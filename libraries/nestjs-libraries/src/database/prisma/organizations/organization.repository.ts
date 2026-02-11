@@ -1,5 +1,5 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, SubscriptionTier } from '@prisma/client';
+import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -12,6 +12,45 @@ export class OrganizationRepository {
     private _userOrg: PrismaRepository<'userOrganization'>,
     private _user: PrismaRepository<'user'>
   ) {}
+
+  createMaxUser(id: string, name: string, saasName: string, email: string) {
+    return this._organization.model.organization.create({
+      select: {
+        id: true,
+        apiKey: true,
+      },
+      data: {
+        name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        isTrailing: false,
+        subscription: {
+          create: {
+            totalChannels: 1000000,
+            subscriptionTier: 'ULTIMATE',
+            isLifetime: true,
+            period: 'YEARLY',
+          },
+        },
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            user: {
+              create: {
+                activated: true,
+                email: email
+                  ? email.split('@').join(`+${saasName}@`)
+                  : `${saasName}+` + makeId(10) + '@postiz.com',
+                name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+                providerName: 'LOCAL',
+                password: AuthService.hashPassword(makeId(500)),
+                timezone: 0,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 
   getOrgByApiKey(api: string) {
     return this._organization.model.organization.findFirst({
@@ -260,6 +299,25 @@ export class OrganizationRepository {
     });
   }
 
+  async setStreak(organizationId: string, type: 'start' | 'end') {
+    try {
+      await this._organization.model.organization.update({
+        where: {
+          id: organizationId,
+          ...(type === 'start'
+            ? {
+                streakSince: null,
+              }
+            : {}),
+        },
+        data: {
+          ...(type === 'end' ? { streakSince: null } : {}),
+          ...(type === 'start' ? { streakSince: new Date() } : {}),
+        },
+      });
+    } catch (err) {}
+  }
+
   async getTeam(orgId: string) {
     return this._organization.model.organization.findUnique({
       where: {
@@ -273,6 +331,9 @@ export class OrganizationRepository {
               select: {
                 email: true,
                 id: true,
+                sendSuccessEmails: true,
+                sendFailureEmails: true,
+                sendStreakEmails: true,
               },
             },
           },
@@ -293,6 +354,8 @@ export class OrganizationRepository {
               select: {
                 email: true,
                 id: true,
+                sendSuccessEmails: true,
+                sendFailureEmails: true,
               },
             },
           },
@@ -322,6 +385,28 @@ export class OrganizationRepository {
       },
       data: {
         disabled: disable,
+      },
+    });
+  }
+
+  getShortlinkPreference(orgId: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id: orgId,
+      },
+      select: {
+        shortlink: true,
+      },
+    });
+  }
+
+  updateShortlinkPreference(orgId: string, shortlink: ShortLinkPreference) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        shortlink,
       },
     });
   }

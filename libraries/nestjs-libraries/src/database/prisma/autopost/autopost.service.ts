@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
-import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import dayjs from 'dayjs';
 import { END, START, StateGraph } from '@langchain/langgraph';
 import { AutoPost, Integration } from '@prisma/client';
@@ -15,6 +14,11 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import Parser from 'rss-parser';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { TemporalService } from 'nestjs-temporal-core';
+import { TypedSearchAttributes } from '@temporalio/common';
+import {
+  organizationId,
+} from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 const parser = new Parser();
 
 interface WorkflowChannelsState {
@@ -58,7 +62,7 @@ const dallePrompt = z.object({
 export class AutopostService {
   constructor(
     private _autopostsRepository: AutopostRepository,
-    private _workerServiceProducer: BullMqClient,
+    private _temporalService: TemporalService,
     private _integrationService: IntegrationService,
     private _postsService: PostsService
   ) {}
@@ -81,7 +85,7 @@ export class AutopostService {
       id
     );
 
-    await this.processCron(body.active, data.id);
+    await this.processCron(body.active, orgId, data.id);
 
     return data;
   }
@@ -92,30 +96,39 @@ export class AutopostService {
       id,
       active
     );
-    await this.processCron(active, id);
+    await this.processCron(active, orgId, id);
     return data;
   }
 
-  async processCron(active: boolean, id: string) {
+  async processCron(active: boolean, orgId: string, id: string) {
     if (active) {
-      return this._workerServiceProducer.emit('cron', {
-        id,
-        options: {
-          every: 3600000,
-          immediately: true,
-        },
-        payload: {
-          id,
-        },
-      });
+      try {
+        return this._temporalService.client
+          .getRawClient()
+          ?.workflow.start('autoPostWorkflow', {
+            workflowId: `autopost-${id}`,
+            taskQueue: 'main',
+            args: [{ id, immediately: true }],
+            typedSearchAttributes: new TypedSearchAttributes([
+              {
+                key: organizationId,
+                value: orgId,
+              },
+            ]),
+          });
+      } catch (err) {}
     }
 
-    return this._workerServiceProducer.deleteScheduler('cron', id);
+    try {
+      return await this._temporalService.terminateWorkflow(`autopost-${id}`);
+    } catch (err) {
+      return false;
+    }
   }
 
   async deleteAutopost(orgId: string, id: string) {
     const data = await this._autopostsRepository.deleteAutopost(orgId, id);
-    await this.processCron(false, id);
+    await this.processCron(false, orgId, id);
     return data;
   }
 
@@ -272,6 +285,7 @@ export class AutopostService {
         value: [
           {
             id: makeId(10),
+            delay: 0,
             content:
               state.description.replace(/\n/g, '\n\n') +
               '\n\n' +

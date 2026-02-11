@@ -1,26 +1,49 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
+import { ApplicationFailure } from '@temporalio/activity';
 
-export class RefreshToken {
-  constructor(
-    public identifier: string,
-    public json: string,
-    public body: BodyInit,
-    public message = ''
-  ) {}
+export class RefreshToken extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(message, 'refresh_token', true, [
+      {
+        identifier,
+        json,
+        body,
+      },
+    ]);
+  }
 }
-export class BadBody {
-  constructor(
-    public identifier: string,
-    public json: string,
-    public body: BodyInit,
-    public message = ''
-  ) {}
+
+export class BadBody extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(message, 'bad_body', true, [
+      {
+        identifier,
+        json,
+        body,
+      },
+    ]);
+  }
 }
 
 export class NotEnoughScopes {
-  constructor(public message = 'Not enough scopes') {}
+  constructor(
+    public message = 'Not enough scopes, when choosing a provider, please add all the scopes'
+  ) {}
+}
+
+function safeStringify(obj: any) {
+  const seen = new WeakSet();
+
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
 }
 
 export abstract class SocialAbstract {
@@ -51,23 +74,24 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
-    const value = await concurrency<any>(
-      this.identifier,
-      this.maxConcurrentJob,
-      async () => {
-        try {
-          return await func();
-        } catch (err) {
-          console.log(err);
-          const handle = this.handleErrors(JSON.stringify(err));
-          return { err: true, ...(handle || {}) };
-        }
-      },
-      ignoreConcurrency
-    );
+    let value: any;
+    try {
+      value = await func();
+    } catch (err) {
+      const handle = this.handleErrors(safeStringify(err));
+      value = { err: true, value: 'Unknown Error', ...(handle || {}) };
+    }
 
     if (value && value?.err && value?.value) {
-      throw new BadBody('', JSON.stringify({}), {} as any, value.value || '');
+      if (value.type === 'refresh-token') {
+        throw new RefreshToken(
+          '',
+          safeStringify({}),
+          {} as any,
+          value.value || ''
+        );
+      }
+      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
     }
 
     return value;
@@ -80,12 +104,7 @@ export abstract class SocialAbstract {
     totalRetries = 0,
     ignoreConcurrency = false
   ): Promise<Response> {
-    const request = await concurrency(
-      this.identifier,
-      this.maxConcurrentJob,
-      () => fetch(url, options),
-      ignoreConcurrency
-    );
+    const request = await fetch(url, options);
 
     if (request.status === 200 || request.status === 201) {
       return request;
@@ -109,19 +128,32 @@ export abstract class SocialAbstract {
       json.includes('Rate limit')
     ) {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+      return this.fetch(
+        url,
+        options,
+        identifier,
+        totalRetries + 1,
+        ignoreConcurrency
+      );
     }
 
     const handleError = this.handleErrors(json || '{}');
 
     if (handleError?.type === 'retry') {
       await timer(5000);
-      return this.fetch(url, options, identifier, totalRetries + 1, ignoreConcurrency);
+      return this.fetch(
+        url,
+        options,
+        identifier,
+        totalRetries + 1,
+        ignoreConcurrency
+      );
     }
 
     if (
-      request.status === 401 &&
-      (handleError?.type === 'refresh-token' || !handleError)
+      (request.status === 401 &&
+        (handleError?.type === 'refresh-token' || !handleError)) ||
+      handleError?.type === 'refresh-token'
     ) {
       throw new RefreshToken(
         identifier,

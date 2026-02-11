@@ -140,118 +140,173 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       : {};
   }
 
+  private processMedia(mediaFiles: PostDetails['media']) {
+    return (mediaFiles || []).map((media) => {
+      let mediaUrl = media.path;
+      if (mediaStorage === 'local' && mediaUrl.startsWith(frontendURL)) {
+        mediaUrl = mediaUrl.replace(frontendURL, '');
+      }
+      //get mime type to pass contentType to telegram api.
+      //some photos and videos might not pass telegram api restrictions, so they are sent as documents instead of returning errors
+      const mimeType = mime.getType(mediaUrl); // Detect MIME type
+      let mediaType: 'photo' | 'video' | 'document';
+
+      if (mimeType?.startsWith('image/')) {
+        mediaType = 'photo';
+      } else if (mimeType?.startsWith('video/')) {
+        mediaType = 'video';
+      } else {
+        mediaType = 'document';
+      }
+
+      return {
+        type: mediaType,
+        media: mediaUrl,
+        fileOptions: {
+          filename: media.path.split('/').pop(),
+          contentType: mimeType || 'application/octet-stream',
+        },
+      };
+    });
+  }
+
+  private async sendMessage(
+    accessToken: string,
+    message: PostDetails,
+    replyToMessageId?: number
+  ): Promise<number | null> {
+    let messageId: number | null = null;
+    const mediaFiles = message.media || [];
+    const text = striptags(message.message || '', ['u', 'strong', 'p'])
+      .replace(/<strong>/g, '<b>')
+      .replace(/<\/strong>/g, '</b>')
+      .replace(/<p>(.*?)<\/p>/g, '$1\n');
+
+    console.log(text);
+    const processedMedia = this.processMedia(mediaFiles);
+
+    // if there's no media, bot sends a text message only
+    if (processedMedia.length === 0) {
+      const response = await telegramBot.sendMessage(accessToken, text, {
+        parse_mode: 'HTML',
+        ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
+      });
+      messageId = response.message_id;
+    }
+    // if there's only one media, bot sends the media with the text message as caption
+    else if (processedMedia.length === 1) {
+      const media = processedMedia[0];
+      const options = {
+        caption: text,
+        parse_mode: 'HTML' as const,
+        ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
+      };
+      const response =
+        media.type === 'video'
+          ? await telegramBot.sendVideo(
+              accessToken,
+              media.media,
+              options,
+              media.fileOptions
+            )
+          : media.type === 'photo'
+          ? await telegramBot.sendPhoto(
+              accessToken,
+              media.media,
+              options,
+              media.fileOptions
+            )
+          : await telegramBot.sendDocument(
+              accessToken,
+              media.media,
+              options,
+              media.fileOptions
+            );
+      messageId = response.message_id;
+    }
+    // if there are multiple media, bot sends them as a media group - max 10 media per group - with the text as a caption (if there are more than 1 group, the caption will only be sent with the first group)
+    else {
+      const mediaGroups = this.chunkMedia(processedMedia, 10);
+      for (let i = 0; i < mediaGroups.length; i++) {
+        const mediaGroup = mediaGroups[i].map((m, index) => ({
+          type: m.type === 'document' ? 'document' : m.type, // Documents are not allowed in media groups
+          media: m.media,
+          caption: i === 0 && index === 0 ? text : undefined,
+          parse_mode: 'HTML',
+        }));
+
+        const response = await telegramBot.sendMediaGroup(
+          accessToken,
+          mediaGroup as any[],
+          {
+            ...(replyToMessageId && i === 0
+              ? { reply_to_message_id: replyToMessageId }
+              : {}),
+          }
+        );
+        if (i === 0) {
+          messageId = response[0].message_id;
+        }
+      }
+    }
+
+    return messageId;
+  }
+
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    const ids: PostResponse[] = [];
+    const [firstPost] = postDetails;
 
-    for (const message of postDetails) {
-      let messageId: number | null = null;
-      const mediaFiles = message.media || [];
-      const text = striptags(message.message || '', ['u', 'strong', 'p'])
-        .replace(/<strong>/g, '<b>')
-        .replace(/<\/strong>/g, '</b>')
-        .replace(/<p>(.*?)<\/p>/g, '$1\n');
+    const messageId = await this.sendMessage(accessToken, firstPost);
 
-      console.log(text);
-      // check if media is local to modify url
-      const processedMedia = mediaFiles.map((media) => {
-        let mediaUrl = media.path;
-        if (mediaStorage === 'local' && mediaUrl.startsWith(frontendURL)) {
-          mediaUrl = mediaUrl.replace(frontendURL, '');
-        }
-        //get mime type to pass contentType to telegram api.
-        //some photos and videos might not pass telegram api restrictions, so they are sent as documents instead of returning errors
-        const mimeType = mime.getType(mediaUrl); // Detect MIME type
-        let mediaType: 'photo' | 'video' | 'document';
-
-        if (mimeType?.startsWith('image/')) {
-          mediaType = 'photo';
-        } else if (mimeType?.startsWith('video/')) {
-          mediaType = 'video';
-        } else {
-          mediaType = 'document';
-        }
-
-        return {
-          type: mediaType,
-          media: mediaUrl,
-          fileOptions: {
-            filename: media.path.split('/').pop(),
-            contentType: mimeType || 'application/octet-stream',
-          },
-        };
-      });
-      // if there's no media, bot sends a text message only
-      if (processedMedia.length === 0) {
-        const response = await telegramBot.sendMessage(accessToken, text, {
-          parse_mode: 'HTML',
-        });
-        messageId = response.message_id;
-      }
-      // if there's only one media, bot sends the media with the text message as caption
-      else if (processedMedia.length === 1) {
-        const media = processedMedia[0];
-        const response =
-          media.type === 'video'
-            ? await telegramBot.sendVideo(
-                accessToken,
-                media.media,
-                { caption: text, parse_mode: 'HTML' },
-                media.fileOptions
-              )
-            : media.type === 'photo'
-            ? await telegramBot.sendPhoto(
-                accessToken,
-                media.media,
-                { caption: text, parse_mode: 'HTML' },
-                media.fileOptions
-              )
-            : await telegramBot.sendDocument(
-                accessToken,
-                media.media,
-                { caption: text, parse_mode: 'HTML' },
-                media.fileOptions
-              );
-        messageId = response.message_id;
-      }
-      // if there are multiple media, bot sends them as a media group - max 10 media per group - with the text as a caption (if there are more than 1 group, the caption will only be sent with the first group)
-      else {
-        const mediaGroups = this.chunkMedia(processedMedia, 10);
-        for (let i = 0; i < mediaGroups.length; i++) {
-          const mediaGroup = mediaGroups[i].map((m, index) => ({
-            type: m.type === 'document' ? 'document' : m.type, // Documents are not allowed in media groups
-            media: m.media,
-            caption: i === 0 && index === 0 ? text : undefined,
-            parse_mode: 'HTML',
-          }));
-
-          const response = await telegramBot.sendMediaGroup(
-            accessToken,
-            mediaGroup as any[]
-          );
-          if (i === 0) {
-            messageId = response[0].message_id;
-          }
-        }
-      }
-      // for private groups/channels message.id is undefined so the link generated by Postiz will be unusable "https://t.me/c/undefined/16"
-      // to avoid that, we use accessToken instead of message.id and we generate the link manually removing the -100 from the start.
-      if (messageId) {
-        ids.push({
-          id: message.id,
+    // for private groups/channels message.id is undefined so the link generated by Postiz will be unusable "https://t.me/c/undefined/16"
+    // to avoid that, we use accessToken instead of message.id and we generate the link manually removing the -100 from the start.
+    if (messageId) {
+      return [
+        {
+          id: firstPost.id,
           postId: String(messageId),
           releaseURL: `https://t.me/${
             id !== 'undefined' ? id : `c/${accessToken.replace('-100', '')}`
           }/${messageId}`,
           status: 'completed',
-        });
-      }
+        },
+      ];
     }
 
-    return ids;
+    return [];
+  }
+
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
+    const replyToId = Number(lastCommentId || postId);
+
+    const messageId = await this.sendMessage(accessToken, commentPost, replyToId);
+
+    if (messageId) {
+      return [
+        {
+          id: commentPost.id,
+          postId: String(messageId),
+          releaseURL: `https://t.me/${
+            id !== 'undefined' ? id : `c/${accessToken.replace('-100', '')}`
+          }/${messageId}`,
+          status: 'completed',
+        },
+      ];
+    }
+
+    return [];
   }
   // chunkMedia is used to split media into groups of "size". 10 is used here because telegram api allows a maximum of 10 media per group
   private chunkMedia(media: { type: string; media: string }[], size: number) {

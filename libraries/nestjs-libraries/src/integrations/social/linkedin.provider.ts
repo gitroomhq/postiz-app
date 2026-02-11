@@ -40,6 +40,29 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   maxLength() {
     return 3000;
   }
+
+  override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.indexOf('Unable to obtain activity') > -1) {
+      return {
+        type: 'retry',
+        value: 'Unable to obtain activity',
+      };
+    }
+
+    if (body.indexOf('resource is forbidden') > -1) {
+      return {
+        type: 'retry',
+        value: 'Resource is forbidden',
+      };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
@@ -188,7 +211,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${token}`,
           },
         }
@@ -233,7 +256,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
@@ -266,7 +289,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           method: 'PUT',
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
             ...(isVideo
               ? { 'Content-Type': 'application/octet-stream' }
@@ -298,7 +321,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           }),
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202601',
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
@@ -348,71 +371,51 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<LinkedinDto>[],
     firstPost: PostDetails<LinkedinDto>
   ): Promise<PostDetails<LinkedinDto>[]> {
-    // Collect all images from all posts
-    const allImages = postDetails.flatMap(
-      (post) =>
-        post.media?.filter(
-          (media) =>
-            media.path.toLowerCase().includes('.jpg') ||
-            media.path.toLowerCase().includes('.jpeg') ||
-            media.path.toLowerCase().includes('.png')
-        ) || []
-    );
-
-    if (allImages.length === 0) {
+    if (!firstPost.media?.length) {
       return postDetails;
     }
 
-    // Convert images to buffers and get dimensions
-    const imageData = await Promise.all(
-      allImages.map(async (media) => {
-        const buffer = await readOrFetch(media.path);
-        const image = sharp(buffer, {
-          animated: lookup(media.path) === 'image/gif',
-        });
-        const metadata = await image.metadata();
-
-        return {
-          buffer,
-          width: metadata.width || 0,
-          height: metadata.height || 0,
-        };
+    // Fetch all images and get their dimensions
+    const images = await Promise.all(
+      firstPost.media.map(async (media) => {
+        const raw = await readOrFetch(media.path);
+        const image = sharp(raw, { animated: false }).toFormat('jpeg');
+        const { width, height } = await image.metadata();
+        const buffer = await image.toBuffer();
+        return { buffer, width: width || 0, height: height || 0 };
       })
     );
 
-    // Use the dimensions of the first image for the PDF page size
-    // You could also use the largest dimensions if you prefer
-    const firstImageDimensions = imageData[0];
-    const pageSize = [firstImageDimensions.width, firstImageDimensions.height];
-
-    // Convert images to PDF with exact image dimensions
-    const pdfStream = imageToPDF(
-      imageData.map((data) => data.buffer),
-      pageSize
+    // Find the largest image by area to use as the PDF page size
+    const largest = images.reduce((max, img) =>
+      img.width * img.height > max.width * max.height ? img : max
     );
 
-    // Convert stream to buffer
+    const imageBuffers = images.map((img) => img.buffer);
+
+    // Create a PDF sized to the largest image; it fills the page,
+    // smaller images are fitted and centered within the same dimensions
+    const pdfStream = imageToPDF(
+      imageBuffers,
+      [largest.width, largest.height]
+    ) as unknown as Readable;
     const pdfBuffer = await this.streamToBuffer(pdfStream);
 
-    // Create a temporary file-like object for the PDF
-    const pdfMedia = {
-      path: 'carousel.pdf',
-      buffer: pdfBuffer,
-    };
-
-    // Return modified post details with PDF instead of images
-    const modifiedFirstPost = {
-      ...firstPost,
-      media: [pdfMedia] as any[],
-    };
-
-    // Remove media from other posts since we're combining everything into one PDF
-    const modifiedRestPosts = postDetails.slice(1).map((post) => ({
-      ...post,
-      media: [] as any[],
-    }));
-
-    return [modifiedFirstPost, ...modifiedRestPosts];
+    // Replace the first post's media with the single PDF
+    const [first, ...rest] = postDetails;
+    return [
+      {
+        ...first,
+        media: [
+          {
+            type: 'image' as const,
+            path: 'carousel.pdf',
+            buffer: pdfBuffer,
+          } as any,
+        ],
+      },
+      ...rest,
+    ];
   }
 
   private async streamToBuffer(stream: Readable): Promise<Buffer> {
@@ -488,7 +491,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       .toBuffer();
   }
 
-  private buildPostContent(isPdf: boolean, mediaIds: string[]) {
+  private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
     if (mediaIds.length === 0) {
       return {};
     }
@@ -497,7 +500,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       return {
         content: {
           media: {
-            ...(isPdf ? { title: 'slides.pdf' } : {}),
+            ...(isPdf ? { title: pdfTitle || 'slides' } : {}),
             id: mediaIds[0],
           },
         },
@@ -518,7 +521,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type: 'company' | 'personal',
     message: string,
     mediaIds: string[],
-    isPdf: boolean
+    isPdf: boolean,
+    pdfTitle?: string
   ) {
     const author =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
@@ -532,7 +536,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         targetEntities: [] as string[],
         thirdPartyDistributionChannels: [] as string[],
       },
-      ...this.buildPostContent(isPdf, mediaIds),
+      ...this.buildPostContent(isPdf, mediaIds, pdfTitle),
       lifecycleState: 'PUBLISHED',
       isReshareDisabledByAuthor: false,
     };
@@ -541,23 +545,28 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   private async createMainPost(
     id: string,
     accessToken: string,
-    firstPost: PostDetails,
+    firstPost: PostDetails<LinkedinDto>,
     mediaIds: string[],
     type: 'company' | 'personal',
     isPdf: boolean
   ): Promise<string> {
+    const pdfTitle = isPdf
+      ? firstPost.settings?.carousel_name || 'slides'
+      : undefined;
+
     const postPayload = this.createLinkedInPostPayload(
       id,
       type,
       firstPost.message,
       mediaIds,
-      isPdf
+      isPdf,
+      pdfTitle
     );
 
-    const response = await this.fetch('https://api.linkedin.com/rest/posts', {
+    const response = await this.fetch(`https://api.linkedin.com/rest/posts`, {
       method: 'POST',
       headers: {
-        'LinkedIn-Version': '202501',
+        'LinkedIn-Version': '202601',
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
@@ -583,7 +592,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
+      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {
@@ -641,11 +650,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       );
     }
 
-    const [processedFirstPost, ...restPosts] = processedPostDetails;
+    const [processedFirstPost] = processedPostDetails;
 
-    // Process and upload media for all posts
+    // Process and upload media for the first post only
     const uploadedMedia = await this.processMediaForPosts(
-      processedPostDetails,
+      [processedFirstPost],
       accessToken,
       id,
       type
@@ -666,25 +675,71 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       !!firstPost.settings?.post_as_images_carousel
     );
 
-    // Build response array starting with main post
-    const responses: PostResponse[] = [
-      this.createPostResponse(mainPostId, processedFirstPost.id, true),
-    ];
+    // Return response for main post only
+    return [this.createPostResponse(mainPostId, processedFirstPost.id, true)];
+  }
 
-    // Create comment posts for remaining posts
-    for (const post of restPosts) {
-      const commentPostId = await this.createCommentPost(
-        id,
-        accessToken,
-        post,
-        mainPostId,
-        type
-      );
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails<LinkedinDto>[],
+    integration: Integration,
+    type = 'personal' as 'company' | 'personal'
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
 
-      responses.push(this.createPostResponse(commentPostId, post.id, false));
-    }
+    const commentPostId = await this.createCommentPost(
+      id,
+      accessToken,
+      commentPost,
+      postId,
+      type
+    );
 
-    return responses;
+    return [this.createPostResponse(commentPostId, commentPost.id, false)];
+  }
+
+  @PostPlug({
+    identifier: 'linkedin-add-comment',
+    title: 'Add comments by a different account',
+    description: 'Add accounts to comment on your post',
+    pickIntegration: ['linkedin', 'linkedin-page'],
+    fields: [
+      {
+        name: 'comment',
+        description: 'The comment to add to the post',
+        type: 'textarea',
+        placeholder: 'Enter your comment here',
+      },
+    ],
+  })
+  async addComment(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any,
+    isPersonal = true
+  ) {
+    return this.comment(
+      integration.internalId,
+      postId,
+      undefined,
+      integration.token,
+      [
+        {
+          id: makeId(10),
+          message: information.comment,
+          media: [],
+          settings: {
+            post_as_images_carousel: false,
+          },
+        },
+      ],
+      integration,
+      isPersonal ? 'personal' : 'company'
+    );
   }
 
   @PostPlug({
@@ -723,7 +778,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       headers: {
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
-        'LinkedIn-Version': '202504',
+        'LinkedIn-Version': '202601',
         Authorization: `Bearer ${integration.token}`,
       },
     });
@@ -739,7 +794,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202504',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${token}`,
           },
         }

@@ -13,11 +13,12 @@ import { VariableContextComponent } from '@gitroom/react/helpers/variable.contex
 import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
-import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+import { DubAnalytics } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
 import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
+import Script from 'next/script';
 // import dynamicLoad from 'next/dynamic';
 // const SetTimezone = dynamicLoad(
 //   () => import('@gitroom/frontend/components/layout/set.timezone'),
@@ -41,6 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <html>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        {!!process.env.DATAFAST_WEBSITE_ID && (
+          <Script
+            data-website-id={process.env.DATAFAST_WEBSITE_ID}
+            data-domain="postiz.com"
+            src="https://datafa.st/js/script.js"
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body
         className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
@@ -52,6 +61,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           environment={process.env.NODE_ENV!}
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
+          stripeClient={process.env.STRIPE_PUBLISHABLE_KEY!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
@@ -60,7 +70,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
           oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
-          tolt={process.env.NEXT_PUBLIC_TOLT!}
+          dub={!!process.env.STRIPE_PUBLISHABLE_KEY}
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
@@ -68,6 +78,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
+          extensionId={process.env.EXTENSION_ID || ''}
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
@@ -81,7 +92,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <SentryComponent>
             {/*<SetTimezone />*/}
             <HtmlComponent />
-            <ToltScript />
+            <DubAnalytics />
             <FacebookComponent />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}

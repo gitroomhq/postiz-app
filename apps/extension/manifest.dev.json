@@ -1,15 +1,30 @@
 {
-  "action": {
-    "default_icon": "public/dev-icon-32.png",
-    "default_popup": "src/pages/popup/index.html"
-  },
+  "manifest_version": 3,
+  "name": "Postiz",
+  "version": "2.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqtH6qclAsfFf6qbUKfPmhBbfycGrt13+0h6ti/olniCGnjQjhkVVTnURfLFz+v+842Ee+pAS5HBEXo57dQ9xUtwFGXnavVR+myjN+Un9NIfFyYmYEBvLrinclsMJBwWMM8JkhxKuaOagxp1hqGgNAO4C0bzE3YN/SPoTjNpGU8TGm/ENZ/TDUneZyyVM5HEEmOTZEmjmy9FJaxbzGmZ2rixNO45pkjXMFp8+/XrFSNiCqNZt6LQNIqL5SfVIRUKGBjE3OG/gtahVToBdlXi5yzP1uYE0Qs4grJ/T1rUUzTXFAQa7heWA9mskf0xAMEtTSED4N9bZ4sF8cf5J+SGGlwIDAQAB",
+  "description": "Postiz browser extension for social media scheduling",
   "icons": {
-    "128": "public/dev-icon-128.png"
+    "32": "icon-32.png",
+    "128": "icon-128.png"
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["contentStyle.css", "dev-icon-128.png", "dev-icon-32.png"],
-      "matches": []
-    }
-  ]
+  "permissions": [
+    "cookies",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.skool.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "externally_connectable": {
+    "matches": [
+      "http://localhost/*",
+      "https://localhost/*",
+      "https://*.postiz.com/*"
+    ]
+  }
 }

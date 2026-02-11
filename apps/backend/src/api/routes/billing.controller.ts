@@ -9,6 +9,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -30,6 +31,20 @@ export class BillingController {
     };
   }
 
+  @Get('/check-discount')
+  async checkDiscount(@GetOrgFromRequest() org: Organization) {
+    return {
+      offerCoupon: !(await this._stripeService.checkDiscount(org.paymentId))
+        ? false
+        : AuthService.signJWT({ discount: true }),
+    };
+  }
+
+  @Post('/apply-discount')
+  async applyDiscount(@GetOrgFromRequest() org: Organization) {
+    await this._stripeService.applyDiscount(org.paymentId);
+  }
+
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
     try {
@@ -45,6 +60,23 @@ export class BillingController {
     return {
       finished: !org.isTrailing,
     };
+  }
+
+  @Post('/embedded')
+  embedded(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Body() body: BillingSubscribeDto,
+    @Req() req: Request
+  ) {
+    const uniqueId = req?.cookies?.track;
+    return this._stripeService.embedded(
+      uniqueId,
+      org.id,
+      user.id,
+      body,
+      org.allowTrial
+    );
   }
 
   @Post('/subscribe')

@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
@@ -5,7 +7,6 @@ import React, { useCallback, useMemo } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { Input } from '@gitroom/react/form/input';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { Select } from '@gitroom/react/form/select';
@@ -16,6 +17,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 const roles = [
   {
     name: 'User',
@@ -56,12 +58,12 @@ export const AddMember = () => {
       ).json();
       if (values.sendEmail) {
         modals.closeAll();
-        toast.show('Invitation link sent');
+        toast.show(t('invitation_link_sent', 'Invitation link sent'));
         return;
       }
       copy(url);
       modals.closeAll();
-      toast.show('Link copied to clipboard');
+      toast.show(t('link_copied_to_clipboard', 'Link copied to clipboard'));
     },
     []
   );
@@ -96,7 +98,7 @@ export const AddMember = () => {
             </div>
           </div>
           <Button type="submit" className="mt-[18px]">
-            {sendEmail ? 'Send Invitation Link' : 'Copy Link'}
+            {sendEmail ? t('send_invitation_link', 'Send Invitation Link') : t('copy_link', 'Copy Link')}
           </Button>
         </div>
       </form>
@@ -107,6 +109,7 @@ export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
   const modals = useModals();
+  const t = useT();
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
     (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
@@ -128,11 +131,11 @@ export const TeamsComponent = () => {
       classNames: {
         modal: 'bg-transparent text-textColor',
       },
-      title: 'Add Team Member',
+      title: t('top_title_add_member', 'Add Member'),
       withCloseButton: true,
       children: <AddMember />,
     });
-  }, []);
+  }, [t]);
   const { data, mutate } = useSWR('/api/teams', loadTeam, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -147,7 +150,7 @@ export const TeamsComponent = () => {
       async () => {
         if (
           !(await deleteDialog(
-            'Are you sure you want to remove this team member?'
+            t('are_you_sure_remove_team_member', 'Are you sure you want to remove this team member?')
           ))
         ) {
           return;
@@ -157,10 +160,8 @@ export const TeamsComponent = () => {
         });
         await mutate();
       },
-    []
+    [t]
   );
-
-  const t = useT();
 
   return (
     <div className="flex flex-col">
@@ -180,10 +181,10 @@ export const TeamsComponent = () => {
               </div>
               <div className="flex-1">
                 {p.role === 'USER'
-                  ? 'User'
+                  ? t('user', 'User')
                   : p.role === 'ADMIN'
-                  ? 'Admin'
-                  : 'Super Admin'}
+                  ? t('admin', 'Admin')
+                  : t('super_admin', 'Super Admin')}
               </div>
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">

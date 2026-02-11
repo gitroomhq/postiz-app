@@ -15,6 +15,8 @@ import DribbbleProvider from '@gitroom/frontend/components/new-launch/providers/
 import ThreadsProvider from '@gitroom/frontend/components/new-launch/providers/threads/threads.provider';
 import DiscordProvider from '@gitroom/frontend/components/new-launch/providers/discord/discord.provider';
 import SlackProvider from '@gitroom/frontend/components/new-launch/providers/slack/slack.provider';
+import KickProvider from '@gitroom/frontend/components/new-launch/providers/kick/kick.provider';
+import TwitchProvider from '@gitroom/frontend/components/new-launch/providers/twitch/twitch.provider';
 import MastodonProvider from '@gitroom/frontend/components/new-launch/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/new-launch/providers/bluesky/bluesky.provider';
 import LemmyProvider from '@gitroom/frontend/components/new-launch/providers/lemmy/lemmy.provider';
@@ -32,6 +34,10 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import WordpressProvider from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.provider';
 import ListmonkProvider from '@gitroom/frontend/components/new-launch/providers/listmonk/listmonk.provider';
+import GmbProvider from '@gitroom/frontend/components/new-launch/providers/gmb/gmb.provider';
+import MoltbookProvider from '@gitroom/frontend/components/new-launch/providers/moltbook/moltbook.provider';
+import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/skool/skool.provider';
+import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 
 export const Providers = [
   {
@@ -103,6 +109,14 @@ export const Providers = [
     component: SlackProvider,
   },
   {
+    identifier: 'kick',
+    component: KickProvider,
+  },
+  {
+    identifier: 'twitch',
+    component: TwitchProvider,
+  },
+  {
     identifier: 'mastodon',
     component: MastodonProvider,
   },
@@ -138,6 +152,22 @@ export const Providers = [
     identifier: 'listmonk',
     component: ListmonkProvider,
   },
+  {
+    identifier: 'gmb',
+    component: GmbProvider,
+  },
+  {
+    identifier: 'moltbook',
+    component: MoltbookProvider,
+  },
+  {
+    identifier: 'skool',
+    component: SkoolProvider,
+  },
+  {
+    identifier: 'whop',
+    component: WhopProvider,
+  }
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {
   const { date, current, global, selectedIntegrations, allIntegrations } =
@@ -187,13 +217,6 @@ export const ShowAllProviders = forwardRef((props, ref) => {
             })),
           }}
         >
-          <div className="flex gap-[4px] mb-[20px]">
-            <div className="flex-1 flex p-[4px] border border-newTableBorder rounded-[8px]">
-              <div className="rounded-[4px] flex-1 overflow-hidden whitespace-nowrap text-center pt-[6px] pb-[5px] text-textItemFocused bg-boxFocused">
-                {t('preview', 'Preview')}
-              </div>
-            </div>
-          </div>
           {global?.[0]?.content?.length === 0 ? (
             <div>
               {t(
@@ -202,7 +225,9 @@ export const ShowAllProviders = forwardRef((props, ref) => {
               )}
             </div>
           ) : (
-            <GeneralPreviewComponent maximumCharacters={100000000} />
+            <div className="border border-borderPreview rounded-[12px] shadow-previewShadow">
+              <GeneralPreviewComponent maximumCharacters={100000000} />
+            </div>
           )}
         </IntegrationContext.Provider>
       )}

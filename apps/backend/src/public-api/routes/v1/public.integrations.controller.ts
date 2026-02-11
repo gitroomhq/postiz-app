@@ -137,11 +137,20 @@ export class PublicIntegrationsController {
   @Delete('/posts/:id')
   async deletePost(
     @GetOrgFromRequest() org: Organization,
-    @Param() body: { id: string }
+    @Param('id') id: string
   ) {
     Sentry.metrics.count("public_api-request", 1);
-    const getPostById = await this._postsService.getPost(org.id, body.id);
+    const getPostById = await this._postsService.getPost(org.id, id);
     return this._postsService.deletePost(org.id, getPostById.group);
+  }
+
+  @Delete('/posts/group/:group')
+  deletePostByGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('group') group: string
+  ) {
+    Sentry.metrics.count("public_api-request", 1);
+    return this._postsService.deletePost(org.id, group);
   }
 
   @Get('/is-connected')

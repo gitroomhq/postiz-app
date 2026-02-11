@@ -28,8 +28,15 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
+import { KickProvider } from '@gitroom/nestjs-libraries/integrations/social/kick.provider';
+import { TwitchProvider } from '@gitroom/nestjs-libraries/integrations/social/twitch.provider';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/moltbook.provider';
+import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
+import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 
-export const socialIntegrationList: SocialProvider[] = [
+export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
@@ -39,11 +46,14 @@ export const socialIntegrationList: SocialProvider[] = [
   new FacebookProvider(),
   new ThreadsProvider(),
   new YoutubeProvider(),
+  new GmbProvider(),
   new TiktokProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),
   new DiscordProvider(),
   new SlackProvider(),
+  new KickProvider(),
+  new TwitchProvider(),
   new MastodonProvider(),
   new BlueskyProvider(),
   new LemmyProvider(),
@@ -56,6 +66,9 @@ export const socialIntegrationList: SocialProvider[] = [
   new HashnodeProvider(),
   new WordpressProvider(),
   new ListmonkProvider(),
+  new MoltbookProvider(),
+  new WhopProvider(),
+  new SkoolProvider(),
   // new MastodonCustomProvider(),
 ];
 
@@ -71,6 +84,8 @@ export class IntegrationManager {
           editor: p.editor,
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
+          isChromeExtension: !!p.isChromeExtension,
+          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),

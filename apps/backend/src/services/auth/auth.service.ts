@@ -21,7 +21,10 @@ export class AuthService {
     private _emailService: EmailService
   ) {}
   async canRegister(provider: string) {
-    if (process.env.DISABLE_REGISTRATION !== 'true' || provider === Provider.GENERIC) {
+    if (
+      process.env.DISABLE_REGISTRATION !== 'true' ||
+      provider === Provider.GENERIC
+    ) {
       return true;
     }
 
@@ -69,7 +72,8 @@ export class AuthService {
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
+          'top'
         );
         return obj;
       }
@@ -158,14 +162,44 @@ export class AuthService {
         password: '',
         provider,
         providerId: providerUser.id,
+        datafast_visitor_id: body.datafast_visitor_id,
       },
       ip,
       userAgent
     );
 
+    this._track('register', providerUser.email, body.datafast_visitor_id).catch(
+      (err) => {}
+    );
+
     await NewsletterService.register(providerUser.email);
 
     return create.users[0].user;
+  }
+
+  private async _track(
+    name: string,
+    email: string,
+    datafast_visitor_id: string
+  ) {
+    if (email && datafast_visitor_id && process.env.DATAFAST_API_KEY) {
+      try {
+        await fetch('https://datafa.st/api/v1/goals', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            datafast_visitor_id: datafast_visitor_id,
+            name: name,
+            metadata: {
+              email,
+            },
+          }),
+        });
+      } catch (err) {}
+    }
   }
 
   async forgot(email: string) {
@@ -198,7 +232,7 @@ export class AuthService {
     return this._userService.updatePassword(user.id, body.password);
   }
 
-  async activate(code: string) {
+  async activate(code: string, tracking: string) {
     const user = AuthChecker.verifyJWT(code) as {
       id: string;
       activated: boolean;
@@ -211,11 +245,35 @@ export class AuthService {
       }
       await this._userService.activateUser(user.id);
       user.activated = true;
+      this._track('register', user.email, tracking).catch((err) => {});
       await NewsletterService.register(user.email);
       return this.jwt(user as any);
     }
 
     return false;
+  }
+
+  async resendActivationEmail(email: string) {
+    const user = await this._userService.getUserByEmail(email);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.activated) {
+      throw new Error('Account is already activated');
+    }
+
+    const jwt = await this.jwt(user);
+
+    await this._emailService.sendEmail(
+      user.email,
+      'Activate your account',
+      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
+      'top'
+    );
+
+    return true;
   }
 
   oauthLink(provider: string, query?: any) {

@@ -3,15 +3,12 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
   Param,
   Post,
   Put,
   Query,
-  UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -21,23 +18,20 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
-import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
-import {
-  NotEnoughScopes,
-  RefreshToken,
-} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+
 import { timer } from '@gitroom/helpers/utils/timer';
 import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/telegram.provider';
+import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/moltbook.provider';
 import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -45,12 +39,9 @@ export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
-    private _postService: PostsService
+    private _postService: PostsService,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
-  @Get('/')
-  getIntegration() {
-    return this._integrationManager.getAllIntegrations();
-  }
 
   @Get('/:identifier/internal-plugs')
   getInternalPlugs(@Param('identifier') identifier: string) {
@@ -193,7 +184,9 @@ export class IntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('onboarding') onboarding: string,
+    @GetOrgFromRequest() org: Organization
   ) {
     if (
       !this._integrationManager
@@ -222,15 +215,20 @@ export class IntegrationsController {
         await integrationProvider.generateAuthUrl(getExternalUrl);
 
       if (refresh) {
-        await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
+        await ioRedis.set(`refresh:${state}`, refresh, 'EX', 3600);
       }
 
-      await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 300);
+      if (onboarding === 'true') {
+        await ioRedis.set(`onboarding:${state}`, 'true', 'EX', 3600);
+      }
+
+      await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
+      await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
       await ioRedis.set(
         `external:${state}`,
         JSON.stringify(getExternalUrl),
         'EX',
-        300
+        3600
       );
 
       return { url };
@@ -338,37 +336,24 @@ export class IntegrationsController {
         return load;
       } catch (err) {
         if (err instanceof RefreshToken) {
-          const { accessToken, refreshToken, expiresIn, additionalSettings } =
-            await integrationProvider.refreshToken(getIntegration.refreshToken);
+          const data = await this._refreshIntegrationService.refresh(
+            getIntegration
+          );
+
+          if (!data) {
+            return;
+          }
+
+          const { accessToken } = data;
 
           if (accessToken) {
-            await this._integrationService.createOrUpdateIntegration(
-              additionalSettings,
-              !!integrationProvider.oneTimeToken,
-              getIntegration.organizationId,
-              getIntegration.name,
-              getIntegration.picture!,
-              'social',
-              getIntegration.internalId,
-              getIntegration.providerIdentifier,
-              accessToken,
-              refreshToken,
-              expiresIn
-            );
-
-            getIntegration.token = accessToken;
-
             if (integrationProvider.refreshWait) {
               await timer(10000);
             }
             return this.functionIntegration(org, body);
-          } else {
-            await this._integrationService.disconnectChannel(
-              org.id,
-              getIntegration
-            );
-            return false;
           }
+
+          return false;
         }
 
         return false;
@@ -377,187 +362,12 @@ export class IntegrationsController {
     throw new Error('Function not found');
   }
 
-  @Post('/social/:integration/connect')
-  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
-  @UseFilters(new NotEnoughScopesFilter())
-  async connectSocialMedia(
-    @GetOrgFromRequest() org: Organization,
-    @Param('integration') integration: string,
-    @Body() body: ConnectIntegrationDto
-  ) {
-    if (
-      !this._integrationManager
-        .getAllowedSocialsIntegrations()
-        .includes(integration)
-    ) {
-      throw new Error('Integration not allowed');
-    }
-
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
-
-    const getCodeVerifier = integrationProvider.customFields
-      ? 'none'
-      : await ioRedis.get(`login:${body.state}`);
-    if (!getCodeVerifier) {
-      throw new Error('Invalid state');
-    }
-
-    if (!integrationProvider.customFields) {
-      await ioRedis.del(`login:${body.state}`);
-    }
-
-    const details = integrationProvider.externalUrl
-      ? await ioRedis.get(`external:${body.state}`)
-      : undefined;
-
-    if (details) {
-      await ioRedis.del(`external:${body.state}`);
-    }
-
-    const refresh = await ioRedis.get(`refresh:${body.state}`);
-    if (refresh) {
-      await ioRedis.del(`refresh:${body.state}`);
-    }
-
-    const {
-      error,
-      accessToken,
-      expiresIn,
-      refreshToken,
-      id,
-      name,
-      picture,
-      username,
-      additionalSettings,
-      // eslint-disable-next-line no-async-promise-executor
-    } = await new Promise<AuthTokenDetails>(async (res) => {
-      const auth = await integrationProvider.authenticate(
-        {
-          code: body.code,
-          codeVerifier: getCodeVerifier,
-          refresh: body.refresh,
-        },
-        details ? JSON.parse(details) : undefined
-      );
-
-      if (typeof auth === 'string') {
-        return res({
-          error: auth,
-          accessToken: '',
-          id: '',
-          name: '',
-          picture: '',
-          username: '',
-          additionalSettings: [],
-        });
-      }
-
-      if (refresh && integrationProvider.reConnect) {
-        const newAuth = await integrationProvider.reConnect(
-          auth.id,
-          refresh,
-          auth.accessToken
-        );
-        return res(newAuth);
-      }
-
-      return res(auth);
-    });
-
-    if (error) {
-      throw new NotEnoughScopes(error);
-    }
-
-    if (!id) {
-      throw new NotEnoughScopes('Invalid API key');
-    }
-
-    if (refresh && String(id) !== String(refresh)) {
-      throw new NotEnoughScopes(
-        'Please refresh the channel that needs to be refreshed'
-      );
-    }
-
-    let validName = name;
-    if (!validName) {
-      if (username) {
-        validName = username.split('.')[0] ?? username;
-      } else {
-        validName = `Channel_${String(id).slice(0, 8)}`;
-      }
-    }
-
-    if (
-      process.env.STRIPE_PUBLISHABLE_KEY &&
-      org.isTrailing &&
-      (await this._integrationService.checkPreviousConnections(
-        org.id,
-        String(id)
-      ))
-    ) {
-      throw new HttpException('', 412);
-    }
-
-    return this._integrationService.createOrUpdateIntegration(
-      additionalSettings,
-      !!integrationProvider.oneTimeToken,
-      org.id,
-      validName.trim(),
-      picture,
-      'social',
-      String(id),
-      integration,
-      accessToken,
-      refreshToken,
-      expiresIn,
-      username,
-      refresh ? false : integrationProvider.isBetweenSteps,
-      body.refresh,
-      +body.timezone,
-      details
-        ? AuthService.fixedEncryption(details)
-        : integrationProvider.customFields
-        ? AuthService.fixedEncryption(
-            Buffer.from(body.code, 'base64').toString()
-          )
-        : undefined
-    );
-  }
-
   @Post('/disable')
   disableChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
     return this._integrationService.disableChannel(org.id, id);
-  }
-
-  @Post('/instagram/:id')
-  async saveInstagram(
-    @Param('id') id: string,
-    @Body() body: { pageId: string; id: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveInstagram(org.id, id, body);
-  }
-
-  @Post('/facebook/:id')
-  async saveFacebook(
-    @Param('id') id: string,
-    @Body() body: { page: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveFacebook(org.id, id, body.page);
-  }
-
-  @Post('/linkedin-page/:id')
-  async saveLinkedin(
-    @Param('id') id: string,
-    @Body() body: { page: string },
-    @GetOrgFromRequest() org: Organization
-  ) {
-    return this._integrationService.saveLinkedin(org.id, id, body.page);
   }
 
   @Post('/enable')
@@ -584,7 +394,7 @@ export class IntegrationsController {
     );
     if (isTherePosts.length) {
       for (const post of isTherePosts) {
-        await this._postService.deletePost(org.id, post.group);
+        this._postService.deletePost(org.id, post.group).catch((err) => {});
       }
     }
 
@@ -625,5 +435,33 @@ export class IntegrationsController {
   @Get('/telegram/updates')
   async getUpdates(@Query() query: { word: string; id?: number }) {
     return new TelegramProvider().getBotId(query);
+  }
+
+  @Post('/moltbook/register')
+  async moltbookRegister(
+    @Body() body: { name: string; description: string }
+  ) {
+    try {
+      const provider = new MoltbookProvider();
+      const result = await provider.registerAgent(body.name, body.description);
+      return {
+        apiKey: result.api_key,
+        claimUrl: result.claim_url,
+        verificationCode: result.verification_code,
+      };
+    } catch (err: any) {
+      return { error: err.message || 'Registration failed' };
+    }
+  }
+
+  @Get('/moltbook/status')
+  async moltbookStatus(@Query('apiKey') apiKey: string) {
+    try {
+      const provider = new MoltbookProvider();
+      const result = await provider.checkAgentStatus(apiKey);
+      return { claimed: result?.status === 'claimed' };
+    } catch (err) {
+      return { claimed: false };
+    }
   }
 }

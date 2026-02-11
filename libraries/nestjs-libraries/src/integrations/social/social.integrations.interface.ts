@@ -19,7 +19,7 @@ export interface IAuthenticator {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails>;
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>>;
   generateAuthUrl(
     clientInformation?: ClientInformation
   ): Promise<GenerateAuthUrlResponse>;
@@ -27,6 +27,12 @@ export interface IAuthenticator {
     id: string,
     accessToken: string,
     date: number
+  ): Promise<AnalyticsData[]>;
+  postAnalytics?(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    fromDate: number,
   ): Promise<AnalyticsData[]>;
   changeNickname?(
     id: string,
@@ -45,6 +51,7 @@ export interface AnalyticsData {
   data: Array<{ total: string; date: string }>;
   percentageChange: number;
 }
+
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -73,6 +80,15 @@ export type AuthTokenDetails = {
 export interface ISocialMediaIntegration {
   post(
     id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]>; // Schedules a new post
+
+  comment?(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
     accessToken: string,
     postDetails: PostDetails[],
     integration: Integration
@@ -107,16 +123,27 @@ export type MediaContent = {
   thumbnailTimestamp?: number;
 };
 
+export type FetchPageInformationResult = {
+  id: string;
+  name: string;
+  access_token: string;
+  picture: string;
+  username: string;
+};
+
 export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
+  refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;
-  editor: 'normal' | 'markdown' | 'html';
+  isChromeExtension?: boolean;
+  extensionCookies?: { name: string; domain: string }[];
+  editor: 'none' | 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;
@@ -135,7 +162,17 @@ export interface SocialProvider
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
   mention?: (
-    token: string, data: { query: string }, id: string, integration: Integration
-  ) => Promise<{ id: string; label: string; image: string, doNotCache?: boolean }[] | {none: true}>;
+    token: string,
+    data: { query: string },
+    id: string,
+    integration: Integration
+  ) => Promise<
+    | { id: string; label: string; image: string; doNotCache?: boolean }[]
+    | { none: true }
+  >;
   mentionFormat?(idOrHandle: string, name: string): string;
+  fetchPageInformation?(
+    accessToken: string,
+    data: any
+  ): Promise<FetchPageInformationResult>;
 }

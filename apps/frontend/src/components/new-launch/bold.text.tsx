@@ -81,32 +81,25 @@ export const BoldText: FC<{
   };
   return (
     <div
+      data-tooltip-id="tooltip"
+      data-tooltip-content="Bold Text"
       onClick={mark}
-      className="select-none cursor-pointer w-[40px] p-[5px] text-center"
+      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
     >
       <svg
-        width="25"
-        height="24"
-        viewBox="0 0 25 24"
-        fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
       >
-        <g clipPath="url(#clip0_31_12616)">
-          <path
-            d="M14.7686 12.24C15.4192 12.3787 15.9419 12.704 16.3366 13.216C16.7312 13.7173 16.9286 14.2933 16.9286 14.944C16.9286 15.8827 16.5979 16.6293 15.9366 17.184C15.2859 17.728 14.3739 18 13.2006 18H7.96856V6.768H13.0246C14.1659 6.768 15.0566 7.02933 15.6966 7.552C16.3472 8.07467 16.6726 8.784 16.6726 9.68C16.6726 10.3413 16.4966 10.8907 16.1446 11.328C15.8032 11.7653 15.3446 12.0693 14.7686 12.24ZM10.7046 11.312H12.4966C12.9446 11.312 13.2859 11.216 13.5206 11.024C13.7659 10.8213 13.8886 10.528 13.8886 10.144C13.8886 9.76 13.7659 9.46667 13.5206 9.264C13.2859 9.06133 12.9446 8.96 12.4966 8.96H10.7046V11.312ZM12.7206 15.792C13.1792 15.792 13.5312 15.6907 13.7766 15.488C14.0326 15.2747 14.1606 14.9707 14.1606 14.576C14.1606 14.1813 14.0272 13.872 13.7606 13.648C13.5046 13.424 13.1472 13.312 12.6886 13.312H10.7046V15.792H12.7206Z"
-            fill="currentColor"
-          />
-        </g>
-        <defs>
-          <clipPath id="clip0_31_12616">
-            <rect
-              width="24"
-              height="24"
-              fill="white"
-              transform="translate(0.25)"
-            />
-          </clipPath>
-        </defs>
+        <path
+          d="M4 8.00033H9.33333C10.8061 8.00033 12 6.80642 12 5.33366C12 3.8609 10.8061 2.66699 9.33333 2.66699H4V8.00033ZM4 8.00033H10C11.4728 8.00033 12.6667 9.19423 12.6667 10.667C12.6667 12.1398 11.4728 13.3337 10 13.3337H4V8.00033Z"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );

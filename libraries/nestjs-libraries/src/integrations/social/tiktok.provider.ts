@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -13,7 +14,6 @@ import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -24,10 +24,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   convertToJPEG = true;
   scopes = [
+    'video.list',
     'user.info.basic',
     'video.publish',
     'video.upload',
     'user.info.profile',
+    'user.info.stats',
   ];
   override maxConcurrentJob = 1; // TikTok has strict video upload limits
   dto = TikTokDto;
@@ -53,7 +55,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (body.indexOf('scope_not_authorized') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value:
           'Missing required permissions, please re-authenticate with all scopes',
       };
@@ -61,7 +63,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (body.indexOf('scope_permission_missed') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value: 'Additional permissions required, please re-authenticate',
       };
     }
@@ -313,7 +315,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    console.log(this.scopes, scope);
     this.checkScopes(this.scopes, scope);
 
     const {
@@ -445,7 +446,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    console.log('hello');
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
     const {
       data: { publish_id },
@@ -540,5 +540,243 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         status: 'success',
       },
     ];
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      // Get user stats (follower_count, following_count, likes_count, video_count)
+      const userStatsResponse = await this.fetch(
+        'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,following_count,likes_count,video_count',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      const userStatsData = await userStatsResponse.json();
+      const userStats = userStatsData?.data?.user;
+
+      const result: AnalyticsData[] = [];
+
+      if (userStats) {
+        if (userStats.follower_count !== undefined) {
+          result.push({
+            label: 'Followers',
+            percentageChange: 0,
+            data: [{ total: String(userStats.follower_count), date: today }],
+          });
+        }
+
+        if (userStats.following_count !== undefined) {
+          result.push({
+            label: 'Following',
+            percentageChange: 0,
+            data: [{ total: String(userStats.following_count), date: today }],
+          });
+        }
+
+        if (userStats.likes_count !== undefined) {
+          result.push({
+            label: 'Total Likes',
+            percentageChange: 0,
+            data: [{ total: String(userStats.likes_count), date: today }],
+          });
+        }
+
+        if (userStats.video_count !== undefined) {
+          result.push({
+            label: 'Videos',
+            percentageChange: 0,
+            data: [{ total: String(userStats.video_count), date: today }],
+          });
+        }
+      }
+
+      // Get recent videos and aggregate their stats
+      const videoListResponse = await this.fetch(
+        'https://open.tiktokapis.com/v2/video/list/?fields=id',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ max_count: 20 }),
+        }
+      );
+
+      const videoListData = await videoListResponse.json();
+      const videos = videoListData?.data?.videos;
+
+      if (videos && videos.length > 0) {
+        const videoIds = videos.map((v: { id: string }) => v.id);
+
+        // Query video details to get engagement metrics
+        const videoQueryResponse = await this.fetch(
+          'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              filters: { video_ids: videoIds },
+            }),
+          }
+        );
+
+        const videoQueryData = await videoQueryResponse.json();
+        const videoDetails = videoQueryData?.data?.videos;
+
+        if (videoDetails && videoDetails.length > 0) {
+          let totalViews = 0;
+          let totalLikes = 0;
+          let totalComments = 0;
+          let totalShares = 0;
+
+          for (const video of videoDetails) {
+            totalViews += video.view_count || 0;
+            totalLikes += video.like_count || 0;
+            totalComments += video.comment_count || 0;
+            totalShares += video.share_count || 0;
+          }
+
+          result.push({
+            label: 'Views',
+            percentageChange: 0,
+            data: [{ total: String(totalViews), date: today }],
+          });
+
+          result.push({
+            label: 'Recent Likes',
+            percentageChange: 0,
+            data: [{ total: String(totalLikes), date: today }],
+          });
+
+          result.push({
+            label: 'Recent Comments',
+            percentageChange: 0,
+            data: [{ total: String(totalComments), date: today }],
+          });
+
+          result.push({
+            label: 'Recent Shares',
+            percentageChange: 0,
+            data: [{ total: String(totalShares), date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching TikTok analytics:', err);
+      return [];
+    }
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    fromDate: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    const post = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            publish_id: postId,
+          }),
+        },
+        '',
+        0,
+        true
+      )
+    ).json();
+
+    if (!post?.data?.publicaly_available_post_id?.[0]) {
+      return [];
+    }
+
+    try {
+      // Query video details using the video ID
+      const response = await this.fetch(
+        'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            filters: {
+              video_ids: post?.data?.publicaly_available_post_id.map(String),
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+      const video = data?.data?.videos?.[0];
+
+      if (!video) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      if (video.view_count !== undefined) {
+        result.push({
+          label: 'Views',
+          percentageChange: 0,
+          data: [{ total: String(video.view_count), date: today }],
+        });
+      }
+
+      if (video.like_count !== undefined) {
+        result.push({
+          label: 'Likes',
+          percentageChange: 0,
+          data: [{ total: String(video.like_count), date: today }],
+        });
+      }
+
+      if (video.comment_count !== undefined) {
+        result.push({
+          label: 'Comments',
+          percentageChange: 0,
+          data: [{ total: String(video.comment_count), date: today }],
+        });
+      }
+
+      if (video.share_count !== undefined) {
+        result.push({
+          label: 'Shares',
+          percentageChange: 0,
+          data: [{ total: String(video.share_count), date: today }],
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching TikTok post analytics:', err);
+      return [];
+    }
   }
 }
