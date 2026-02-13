@@ -72,7 +72,12 @@ export async function middleware(request: NextRequest) {
 
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
-  if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
+
+  // SSO INTEGRATION: When SSO is enabled, disable frontend auth checks
+  // Let the reverse proxy (Traefik + Authelia) and backend middleware handle authentication
+  const enableSSO = process.env.ENABLE_SSO === 'true';
+
+  if (nextUrl.href.indexOf('/auth') === -1 && !authCookie && !enableSSO) {
     const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex
