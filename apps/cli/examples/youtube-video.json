@@ -1,0 +1,34 @@
+{
+  "type": "schedule",
+  "date": "2024-12-25T09:00:00Z",
+  "shortLink": true,
+  "tags": [
+    { "value": "tutorial", "label": "Tutorial" },
+    { "value": "tech", "label": "Tech" }
+  ],
+  "posts": [{
+    "integration": {
+      "id": "your-youtube-integration-id"
+    },
+    "value": [{
+      "content": "In this video, I'll show you how to build a powerful CLI tool for social media automation.\n\n⏱️ Timestamps:\n0:00 - Introduction\n2:15 - Setting up the project\n5:30 - Building the API client\n10:45 - Creating commands\n15:20 - Testing and deployment\n\n📚 Resources:\n- GitHub: https://github.com/yourrepo\n- Documentation: https://docs.example.com\n\n🔔 Subscribe for more TypeScript tutorials!",
+      "image": [{
+        "id": "thumbnail1",
+        "path": "https://cdn.example.com/thumbnail.jpg"
+      }]
+    }],
+    "settings": {
+      "__type": "youtube",
+      "title": "Building a Social Media CLI Tool with TypeScript",
+      "type": "public",
+      "selfDeclaredMadeForKids": "no",
+      "tags": [
+        { "value": "typescript", "label": "TypeScript" },
+        { "value": "cli", "label": "CLI" },
+        { "value": "tutorial", "label": "Tutorial" },
+        { "value": "programming", "label": "Programming" },
+        { "value": "nodejs", "label": "Node.js" }
+      ]
+    }
+  }]
+}

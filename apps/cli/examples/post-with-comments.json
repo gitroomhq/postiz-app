@@ -1,0 +1,55 @@
+{
+  "type": "now",
+  "date": "2024-01-15T12:00:00Z",
+  "shortLink": true,
+  "tags": [],
+  "posts": [
+    {
+      "integration": {
+        "id": "your-integration-id-here"
+      },
+      "value": [
+        {
+          "content": "This is the main post content 🚀",
+          "image": [
+            {
+              "id": "img1",
+              "path": "https://example.com/main-image.jpg"
+            },
+            {
+              "id": "img2",
+              "path": "https://example.com/secondary-image.jpg"
+            }
+          ]
+        },
+        {
+          "content": "This is the first comment with its own media 📸",
+          "image": [
+            {
+              "id": "img3",
+              "path": "https://example.com/comment1-image.jpg"
+            }
+          ],
+          "delay": 5000
+        },
+        {
+          "content": "This is the second comment with different media 🎨",
+          "image": [
+            {
+              "id": "img4",
+              "path": "https://example.com/comment2-image1.jpg"
+            },
+            {
+              "id": "img5",
+              "path": "https://example.com/comment2-image2.jpg"
+            }
+          ],
+          "delay": 10000
+        }
+      ],
+      "settings": {
+        "__type": "EmptySettings"
+      }
+    }
+  ]
+}

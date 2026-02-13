@@ -1,0 +1,31 @@
+{
+  "type": "now",
+  "date": "2024-01-15T12:00:00Z",
+  "shortLink": true,
+  "tags": [],
+  "posts": [{
+    "integration": {
+      "id": "your-tiktok-integration-id"
+    },
+    "value": [{
+      "content": "Quick tip: Automate your social media with this CLI tool! 🚀\n\n#coding #programming #typescript #developer #tech",
+      "image": [{
+        "id": "video1",
+        "path": "https://cdn.example.com/tiktok-video.mp4"
+      }]
+    }],
+    "settings": {
+      "__type": "tiktok",
+      "title": "Automate Social Media with CLI",
+      "privacy_level": "PUBLIC_TO_EVERYONE",
+      "duet": true,
+      "stitch": true,
+      "comment": true,
+      "autoAddMusic": "no",
+      "brand_content_toggle": false,
+      "brand_organic_toggle": false,
+      "video_made_with_ai": false,
+      "content_posting_method": "DIRECT_POST"
+    }
+  }]
+}

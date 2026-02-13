@@ -1,0 +1,9 @@
+src
+examples
+tsconfig.json
+tsup.config.ts
+*.md
+!README.md
+node_modules
+.git
+.gitignore

@@ -1,0 +1,67 @@
+{
+  "type": "now",
+  "date": "2024-01-15T12:00:00Z",
+  "shortLink": true,
+  "tags": [],
+  "posts": [
+    {
+      "integration": {
+        "id": "twitter-integration-id"
+      },
+      "value": [
+        {
+          "content": "🧵 Thread: How to use Postiz CLI for automated social media posting (1/5)",
+          "image": [
+            {
+              "id": "tutorial1",
+              "path": "https://example.com/tutorial-intro.jpg"
+            }
+          ]
+        },
+        {
+          "content": "Step 1: Install the CLI and set your API key\n\nexport POSTIZ_API_KEY=your_key\npnpm install -g postiz (2/5)",
+          "image": [
+            {
+              "id": "tutorial2",
+              "path": "https://example.com/tutorial-install.jpg"
+            }
+          ],
+          "delay": 2000
+        },
+        {
+          "content": "Step 2: List your connected integrations to get their IDs\n\npostiz integrations:list (3/5)",
+          "image": [
+            {
+              "id": "tutorial3",
+              "path": "https://example.com/tutorial-integrations.jpg"
+            }
+          ],
+          "delay": 2000
+        },
+        {
+          "content": "Step 3: Create your first post\n\npostiz posts:create -c \"Hello World!\" -i \"twitter-123\" (4/5)",
+          "image": [
+            {
+              "id": "tutorial4",
+              "path": "https://example.com/tutorial-create.jpg"
+            }
+          ],
+          "delay": 2000
+        },
+        {
+          "content": "That's it! You can now automate your social media posts with ease. Check out our docs for more advanced features! 🚀 (5/5)",
+          "image": [
+            {
+              "id": "tutorial5",
+              "path": "https://example.com/tutorial-done.jpg"
+            }
+          ],
+          "delay": 2000
+        }
+      ],
+      "settings": {
+        "__type": "EmptySettings"
+      }
+    }
+  ]
+}

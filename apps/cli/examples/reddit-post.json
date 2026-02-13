@@ -1,0 +1,27 @@
+{
+  "type": "now",
+  "date": "2024-01-15T12:00:00Z",
+  "shortLink": true,
+  "tags": [],
+  "posts": [{
+    "integration": {
+      "id": "your-reddit-integration-id"
+    },
+    "value": [{
+      "content": "I built a CLI tool for Postiz that makes social media scheduling super easy!\n\nYou can create posts, schedule them, and even post to multiple platforms at once. It supports comments with their own media, threads, and much more.\n\nCheck it out and let me know what you think!",
+      "image": []
+    }],
+    "settings": {
+      "__type": "reddit",
+      "subreddit": [{
+        "value": {
+          "subreddit": "programming",
+          "title": "Built a CLI tool for social media scheduling with TypeScript",
+          "type": "text",
+          "url": "",
+          "is_flair_required": false
+        }
+      }]
+    }
+  }]
+}

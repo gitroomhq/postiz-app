@@ -1,0 +1,89 @@
+{
+  "type": "schedule",
+  "date": "2024-12-25T12:00:00Z",
+  "shortLink": true,
+  "tags": [
+    {
+      "value": "holiday",
+      "label": "Holiday"
+    },
+    {
+      "value": "marketing",
+      "label": "Marketing"
+    }
+  ],
+  "posts": [
+    {
+      "integration": {
+        "id": "twitter-integration-id"
+      },
+      "value": [
+        {
+          "content": "Happy Holidays! 🎄 Check out our special offers!",
+          "image": [
+            {
+              "id": "holiday1",
+              "path": "https://example.com/holiday-twitter.jpg"
+            }
+          ]
+        },
+        {
+          "content": "Limited time offer - 50% off! 🎁",
+          "image": [],
+          "delay": 3600000
+        }
+      ],
+      "settings": {
+        "__type": "EmptySettings"
+      }
+    },
+    {
+      "integration": {
+        "id": "linkedin-integration-id"
+      },
+      "value": [
+        {
+          "content": "Season's greetings from our team! We're offering exclusive holiday promotions.",
+          "image": [
+            {
+              "id": "holiday2",
+              "path": "https://example.com/holiday-linkedin.jpg"
+            }
+          ]
+        }
+      ],
+      "settings": {
+        "__type": "EmptySettings"
+      }
+    },
+    {
+      "integration": {
+        "id": "facebook-integration-id"
+      },
+      "value": [
+        {
+          "content": "🎅 Happy Holidays! Special announcement in the comments!",
+          "image": [
+            {
+              "id": "holiday3",
+              "path": "https://example.com/holiday-facebook-main.jpg"
+            }
+          ]
+        },
+        {
+          "content": "Our holiday sale is now live! Visit our website for amazing deals 🎁",
+          "image": [
+            {
+              "id": "holiday4",
+              "path": "https://example.com/holiday-sale-banner.jpg"
+            }
+          ],
+          "delay": 300000
+        }
+      ],
+      "settings": {
+        "__type": "EmptySettings"
+      }
+    }
+  ]
+}
