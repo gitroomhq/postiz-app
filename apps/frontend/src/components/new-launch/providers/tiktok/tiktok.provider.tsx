@@ -118,6 +118,7 @@ const TikTokSettings: FC<{
           </option>
         ))}
       </Select>
+      {isUploadMode && <div className="-mt-[23px] mb-[23px] text-red-600">After posting you fill find a notification inside your Inbox about your post (not content studio)</div>}
       <Select
         label={t('label_auto_add_music', 'Auto add music')}
         {...register('autoAddMusic', {

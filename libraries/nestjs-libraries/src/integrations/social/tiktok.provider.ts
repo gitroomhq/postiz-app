@@ -395,7 +395,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       if (status === 'SEND_TO_USER_INBOX') {
         return {
-          url: 'https://www.tiktok.com/tiktokstudio/content?tab=post',
+          url: 'https://www.tiktok.com/messages?lang=en',
           id: Math.floor(Math.random() * 1000000 + 100000),
         };
       }
@@ -497,6 +497,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               : {}),
             ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
               ? {
+                  post_info: {
+                    ...((firstPost?.settings?.title && isPhoto) ||
+                    (firstPost.message && !isPhoto)
+                      ? {
+                          title: isPhoto
+                            ? firstPost.settings.title
+                            : firstPost.message,
+                        }
+                      : {}),
+                    ...(isPhoto ? { description: firstPost.message } : {}),
+                  },
                   source_info: {
                     source: 'PULL_FROM_URL',
                     video_url: firstPost?.media?.[0]?.path!,
@@ -509,6 +520,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                   },
                 }
               : {
+                  post_info: {
+                    ...((firstPost?.settings?.title && isPhoto) ||
+                    (firstPost.message && !isPhoto)
+                      ? {
+                          title: isPhoto
+                            ? firstPost.settings.title
+                            : firstPost.message,
+                        }
+                      : {}),
+                    ...(isPhoto ? { description: firstPost.message } : {}),
+                  },
                   source_info: {
                     source: 'PULL_FROM_URL',
                     photo_cover_index: 0,
