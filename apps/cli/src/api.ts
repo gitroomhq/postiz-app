@@ -142,4 +142,10 @@ export class PostizAPI {
       method: 'GET',
     });
   }
+
+  async getIntegrationSettings(integrationId: string) {
+    return this.request(`/public/v1/integration-settings/${integrationId}`, {
+      method: 'GET',
+    });
+  }
 }

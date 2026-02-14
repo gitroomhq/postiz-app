@@ -1,7 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createPost, listPosts, deletePost } from './commands/posts';
-import { listIntegrations } from './commands/integrations';
+import { listIntegrations, getIntegrationSettings } from './commands/integrations';
 import { uploadFile } from './commands/upload';
 import type { Argv } from 'yargs';
 
@@ -153,6 +153,26 @@ yargs(hideBin(process.argv))
     'List all connected integrations',
     {},
     listIntegrations as any
+  )
+  .command(
+    'integrations:settings <id>',
+    'Get settings schema for a specific integration',
+    (yargs: Argv) => {
+      return yargs
+        .positional('id', {
+          describe: 'Integration ID',
+          type: 'string',
+        })
+        .example(
+          '$0 integrations:settings reddit-123',
+          'Get settings schema for Reddit integration'
+        )
+        .example(
+          '$0 integrations:settings youtube-456',
+          'Get settings schema for YouTube integration'
+        );
+    },
+    getIntegrationSettings as any
   )
   .command(
     'upload <file>',
