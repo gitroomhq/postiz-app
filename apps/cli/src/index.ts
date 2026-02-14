@@ -28,10 +28,17 @@ yargs(hideBin(process.argv))
           describe: 'Comma-separated list of integration IDs',
           type: 'string',
         })
-        .option('schedule', {
+        .option('date', {
           alias: 's',
-          describe: 'Schedule date (ISO 8601 format)',
+          describe: 'Schedule date (ISO 8601 format) - REQUIRED',
           type: 'string',
+        })
+        .option('type', {
+          alias: 't',
+          describe: 'Post type: "schedule" or "draft"',
+          type: 'string',
+          choices: ['schedule', 'draft'],
+          default: 'schedule',
         })
         .option('delay', {
           alias: 'd',
@@ -49,13 +56,8 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           default: true,
         })
-        .option('provider-type', {
-          alias: 'p',
-          describe: 'Provider type for settings (e.g., reddit, youtube, tiktok, x, linkedin, instagram)',
-          type: 'string',
-        })
         .option('settings', {
-          describe: 'Provider-specific settings as JSON string',
+          describe: 'Platform-specific settings as JSON string',
           type: 'string',
         })
         .check((argv) => {
@@ -65,26 +67,33 @@ yargs(hideBin(process.argv))
           if (!argv.json && !argv.integrations) {
             throw new Error('--integrations is required when not using --json');
           }
+          if (!argv.json && !argv.date) {
+            throw new Error('--date is required when not using --json');
+          }
           return true;
         })
         .example(
-          '$0 posts:create -c "Hello World!" -i "twitter-123"',
-          'Simple post'
+          '$0 posts:create -c "Hello World!" -s "2024-12-31T12:00:00Z" -i "twitter-123"',
+          'Simple scheduled post'
         )
         .example(
-          '$0 posts:create -c "Main post" -m "img1.jpg,img2.jpg" -i "twitter-123"',
+          '$0 posts:create -c "Draft post" -s "2024-12-31T12:00:00Z" -t draft -i "twitter-123"',
+          'Create draft post'
+        )
+        .example(
+          '$0 posts:create -c "Main post" -m "img1.jpg,img2.jpg" -s "2024-12-31T12:00:00Z" -i "twitter-123"',
           'Post with multiple images'
         )
         .example(
-          '$0 posts:create -c "Main post" -m "img1.jpg" -c "First comment" -m "img2.jpg" -c "Second comment" -m "img3.jpg,img4.jpg" -i "twitter-123"',
+          '$0 posts:create -c "Main post" -m "img1.jpg" -c "First comment" -m "img2.jpg" -c "Second comment" -m "img3.jpg,img4.jpg" -s "2024-12-31T12:00:00Z" -i "twitter-123"',
           'Post with comments, each having their own media'
         )
         .example(
-          '$0 posts:create -c "Main" -c "Comment with semicolon; see?" -c "Another!" -i "twitter-123"',
+          '$0 posts:create -c "Main" -c "Comment with semicolon; see?" -c "Another!" -s "2024-12-31T12:00:00Z" -i "twitter-123"',
           'Comments can contain semicolons'
         )
         .example(
-          '$0 posts:create -c "Thread 1/3" -c "Thread 2/3" -c "Thread 3/3" -d 2000 -i "twitter-123"',
+          '$0 posts:create -c "Thread 1/3" -c "Thread 2/3" -c "Thread 3/3" -d 2000 -s "2024-12-31T12:00:00Z" -i "twitter-123"',
           'Twitter thread with 2s delay'
         )
         .example(
@@ -92,15 +101,15 @@ yargs(hideBin(process.argv))
           'Complex post from JSON file'
         )
         .example(
-          '$0 posts:create -c "Post to subreddit" -p reddit --settings \'{"subreddit":[{"value":{"subreddit":"programming","title":"My Title","type":"text","url":"","is_flair_required":false}}]}\' -i "reddit-123"',
+          '$0 posts:create -c "Post to subreddit" -s "2024-12-31T12:00:00Z" --settings \'{"subreddit":[{"value":{"subreddit":"programming","title":"My Title","type":"text","url":"","is_flair_required":false}}]}\' -i "reddit-123"',
           'Reddit post with specific subreddit settings'
         )
         .example(
-          '$0 posts:create -c "Video description" -p youtube --settings \'{"title":"My Video","type":"public","tags":[{"value":"tech","label":"Tech"}]}\' -i "youtube-123"',
+          '$0 posts:create -c "Video description" -s "2024-12-31T12:00:00Z" --settings \'{"title":"My Video","type":"public","tags":[{"value":"tech","label":"Tech"}]}\' -i "youtube-123"',
           'YouTube post with title and tags'
         )
         .example(
-          '$0 posts:create -c "Tweet content" -p x --settings \'{"who_can_reply_post":"everyone"}\' -i "twitter-123"',
+          '$0 posts:create -c "Tweet content" -s "2024-12-31T12:00:00Z" --settings \'{"who_can_reply_post":"everyone"}\' -i "twitter-123"',
           'X (Twitter) post with reply settings'
         );
     },

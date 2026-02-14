@@ -1,468 +1,585 @@
-# Postiz CLI Skill
+| Property | Value |
+|----------|-------|
+| **name** | postiz |
+| **description** | Social media automation CLI for scheduling posts across 28+ platforms |
+| **allowed-tools** | Bash(postiz:*) |
 
-## Description
+---
 
-The Postiz CLI is a command-line interface for interacting with the Postiz social media scheduling API. It allows AI agents and developers to programmatically manage posts, integrations, and media uploads.
+## Core Workflow
 
-## Prerequisites
+The fundamental pattern for using Postiz CLI:
 
-- API Key: You need a valid Postiz API key
-- Set the environment variable: `export POSTIZ_API_KEY=your_api_key`
-- Optional: Set custom API URL with `export POSTIZ_API_URL=https://your-api-url.com`
-
-## Installation
-
-```bash
-# From the monorepo root
-pnpm install
-
-# Build the CLI
-pnpm --filter postiz run build
-
-# Link globally (optional)
-cd apps/cli
-pnpm link --global
-```
-
-## Available Commands
-
-### Posts Management
-
-#### Create a Post
-
-The CLI supports both **simple** and **complex** post creation:
-
-##### Simple Post Creation (Command-line)
+1. **Discover** - List integrations and get their settings
+2. **Fetch** - Use integration tools to retrieve dynamic data (flairs, playlists, companies)
+3. **Prepare** - Upload media files if needed
+4. **Post** - Create posts with content, media, and platform-specific settings
 
 ```bash
-postiz posts:create -c "Your post content" -i "integration-id-1,integration-id-2"
+# 1. Discover
+postiz integrations:list
+postiz integrations:settings <integration-id>
+
+# 2. Fetch (if needed)
+postiz integrations:trigger <integration-id> <method> -d '{"key":"value"}'
+
+# 3. Prepare
+postiz upload image.jpg
+
+# 4. Post
+postiz posts:create -c "Content" -m "image.jpg" -i "<integration-id>"
 ```
 
-Options:
-- `-c, --content <text>`: Post content/text
-- `-i, --integrations <ids>`: Comma-separated integration IDs (required)
-- `-s, --schedule <date>`: Schedule date in ISO 8601 format
-- `--image <urls>`: Comma-separated image URLs or paths (multiple images supported)
-- `--comments <text>`: Semicolon-separated comments
-- `--shortLink`: Use URL shortener (default: true)
+---
 
-Examples:
-```bash
-# Create immediate post
-postiz posts:create -c "Hello World!" -i "twitter-123,linkedin-456"
+## Essential Commands
 
-# Create scheduled post
-postiz posts:create -c "Future post" -s "2024-12-31T12:00:00Z" -i "twitter-123"
-
-# Create post with multiple images
-postiz posts:create -c "Check these out!" --image "url1.jpg,url2.jpg,url3.jpg" -i "twitter-123"
-
-# Create post with comments (simple)
-postiz posts:create -c "Main post" --comments "First comment;Second comment" -i "twitter-123"
-```
-
-##### Complex Post Creation (JSON File)
-
-For posts with **comments that have their own media**, use JSON files:
+### Setup
 
 ```bash
-postiz posts:create --json ./my-post.json
+# Required environment variable
+export POSTIZ_API_KEY=your_api_key_here
+
+# Optional custom API URL
+export POSTIZ_API_URL=https://custom-api-url.com
 ```
 
-**JSON Structure:**
-```json
-{
-  "type": "now",
-  "date": "2024-01-15T12:00:00Z",
-  "shortLink": true,
-  "tags": [],
-  "posts": [
-    {
-      "integration": { "id": "twitter-123" },
-      "value": [
-        {
-          "content": "Main post with media 🚀",
-          "image": [
-            { "id": "img1", "path": "https://example.com/main1.jpg" },
-            { "id": "img2", "path": "https://example.com/main2.jpg" }
-          ]
-        },
-        {
-          "content": "First comment with its own media 📸",
-          "image": [
-            { "id": "img3", "path": "https://example.com/comment1.jpg" }
-          ],
-          "delay": 5000
-        },
-        {
-          "content": "Second comment with different media 🎨",
-          "image": [
-            { "id": "img4", "path": "https://example.com/comment2.jpg" }
-          ],
-          "delay": 10000
-        }
-      ],
-      "settings": { "__type": "EmptySettings" }
-    }
-  ]
-}
-```
+### Integration Discovery
 
-**Key Features:**
-- ✅ **Multiple posts** to different platforms in one request
-- ✅ **Each post can have multiple values** (main post + comments/thread)
-- ✅ **Each value can have multiple images** (array of MediaDto)
-- ✅ **Delays between comments** (in milliseconds)
-- ✅ **Platform-specific content** (different content per integration)
-
-See `examples/` directory for:
-- `post-with-comments.json` - Post with comments, each having their own media
-- `multi-platform-post.json` - Post to multiple platforms with different content
-- `thread-post.json` - Create a Twitter thread with 5 tweets
-- `EXAMPLES.md` - Comprehensive guide with all use cases
-
-#### List Posts
 ```bash
-postiz posts:list
+# List all connected integrations
+postiz integrations:list
+
+# Get settings schema for specific integration
+postiz integrations:settings <integration-id>
+
+# Trigger integration tool to fetch dynamic data
+postiz integrations:trigger <integration-id> <method-name>
+postiz integrations:trigger <integration-id> <method-name> -d '{"param":"value"}'
 ```
 
-Options:
-- `-p, --page <number>`: Page number (default: 1)
-- `-l, --limit <number>`: Posts per page (default: 10)
-- `-s, --search <query>`: Search query
+### Creating Posts
 
-Examples:
 ```bash
-# List all posts
+# Simple post (date is REQUIRED)
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -i "integration-id"
+
+# Draft post
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -t draft -i "integration-id"
+
+# Post with media
+postiz posts:create -c "Content" -m "img1.jpg,img2.jpg" -s "2024-12-31T12:00:00Z" -i "integration-id"
+
+# Post with comments (each with own media)
+postiz posts:create \
+  -c "Main post" -m "main.jpg" \
+  -c "First comment" -m "comment1.jpg" \
+  -c "Second comment" -m "comment2.jpg,comment3.jpg" \
+  -s "2024-12-31T12:00:00Z" \
+  -i "integration-id"
+
+# Multi-platform post
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -i "twitter-id,linkedin-id,facebook-id"
+
+# Platform-specific settings
+postiz posts:create \
+  -c "Content" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"subreddit":[{"value":{"subreddit":"programming","title":"My Post","type":"text"}}]}' \
+  -i "reddit-id"
+
+# Complex post from JSON file
+postiz posts:create --json post.json
+```
+
+### Managing Posts
+
+```bash
+# List posts (defaults to last 30 days to next 30 days)
 postiz posts:list
 
-# List with pagination
-postiz posts:list -p 2 -l 20
+# List posts in date range
+postiz posts:list --startDate "2024-01-01T00:00:00Z" --endDate "2024-12-31T23:59:59Z"
 
-# Search posts
-postiz posts:list -s "hello"
-```
-
-#### Delete a Post
-```bash
+# Delete post
 postiz posts:delete <post-id>
 ```
 
-Example:
-```bash
-postiz posts:delete abc123xyz
-```
-
-### Integrations
-
-#### List Connected Integrations
-```bash
-postiz integrations:list
-```
-
-This command shows all connected social media accounts and their IDs, which can be used when creating posts.
-
 ### Media Upload
 
-#### Upload a File
 ```bash
-postiz upload <file-path>
+# Upload file and get URL
+postiz upload image.jpg
+
+# Supports: images (PNG, JPG, GIF, WEBP, SVG), videos (MP4, MOV, AVI, MKV, WEBM),
+# audio (MP3, WAV, OGG, AAC), documents (PDF, DOC, DOCX)
 ```
 
-Example:
+---
+
+## Common Patterns
+
+### Pattern 1: Discover & Use Integration Tools
+
+**Reddit - Get flairs for a subreddit:**
 ```bash
-postiz upload ./images/photo.png
+# Get Reddit integration ID
+REDDIT_ID=$(postiz integrations:list | jq -r '.[] | select(.identifier=="reddit") | .id')
+
+# Fetch available flairs
+FLAIRS=$(postiz integrations:trigger "$REDDIT_ID" getFlairs -d '{"subreddit":"programming"}')
+FLAIR_ID=$(echo "$FLAIRS" | jq -r '.output[0].id')
+
+# Use in post
+postiz posts:create \
+  -c "My post content" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings "{\"subreddit\":[{\"value\":{\"subreddit\":\"programming\",\"title\":\"Post Title\",\"type\":\"text\",\"is_flair_required\":true,\"flair\":{\"id\":\"$FLAIR_ID\",\"name\":\"Discussion\"}}}]}" \
+  -i "$REDDIT_ID"
 ```
 
-Supported formats: PNG, JPG, JPEG, GIF
+**YouTube - Get playlists:**
+```bash
+YOUTUBE_ID=$(postiz integrations:list | jq -r '.[] | select(.identifier=="youtube") | .id')
+PLAYLISTS=$(postiz integrations:trigger "$YOUTUBE_ID" getPlaylists)
+PLAYLIST_ID=$(echo "$PLAYLISTS" | jq -r '.output[0].id')
 
-## Usage for AI Agents
+postiz posts:create \
+  -c "Video description" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings "{\"title\":\"My Video\",\"type\":\"public\",\"playlistId\":\"$PLAYLIST_ID\"}" \
+  -m "video.mp4" \
+  -i "$YOUTUBE_ID"
+```
 
-AI agents can use this CLI to automate social media scheduling. The CLI supports both simple and advanced post structures, including posts with comments where each has its own media.
+**LinkedIn - Post as company:**
+```bash
+LINKEDIN_ID=$(postiz integrations:list | jq -r '.[] | select(.identifier=="linkedin") | .id')
+COMPANIES=$(postiz integrations:trigger "$LINKEDIN_ID" getCompanies)
+COMPANY_ID=$(echo "$COMPANIES" | jq -r '.output[0].id')
 
-### Understanding the Post Structure
+postiz posts:create \
+  -c "Company announcement" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings "{\"companyId\":\"$COMPANY_ID\"}" \
+  -i "$LINKEDIN_ID"
+```
 
-```typescript
-CreatePostDto {
-  type: 'now' | 'schedule' | 'draft' | 'update',
-  date: string,              // ISO 8601 timestamp
-  shortLink: boolean,        // Enable URL shortening
-  tags: Tag[],              // Array of tags
-  posts: [                  // Can post to multiple platforms
+### Pattern 2: Upload Media Before Posting
+
+```bash
+# Upload multiple files
+VIDEO_RESULT=$(postiz upload video.mp4)
+VIDEO_PATH=$(echo "$VIDEO_RESULT" | jq -r '.path')
+
+THUMB_RESULT=$(postiz upload thumbnail.jpg)
+THUMB_PATH=$(echo "$THUMB_RESULT" | jq -r '.path')
+
+# Use in post
+postiz posts:create \
+  -c "Check out my video!" \
+  -s "2024-12-31T12:00:00Z" \
+  -m "$VIDEO_PATH" \
+  -i "tiktok-id"
+```
+
+### Pattern 3: Twitter Thread
+
+```bash
+postiz posts:create \
+  -c "🧵 Thread starter (1/4)" -m "intro.jpg" \
+  -c "Point one (2/4)" -m "point1.jpg" \
+  -c "Point two (3/4)" -m "point2.jpg" \
+  -c "Conclusion (4/4)" -m "outro.jpg" \
+  -s "2024-12-31T12:00:00Z" \
+  -d 2000 \
+  -i "twitter-id"
+```
+
+### Pattern 4: Multi-Platform Campaign
+
+```bash
+# Create JSON file with platform-specific content
+cat > campaign.json << 'EOF'
+{
+  "integrations": ["twitter-123", "linkedin-456", "facebook-789"],
+  "posts": [
     {
-      integration: { id: string },    // Platform integration ID
-      value: [                        // Main post + comments/thread
+      "provider": "twitter",
+      "post": [
         {
-          content: string,            // Text content
-          image: MediaDto[],          // Array of media (multiple images)
-          delay?: number,             // Delay in ms (for comments)
-          id?: string                 // Optional ID
+          "content": "Short tweet version #tech",
+          "image": ["twitter-image.jpg"]
         }
-      ],
-      settings: { __type: 'EmptySettings' }
+      ]
+    },
+    {
+      "provider": "linkedin",
+      "post": [
+        {
+          "content": "Professional LinkedIn version with more context...",
+          "image": ["linkedin-image.jpg"]
+        }
+      ]
     }
   ]
 }
-```
-
-### Common Patterns
-
-### Pattern 1: Create and Schedule Multiple Posts
-```bash
-# Set API key once
-export POSTIZ_API_KEY=your_key
-
-# Create posts programmatically
-postiz posts:create -c "Morning update" -s "2024-01-15T09:00:00Z" -i "twitter-123"
-postiz posts:create -c "Afternoon update" -s "2024-01-15T15:00:00Z" -i "twitter-123"
-postiz posts:create -c "Evening update" -s "2024-01-15T20:00:00Z" -i "twitter-123"
-```
-
-### Pattern 2: Upload Media and Create Post
-```bash
-# First, upload the media
-UPLOAD_RESULT=$(postiz upload ./image.png)
-
-# Extract the URL from the result (you'll need to parse the JSON)
-# Then create post with the media URL
-postiz posts:create -c "Check out this image!" --image "<url-from-upload>"
-```
-
-### Pattern 3: Check Integrations Before Posting
-```bash
-# List available integrations
-postiz integrations:list
-
-# Use the integration IDs from the response to create posts
-postiz posts:create -c "Multi-platform post" -i "twitter-123,linkedin-456,facebook-789"
-```
-
-### Pattern 4: Manage Existing Posts
-```bash
-# List all posts to get IDs
-postiz posts:list
-
-# Delete a specific post
-postiz posts:delete <post-id-from-list>
-```
-
-### Pattern 5: Create Post with Comments and Media (Advanced)
-
-```bash
-# Create a JSON file programmatically
-cat > post.json << 'EOF'
-{
-  "type": "now",
-  "date": "2024-01-15T12:00:00Z",
-  "shortLink": true,
-  "tags": [],
-  "posts": [{
-    "integration": { "id": "twitter-123" },
-    "value": [
-      {
-        "content": "Main post with 2 images 🚀",
-        "image": [
-          { "id": "1", "path": "https://example.com/img1.jpg" },
-          { "id": "2", "path": "https://example.com/img2.jpg" }
-        ]
-      },
-      {
-        "content": "First comment with its own image 📸",
-        "image": [
-          { "id": "3", "path": "https://example.com/comment-img.jpg" }
-        ],
-        "delay": 5000
-      }
-    ],
-    "settings": { "__type": "EmptySettings" }
-  }]
-}
 EOF
 
-# Post it
-postiz posts:create --json post.json
+postiz posts:create --json campaign.json
 ```
 
-### Pattern 6: Multi-Platform Campaign
+### Pattern 5: Validate Settings Before Posting
 
 ```javascript
-// AI Agent: Create coordinated multi-platform posts
-const campaign = {
-  type: "schedule",
-  date: "2024-12-25T12:00:00Z",
-  shortLink: true,
-  tags: [{ value: "campaign", label: "Campaign" }],
-  posts: [
-    {
-      integration: { id: "twitter-123" },
-      value: [{
-        content: "Twitter-optimized content 🐦",
-        image: [{ id: "t1", path: "twitter-image.jpg" }]
-      }]
-    },
-    {
-      integration: { id: "linkedin-456" },
-      value: [{
-        content: "Professional LinkedIn content 💼",
-        image: [{ id: "l1", path: "linkedin-image.jpg" }]
-      }]
-    },
-    {
-      integration: { id: "facebook-789" },
-      value: [
-        {
-          content: "Facebook main post 📱",
-          image: [{ id: "f1", path: "facebook-main.jpg" }]
-        },
-        {
-          content: "Additional context in comments",
-          image: [{ id: "f2", path: "facebook-comment.jpg" }],
-          delay: 300000  // 5 minutes later
-        }
-      ]
-    }
-  ]
-};
+const { execSync } = require('child_process');
 
-require('fs').writeFileSync('campaign.json', JSON.stringify(campaign, null, 2));
-execSync('postiz posts:create --json campaign.json');
-```
+function validateAndPost(content, integrationId, settings) {
+  // Get integration settings
+  const settingsResult = execSync(
+    `postiz integrations:settings ${integrationId}`,
+    { encoding: 'utf-8' }
+  );
+  const schema = JSON.parse(settingsResult);
 
-### Pattern 7: Twitter Thread Creation
-
-```bash
-# Create a thread with multiple tweets, each with media
-postiz posts:create --json - << 'EOF'
-{
-  "type": "now",
-  "date": "2024-01-15T12:00:00Z",
-  "shortLink": true,
-  "tags": [],
-  "posts": [{
-    "integration": { "id": "twitter-123" },
-    "value": [
-      {
-        "content": "🧵 Thread about X (1/3)",
-        "image": [{ "id": "1", "path": "https://example.com/thread-1.jpg" }]
-      },
-      {
-        "content": "Key point number 1 (2/3)",
-        "image": [{ "id": "2", "path": "https://example.com/thread-2.jpg" }],
-        "delay": 2000
-      },
-      {
-        "content": "Conclusion and CTA (3/3)",
-        "image": [{ "id": "3", "path": "https://example.com/thread-3.jpg" }],
-        "delay": 2000
-      }
-    ],
-    "settings": { "__type": "EmptySettings" }
-  }]
-}
-EOF
-```
-
-### Pattern 8: Upload Media, Then Post
-
-```bash
-# 1. Upload images first
-IMG1=$(postiz upload ./image1.jpg | jq -r '.path')
-IMG2=$(postiz upload ./image2.jpg | jq -r '.path')
-
-# 2. Create post with uploaded images
-cat > post.json << EOF
-{
-  "type": "now",
-  "date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "shortLink": true,
-  "tags": [],
-  "posts": [{
-    "integration": { "id": "twitter-123" },
-    "value": [{
-      "content": "Check out these images!",
-      "image": [
-        { "id": "img1", "path": "$IMG1" },
-        { "id": "img2", "path": "$IMG2" }
-      ]
-    }],
-    "settings": { "__type": "EmptySettings" }
-  }]
-}
-EOF
-
-postiz posts:create --json post.json
-```
-
-## Output Format
-
-All commands return JSON output, making it easy for AI agents to parse and process results:
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "post-123",
-    "content": "Hello World!",
-    "scheduledDate": "2024-01-15T12:00:00Z"
+  // Check character limit
+  if (content.length > schema.output.maxLength) {
+    console.warn(`Content exceeds ${schema.output.maxLength} chars, truncating...`);
+    content = content.substring(0, schema.output.maxLength - 3) + '...';
   }
+
+  // Create post
+  const result = execSync(
+    `postiz posts:create -c "${content}" -s "2024-12-31T12:00:00Z" --settings '${JSON.stringify(settings)}' -i "${integrationId}"`,
+    { encoding: 'utf-8' }
+  );
+
+  return JSON.parse(result);
 }
 ```
 
-## Error Handling
-
-The CLI provides clear error messages:
-
-- Missing API key: `❌ Error: POSTIZ_API_KEY environment variable is required`
-- API errors: `❌ API Error (status): message`
-- File not found: `❌ Failed to upload file: message`
-
-Exit codes:
-- `0`: Success
-- `1`: Error occurred
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `POSTIZ_API_KEY` | Yes | - | Your Postiz API key |
-| `POSTIZ_API_URL` | No | `https://api.postiz.com` | Custom API endpoint |
-
-## Tips for AI Agents
-
-1. **Always set the API key** before running commands
-2. **Parse JSON output** using tools like `jq` for scripting
-3. **Check exit codes** to determine if commands succeeded
-4. **Use integrations:list** first to get valid integration IDs
-5. **Schedule posts** in the future using ISO 8601 date format
-6. **Upload media first** before referencing in posts
-
-## Example Workflow Script
+### Pattern 6: Batch Scheduling
 
 ```bash
 #!/bin/bash
 
-# Set API key
-export POSTIZ_API_KEY="your-api-key-here"
+# Schedule posts for the week
+DATES=(
+  "2024-02-14T09:00:00Z"
+  "2024-02-15T09:00:00Z"
+  "2024-02-16T09:00:00Z"
+)
 
-# Get integrations
-INTEGRATIONS=$(postiz integrations:list)
-echo "Available integrations: $INTEGRATIONS"
+CONTENT=(
+  "Monday motivation 💪"
+  "Tuesday tips 💡"
+  "Wednesday wisdom 🧠"
+)
 
-# Create a post
-postiz posts:create \
-  -c "Automated post from AI agent" \
-  -s "2024-12-25T12:00:00Z" \
-  -i "twitter-123,linkedin-456"
-
-# List all posts
-postiz posts:list -l 5
-
-echo "✅ Workflow completed!"
+for i in "${!DATES[@]}"; do
+  postiz posts:create \
+    -c "${CONTENT[$i]}" \
+    -s "${DATES[$i]}" \
+    -i "twitter-id" \
+    -m "post-${i}.jpg"
+  echo "Scheduled: ${CONTENT[$i]} for ${DATES[$i]}"
+done
 ```
 
-## Support
+### Pattern 7: Error Handling & Retry
 
-For issues or questions:
-- GitHub: https://github.com/gitroomhq/postiz-app
-- Documentation: https://postiz.com/docs
-- API Reference: https://postiz.com/api-docs
+```javascript
+const { execSync } = require('child_process');
+
+async function postWithRetry(content, integrationId, date, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = execSync(
+        `postiz posts:create -c "${content}" -s "${date}" -i "${integrationId}"`,
+        { encoding: 'utf-8', stdio: 'pipe' }
+      );
+      console.log('✅ Post created successfully');
+      return JSON.parse(result);
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt} failed: ${error.message}`);
+
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`⏳ Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw new Error(`Failed after ${maxRetries} attempts`);
+      }
+    }
+  }
+}
+```
+
+---
+
+## Technical Concepts
+
+### Integration Tools Workflow
+
+Many integrations require dynamic data (IDs, tags, playlists) that can't be hardcoded. The tools workflow enables discovery and usage:
+
+1. **Check available tools** - `integrations:settings` returns a `tools` array
+2. **Review tool schema** - Each tool has `methodName`, `description`, and `dataSchema`
+3. **Trigger tool** - Call `integrations:trigger` with required parameters
+4. **Use output** - Tool returns data to use in post settings
+
+**Example tools by platform:**
+- **Reddit**: `getFlairs`, `searchSubreddits`, `getSubreddits`
+- **YouTube**: `getPlaylists`, `getCategories`, `getChannels`
+- **LinkedIn**: `getCompanies`, `getOrganizations`
+- **Twitter/X**: `getListsowned`, `getCommunities`
+- **Pinterest**: `getBoards`, `getBoardSections`
+
+### Provider Settings Structure
+
+Platform-specific settings use a discriminator pattern with `__type` field:
+
+```json
+{
+  "posts": [
+    {
+      "provider": "reddit",
+      "post": [{ "content": "...", "image": [...] }],
+      "settings": {
+        "__type": "reddit",
+        "subreddit": [{
+          "value": {
+            "subreddit": "programming",
+            "title": "Post Title",
+            "type": "text",
+            "url": "",
+            "is_flair_required": false
+          }
+        }]
+      }
+    }
+  ]
+}
+```
+
+Pass settings directly:
+```bash
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" --settings '{"subreddit":[...]}' -i "reddit-id"
+# Backend automatically adds "__type" based on integration ID
+```
+
+### Comments and Threading
+
+Posts can have comments (threads on Twitter/X, replies elsewhere). Each comment can have its own media:
+
+```bash
+# Using multiple -c and -m flags
+postiz posts:create \
+  -c "Main post" -m "image1.jpg,image2.jpg" \
+  -c "Comment 1" -m "comment-img.jpg" \
+  -c "Comment 2" -m "another.jpg,more.jpg" \
+  -s "2024-12-31T12:00:00Z" \
+  -d 5000 \  # Delay between comments in ms
+  -i "integration-id"
+```
+
+Internally creates:
+```json
+{
+  "posts": [{
+    "value": [
+      { "content": "Main post", "image": ["image1.jpg", "image2.jpg"] },
+      { "content": "Comment 1", "image": ["comment-img.jpg"], "delay": 5000 },
+      { "content": "Comment 2", "image": ["another.jpg", "more.jpg"], "delay": 5000 }
+    ]
+  }]
+}
+```
+
+### Date Handling
+
+All dates use ISO 8601 format:
+- Schedule posts: `-s "2024-12-31T12:00:00Z"`
+- List posts: `--startDate "2024-01-01T00:00:00Z" --endDate "2024-12-31T23:59:59Z"`
+- Defaults: `posts:list` uses 30 days ago to 30 days from now
+
+### Media Upload Response
+
+Upload returns JSON with path and metadata:
+```json
+{
+  "path": "https://cdn.postiz.com/uploads/abc123.jpg",
+  "size": 123456,
+  "type": "image/jpeg"
+}
+```
+
+Extract path for use in posts:
+```bash
+RESULT=$(postiz upload image.jpg)
+PATH=$(echo "$RESULT" | jq -r '.path')
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -m "$PATH" -i "integration-id"
+```
+
+### JSON Mode vs CLI Flags
+
+**CLI flags** - Quick posts:
+```bash
+postiz posts:create -c "Content" -m "img.jpg" -i "twitter-id"
+```
+
+**JSON mode** - Complex posts with multiple platforms and settings:
+```bash
+postiz posts:create --json post.json
+```
+
+JSON mode supports:
+- Multiple platforms with different content per platform
+- Complex provider-specific settings
+- Scheduled posts
+- Posts with many comments
+- Custom delay between comments
+
+---
+
+## Platform-Specific Examples
+
+### Reddit
+```bash
+postiz posts:create \
+  -c "Post content" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"subreddit":[{"value":{"subreddit":"programming","title":"My Title","type":"text","url":"","is_flair_required":false}}]}' \
+  -i "reddit-id"
+```
+
+### YouTube
+```bash
+postiz posts:create \
+  -c "Video description" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"title":"Video Title","type":"public","tags":[{"value":"tech","label":"Tech"}]}' \
+  -m "video.mp4" \
+  -i "youtube-id"
+```
+
+### TikTok
+```bash
+postiz posts:create \
+  -c "Video caption #fyp" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"privacy":"PUBLIC_TO_EVERYONE","duet":true,"stitch":true}' \
+  -m "video.mp4" \
+  -i "tiktok-id"
+```
+
+### X (Twitter)
+```bash
+postiz posts:create \
+  -c "Tweet content" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"who_can_reply_post":"everyone"}' \
+  -i "twitter-id"
+```
+
+### LinkedIn
+```bash
+# Personal post
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -i "linkedin-id"
+
+# Company post
+postiz posts:create \
+  -c "Content" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"companyId":"company-123"}' \
+  -i "linkedin-id"
+```
+
+### Instagram
+```bash
+# Regular post
+postiz posts:create \
+  -c "Caption #hashtag" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"post_type":"post"}' \
+  -m "image.jpg" \
+  -i "instagram-id"
+
+# Story
+postiz posts:create \
+  -c "" \
+  -s "2024-12-31T12:00:00Z" \
+  --settings '{"post_type":"story"}' \
+  -m "story.jpg" \
+  -i "instagram-id"
+```
+
+---
+
+## Supporting Resources
+
+**Deep-dive documentation:**
+- [HOW_TO_RUN.md](./HOW_TO_RUN.md) - Installation and setup methods
+- [COMMAND_LINE_GUIDE.md](./COMMAND_LINE_GUIDE.md) - Complete command syntax reference
+- [PROVIDER_SETTINGS.md](./PROVIDER_SETTINGS.md) - All 28+ platform settings schemas
+- [INTEGRATION_TOOLS_WORKFLOW.md](./INTEGRATION_TOOLS_WORKFLOW.md) - Complete tools workflow guide
+- [INTEGRATION_SETTINGS_DISCOVERY.md](./INTEGRATION_SETTINGS_DISCOVERY.md) - Settings discovery workflow
+- [SUPPORTED_FILE_TYPES.md](./SUPPORTED_FILE_TYPES.md) - All supported media formats
+- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - Code architecture
+- [PUBLISHING.md](./PUBLISHING.md) - npm publishing guide
+
+**Ready-to-use examples:**
+- [examples/EXAMPLES.md](./examples/EXAMPLES.md) - Comprehensive examples
+- [examples/basic-usage.sh](./examples/basic-usage.sh) - Shell script basics
+- [examples/ai-agent-example.js](./examples/ai-agent-example.js) - Node.js agent
+- [examples/post-with-comments.json](./examples/post-with-comments.json) - Threading example
+- [examples/multi-platform-with-settings.json](./examples/multi-platform-with-settings.json) - Campaign example
+- [examples/youtube-video.json](./examples/youtube-video.json) - YouTube with tags
+- [examples/reddit-post.json](./examples/reddit-post.json) - Reddit with subreddit
+- [examples/tiktok-video.json](./examples/tiktok-video.json) - TikTok with privacy
+
+---
+
+## Common Gotchas
+
+1. **API Key not set** - Always `export POSTIZ_API_KEY=key` before using CLI
+2. **Invalid integration ID** - Run `integrations:list` to get current IDs
+3. **Settings schema mismatch** - Check `integrations:settings` for required fields
+4. **Media upload before posting** - Upload returns URL to use in `-m` flag
+5. **JSON escaping in shell** - Use single quotes for JSON: `--settings '{...}'`
+6. **Date format** - Must be ISO 8601: `"2024-12-31T12:00:00Z"`
+7. **Tool not found** - Check available tools in `integrations:settings` output
+8. **Character limits** - Each platform has different limits, check `maxLength` in settings
+9. **Required settings** - Some platforms require specific settings (Reddit needs title, YouTube needs title)
+10. **Media MIME types** - CLI auto-detects from file extension, ensure correct extension
+
+---
+
+## Quick Reference
+
+```bash
+# Environment
+export POSTIZ_API_KEY=key
+
+# Discovery
+postiz integrations:list                           # Get integration IDs
+postiz integrations:settings <id>                  # Get settings schema
+postiz integrations:trigger <id> <method> -d '{}'  # Fetch dynamic data
+
+# Posting (date is REQUIRED)
+postiz posts:create -c "text" -s "2024-12-31T12:00:00Z" -i "id"                  # Simple
+postiz posts:create -c "text" -s "2024-12-31T12:00:00Z" -t draft -i "id"        # Draft
+postiz posts:create -c "text" -m "img.jpg" -s "2024-12-31T12:00:00Z" -i "id"    # With media
+postiz posts:create -c "main" -c "comment" -s "2024-12-31T12:00:00Z" -i "id"    # With comment
+postiz posts:create -c "text" -s "2024-12-31T12:00:00Z" --settings '{}' -i "id" # Platform-specific
+postiz posts:create --json file.json                                             # Complex
+
+# Management
+postiz posts:list                                  # List posts
+postiz posts:delete <id>                          # Delete post
+postiz upload <file>                              # Upload media
+
+# Help
+postiz --help                                     # Show help
+postiz posts:create --help                        # Command help
+```

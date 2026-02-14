@@ -64,35 +64,24 @@ export async function createPost(args: any) {
     });
 
     // Parse provider-specific settings if provided
-    let settings: any = { __type: 'EmptySettings' };
+    // Note: __type is automatically added by the backend based on integration ID
+    let settings: any = undefined;
 
     if (args.settings) {
       try {
-        const parsedSettings = typeof args.settings === 'string'
+        settings = typeof args.settings === 'string'
           ? JSON.parse(args.settings)
           : args.settings;
-
-        // If provider type is specified, add it to settings
-        if (args.providerType) {
-          settings = {
-            __type: args.providerType,
-            ...parsedSettings,
-          };
-        } else {
-          settings = parsedSettings;
-        }
       } catch (error: any) {
         console.error('❌ Failed to parse settings JSON:', error.message);
         process.exit(1);
       }
-    } else if (args.providerType) {
-      settings = { __type: args.providerType };
     }
 
     // Build the proper post structure
     postData = {
-      type: args.schedule ? 'schedule' : 'now',
-      date: args.schedule || new Date().toISOString(),
+      type: args.type || 'schedule', // 'schedule' or 'draft'
+      date: args.date, // Required date field
       shortLink: args.shortLink !== false,
       tags: [],
       posts: integrations.map((integrationId: string) => ({
