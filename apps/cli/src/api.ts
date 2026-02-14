@@ -73,16 +73,48 @@ export class PostizAPI {
 
   async upload(file: Buffer, filename: string) {
     const formData = new FormData();
-    const extension = filename.split('.').pop() || 'jpg';
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
 
-    const type =
-      extension === 'png'
-        ? 'image/png'
-        : extension === 'jpg' || extension === 'jpeg'
-        ? 'image/jpeg'
-        : extension === 'gif'
-        ? 'image/gif'
-        : 'image/jpeg';
+    // Determine MIME type based on file extension
+    const mimeTypes: Record<string, string> = {
+      // Images
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp',
+      'ico': 'image/x-icon',
+
+      // Videos
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'webm': 'video/webm',
+      'flv': 'video/x-flv',
+      'wmv': 'video/x-ms-wmv',
+      'm4v': 'video/x-m4v',
+      'mpeg': 'video/mpeg',
+      'mpg': 'video/mpeg',
+      '3gp': 'video/3gpp',
+
+      // Audio
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'aac': 'audio/aac',
+      'flac': 'audio/flac',
+      'm4a': 'audio/mp4',
+
+      // Documents
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+
+    const type = mimeTypes[extension] || 'application/octet-stream';
 
     const blob = new Blob([file], { type });
     formData.append('file', blob, filename);

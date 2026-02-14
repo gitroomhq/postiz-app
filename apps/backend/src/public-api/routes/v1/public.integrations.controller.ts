@@ -33,6 +33,9 @@ import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup } from 'mime-types';
 import * as Sentry from '@sentry/nestjs';
+import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -212,5 +215,43 @@ export class PublicIntegrationsController {
       body.functionName,
       body.params
     );
+  }
+
+  @Get('/integration-settings/:id')
+  async getIntegrationSettings(
+    @GetOrgFromRequest() org: Organization,
+    @Param('providerName') providerName: string
+  ) {
+    const loadIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      providerName
+    );
+
+    const verified =
+      JSON.parse(loadIntegration.additionalSettings || '[]')?.find(
+        (p: any) => p?.title === 'Verified'
+      )?.value || false;
+
+    const integration = socialIntegrationList.find(
+      (p) => p.identifier === loadIntegration.providerIdentifier
+    )!;
+
+    if (!integration) {
+      return {
+        output: { rules: '', maxLength: 0, settings: {}, tools: [] as any[] },
+      };
+    }
+
+    const maxLength = integration.maxLength(verified);
+    const schemas = !integration.dto
+      ? false
+      : getValidationSchemas()[integration.dto.name];
+
+    return {
+      output: {
+        maxLength,
+        settings: !schemas ? 'No additional settings required' : schemas,
+      },
+    };
   }
 }

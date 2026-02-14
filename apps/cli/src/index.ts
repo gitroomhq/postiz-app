@@ -111,26 +111,27 @@ yargs(hideBin(process.argv))
     'List all posts',
     (yargs: Argv) => {
       return yargs
-        .option('page', {
-          alias: 'p',
-          describe: 'Page number',
-          type: 'number',
-          default: 1,
-        })
-        .option('limit', {
-          alias: 'l',
-          describe: 'Number of posts per page',
-          type: 'number',
-          default: 10,
-        })
-        .option('search', {
-          alias: 's',
-          describe: 'Search query',
+        .option('startDate', {
+          describe: 'Start date (ISO 8601 format). Default: 30 days ago',
           type: 'string',
         })
-        .example('$0 posts:list', 'List all posts')
-        .example('$0 posts:list -p 2 -l 20', 'List posts with pagination')
-        .example('$0 posts:list -s "hello"', 'Search posts');
+        .option('endDate', {
+          describe: 'End date (ISO 8601 format). Default: 30 days from now',
+          type: 'string',
+        })
+        .option('customer', {
+          describe: 'Customer ID (optional)',
+          type: 'string',
+        })
+        .example('$0 posts:list', 'List all posts (last 30 days to next 30 days)')
+        .example(
+          '$0 posts:list --startDate "2024-01-01T00:00:00Z" --endDate "2024-12-31T23:59:59Z"',
+          'List posts for a specific date range'
+        )
+        .example(
+          '$0 posts:list --customer "customer-id"',
+          'List posts for a specific customer'
+        );
     },
     listPosts as any
   )

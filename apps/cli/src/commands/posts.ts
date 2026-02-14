@@ -118,10 +118,23 @@ export async function listPosts(args: any) {
   const config = getConfig();
   const api = new PostizAPI(config);
 
-  const filters: any = {};
-  if (args.page) filters.page = args.page;
-  if (args.limit) filters.limit = args.limit;
-  if (args.search) filters.search = args.search;
+  // Set default date range: last 30 days to 30 days in the future
+  const defaultStartDate = new Date();
+  defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+
+  // Only send fields that are in GetPostsDto
+  const filters: any = {
+    startDate: args.startDate || defaultStartDate.toISOString(),
+    endDate: args.endDate || defaultEndDate.toISOString(),
+  };
+
+  // customer is optional in the DTO
+  if (args.customer) {
+    filters.customer = args.customer;
+  }
 
   try {
     const result = await api.listPosts(filters);
