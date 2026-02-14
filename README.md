@@ -13,6 +13,7 @@
 </a>
 </p>
 
+<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
