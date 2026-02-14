@@ -802,6 +802,8 @@ importers:
 
   apps/backend: {}
 
+  apps/cli: {}
+
   apps/commands: {}
 
   apps/extension: {}
