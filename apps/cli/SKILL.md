@@ -107,12 +107,19 @@ postiz posts:delete <post-id>
 
 ### Media Upload
 
+**⚠️ IMPORTANT:** Always upload files to Postiz before using them in posts. Many platforms (TikTok, Instagram, YouTube) **require verified URLs** and will reject external links.
+
 ```bash
 # Upload file and get URL
 postiz upload image.jpg
 
 # Supports: images (PNG, JPG, GIF, WEBP, SVG), videos (MP4, MOV, AVI, MKV, WEBM),
 # audio (MP3, WAV, OGG, AAC), documents (PDF, DOC, DOCX)
+
+# Workflow: Upload → Extract URL → Use in post
+VIDEO=$(postiz upload video.mp4)
+VIDEO_PATH=$(echo "$VIDEO" | jq -r '.path')
+postiz posts:create -c "Content" -s "2024-12-31T12:00:00Z" -m "$VIDEO_PATH" -i "tiktok-id"
 ```
 
 ---
@@ -455,21 +462,29 @@ postiz posts:create \
 
 ### YouTube
 ```bash
+# Upload video first (required!)
+VIDEO=$(postiz upload video.mp4)
+VIDEO_URL=$(echo "$VIDEO" | jq -r '.path')
+
 postiz posts:create \
   -c "Video description" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"title":"Video Title","type":"public","tags":[{"value":"tech","label":"Tech"}]}' \
-  -m "video.mp4" \
+  -m "$VIDEO_URL" \
   -i "youtube-id"
 ```
 
 ### TikTok
 ```bash
+# Upload video first (TikTok only accepts verified URLs!)
+VIDEO=$(postiz upload video.mp4)
+VIDEO_URL=$(echo "$VIDEO" | jq -r '.path')
+
 postiz posts:create \
   -c "Video caption #fyp" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"privacy":"PUBLIC_TO_EVERYONE","duet":true,"stitch":true}' \
-  -m "video.mp4" \
+  -m "$VIDEO_URL" \
   -i "tiktok-id"
 ```
 
@@ -497,20 +512,27 @@ postiz posts:create \
 
 ### Instagram
 ```bash
+# Upload image first (Instagram requires verified URLs!)
+IMAGE=$(postiz upload image.jpg)
+IMAGE_URL=$(echo "$IMAGE" | jq -r '.path')
+
 # Regular post
 postiz posts:create \
   -c "Caption #hashtag" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"post_type":"post"}' \
-  -m "image.jpg" \
+  -m "$IMAGE_URL" \
   -i "instagram-id"
 
 # Story
+STORY=$(postiz upload story.jpg)
+STORY_URL=$(echo "$STORY" | jq -r '.path')
+
 postiz posts:create \
   -c "" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"post_type":"story"}' \
-  -m "story.jpg" \
+  -m "$STORY_URL" \
   -i "instagram-id"
 ```
 
@@ -545,9 +567,9 @@ postiz posts:create \
 1. **API Key not set** - Always `export POSTIZ_API_KEY=key` before using CLI
 2. **Invalid integration ID** - Run `integrations:list` to get current IDs
 3. **Settings schema mismatch** - Check `integrations:settings` for required fields
-4. **Media upload before posting** - Upload returns URL to use in `-m` flag
+4. **Media MUST be uploaded to Postiz first** - ⚠️ **CRITICAL:** TikTok, Instagram, YouTube, and many platforms only accept verified URLs. Upload files via `postiz upload` first, then use the returned URL in `-m`. External URLs will be rejected!
 5. **JSON escaping in shell** - Use single quotes for JSON: `--settings '{...}'`
-6. **Date format** - Must be ISO 8601: `"2024-12-31T12:00:00Z"`
+6. **Date format** - Must be ISO 8601: `"2024-12-31T12:00:00Z"` and is REQUIRED
 7. **Tool not found** - Check available tools in `integrations:settings` output
 8. **Character limits** - Each platform has different limits, check `maxLength` in settings
 9. **Required settings** - Some platforms require specific settings (Reddit needs title, YouTube needs title)

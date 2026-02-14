@@ -180,6 +180,15 @@ postiz posts:delete <post-id>
 postiz upload <file-path>
 ```
 
+**⚠️ IMPORTANT: Upload Files Before Posting**
+
+You **must** upload media files to Postiz before using them in posts. Many platforms (especially TikTok, Instagram, and YouTube) require verified/trusted URLs and will reject external links.
+
+**Workflow:**
+1. Upload your file using `postiz upload`
+2. Extract the returned URL
+3. Use that URL in your post's `-m` parameter
+
 **Supported formats:**
 - **Images:** PNG, JPG, JPEG, GIF, WEBP, SVG, BMP, ICO
 - **Videos:** MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V, MPEG, MPG, 3GP
@@ -188,10 +197,18 @@ postiz upload <file-path>
 
 **Example:**
 ```bash
+# 1. Upload the file first
 RESULT=$(postiz upload video.mp4)
 PATH=$(echo "$RESULT" | jq -r '.path')
-postiz posts:create -c "Check out my video!" -m "$PATH" -i "tiktok-id"
+
+# 2. Use the Postiz URL in your post
+postiz posts:create -c "Check out my video!" -s "2024-12-31T12:00:00Z" -m "$PATH" -i "tiktok-id"
 ```
+
+**Why this is required:**
+- **TikTok, Instagram, YouTube** only accept URLs from trusted domains
+- **Security:** Platforms verify media sources to prevent abuse
+- **Reliability:** Postiz ensures your media is always accessible
 
 ---
 
@@ -215,22 +232,31 @@ postiz posts:create \
 # Get playlists
 postiz integrations:trigger youtube-id getPlaylists
 
-# Upload video with metadata
+# Upload video FIRST (required!)
+VIDEO=$(postiz upload video.mp4)
+VIDEO_URL=$(echo "$VIDEO" | jq -r '.path')
+
+# Post with uploaded video URL
 postiz posts:create \
   -c "Video description" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"title":"Video Title","type":"public","tags":[{"value":"tech","label":"Tech"}],"playlistId":"playlist-id"}' \
-  -m "video.mp4" \
+  -m "$VIDEO_URL" \
   -i "youtube-id"
 ```
 
 ### TikTok
 ```bash
+# Upload video FIRST (TikTok only accepts verified URLs!)
+VIDEO=$(postiz upload video.mp4)
+VIDEO_URL=$(echo "$VIDEO" | jq -r '.path')
+
+# Post with uploaded video URL
 postiz posts:create \
   -c "Video caption #fyp" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"privacy":"PUBLIC_TO_EVERYONE","duet":true,"stitch":true}' \
-  -m "video.mp4" \
+  -m "$VIDEO_URL" \
   -i "tiktok-id"
 ```
 
@@ -268,20 +294,27 @@ postiz posts:create \
 
 ### Instagram
 ```bash
+# Upload image FIRST (Instagram requires verified URLs!)
+IMAGE=$(postiz upload image.jpg)
+IMAGE_URL=$(echo "$IMAGE" | jq -r '.path')
+
 # Regular post
 postiz posts:create \
   -c "Caption #hashtag" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"post_type":"post"}' \
-  -m "image.jpg" \
+  -m "$IMAGE_URL" \
   -i "instagram-id"
 
-# Story
+# Story (upload first)
+STORY=$(postiz upload story.jpg)
+STORY_URL=$(echo "$STORY" | jq -r '.path')
+
 postiz posts:create \
   -c "" \
   -s "2024-12-31T12:00:00Z" \
   --settings '{"post_type":"story"}' \
-  -m "story.jpg" \
+  -m "$STORY_URL" \
   -i "instagram-id"
 ```
 
