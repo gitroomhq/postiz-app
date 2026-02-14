@@ -69,6 +69,11 @@ export class AuthService {
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        if (process.env.POSTIZ_MODE === 'desktop') {
+          await this._userService.activateUser(create.users[0].user.id);
+          return obj;
+        }
+
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',

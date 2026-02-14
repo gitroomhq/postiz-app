@@ -43,6 +43,8 @@ struct ConfigFile {
     data_dir: Option<String>,
     /// Whether to auto-find available ports if defaults are occupied (default: true)
     auto_find_ports: Option<bool>,
+    /// JWT Secret for authentication (auto-generated if missing)
+    jwt_secret: Option<String>,
 }
 
 impl ConfigFile {
@@ -51,9 +53,19 @@ impl ConfigFile {
         let config_path = Self::config_path();
         if config_path.exists() {
             match fs::read_to_string(&config_path) {
-                Ok(contents) => match toml::from_str(&contents) {
-                    Ok(config) => {
+                Ok(contents) => match toml::from_str::<ConfigFile>(&contents) {
+                    Ok(mut config) => {
                         println!("[postiz] Loaded config from {:?}", config_path);
+                        // If JWT secret is missing in file, generate it and save back
+                        if config.jwt_secret.is_none() {
+                            let secret: String = rand::thread_rng()
+                                .sample_iter(&rand::distributions::Alphanumeric)
+                                .take(32)
+                                .map(char::from)
+                                .collect();
+                            config.jwt_secret = Some(secret);
+                            let _ = config.save();
+                        }
                         return config;
                     }
                     Err(e) => {
@@ -65,7 +77,29 @@ impl ConfigFile {
                 }
             }
         }
-        Self::default()
+        
+        // No config file, create one with a new JWT secret
+        let secret: String = rand::thread_rng()
+            .sample_iter(&rand::distributions::Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
+        let config = Self {
+            jwt_secret: Some(secret),
+            ..Self::default()
+        };
+        let _ = config.save();
+        config
+    }
+
+    /// Save config to file
+    fn save(&self) -> std::io::Result<()> {
+        let config_path = Self::config_path();
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let contents = toml::to_string_pretty(self).unwrap_or_default();
+        fs::write(&config_path, contents)
     }
 
     /// Get the config file path
@@ -88,6 +122,7 @@ impl ConfigFile {
 #   POSTIZ_TEMPORAL_UI_PORT - Temporal UI port (default: 8233)
 #   POSTIZ_DATA_DIR         - Data directory path
 #   POSTIZ_AUTO_FIND_PORTS  - Auto-find available ports (true/false)
+#   JWT_SECRET              - JWT Secret for authentication
 
 # Uncomment and modify the following lines to customize:
 
@@ -97,6 +132,7 @@ impl ConfigFile {
 # temporal_ui_port = 8233
 # data_dir = "/custom/path/to/data"
 # auto_find_ports = true
+# jwt_secret = "your-secure-secret-here"
 "#;
             if let Some(parent) = config_path.parent() {
                 fs::create_dir_all(parent)?;
@@ -116,6 +152,7 @@ struct Config {
     temporal_ui_port: u16,
     data_dir: PathBuf,
     auto_find_ports: bool,
+    jwt_secret: String,
 }
 
 impl Config {
@@ -148,6 +185,13 @@ impl Config {
                 .unwrap_or(default)
         }
 
+        fn get_string(env_var: &str, file_value: Option<String>, default: &str) -> String {
+            env::var(env_var)
+                .ok()
+                .or(file_value)
+                .unwrap_or_else(|| default.to_string())
+        }
+
         Self {
             backend_port: get_port("POSTIZ_BACKEND_PORT", file_config.backend_port, 3000),
             frontend_port: get_port("POSTIZ_FRONTEND_PORT", file_config.frontend_port, 4200),
@@ -155,6 +199,7 @@ impl Config {
             temporal_ui_port: get_port("POSTIZ_TEMPORAL_UI_PORT", file_config.temporal_ui_port, 8233),
             data_dir: get_path("POSTIZ_DATA_DIR", file_config.data_dir, get_data_dir()),
             auto_find_ports: get_bool("POSTIZ_AUTO_FIND_PORTS", file_config.auto_find_ports, true),
+            jwt_secret: get_string("JWT_SECRET", file_config.jwt_secret, "change-me-postiz-desktop"),
         }
     }
 }
@@ -291,7 +336,7 @@ impl HealthChecker {
                 .timeout(Duration::from_secs(5))
                 .build()
                 .unwrap_or_else(|_| Client::new()),
-            max_retries: 30,      // 30 attempts (~45 seconds max)
+            max_retries: 120,     // 120 attempts (~180 seconds max)
             base_delay_ms: 500,   // Start at 500ms
             max_delay_ms: 3000,   // Cap at 3 seconds
         }
@@ -310,32 +355,36 @@ impl HealthChecker {
     fn wait_for_http(&self, url: &str, service_name: &str) -> Result<(), String> {
         let start = Instant::now();
 
+        println!("[{}] Health check starting for {}", service_name, url);
+
         for attempt in 0..self.max_retries {
             match self.client.get(url).send() {
                 Ok(resp) if resp.status().is_success() => {
                     println!(
-                        "[{}] Ready after {:.1}s",
+                        "[{}] Ready after {:.1}s (attempt {})",
                         service_name,
-                        start.elapsed().as_secs_f64()
+                        start.elapsed().as_secs_f64(),
+                        attempt + 1
                     );
                     return Ok(());
                 }
                 Ok(resp) => {
+                    println!(
+                        "[{}] Received status {} from {} (attempt {})",
+                        service_name,
+                        resp.status(),
+                        url,
+                        attempt + 1
+                    );
+                }
+                Err(e) => {
                     if attempt % 5 == 0 {
                         println!(
-                            "[{}] Waiting... (status {})",
+                            "[{}] Error connecting to {}: {} (attempt {})",
                             service_name,
-                            resp.status()
-                        );
-                    }
-                }
-                Err(_) => {
-                    // Connection refused is expected while service starts
-                    if attempt % 5 == 0 && attempt > 0 {
-                        println!(
-                            "[{}] Waiting for startup... ({:.0}s)",
-                            service_name,
-                            start.elapsed().as_secs_f64()
+                            url,
+                            e,
+                            attempt + 1
                         );
                     }
                 }
@@ -345,8 +394,9 @@ impl HealthChecker {
         }
 
         Err(format!(
-            "{} failed to become ready after {:.0}s",
+            "{} failed to become ready at {} after {:.0}s",
             service_name,
+            url,
             start.elapsed().as_secs_f64()
         ))
     }
@@ -541,21 +591,39 @@ fn get_data_dir() -> PathBuf {
 
 /// Get the resources directory for bundled JS code
 fn get_resources_dir(app: &tauri::App) -> PathBuf {
-    // In production, Tauri puts resources in Contents/Resources/resources/
-    // (the extra "resources" is from our tauri.conf.json resources glob)
-    // In development, they're in src-tauri/resources/
+    // 1. Check for bundled resources first (production)
     let base = app.path()
         .resource_dir()
         .unwrap_or_else(|_| PathBuf::from("."));
 
-    // Check if we're in a bundled app (has resources subdirectory)
     let bundled_path = base.join("resources");
     if bundled_path.exists() {
-        bundled_path
-    } else {
-        // Development mode - resources are directly in src-tauri/resources/
-        base
+        return bundled_path;
     }
+
+    // 2. Fallback for development: look for resources directory relative to executable
+    // During cargo run, we are in apps/desktop/src-tauri/target/debug/
+    // We want apps/desktop/src-tauri/resources/
+    if let Ok(exe_path) = env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            // Try target/debug/resources/
+            let dev_resources = exe_dir.join("resources");
+            if dev_resources.exists() {
+                return dev_resources;
+            }
+            
+            // Try apps/desktop/src-tauri/resources/
+            if let Some(src_tauri) = exe_dir.parent().and_then(|p| p.parent()) {
+                let src_tauri_resources = src_tauri.join("resources");
+                if src_tauri_resources.exists() {
+                    return src_tauri_resources;
+                }
+            }
+        }
+    }
+    
+    // 3. Last resort: use current directory
+    base
 }
 
 fn main() {
@@ -590,14 +658,28 @@ fn main() {
             fs::create_dir_all(data_dir).ok();
             let pglite_dir = data_dir.join("pglite-data");
             fs::create_dir_all(&pglite_dir).ok();
+            let uploads_dir = data_dir.join("uploads");
+            fs::create_dir_all(&uploads_dir).ok();
 
             // Build environment variables with dynamic ports
             let pglite_path = pglite_dir.to_string_lossy().to_string();
+            let uploads_path = uploads_dir.to_string_lossy().to_string();
             let database_url = format!(
                 "postgresql://localhost:5432/postiz?pglite={}",
                 urlencoding::encode(&pglite_path)
             );
             let temporal_db = data_dir.join("temporal.db");
+
+            // Detect target triple for sidecar names
+            let target_triple = if cfg!(target_os = "macos") {
+                if cfg!(target_arch = "aarch64") { "aarch64-apple-darwin" } else { "x86_64-apple-darwin" }
+            } else if cfg!(target_os = "linux") {
+                if cfg!(target_arch = "aarch64") { "aarch64-unknown-linux-gnu" } else { "x86_64-unknown-linux-gnu" }
+            } else if cfg!(target_os = "windows") {
+                "x86_64-pc-windows-msvc"
+            } else {
+                "unknown"
+            };
 
             // Build URL strings for cross-service communication
             let temporal_address = format!("localhost:{}", ports.temporal_grpc);
@@ -608,8 +690,9 @@ fn main() {
             let shell = app_handle.shell();
             let temporal_port_str = ports.temporal_grpc.to_string();
             let temporal_ui_port_str = ports.temporal_ui.to_string();
+            let temporal_sidecar = format!("temporal-{}", target_triple);
             let temporal_cmd = shell
-                .sidecar("temporal")
+                .sidecar(&temporal_sidecar)
                 .expect("failed to create temporal sidecar")
                 .args([
                     "server",
@@ -642,15 +725,81 @@ fn main() {
                 }
             });
 
+            // ===== Initialize Database Schema =====
+            // Run Prisma schema push before starting backend service
+            //
+            // This follows the exact same pattern as server deployment's pm2-run script:
+            //   package.json:17: "pm2-run": "... && pnpm run prisma-db-push && pnpm run --parallel pm2 && ..."
+            //
+            // Server pathway: bash script runs `prisma db push` → then starts services
+            // Desktop pathway: Rust runs `prisma db push` → then spawns backend service
+            //
+            // Both achieve the same result: database schema initialized before application starts
+            let shell = app_handle.shell();
+            let schema_path = resources_dir.join("backend/prisma/schema.prisma");
+            let prisma_cli = resources_dir.join("backend/node_modules/prisma/build/index.js");
+            let node_sidecar = format!("node-{}", target_triple);
+
+            println!("[postiz] Initializing PGlite database schema...");
+
+            // Verify files exist before attempting to run
+            if schema_path.exists() && prisma_cli.exists() {
+                let result = shell
+                    .sidecar(&node_sidecar)
+                    .expect("failed to create node sidecar for prisma db push")
+                    .args([
+                        prisma_cli.to_str().unwrap(),
+                        "db",
+                        "push",
+                        "--accept-data-loss",
+                        "--schema",
+                        schema_path.to_str().unwrap(),
+                    ])
+                    .env("DATABASE_URL", &database_url)
+                    .env("USE_PGLITE", "true")
+                    .env("PGLITE_DATA_DIR", &pglite_path)
+                    .output();
+
+                // Use block_on to wait for the async output() call to complete
+                match tauri::async_runtime::block_on(result) {
+                    Ok(output) if output.status.success() => {
+                        println!("[postiz] Database schema initialized successfully");
+                    }
+                    Ok(output) => {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        let stdout = String::from_utf8_lossy(&output.stdout);
+
+                        // Check if error is just "schema already up to date"
+                        if stderr.contains("already up to date") || stdout.contains("already up to date") {
+                            println!("[postiz] Database schema already up to date");
+                        } else {
+                            // Log warning but continue - database might already be initialized
+                            eprintln!("[postiz] Warning: Database initialization had issues: {}", stderr);
+                            eprintln!("[postiz] Continuing anyway - database may already be initialized");
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[postiz] Warning: Failed to run database initialization: {}", e);
+                        eprintln!("[postiz] Continuing anyway - database may already be initialized");
+                    }
+                }
+            } else {
+                if !schema_path.exists() {
+                    println!("[postiz] Warning: Schema file not found at {:?}, skipping initialization", schema_path);
+                }
+                if !prisma_cli.exists() {
+                    println!("[postiz] Warning: Prisma CLI not found at {:?}, skipping initialization", prisma_cli);
+                }
+            }
+
             // ===== Spawn Backend (Node.js + JS resources) =====
             let backend_dir = resources_dir.join("backend");
             let backend_entry = backend_dir.join("dist/apps/backend/src/main.js");
             println!("[backend] Entry: {:?}", backend_entry);
 
-            let shell = app_handle.shell();
             let backend_port_str = ports.backend.to_string();
             let backend_cmd = shell
-                .sidecar("node")
+                .sidecar(&node_sidecar)
                 .expect("failed to create node sidecar for backend")
                 .args([backend_entry.to_str().unwrap_or("")])
                 .current_dir(backend_dir.clone())
@@ -658,6 +807,9 @@ fn main() {
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
                 .env("USE_PGLITE", "true")
+                .env("JWT_SECRET", &config.jwt_secret)
+                .env("STORAGE_PROVIDER", "local")
+                .env("UPLOAD_DIRECTORY", &uploads_path)
                 .env("TEMPORAL_ADDRESS", &temporal_address)
                 .env("TEMPORAL_NAMESPACE", "default")
                 .env("PORT", &backend_port_str)
@@ -695,13 +847,14 @@ fn main() {
             let shell = app_handle.shell();
             let frontend_port_str = ports.frontend.to_string();
             let frontend_cmd = shell
-                .sidecar("node")
+                .sidecar(&node_sidecar)
                 .expect("failed to create node sidecar for frontend")
                 .args([frontend_entry.to_str().unwrap_or("")])
                 .current_dir(frontend_dir)
                 .env("POSTIZ_MODE", "desktop")
                 .env("PORT", &frontend_port_str)
                 .env("HOSTNAME", "localhost")
+                .env("JWT_SECRET", &config.jwt_secret)
                 .env("NEXT_PUBLIC_BACKEND_URL", &backend_url)
                 .env("BACKEND_URL", &backend_url);
 
@@ -732,7 +885,7 @@ fn main() {
 
             let shell = app_handle.shell();
             let orchestrator_cmd = shell
-                .sidecar("node")
+                .sidecar(&node_sidecar)
                 .expect("failed to create node sidecar for orchestrator")
                 .args([orchestrator_entry.to_str().unwrap_or("")])
                 .current_dir(orchestrator_dir)
@@ -740,6 +893,9 @@ fn main() {
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
                 .env("USE_PGLITE", "true")
+                .env("JWT_SECRET", &config.jwt_secret)
+                .env("STORAGE_PROVIDER", "local")
+                .env("UPLOAD_DIRECTORY", &uploads_path)
                 .env("TEMPORAL_ADDRESS", &temporal_address)
                 .env("TEMPORAL_NAMESPACE", "default")
                 .env("BACKEND_URL", &backend_url)

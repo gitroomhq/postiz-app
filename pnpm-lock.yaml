@@ -803,6 +803,10 @@ importers:
         version: 3.1.4(@types/debug@4.1.12)(@types/node@18.16.9)(@vitest/ui@1.6.0)(happy-dom@15.11.7)(jiti@2.6.1)(jsdom@22.1.0(bufferutil@4.1.0)(canvas@2.11.2)(utf-8-validate@5.0.10))(lightningcss@1.30.2)(sass@1.97.1)(terser@5.44.1)(yaml@2.8.2)
 
   apps/backend:
+    dependencies:
+      prisma:
+        specifier: 6.5.0
+        version: 6.5.0(typescript@5.5.4)
     optionalDependencies:
       '@electric-sql/pglite':
         specifier: ^0.2.17
