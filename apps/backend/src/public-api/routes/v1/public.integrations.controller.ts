@@ -220,11 +220,11 @@ export class PublicIntegrationsController {
   @Get('/integration-settings/:id')
   async getIntegrationSettings(
     @GetOrgFromRequest() org: Organization,
-    @Param('providerName') providerName: string
+    @Param('id') id: string
   ) {
     const loadIntegration = await this._integrationService.getIntegrationById(
       org.id,
-      providerName
+      id
     );
 
     const verified =

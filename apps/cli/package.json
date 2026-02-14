@@ -1,6 +1,6 @@
 {
   "name": "postiz",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Postiz CLI - Command line interface for the Postiz social media scheduling API",
   "main": "dist/index.js",
   "bin": {
