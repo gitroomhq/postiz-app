@@ -4,7 +4,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
 // @ts-ignore
 import { getExtension } from 'mime';
-import { IUploadProvider } from './upload.interface';
+import { IUploadProvider, UploadSimpleOptions } from './upload.interface';
 import axios from 'axios';
 
 class CloudflareStorage implements IUploadProvider {
@@ -57,8 +57,14 @@ class CloudflareStorage implements IUploadProvider {
     );
   }
 
-  async uploadSimple(path: string) {
-    const loadImage = await fetch(path);
+  async uploadSimple(path: string, options?: UploadSimpleOptions) {
+    const loadImage = await fetch(path, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Postiz/1.0)',
+        Accept: 'image/*',
+        ...options?.headers,
+      },
+    });
     const contentType =
       loadImage?.headers?.get('content-type') ||
       loadImage?.headers?.get('Content-Type');
