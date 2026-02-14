@@ -33,9 +33,11 @@ import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup } from 'mime-types';
 import * as Sentry from '@sentry/nestjs';
-import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
-import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { socialIntegrationList, IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -46,7 +48,9 @@ export class PublicIntegrationsController {
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
     private _mediaService: MediaService,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _integrationManager: IntegrationManager,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 
   @Post('/upload')
@@ -222,6 +226,7 @@ export class PublicIntegrationsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string
   ) {
+    Sentry.metrics.count('public_api-request', 1);
     const loadIntegration = await this._integrationService.getIntegrationById(
       org.id,
       id
@@ -246,12 +251,97 @@ export class PublicIntegrationsController {
     const schemas = !integration.dto
       ? false
       : getValidationSchemas()[integration.dto.name];
+    const tools = this._integrationManager.getAllTools();
+    const rules = this._integrationManager.getAllRulesDescription();
 
     return {
       output: {
+        rules: rules[integration.identifier],
         maxLength,
         settings: !schemas ? 'No additional settings required' : schemas,
+        tools: tools[integration.identifier],
       },
     };
+  }
+
+  @Post('/integration-trigger/:id')
+  async triggerIntegrationTool(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { methodName: string; data: Record<string, string> }
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      id
+    );
+
+    if (!getIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
+    const integrationProvider = socialIntegrationList.find(
+      (p) => p.identifier === getIntegration.providerIdentifier
+    )!;
+
+    if (!integrationProvider) {
+      throw new HttpException({ msg: 'Integration provider not found' }, 404);
+    }
+
+    const tools = this._integrationManager.getAllTools();
+    if (
+      // @ts-ignore
+      !tools[integrationProvider.identifier]?.some(
+        (p: any) => p.methodName === body.methodName
+      ) ||
+      // @ts-ignore
+      !integrationProvider[body.methodName]
+    ) {
+      throw new HttpException({ msg: 'Tool not found' }, 404);
+    }
+
+    while (true) {
+      try {
+        // @ts-ignore
+        const result = await integrationProvider[body.methodName](
+          getIntegration.token,
+          body.data || {},
+          getIntegration.internalId,
+          getIntegration
+        );
+
+        return { output: result };
+      } catch (err) {
+        if (err instanceof RefreshToken) {
+          const data = await this._refreshIntegrationService.refresh(
+            getIntegration
+          );
+
+          if (!data) {
+            await this._integrationService.disconnectChannel(
+              org.id,
+              getIntegration
+            );
+            throw new HttpException(
+              { msg: 'Channel disconnected due to expired token' },
+              401
+            );
+          }
+
+          const { accessToken } = data;
+
+          if (accessToken) {
+            getIntegration.token = accessToken;
+
+            if (integrationProvider.refreshWait) {
+              await timer(10000);
+            }
+
+            continue;
+          }
+        }
+        throw new HttpException({ msg: 'Unexpected error' }, 500);
+      }
+    }
   }
 }

@@ -1,7 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createPost, listPosts, deletePost } from './commands/posts';
-import { listIntegrations, getIntegrationSettings } from './commands/integrations';
+import { listIntegrations, getIntegrationSettings, triggerIntegrationTool } from './commands/integrations';
 import { uploadFile } from './commands/upload';
 import type { Argv } from 'yargs';
 
@@ -173,6 +173,39 @@ yargs(hideBin(process.argv))
         );
     },
     getIntegrationSettings as any
+  )
+  .command(
+    'integrations:trigger <id> <method>',
+    'Trigger an integration tool to fetch additional data',
+    (yargs: Argv) => {
+      return yargs
+        .positional('id', {
+          describe: 'Integration ID',
+          type: 'string',
+        })
+        .positional('method', {
+          describe: 'Method name from the integration tools',
+          type: 'string',
+        })
+        .option('data', {
+          alias: 'd',
+          describe: 'Data to pass to the tool as JSON string',
+          type: 'string',
+        })
+        .example(
+          '$0 integrations:trigger reddit-123 getSubreddits',
+          'Get list of subreddits'
+        )
+        .example(
+          '$0 integrations:trigger reddit-123 searchSubreddits -d \'{"query":"programming"}\'',
+          'Search for subreddits'
+        )
+        .example(
+          '$0 integrations:trigger youtube-123 getPlaylists',
+          'Get YouTube playlists'
+        );
+    },
+    triggerIntegrationTool as any
   )
   .command(
     'upload <file>',

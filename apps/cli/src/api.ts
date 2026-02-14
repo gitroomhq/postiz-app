@@ -148,4 +148,15 @@ export class PostizAPI {
       method: 'GET',
     });
   }
+
+  async triggerIntegrationTool(
+    integrationId: string,
+    methodName: string,
+    data: Record<string, string>
+  ) {
+    return this.request(`/public/v1/integration-trigger/${integrationId}`, {
+      method: 'POST',
+      body: JSON.stringify({ methodName, data }),
+    });
+  }
 }
