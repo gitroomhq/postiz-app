@@ -34,7 +34,6 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const {
       access_token: accessToken,
-      refresh_token: newRefreshToken,
       expires_in: expiresIn,
     } = await (
       await this.fetch('https://www.reddit.com/api/v1/access_token', {
@@ -64,7 +63,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       id,
       name,
       accessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: refreshToken,
       expiresIn,
       picture: icon_img?.split?.('?')?.[0] || '',
       username: name,
