@@ -439,6 +439,82 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
+    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const method = firstPost?.settings?.content_posting_method;
+
+    if (method === 'DIRECT_POST') {
+      return {
+        post_info: {
+          ...(isPhoto && firstPost.settings.title
+            ? { title: firstPost.settings.title }
+            : {}),
+          ...(!isPhoto && firstPost.message
+            ? { title: firstPost.message }
+            : {}),
+          ...(isPhoto ? { description: firstPost.message } : {}),
+          privacy_level:
+            firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+          disable_duet: !firstPost.settings.duet || false,
+          disable_comment: !firstPost.settings.comment || false,
+          disable_stitch: !firstPost.settings.stitch || false,
+          is_aigc: firstPost.settings.video_made_with_ai || false,
+          brand_content_toggle:
+            firstPost.settings.brand_content_toggle || false,
+          brand_organic_toggle:
+            firstPost.settings.brand_organic_toggle || false,
+          ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+            ? {
+                auto_add_music: firstPost.settings.autoAddMusic === 'yes',
+              }
+            : {}),
+        },
+      };
+    }
+
+    return {
+      post_info: {
+        ...(isPhoto && firstPost.settings.title
+          ? { title: firstPost.settings.title }
+          : {}),
+        ...(!isPhoto && firstPost.message ? { title: firstPost.message } : {}),
+        ...(isPhoto ? { description: firstPost.message } : {}),
+      },
+    };
+  }
+
+  private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
+    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+
+    if (isPhoto) {
+      return {
+        post_mode:
+          firstPost?.settings?.content_posting_method === 'DIRECT_POST'
+            ? 'DIRECT_POST'
+            : 'MEDIA_UPLOAD',
+        media_type: 'PHOTO',
+        source_info: {
+          source: 'PULL_FROM_URL',
+          photo_cover_index: 0,
+          photo_images: firstPost.media?.map((p) => p.path),
+        },
+      };
+    }
+
+    return {
+      source_info: {
+        source: 'PULL_FROM_URL',
+        video_url: firstPost?.media?.[0]?.path!,
+        ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+          ? {
+              video_cover_timestamp_ms:
+                firstPost?.media?.[0]?.thumbnailTimestamp!,
+            }
+          : {}),
+      },
+    };
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -447,6 +523,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+
     const {
       data: { publish_id },
     } = await (
@@ -462,87 +539,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...((firstPost?.settings?.content_posting_method ||
-              'DIRECT_POST') === 'DIRECT_POST'
-              ? {
-                  post_info: {
-                    ...((firstPost?.settings?.title && isPhoto) ||
-                    (firstPost.message && !isPhoto)
-                      ? {
-                          title: isPhoto
-                            ? firstPost.settings.title
-                            : firstPost.message,
-                        }
-                      : {}),
-                    ...(isPhoto ? { description: firstPost.message } : {}),
-                    privacy_level:
-                      firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-                    disable_duet: !firstPost.settings.duet || false,
-                    disable_comment: !firstPost.settings.comment || false,
-                    disable_stitch: !firstPost.settings.stitch || false,
-                    is_aigc: firstPost.settings.video_made_with_ai || false,
-                    brand_content_toggle:
-                      firstPost.settings.brand_content_toggle || false,
-                    brand_organic_toggle:
-                      firstPost.settings.brand_organic_toggle || false,
-                    ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) ===
-                    -1
-                      ? {
-                          auto_add_music:
-                            firstPost.settings.autoAddMusic === 'yes',
-                        }
-                      : {}),
-                  },
-                }
-              : {}),
-            ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) > -1
-              ? {
-                  post_info: {
-                    ...((firstPost?.settings?.title && isPhoto) ||
-                    (firstPost.message && !isPhoto)
-                      ? {
-                          title: isPhoto
-                            ? firstPost.settings.title
-                            : firstPost.message,
-                        }
-                      : {}),
-                    ...(isPhoto ? { description: firstPost.message } : {}),
-                  },
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    video_url: firstPost?.media?.[0]?.path!,
-                    ...(firstPost?.media?.[0]?.thumbnailTimestamp!
-                      ? {
-                          video_cover_timestamp_ms:
-                            firstPost?.media?.[0]?.thumbnailTimestamp!,
-                        }
-                      : {}),
-                  },
-                }
-              : {
-                  post_info: {
-                    ...((firstPost?.settings?.title && isPhoto) ||
-                    (firstPost.message && !isPhoto)
-                      ? {
-                          title: isPhoto
-                            ? firstPost.settings.title
-                            : firstPost.message,
-                        }
-                      : {}),
-                    ...(isPhoto ? { description: firstPost.message } : {}),
-                  },
-                  source_info: {
-                    source: 'PULL_FROM_URL',
-                    photo_cover_index: 0,
-                    photo_images: firstPost.media?.map((p) => p.path),
-                  },
-                  post_mode:
-                    firstPost?.settings?.content_posting_method ===
-                    'DIRECT_POST'
-                      ? 'DIRECT_POST'
-                      : 'MEDIA_UPLOAD',
-                  media_type: 'PHOTO',
-                }),
+            ...this.buildTikokPostInfoBody(firstPost),
+            ...this.buildTikokSourceInfoBody(firstPost),
           }),
         }
       )
