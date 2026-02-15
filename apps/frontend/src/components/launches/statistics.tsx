@@ -1,10 +1,11 @@
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { Select } from '@gitroom/react/form/select';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 
 interface AnalyticsData {
   label: string;
@@ -34,7 +35,7 @@ export const StatisticsModal: FC<{
     loadStatistics
   );
 
-  const { data: analyticsData, isLoading: isLoadingAnalytics } = useSWR(
+  const { data: analyticsData, isLoading: isLoadingAnalytics, mutate: mutateAnalytics } = useSWR(
     `/analytics/post/${postId}?date=${dateRange}`,
     loadPostAnalytics,
     {
@@ -46,6 +47,8 @@ export const StatisticsModal: FC<{
       refreshWhenOffline: false,
     }
   );
+
+  const isMissing = analyticsData && !Array.isArray(analyticsData) && analyticsData.missing;
 
   const dateOptions = useMemo(() => {
     return [
@@ -76,6 +79,8 @@ export const StatisticsModal: FC<{
         <div className="flex items-center justify-center py-[40px]">
           <LoadingComponent />
         </div>
+      ) : isMissing ? (
+        <MissingReleaseModal postId={postId} onSuccess={() => mutateAnalytics()} />
       ) : (
         <div className="flex flex-col gap-[24px]">
           {/* Post Analytics Section */}

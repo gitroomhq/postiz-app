@@ -369,7 +369,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     id: string,
     publishId: string,
     accessToken: string
-  ): Promise<{ url: string; id: number }> {
+  ): Promise<{ url: string; id: string }> {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const post = await (
@@ -396,7 +396,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       if (status === 'SEND_TO_USER_INBOX') {
         return {
           url: 'https://www.tiktok.com/messages?lang=en',
-          id: Math.floor(Math.random() * 1000000 + 100000),
+          id: 'missing',
         };
       }
 
@@ -703,6 +703,40 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  async missing(
+    id: string,
+    accessToken: string
+  ): Promise<{ id: string; url: string }[]> {
+    try {
+      const videoListResponse = await this.fetch(
+        'https://open.tiktokapis.com/v2/video/list/?fields=id,cover_image_url,title',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ max_count: 20 }),
+        }
+      );
+
+      const videoListData = await videoListResponse.json();
+      const videos = videoListData?.data?.videos;
+
+      if (!videos || videos.length === 0) {
+        return [];
+      }
+
+      return videos.map((v: { id: string; cover_image_url: string }) => ({
+        id: String(v.id),
+        url: v.cover_image_url,
+      }));
+    } catch (err) {
+      console.error('Error fetching TikTok missing content:', err);
+      return [];
+    }
+  }
+
   async postAnalytics(
     integrationId: string,
     accessToken: string,
@@ -711,27 +745,31 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
-    const post = await (
-      await this.fetch(
-        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            Authorization: `Bearer ${accessToken}`,
+    if (postId.indexOf('v_pub_url') > -1) {
+      const post = await (
+        await this.fetch(
+          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              publish_id: postId,
+            }),
           },
-          body: JSON.stringify({
-            publish_id: postId,
-          }),
-        },
-        '',
-        0,
-        true
-      )
-    ).json();
+          '',
+          0,
+          true
+        )
+      ).json();
 
-    if (!post?.data?.publicaly_available_post_id?.[0]) {
-      return [];
+      if (!post?.data?.publicaly_available_post_id?.[0]) {
+        return [];
+      }
+
+      postId = post.data.publicaly_available_post_id[0];
     }
 
     try {
@@ -746,7 +784,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           },
           body: JSON.stringify({
             filters: {
-              video_ids: post?.data?.publicaly_available_post_id.map(String),
+              video_ids: [postId],
             },
           }),
         }

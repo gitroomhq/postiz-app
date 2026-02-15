@@ -372,6 +372,19 @@ export class PostsRepository {
     });
   }
 
+  updateReleaseId(id: string, orgId: string, releaseId: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+        organizationId: orgId,
+        releaseId: 'missing',
+      },
+      data: {
+        releaseId,
+      },
+    });
+  }
+
   async changeState(id: string, state: State, err?: any, body?: any) {
     const update = await this._post.model.post.update({
       where: {

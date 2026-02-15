@@ -6,6 +6,7 @@ import {
   HttpException,
   Param,
   Post,
+  Put,
   Query,
   UploadedFile,
   UseInterceptors,
@@ -266,6 +267,25 @@ export class PublicIntegrationsController {
         tools: tools[integration.identifier],
       },
     };
+  }
+
+  @Get('/posts/:id/missing')
+  async getMissingContent(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/posts/:id/release-id')
+  async updateReleaseId(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('releaseId') releaseId: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.updateReleaseId(org.id, id, releaseId);
   }
 
   @Get('/analytics/:integration')

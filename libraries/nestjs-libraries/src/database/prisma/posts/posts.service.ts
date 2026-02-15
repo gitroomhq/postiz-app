@@ -64,15 +64,83 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
+  async getMissingContent(
+    orgId: string,
+    postId: string,
+    forceRefresh = false
+  ): Promise<{ id: string; url: string }[]> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || post.releaseId !== 'missing') {
+      return [];
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.missing) {
+      return [];
+    }
+
+    const getIntegration = post.integration!;
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return [];
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return [];
+      }
+    }
+
+    try {
+      return await integrationProvider.missing(
+        getIntegration.internalId,
+        getIntegration.token
+      );
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken) {
+        return this.getMissingContent(orgId, postId, true);
+      }
+    }
+
+    return [];
+  }
+
+  async updateReleaseId(orgId: string, postId: string, releaseId: string) {
+    return this._postRepository.updateReleaseId(postId, orgId, releaseId);
+  }
+
   async checkPostAnalytics(
     orgId: string,
     postId: string,
     date: number,
     forceRefresh = false
-  ): Promise<AnalyticsData[]> {
+  ): Promise<AnalyticsData[] | { missing: true }> {
     const post = await this._postRepository.getPostById(postId, orgId);
     if (!post || !post.releaseId) {
       return [];
+    }
+
+    if (post.releaseId === 'missing') {
+      return { missing: true };
     }
 
     const integrationProvider = this._integrationManager.getSocialIntegration(

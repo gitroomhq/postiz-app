@@ -45,6 +45,23 @@ export class PostsController {
     return this._postsService.getStatistics(org.id, id);
   }
 
+  @Get('/:id/missing')
+  async getMissingContent(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/:id/release-id')
+  async updateReleaseId(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('releaseId') releaseId: string
+  ) {
+    return this._postsService.updateReleaseId(org.id, id, releaseId);
+  }
+
   @Post('/should-shortlink')
   async shouldShortlink(@Body() body: { messages: string[] }) {
     return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
