@@ -264,6 +264,26 @@ export class PublicIntegrationsController {
     };
   }
 
+  @Get('/analytics/:integration')
+  async getAnalytics(
+    @GetOrgFromRequest() org: Organization,
+    @Param('integration') integration: string,
+    @Query('date') date: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._integrationService.checkAnalytics(org, integration, date);
+  }
+
+  @Get('/analytics/post/:postId')
+  async getPostAnalytics(
+    @GetOrgFromRequest() org: Organization,
+    @Param('postId') postId: string,
+    @Query('date') date: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.checkPostAnalytics(org.id, postId, +date);
+  }
+
   @Post('/integration-trigger/:id')
   async triggerIntegrationTool(
     @GetOrgFromRequest() org: Organization,
