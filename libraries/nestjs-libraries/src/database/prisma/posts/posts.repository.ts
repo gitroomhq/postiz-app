@@ -380,7 +380,7 @@ export class PostsRepository {
         releaseId: 'missing',
       },
       data: {
-        releaseId,
+        releaseId: String(releaseId),
       },
     });
   }
