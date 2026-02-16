@@ -249,11 +249,19 @@ module.exports = {
         },
       }),
       screens: {
+        // Standard Tailwind breakpoints (mobile-first)
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        
+        // Custom breakpoints (max-width for responsive utilities)
         mobile: {
-          raw: '(max-width: 1025px)',
+          raw: '(max-width: 768px)',
         },
         tablet: {
-          raw: '(max-width: 1300px)',
+          raw: '(max-width: 1024px)',
         },
         iconBreak: {
           raw: '(max-width: 1560px)',

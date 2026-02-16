@@ -1,8 +1,9 @@
 'use client';
 
-import React, { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { useMobile } from '@gitroom/frontend/components/hooks/use-mobile';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   {
@@ -51,6 +52,10 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
+  
+  // Mobile responsiveness
+  const isMobile = useMobile();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
@@ -97,13 +102,55 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               ) : (
                 <div className="flex-1 flex gap-[8px]">
                   <Support />
-                  <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                  
+                  {/* Backdrop for mobile drawer - only visible on mobile when sidebar is open */}
+                  <div
+                    className={clsx(
+                      'fixed inset-0 bg-black/50 z-40 hidden',
+                      isSidebarOpen && 'mobile:block'
+                    )}
+                    onClick={() => setIsSidebarOpen(false)}
+                  />
+                  
+                  {/* Sidebar - hidden on mobile by default, shows as drawer overlay when opened */}
+                  <div
+                    className={clsx(
+                      'flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]',
+                      // On mobile: fixed overlay that slides in from left
+                      'mobile:fixed mobile:top-0 mobile:left-0 mobile:h-full mobile:z-50 mobile:rounded-none',
+                      'mobile:transition-transform mobile:duration-300',
+                      // Hide by default on mobile (translate off-screen)
+                      !isSidebarOpen && 'mobile:-translate-x-full'
+                    )}
+                  >
                     <div
                       className={clsx(
                         'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
-                        user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
+                        user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]',
+                        // On mobile, adjust positioning for drawer
+                        'mobile:start-0 mobile:w-[80px] mobile:px-[8px]'
                       )}
                     >
+                      {/* Close button for mobile - hidden on desktop */}
+                      <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="absolute top-4 right-4 p-2 hover:bg-boxHover rounded-lg transition-colors z-50 hidden mobile:block"
+                        aria-label="Close menu"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
                       <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
                         <Logo />
                         <TopMenu />
@@ -111,22 +158,53 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     </div>
                   </div>
                   <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                    <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                      <div className="text-[24px] font-[600] flex flex-1">
+                    <div className="flex bg-newBgColorInner h-[80px] mobile:h-[56px] px-[20px] mobile:px-[12px] items-center">
+                      {/* Hamburger menu - only visible on mobile */}
+                      {isMobile && (
+                        <button
+                          onClick={() => setIsSidebarOpen(true)}
+                          className="mr-3 p-2 hover:bg-boxHover rounded-lg transition-colors"
+                          aria-label="Open menu"
+                        >
+                          <svg
+                            className="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 6h16M4 12h16M4 18h16"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      <div className="text-[24px] mobile:text-[18px] font-[600] flex flex-1">
                         <Title />
                       </div>
-                      <div className="flex gap-[20px] text-textItemBlur">
-                        <StreakComponent />
-                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                      <div className="flex gap-[20px] mobile:gap-[12px] text-textItemBlur items-center">
+                        {/* Hide non-essential icons on mobile */}
+                        {!isMobile && (
+                          <>
+                            <StreakComponent />
+                            <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                          </>
+                        )}
                         <OrganizationSelector />
-                        <div className="hover:text-newTextColor">
-                          <ModeComponent />
-                        </div>
-                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                        <LanguageComponent />
-                        <ChromeExtensionComponent />
-                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                        <AttachToFeedbackIcon />
+                        {!isMobile && (
+                          <>
+                            <div className="hover:text-newTextColor">
+                              <ModeComponent />
+                            </div>
+                            <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                            <LanguageComponent />
+                            <ChromeExtensionComponent />
+                            <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                            <AttachToFeedbackIcon />
+                          </>
+                        )}
                         <NotificationComponent />
                       </div>
                     </div>
