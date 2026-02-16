@@ -447,7 +447,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return {
         post_info: {
           ...(isPhoto && firstPost.settings.title
-            ? { title: firstPost.settings.title }
+            ? { title: firstPost.settings.title.slice(0, 90) }
             : {}),
           ...(!isPhoto && firstPost.message
             ? { title: firstPost.message }
@@ -455,15 +455,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           ...(isPhoto ? { description: firstPost.message } : {}),
           privacy_level:
             firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-          disable_duet: !firstPost.settings.duet || false,
+          ...(isPhoto
+            ? {}
+            : { disable_duet: !firstPost.settings.duet || false }),
           disable_comment: !firstPost.settings.comment || false,
-          disable_stitch: !firstPost.settings.stitch || false,
-          is_aigc: firstPost.settings.video_made_with_ai || false,
+          ...(isPhoto
+            ? {}
+            : { disable_stitch: !firstPost.settings.stitch || false }),
+          ...(isPhoto
+            ? {}
+            : { is_aigc: firstPost.settings.video_made_with_ai || false }),
           brand_content_toggle:
             firstPost.settings.brand_content_toggle || false,
           brand_organic_toggle:
             firstPost.settings.brand_organic_toggle || false,
-          ...((firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+          ...(isPhoto
             ? {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',
               }
@@ -524,6 +530,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
     const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
 
+    console.log({
+      ...this.buildTikokPostInfoBody(firstPost),
+      ...this.buildTikokSourceInfoBody(firstPost),
+    });
     const {
       data: { publish_id },
     } = await (
