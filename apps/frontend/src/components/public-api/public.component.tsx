@@ -1,16 +1,22 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useSWRConfig } from 'swr';
 import { useUser } from '../layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 export const PublicComponent = () => {
   const user = useUser();
   const { backendUrl, frontEndUrl } = useVariables();
   const toaster = useToaster();
+  const fetch = useFetch();
+  const decision = useDecisionModal();
+  const { mutate } = useSWRConfig();
   const [reveal, setReveal] = useState(false);
   const [reveal2, setReveal2] = useState(false);
   const copyToClipboard = useCallback(() => {
@@ -21,6 +27,22 @@ export const PublicComponent = () => {
     toaster.show('MCP copied to clipboard', 'success');
     copy(`${backendUrl}/mcp/` + user?.publicApi);
   }, [user]);
+
+  const rotateKey = useCallback(async () => {
+    const approved = await decision.open({
+      title: 'Rotate API Key?',
+      description:
+        'This will generate a new API key and invalidate the current one. Any integrations using the old key will stop working.',
+      approveLabel: 'Rotate',
+      cancelLabel: 'Cancel',
+    });
+    if (!approved) return;
+    await fetch('/user/api-key/rotate', { method: 'POST' });
+    await mutate('/user/self');
+    setReveal(false);
+    setReveal2(false);
+    toaster.show('API Key rotated successfully', 'success');
+  }, [decision, fetch, mutate, toaster]);
 
   const t = useT();
 
@@ -79,6 +101,11 @@ export const PublicComponent = () => {
                 </Button>
               )}
             </div>
+          </div>
+          <div>
+            <Button onClick={rotateKey}>
+              {t('rotate_key', 'Rotate Key')}
+            </Button>
           </div>
         </div>
       </div>
