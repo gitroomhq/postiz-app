@@ -35,9 +35,9 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
-    ? PlausibleProvider
-    : Fragment;
+  const isPlausibleEnabled = !!process.env.STRIPE_PUBLISHABLE_KEY;
+  const plausibleDomain = !!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com';
+
   return (
     <html>
       <head>
@@ -94,9 +94,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <HtmlComponent />
             <DubAnalytics />
             <FacebookComponent />
-            <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-            >
+            {isPlausibleEnabled ? (
+              <PlausibleProvider domain={plausibleDomain}>
+                <PHProvider
+                  phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+                  host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+                >
+                  <LayoutContext>
+                    <UtmSaver />
+                    {children}
+                  </LayoutContext>
+                </PHProvider>
+              </PlausibleProvider>
+            ) : (
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
@@ -106,7 +116,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   {children}
                 </LayoutContext>
               </PHProvider>
-            </Plausible>
+            )}
           </SentryComponent>
         </VariableContextComponent>
       </body>
