@@ -21,6 +21,59 @@ export const startMcp = async (app: INestApplication) => {
   });
 
   app.use(
+    '/mcp',
+    async (req: Request, res: Response, next: () => void) => {
+      // Skip if this is the /mcp/:id route
+      if (req.path !== '/' && req.path !== '') {
+        next();
+        return;
+      }
+
+      // @ts-ignore
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.setHeader('Access-Control-Expose-Headers', '*');
+
+      if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+      }
+
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        res.status(401).send('Missing Authorization header');
+        return;
+      }
+
+      // @ts-ignore
+      req.auth = await organizationService.getOrgByApiKey(token);
+      // @ts-ignore
+      if (!req.auth) {
+        res.status(401).send('Invalid API Key');
+        return;
+      }
+
+      const url = new URL('/mcp', process.env.NEXT_PUBLIC_BACKEND_URL);
+
+      // @ts-ignore
+      await runWithContext({ requestId: token, auth: req.auth }, async () => {
+        await server.startHTTP({
+          url,
+          httpPath: url.pathname,
+          options: {
+            sessionIdGenerator: () => {
+              return randomUUID();
+            },
+          },
+          req,
+          res,
+        });
+      });
+    }
+  );
+
+  app.use(
     '/mcp/:id',
     async (req: Request, res: Response) => {
       // @ts-ignore
