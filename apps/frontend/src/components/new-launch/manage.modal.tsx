@@ -246,35 +246,36 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       setLoading(true);
       const checkAllValid = await ref.current.checkAllValid();
-      if (type !== 'draft') {
-        const notEnoughChars = checkAllValid.filter((p: any) => {
-          return p.values.some((a: any) => {
-            return (
-              countCharacters(
-                stripHtmlValidation('normal', a.content, true),
-                p?.integration?.identifier || ''
-              ) === 0 && a.media?.length === 0
-            );
-          });
-        });
 
-        for (const item of notEnoughChars) {
-          toaster.show(
-            `${capitalize(item.integration.identifier.split('-')[0])} (${
-              item.integration.name
-            }):` +
-              ' ' +
-              t(
-                'post_needs_content_or_image',
-                'Your post should have at least one character or one image.'
-              ),
-            'warning'
+      const notEnoughChars = checkAllValid.filter((p: any) => {
+        return p.values.some((a: any) => {
+          return (
+            countCharacters(
+              stripHtmlValidation('normal', a.content, true),
+              p?.integration?.identifier || ''
+            ) === 0 && a.media?.length === 0
           );
-          setLoading(false);
-          item.preview();
-          return;
-        }
+        });
+      });
 
+      for (const item of notEnoughChars) {
+        toaster.show(
+          `${capitalize(item.integration.identifier.split('-')[0])} (${
+            item.integration.name
+          }):` +
+            ' ' +
+            t(
+              'post_needs_content_or_image',
+              'Your post should have at least one character or one image.'
+            ),
+          'warning'
+        );
+        setLoading(false);
+        item.preview();
+        return;
+      }
+
+      if (type !== 'draft') {
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show(
