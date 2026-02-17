@@ -26,6 +26,8 @@ const getCountryCodeForFlag = (languageCode: string) => {
   if (languageCode === 'en') return 'GB';
   if (languageCode === 'es') return 'ES';
   if (languageCode === 'ar') return 'SA';
+  if (languageCode === 'ckb') return 'KU';
+  if (languageCode === 'kmr') return 'KU';
   if (languageCode === 'zh') return 'CN';
   if (languageCode === 'he') return 'IL';
   if (languageCode === 'ja') return 'JP';
@@ -77,6 +79,9 @@ export const ChangeLanguageComponent = () => {
   // Function to get language name in its native script
   const getLanguageName = useCallback((code: string) => {
     try {
+      if (code === 'ckb') return 'سۆرانی';
+      if (code == 'kmr') return 'Kurmancî';
+
       // Use browser's Intl API to get language name in native script
       const displayNames = new Intl.DisplayNames([code], {
         type: 'language',
@@ -102,6 +107,7 @@ export const ChangeLanguageComponent = () => {
           >
             <ReactCountryFlag
               countryCode={getCountryCodeForFlag(language)}
+              cdnUrl="https://ocdn.soma.krd/flags/4x3/"
               svg
               style={{
                 width: '1.5em',
@@ -136,6 +142,7 @@ export const LanguageComponent = () => {
     >
       <ReactCountryFlag
         countryCode={getCountryCodeForFlag(currentLanguage)}
+        cdnUrl="https://ocdn.soma.krd/flags/1x1/"
         svg
         style={{
           width: '22px',
