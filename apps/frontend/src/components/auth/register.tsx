@@ -5,7 +5,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
@@ -40,16 +40,22 @@ type Inputs = {
 export function Register() {
   const getQuery = useSearchParams();
   const fetch = useFetch();
+  const router = useRouter();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
   const [show, setShow] = useState(false);
+  // Prevent double-execution in React StrictMode
+  const loadingRef = useRef(false);
+
   useEffect(() => {
-    if (provider && code) {
+    if (provider && code && !loadingRef.current) {
+      loadingRef.current = true;
       load();
     }
   }, []);
+
   const load = useCallback(async () => {
-    const { token } = await (
+    const { token, login } = await (
       await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
         method: 'POST',
         body: JSON.stringify({
@@ -57,11 +63,21 @@ export function Register() {
         }),
       })
     ).json();
+
+    // Handle existing user login - backend already set auth cookie
+    // Use window.location.href instead of router.push to do a full page reload
+    // This clears the OAuth code from the URL and ensures cookies are properly read
+    if (login) {
+      window.location.href = '/';
+      return;
+    }
+
     if (token) {
       setCode(token);
       setShow(true);
     }
-  }, [provider, code]);
+  }, [provider, code, router]);
+
   if (!code && !provider) {
     return <RegisterAfter token="" provider="LOCAL" />;
   }
