@@ -126,13 +126,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('spam_risk') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value: 'TikTok detected potential spam',
-      };
-    }
-
     if (body.indexOf('spam_risk_too_many_posts') > -1) {
       return {
         type: 'bad-body' as const,
@@ -145,6 +138,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body' as const,
         value:
           'Account banned from posting, please check TikTok account status',
+      };
+    }
+
+    if (body.indexOf('spam_risk') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'TikTok detected potential spam',
       };
     }
 
