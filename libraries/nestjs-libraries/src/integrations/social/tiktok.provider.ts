@@ -129,7 +129,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('spam_risk_too_many_posts') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Daily post limit reached, please try again tomorrow',
+        value: 'TikTok says your daily post limit reached, please try again tomorrow',
       };
     }
 
