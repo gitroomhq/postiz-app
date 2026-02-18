@@ -478,7 +478,7 @@ export class InstagramProvider
             ? `&caption=${encodeURIComponent(firstPost.message)}`
             : ``;
         const isCarousel =
-          (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
+          (firstPost?.media?.length || 0) > 1 && !isStory ? `&is_carousel_item=true` : ``;
         const mediaType =
           m.path.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
@@ -542,7 +542,38 @@ export class InstagramProvider
       }) || []
     );
 
-    if (medias.length === 1) {
+    if (isStory && medias.length > 1) {
+      // Stories don't support carousels - publish each media as a separate story
+      let lastMediaId = '';
+      let lastPermalink = '';
+      for (const mediaCreationId of medias) {
+        const { id: mediaId } = await (
+          await this.fetch(
+            `https://${type}/v20.0/${id}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
+            {
+              method: 'POST',
+            }
+          )
+        ).json();
+        lastMediaId = mediaId;
+
+        const { permalink } = await (
+          await this.fetch(
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          )
+        ).json();
+        lastPermalink = permalink;
+      }
+
+      return [
+        {
+          id: firstPost.id,
+          postId: lastMediaId,
+          releaseURL: lastPermalink,
+          status: 'success',
+        },
+      ];
+    } else if (medias.length === 1) {
       const { id: mediaId } = await (
         await this.fetch(
           `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,

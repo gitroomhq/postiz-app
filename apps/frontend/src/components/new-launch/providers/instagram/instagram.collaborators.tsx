@@ -103,9 +103,6 @@ export default withProvider<InstagramDto>({
     if (!firstPost?.length) {
       return 'Should have at least one media';
     }
-    if ((firstPost?.length ?? 0) > 1 && settings?.post_type === 'story') {
-      return 'Stories can only have one media';
-    }
     if (settings?.is_trial_reel) {
       if ((firstPost?.length ?? 0) > 1) {
         return 'Trial Reels can only have one video';
