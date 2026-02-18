@@ -83,6 +83,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('app_version_check_failed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'In order to use the TikTok upload feature, you have to update your app to the latest version',
+      };
+    }
+
     if (body.indexOf('duration_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
@@ -129,7 +136,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('spam_risk_too_many_posts') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'TikTok says your daily post limit reached, please try again tomorrow',
+        value:
+          'TikTok says your daily post limit reached, please try again tomorrow',
       };
     }
 
