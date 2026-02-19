@@ -961,11 +961,14 @@ async function main(): Promise<void> {
       console.log(`\n  App:  ${appPath}`);
       console.log(`  Size: ${getDirSize(appPath)}`);
 
-      // Find DMG
-      if (fs.existsSync(bundleDir)) {
-        const dmgFiles = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
+      // Find DMG (lives in bundle/dmg/, sibling of bundle/macos/)
+      const dmgDir = path.join(DESKTOP_DIR, 'src-tauri', 'target', 'release', 'bundle', 'dmg');
+      if (fs.existsSync(dmgDir)) {
+        const dmgFiles = fs.readdirSync(dmgDir).filter(f => f.endsWith('.dmg'));
         if (dmgFiles.length > 0) {
-          const dmgPath = path.join(bundleDir, dmgFiles[0]);
+          // Sort and pick the newest (highest semver)
+          dmgFiles.sort().reverse();
+          const dmgPath = path.join(dmgDir, dmgFiles[0]);
           console.log(`\n  DMG:  ${dmgPath}`);
           console.log(`  Size: ${getDirSize(dmgPath)}`);
         }
