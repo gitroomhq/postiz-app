@@ -203,7 +203,12 @@ function cleanAllResources(): void {
   for (const dir of dirs) {
     const fullPath = path.join(RESOURCES_DIR, dir);
     if (fs.existsSync(fullPath)) {
-      fs.rmSync(fullPath, { recursive: true, force: true });
+      // Use shell rm -rf because fs.rmSync can fail with ENOTEMPTY on macOS
+      // when the directory contains deep pnpm symlink trees in node_modules.
+      const result = spawnSync('rm', ['-rf', fullPath], { stdio: 'inherit' });
+      if (result.status !== 0) {
+        throw new Error(`Failed to remove ${fullPath}: exit code ${result.status}`);
+      }
       console.log(`  ✓ Removed ${dir}/`);
       cleaned = true;
     }
