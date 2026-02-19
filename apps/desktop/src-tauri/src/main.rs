@@ -674,16 +674,22 @@ fn main() {
             // (port-allocation check). Users lose unsaved state but the app starts.
             let postmaster_pid = pglite_dir.join("postmaster.pid");
             let pglite_socket_lock = pglite_dir.join(".s.PGSQL.5432.lock.out");
-            if postmaster_pid.exists() || pglite_socket_lock.exists() {
+            let pglite_was_wiped = if postmaster_pid.exists() || pglite_socket_lock.exists() {
                 println!("[postiz] Detected unclean PGlite shutdown — wiping corrupted database for fresh start");
                 match fs::remove_dir_all(&pglite_dir) {
                     Ok(_) => {
                         fs::create_dir_all(&pglite_dir).ok();
                         println!("[postiz] PGlite data directory reset successfully");
+                        true
                     }
-                    Err(e) => eprintln!("[postiz] Warning: Failed to wipe PGlite data: {}", e),
+                    Err(e) => {
+                        eprintln!("[postiz] Warning: Failed to wipe PGlite data: {}", e);
+                        false
+                    }
                 }
-            }
+            } else {
+                false
+            };
 
             // Build environment variables with dynamic ports
             let pglite_path = pglite_dir.to_string_lossy().to_string();
@@ -949,8 +955,17 @@ fn main() {
 
                     match result {
                         Ok(Ok(())) => {
-                            // Services are ready, navigate to frontend
-                            if let Ok(url) = tauri::Url::parse(&frontend_url_clone) {
+                            // Services are ready. If PGlite was wiped, navigate to /auth/logout
+                            // first so Next.js middleware atomically clears any stale HttpOnly
+                            // auth cookies and redirects to /auth/login. Without this, a stale
+                            // WKWebView cookie from a previous session would cause a 401 redirect
+                            // loop and show a flat black screen instead of the login form.
+                            let target = if pglite_was_wiped {
+                                format!("{}/auth/logout", frontend_url_clone)
+                            } else {
+                                frontend_url_clone.clone()
+                            };
+                            if let Ok(url) = tauri::Url::parse(&target) {
                                 let _ = win.navigate(url);
                             }
                         }

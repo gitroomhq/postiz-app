@@ -89,7 +89,13 @@ function LayoutContextInner(params: { children: ReactNode }) {
         setCookie('auth', '', -10);
         setCookie('showorg', '', -10);
         setCookie('impersonate', '', -10);
-        window.location.href = '/';
+        // Don't navigate away from auth pages (e.g. wrong password on login form).
+        // Navigating away would swallow the error before the form can display it.
+        // Use /auth/logout so Next.js middleware atomically clears HttpOnly cookies
+        // and redirects to /auth/login, preventing redirect loops with stale tokens.
+        if (!window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth/logout';
+        }
         return true;
       }
       if (response.status === 406) {
