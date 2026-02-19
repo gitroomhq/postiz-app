@@ -120,6 +120,13 @@ export function RegisterAfter({
         setLoading(false);
         if (response.status === 200) {
           fireEvents('register');
+          // If the backend returned an onboarding header, afterRequest has already
+          // initiated a full-page navigation to /launches (or /analytics). Don't
+          // also call router.push here — the two navigations race and the user can
+          // end up on /auth/login instead of the app.
+          if (response.headers.get('onboarding')) {
+            return;
+          }
           return track(TrackEnum.CompleteRegistration).then(() => {
             if (response.headers.get('activate') === 'true') {
               router.push('/auth/activate');

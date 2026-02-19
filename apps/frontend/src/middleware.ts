@@ -51,6 +51,30 @@ function middlewareCookieWithPathDomain(): object {
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
+
+  // Desktop/non-secured mode: when navigating to a page with ?loggedAuth=JWT in the URL,
+  // the middleware sets a proper HttpOnly auth cookie and redirects to the clean URL.
+  // This handles WKWebView's async cookie-store sync: JS cookies set via document.cookie
+  // may not appear in native HTTP requests immediately. By including loggedAuth in the
+  // URL we guarantee the middleware can authenticate and set a persistent server cookie.
+  // Only enabled for DESKTOP_COOKIE_MODE or NOT_SECURED environments — never production.
+  const loggedAuthInUrl = nextUrl.searchParams.get('loggedAuth');
+  if (
+    loggedAuthInUrl &&
+    (process.env.DESKTOP_COOKIE_MODE || process.env.NOT_SECURED)
+  ) {
+    const destUrl = new URL(nextUrl.href);
+    destUrl.searchParams.delete('loggedAuth');
+    const resp = NextResponse.redirect(destUrl);
+    resp.cookies.set('auth', loggedAuthInUrl, {
+      path: '/',
+      ...middlewareCookieFlags(),
+      maxAge: 365 * 24 * 60 * 60,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    });
+    return resp;
+  }
+
   const authCookie =
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
