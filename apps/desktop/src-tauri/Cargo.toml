@@ -1,6 +1,6 @@
 [package]
 name = "postiz-desktop"
-version = "0.1.0"
+version = "2.12.1"
 description = "Postiz Desktop App"
 authors = ["Postiz"]
 edition = "2021"

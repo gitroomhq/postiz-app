@@ -1,6 +1,6 @@
 {
   "name": "@gitroom/desktop",
-  "version": "0.1.0",
+  "version": "2.12.1",
   "private": true,
   "description": "Postiz Desktop App - Social media scheduling without Docker",
   "scripts": {
