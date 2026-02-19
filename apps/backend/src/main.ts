@@ -33,7 +33,7 @@ async function start() {
         'onboarding',
         'activate',
         'x-copilotkit-runtime-client-gql-version',
-        ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
+        ...((process.env.NOT_SECURED || process.env.DESKTOP_COOKIE_MODE) ? ['auth', 'showorg', 'impersonate'] : []),
       ],
       origin: [
         process.env.FRONTEND_URL,

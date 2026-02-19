@@ -8,16 +8,21 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 
+// Cookie security options based on deployment context. See auth.controller.ts for rationale.
+function cookieSecurityOptions(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: 'none' };
+}
+
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
     domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-    ...(!process.env.NOT_SECURED
-      ? {
-          secure: true,
-          httpOnly: true,
-          sameSite: 'none',
-        }
-      : {}),
+    ...cookieSecurityOptions(),
     expires: new Date(0),
     maxAge: -1,
   });

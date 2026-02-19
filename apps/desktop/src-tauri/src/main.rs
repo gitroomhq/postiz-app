@@ -759,7 +759,16 @@ fn main() {
                 .env("FRONTEND_URL", &frontend_url)
                 .env("NEXT_PUBLIC_BACKEND_URL", &backend_url)
                 .env("BACKEND_URL", &backend_url)
-                .env("BACKEND_INTERNAL_URL", &backend_url);
+                .env("BACKEND_INTERNAL_URL", &backend_url)
+                // Desktop runs over HTTP (no TLS). WKWebView rejects cookies
+                // with Secure flag on http://localhost (WebKit limitation).
+                // DESKTOP_COOKIE_MODE tells the backend to use:
+                //   { secure: false, httpOnly: true, sameSite: 'lax' }
+                // This keeps HttpOnly (XSS protection) and SameSite=Lax
+                // (CSRF protection) while dropping Secure (required for HTTP).
+                // The backend also sends the JWT in an `auth` response header
+                // so Next.js middleware can read it as a fallback.
+                .env("DESKTOP_COOKIE_MODE", "true");
 
             let (mut rx, backend_child) = backend_cmd.spawn().expect("Failed to spawn backend");
             println!("[backend] Started with PID: {:?}", backend_child.pid());
@@ -799,7 +808,10 @@ fn main() {
                 .env("JWT_SECRET", &config.jwt_secret)
                 .env("NEXT_PUBLIC_BACKEND_URL", &backend_url)
                 .env("BACKEND_URL", &backend_url)
-                .env("BACKEND_INTERNAL_URL", &backend_url);
+                .env("BACKEND_INTERNAL_URL", &backend_url)
+                // Same flag so the Next.js middleware reads auth from the
+                // `auth` response header (sent by backend in DESKTOP_COOKIE_MODE).
+                .env("DESKTOP_COOKIE_MODE", "true");
 
             let (mut rx, frontend_child) = frontend_cmd.spawn().expect("Failed to spawn frontend");
             println!("[frontend] Started with PID: {:?}", frontend_child.pid());

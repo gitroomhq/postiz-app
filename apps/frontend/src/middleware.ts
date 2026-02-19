@@ -11,6 +11,43 @@ import {
 } from '@gitroom/react/translation/i18n.config';
 acceptLanguage.languages(languages);
 
+// Cookie security options based on deployment context.
+// Desktop (DESKTOP_COOKIE_MODE): WKWebView rejects Secure cookies on http://localhost.
+// Production (default): full Secure+HttpOnly+SameSite for HTTPS.
+// NOT_SECURED: legacy dev/HTTP mode — no flags, for backward compatibility.
+function middlewareCookieFlags(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: false };
+}
+
+// Includes path and domain — for cookies where those were inside the conditional block.
+function middlewareCookieWithPathDomain(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return {
+      path: '/',
+      secure: false,
+      httpOnly: true,
+      sameSite: 'lax',
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: false,
+    domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+  };
+}
+
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
@@ -49,13 +86,7 @@ export async function middleware(request: NextRequest) {
     );
     response.cookies.set('auth', '', {
       path: '/',
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: false,
-          }
-        : {}),
+      ...middlewareCookieFlags(),
       maxAge: -1,
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
@@ -89,15 +120,7 @@ export async function middleware(request: NextRequest) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
-        ...(!process.env.NOT_SECURED
-          ? {
-              path: '/',
-              secure: true,
-              httpOnly: true,
-              sameSite: false,
-              domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-            }
-          : {}),
+        ...middlewareCookieWithPathDomain(),
         expires: new Date(Date.now() + 15 * 60 * 1000),
       });
       return redirect;
@@ -119,15 +142,7 @@ export async function middleware(request: NextRequest) {
       );
       if (id) {
         redirect.cookies.set('showorg', id, {
-          ...(!process.env.NOT_SECURED
-            ? {
-                path: '/',
-                secure: true,
-                httpOnly: true,
-                sameSite: false,
-                domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-              }
-            : {}),
+          ...middlewareCookieWithPathDomain(),
           expires: new Date(Date.now() + 15 * 60 * 1000),
         });
       }
