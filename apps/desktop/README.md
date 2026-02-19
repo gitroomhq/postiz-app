@@ -98,7 +98,7 @@ NODE="src-tauri/target/release/bundle/macos/Postiz.app/Contents/MacOS/node"
 FRONTEND="${BUNDLE}/frontend/standalone/apps/frontend"
 JWT_SECRET="<value from ~/Library/Application Support/Postiz/config.toml>"
 
-DESKTOP_COOKIE_MODE=true PORT=4200 HOSTNAME=localhost \
+DESKTOP_COOKIE_MODE=true STORAGE_PROVIDER=local PORT=4200 HOSTNAME=localhost \
   JWT_SECRET="${JWT_SECRET}" \
   NEXT_PUBLIC_BACKEND_URL=http://localhost:3000 \
   BACKEND_URL=http://localhost:3000 \
