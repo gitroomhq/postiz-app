@@ -86,6 +86,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
           setCookie('impersonate', '', -10);
         }
         window.location.href = '/';
+        return true;
       }
       if (response.status === 406) {
         if (
