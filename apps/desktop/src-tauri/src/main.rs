@@ -855,6 +855,11 @@ fn main() {
                 .env("NEXT_PUBLIC_BACKEND_URL", &backend_url)
                 .env("BACKEND_URL", &backend_url)
                 .env("BACKEND_INTERNAL_URL", &backend_url)
+                // Next.js layout reads STORAGE_PROVIDER (server-side, not NEXT_PUBLIC_)
+                // to configure the Uppy upload plugin. Without this, storageProvider is
+                // undefined at runtime and getUppyUploadPlugin throws "Unsupported storage
+                // provider: undefined", crashing the media page with a blank screen.
+                .env("STORAGE_PROVIDER", "local")
                 // Same flag so the Next.js middleware reads auth from the
                 // `auth` response header (sent by backend in DESKTOP_COOKIE_MODE).
                 .env("DESKTOP_COOKIE_MODE", "true");
