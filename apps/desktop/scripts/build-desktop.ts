@@ -76,6 +76,7 @@ const DESKTOP_DIR = path.resolve(__dirname, '..');
 const BINARIES_DIR = path.join(DESKTOP_DIR, 'src-tauri', 'binaries');
 const RESOURCES_DIR = path.join(DESKTOP_DIR, 'src-tauri', 'resources');
 const CACHE_DIR = path.join(ROOT_DIR, '.cache');
+const SHARED_NODE_MODULES_DIR = path.join(RESOURCES_DIR, 'node_modules');
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -198,7 +199,7 @@ interface ValidationResult {
  */
 function cleanAllResources(): void {
   console.log('\n🧹 Cleaning previous resources...');
-  const dirs = ['backend', 'orchestrator', 'frontend'];
+  const dirs = ['backend', 'orchestrator', 'frontend', 'node_modules'];
   let cleaned = false;
   for (const dir of dirs) {
     const fullPath = path.join(RESOURCES_DIR, dir);
@@ -263,10 +264,9 @@ function verifyBuildArtifacts(): ValidationResult {
 
   const requiredArtifacts = [
     { path: 'backend/dist/apps/backend/src/main.js', minSize: 500, desc: 'Backend entry' },
-    { path: 'backend/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Backend Prisma client' },
     { path: 'backend/prisma/schema.sql', minSize: 500, desc: 'PGlite schema SQL (for desktop init)' },
     { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 500, desc: 'Orchestrator entry' },
-    { path: 'orchestrator/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Orchestrator Prisma client' },
+    { path: 'node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Shared Prisma client' },
     { path: 'frontend/standalone/apps/frontend/server.js', minSize: 500, desc: 'Frontend entry' },
     { path: 'frontend/standalone/apps/frontend/.next/static', isDir: true, desc: 'Frontend static assets' },
   ];
@@ -326,6 +326,7 @@ function writeBuildManifest(): void {
       backend: getDirSize(path.join(RESOURCES_DIR, 'backend')),
       orchestrator: getDirSize(path.join(RESOURCES_DIR, 'orchestrator')),
       frontend: getDirSize(path.join(RESOURCES_DIR, 'frontend')),
+      sharedNodeModules: getDirSize(SHARED_NODE_MODULES_DIR),
     },
   };
 
@@ -676,6 +677,75 @@ async function prepareOrchestratorResourcesManual(orchestratorDir: string): Prom
   console.log('✓ Orchestrator resources ready (manual copy)');
 }
 
+/**
+ * Consolidate backend and orchestrator node_modules into a single shared directory.
+ *
+ * Both services deploy from the same pnpm lockfile, so shared packages have
+ * identical resolved versions — merging is safe.
+ *
+ * Node.js module resolution walks up directories, so placing node_modules at
+ * resources/node_modules/ is automatically found by both:
+ *   resources/backend/dist/.../main.js  → walks up to resources/
+ *   resources/orchestrator/dist/.../main.js → walks up to resources/
+ */
+function consolidateNodeModules(): void {
+  console.log('\n🔗 Consolidating node_modules...');
+
+  const backendNm = path.join(RESOURCES_DIR, 'backend', 'node_modules');
+  const orchestratorNm = path.join(RESOURCES_DIR, 'orchestrator', 'node_modules');
+
+  if (!fs.existsSync(backendNm) && !fs.existsSync(orchestratorNm)) {
+    console.log('  (no per-service node_modules to consolidate)');
+    return;
+  }
+
+  ensureDir(SHARED_NODE_MODULES_DIR);
+
+  // Base pass: copy backend's node_modules into shared
+  if (fs.existsSync(backendNm)) {
+    console.log('  Copying backend node_modules to shared...');
+    copyDirSync(backendNm, SHARED_NODE_MODULES_DIR);
+  }
+
+  // Merge pass: add orchestrator-only packages to shared (skip existing)
+  if (fs.existsSync(orchestratorNm)) {
+    console.log('  Merging orchestrator node_modules into shared...');
+    const entries = fs.readdirSync(orchestratorNm, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(orchestratorNm, entry.name);
+      const destPath = path.join(SHARED_NODE_MODULES_DIR, entry.name);
+      if (!fs.existsSync(destPath)) {
+        // Entire entry not in shared — copy it (package or scoped namespace dir)
+        copyDirSync(srcPath, destPath);
+      } else if (entry.isDirectory() && entry.name.startsWith('@')) {
+        // Scoped namespace dir (@temporalio, @nestjs, etc.) exists in both —
+        // recurse one level to add any orchestrator-only packages within it.
+        // Without this, a top-level skip would silently drop orchestrator packages
+        // (e.g. @temporalio/activity) that are absent from the backend.
+        const scopedEntries = fs.readdirSync(srcPath, { withFileTypes: true });
+        for (const scopedEntry of scopedEntries) {
+          const scopedDest = path.join(destPath, scopedEntry.name);
+          if (!fs.existsSync(scopedDest)) {
+            copyDirSync(path.join(srcPath, scopedEntry.name), scopedDest);
+          }
+        }
+      }
+      // else: non-scoped package already in shared → same version (shared lockfile), skip
+    }
+  }
+
+  console.log(`  Shared node_modules: ${getDirSize(SHARED_NODE_MODULES_DIR)}`);
+
+  // Remove per-service node_modules — use shell rm -rf to avoid ENOTEMPTY on macOS
+  for (const nm of [backendNm, orchestratorNm]) {
+    if (fs.existsSync(nm)) {
+      spawnSync('rm', ['-rf', nm], { stdio: 'inherit' });
+    }
+  }
+
+  console.log('✓ node_modules consolidated');
+}
+
 async function prepareFrontendResources(): Promise<void> {
   console.log('\n📦 Preparing frontend resources...');
 
@@ -879,6 +949,7 @@ async function main(): Promise<void> {
   await prepareBackendResources();
   await prepareOrchestratorResources();
   await prepareFrontendResources();
+  consolidateNodeModules();
 
   // Step: Generate PGlite schema SQL for desktop initialization
   // prisma db push cannot connect to embedded PGlite (no TCP server), so we
@@ -944,6 +1015,7 @@ async function main(): Promise<void> {
   console.log(`  - backend: ${getDirSize(path.join(RESOURCES_DIR, 'backend'))}`);
   console.log(`  - orchestrator: ${getDirSize(path.join(RESOURCES_DIR, 'orchestrator'))}`);
   console.log(`  - frontend: ${getDirSize(path.join(RESOURCES_DIR, 'frontend'))}`);
+  console.log(`  - shared node_modules: ${getDirSize(SHARED_NODE_MODULES_DIR)}`);
 
   // Full build: Step 5 - Build Tauri
   if (isFullBuild) {
