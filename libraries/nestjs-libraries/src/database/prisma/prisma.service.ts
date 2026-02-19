@@ -39,7 +39,35 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         // @ts-ignore - Optional dependency, only installed for desktop builds
         const { PrismaPGlite } = await import('pglite-prisma-adapter');
 
-        this.pgliteInstance = new PGlite(pglitePath);
+        // Attempt to open the database. If a previous run was killed with SIGKILL
+        // (e.g. force-quit or crash) PGlite WASM throws RuntimeError: Aborted()
+        // because it cannot perform WAL crash recovery. Recovery: wipe the data
+        // directory and start fresh with a clean database.
+        let pgliteInstance: any;
+        try {
+          pgliteInstance = new PGlite(pglitePath);
+          // Probe with a simple query to confirm the database is actually usable.
+          // PGlite may not throw immediately on open but only on first query.
+          await pgliteInstance.query('SELECT 1');
+        } catch (openErr: any) {
+          const isWasmAbort = String(openErr).includes('Aborted') || String(openErr).includes('RuntimeError');
+          if (isWasmAbort) {
+            console.warn(`[Prisma] PGlite database at ${pglitePath} is corrupt (${openErr}). Wiping and recreating.`);
+            const { rmSync, mkdirSync } = await import('fs');
+            try {
+              rmSync(pglitePath, { recursive: true, force: true });
+              mkdirSync(pglitePath, { recursive: true });
+              console.log(`[Prisma] PGlite data directory wiped. Fresh database will be initialized.`);
+            } catch (wipeErr) {
+              throw new Error(`PGlite database is corrupt and could not be wiped: ${wipeErr}`);
+            }
+            pgliteInstance = new PGlite(pglitePath);
+          } else {
+            throw openErr;
+          }
+        }
+
+        this.pgliteInstance = pgliteInstance;
         const adapter = new PrismaPGlite(this.pgliteInstance);
 
         // Create new client with PGlite adapter and copy methods to this instance

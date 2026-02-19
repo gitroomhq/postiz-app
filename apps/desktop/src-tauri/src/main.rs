@@ -661,6 +661,30 @@ fn main() {
             let uploads_dir = data_dir.join("uploads");
             fs::create_dir_all(&uploads_dir).ok();
 
+            // Detect unclean PGlite shutdown (force-kill / SIGKILL).
+            // PGlite is a WASM PostgreSQL that cannot do WAL crash recovery.
+            // When killed mid-operation the WAL is incomplete; on next startup the
+            // WASM binary calls abort() → RuntimeError: Aborted() → backend never starts.
+            //
+            // Detection: postmaster.pid OR .s.PGSQL.5432.lock.out present means
+            // PostgreSQL did not shut down cleanly (both are removed on clean shutdown).
+            //
+            // Recovery: wipe the entire pglite-data directory so PGlite starts fresh.
+            // Safe here because we verified no other Postiz instance is running above
+            // (port-allocation check). Users lose unsaved state but the app starts.
+            let postmaster_pid = pglite_dir.join("postmaster.pid");
+            let pglite_socket_lock = pglite_dir.join(".s.PGSQL.5432.lock.out");
+            if postmaster_pid.exists() || pglite_socket_lock.exists() {
+                println!("[postiz] Detected unclean PGlite shutdown — wiping corrupted database for fresh start");
+                match fs::remove_dir_all(&pglite_dir) {
+                    Ok(_) => {
+                        fs::create_dir_all(&pglite_dir).ok();
+                        println!("[postiz] PGlite data directory reset successfully");
+                    }
+                    Err(e) => eprintln!("[postiz] Warning: Failed to wipe PGlite data: {}", e),
+                }
+            }
+
             // Build environment variables with dynamic ports
             let pglite_path = pglite_dir.to_string_lossy().to_string();
             let uploads_path = uploads_dir.to_string_lossy().to_string();
