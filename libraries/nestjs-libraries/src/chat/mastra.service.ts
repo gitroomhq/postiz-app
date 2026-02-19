@@ -12,7 +12,7 @@ export class MastraService {
     MastraService.mastra =
       MastraService.mastra ||
       new Mastra({
-        storage: pStore,
+        ...(pStore ? { storage: pStore } : {}),
         agents: {
           postiz: await this._loadToolsService.agent(),
         },
