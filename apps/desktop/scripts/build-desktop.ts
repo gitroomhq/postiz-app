@@ -819,8 +819,13 @@ async function main(): Promise<void> {
   // Full build: Step 2 - Build apps
   if (isFullBuild && !process.env.POSTIZ_SKIP_BUILD) {
     console.log('\n🔨 [2/5] Building backend, frontend, and orchestrator...');
-    // DESKTOP_BUILD=1 enables Next.js standalone output for bundling
-    if (!runCommand('pnpm', ['run', 'build'], { env: { DESKTOP_BUILD: '1' } })) {
+    // DESKTOP_BUILD=1 enables Next.js standalone output for bundling.
+    // STORAGE_PROVIDER=local is required at build time: next.config.js evaluates
+    // process.env.STORAGE_PROVIDER in rewrites() to route /uploads/:path* →
+    // /api/uploads/:path*. Without it the rewrite goes to /404 and file serving breaks.
+    // NEXT_PUBLIC_BACKEND_URL bakes the default backend URL into any client bundles
+    // that reference it directly.
+    if (!runCommand('pnpm', ['run', 'build'], { env: { DESKTOP_BUILD: '1', STORAGE_PROVIDER: 'local', NEXT_PUBLIC_BACKEND_URL: 'http://localhost:3000' } })) {
       console.log('✗ Failed to build apps');
       process.exit(1);
     }
