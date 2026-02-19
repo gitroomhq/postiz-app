@@ -62,6 +62,53 @@ pnpm build:orchestrator
 POSTIZ_SKIP_BUILD=1 pnpm desktop:build
 ```
 
+### Hot-deploy frontend without full Tauri rebuild
+
+When iterating on frontend-only changes (Next.js / React), you can deploy without rebuilding Rust:
+
+**Step 1 — Build the Next.js standalone bundle:**
+
+```bash
+cd apps/frontend
+DESKTOP_BUILD=1 STORAGE_PROVIDER=local NEXT_PUBLIC_BACKEND_URL=http://localhost:3000 pnpm run build
+```
+
+**Step 2 — rsync it into the running .app bundle:**
+
+```bash
+BUNDLE="src-tauri/target/release/bundle/macos/Postiz.app/Contents/Resources/resources/frontend"
+SRC="apps/frontend"
+
+rsync -a --delete "${SRC}/.next/standalone/" "${BUNDLE}/standalone/"
+rsync -a --delete "${SRC}/.next/static/" "${BUNDLE}/standalone/apps/frontend/.next/static/"
+rsync -a --delete "${SRC}/public/" "${BUNDLE}/standalone/apps/frontend/public/"
+```
+
+**Step 3 — Restart the Next.js server:**
+
+Kill the running next-server process and restart it with the env vars Tauri injects. Read `JWT_SECRET` from `~/Library/Application Support/Postiz/config.toml`:
+
+```bash
+# Kill old server
+kill $(lsof -ti:4200) 2>/dev/null || true
+
+# Restart (substitute your actual JWT_SECRET from config.toml)
+BUNDLE="src-tauri/target/release/bundle/macos/Postiz.app/Contents/Resources/resources"
+NODE="src-tauri/target/release/bundle/macos/Postiz.app/Contents/MacOS/node"
+FRONTEND="${BUNDLE}/frontend/standalone/apps/frontend"
+JWT_SECRET="<value from ~/Library/Application Support/Postiz/config.toml>"
+
+DESKTOP_COOKIE_MODE=true PORT=4200 HOSTNAME=localhost \
+  JWT_SECRET="${JWT_SECRET}" \
+  NEXT_PUBLIC_BACKEND_URL=http://localhost:3000 \
+  BACKEND_URL=http://localhost:3000 \
+  BACKEND_INTERNAL_URL=http://localhost:3000 \
+  FRONTEND_URL=http://localhost:4200 \
+  "${NODE}" "${FRONTEND}/server.js" &
+```
+
+Wait ~5 seconds for the server to start, then reload the Postiz window.
+
 ### Development mode
 
 ```bash
