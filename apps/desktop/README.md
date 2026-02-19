@@ -1,233 +1,189 @@
 # Postiz Desktop App
 
-Native macOS desktop app for [Postiz](https://postiz.com) - run Postiz without Docker.
+Native macOS (and Linux) desktop app for [Postiz](https://postiz.com). Runs the full Postiz stack — backend, frontend, workflow engine, and embedded database — as a single self-contained application. No Docker, PostgreSQL, Redis, or external services required.
 
-The desktop app uses [Tauri](https://tauri.app) to wrap the Postiz web frontend in a native macOS window, with embedded services running locally.
+## End Users: Download and Install
 
-## Prerequisites
+Download the latest `Postiz_<version>_aarch64.dmg` (Apple Silicon) or `Postiz_<version>_x86_64.dmg` (Intel) from the releases page.
 
-### 1. Rust (required for Tauri)
+On first launch macOS Gatekeeper may warn "unverified developer." Right-click the app → **Open** to proceed. The app auto-configures itself:
 
-```bash
-curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
-```
+- Generates a random `JWT_SECRET` on first run (saved to `~/Library/Application Support/Postiz/config.toml`)
+- Creates an embedded PostgreSQL database via PGlite
+- Initializes the full database schema automatically
+- Selects available ports (defaults: backend 3000, frontend 4200, Temporal 7233)
 
-Restart your terminal after installation.
+Create an account at the registration screen — no email verification needed in desktop mode.
 
-### 2. Xcode Command Line Tools (macOS only)
+---
 
-```bash
-xcode-select --install
-```
+## Developers: Build from Source
 
-### 3. Tauri CLI
+### Prerequisites
 
-```bash
-cargo install tauri-cli
-```
+| Tool | Version | Install |
+|------|---------|---------|
+| Rust | stable | `curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf \| sh` |
+| Node.js | 22.x | [nodejs.org](https://nodejs.org) or `volta install node@22` |
+| pnpm | 10.x | `npm install -g pnpm@10` |
+| Xcode Command Line Tools | (macOS only) | `xcode-select --install` |
 
-### 4. Temporal CLI
+### Build (one command)
 
-```bash
-brew install temporal
-```
-
-### 5. Node.js and pnpm
-
-The project uses Volta for Node.js version management (Node 22.12.0+, pnpm 10.6.1).
-
-## Quick Start (Development)
-
-### 1. Clone and install dependencies
+From the repository root:
 
 ```bash
-git clone https://github.com/gitroomhq/postiz-app.git
-cd postiz-app
-pnpm install
+pnpm desktop:build
 ```
 
-### 2. Configure environment
+This single command does everything:
+
+1. Installs dependencies
+2. Compiles backend, frontend, and orchestrator TypeScript
+3. Downloads Node.js and Temporal sidecar binaries for the host platform
+4. Deploys production node_modules (pruned, no dev deps)
+5. Generates `schema.sql` from the Prisma schema for database initialization
+6. Validates all build artifacts
+7. Compiles the Rust binary and bundles the `.app` and `.dmg`
+
+First build: 20-40 minutes (Rust compilation, Next.js build, pnpm deploy).
+Subsequent builds: faster due to incremental Rust compilation.
+
+### Rebuild after code changes
+
+When only the TypeScript source changed (not Rust):
 
 ```bash
-cp .env.desktop.example .env
+# Recompile just backend + orchestrator (fast, ~2 min)
+pnpm build:backend
+pnpm build:orchestrator
+
+# Re-prepare resources + schema.sql + rebuild .app (skips TS recompile)
+POSTIZ_SKIP_BUILD=1 pnpm desktop:build
 ```
 
-Edit `.env` and set a secure `JWT_SECRET`:
+### Development mode
 
 ```bash
-# Generate a random secret
-openssl rand -hex 32
+pnpm desktop:dev
 ```
 
-### 3. Generate Prisma client
+Runs `tauri dev` — Rust compiles and the app opens. Services are spawned by the Rust binary using development resource paths (`target/debug/resources/`). Requires the JS apps to have been built at least once.
+
+### Launch the built app
 
 ```bash
-pnpm run prisma-generate
+pnpm desktop:start
 ```
 
-### 4. Start backend services
+Opens `src-tauri/target/release/bundle/macos/Postiz.app` directly.
 
-In one terminal:
-
-```bash
-pnpm run desktop:start
-```
-
-Wait for "All services started successfully!" before proceeding.
-
-### 5. Launch Tauri dev mode
-
-In another terminal:
-
-```bash
-cd apps/desktop
-pnpm run dev
-```
-
-The first build takes several minutes to compile Rust code. Subsequent builds are faster.
-
-A native macOS window will open with the Postiz UI.
-
-## Building for Production
-
-Build a distributable macOS app bundle:
-
-```bash
-cd apps/desktop
-pnpm run build
-```
-
-Output files:
-
-- `target/release/bundle/macos/Postiz.app` - Native macOS app bundle
-- `target/release/bundle/dmg/Postiz_0.1.0_aarch64.dmg` - DMG installer
-
-## Building a Self-Contained DMG
-
-To create a fully self-contained DMG (~950MB) that bundles all services and requires no external dependencies:
-
-### 1. Build all services
-
-```bash
-# From the repository root
-pnpm run build:backend
-pnpm run build:frontend
-cd apps/orchestrator && pnpm run build && cd ../..
-```
-
-### 2. Prepare sidecars and resources
-
-This downloads Node.js, deploys production dependencies, and prunes unnecessary packages:
-
-```bash
-cd apps/desktop
-npx ts-node scripts/prepare-sidecars.ts
-```
-
-The script:
-- Downloads Node.js binary for the target platform (~116MB)
-- Uses `pnpm deploy` to create minimal production deployments
-- Copies compiled dist folders from NestJS builds
-- Prunes ~975MB of dev-only packages per service
-- Removes symlinks that break Tauri bundling
-
-### 3. Build the Tauri app
-
-```bash
-pnpm run build
-```
-
-Build time is ~8 minutes (mostly due to resource enumeration).
-
-### Output
-
-| Artifact | Size |
-|----------|------|
-| `Postiz.app` (uncompressed) | ~5GB |
-| `Postiz_0.1.0_aarch64.dmg` (compressed) | ~950MB |
-
-### Bundle Contents
-
-```
-Postiz.app/Contents/
-├── MacOS/
-│   ├── postiz-desktop    # Tauri binary (Rust)
-│   ├── node              # Node.js runtime (sidecar)
-│   └── temporal          # Temporal CLI (sidecar)
-└── Resources/
-    └── resources/
-        ├── backend/      # NestJS backend + dependencies
-        ├── orchestrator/ # Temporal worker + dependencies
-        └── frontend/     # Next.js standalone
-```
-
-### Cross-Platform Builds
-
-The `prepare-sidecars.ts` script auto-detects the target platform. Supported targets:
-
-- `aarch64-apple-darwin` (macOS Apple Silicon)
-- `x86_64-apple-darwin` (macOS Intel)
-- `x86_64-unknown-linux-gnu` (Linux x64)
-- `aarch64-unknown-linux-gnu` (Linux ARM64)
-- `x86_64-pc-windows-msvc` (Windows x64)
-
-## Configuration
-
-See `.env.desktop.example` for all configuration options.
-
-Key differences from Docker deployment:
-
-| Feature | Docker | Desktop |
-|---------|--------|---------|
-| Database | External PostgreSQL | PGlite (embedded PostgreSQL) |
-| Redis | External Redis | MockRedis (in-memory) |
-| Temporal | Docker container | `temporal server start-dev` |
-
-### Data Location
-
-Desktop mode stores data in platform-specific directories:
-
-- **macOS**: `~/Library/Application Support/Postiz/`
-- **Linux**: `~/.local/share/postiz/`
-- **Windows**: `%APPDATA%/Postiz/`
-
-### Using External PostgreSQL
-
-To use an external PostgreSQL database instead of PGlite:
-
-```bash
-DATABASE_URL="postgresql://user:pass@localhost:5432/postiz"
-```
+---
 
 ## Architecture
 
 ```
-apps/desktop/
-├── src-tauri/           # Tauri/Rust native app
-│   ├── tauri.conf.json  # Window config, CSP, bundling
-│   ├── icons/           # macOS app icons (.icns, iconset)
-│   └── src/main.rs      # Service orchestration & process lifecycle
-├── scripts/
-│   ├── build-desktop.ts # Build script for bundling sidecars
-│   └── download-temporal.sh
-└── package.json
+Postiz.app
+├── MacOS/
+│   ├── postiz-desktop      # Tauri/Rust launcher (orchestrates all services)
+│   ├── node-<triple>       # Node.js 22 sidecar (runs backend, frontend, orchestrator)
+│   └── temporal-<triple>   # Temporal dev server sidecar
+└── Resources/resources/
+    ├── backend/            # NestJS API + PGlite + production node_modules
+    │   └── prisma/
+    │       └── schema.sql  # Pre-generated DDL (applied on first launch)
+    ├── orchestrator/       # Temporal worker + production node_modules
+    └── frontend/           # Next.js standalone server
 ```
 
-Services started by desktop mode:
+**Service startup order** (managed by `main.rs`):
 
-1. **Temporal** (port 7233) - Workflow orchestration
-2. **Backend** (port 3000) - NestJS API
-3. **Frontend** (port 4200) - Next.js UI
-4. **Orchestrator** - Temporal worker
+1. **Temporal** (port 7233 gRPC, 8233 UI) — workflow engine, SQLite-backed
+2. **Backend** (port 3000) — NestJS API; initializes PGlite schema on first run
+3. **Frontend** (port 4200) — Next.js SSR; served directly in the Tauri webview
+4. **Orchestrator** — Temporal worker; connects to Temporal and backend
+
+Health checks poll each service with exponential backoff (up to ~3 minutes total). The loading screen shows until all services are ready.
+
+### Database initialization
+
+PGlite is an embedded PostgreSQL compiled to WASM — it has no TCP server, so `prisma db push` cannot reach it. Instead:
+
+- At build time: `prisma migrate diff --from-empty` generates `schema.sql`
+- At runtime: `prisma.service.ts` checks for the `Organization` table; if missing, executes `schema.sql` via `db.exec()` before accepting connections
+- On subsequent runs: the table probe succeeds and initialization is skipped
+
+### Data location (macOS)
+
+| Data | Path |
+|------|------|
+| Config (JWT secret, ports) | `~/Library/Application Support/Postiz/config.toml` |
+| Database | `~/Library/Application Support/Postiz/pglite-data/` |
+| File uploads | `~/Library/Application Support/Postiz/uploads/` |
+| Temporal workflows | `~/Library/Application Support/Postiz/temporal.db` |
+
+---
+
+## Version Management
+
+The app version must be kept in sync across three files. When bumping versions, update all three:
+
+| File | Field |
+|------|-------|
+| `apps/desktop/src-tauri/tauri.conf.json` | `"version"` |
+| `apps/desktop/src-tauri/Cargo.toml` | `version` in `[package]` |
+| `apps/desktop/package.json` | `"version"` |
+
+The version should match the latest git tag (e.g., `v2.12.1` → `2.12.1` without the `v` prefix).
+
+```bash
+# Check current version
+git describe --tags --abbrev=0
+```
+
+---
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| `cargo: command not found` | Install Rust (see Prerequisites) |
-| `tauri: command not found` | Run `cargo install tauri-cli` |
-| Window is blank | Ensure services are running (`pnpm run desktop:start`) |
-| Port already in use | Kill existing processes: `lsof -ti:3000,4200,7233 \| xargs kill` |
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| App won't open ("unverified developer") | No code signing | Right-click → Open |
+| Blank white window | CSP or service startup failure | Check Console.app for `[postiz]` log lines |
+| Login page won't load | Frontend not yet ready | Wait 30–60 seconds for health checks to pass |
+| "Schema SQL not found" in logs | Build artifact missing | Run `pnpm desktop:build` to regenerate |
+| Port already in use | Previous instance still running | `lsof -ti:3000,4200,7233 \| xargs kill -9` |
+| PGlite data corrupted | Unclean shutdown | Move `~/Library/Application Support/Postiz/pglite-data/` to back it up, restart app |
+
+### Reading logs
+
+The Rust launcher writes to stdout/stderr tagged by service:
+
+```
+[postiz] ...   # Tauri launcher events
+[backend] ...  # NestJS backend output
+[frontend] ... # Next.js output
+[orchestrator] ... # Temporal worker output
+[temporal] ... # Temporal server output
+```
+
+On macOS, view with: `open /Applications/Postiz.app` then check **Console.app** → search for "Postiz".
+
+---
+
+## Configuration
+
+The app auto-configures itself on first run. Manual overrides can be placed in `~/Library/Application Support/Postiz/config.toml`:
+
+```toml
+jwt_secret = "your-secret-here"
+backend_port = 3000
+frontend_port = 4200
+temporal_port = 7233
+temporal_ui_port = 8233
+auto_find_ports = true
+```
+
+---
 
 ## License
 
