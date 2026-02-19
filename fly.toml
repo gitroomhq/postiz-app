@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for postiz-app-sv8g-g on 2026-02-19T16:15:56Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'postiz-app-sv8g-g'
+primary_region = 'ams'
+
+[build]
+  [build.args]
+    NEXT_PUBLIC_EXAMPLE = 'Value goes here'
+
+[env]
+  PORT = '8080'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
