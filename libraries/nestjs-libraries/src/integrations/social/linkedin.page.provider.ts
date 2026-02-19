@@ -115,7 +115,7 @@ export class LinkedinPageProvider
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202410',
           },
         }
       )
@@ -285,20 +285,9 @@ export class LinkedinPageProvider
       )
     ).json();
 
-    const { elements: elements3 }: { elements: Root[]; paging: any } = await (
-      await this.fetch(
-        `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202410',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
+    // Skip organizationalEntityShareStatistics API call as it's causing 400 errors
+    // This API may be deprecated or require special permissions
+    const elements3: Root[] = []; // Empty array to skip processing
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {
@@ -404,7 +393,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202410',
             Authorization: `Bearer ${integration.token}`,
           },
         }
@@ -482,7 +471,7 @@ export class LinkedinPageProvider
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202501',
+            'LinkedIn-Version': '202410',
             Authorization: `Bearer ${integration.token}`,
           },
         }

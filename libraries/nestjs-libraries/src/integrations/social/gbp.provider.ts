@@ -103,11 +103,9 @@ export class GbpProvider implements SocialProvider {
 
     console.log('🔍 GBP Authenticate - Received customerId:', params.customerId);
 
-    // If customerId is provided in params, update the class property
     if (params.customerId) {
       this.currentCustomerId = params.customerId;
 
-      // Fetch customer details to get the name for location matching
       try {
         const customer = await this._customersRepository.getCustomerByPKId(params.customerId);
         this.currentOrgId = customer?.orgId || '';
@@ -122,20 +120,8 @@ export class GbpProvider implements SocialProvider {
       console.warn('⚠️ No customerId provided in authenticate params');
     }
 
-    // Add delay to avoid rate limiting (10 seconds)
     console.log('⏳ Waiting 10 seconds to avoid rate limiting...');
     await new Promise(resolve => setTimeout(resolve, 10000));
-
-    // Verify state (minimal verification)
-    // try {
-    //   const state = JSON.parse(decodeURIComponent(params.state));
-    //   if (!state.uniqueState || !state.timestamp) {
-    //     return 'Invalid state format';
-    //   }
-    //   // Optional: Add timestamp validation (e.g., not older than 10 minutes)
-    // } catch (e) {
-    //   return 'Invalid state parameter';
-    // }
 
     const oauth2Client = new google.auth.OAuth2(
       this.config.GOOGLE_CLIENT_ID,
@@ -144,27 +130,28 @@ export class GbpProvider implements SocialProvider {
     );
 
     try {
-      // Exchange code for tokens
       const tokenResponse = await oauth2Client.getToken(params.code);
+      
+      if (!tokenResponse.tokens.access_token) {
+        return 'Failed to obtain access token';
+      }
+      
+      if (!tokenResponse.tokens.refresh_token) {
+        return 'Failed to obtain refresh token. Please ensure you grant offline access.';
+      }
+      
       const tokens = {
-        access_token: tokenResponse.tokens.access_token!,
-        refresh_token: tokenResponse.tokens.refresh_token || '',
+        access_token: tokenResponse.tokens.access_token,
+        refresh_token: tokenResponse.tokens.refresh_token,
         expiry_date: tokenResponse.tokens.expiry_date || Date.now() + 3600 * 1000
       };
 
       oauth2Client.setCredentials({ access_token: tokens.access_token });
 
-      // Get account info
       const accountManagement = google.mybusinessaccountmanagement({
         version: 'v1',
         auth: oauth2Client,
       });
-
-      // Add retry options to prevent rate limiting
-      const listOptions = {
-        retry: false,
-        maxRetries: 0
-      };
 
       const { data: accountsData } = await accountManagement.accounts.list();
       const account = accountsData.accounts?.[0];
@@ -173,14 +160,12 @@ export class GbpProvider implements SocialProvider {
         return 'No Google Business Profile account found';
       }
 
-      // Get locations using class property
       const locations = await this._getAllLocations(oauth2Client, account.name);
 
       if (locations.length === 0) {
         return 'No business locations found for this account';
       }
 
-      // Use class property for matching
       const location = this._findMatchingLocation(locations, this.currentCustomerName);
 
       if (!location) {
@@ -222,35 +207,69 @@ export class GbpProvider implements SocialProvider {
           }
         ]
       };
-    } catch (err) {
+    } catch (err: any) {
       console.error('GBP Authentication Error:', err);
-      return err instanceof Error && err.message.includes('invalid_grant')
-        ? 'Invalid authorization code. Please try again.'
-        : 'An unexpected error occurred during authentication';
+      
+      if (err.message?.includes('invalid_grant')) {
+        return 'Invalid authorization code. Please try again.';
+      }
+      
+      if (err.response?.status === 401) {
+        return 'Authentication failed. Please check your Google account permissions.';
+      }
+      
+      return `Authentication error: ${err.message || 'Unknown error'}`;
     }
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const oauth2Client = new google.auth.OAuth2(
-      this.config.GOOGLE_CLIENT_ID,
-      this.config.GOOGLE_CLIENT_SECRET
-    );
+    if (!refreshToken) {
+      throw new Error('Refresh token is required');
+    }
 
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    try {
+      const oauth2Client = new google.auth.OAuth2(
+        this.config.GOOGLE_CLIENT_ID,
+        this.config.GOOGLE_CLIENT_SECRET
+      );
 
-    return {
-      accessToken: credentials.access_token!,
-      refreshToken: credentials.refresh_token || refreshToken,
-      expiresIn: credentials.expiry_date
-        ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
-        : 3600, // 1 hour in seconds
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
-      additionalSettings: [],
-    };
+      oauth2Client.setCredentials({ refresh_token: refreshToken });
+      const { credentials } = await oauth2Client.refreshAccessToken();
+
+      if (!credentials.access_token) {
+        throw new Error('Failed to obtain new access token');
+      }
+
+      console.log('✅ GBP token refreshed successfully');
+
+      return {
+        accessToken: credentials.access_token,
+        refreshToken: credentials.refresh_token || refreshToken,
+        expiresIn: credentials.expiry_date
+          ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
+          : 3600,
+        id: '',
+        name: '',
+        picture: '',
+        username: '',
+        additionalSettings: [],
+      };
+    } catch (error: any) {
+      console.error('❌ GBP refreshToken failed:', error);
+      
+      // Don't throw error - return empty tokens to trigger auto-reconnect flow
+      // The system will mark as refreshNeeded and user can reconnect
+      return {
+        accessToken: '',
+        refreshToken: refreshToken,
+        expiresIn: 0,
+        id: '',
+        name: '',
+        picture: '',
+        username: '',
+        additionalSettings: [],
+      };
+    }
   }
 
   async reConnect(
@@ -407,15 +426,13 @@ export class GbpProvider implements SocialProvider {
         for (const mediaItem of media) {
           const mediaUrl = mediaItem.url || mediaItem.path;
           
-          // Detect actual media type from URL/extension
+          // Detect media type from URL/extension
           const isVideo = /\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/i.test(mediaUrl);
           const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|tiff)$/i.test(mediaUrl);
           
           if (isVideo || mediaItem.type === 'video') {
-            console.log(`⚠️  Video detected but GBP doesn't support video uploads: ${mediaUrl}`);
-            console.log(`ℹ️  Skipping video - only text post will be created`);
-            // Skip videos as GBP API doesn't support them
-            continue;
+            console.log(`⚠️  Video not supported by GBP API: ${mediaUrl}`);
+            throw new Error('Google Business Profile does not support video uploads via API. Please use images only.');
           } else if (isImage || mediaItem.type === 'image') {
             console.log(`📸 Adding image: ${mediaUrl}`);
             mediaContent.push({

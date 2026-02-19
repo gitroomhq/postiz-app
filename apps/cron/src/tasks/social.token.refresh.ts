@@ -17,8 +17,63 @@ export class SocialTokenRefreshTask {
   @Cron('30 6 * * *') // Runs at 6:30 AM IST daily
   async handleGbpTokenRefresh() {
 
-    console.log('⏰ GBP Token Refresh - TEST RUN');
+    console.log('⏰ GBP Token Refresh - Auto Reconnect');
 
+    // Refresh GBP integrations from Integration table
+    const thresholdDays = 5;
+    const integrations = await this._integrationRepo.model.integration.findMany({
+      where: {
+        providerIdentifier: 'gbp',
+        refreshToken: { not: null },
+        tokenExpiration: {
+          lte: dayjs().add(thresholdDays, 'days').toDate(),
+        },
+        deletedAt: null,
+      },
+    });
+
+    console.log(`📊 Found ${integrations.length} GBP integrations to refresh`);
+
+    for (const integration of integrations) {
+      if (integration.tokenExpiration) {
+        const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+        console.log(`🕐 Token for ${integration.name} expires in ${daysUntilExpiry} days`);
+      }
+
+      console.log(`♻️ Auto-refreshing GBP token for ${integration.name}...`);
+
+      try {
+        const response = await axios.post(
+          `${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`,
+          { refreshToken: integration.refreshToken },
+          {
+            headers: {
+              'cookie': process.env.INTERNEL_TOKEN,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+        const newExpiryDate = dayjs().add(expiresIn, 'seconds').toDate();
+
+        await this._integrationRepo.model.integration.update({
+          where: { id: integration.id },
+          data: {
+            token: accessToken,
+            refreshToken: newRefreshToken || integration.refreshToken,
+            tokenExpiration: newExpiryDate,
+            refreshNeeded: false,
+          },
+        });
+
+        console.log(`✅ Successfully auto-refreshed GBP token for ${integration.name}\n`);
+      } catch (err) {
+        console.error(`❌ Failed to auto-refresh GBP token ${integration.name}: ${err.message}`);
+      }
+    }
+
+    // Also refresh socialToken table entries
     const tokens = await this._socialTokenRepo.model.socialToken.findMany({
       where: {
         refreshToken : { not : null },
@@ -26,11 +81,10 @@ export class SocialTokenRefreshTask {
       },
     });
 
-    console.log(`📊 Found ${tokens.length} GBP tokens to refresh`);
+    console.log(`📊 Found ${tokens.length} GBP social tokens to refresh`);
 
     for (const token of tokens) {
 
-      // Log current token status before refresh
       if (token.tokenExpiry) {
         const timeUntilExpiry = (token.tokenExpiry.getTime() - Date.now()) / 1000 / 60;
         if (timeUntilExpiry > 0) {
@@ -40,10 +94,9 @@ export class SocialTokenRefreshTask {
         }
       }
 
-      console.log(`♻️ Refreshing token for ${token.identifier} ${token.businessId}...`);
+      console.log(`♻️ Refreshing social token for ${token.identifier} ${token.businessId}...`);
 
       try {
-        // Use backend API for token refresh (same method as GBP Insights)
         const response = await axios.post(
           `${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`,
           { refreshToken: token.refreshToken },
@@ -57,7 +110,6 @@ export class SocialTokenRefreshTask {
 
         const { accessToken: access_token, expiresIn: expires_in, refreshToken: newRefreshToken } = response.data;
 
-        // Calculate new expiry time
         const newExpiryDate = dayjs().add(expires_in, 'seconds').toDate();
         const expiryMinutes = expires_in / 60;
 
@@ -69,7 +121,6 @@ export class SocialTokenRefreshTask {
           console.log(`✅ Using existing refresh token`);
         }
 
-        // ✅ Always upsert with same fields
         await this._socialTokenRepo.model.socialToken.upsert({
           where: { id: token.id },
           update: {
@@ -78,6 +129,25 @@ export class SocialTokenRefreshTask {
             tokenExpiry: newExpiryDate,
           },
           create: {
+            identifier: 'gbp',
+            businessId: 'locations/1151483555897051544',
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: newExpiryDate,
+          },
+        });
+
+        console.log(`✅ Successfully refreshed token for ${token.identifier} ${token.businessId}`);
+      } catch (err) {
+        console.error(`❌ Failed to refresh ${token.identifier} ${token.businessId}: ${err.message}`);
+        if (err.response?.data) {
+          console.error(`❌ Error details:`, err.response.data);
+        }
+      }
+    }
+
+    console.log(`✅ GBP auto-reconnect completed - processed ${integrations.length} integrations and ${tokens.length} tokens`);
+  }
             identifier: 'gbp',
             businessId: 'locations/1151483555897051544',
             accessToken: access_token,
@@ -118,22 +188,22 @@ export class SocialTokenRefreshTask {
       const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
       const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
 
-      const response = await axios.post(
-        'https://oauth2.googleapis.com/token',
-        qs.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
+        const response = await axios.post(
+          'https://oauth2.googleapis.com/token',
+          qs.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
           refresh_token: token.refreshToken,
-          grant_type: 'refresh_token',
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            grant_type: 'refresh_token',
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
           }
-        }
-      );
+        );
 
-      const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+        const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
 
       await this._socialTokenRepo.model.socialToken.upsert({
         where: { id: token.id },
@@ -148,11 +218,11 @@ export class SocialTokenRefreshTask {
           accessToken: access_token,
           refreshToken: newRefreshToken || token.refreshToken,
           tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
-        },
-      });
+          },
+        });
 
       console.log('✅ Website token refreshed!');
-    } catch (err) {
+      } catch (err) {
       console.error(`❌ Failed to refresh Website token: ${err.message}`);
     }
   }
@@ -311,22 +381,22 @@ export class SocialTokenRefreshTask {
       const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
       const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
 
-      const response = await axios.post(
-        'https://oauth2.googleapis.com/token',
-        qs.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
+        const response = await axios.post(
+          'https://oauth2.googleapis.com/token',
+          qs.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
           refresh_token: token.refreshToken,
-          grant_type: 'refresh_token',
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            grant_type: 'refresh_token',
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
           }
-        }
-      );
+        );
 
-      const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+        const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
 
       await this._socialTokenRepo.model.socialToken.upsert({
         where: { id: token.id },
@@ -341,11 +411,11 @@ export class SocialTokenRefreshTask {
           accessToken: access_token,
           refreshToken: newRefreshToken || token.refreshToken,
           tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
-        },
-      });
+          },
+        });
 
       console.log('✅ YouTube token refreshed!');
-    } catch (err) {
+      } catch (err) {
       console.error(`❌ Failed to refresh YouTube token: ${err.message}`);
     }
   }
@@ -543,6 +613,71 @@ export class SocialTokenRefreshTask {
     }
 
     console.log(`✅ Threads token refresh completed - processed ${integrations.length} integrations`);
+  }
+
+  @Cron('30 6 * * *') // Runs at 6:30 AM IST daily (before Pinterest insights at 7:00 AM)
+  async handlePinterestTokenRefresh() {
+    console.log('⏰ Pinterest Token Refresh Cron Triggered');
+
+    const thresholdDays = 10;
+
+    const integrations = await this._integrationRepo.model.integration.findMany({
+      where: {
+        providerIdentifier: 'pinterest',
+        refreshToken: { not: null },
+        tokenExpiration: {
+          lte: dayjs().add(thresholdDays, 'days').toDate(),
+        },
+        deletedAt: null,
+      },
+    });
+
+    if (!integrations.length) {
+      console.log(`✅ No Pinterest integrations need refresh (within next ${thresholdDays} days).`);
+      return;
+    }
+
+    console.log(`📊 Found ${integrations.length} Pinterest integrations to refresh`);
+
+    for (const integration of integrations) {
+      if (integration.tokenExpiration) {
+        const daysUntilExpiry = dayjs(integration.tokenExpiration).diff(dayjs(), 'days');
+        console.log(`🕐 Token for ${integration.name} expires in ${daysUntilExpiry} days`);
+      }
+
+      console.log(`♻️ Refreshing Pinterest token for ${integration.name}...`);
+
+      try {
+        const response = await axios.post(
+          `${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`,
+          { refreshToken: integration.refreshToken },
+          {
+            headers: {
+              'cookie': process.env.INTERNEL_TOKEN,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+        const newExpiryDate = dayjs().add(expiresIn, 'seconds').toDate();
+
+        await this._integrationRepo.model.integration.update({
+          where: { id: integration.id },
+          data: {
+            token: accessToken,
+            refreshToken: newRefreshToken || integration.refreshToken,
+            tokenExpiration: newExpiryDate,
+          },
+        });
+
+        console.log(`✅ Successfully refreshed Pinterest token for ${integration.name}\n`);
+      } catch (err) {
+        console.error(`❌ Failed to refresh Pinterest token ${integration.name}: ${err.message}`);
+      }
+    }
+
+    console.log(`✅ Pinterest token refresh completed - processed ${integrations.length} integrations`);
   }
 
   async sendExpiryEmail(token: any) {
