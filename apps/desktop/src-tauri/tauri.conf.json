@@ -33,6 +33,7 @@
       "binaries/temporal"
     ],
     "resources": [
+      "resources/node_modules/**/*",
       "resources/backend/**/*",
       "resources/orchestrator/**/*",
       "resources/frontend/**/*"
