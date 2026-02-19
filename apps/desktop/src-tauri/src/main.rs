@@ -672,24 +672,39 @@ fn main() {
             // Recovery: wipe the entire pglite-data directory so PGlite starts fresh.
             // Safe here because we verified no other Postiz instance is running above
             // (port-allocation check). Users lose unsaved state but the app starts.
-            let postmaster_pid = pglite_dir.join("postmaster.pid");
-            let pglite_socket_lock = pglite_dir.join(".s.PGSQL.5432.lock.out");
-            let pglite_was_wiped = if postmaster_pid.exists() || pglite_socket_lock.exists() {
-                println!("[postiz] Detected unclean PGlite shutdown — wiping corrupted database for fresh start");
-                match fs::remove_dir_all(&pglite_dir) {
-                    Ok(_) => {
-                        fs::create_dir_all(&pglite_dir).ok();
-                        println!("[postiz] PGlite data directory reset successfully");
-                        true
-                    }
-                    Err(e) => {
-                        eprintln!("[postiz] Warning: Failed to wipe PGlite data: {}", e);
-                        false
+            // Clean up stale PGlite lock files from a previous unclean shutdown
+            // (e.g. force-kill, crash, system restart).
+            //
+            // We remove ONLY the lock/socket files so that PostgreSQL (PGlite) can
+            // attempt WAL crash-recovery on the existing data directory, preserving
+            // user accounts. We do NOT wipe the whole pglite-data directory here.
+            //
+            // If PGlite genuinely cannot recover (it calls abort() → RuntimeError:
+            // Aborted()), prisma.service.ts catches the crash, wipes pglite-data,
+            // and restarts with a fresh DB automatically.  When that happens the
+            // user's stale auth cookie (if any) will cause a 401 on the first
+            // protected request; afterRequest() then navigates to /auth/logout which
+            // lets Next.js middleware atomically clear the HttpOnly cookie and
+            // redirect to /auth/login — so no manual cookie clearing is needed.
+            let stale_files = [
+                "postmaster.pid",
+                ".s.PGSQL.5432",
+                ".s.PGSQL.5432.lock",
+                ".s.PGSQL.5432.lock.out",
+            ];
+            let mut cleaned_locks = false;
+            for fname in &stale_files {
+                let p = pglite_dir.join(fname);
+                if p.exists() {
+                    match fs::remove_file(&p) {
+                        Ok(_) => { cleaned_locks = true; }
+                        Err(e) => eprintln!("[postiz] Warning: could not remove {}: {}", fname, e),
                     }
                 }
-            } else {
-                false
-            };
+            }
+            if cleaned_locks {
+                println!("[postiz] Removed stale PGlite lock files — attempting WAL recovery of existing data");
+            }
 
             // Build environment variables with dynamic ports
             let pglite_path = pglite_dir.to_string_lossy().to_string();
@@ -955,17 +970,14 @@ fn main() {
 
                     match result {
                         Ok(Ok(())) => {
-                            // Services are ready. If PGlite was wiped, navigate to /auth/logout
-                            // first so Next.js middleware atomically clears any stale HttpOnly
-                            // auth cookies and redirects to /auth/login. Without this, a stale
-                            // WKWebView cookie from a previous session would cause a 401 redirect
-                            // loop and show a flat black screen instead of the login form.
-                            let target = if pglite_was_wiped {
-                                format!("{}/auth/logout", frontend_url_clone)
-                            } else {
-                                frontend_url_clone.clone()
-                            };
-                            if let Ok(url) = tauri::Url::parse(&target) {
+                            // Services are ready — navigate to the frontend.
+                            // If the user has a stale auth cookie (e.g. from a previous
+                            // session whose DB was wiped by prisma.service.ts crash recovery),
+                            // the first protected request will get a logout:true response.
+                            // afterRequest() in layout.context.tsx then navigates to
+                            // /auth/logout which lets Next.js middleware atomically clear the
+                            // HttpOnly cookie and redirect to /auth/login.
+                            if let Ok(url) = tauri::Url::parse(&frontend_url_clone) {
                                 let _ = win.navigate(url);
                             }
                         }
