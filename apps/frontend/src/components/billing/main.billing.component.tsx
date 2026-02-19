@@ -28,6 +28,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
+import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -572,6 +573,9 @@ export const MainBillingComponent: FC<{
         </div>
       )}
       <FAQComponent />
+      <div className="flex justify-center mt-[20px]">
+        <LogoutComponent />
+      </div>
     </div>
   );
 };
