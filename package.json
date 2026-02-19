@@ -36,7 +36,7 @@
     "desktop:build": "pnpm --filter @gitroom/desktop run build:full",
     "desktop:prepare": "pnpm --filter @gitroom/desktop run build:prepare",
     "desktop:dev": "pnpm --filter @gitroom/desktop run dev",
-    "desktop:start": "pnpm --filter @gitroom/desktop run dev",
+    "desktop:start": "pnpm --filter @gitroom/desktop run start",
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "pnpm run prisma-generate",

@@ -47,6 +47,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         const pgliteClient = new PrismaClient({ adapter } as any);
         Object.assign(this, pgliteClient);
 
+        // Initialize schema on fresh database before accepting connections.
+        // prisma db push cannot connect to embedded PGlite (no TCP server),
+        // so schema is pushed here via PGLITE_SCHEMA_SQL (generated at build time).
+        await this.initializePGliteSchema(this.pgliteInstance);
+
         console.log(`[Prisma] Using embedded PGlite database at: ${pglitePath}`);
       } catch (err) {
         throw new Error(
@@ -58,6 +63,36 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
 
     await this.$connect();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async initializePGliteSchema(db: any): Promise<void> {
+    // Check if schema already exists by probing the first Prisma model table
+    try {
+      await db.query(`SELECT 1 FROM "Organization" LIMIT 1`);
+      console.log('[Prisma] PGlite schema already initialized');
+      return;
+    } catch {
+      // Table does not exist - proceed with initialization
+    }
+
+    // Path to the pre-generated schema SQL, injected by the Tauri launcher via env var
+    const sqlPath = process.env.PGLITE_SCHEMA_SQL;
+    if (!sqlPath) {
+      console.warn('[Prisma] PGLITE_SCHEMA_SQL not set - skipping schema initialization');
+      return;
+    }
+
+    const { existsSync, readFileSync } = await import('fs');
+    if (!existsSync(sqlPath)) {
+      console.warn(`[Prisma] Schema SQL not found at ${sqlPath} - skipping initialization`);
+      return;
+    }
+
+    console.log('[Prisma] Initializing PGlite database schema...');
+    const sql = readFileSync(sqlPath, 'utf-8');
+    await db.exec(sql);
+    console.log('[Prisma] PGlite schema initialized successfully');
   }
 
   async onModuleDestroy() {

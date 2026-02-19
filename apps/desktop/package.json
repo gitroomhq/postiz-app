@@ -8,6 +8,7 @@
     "build:full": "npx ts-node scripts/build-desktop.ts --full",
     "build:prepare": "npx ts-node scripts/build-desktop.ts",
     "dev": "tauri dev",
+    "start": "open src-tauri/target/release/bundle/macos/Postiz.app",
     "help": "npx ts-node scripts/build-desktop.ts --help"
   },
   "dependencies": {

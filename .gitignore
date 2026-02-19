@@ -3,6 +3,9 @@
 # compiled output
 dist
 tmp
+
+# Desktop app - PGlite test artifacts (production data goes in ~/Library/Application Support/Postiz)
+pglite-tmp/
 /out-tsc
 .env
 # dependencies

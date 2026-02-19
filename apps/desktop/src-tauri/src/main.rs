@@ -725,71 +725,21 @@ fn main() {
                 }
             });
 
-            // ===== Initialize Database Schema =====
-            // Run Prisma schema push before starting backend service
-            //
-            // This follows the exact same pattern as server deployment's pm2-run script:
-            //   package.json:17: "pm2-run": "... && pnpm run prisma-db-push && pnpm run --parallel pm2 && ..."
-            //
-            // Server pathway: bash script runs `prisma db push` → then starts services
-            // Desktop pathway: Rust runs `prisma db push` → then spawns backend service
-            //
-            // Both achieve the same result: database schema initialized before application starts
+            // ===== PGlite Schema Initialization =====
+            // Schema is initialized by prisma.service.ts at backend startup using
+            // pre-generated SQL (schema.sql built by build-desktop.ts via prisma migrate diff).
+            // prisma db push cannot initialize PGlite because it connects via TCP to
+            // postgresql://localhost:5432 — but PGlite is an embedded WASM process with no
+            // TCP server. The backend reads PGLITE_SCHEMA_SQL at startup and applies it if
+            // the Organization table does not yet exist.
             let shell = app_handle.shell();
-            let schema_path = resources_dir.join("backend/prisma/schema.prisma");
-            let prisma_cli = resources_dir.join("backend/node_modules/prisma/build/index.js");
             let node_sidecar = format!("node-{}", target_triple);
-
-            println!("[postiz] Initializing PGlite database schema...");
-
-            // Verify files exist before attempting to run
-            if schema_path.exists() && prisma_cli.exists() {
-                let result = shell
-                    .sidecar(&node_sidecar)
-                    .expect("failed to create node sidecar for prisma db push")
-                    .args([
-                        prisma_cli.to_str().unwrap(),
-                        "db",
-                        "push",
-                        "--accept-data-loss",
-                        "--schema",
-                        schema_path.to_str().unwrap(),
-                    ])
-                    .env("DATABASE_URL", &database_url)
-                    .env("USE_PGLITE", "true")
-                    .env("PGLITE_DATA_DIR", &pglite_path)
-                    .output();
-
-                // Use block_on to wait for the async output() call to complete
-                match tauri::async_runtime::block_on(result) {
-                    Ok(output) if output.status.success() => {
-                        println!("[postiz] Database schema initialized successfully");
-                    }
-                    Ok(output) => {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-
-                        // Check if error is just "schema already up to date"
-                        if stderr.contains("already up to date") || stdout.contains("already up to date") {
-                            println!("[postiz] Database schema already up to date");
-                        } else {
-                            // Log warning but continue - database might already be initialized
-                            eprintln!("[postiz] Warning: Database initialization had issues: {}", stderr);
-                            eprintln!("[postiz] Continuing anyway - database may already be initialized");
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("[postiz] Warning: Failed to run database initialization: {}", e);
-                        eprintln!("[postiz] Continuing anyway - database may already be initialized");
-                    }
-                }
+            let pglite_schema_sql = resources_dir.join("backend/prisma/schema.sql");
+            let pglite_schema_sql_path = pglite_schema_sql.to_string_lossy().to_string();
+            if pglite_schema_sql.exists() {
+                println!("[postiz] PGlite schema SQL ready at: {:?}", pglite_schema_sql);
             } else {
-                if !schema_path.exists() {
-                    println!("[postiz] Warning: Schema file not found at {:?}, skipping initialization", schema_path);
-                }
-                if !prisma_cli.exists() {
-                    println!("[postiz] Warning: Prisma CLI not found at {:?}, skipping initialization", prisma_cli);
-                }
+                eprintln!("[postiz] Warning: PGlite schema SQL not found at {:?} — schema init will be skipped", pglite_schema_sql);
             }
 
             // ===== Spawn Backend (Node.js + JS resources) =====
@@ -806,6 +756,7 @@ fn main() {
                 .env("POSTIZ_MODE", "desktop")
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
+                .env("PGLITE_SCHEMA_SQL", &pglite_schema_sql_path)
                 .env("USE_PGLITE", "true")
                 .env("JWT_SECRET", &config.jwt_secret)
                 .env("STORAGE_PROVIDER", "local")
@@ -856,7 +807,8 @@ fn main() {
                 .env("HOSTNAME", "localhost")
                 .env("JWT_SECRET", &config.jwt_secret)
                 .env("NEXT_PUBLIC_BACKEND_URL", &backend_url)
-                .env("BACKEND_URL", &backend_url);
+                .env("BACKEND_URL", &backend_url)
+                .env("BACKEND_INTERNAL_URL", &backend_url);
 
             let (mut rx, frontend_child) = frontend_cmd.spawn().expect("Failed to spawn frontend");
             println!("[frontend] Started with PID: {:?}", frontend_child.pid());
@@ -892,6 +844,7 @@ fn main() {
                 .env("POSTIZ_MODE", "desktop")
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
+                .env("PGLITE_SCHEMA_SQL", &pglite_schema_sql_path)
                 .env("USE_PGLITE", "true")
                 .env("JWT_SECRET", &config.jwt_secret)
                 .env("STORAGE_PROVIDER", "local")

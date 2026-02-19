@@ -259,6 +259,7 @@ function verifyBuildArtifacts(): ValidationResult {
   const requiredArtifacts = [
     { path: 'backend/dist/apps/backend/src/main.js', minSize: 500, desc: 'Backend entry' },
     { path: 'backend/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Backend Prisma client' },
+    { path: 'backend/prisma/schema.sql', minSize: 500, desc: 'PGlite schema SQL (for desktop init)' },
     { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 500, desc: 'Orchestrator entry' },
     { path: 'orchestrator/node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Orchestrator Prisma client' },
     { path: 'frontend/standalone/apps/frontend/server.js', minSize: 500, desc: 'Frontend entry' },
@@ -868,6 +869,35 @@ async function main(): Promise<void> {
   await prepareBackendResources();
   await prepareOrchestratorResources();
   await prepareFrontendResources();
+
+  // Step: Generate PGlite schema SQL for desktop initialization
+  // prisma db push cannot connect to embedded PGlite (no TCP server), so we
+  // pre-generate the schema SQL at build time and bundle it with the app.
+  // prisma.service.ts reads this file via PGLITE_SCHEMA_SQL at runtime.
+  console.log('\n📋 Generating PGlite schema SQL...');
+  const schemaSrc = path.join(ROOT_DIR, 'libraries/nestjs-libraries/src/database/prisma/schema.prisma');
+  const schemaSqlDest = path.join(RESOURCES_DIR, 'backend/prisma/schema.sql');
+  const prismaCliLocal = path.join(ROOT_DIR, 'node_modules/.bin/prisma');
+  const hasPrismaLocal = fs.existsSync(prismaCliLocal);
+  const diffResult = spawnSync(
+    hasPrismaLocal ? prismaCliLocal : 'npx',
+    hasPrismaLocal
+      ? ['migrate', 'diff', '--from-empty', '--to-schema-datamodel', schemaSrc, '--script']
+      : ['prisma', 'migrate', 'diff', '--from-empty', '--to-schema-datamodel', schemaSrc, '--script'],
+    {
+      encoding: 'utf-8',
+      cwd: ROOT_DIR,
+      env: { ...process.env, DATABASE_URL: 'postgresql://localhost:5432/postiz' },
+    }
+  );
+  if (diffResult.status === 0 && diffResult.stdout && diffResult.stdout.trim().length > 100) {
+    ensureDir(path.dirname(schemaSqlDest));
+    fs.writeFileSync(schemaSqlDest, diffResult.stdout);
+    console.log(`  ✓ Schema SQL written (${(diffResult.stdout.length / 1024).toFixed(1)} KB)`);
+  } else {
+    console.log('  ⚠ Could not generate schema SQL (prisma migrate diff failed)');
+    if (diffResult.stderr) console.log('  ', diffResult.stderr.slice(0, 200));
+  }
 
   // Verify build artifacts
   console.log('\n🔍 Verifying build artifacts...');
