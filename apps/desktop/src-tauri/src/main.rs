@@ -670,29 +670,19 @@ fn main() {
             );
             let temporal_db = data_dir.join("temporal.db");
 
-            // Detect target triple for sidecar names
-            let target_triple = if cfg!(target_os = "macos") {
-                if cfg!(target_arch = "aarch64") { "aarch64-apple-darwin" } else { "x86_64-apple-darwin" }
-            } else if cfg!(target_os = "linux") {
-                if cfg!(target_arch = "aarch64") { "aarch64-unknown-linux-gnu" } else { "x86_64-unknown-linux-gnu" }
-            } else if cfg!(target_os = "windows") {
-                "x86_64-pc-windows-msvc"
-            } else {
-                "unknown"
-            };
-
             // Build URL strings for cross-service communication
             let temporal_address = format!("localhost:{}", ports.temporal_grpc);
             let backend_url = format!("http://localhost:{}", ports.backend);
             let frontend_url = format!("http://localhost:{}", ports.frontend);
 
             // ===== Spawn Temporal server =====
+            // Sidecar name must match the `name` field in capabilities/default.json,
+            // which is "temporal" (Tauri resolves the platform triple automatically).
             let shell = app_handle.shell();
             let temporal_port_str = ports.temporal_grpc.to_string();
             let temporal_ui_port_str = ports.temporal_ui.to_string();
-            let temporal_sidecar = format!("temporal-{}", target_triple);
             let temporal_cmd = shell
-                .sidecar(&temporal_sidecar)
+                .sidecar("temporal")
                 .expect("failed to create temporal sidecar")
                 .args([
                     "server",
@@ -732,8 +722,9 @@ fn main() {
             // postgresql://localhost:5432 — but PGlite is an embedded WASM process with no
             // TCP server. The backend reads PGLITE_SCHEMA_SQL at startup and applies it if
             // the Organization table does not yet exist.
+            // Sidecar name must match the `name` field in capabilities/default.json ("node").
+            // Tauri resolves the platform triple automatically at runtime.
             let shell = app_handle.shell();
-            let node_sidecar = format!("node-{}", target_triple);
             let pglite_schema_sql = resources_dir.join("backend/prisma/schema.sql");
             let pglite_schema_sql_path = pglite_schema_sql.to_string_lossy().to_string();
             if pglite_schema_sql.exists() {
@@ -749,7 +740,7 @@ fn main() {
 
             let backend_port_str = ports.backend.to_string();
             let backend_cmd = shell
-                .sidecar(&node_sidecar)
+                .sidecar("node")
                 .expect("failed to create node sidecar for backend")
                 .args([backend_entry.to_str().unwrap_or("")])
                 .current_dir(backend_dir.clone())
@@ -798,7 +789,7 @@ fn main() {
             let shell = app_handle.shell();
             let frontend_port_str = ports.frontend.to_string();
             let frontend_cmd = shell
-                .sidecar(&node_sidecar)
+                .sidecar("node")
                 .expect("failed to create node sidecar for frontend")
                 .args([frontend_entry.to_str().unwrap_or("")])
                 .current_dir(frontend_dir)
@@ -837,7 +828,7 @@ fn main() {
 
             let shell = app_handle.shell();
             let orchestrator_cmd = shell
-                .sidecar(&node_sidecar)
+                .sidecar("node")
                 .expect("failed to create node sidecar for orchestrator")
                 .args([orchestrator_entry.to_str().unwrap_or("")])
                 .current_dir(orchestrator_dir)
