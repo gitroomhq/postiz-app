@@ -148,25 +148,6 @@ export class SocialTokenRefreshTask {
 
     console.log(`✅ GBP auto-reconnect completed - processed ${integrations.length} integrations and ${tokens.length} tokens`);
   }
-            identifier: 'gbp',
-            businessId: 'locations/1151483555897051544',
-            accessToken: access_token,
-            refreshToken: newRefreshToken || token.refreshToken,
-            tokenExpiry: newExpiryDate,
-          },
-        });
-
-        console.log(`✅ Successfully refreshed token for ${token.identifier} ${token.businessId}`);
-      } catch (err) {
-        console.error(`❌ Failed to refresh ${token.identifier} ${token.businessId}: ${err.message}`);
-        if (err.response?.data) {
-          console.error(`❌ Error details:`, err.response.data);
-        }
-      }
-    }
-
-    console.log(`✅ GBP token refresh completed - processed ${tokens.length} tokens`);
-  }
 
   @Cron('30 8 * * *') // Runs at 8:30 AM IST daily
   async handleWebsiteTokenRefresh() {
