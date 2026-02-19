@@ -80,11 +80,15 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
-        if (!isSecured) {
-          setCookie('auth', '', -10);
-          setCookie('showorg', '', -10);
-          setCookie('impersonate', '', -10);
-        }
+        // Always clear JavaScript-accessible auth cookies regardless of isSecured.
+        // In desktop (DESKTOP_COOKIE_MODE) mode the JWT is stored in document.cookie
+        // via setCookie() and must be cleared here to prevent a redirect loop where
+        // a stale cookie causes repeated 401s (e.g. after a database wipe on restart).
+        // In production HTTPS mode these document.cookie values are empty (the real
+        // auth uses HTTP-only cookies set by the server), so clearing them is a no-op.
+        setCookie('auth', '', -10);
+        setCookie('showorg', '', -10);
+        setCookie('impersonate', '', -10);
         window.location.href = '/';
         return true;
       }
