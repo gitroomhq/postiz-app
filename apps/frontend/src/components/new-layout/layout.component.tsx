@@ -56,7 +56,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user, mutate } = useSWR('/user/self', load, {
+  const { data: user, mutate, isLoading } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -64,6 +64,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     refreshWhenHidden: false,
   });
 
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" />;
   if (!user) return null;
 
   return (
