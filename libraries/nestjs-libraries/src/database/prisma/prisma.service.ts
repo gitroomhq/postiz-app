@@ -39,33 +39,23 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         // @ts-ignore - Optional dependency, only installed for desktop builds
         const { PrismaPGlite } = await import('pglite-prisma-adapter');
 
-        // Attempt to open the database. If a previous run was killed with SIGKILL
-        // (e.g. force-quit or crash) PGlite WASM throws RuntimeError: Aborted()
-        // because it cannot perform WAL crash recovery. Recovery: wipe the data
-        // directory and start fresh with a clean database.
-        let pgliteInstance: any;
-        try {
-          pgliteInstance = new PGlite(pglitePath);
-          // Probe with a simple query to confirm the database is actually usable.
-          // PGlite may not throw immediately on open but only on first query.
-          await pgliteInstance.query('SELECT 1');
-        } catch (openErr: any) {
-          const isWasmAbort = String(openErr).includes('Aborted') || String(openErr).includes('RuntimeError');
-          if (isWasmAbort) {
-            console.warn(`[Prisma] PGlite database at ${pglitePath} is corrupt (${openErr}). Wiping and recreating.`);
-            const { rmSync, mkdirSync } = await import('fs');
-            try {
-              rmSync(pglitePath, { recursive: true, force: true });
-              mkdirSync(pglitePath, { recursive: true });
-              console.log(`[Prisma] PGlite data directory wiped. Fresh database will be initialized.`);
-            } catch (wipeErr) {
-              throw new Error(`PGlite database is corrupt and could not be wiped: ${wipeErr}`);
-            }
-            pgliteInstance = new PGlite(pglitePath);
-          } else {
-            throw openErr;
-          }
-        }
+        // Attempt to open the database.
+        // main.rs removes stale lock files (postmaster.pid, .s.PGSQL.5432*)
+        // before starting the backend so that PGlite can attempt WAL crash
+        // recovery after an unclean shutdown. In most cases this succeeds and
+        // user data is preserved.
+        //
+        // If PGlite genuinely cannot recover it throws RuntimeError: Aborted().
+        // We DO NOT wipe the data automatically — that would destroy user data.
+        // Instead we re-throw so the backend fails to start, the Tauri health
+        // check times out, and the user sees an actionable error screen.
+        // They can quit and relaunch (lock-file cleanup often fixes it), or
+        // manually clear ~/Library/Application\ Support/Postiz/pglite-data if
+        // the database is unrecoverable.
+        const pgliteInstance: any = new PGlite(pglitePath);
+        // Probe with a simple query to confirm the database is actually usable.
+        // PGlite may not throw immediately on open but only on first query.
+        await pgliteInstance.query('SELECT 1');
 
         this.pgliteInstance = pgliteInstance;
         const adapter = new PrismaPGlite(this.pgliteInstance);

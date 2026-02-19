@@ -549,10 +549,11 @@ fn get_error_html(error: &str) -> String {
     <div class="help">
         <h2>Troubleshooting</h2>
         <ul>
-            <li>Check Console.app (macOS) or logs for detailed error messages</li>
+            <li>Quit fully and relaunch — Postiz cleans up stale lock files on startup, which often allows the database to recover</li>
             <li>Verify no other instance of Postiz is running</li>
-            <li>Try quitting and restarting the application</li>
+            <li>Check Console.app (macOS) or logs for detailed error messages</li>
             <li>If the issue persists, check port availability (3000, 4200, 7233, 8233)</li>
+            <li><strong>Last resort only (destroys all data):</strong> delete ~/Library/Application Support/Postiz/pglite-data and relaunch</li>
         </ul>
     </div>
 </body>
