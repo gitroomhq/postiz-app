@@ -11,5 +11,9 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: undefined,
   checkValidity: undefined,
-  maximumCharacters: 500,
+  maximumCharacters: (settings) => {
+    const value = settings?.find((s: any) => s?.title === 'Max characters')?.value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 500;
+  },
 });
