@@ -18,6 +18,7 @@ import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { minifyPostsList, minifyPosts } from '@gitroom/helpers/utils/posts.list.minify';
 import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -308,8 +309,16 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
+  async getPostsMinified(orgId: string, query: GetPostsDto) {
+    return minifyPosts({
+      posts: await this._postRepository.getPosts(orgId, query),
+    });
+  }
+
   async getPostsList(orgId: string, query: GetPostsListDto) {
-    return this._postRepository.getPostsList(orgId, query);
+    return minifyPostsList(
+      await this._postRepository.getPostsList(orgId, query)
+    );
   }
 
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {

@@ -112,11 +112,7 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
-    const posts = await this._postsService.getPosts(org.id, query);
-
-    return {
-      posts,
-    };
+    return this._postsService.getPostsMinified(org.id, query);
   }
 
   @Get('/find-slot')
