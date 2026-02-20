@@ -7,6 +7,7 @@ import {
 @ValidatorConstraint({ name: 'checkValidExtension', async: false })
 export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
+    text = text?.toLowerCase();
     return (
       !!text?.split?.('?')?.[0].endsWith('.png') ||
       !!text?.split?.('?')?.[0].endsWith('.jpg') ||
