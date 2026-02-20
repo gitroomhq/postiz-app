@@ -224,9 +224,6 @@ export class PostsRepository {
             {
               organizationId: orgId,
             },
-            {
-              submittedForOrganizationId: orgId,
-            },
           ],
         },
         {
