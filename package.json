@@ -39,7 +39,8 @@
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "pnpm run prisma-generate",
-    "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
+    "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit --passWithNoTests",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@ag-ui/mastra": "0.2.0",
@@ -255,6 +256,7 @@
     "@crxjs/vite-plugin": "^2.0.0-beta.32",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^10.0.2",
+    "@nx/jest": "^22.5.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "1.9.2",
