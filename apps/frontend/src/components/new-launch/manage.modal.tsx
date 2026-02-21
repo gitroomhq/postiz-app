@@ -413,12 +413,25 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       if (!dummy) {
-        addEditSets
-          ? addEditSets(data)
-          : await fetch('/posts', {
-              method: 'POST',
-              body: JSON.stringify(data),
-            });
+        if (addEditSets) {
+          addEditSets(data);
+        } else {
+          const response = await fetch('/posts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          if (!response.ok) {
+            const errBody = await response.json().catch(() => ({}));
+            const message =
+              (Array.isArray(errBody?.message)
+                ? errBody.message.join(', ')
+                : errBody?.message) ||
+              t('schedule_failed', 'Failed to schedule. Please try again.');
+            toaster.show(message, 'error');
+            setLoading(false);
+            return;
+          }
+        }
 
         if (!addEditSets) {
           mutate();
