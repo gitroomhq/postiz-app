@@ -56,7 +56,7 @@ importers:
         version: 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
       '@langchain/langgraph':
         specifier: ^0.2.63
-        version: 0.2.74(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.0(zod@3.25.76))
+        version: 0.2.74(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.1(zod@3.25.76))
       '@langchain/openai':
         specifier: ^0.5.5
         version: 0.5.18(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))
@@ -430,8 +430,8 @@ importers:
         specifier: ^2.1.35
         version: 2.1.35
       multer:
-        specifier: ^1.4.5-lts.1
-        version: 1.4.5-lts.2
+        specifier: ^2.0.2
+        version: 2.0.2
       music-metadata:
         specifier: ^7.14.0
         version: 7.14.0
@@ -3265,6 +3265,10 @@ packages:
 
   '@langchain/core@0.3.79':
     resolution: {integrity: sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A==}
+    engines: {node: '>=18'}
+
+  '@langchain/core@0.3.80':
+    resolution: {integrity: sha512-vcJDV2vk1AlCwSh3aBm/urQ1ZrlXFFBocv11bz/NBUfLWD5/UDNMzwPdaAd2dKvNmTWa9FM2lirLU3+JCf4cRA==}
     engines: {node: '>=18'}
 
   '@langchain/google-common@0.1.8':
@@ -8173,9 +8177,11 @@ packages:
 
   '@walletconnect/sign-client@2.19.0':
     resolution: {integrity: sha512-+GkuJzPK9SPq+RZgdKHNOvgRagxh/hhYWFHOeSiGh3DyAQofWuFTq4UrN/MPjKOYswSSBKfIa+iqKYsi4t8zLQ==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/sign-client@2.19.1':
     resolution: {integrity: sha512-OgBHRPo423S02ceN3lAzcZ3MYb1XuLyTTkKqLmKp/icYZCyRzm3/ynqJDKndiBLJ5LTic0y07LiZilnliYqlvw==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/solana-adapter@0.0.8':
     resolution: {integrity: sha512-Qb7MT8SdkeBldfUCmF+rYW6vL98mxPuT1yAwww5X2vpx7xEPZvFCoAKnyT5fXu0v56rMxhW3MGejnHyyYdDY7Q==}
@@ -8194,9 +8200,11 @@ packages:
 
   '@walletconnect/universal-provider@2.19.0':
     resolution: {integrity: sha512-e9JvadT5F8QwdLmd7qBrmACq04MT7LQEe1m3X2Fzvs3DWo8dzY8QbacnJy4XSv5PCdxMWnua+2EavBk8nrI9QA==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/universal-provider@2.19.1':
     resolution: {integrity: sha512-4rdLvJ2TGDIieNWW3sZw2MXlX65iHpTuKb5vyvUHQtjIVNLj+7X/09iUAI/poswhtspBK0ytwbH+AIT/nbGpjg==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/utils@2.19.0':
     resolution: {integrity: sha512-LZ0D8kevknKfrfA0Sq3Hf3PpmM8oWyNfsyWwFR51t//2LBgtN2Amz5xyoDDJcjLibIbKAxpuo/i0JYAQxz+aPA==}
@@ -9309,10 +9317,6 @@ packages:
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
-
-  concat-stream@1.6.2:
-    resolution: {integrity: sha512-27HBghJxjiZtIk3Ycvn/4kbJk/1uZuJFfuPEns6LaEvpvG1f0hTea8lilrouyo9mVc2GWdcEZ8OLoGmSADlrCw==}
-    engines: {'0': node >= 0.8}
 
   concat-stream@2.0.0:
     resolution: {integrity: sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==}
@@ -13109,11 +13113,6 @@ packages:
     resolution: {integrity: sha512-kh8ARjh8rMN7Du2igDRO9QJnqCb2xYTJxyQYK7vJJS4TvLLmsbyhiKpSW+t+y26gyOyMd0riphX0GeWKU3ky5g==}
     engines: {node: '>=12.13'}
 
-  multer@1.4.5-lts.2:
-    resolution: {integrity: sha512-VzGiVigcG9zUAoCNU+xShztrlr1auZOlurXynNvO9GiWD1/mTBbUljOKY+qMeazBqXgRnjzeEgJI/wyjJUHg9A==}
-    engines: {node: '>= 6.0.0'}
-    deprecated: Multer 1.x is impacted by a number of vulnerabilities, which have been patched in 2.x. You should upgrade to the latest 2.x version.
-
   multer@2.0.2:
     resolution: {integrity: sha512-u7f2xaZ/UG8oLXHvtF/oWTRvT44p9ecwBBqTwgJVq0+4BW1g8OW01TyMEGWBHbyMOYVHXslaut7qEQ1meATXgw==}
     engines: {node: '>= 10.16.0'}
@@ -14262,6 +14261,10 @@ packages:
 
   qs@6.14.0:
     resolution: {integrity: sha512-YWWTjgABSKcvs/nWBi9PycY/JiPJqOD4JA6o9Sej2AtvSGarXxKC3OQSk4pAarbdQlKAh5D4FCQkJNkW+GAn3w==}
+    engines: {node: '>=0.6'}
+
+  qs@6.14.1:
+    resolution: {integrity: sha512-4EK3+xJl8Ts67nLYNwqw/dsFVnCf+qR7RgXSK9jEEm9unao3njwMDdmsdvoKBKHzxd7tCYz5e5M+SnMjdtXGQQ==}
     engines: {node: '>=0.6'}
 
   qs@6.5.3:
@@ -16734,10 +16737,12 @@ packages:
   whatwg-encoding@2.0.0:
     resolution: {integrity: sha512-p41ogyeMUrw3jWclHWTQg1k05DSVXPLcVxRTYsXUk+ZooOCZLcoYgPZ/HL/D/N+uQPOtcp1me1WhBEaX02mhWg==}
     engines: {node: '>=12'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
@@ -16996,6 +17001,11 @@ packages:
     peerDependencies:
       zod: ^3.25 || ^4
 
+  zod-to-json-schema@3.25.1:
+    resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
+    peerDependencies:
+      zod: ^3.25 || ^4
+
   zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
 
@@ -17077,8 +17087,8 @@ snapshots:
     dependencies:
       '@ag-ui/client': 0.0.42
       '@ag-ui/core': 0.0.42
-      '@langchain/core': 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
-      '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
+      '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       partial-json: 0.1.7
       rxjs: 7.8.1
     transitivePeerDependencies:
@@ -18951,7 +18961,7 @@ snapshots:
       openai: 6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)
       ws: 8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       zod: 3.25.76
-      zod-to-json-schema: 3.25.0(zod@3.25.76)
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -20382,6 +20392,26 @@ snapshots:
       - '@opentelemetry/sdk-trace-base'
       - openai
 
+  '@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))':
+    dependencies:
+      '@cfworker/json-schema': 4.1.1
+      ansi-styles: 5.2.0
+      camelcase: 6.3.0
+      decamelize: 1.2.0
+      js-tiktoken: 1.0.21
+      langsmith: 0.3.87(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
+      mustache: 4.2.0
+      p-queue: 6.6.2
+      p-retry: 4.6.2
+      uuid: 10.0.0
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - openai
+
   '@langchain/google-common@0.1.8(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(zod@3.25.76)':
     dependencies:
       '@langchain/core': 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
@@ -20426,18 +20456,18 @@ snapshots:
       '@langchain/core': 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
       react: 18.3.1
 
-  '@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@types/json-schema': 7.0.15
       p-queue: 6.6.2
       p-retry: 4.6.2
       uuid: 9.0.1
     optionalDependencies:
-      '@langchain/core': 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
+      '@langchain/core': 0.3.80(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@langchain/langgraph@0.2.74(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.0(zod@3.25.76))':
+  '@langchain/langgraph@0.2.74(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.1(zod@3.25.76))':
     dependencies:
       '@langchain/core': 0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))
       '@langchain/langgraph-checkpoint': 0.0.18(@langchain/core@0.3.79(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.15.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)))
@@ -20445,7 +20475,7 @@ snapshots:
       uuid: 10.0.0
       zod: 3.25.76
     optionalDependencies:
-      zod-to-json-schema: 3.25.0(zod@3.25.76)
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
     transitivePeerDependencies:
       - react
       - react-dom
@@ -24798,7 +24828,7 @@ snapshots:
       '@storybook/client-logger': 7.6.17
       '@storybook/core-events': 7.6.17
       '@storybook/global': 5.0.0
-      qs: 6.14.0
+      qs: 6.14.1
       telejson: 7.2.0
       tiny-invariant: 1.3.3
 
@@ -24865,7 +24895,7 @@ snapshots:
       dequal: 2.0.3
       lodash: 4.17.21
       memoizerific: 1.11.3
-      qs: 6.14.0
+      qs: 6.14.1
       synchronous-promise: 2.0.17
       ts-dedent: 2.2.0
       util-deprecate: 1.0.2
@@ -24891,7 +24921,7 @@ snapshots:
     dependencies:
       '@storybook/client-logger': 7.6.17
       memoizerific: 1.11.3
-      qs: 6.14.0
+      qs: 6.14.1
 
   '@storybook/theming@7.6.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -28488,13 +28518,6 @@ snapshots:
   compute-scroll-into-view@1.0.20: {}
 
   concat-map@0.0.1: {}
-
-  concat-stream@1.6.2:
-    dependencies:
-      buffer-from: 1.1.2
-      inherits: 2.0.4
-      readable-stream: 2.3.8
-      typedarray: 0.0.6
 
   concat-stream@2.0.0:
     dependencies:
@@ -33590,16 +33613,6 @@ snapshots:
 
   ms@3.0.0-canary.1: {}
 
-  multer@1.4.5-lts.2:
-    dependencies:
-      append-field: 1.0.0
-      busboy: 1.6.0
-      concat-stream: 1.6.2
-      mkdirp: 0.5.6
-      object-assign: 4.1.1
-      type-is: 1.6.18
-      xtend: 4.0.2
-
   multer@2.0.2:
     dependencies:
       append-field: 1.0.0
@@ -34916,6 +34929,10 @@ snapshots:
       side-channel: 1.1.0
 
   qs@6.14.0:
+    dependencies:
+      side-channel: 1.1.0
+
+  qs@6.14.1:
     dependencies:
       side-channel: 1.1.0
 
@@ -38114,6 +38131,10 @@ snapshots:
       zod: 4.2.1
 
   zod-to-json-schema@3.25.0(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
+
+  zod-to-json-schema@3.25.1(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
