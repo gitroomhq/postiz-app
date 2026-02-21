@@ -1,11 +1,13 @@
-import { IsDefined, IsString, IsUrl, ValidateIf, Validate } from 'class-validator';
+import { IsDefined, IsOptional, IsString, IsUrl, ValidateIf, Validate } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ValidUrlExtension, ValidUrlPath } from '@gitroom/helpers/utils/valid.url.path';
 
 export class MediaDto {
+  @IsOptional()
   @IsString()
-  @IsDefined()
-  id: string;
+  id?: string;
 
+  @Transform(({ value, obj }) => value ?? obj?.url)
   @IsString()
   @IsDefined()
   @Validate(ValidUrlPath)
