@@ -10,6 +10,8 @@ export const getTemporalModule = (
     isGlobal: true,
     connection: {
       address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
+      ...process.env.TEMPORAL_TLS === 'true' ? {tls: true} : {},
+      ...process.env.TEMPORAL_API_KEY ? {apiKey: process.env.TEMPORAL_API_KEY} : {},
       namespace: process.env.TEMPORAL_NAMESPACE || 'default',
     },
     taskQueue: 'main',
