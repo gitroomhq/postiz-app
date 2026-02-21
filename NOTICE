@@ -1,0 +1,11 @@
+Postra includes software developed by third parties.
+
+Upstream project:
+Postiz (https://github.com/gitroomhq/postiz-app)
+License: AGPL-3.0-only
+Copyright (c) Postiz / gitroomhq contributors
+
+Postra is a fork of Postiz, modified for the Polish market.
+All modifications are published under the same AGPL-3.0-only license.
+
+See LICENSE file for the full license text.
