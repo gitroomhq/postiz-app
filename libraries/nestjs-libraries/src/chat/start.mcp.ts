@@ -14,10 +14,10 @@ export const startMcp = async (app: INestApplication) => {
   const tools = await agent.getTools();
 
   const server = new MCPServer({
-    name: 'Postiz MCP',
+    name: 'Postra MCP',
     version: '1.0.0',
     tools,
-    agents: { postiz: agent },
+    agents: { postra: agent },
   });
 
   app.use(

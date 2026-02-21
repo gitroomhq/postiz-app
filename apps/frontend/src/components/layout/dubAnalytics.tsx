@@ -10,7 +10,7 @@ export const DubAnalytics = () => {
   return (
     <DubAnalyticsIn
       domainsConfig={{
-        refer: 'postiz.pro',
+        refer: 'postra.pl',
       }}
     />
   );

@@ -43,7 +43,7 @@ export class LoadToolsService {
   async agent() {
     const tools = await this.loadTools();
     return new Agent({
-      name: 'postiz',
+      name: 'postra',
       description: 'Agent that helps manage and schedule social media posts for users',
       instructions: ({ runtimeContext }) => {
         const ui: string = runtimeContext.get('ui' as never);

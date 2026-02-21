@@ -11,7 +11,7 @@ export class PostizAPI {
 
   constructor(config: PostizConfig) {
     this.apiKey = config.apiKey;
-    this.apiUrl = config.apiUrl || 'https://api.postiz.com';
+    this.apiUrl = config.apiUrl || 'https://api.postra.pl';
   }
 
   private async request(endpoint: string, options: any = {}) {

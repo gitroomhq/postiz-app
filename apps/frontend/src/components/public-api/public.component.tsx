@@ -56,12 +56,12 @@ export const PublicComponent = () => {
         <div className="text-customColor18 mt-[4px]">
           {t(
             'use_postiz_api_to_integrate_with_your_tools',
-            'Use Postiz API to integrate with your tools.'
+            'Use Postra API to integrate with your tools.'
           )}
           <br />
           <a
             className="underline hover:font-bold hover:underline"
-            href="https://docs.postiz.com/public-api"
+            href="https://postra.pl/docs"
             target="_blank"
           >
             {t(
@@ -75,7 +75,7 @@ export const PublicComponent = () => {
             target="_blank"
           >
             <br />
-            {t('check_n8n', 'Check out our N8N custom node for Postiz.')}
+            {t('check_n8n', 'Check out our N8N custom node for Postra.')}
           </a>
         </div>
         <div className="flex flex-col">
@@ -115,7 +115,7 @@ export const PublicComponent = () => {
         <div className="text-customColor18 mt-[4px]">
           {t(
             'connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster',
-            'Connect Postiz MCP server to your client (Http streaming) to schedule your posts faster.'
+            'Connect Postra MCP server to your client (Http streaming) to schedule your posts faster.'
           )}
         </div>
         <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
@@ -146,13 +146,13 @@ export const PublicComponent = () => {
       </div>
 
       <div className="flex flex-col">
-        <h3 className="text-[20px]">Building your Postiz payload</h3>
+        <h3 className="text-[20px]">Building your Postra payload</h3>
         <div className="text-customColor18 mt-[4px] whitespace-pre-line">
           Sending a POST request to <strong className="text-textColor">/posts</strong> might feel a bit overwhelming as many
           platforms have different requirements.{'\n'}
-          We have created an easy way to build your Postiz payload to schedule
+          We have created an easy way to build your Postra payload to schedule
           posts. {'\n'}
-          You can use the Postiz wizard, and schedule a post with our UI, after
+          You can use the Postra wizard, and schedule a post with our UI, after
           you added all your text and settings, the wizard will generate the
           payload for you.{'\n'}
         </div>

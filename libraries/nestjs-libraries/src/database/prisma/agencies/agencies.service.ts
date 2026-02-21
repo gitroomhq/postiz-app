@@ -37,21 +37,21 @@ export class AgenciesService {
     if (action === 'approve') {
       await this._notificationService.sendEmail(
         agency?.user?.email!,
-        'Your Agency has been approved and added to Postiz 🚀',
+        'Your Agency has been approved and added to Postra 🚀',
         `
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Agency has been approved and added to Postiz 🚀</title>
+    <title>Your Agency has been approved and added to Postra 🚀</title>
 </head>
 
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
   Hi there, <br /><br />
-  Your agency ${agency?.name} has been added to Postiz!<br />
-  You can <a href="https://postiz.com/agencies/${agency?.slug}">check it here</a><br />
-  It will appear on the main agency of Postiz in the next 24 hours.<br /><br />
+  Your agency ${agency?.name} has been added to Postra!<br />
+  You can <a href="https://postra.pl/agencies/${agency?.slug}">check it here</a><br />
+  It will appear on the main agency of Postra in the next 24 hours.<br /><br />
 </body>
 </html>`
       );
@@ -73,7 +73,7 @@ export class AgenciesService {
 
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
   Hi there, <br /><br />
-  Your agency ${agency?.name} has been declined to Postiz!<br />
+  Your agency ${agency?.name} has been declined to Postra!<br />
   If you think we have made a mistake, please reply to this email and let us know
 </body>
 </html>`
@@ -85,7 +85,7 @@ export class AgenciesService {
   async createAgency(user: User, body: CreateAgencyDto) {
     const agency = await this._agenciesRepository.createAgency(user, body);
     await this._notificationService.sendEmail(
-      'nevo@postiz.com',
+      'hello@postra.pl',
       'New agency created',
       `
 <html lang="en">
@@ -193,10 +193,10 @@ export class AgenciesService {
         </tr>
         <tr>
             <td style="padding: 20px; text-align: center; background-color: #000;">
-                <a href="https://postiz.com/agencies/action/approve/${
+                <a href="https://postra.pl/agencies/action/approve/${
                   agency.id
                 }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To approve click here</a><br /><br /><br />
-                <a href="https://postiz.com/agencies/action/decline/${
+                <a href="https://postra.pl/agencies/action/decline/${
                   agency.id
                 }" style="margin: 0 10px; text-decoration: none; color: #007bff;">To decline click here</a><br /><br /><br />
             </td>
