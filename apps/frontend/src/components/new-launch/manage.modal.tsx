@@ -427,7 +427,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 ? errBody.message.join(', ')
                 : errBody?.message) ||
               t('schedule_failed', 'Failed to schedule. Please try again.');
-            toaster.show(message, 'error');
+            toaster.show(message, 'warning');
             setLoading(false);
             return;
           }
