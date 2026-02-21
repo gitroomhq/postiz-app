@@ -35,20 +35,6 @@ export class CopilotController {
     private _subscriptionService: SubscriptionService,
     private _mastraService: MastraService
   ) {}
-  @Get('/features')
-  getFeatures(@Res() res: Response) {
-    const chatEnabled =
-      !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '';
-    const mcpDisabled =
-      process.env.DISABLE_MCP === '1' ||
-      process.env.DISABLE_MCP === 'true' ||
-      process.env.DISABLE_MCP === 'yes';
-    return res.json({
-      chatEnabled,
-      mcpEnabled: !mcpDisabled,
-    });
-  }
-
   @Post('/chat')
   chatAgent(@Req() req: Request, @Res() res: Response) {
     if (
