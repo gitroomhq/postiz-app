@@ -203,7 +203,7 @@ export class AgenciesService {
         </tr>
         <tr>
             <td style="padding: 20px; text-align: center; background-color: #f4f4f4;">
-                <p style="color: #777; font-size: 14px;">&copy; 2024 Your Gitroom Limited All rights reserved.</p>
+                <p style="color: #777; font-size: 14px;">&copy; 2024 Postra. All rights reserved.</p>
             </td>
         </tr>
     </table>
