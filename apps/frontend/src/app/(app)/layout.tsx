@@ -33,8 +33,30 @@ const jakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
 });
 
+async function getAiFeatures(): Promise<{
+  chatEnabled: boolean;
+  mcpEnabled: boolean;
+}> {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) return { chatEnabled: false, mcpEnabled: false };
+  try {
+    const res = await fetch(`${backendUrl}/copilot/features`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return { chatEnabled: false, mcpEnabled: false };
+    const data = await res.json();
+    return {
+      chatEnabled: !!data.chatEnabled,
+      mcpEnabled: !!data.mcpEnabled,
+    };
+  } catch {
+    return { chatEnabled: false, mcpEnabled: false };
+  }
+}
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
+  const aiFeatures = await getAiFeatures();
   const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
     ? PlausibleProvider
     : Fragment;
@@ -79,6 +101,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          chatEnabled={aiFeatures.chatEnabled}
+          mcpEnabled={aiFeatures.mcpEnabled}
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE

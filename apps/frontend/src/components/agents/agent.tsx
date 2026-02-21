@@ -22,6 +22,7 @@ import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -199,6 +200,26 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
 export const PropertiesContext = createContext({ properties: [] });
 export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
+  const { chatEnabled } = useVariables();
+  const t = useT();
+
+  if (!chatEnabled) {
+    return (
+      <div className="bg-newBgColorInner flex flex-1 items-center justify-center p-[24px]">
+        <div className="text-center text-newTextColor max-w-[400px]">
+          <p className="font-[600] text-[18px] mb-[8px]">
+            {t('ai_features_disabled', 'AI features are disabled')}
+          </p>
+          <p className="text-[14px] opacity-80">
+            {t(
+              'ai_features_disabled_description',
+              'Chat and AI features are not configured on this installation. Set OPENAI_API_KEY to enable.'
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PropertiesContext.Provider value={{ properties }}>

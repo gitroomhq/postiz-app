@@ -12,7 +12,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 export const PublicComponent = () => {
   const user = useUser();
-  const { backendUrl, frontEndUrl } = useVariables();
+  const { backendUrl, frontEndUrl, mcpEnabled } = useVariables();
   const toaster = useToaster();
   const fetch = useFetch();
   const decision = useDecisionModal();
@@ -110,6 +110,7 @@ export const PublicComponent = () => {
         </div>
       </div>
 
+      {mcpEnabled && (
       <div className="flex flex-col">
         <h3 className="text-[20px]">{t('mcp', 'MCP')}</h3>
         <div className="text-customColor18 mt-[4px]">
@@ -144,6 +145,7 @@ export const PublicComponent = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="flex flex-col">
         <h3 className="text-[20px]">Building your Postiz payload</h3>
