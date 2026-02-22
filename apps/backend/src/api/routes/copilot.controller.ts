@@ -1,5 +1,4 @@
 import {
-  Logger,
   Controller,
   Get,
   Post,
@@ -40,10 +39,13 @@ export class CopilotController {
   chatAgent(@Req() req: Request, @Res() res: Response) {
     if (
       process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
+      process.env.OPENAI_API_KEY === '' ||
+      process.env.OPENAI_API_KEY?.trim() === ''
     ) {
-      Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return;
+      return res.status(503).json({
+        error: 'Chat is not configured',
+        code: 'CHAT_DISABLED',
+      });
     }
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
@@ -66,10 +68,13 @@ export class CopilotController {
   ) {
     if (
       process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
+      process.env.OPENAI_API_KEY === '' ||
+      process.env.OPENAI_API_KEY?.trim() === ''
     ) {
-      Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return;
+      return res.status(503).json({
+        error: 'Chat is not configured',
+        code: 'CHAT_DISABLED',
+      });
     }
     const mastra = await this._mastraService.mastra();
     const runtimeContext = new RuntimeContext<ChannelsContext>();
@@ -115,27 +120,49 @@ export class CopilotController {
     );
   }
 
+  private _isChatEnabled(): boolean {
+    const key = process.env.OPENAI_API_KEY;
+    return !!key && key.trim() !== '';
+  }
+
   @Get('/:thread/list')
   @CheckPolicies([AuthorizationActions.Create, Sections.AI])
   async getMessagesList(
+    @Res() res: Response,
     @GetOrgFromRequest() organization: Organization,
     @Param('thread') threadId: string
   ): Promise<any> {
+    if (!this._isChatEnabled()) {
+      return res.status(503).json({
+        error: 'Chat is not configured',
+        code: 'CHAT_DISABLED',
+      });
+    }
     const mastra = await this._mastraService.mastra();
     const memory = await mastra.getAgent('postiz').getMemory();
     try {
-      return await memory.query({
+      const data = await memory.query({
         resourceId: organization.id,
         threadId,
       });
+      return res.json(data);
     } catch (err) {
-      return { messages: [] };
+      return res.json({ messages: [] });
     }
   }
 
   @Get('/list')
   @CheckPolicies([AuthorizationActions.Create, Sections.AI])
-  async getList(@GetOrgFromRequest() organization: Organization) {
+  async getList(
+    @Res() res: Response,
+    @GetOrgFromRequest() organization: Organization
+  ) {
+    if (!this._isChatEnabled()) {
+      return res.status(503).json({
+        error: 'Chat is not configured',
+        code: 'CHAT_DISABLED',
+      });
+    }
     const mastra = await this._mastraService.mastra();
     // @ts-ignore
     const memory = await mastra.getAgent('postiz').getMemory();
@@ -147,11 +174,11 @@ export class CopilotController {
       sortDirection: 'DESC',
     });
 
-    return {
+    return res.json({
       threads: list.threads.map((p) => ({
         id: p.id,
         title: p.title,
       })),
-    };
+    });
   }
 }

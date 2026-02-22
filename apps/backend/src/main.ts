@@ -44,7 +44,13 @@ async function start() {
     },
   });
 
-  await startMcp(app);
+  const mcpDisabled =
+    process.env.DISABLE_MCP === '1' ||
+    process.env.DISABLE_MCP === 'true' ||
+    process.env.DISABLE_MCP === 'yes';
+  if (!mcpDisabled) {
+    await startMcp(app);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
