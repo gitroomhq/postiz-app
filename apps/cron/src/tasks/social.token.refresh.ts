@@ -130,7 +130,7 @@ export class SocialTokenRefreshTask {
           },
           create: {
             identifier: 'gbp',
-            businessId: 'locations/1151483555897051544',
+            businessId: token.businessId,
             accessToken: access_token,
             refreshToken: newRefreshToken || token.refreshToken,
             tokenExpiry: newExpiryDate,
@@ -153,59 +153,64 @@ export class SocialTokenRefreshTask {
   async handleWebsiteTokenRefresh() {
     console.log('⏰ Website Token Refresh - TEST RUN');
 
-    const token = await this._socialTokenRepo.model.socialToken.findFirst({
+    const tokens = await this._socialTokenRepo.model.socialToken.findMany({
       where: {
         identifier: 'website',
         refreshToken: { not: null }
       },
     });
 
-    if (!token) {
-      console.log('❌ No Website refresh token found.');
+    if (!tokens.length) {
+      console.log('❌ No Website refresh tokens found.');
       return;
     }
 
-    try {
-      const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
-      const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
+    console.log(`📊 Found ${tokens.length} Website tokens to refresh`);
 
+    for (const token of tokens) {
+      console.log(`♻️ Refreshing Website token for ${token.businessId}...`);
+
+      try {
         const response = await axios.post(
-          'https://oauth2.googleapis.com/token',
-          qs.stringify({
-            client_id: clientId,
-            client_secret: clientSecret,
-          refresh_token: token.refreshToken,
-            grant_type: 'refresh_token',
-          }),
+          `${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`,
+          { refreshToken: token.refreshToken },
           {
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'cookie': process.env.INTERNEL_TOKEN,
+              'Content-Type': 'application/json'
             }
           }
         );
 
-        const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+        const { accessToken: access_token, expiresIn: expires_in, refreshToken: newRefreshToken } = response.data;
+        const newExpiryDate = dayjs().add(expires_in, 'seconds').toDate();
 
-      await this._socialTokenRepo.model.socialToken.upsert({
-        where: { id: token.id },
-        update: {
-          accessToken: access_token,
-          refreshToken: newRefreshToken || token.refreshToken,
-          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
-        },
-        create: {
-          identifier: 'website',
-          businessId: '475927440',
-          accessToken: access_token,
-          refreshToken: newRefreshToken || token.refreshToken,
-          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+        await this._socialTokenRepo.model.socialToken.upsert({
+          where: { id: token.id },
+          update: {
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: newExpiryDate,
+          },
+          create: {
+            identifier: 'website',
+            businessId: token.businessId,
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: newExpiryDate,
           },
         });
 
-      console.log('✅ Website token refreshed!');
+        console.log(`✅ Successfully refreshed Website token for ${token.businessId}`);
       } catch (err) {
-      console.error(`❌ Failed to refresh Website token: ${err.message}`);
+        console.error(`❌ Failed to refresh Website token ${token.businessId}: ${err.message}`);
+        if (err.response?.data) {
+          console.error(`❌ Error details:`, err.response.data);
+        }
+      }
     }
+
+    console.log(`✅ Website token refresh completed - processed ${tokens.length} tokens`);
   }
 
   @Cron('30 5 * * *') // Runs at 5:30 AM IST daily
@@ -346,59 +351,64 @@ export class SocialTokenRefreshTask {
   async handleYouTubeTokenRefresh() {
     console.log('⏰ YouTube Token Refresh - TEST RUN');
 
-    const token = await this._socialTokenRepo.model.socialToken.findFirst({
+    const tokens = await this._socialTokenRepo.model.socialToken.findMany({
       where: {
         identifier: 'youtube',
         refreshToken: { not: null }
       },
     });
 
-    if (!token) {
-      console.log('❌ No YouTube refresh token found.');
+    if (!tokens.length) {
+      console.log('❌ No YouTube refresh tokens found.');
       return;
     }
 
-    try {
-      const clientId = process.env.GOOGLE_WEBSITE_CLIENT_ID;
-      const clientSecret = process.env.GOOGLE_WEBSITE_CLIENT_SECRET;
+    console.log(`📊 Found ${tokens.length} YouTube tokens to refresh`);
 
+    for (const token of tokens) {
+      console.log(`♻️ Refreshing YouTube token for ${token.businessId}...`);
+
+      try {
         const response = await axios.post(
-          'https://oauth2.googleapis.com/token',
-          qs.stringify({
-            client_id: clientId,
-            client_secret: clientSecret,
-          refresh_token: token.refreshToken,
-            grant_type: 'refresh_token',
-          }),
+          `${process.env.BACKEND_INTERNAL_URL}/integrations/refresh-token`,
+          { refreshToken: token.refreshToken },
           {
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'cookie': process.env.INTERNEL_TOKEN,
+              'Content-Type': 'application/json'
             }
           }
         );
 
-        const { access_token, expires_in, refresh_token: newRefreshToken } = response.data;
+        const { accessToken: access_token, expiresIn: expires_in, refreshToken: newRefreshToken } = response.data;
+        const newExpiryDate = dayjs().add(expires_in, 'seconds').toDate();
 
-      await this._socialTokenRepo.model.socialToken.upsert({
-        where: { id: token.id },
-        update: {
-          accessToken: access_token,
-          refreshToken: newRefreshToken || token.refreshToken,
-          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
-        },
-        create: {
-          identifier: 'youtube',
-          businessId: '114098237445558162556', 
-          accessToken: access_token,
-          refreshToken: newRefreshToken || token.refreshToken,
-          tokenExpiry: dayjs().add(expires_in, 'seconds').toDate(),
+        await this._socialTokenRepo.model.socialToken.upsert({
+          where: { id: token.id },
+          update: {
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: newExpiryDate,
+          },
+          create: {
+            identifier: 'youtube',
+            businessId: token.businessId,
+            accessToken: access_token,
+            refreshToken: newRefreshToken || token.refreshToken,
+            tokenExpiry: newExpiryDate,
           },
         });
 
-      console.log('✅ YouTube token refreshed!');
+        console.log(`✅ Successfully refreshed YouTube token for ${token.businessId}`);
       } catch (err) {
-      console.error(`❌ Failed to refresh YouTube token: ${err.message}`);
+        console.error(`❌ Failed to refresh YouTube token ${token.businessId}: ${err.message}`);
+        if (err.response?.data) {
+          console.error(`❌ Error details:`, err.response.data);
+        }
+      }
     }
+
+    console.log(`✅ YouTube token refresh completed - processed ${tokens.length} tokens`);
   }
 
   @Cron('30 2 * * *') // Runs at 2:30 AM IST daily

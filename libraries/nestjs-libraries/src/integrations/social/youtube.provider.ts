@@ -61,8 +61,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   ];
 
   config = {
-    YOUTUBE_CLIENT_ID: process.env.FACEBOOK_APP_ID || '',
-    YOUTUBE_CLIENT_SECRET: process.env.FACEBOOK_APP_SECRET || '',
+    YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID || '',
+    YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET || '',
   };
 
   setConfig(newConfig: Record<string, string>): void {

@@ -33,9 +33,30 @@ export class WebsiteProvider implements SocialProvider {
 
   scopes = ['https://www.googleapis.com/auth/analytics.readonly'];
 
-  private GOOGLE_CLIENT_ID = process.env.GOOGLE_WEBSITE_CLIENT_ID!;
-  private GOOGLE_CLIENT_SECRET = process.env.GOOGLE_WEBSITE_CLIENT_SECRET!;
-  private REDIRECT_URI = `${process.env.FRONTEND_URL}/integrations/social/website`;
+  config = {
+    GOOGLE_WEBSITE_CLIENT_ID: process.env.GOOGLE_WEBSITE_CLIENT_ID || '',
+    GOOGLE_WEBSITE_CLIENT_SECRET: process.env.GOOGLE_WEBSITE_CLIENT_SECRET || '',
+  };
+
+  private get GOOGLE_CLIENT_ID() {
+    return this.config.GOOGLE_WEBSITE_CLIENT_ID;
+  }
+
+  private get GOOGLE_CLIENT_SECRET() {
+    return this.config.GOOGLE_WEBSITE_CLIENT_SECRET;
+  }
+
+  private get REDIRECT_URI() {
+    return `${process.env.FRONTEND_URL}/integrations/social/website`;
+  }
+
+  setConfig(newConfig: Record<string, string>): void {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  getConfig(): Record<string, string> {
+    return this.config;
+  }
 
 
   async generateAuthUrl(clientInformation: ClientInformation, customerId: string) {
