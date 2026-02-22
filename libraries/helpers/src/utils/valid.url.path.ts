@@ -4,17 +4,14 @@ import {
   ValidatorConstraint,
 } from 'class-validator';
 
+const VALID_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4'];
+
 @ValidatorConstraint({ name: 'checkValidExtension', async: false })
 export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
-    return (
-      !!text?.split?.('?')?.[0].endsWith('.png') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpg') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpeg') ||
-      !!text?.split?.('?')?.[0].endsWith('.gif') ||
-      !!text?.split?.('?')?.[0].endsWith('.webp') ||
-      !!text?.split?.('?')?.[0].endsWith('.mp4')
-    );
+    const pathWithoutQuery = text?.split?.('?')?.[0] ?? '';
+    const lower = pathWithoutQuery.toLowerCase();
+    return VALID_EXTENSIONS.some((ext) => lower.endsWith(ext));
   }
 
   defaultMessage(args: ValidationArguments) {
