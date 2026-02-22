@@ -25,11 +25,15 @@ const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-4.1',
   temperature: 0.7,
+  ...(process.env.OPENAI_BASE_URL && {
+    configuration: { baseURL: process.env.OPENAI_BASE_URL },
+  }),
 });
 
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'dall-e-3',
+  ...(process.env.OPENAI_BASE_URL && { baseUrl: process.env.OPENAI_BASE_URL }),
 });
 
 interface WorkflowChannelsState {
