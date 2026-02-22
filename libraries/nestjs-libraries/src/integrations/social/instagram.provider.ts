@@ -305,6 +305,13 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('param collaborators is not allowed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Collaborators are not allowed for carousel'
+      };
+    }
+
     return undefined;
   }
 
