@@ -51,6 +51,7 @@ export class CopilotController {
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
         model: 'gpt-4.1',
+        ...(process.env.OPENAI_BASE_URL && { baseURL: process.env.OPENAI_BASE_URL }),
       }),
     });
 
@@ -98,6 +99,7 @@ export class CopilotController {
       // properties: req.body.variables.properties,
       serviceAdapter: new OpenAIAdapter({
         model: 'gpt-4.1',
+        ...(process.env.OPENAI_BASE_URL && { baseURL: process.env.OPENAI_BASE_URL }),
       }),
     });
 

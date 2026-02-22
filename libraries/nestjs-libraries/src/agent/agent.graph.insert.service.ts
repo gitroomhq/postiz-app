@@ -12,6 +12,7 @@ const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-4o-2024-08-06',
   temperature: 0,
+  ...(process.env.OPENAI_BASE_URL && { baseURL: process.env.OPENAI_BASE_URL }),
 });
 
 interface WorkflowChannelsState {
