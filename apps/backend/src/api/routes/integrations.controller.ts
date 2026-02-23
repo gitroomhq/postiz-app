@@ -534,10 +534,24 @@ export class IntegrationsController {
 
     let validName = name;
     if (!validName) {
-      if (username) {
-        validName = username.split('.')[0] ?? username;
-      } else {
-        validName = `Channel_${String(id).slice(0, 8)}`;
+      // On reconnect, preserve existing integration name from DB
+      if (refresh) {
+        try {
+          const existingIntegration = await this._integrationService.getIntegrationById(org.id, refresh);
+          if (existingIntegration?.name) {
+            validName = existingIntegration.name;
+          }
+        } catch (e) {
+          // ignore lookup failure
+        }
+      }
+
+      if (!validName) {
+        if (username) {
+          validName = username.split('.')[0] ?? username;
+        } else {
+          validName = `Channel_${String(id).slice(0, 8)}`;
+        }
       }
     }
 
