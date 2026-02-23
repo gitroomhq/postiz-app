@@ -299,6 +299,25 @@ export class GbpProvider implements SocialProvider {
 
       console.log('✅ GBP reConnect: Token refreshed successfully');
 
+      // Fetch location title from GBP API
+      let locationName = '';
+      if (connectionId) {
+        try {
+          oauth2Client.setCredentials({ access_token: credentials.access_token });
+          const response = await google.mybusinessbusinessinformation({
+            version: 'v1',
+            auth: oauth2Client,
+          }).locations.get({
+            name: connectionId,
+            readMask: 'name,title',
+          });
+          locationName = response.data.title || '';
+          console.log('✅ GBP reConnect: Fetched location name:', locationName);
+        } catch (e) {
+          console.error('⚠️ GBP reConnect: Could not fetch location name:', e);
+        }
+      }
+
       return {
         accessToken: credentials.access_token,
         refreshToken: credentials.refresh_token || refreshToken,
@@ -306,7 +325,7 @@ export class GbpProvider implements SocialProvider {
           ? Math.floor((credentials.expiry_date - Date.now()) / 1000)
           : 3600,
         id: connectionId || '',
-        name: '',
+        name: locationName,
         picture: '',
         username: '',
         additionalSettings: [],
