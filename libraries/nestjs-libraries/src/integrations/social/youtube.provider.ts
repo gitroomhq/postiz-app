@@ -164,7 +164,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
-        prompt: 'consent',
+        prompt: 'consent select_account',
         state,
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
