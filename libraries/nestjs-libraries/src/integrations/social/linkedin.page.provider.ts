@@ -136,7 +136,7 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const roles = ['ADMINISTRATOR', 'CONTENT_ADMIN'];
+    const roles = ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'];
     const allElements: any[] = [];
 
     for (const role of roles) {
