@@ -140,19 +140,23 @@ export class LinkedinPageProvider
     const allElements: any[] = [];
 
     for (const role of roles) {
-      const { elements } = await (
-        await fetch(
-          `https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=${role}&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202601',
-            },
-          }
-        )
-      ).json();
-      allElements.push(...(elements || []));
+      try {
+        const { elements } = await (
+          await fetch(
+            `https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=${role}&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'X-Restli-Protocol-Version': '2.0.0',
+                'LinkedIn-Version': '202601',
+              },
+            }
+          )
+        ).json();
+        allElements.push(...(elements || []));
+      } catch (e) {
+        // Continue with other roles if one fails
+      }
     }
 
     // Deduplicate by organizational target
