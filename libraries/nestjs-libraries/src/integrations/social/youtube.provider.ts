@@ -207,7 +207,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       accessToken: tokens.access_token!,
       expiresIn: unixTimestamp,
       refreshToken: tokens.refresh_token!,
-      id: channel?.id || '',
+      id: `yt-pending-${makeId(10)}`,
       name: channel?.snippet?.title || '',
       picture: channel?.snippet?.thumbnails?.default?.url || '',
       username: channel?.snippet?.customUrl || '',
