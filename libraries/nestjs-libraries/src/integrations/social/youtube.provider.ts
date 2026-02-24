@@ -145,6 +145,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       mine: true,
     });
     const channel = response.data.items?.[0];
+    if (!channel?.id) {
+      throw new Error('No YouTube channel found for this account');
+    }
 
     const expiryDate = new Date(credentials.expiry_date!);
     const unixTimestamp =
@@ -155,7 +158,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       accessToken: credentials.access_token!,
       expiresIn: unixTimestamp!,
       refreshToken: credentials.refresh_token!,
-      id: channel?.id || '',
+      id: channel.id,
       name: channel?.snippet?.title || '',
       picture: channel?.snippet?.thumbnails?.default?.url || '',
       username: channel?.snippet?.customUrl || '',
@@ -197,6 +200,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       mine: true,
     });
     const channel = response.data.items?.[0];
+    if (!channel) {
+      throw new Error('No YouTube channel found for this account');
+    }
 
     const expiryDate = new Date(tokens.expiry_date!);
     const unixTimestamp =
