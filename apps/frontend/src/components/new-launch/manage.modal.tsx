@@ -248,14 +248,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const checkAllValid = await ref.current.checkAllValid();
 
       const notEnoughChars = checkAllValid.filter((p: any) => {
-        return p.values.some((a: any) => {
-          return (
-            countCharacters(
-              stripHtmlValidation('normal', a.content, true),
-              p?.integration?.identifier || ''
-            ) === 0 && a.media?.length === 0
-          );
-        });
+        const firstValue = p.values?.[0];
+        if (!firstValue) return true;
+        return (
+          countCharacters(
+            stripHtmlValidation('normal', firstValue.content, true),
+            p?.integration?.identifier || ''
+          ) === 0 && firstValue.media?.length === 0
+        );
       });
 
       for (const item of notEnoughChars) {
