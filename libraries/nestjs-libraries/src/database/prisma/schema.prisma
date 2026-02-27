@@ -30,6 +30,7 @@ model Organization {
   media             Media[]
   buyerOrganization MessagesGroup[]
   notifications     Notifications[]
+  reviewTokens      ReviewToken[]
   plugs             Plugs[]
   post              Post[]              @relation("organization")
   submittedPost     Post[]              @relation("submittedForOrg")
@@ -414,6 +415,7 @@ model Post {
   comments                   Comments[]
   errors                     Errors[]
   payoutProblems             PayoutProblems[]
+  reviewTokens               ReviewToken[]
   integration                Integration               @relation(fields: [integrationId], references: [id])
   lastMessage                Messages?                 @relation(fields: [lastMessageId], references: [id])
   organization               Organization              @relation("organization", fields: [organizationId], references: [id])
@@ -452,6 +454,40 @@ model Notifications {
   @@index([createdAt])
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+model ReviewToken {
+  id             String        @id @default(uuid())
+  organizationId String
+  postId         String
+  tokenHash      String        @unique
+  status         ReviewStatus  @default(PENDING)
+  expiresAt      DateTime
+  decidedAt      DateTime?
+  feedback       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  post           Post          @relation(fields: [postId], references: [id])
+  events         ReviewEvent[]
+
+  @@index([organizationId])
+  @@index([postId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model ReviewEvent {
+  id            String      @id @default(uuid())
+  reviewTokenId String
+  type          String
+  actor         Json?
+  details       String?
+  createdAt     DateTime    @default(now())
+  reviewToken   ReviewToken @relation(fields: [reviewTokenId], references: [id], onDelete: Cascade)
+
+  @@index([reviewTokenId])
+  @@index([createdAt])
 }
 
 model MessagesGroup {
@@ -892,4 +928,12 @@ enum ShortLinkPreference {
   ASK
   YES
   NO
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  REVOKED
 }

@@ -17,6 +17,7 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { ReviewService } from '@gitroom/nestjs-libraries/review/review.service';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
@@ -33,7 +34,8 @@ export class PostActivity {
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _reviewService: ReviewService
   ) {}
 
   @ActivityMethod()
@@ -322,5 +324,15 @@ export class PostActivity {
       await this._refreshIntegrationService.setBetweenSteps(integration);
       return false;
     }
+  }
+
+  @ActivityMethod()
+  async sendExternalReviewReminder(token: string) {
+    return this._reviewService.sendReminderIfPending(token);
+  }
+
+  @ActivityMethod()
+  async expireExternalReview(token: string) {
+    return this._reviewService.expireIfPending(token);
   }
 }
