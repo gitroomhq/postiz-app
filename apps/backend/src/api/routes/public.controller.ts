@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Post,
   Query,
@@ -23,6 +25,7 @@ import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.g
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { Readable, pipeline } from 'stream';
 import { promisify } from 'util';
+import { ReviewService } from '@gitroom/nestjs-libraries/review/review.service';
 
 const pump = promisify(pipeline);
 
@@ -34,8 +37,27 @@ export class PublicController {
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
-    private _nowpayments: Nowpayments
+    private _nowpayments: Nowpayments,
+    private _reviewService: ReviewService
   ) {}
+
+  private assertExternalReviewEnabled() {
+    if (process.env.EXTERNAL_REVIEW_ENABLED === 'false') {
+      throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  private getActorMeta(req: Request) {
+    const forwarded = String(req.headers['x-forwarded-for'] || '');
+    const ip = forwarded
+      ? forwarded.split(',')[0].trim()
+      : req.ip || req.socket?.remoteAddress || '';
+    const userAgent = String(req.headers['user-agent'] || '');
+    return {
+      ip,
+      userAgent,
+    };
+  }
   @Post('/agent')
   async createAgent(@Body() body: { text: string; apiKey: string }) {
     if (
@@ -91,6 +113,80 @@ export class PublicController {
   @Get(`/posts/:id/comments`)
   async getComments(@Param('id') postId: string) {
     return { comments: await this._postsService.getComments(postId) };
+  }
+
+  @Get('/review/:token')
+  async getReview(@Param('token') token: string, @Req() req: Request) {
+    this.assertExternalReviewEnabled();
+    const review = await this._reviewService.getReviewByToken(
+      token,
+      this.getActorMeta(req)
+    );
+    if (!review) {
+      throw new HttpException(
+        'This review link is invalid or expired.',
+        HttpStatus.NOT_FOUND
+      );
+    }
+    return review;
+  }
+
+  @Post('/review/:token/approve')
+  async approveReview(
+    @Param('token') token: string,
+    @Req() req: Request,
+    @Body() body: { reviewerName?: string; reviewerEmail?: string }
+  ) {
+    this.assertExternalReviewEnabled();
+    const result = await this._reviewService.decide(
+      token,
+      'approve',
+      undefined,
+      {
+        ...this.getActorMeta(req),
+        reviewerName: body?.reviewerName,
+        reviewerEmail: body?.reviewerEmail,
+      }
+    );
+    if (!result.ok) {
+      throw new HttpException(
+        result.message,
+        result.code || HttpStatus.BAD_REQUEST
+      );
+    }
+    return {
+      status: result.status,
+    };
+  }
+
+  @Post('/review/:token/reject')
+  async rejectReview(
+    @Param('token') token: string,
+    @Req() req: Request,
+    @Body()
+    body: { feedback?: string; reviewerName?: string; reviewerEmail?: string }
+  ) {
+    this.assertExternalReviewEnabled();
+    const result = await this._reviewService.decide(
+      token,
+      'reject',
+      body?.feedback,
+      {
+        ...this.getActorMeta(req),
+        reviewerName: body?.reviewerName,
+        reviewerEmail: body?.reviewerEmail,
+      }
+    );
+    if (!result.ok) {
+      throw new HttpException(
+        result.message,
+        result.code || HttpStatus.BAD_REQUEST
+      );
+    }
+    return {
+      status: result.status,
+      feedback: result.feedback,
+    };
   }
 
   @Post('/t')

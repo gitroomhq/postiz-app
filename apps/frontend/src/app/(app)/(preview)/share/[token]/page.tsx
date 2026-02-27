@@ -167,6 +167,7 @@ export default async function ShareReviewPage({
             token={token}
             initialStatus={status}
             expiresAt={expiresAt}
+            initialFeedback={payload?.feedback}
           />
         </div>
       </div>
