@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { SelectChannel } from '@gitroom/frontend/components/launches/select.channel';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -84,6 +85,7 @@ export const Filters = () => {
       endDate: currentRange.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -102,6 +104,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'day',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -120,6 +123,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'week',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -138,6 +142,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'month',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -152,6 +157,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'list',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -166,6 +172,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'week',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -179,6 +186,23 @@ export const Filters = () => {
         endDate: calendar.endDate,
         display: calendar.display as 'day' | 'week' | 'month',
         customer: customer,
+        channels: calendar.channels,
+      });
+    },
+    [calendar]
+  );
+
+  const setChannels = useCallback(
+    (channels: string) => {
+      if (calendar.channels === channels) {
+        return; // No need to set the same channels
+      }
+      calendar.setFilters({
+        startDate: calendar.startDate,
+        endDate: calendar.endDate,
+        display: calendar.display as 'day' | 'week' | 'month',
+        customer: calendar.customer,
+        channels: channels,
       });
     },
     [calendar]
@@ -211,6 +235,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -241,6 +266,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      channels: calendar.channels,
     });
   }, [calendar]);
 
@@ -399,6 +425,11 @@ export const Filters = () => {
       <SelectCustomer
         customer={calendar.customer as string}
         onChange={(customer: string) => setCustomer(customer)}
+        integrations={calendar.integrations}
+      />
+      <SelectChannel
+        channels={calendar.channels as string}
+        onChange={(channels: string) => setChannels(channels)}
         integrations={calendar.integrations}
       />
       {!isListView && (

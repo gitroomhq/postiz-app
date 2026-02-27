@@ -153,6 +153,13 @@ export class PostsRepository {
         ],
         integration: {
           deletedAt: null,
+          ...(query.integrations
+          ? {
+              id: {
+                in: query.integrations.split(','),
+              }
+            }
+          : {}),
         },
         deletedAt: null,
         parentPostId: null,
