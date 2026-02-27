@@ -7,20 +7,31 @@ import {
 @ValidatorConstraint({ name: 'checkValidExtension', async: false })
 export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
-    return (
-      !!text?.split?.('?')?.[0].endsWith('.png') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpg') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpeg') ||
-      !!text?.split?.('?')?.[0].endsWith('.gif') ||
-      !!text?.split?.('?')?.[0].endsWith('.webp') ||
-      !!text?.split?.('?')?.[0].endsWith('.mp4')
-    );
+   if (!text) {
+      return false;
+    }
+
+    const validExtension = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4'];
+
+    try {
+      const url = new URL(text);
+      const lastPathSegment = url.pathname.split('/').pop() || '';
+
+      if (!lastPathSegment || !lastPathSegment.includes('.')) {
+        return true;
+      }
+
+      const extension = lastPathSegment.split('.').pop()?.toLowerCase();
+      return !!extension && validExtension.includes(extension);
+    } catch {
+      return false;
+    }
   }
 
   defaultMessage(args: ValidationArguments) {
     // here you can provide default error message if validation failed
     return (
-      'File must have a valid extension: .png, .jpg, .jpeg, .gif, .webp, or .mp4'
+      'File extension (if present) must be one of: .png, .jpg, .jpeg, .gif, .webp, or .mp4'
     );
   }
 }

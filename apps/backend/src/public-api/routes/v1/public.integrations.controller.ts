@@ -86,9 +86,20 @@ export class PublicIntegrationsController {
     const buffer = Buffer.from(response.data);
     const responseMime = response.headers?.['content-type']?.split(';')[0]?.trim();
     const urlMime = lookup(body?.url?.split?.('?')?.[0]);
-    const mimetype = (urlMime || responseMime || 'image/jpeg') as string;
-    const ext = extension(mimetype) || 'jpg';
+    const inferredMime = (responseMime || urlMime) as string | false | undefined;
+    const ext = inferredMime ? extension(inferredMime) : false;
 
+    if (!ext || !['png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4'].includes(ext)) {
+      throw new HttpException(
+        {
+          msg: 'Unsupported file type. Allowed types: .png, .jpg, .jpeg, .gif, .webp, .mp4',
+        },
+        400
+      );
+    }
+
+    const mimetype =
+      inferredMime || (ext === 'mp4' ? 'video/mp4' : `image/${ext}`);
     const getFile = await this.storage.uploadFile({
       buffer,
       mimetype,
