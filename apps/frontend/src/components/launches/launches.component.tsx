@@ -348,7 +348,7 @@ export const MenuComponent: FC<
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const user = useUser();
-  const { billingEnabled } = useVariables();
+  const { billingEnabled, chatEnabled } = useVariables();
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
@@ -537,7 +537,8 @@ export const LaunchesComponent = () => {
                 {sortedIntegrations?.length > 0 && <NewPost />}
                 {sortedIntegrations?.length > 0 &&
                   user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
+                  billingEnabled &&
+                  chatEnabled && <GeneratorComponent />}
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">

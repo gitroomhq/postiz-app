@@ -16,7 +16,7 @@ interface MenuItemInterface {
 }
 
 export const useMenuItem = () => {
-  const { isGeneral } = useVariables();
+  const { isGeneral, chatEnabled } = useVariables();
   const t = useT();
 
   const firstMenu = [
@@ -58,6 +58,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/agents',
+      hide: !chatEnabled,
     },
     {
       name: t('analytics', 'Analytics'),

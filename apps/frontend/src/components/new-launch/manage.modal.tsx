@@ -44,6 +44,7 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -62,6 +63,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
+  const { chatEnabled } = useVariables();
 
   const { addEditSets, mutate, customClose, dummy } = props;
 
@@ -663,6 +665,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
       </div>
+      {chatEnabled && (
       <CopilotPopup
         hitEscapeToClose={false}
         clickOutsideToClose={true}
@@ -685,6 +688,7 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
           ),
         }}
       />
+      )}
     </div>
   );
 };
