@@ -10,7 +10,6 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
-import { Fragment } from 'react';
 import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { DubAnalytics } from '@gitroom/frontend/components/layout/dubAnalytics';
@@ -35,9 +34,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
-    ? PlausibleProvider
-    : Fragment;
+  const isPlausibleEnabled = !!process.env.STRIPE_PUBLISHABLE_KEY;
   return (
     <html>
       <head>
@@ -79,6 +76,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          externalReviewEnabled={
+            process.env.NEXT_PUBLIC_EXTERNAL_REVIEW_ENABLED !== 'false'
+          }
           language={allHeaders.get(headerName)}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
@@ -94,9 +94,21 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <HtmlComponent />
             <DubAnalytics />
             <FacebookComponent />
-            <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-            >
+            {isPlausibleEnabled ? (
+              <PlausibleProvider
+                domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+              >
+                <PHProvider
+                  phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+                  host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
+                >
+                  <LayoutContext>
+                    <UtmSaver />
+                    {children}
+                  </LayoutContext>
+                </PHProvider>
+              </PlausibleProvider>
+            ) : (
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
@@ -106,7 +118,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   {children}
                 </LayoutContext>
               </PHProvider>
-            </Plausible>
+            )}
           </SentryComponent>
         </VariableContextComponent>
       </body>
