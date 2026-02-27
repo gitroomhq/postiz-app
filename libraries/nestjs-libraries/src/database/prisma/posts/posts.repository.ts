@@ -753,9 +753,42 @@ export class PostsRepository {
   }
 
   async getComments(postId: string) {
+    const post = await this._post.model.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        group: true,
+        organizationId: true,
+      },
+    });
+
+    if (!post) {
+      return [];
+    }
+
     return this._comments.model.comments.findMany({
       where: {
-        postId,
+        deletedAt: null,
+        organizationId: post.organizationId,
+        post: {
+          group: post.group,
+          deletedAt: null,
+        },
+      },
+      select: {
+        id: true,
+        content: true,
+        userId: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            lastName: true,
+            email: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',

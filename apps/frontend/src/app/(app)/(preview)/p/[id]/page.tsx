@@ -27,13 +27,9 @@ export const metadata: Metadata = {
 };
 export default async function Auth({
   params: { id },
-  searchParams,
 }: {
   params: {
     id: string;
-  };
-  searchParams?: {
-    share?: string;
   };
 }) {
   const post = await (await internalFetch(`/public/posts/${id}`)).json();
@@ -95,11 +91,9 @@ export default async function Auth({
             </div>
           </div>
           <div className="text-sm text-gray-400 flex items-center gap-[20px]">
-            {!!searchParams?.share && (
-              <div>
-                <CopyClient />
-              </div>
-            )}
+            <div>
+              <CopyClient postId={id} />
+            </div>
             <div className="flex-1">
               {t('publication_date', 'Publication Date:')}{' '}
               <RenderPreviewDate date={post[0].publishDate} />

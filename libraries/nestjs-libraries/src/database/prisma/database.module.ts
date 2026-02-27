@@ -36,6 +36,7 @@ import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/thi
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { ReviewService } from '@gitroom/nestjs-libraries/review/review.service';
 
 @Global()
 @Module({
@@ -81,6 +82,7 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
     ThirdPartyRepository,
     ThirdPartyService,
     VideoManager,
+    ReviewService,
   ],
   get exports() {
     return this.providers;
