@@ -2,17 +2,18 @@
 
 import {
   DetailedHTMLProps,
-  FC,
+  ForwardedRef,
   InputHTMLAttributes,
   ReactNode,
+  forwardRef,
   useEffect,
   useMemo,
 } from 'react';
 import { clsx } from 'clsx';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { TranslatedLabel } from '../translation/translated-label';
 
-export const Input: FC<
+type InputProps =
   DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     removeError?: boolean;
     error?: any;
@@ -23,8 +24,25 @@ export const Input: FC<
     icon?: ReactNode;
     translationKey?: string;
     translationParams?: Record<string, string | number>;
+  };
+
+function setMergedRef(
+  ref: ForwardedRef<HTMLInputElement>,
+  registerRef: any,
+  node: HTMLInputElement | null
+) {
+  if (typeof registerRef === 'function') {
+    registerRef(node);
   }
-> = (props) => {
+
+  if (typeof ref === 'function') {
+    ref(node);
+  } else if (ref) {
+    ref.current = node;
+  }
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
   const {
     label,
     icon,
@@ -38,6 +56,7 @@ export const Input: FC<
     ...rest
   } = props;
   const form = useFormContext();
+  const registerProps = !disableForm && form ? form.register(props.name) : {};
   const err = useMemo(() => {
     if (error) return error;
     if (!form || !form.formState.errors[props?.name!]) return;
@@ -72,8 +91,9 @@ export const Input: FC<
             'h-full bg-transparent outline-none flex-1 text-[14px] text-textColor',
             icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
           )}
-          {...(disableForm ? {} : form.register(props.name))}
+          {...registerProps}
           {...rest}
+          ref={(node) => setMergedRef(ref, (registerProps as any).ref, node)}
         />
       </div>
       {!removeError && (
@@ -81,4 +101,6 @@ export const Input: FC<
       )}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';
