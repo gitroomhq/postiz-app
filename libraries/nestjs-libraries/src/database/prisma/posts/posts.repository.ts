@@ -163,6 +163,20 @@ export class PostsRepository {
               },
             }
           : {}),
+        ...(query.tagId
+          ? ((): any => {
+              const tagIds = String(query.tagId).split(',').filter(Boolean);
+              return {
+                tags: {
+                  some: {
+                    tagId: {
+                      in: tagIds,
+                    },
+                  },
+                },
+              };
+            })()
+          : {}),
       },
       select: {
         id: true,
@@ -241,6 +255,20 @@ export class PostsRepository {
               customerId: query.customer,
             },
           }
+        : {}),
+      ...(query.tagId
+        ? ((): any => {
+            const tagIds = String(query.tagId).split(',').filter(Boolean);
+            return {
+              tags: {
+                some: {
+                  tagId: {
+                    in: tagIds,
+                  },
+                },
+              },
+            };
+          })()
         : {}),
     };
 

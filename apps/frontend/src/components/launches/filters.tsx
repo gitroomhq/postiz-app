@@ -8,6 +8,7 @@ import { SelectCustomer } from '@gitroom/frontend/components/launches/select.cus
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import TagFilter from '@gitroom/frontend/components/launches/tag.filter';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -84,6 +85,7 @@ export const Filters = () => {
       endDate: currentRange.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -102,6 +104,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'day',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -120,6 +123,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'week',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -138,6 +142,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'month',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -152,6 +157,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'list',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -166,6 +172,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: 'week',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -179,6 +186,7 @@ export const Filters = () => {
         endDate: calendar.endDate,
         display: calendar.display as 'day' | 'week' | 'month',
         customer: customer,
+        tagId: calendar.tagId,
       });
     },
     [calendar]
@@ -211,6 +219,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -241,6 +250,7 @@ export const Filters = () => {
       endDate: range.endDate,
       display: calendar.display as 'day' | 'week' | 'month',
       customer: calendar.customer,
+      tagId: calendar.tagId,
     });
   }, [calendar]);
 
@@ -402,7 +412,9 @@ export const Filters = () => {
         integrations={calendar.integrations}
       />
       {!isListView && (
-        <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+        <div className="flex flex-row items-center gap-[8px]">
+          <TagFilter />
+          <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
           <div
             className={clsx(
               'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
@@ -429,6 +441,7 @@ export const Filters = () => {
             onClick={setMonth}
           >
             {t('month', 'Month')}
+          </div>
           </div>
         </div>
       )}

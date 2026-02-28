@@ -24,4 +24,8 @@ export class GetPostsListDto {
   @IsOptional()
   @IsString()
   customer?: string;
+
+  @IsOptional()
+  @IsString()
+  tagId?: string;
 }
