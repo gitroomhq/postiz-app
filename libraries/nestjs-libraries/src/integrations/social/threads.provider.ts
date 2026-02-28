@@ -14,6 +14,22 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
+// Threads API enforces a maximum of 3 URLs per post
+const THREADS_MAX_URLS = 3;
+
+function validateUrlCount(message: string): void {
+  const urlPattern = /https?:\/\/[^\s]+/g;
+  const urls = message.match(urlPattern) || [];
+  if (urls.length > THREADS_MAX_URLS) {
+    throw new Error(
+      `Threads only allows a maximum of ${THREADS_MAX_URLS} URLs per post. ` +
+      `Your post contains ${urls.length} URLs. ` +
+      `Please reduce the number of URLs and try again.`
+    );
+  }
+}
+
+
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
   name = 'Threads';
@@ -160,7 +176,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async fetchUserInfo(accessToken: string) {
     const { id, username, threads_profile_picture_url } = await (
       await this.fetch(
-        `https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${accessToken}`
+        `ht';tps://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
@@ -172,6 +188,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+
+
+
+
   private async createSingleMediaContent(
     userId: string,
     accessToken: string,
@@ -180,8 +200,14 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
+    validateUrlCount(message);
+
     const mediaType =
       media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+
+
+
+
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.path } : {}),
@@ -250,15 +276,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return containerId;
   }
 
-  private async createTextContent(
+
+    private async createTextContent(
     userId: string,
     accessToken: string,
     message: string,
     replyToId?: string,
     quoteId?: string
   ): Promise<string> {
+    validateUrlCount(message);
+
     const form = new FormData();
     form.append('media_type', 'TEXT');
+
     form.append('text', message);
     form.append('access_token', accessToken);
 
