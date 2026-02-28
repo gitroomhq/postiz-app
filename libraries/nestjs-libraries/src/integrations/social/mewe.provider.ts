@@ -239,6 +239,7 @@ export class MeweProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
+    const postType = firstPost.settings.postType || 'group';
     const groupId = firstPost.settings.group;
 
     // Upload photos if present (exclude videos)
@@ -257,15 +258,17 @@ export class MeweProvider extends SocialAbstract implements SocialProvider {
       postBody.uploadedPhotoIds = uploadedPhotoIds;
     }
 
+    const postUrl =
+      postType === 'timeline'
+        ? `${this.meweHost}/api/dev/me/post`
+        : `${this.meweHost}/api/dev/group/${groupId}/post`;
+
     // MeWe post endpoint may return 204 (no content), so use raw fetch
-    const postResponse = await fetch(
-      `${this.meweHost}/api/dev/group/${groupId}/post`,
-      {
-        method: 'POST',
-        headers: this.authHeaders(accessToken),
-        body: JSON.stringify(postBody),
-      }
-    );
+    const postResponse = await fetch(postUrl, {
+      method: 'POST',
+      headers: this.authHeaders(accessToken),
+      body: JSON.stringify(postBody),
+    });
 
     if (!postResponse.ok) {
       const errorText = await postResponse.text();
@@ -285,11 +288,13 @@ export class MeweProvider extends SocialAbstract implements SocialProvider {
       postId = makeId(12);
     }
 
+    const releaseURL = `${this.meweHost}/post/show/${postId}`;
+
     return [
       {
         id: firstPost.id,
         postId,
-        releaseURL: `${this.meweHost}/group/${groupId}`,
+        releaseURL,
         status: 'success',
       },
     ];
