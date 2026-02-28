@@ -513,11 +513,14 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     id: string,
     fields: { likesAmount: string; post: string }
   ) {
+    validateUrlCount(fields.post);
+    
     const { data } = await (
       await fetch(
         `https://graph.threads.net/v1.0/${id}/insights?metric=likes&access_token=${integration.token}`
       )
     ).json();
+    
 
     const {
       values: [value],
