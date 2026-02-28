@@ -22,6 +22,7 @@ import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 extend(isoWeek);
 extend(weekOfYear);
 
@@ -178,8 +179,8 @@ export const CalendarWeekProvider: FC<{
       endDate: newDayjs(filters.endDate).endOf('day').utc().format(),
     }).toString();
 
-    const data = (await fetch(`/posts?${modifiedParams}`)).json();
-    return data;
+    const data = await (await fetch(`/posts?${modifiedParams}`)).json();
+    return expandPosts(data);
   }, [filters, params]);
 
   // List view data fetcher
@@ -193,7 +194,7 @@ export const CalendarWeekProvider: FC<{
 
   const loadListData = useCallback(async () => {
     const response = await fetch(`/posts/list?${listParams}`);
-    return response.json();
+    return expandPostsList(await response.json());
   }, [listParams]);
 
   // SWR for calendar view

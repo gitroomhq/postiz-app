@@ -224,9 +224,6 @@ export class PostsRepository {
             {
               organizationId: orgId,
             },
-            {
-              submittedForOrganizationId: orgId,
-            },
           ],
         },
         {
@@ -368,6 +365,19 @@ export class PostsRepository {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+      },
+    });
+  }
+
+  updateReleaseId(id: string, orgId: string, releaseId: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+        organizationId: orgId,
+        releaseId: 'missing',
+      },
+      data: {
+        releaseId: String(releaseId),
       },
     });
   }

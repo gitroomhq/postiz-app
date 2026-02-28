@@ -140,6 +140,12 @@ export class UsersController {
     return this._userService.updateEmailNotifications(user.id, body);
   }
 
+  @Post('/api-key/rotate')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async rotateApiKey(@GetOrgFromRequest() organization: Organization) {
+    return this._orgService.updateApiKey(organization.id);
+  }
+
   @Get('/subscription')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async getSubscription(@GetOrgFromRequest() organization: Organization) {

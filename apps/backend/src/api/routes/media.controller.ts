@@ -91,7 +91,7 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const originalName = file.originalname;
+    const originalName = file?.originalname || '';
     const uploadedFile = await this.storage.uploadFile(file);
     return this._mediaService.saveFile(
       org.id,
