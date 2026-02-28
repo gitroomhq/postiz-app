@@ -127,6 +127,70 @@ export type MediaContent = {
   thumbnailTimestamp?: number;
 };
 
+export type MediaCapabilities = {
+  maxImages: number;
+  maxVideos: number;
+  canMixMediaTypes: boolean;
+  requiresMedia: boolean;
+  requiresVideo: boolean;
+  maxImageSizeBytes?: number;
+  maxVideoSizeBytes?: number;
+  maxVideoDurationSeconds?: number;
+};
+
+export type MediaValidationError = {
+  field: string;
+  message: string;
+};
+
+export function validateMediaAgainstCapabilities(
+  media: MediaContent[],
+  capabilities: MediaCapabilities
+): MediaValidationError[] {
+  const errors: MediaValidationError[] = [];
+  const images = media.filter((m) => m.type === 'image');
+  const videos = media.filter((m) => m.type === 'video');
+  const hasImages = images.length > 0;
+  const hasVideos = videos.length > 0;
+
+  if (capabilities.requiresMedia && media.length === 0) {
+    errors.push({
+      field: 'media',
+      message: 'At least one media attachment is required',
+    });
+  }
+
+  if (capabilities.requiresVideo && videos.length === 0) {
+    errors.push({
+      field: 'media',
+      message: 'At least one video is required',
+    });
+  }
+
+  if (images.length > capabilities.maxImages) {
+    errors.push({
+      field: 'images',
+      message: `Maximum ${capabilities.maxImages} images allowed`,
+    });
+  }
+
+  if (videos.length > capabilities.maxVideos) {
+    errors.push({
+      field: 'videos',
+      message: `Maximum ${capabilities.maxVideos} videos allowed`,
+    });
+  }
+
+  if (!capabilities.canMixMediaTypes && hasImages && hasVideos) {
+    errors.push({
+      field: 'media',
+      message: 'Images and videos cannot be mixed in the same post',
+    });
+  }
+
+  return errors;
+}
+
 export type FetchPageInformationResult = {
   id: string;
   name: string;
@@ -139,6 +203,7 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  mediaCapabilities?: MediaCapabilities;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   refreshCron?: boolean;

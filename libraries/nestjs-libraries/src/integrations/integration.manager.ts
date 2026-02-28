@@ -87,6 +87,7 @@ export class IntegrationManager {
           isChromeExtension: !!p.isChromeExtension,
           ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
+          mediaCapabilities: p.mediaCapabilities,
         }))
       ),
       article: [] as any[],

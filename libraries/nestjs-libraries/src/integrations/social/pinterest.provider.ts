@@ -25,6 +25,13 @@ export class PinterestProvider
   identifier = 'pinterest';
   name = 'Pinterest';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: true,
+    requiresMedia: true,
+    requiresVideo: false,
+  };
   scopes = [
     'boards:read',
     'boards:write',

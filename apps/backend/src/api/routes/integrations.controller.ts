@@ -106,6 +106,7 @@ export class IntegrationsController {
             changeNickName: !!findIntegration?.changeNickname,
             customer: p.customer,
             additionalSettings: p.additionalSettings || '[]',
+            mediaCapabilities: findIntegration.mediaCapabilities,
           };
         })
       ),

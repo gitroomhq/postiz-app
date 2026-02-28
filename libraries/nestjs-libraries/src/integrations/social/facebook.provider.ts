@@ -16,6 +16,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+    maxImageSizeBytes: 4194304,
+  };
   scopes = [
     'pages_show_list',
     'business_management',

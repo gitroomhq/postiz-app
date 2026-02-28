@@ -1,6 +1,7 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
+import { MediaCapabilities } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
@@ -49,6 +50,13 @@ function safeStringify(obj: any) {
 export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
+  mediaCapabilities: MediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: true,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
 
   public handleErrors(
     body: string

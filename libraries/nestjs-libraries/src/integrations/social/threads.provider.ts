@@ -18,6 +18,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
   name = 'Threads';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [
     'threads_basic',
     'threads_content_publish',

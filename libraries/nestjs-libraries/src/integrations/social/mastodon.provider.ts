@@ -14,6 +14,13 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 10,
+    canMixMediaTypes: true,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
   maxLength() {
