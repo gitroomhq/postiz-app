@@ -1,8 +1,9 @@
 import 'reflect-metadata';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provider';
 import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { WebhookProvider } from '@gitroom/nestjs-libraries/integrations/webhook.provider';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { RedditProvider } from '@gitroom/nestjs-libraries/integrations/social/reddit.provider';
 import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/social/dev.to.provider';
@@ -74,6 +75,50 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
 
 @Injectable()
 export class IntegrationManager {
+  private readonly logger = new Logger(IntegrationManager.name);
+
+  // --- Webhook Provider Registry ---
+  private webhookProviders = new Map<string, WebhookProvider>();
+
+  /**
+   * Register an inbound webhook provider.
+   * Called at startup to wire each provider into the routing map.
+   */
+  registerWebhookProvider(provider: WebhookProvider): void {
+    if (this.webhookProviders.has(provider.providerName)) {
+      this.logger.warn(
+        `Webhook provider "${provider.providerName}" is already registered — overwriting.`
+      );
+    }
+    this.webhookProviders.set(provider.providerName, provider);
+    this.logger.log(
+      `Registered webhook provider: ${provider.providerName}`
+    );
+  }
+
+  /**
+   * Look up a registered webhook provider by name.
+   * @throws Error if the provider is not registered
+   */
+  getWebhookProvider(name: string): WebhookProvider {
+    const provider = this.webhookProviders.get(name);
+    if (!provider) {
+      throw new Error(
+        `Webhook provider "${name}" not found. Registered providers: ${[...this.webhookProviders.keys()].join(', ') || '(none)'}`
+      );
+    }
+    return provider;
+  }
+
+  /**
+   * List identifiers of all registered webhook providers.
+   */
+  getRegisteredWebhookProviders(): string[] {
+    return [...this.webhookProviders.keys()];
+  }
+
+  // --- Social Integration Methods ---
+
   async getAllIntegrations() {
     return {
       social: await Promise.all(
