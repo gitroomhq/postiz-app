@@ -322,7 +322,22 @@
       "next": "14.2.35"
     },
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "bcrypt",
+      "@prisma/client",
+      "@prisma/engines",
+      "@swc/core",
+      "sharp",
+      "canvas",
+      "bufferutil",
+      "utf-8-validate",
+      "prisma",
+      "esbuild",
+      "@sentry/cli",
+      "@sentry-internal/node-cpu-profiler",
+      "@temporalio/core-bridge",
+      "@parcel/watcher",
+      "protobufjs",
+      "unrs-resolver"
     ]
   }
 }
