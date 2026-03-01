@@ -10,10 +10,11 @@ import {
   Param,
   Post,
   Req,
+  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RawBodyRequest } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 /**
@@ -58,7 +59,8 @@ export class InboundWebhooksController {
     @Param('provider') provider: string,
     @Body() body: any,
     @Headers() headers: Record<string, string>,
-    @Req() req: RawBodyRequest<Request>
+    @Req() req: RawBodyRequest<Request>,
+    @Res({ passthrough: true }) res: Response
   ) {
     let handler;
     try {
@@ -99,6 +101,13 @@ export class InboundWebhooksController {
 
     try {
       const result = await handler.handleWebhook(body, headers);
+
+      // Allow providers to control the Content-Type (e.g. text/plain for
+      // Facebook's hub.challenge verification response).
+      if (result?.contentType) {
+        res.setHeader('Content-Type', result.contentType);
+      }
+
       return result?.body ?? { status: 'ok' };
     } catch (err: any) {
       this.logger.error(

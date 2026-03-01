@@ -43,4 +43,6 @@ export interface WebhookResponse {
   statusCode?: number;
   /** Response body to return to the webhook caller */
   body?: any;
+  /** Content-Type header (e.g. 'text/plain' for verification challenges) */
+  contentType?: string;
 }

@@ -33,6 +33,7 @@ export class FacebookWebhookProvider implements WebhookProvider {
       return {
         statusCode: 200,
         body: payload['hub.challenge'],
+        contentType: 'text/plain',
       };
     }
 
