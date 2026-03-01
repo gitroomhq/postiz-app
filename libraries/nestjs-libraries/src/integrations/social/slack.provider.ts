@@ -43,6 +43,9 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
+    if (!process.env.SLACK_ID || !process.env.SLACK_SECRET) {
+      throw new Error('Slack credentials not configured');
+    }
     const state = makeId(6);
 
     return {

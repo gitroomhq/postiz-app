@@ -54,6 +54,9 @@ export class TwitchProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+      throw new Error('Twitch credentials not configured');
+    }
     const state = makeId(32);
 
     const redirectUri = `${process.env.FRONTEND_URL}/integrations/social/twitch`;

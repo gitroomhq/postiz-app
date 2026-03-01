@@ -75,6 +75,9 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.VK_ID) {
+      throw new Error('VK credentials not configured');
+    }
     const state = makeId(32);
     const codeVerifier = randomBytes(64).toString('base64url');
     const challenge = Buffer.from(

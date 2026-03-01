@@ -128,6 +128,11 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    const gmbClientId = process.env.GOOGLE_GMB_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID;
+    const gmbClientSecret = process.env.GOOGLE_GMB_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET;
+    if (!gmbClientId || !gmbClientSecret) {
+      throw new Error('Google Business credentials not configured');
+    }
     const state = makeId(7);
     const { client } = clientAndGmb();
     return {

@@ -77,6 +77,9 @@ export class InstagramStandaloneProvider
   }
 
   async generateAuthUrl() {
+    if (!process.env.INSTAGRAM_APP_ID || !process.env.INSTAGRAM_APP_SECRET) {
+      throw new Error('Instagram credentials not configured');
+    }
     const state = makeId(6);
     return {
       url:

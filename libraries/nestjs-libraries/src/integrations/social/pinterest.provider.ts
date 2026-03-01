@@ -98,6 +98,9 @@ export class PinterestProvider
   }
 
   async generateAuthUrl() {
+    if (!process.env.PINTEREST_CLIENT_ID || !process.env.PINTEREST_CLIENT_SECRET) {
+      throw new Error('Pinterest credentials not configured');
+    }
     const state = makeId(6);
     return {
       url: `https://www.pinterest.com/oauth/?client_id=${

@@ -159,6 +159,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.YOUTUBE_CLIENT_ID || !process.env.YOUTUBE_CLIENT_SECRET) {
+      throw new Error('YouTube credentials not configured');
+    }
     const state = makeId(7);
     const { client } = clientAndYoutube();
     return {

@@ -85,6 +85,9 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.DRIBBBLE_CLIENT_ID || !process.env.DRIBBBLE_CLIENT_SECRET) {
+      throw new Error('Dribbble credentials not configured');
+    }
     const state = makeId(6);
     return {
       url: `https://dribbble.com/oauth/authorize?client_id=${

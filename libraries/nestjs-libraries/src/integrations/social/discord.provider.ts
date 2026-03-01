@@ -60,6 +60,9 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
+    if (!process.env.DISCORD_CLIENT_ID || !process.env.DISCORD_CLIENT_SECRET) {
+      throw new Error('Discord credentials not configured');
+    }
     const state = makeId(6);
     return {
       url: `https://discord.com/oauth2/authorize?client_id=${

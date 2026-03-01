@@ -339,6 +339,9 @@ export class InstagramProvider
   }
 
   async generateAuthUrl() {
+    if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
+      throw new Error('Facebook/Instagram credentials not configured');
+    }
     const state = makeId(6);
     return {
       url:

@@ -283,6 +283,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.TIKTOK_CLIENT_ID || !process.env.TIKTOK_CLIENT_SECRET) {
+      throw new Error('TikTok credentials not configured');
+    }
     const state = Math.random().toString(36).substring(2);
 
     return {

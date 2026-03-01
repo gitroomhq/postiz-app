@@ -69,6 +69,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.THREADS_APP_ID || !process.env.THREADS_APP_SECRET) {
+      throw new Error('Threads credentials not configured');
+    }
     const state = makeId(6);
     return {
       url:
