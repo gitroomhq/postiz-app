@@ -126,6 +126,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1404112') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'For security reasons, your account has limited access to the site for a few days',
+      };
+    }
+
     if (body.indexOf('Name parameter too long') > -1) {
       return {
         type: 'bad-body' as const,
@@ -504,10 +511,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           case 'post_clicks_by_type':
             // This returns an object with click types
             if (typeof value === 'object') {
-              const totalClicks = Object.values(value as Record<string, number>).reduce(
-                (sum: number, v: number) => sum + v,
-                0
-              );
+              const totalClicks = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Clicks by Type';
               total = String(totalClicks);
             }
@@ -515,10 +521,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           case 'post_reactions_by_type_total':
             // This returns an object with reaction types
             if (typeof value === 'object') {
-              const totalReactions = Object.values(value as Record<string, number>).reduce(
-                (sum: number, v: number) => sum + v,
-                0
-              );
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Reactions';
               total = String(totalReactions);
             }

@@ -84,6 +84,7 @@ export class UsersController {
       impersonate: !!impersonate,
       isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY ? false : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
+      streakSince: organization?.streakSince || null,
       // @ts-ignore
       publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey : '',
     };
@@ -146,6 +147,12 @@ export class UsersController {
     @Body() body: EmailNotificationsDto
   ) {
     return this._userService.updateEmailNotifications(user.id, body);
+  }
+
+  @Post('/api-key/rotate')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async rotateApiKey(@GetOrgFromRequest() organization: Organization) {
+    return this._orgService.updateApiKey(organization.id);
   }
 
   @Get('/subscription')

@@ -13,6 +13,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -42,6 +43,23 @@ export class PostsController {
     @Param('id') id: string
   ) {
     return this._postsService.getStatistics(org.id, id);
+  }
+
+  @Get('/:id/missing')
+  async getMissingContent(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/:id/release-id')
+  async updateReleaseId(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('releaseId') releaseId: string
+  ) {
+    return this._postsService.updateReleaseId(org.id, id, releaseId);
   }
 
   @Post('/should-shortlink')
@@ -81,16 +99,20 @@ export class PostsController {
     return this._postsService.editTag(id, org.id, body);
   }
 
+  @Delete('/tags/:id')
+  async deleteTag(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.deleteTag(id, org.id);
+  }
+
   @Get('/')
   async getPosts(
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetPostsDto
   ) {
-    const posts = await this._postsService.getPosts(org.id, query);
-
-    return {
-      posts,
-    };
+    return this._postsService.getPostsMinified(org.id, query);
   }
 
   @Get('/find-slot')
@@ -104,6 +126,14 @@ export class PostsController {
     @Param('id') id?: string
   ) {
     return { date: await this._postsService.findFreeDateTime(org.id, id) };
+  }
+
+  @Get('/list')
+  async getPostsList(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetPostsListDto
+  ) {
+    return this._postsService.getPostsList(org.id, query);
   }
 
   @Get('/old')
@@ -171,9 +201,10 @@ export class PostsController {
   changeDate(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
-    @Body('date') date: string
+    @Body('date') date: string,
+    @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
-    return this._postsService.changeDate(org.id, id, date);
+    return this._postsService.changeDate(org.id, id, date, action);
   }
 
   @Post('/separate-posts')

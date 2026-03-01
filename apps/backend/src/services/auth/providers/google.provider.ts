@@ -33,7 +33,7 @@ const clientAndYoutube = () => {
 
 export class GoogleProvider implements ProvidersInterface {
   generateLink() {
-    const state = makeId(7);
+    const state = 'login';
     const { client } = clientAndYoutube();
     return client.generateAuthUrl({
       access_type: 'online',

@@ -65,7 +65,7 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(6);
     return {
-      url: '',
+      url: state,
       codeVerifier: makeId(10),
       state,
     };

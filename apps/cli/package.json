@@ -1,0 +1,40 @@
+{
+  "name": "postiz",
+  "version": "2.0.5",
+  "description": "Postiz CLI - Command line interface for the Postiz social media scheduling API",
+  "main": "dist/index.js",
+  "bin": {
+    "postiz": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "start": "node ./dist/index.js",
+    "publish": "tsup && pnpm publish --access public --no-git-checks"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "SKILL.md"
+  ],
+  "keywords": [
+    "postiz",
+    "cli",
+    "social media",
+    "scheduling",
+    "automation",
+    "ai-agent",
+    "command-line"
+  ],
+  "author": "Nevo David",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gitroomhq/postiz-app.git",
+    "directory": "apps/cli"
+  },
+  "homepage": "https://postiz.com",
+  "bugs": {
+    "url": "https://github.com/gitroomhq/postiz-app/issues"
+  }
+}

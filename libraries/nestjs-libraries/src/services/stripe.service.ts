@@ -450,6 +450,14 @@ export class StripeService {
           ud,
         },
       },
+      ...(body.datafast_session_id && body.datafast_visitor_id
+        ? {
+            metadata: {
+              datafast_visitor_id: body.datafast_visitor_id,
+              datafast_session_id: body.datafast_session_id,
+            },
+          }
+        : {}),
       allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {
@@ -810,6 +818,77 @@ export class StripeService {
     }
 
     return { ok: true };
+  }
+
+  async getCharges(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return [];
+    }
+
+    const charges = await stripe.charges.list({
+      customer: org.paymentId,
+      limit: 100,
+    });
+
+    return charges.data
+      .filter((f) => f.status === 'succeeded')
+      .map((charge) => ({
+        id: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        created: charge.created,
+        status: charge.status,
+        refunded: charge.refunded,
+        amount_refunded: charge.amount_refunded,
+        description: charge.description,
+      }));
+  }
+
+  async refundCharges(organizationId: string, chargeIds: string[]) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      throw new Error('No payment customer found for this organization');
+    }
+
+    const refunded: string[] = [];
+    const failed: string[] = [];
+
+    for (const chargeId of chargeIds) {
+      try {
+        await stripe.refunds.create({ charge: chargeId });
+        refunded.push(chargeId);
+      } catch (err) {
+        failed.push(chargeId);
+      }
+    }
+
+    return { refunded, failed };
+  }
+
+  async cancelSubscription(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      throw new Error('No payment customer found for this organization');
+    }
+
+    const customer = org.paymentId;
+
+    const subscriptions = (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+      })
+    ).data.filter((f) => f.status !== 'canceled');
+
+    if (!subscriptions.length) {
+      throw new Error('No active subscription found');
+    }
+
+    await stripe.subscriptions.cancel(subscriptions[0].id);
+    await this._subscriptionService.deleteSubscription(customer);
+
+    return { cancelled: true };
   }
 
   async lifetimeDeal(organizationId: string, code: string) {

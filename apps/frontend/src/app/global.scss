@@ -745,7 +745,9 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .post-now {
-  box-shadow: -33px 57px 18px 0 rgba(0, 0, 0, 0.01), -21px 36px 17px 0 rgba(0, 0, 0, 0.06), -12px 20px 14px 0 rgba(0, 0, 0, 0.20), -5px 9px 11px 0 rgba(0, 0, 0, 0.34), -1px 2px 6px 0 rgba(0, 0, 0, 0.39);
+  box-shadow: -33px 57px 18px 0 rgba(0, 0, 0, 0.01),
+    -21px 36px 17px 0 rgba(0, 0, 0, 0.06), -12px 20px 14px 0 rgba(0, 0, 0, 0.2),
+    -5px 9px 11px 0 rgba(0, 0, 0, 0.34), -1px 2px 6px 0 rgba(0, 0, 0, 0.39);
 }
 
 .uppyChange .uppy-Dashboard-inner {
@@ -780,4 +782,9 @@ html[dir='rtl'] [dir='ltr'] {
 .forceChange .changeColor {
   background: var(--new-btn-primary) !important;
   color: #fff !important;
+}
+
+.text-shadow-tags {
+  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
+    1px 1px 0 black;
 }

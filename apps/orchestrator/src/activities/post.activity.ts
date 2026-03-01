@@ -83,7 +83,11 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    const getPosts = await this._postService.getPostsRecursively(postId, true, orgId);
+    const getPosts = await this._postService.getPostsRecursively(
+      postId,
+      true,
+      orgId
+    );
     if (!getPosts || getPosts.length === 0 || getPosts[0].parentPostId) {
       return [];
     }
@@ -155,7 +159,7 @@ export class PostActivity {
       posts
     );
 
-    return getIntegration.post(
+    const postNow = await getIntegration.post(
       integration.internalId,
       integration.token,
       await Promise.all(
@@ -179,6 +183,23 @@ export class PostActivity {
       ),
       integration
     );
+
+    await this._temporalService.client
+      .getRawClient()
+      .workflow.start('streakWorkflow', {
+        args: [{ organizationId: integration.organizationId }],
+        workflowId: `streak_${integration.organizationId}`,
+        taskQueue: 'main',
+        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+        typedSearchAttributes: new TypedSearchAttributes([
+          {
+            key: organizationId,
+            value: integration.organizationId,
+          },
+        ]),
+      });
+
+    return postNow;
   }
 
   @ActivityMethod()

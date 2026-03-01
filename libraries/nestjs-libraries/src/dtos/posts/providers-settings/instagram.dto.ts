@@ -18,6 +18,13 @@ export class InstagramDto {
   @IsDefined()
   post_type: 'post' | 'story';
 
+  @IsOptional()
+  is_trial_reel?: boolean;
+
+  @IsIn(['MANUAL', 'SS_PERFORMANCE'])
+  @IsOptional()
+  graduation_strategy?: 'MANUAL' | 'SS_PERFORMANCE';
+
   @Type(() => Collaborators)
   @ValidateNested({ each: true })
   @IsArray()
