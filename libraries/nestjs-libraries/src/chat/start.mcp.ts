@@ -13,12 +13,14 @@ export const startMcp = async (app: INestApplication) => {
   const agent = mastra.getAgent('postiz');
   const tools = await agent.getTools();
 
-  const server = new MCPServer({
+  const serverConfig = {
     name: 'Postiz MCP',
     version: '1.0.0',
     tools,
     agents: { postiz: agent },
-  });
+  };
+
+  const server = new MCPServer(serverConfig);
 
   app.use('/mcp', async (req: Request, res: Response, next: () => void) => {
     // Skip if this is the /mcp/:id route
@@ -140,7 +142,7 @@ export const startMcp = async (app: INestApplication) => {
       // @ts-ignore
       { requestId: req.params.id, auth: req.auth },
       async () => {
-        await server.startSSE({
+        await new MCPServer(serverConfig).startSSE({
           url,
           ssePath: `/sse/${req.params.id}`,
           messagePath: `/message/${req.params.id}`,
