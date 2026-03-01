@@ -407,6 +407,7 @@ model Post {
   approvedSubmitForOrder     APPROVED_SUBMIT_FOR_ORDER @default(NO)
   lastMessageId              String?
   intervalInDays             Int?
+  repeatTimezone             String?
   error                      String?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt

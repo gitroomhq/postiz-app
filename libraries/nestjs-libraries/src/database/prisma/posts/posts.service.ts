@@ -37,6 +37,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { isValidIanaTimezone } from '@gitroom/helpers/utils/recurrence';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -231,6 +232,10 @@ export class PostsService {
   ): Promise<CreatePostDto> {
     if (!body?.posts?.every((p) => p?.integration?.id)) {
       throw new BadRequestException('All posts must have an integration id');
+    }
+
+    if (body.inter && body.timezone && !isValidIanaTimezone(body.timezone)) {
+      throw new BadRequestException('Invalid timezone value');
     }
 
     const mappedValues = {
@@ -703,7 +708,8 @@ export class PostsService {
         body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
         post,
         body.tags,
-        body.inter
+        body.inter,
+        body.timezone
       );
 
       if (!posts?.length) {
