@@ -66,6 +66,7 @@
     "@mastra/memory": "^0.15.6",
     "@mastra/pg": "^0.17.2",
     "@modelcontextprotocol/sdk": "^1.22.0",
+    "@nest-lab/throttler-storage-redis": "^1.2.0",
     "@nestjs/cli": "10.0.2",
     "@nestjs/common": "^10.0.2",
     "@nestjs/core": "^10.0.2",
