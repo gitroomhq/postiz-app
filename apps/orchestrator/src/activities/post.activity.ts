@@ -22,6 +22,7 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { getNextRecurringOccurrenceDate } from '@gitroom/helpers/utils/recurrence';
 
 @Injectable()
 @Activity()
@@ -273,6 +274,25 @@ export class PostActivity {
       })
     );
   }
+
+  @ActivityMethod()
+  async getRepeatDelay(
+    publishDate: Date,
+    intervalInDays: number,
+    repeatTimezone?: string | null,
+    fromDate?: string
+  ) {
+    const from = fromDate ? new Date(fromDate) : new Date();
+    const nextOccurrence = getNextRecurringOccurrenceDate({
+      anchorDate: publishDate,
+      intervalInDays,
+      timezone: repeatTimezone,
+      fromDate: from,
+    });
+
+    return Math.max(0, nextOccurrence.getTime() - from.getTime());
+  }
+
   @ActivityMethod()
   async processPlug(data: {
     plugId: string;

@@ -28,6 +28,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { getTimezone } from '@gitroom/frontend/components/layout/set.timezone';
 import { capitalize } from 'lodash';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
@@ -368,7 +369,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const group = existingData.group || makeId(10);
       const data = {
         type,
-        ...(repeater ? { inter: repeater } : {}),
+        ...(repeater ? { inter: repeater, timezone: getTimezone() } : {}),
         tags,
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),

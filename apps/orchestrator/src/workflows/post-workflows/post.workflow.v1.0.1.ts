@@ -35,6 +35,7 @@ const {
   updatePost,
   sendWebhooks,
   isCommentable,
+  getRepeatDelay,
 } = proxyActivities<PostActivity>({
   startToCloseTimeout: '10 minute',
   retry: {
@@ -76,7 +77,6 @@ export async function postWorkflowV101({
     poked = true;
   });
 
-  const startTime = new Date();
   // get all the posts and comments to post
   const postsListBefore = await getPostsList(organizationId, postId);
   const [post] = postsListBefore;
@@ -271,9 +271,11 @@ export async function postWorkflowV101({
     : [
         {
           type: 'repeat-post',
-          delay:
-            post.intervalInDays * 24 * 60 * 60 * 1000 -
-            (new Date().getTime() - startTime.getTime()),
+          delay: await getRepeatDelay(
+            post.publishDate,
+            post.intervalInDays,
+            post.repeatTimezone
+          ),
         },
       ];
 

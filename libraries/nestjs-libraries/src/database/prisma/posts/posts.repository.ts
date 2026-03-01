@@ -11,6 +11,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { listRecurringOccurrencesInRange } from '@gitroom/helpers/utils/recurrence';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -172,6 +173,7 @@ export class PostsRepository {
         releaseId: true,
         state: true,
         intervalInDays: true,
+        repeatTimezone: true,
         group: true,
         tags: {
           select: {
@@ -190,23 +192,23 @@ export class PostsRepository {
     });
 
     return list.reduce((all, post) => {
+      const { repeatTimezone, ...postWithoutTimezone } = post;
+
       if (!post.intervalInDays) {
-        return [...all, post];
+        return [...all, postWithoutTimezone];
       }
 
-      const addMorePosts = [];
-      let startingDate = dayjs.utc(post.publishDate);
-      while (dayjs.utc(endDate).isSameOrAfter(startingDate)) {
-        if (dayjs(startingDate).isSameOrAfter(dayjs.utc(post.publishDate))) {
-          addMorePosts.push({
-            ...post,
-            publishDate: startingDate.toDate(),
-            actualDate: post.publishDate,
-          });
-        }
-
-        startingDate = startingDate.add(post.intervalInDays, 'days');
-      }
+      const addMorePosts = listRecurringOccurrencesInRange({
+        anchorDate: post.publishDate,
+        intervalInDays: post.intervalInDays,
+        rangeStart: startDate,
+        rangeEnd: endDate,
+        timezone: repeatTimezone,
+      }).map((occurrence) => ({
+        ...postWithoutTimezone,
+        publishDate: occurrence,
+        actualDate: post.publishDate,
+      }));
 
       return [...all, ...addMorePosts];
     }, [] as any[]);
@@ -474,7 +476,8 @@ export class PostsRepository {
     date: string,
     body: PostBody,
     tags: { value: string; label: string }[],
-    inter?: number
+    inter?: number,
+    timezone?: string
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -507,6 +510,11 @@ export class PostsRepository {
         delay: value.delay || 0,
         group: uuid,
         intervalInDays: inter ? +inter : null,
+        ...(inter
+          ? timezone
+            ? { repeatTimezone: timezone }
+            : {}
+          : { repeatTimezone: null }),
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(state === 'update'
           ? {}

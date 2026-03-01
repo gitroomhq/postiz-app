@@ -105,6 +105,10 @@ export class CreatePostDto {
   @IsNumber()
   inter?: number;
 
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
   @IsDefined()
   @IsDateString()
   date: string;
