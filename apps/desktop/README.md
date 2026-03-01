@@ -249,9 +249,13 @@ X_API_SECRET=your_api_secret
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
 
-# LinkedIn — https://www.linkedin.com/developers
+# LinkedIn personal profile — https://www.linkedin.com/developers
 LINKEDIN_CLIENT_ID=your_client_id
 LINKEDIN_CLIENT_SECRET=your_client_secret
+# Optional: set to true only if your LinkedIn app has Marketing Developer Platform (MDP)
+# approval (requires legal entity verification from LinkedIn). Without MDP access, leave
+# this unset — standard apps cannot use org scopes and LinkedIn will reject the OAuth flow.
+# LINKEDIN_INCLUDE_ORG_SCOPES=true
 
 # Add any other Postiz-supported platform vars here
 ```
@@ -263,6 +267,11 @@ http://localhost:4200/integrations/social/<platform>
 ```
 
 For example, register `http://localhost:4200/integrations/social/x` as the callback URL in your Twitter/X developer app. Most platforms (X, Google, LinkedIn) allow `http://localhost` for desktop/development use. Facebook and Instagram require HTTPS — those platforms require a hosted deployment.
+
+**LinkedIn notes:**
+- The personal LinkedIn provider (`linkedin`) uses minimal scopes by default: `openid`, `profile`, `w_member_social`, `r_basicprofile`. This works for all standard LinkedIn developer apps.
+- The LinkedIn Pages provider (`linkedin-page`) always requests organization scopes and requires LinkedIn MDP access — connect company pages through "Add Channel > LinkedIn Page" separately.
+- If your app has LinkedIn MDP approval, set `LINKEDIN_INCLUDE_ORG_SCOPES=true` in `postiz.env` to add organization scopes to the personal provider as well.
 
 All variables from `postiz.env` are forwarded to the backend service on startup. The launcher's infrastructure settings (`DATABASE_URL`, `JWT_SECRET`, port assignments) take priority and cannot be overridden from this file.
 
