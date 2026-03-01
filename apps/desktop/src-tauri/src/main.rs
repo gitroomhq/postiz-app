@@ -15,66 +15,107 @@ use tauri::Manager;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-// Store child processes so they can be cleaned up on exit
+// Store child processes so they can be cleaned up on exit.
+// Children are stored as (service_name, CommandChild) pairs to enable
+// ordered shutdown: stop orchestrator first (drains work queue), then
+// frontend + backend (stop accepting traffic), then temporal last.
 struct AppState {
-    children: Mutex<Vec<CommandChild>>,
+    children: Mutex<Vec<(String, CommandChild)>>,
 }
 
-/// Send SIGTERM to each tracked child, wait up to 5 s for graceful exit,
-/// then SIGKILL any that are still alive. Safe to call multiple times: the
-/// Vec is drained on first call so subsequent calls are a no-op.
+/// Send SIGTERM to `pids`, poll until all exit or `timeout` elapses,
+/// then SIGKILL any survivors. Returns the set of PIDs that are still
+/// alive after the SIGKILL (should always be empty).
+#[cfg(unix)]
+fn sigterm_wait_sigkill(label: &str, pids: &[u32], timeout: Duration) {
+    if pids.is_empty() {
+        return;
+    }
+    for &pid in pids {
+        let _ = std::process::Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .status();
+        println!("[postiz] SIGTERM → {} (PID {})", label, pid);
+    }
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        let any_alive = pids.iter().any(|&pid| {
+            std::process::Command::new("kill")
+                .args(["-0", &pid.to_string()])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        });
+        if !any_alive {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    // Grace period exhausted — SIGKILL survivors.
+    for &pid in pids {
+        let _ = std::process::Command::new("kill")
+            .args(["-KILL", &pid.to_string()])
+            .status();
+        eprintln!("[postiz] SIGKILL → {} (PID {}) — did not exit in time", label, pid);
+    }
+}
+
+/// Ordered graceful shutdown of all tracked child services.
+///
+/// Shutdown order (best-practice for a multi-service app):
+///   1. orchestrator — stop accepting new Temporal work items
+///   2. frontend     — stop serving HTTP (users see connection refused)
+///   3. backend      — flush in-flight requests, close DB connections
+///   4. temporal     — shut down after workers have disconnected
+///
+/// Each phase sends SIGTERM and waits up to the per-phase grace period
+/// before escalating to SIGKILL. CommandChild::kill() (SIGKILL) is
+/// called on every child at the end to release Tauri's handle.
+///
+/// Safe to call multiple times — the Vec is drained on first call.
 fn kill_children_gracefully(state: &AppState) {
     let mut children = state.children.lock().unwrap();
     if children.is_empty() {
         return;
     }
-    println!("[postiz] Shutting down {} child process(es)...", children.len());
+    println!(
+        "[postiz] Graceful shutdown: {} service(s)…",
+        children.len()
+    );
 
-    // Collect PIDs and send SIGTERM before consuming the Vec.
-    let pids: Vec<u32> = children.iter().map(|c| c.pid()).collect();
+    // Ordered shutdown groups: stop dependents before dependencies.
+    let shutdown_order: &[(&str, Duration)] = &[
+        ("orchestrator", Duration::from_secs(5)),
+        ("frontend",     Duration::from_secs(3)),
+        ("backend",      Duration::from_secs(8)),
+        ("temporal",     Duration::from_secs(3)),
+    ];
 
     #[cfg(unix)]
-    for &pid in &pids {
-        let _ = std::process::Command::new("kill")
-            .args(["-TERM", &pid.to_string()])
-            .status();
-        println!("[postiz] Sent SIGTERM to PID {}", pid);
+    for (name, grace) in shutdown_order {
+        let pids: Vec<u32> = children
+            .iter()
+            .filter(|(n, _)| n == name)
+            .map(|(_, c)| c.pid())
+            .collect();
+        sigterm_wait_sigkill(name, &pids, *grace);
     }
 
-    // Wait up to 5 s for all processes to exit (poll every 100 ms).
-    #[cfg(unix)]
-    {
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while Instant::now() < deadline {
-            let any_alive = pids.iter().any(|&pid| {
-                std::process::Command::new("kill")
-                    .args(["-0", &pid.to_string()])
-                    .status()
-                    .map(|s| s.success())
-                    .unwrap_or(false)
-            });
-            if !any_alive {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(100));
-        }
-    }
-
-    // SIGKILL any survivors (CommandChild::kill sends SIGKILL on Unix).
+    // SIGKILL any remaining survivors via Tauri handle (releases OS resources).
     let count = children.len();
-    for (i, child) in children.drain(..).enumerate() {
+    for (i, (name, child)) in children.drain(..).enumerate() {
         let pid = child.pid();
         match child.kill() {
             Ok(_) => println!(
-                "[postiz] Stopped process {}/{} (PID {:?})",
-                i + 1,
-                count,
-                pid
+                "[postiz] Released {}/{} {} (PID {})",
+                i + 1, count, name, pid
             ),
-            Err(e) => eprintln!(
-                "[postiz] Failed to stop PID {:?}: {}",
-                pid, e
-            ),
+            Err(e) => {
+                // Process already exited from SIGTERM — that's fine.
+                if !e.to_string().contains("process exit") {
+                    eprintln!("[postiz] Could not release {} (PID {}): {}", name, pid, e);
+                }
+            }
         }
     }
 
@@ -748,7 +789,7 @@ fn load_env_file(data_dir: &std::path::Path) -> HashMap<String, String> {
 }
 
 fn main() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(AppState {
             children: Mutex::new(Vec::new()),
@@ -1092,13 +1133,13 @@ fn main() {
                 }
             });
 
-            // Store children for cleanup
+            // Store children for cleanup (named for ordered shutdown).
             let state = app.state::<AppState>();
             let mut children = state.children.lock().unwrap();
-            children.push(temporal_child);
-            children.push(backend_child);
-            children.push(frontend_child);
-            children.push(orchestrator_child);
+            children.push(("temporal".to_string(),     temporal_child));
+            children.push(("backend".to_string(),      backend_child));
+            children.push(("frontend".to_string(),     frontend_child));
+            children.push(("orchestrator".to_string(), orchestrator_child));
             drop(children); // Release lock before potentially blocking
 
             // Get the main window to show loading/error states
@@ -1183,12 +1224,37 @@ fn main() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|app_handle, event| {
+        .expect("error while building tauri application");
+
+    // Register SIGTERM / SIGINT handler so `kill <pid>` and Ctrl-C from a
+    // terminal also trigger graceful shutdown instead of orphaning children.
+    // ctrlc runs the handler in a dedicated thread (not a raw async-signal
+    // handler), so it is safe to call blocking code here.
+    {
+        let app_handle = app.handle().clone();
+        let _ = ctrlc::set_handler(move || {
+            println!("[postiz] Received SIGTERM/SIGINT — shutting down");
+            let state = app_handle.state::<AppState>();
+            kill_children_gracefully(&state);
+            std::process::exit(0);
+        });
+    }
+
+    app.run(|app_handle: &tauri::AppHandle, event| {
+        match event {
             // Fires on Cmd+Q, Dock → Quit, and other OS-level quit signals.
-            if let tauri::RunEvent::ExitRequested { .. } = event {
+            tauri::RunEvent::ExitRequested { .. } => {
                 let state = app_handle.state::<AppState>();
                 kill_children_gracefully(&state);
             }
-        });
+            // Belt-and-suspenders: fires after all windows have closed and
+            // the event loop is about to return. Children Vec will be empty
+            // if ExitRequested already ran, making this a cheap no-op.
+            tauri::RunEvent::Exit => {
+                let state = app_handle.state::<AppState>();
+                kill_children_gracefully(&state);
+            }
+            _ => {}
+        }
+    });
 }
