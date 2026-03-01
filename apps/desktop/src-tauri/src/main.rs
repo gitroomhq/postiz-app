@@ -20,6 +20,67 @@ struct AppState {
     children: Mutex<Vec<CommandChild>>,
 }
 
+/// Send SIGTERM to each tracked child, wait up to 5 s for graceful exit,
+/// then SIGKILL any that are still alive. Safe to call multiple times: the
+/// Vec is drained on first call so subsequent calls are a no-op.
+fn kill_children_gracefully(state: &AppState) {
+    let mut children = state.children.lock().unwrap();
+    if children.is_empty() {
+        return;
+    }
+    println!("[postiz] Shutting down {} child process(es)...", children.len());
+
+    // Collect PIDs and send SIGTERM before consuming the Vec.
+    let pids: Vec<u32> = children.iter().map(|c| c.pid()).collect();
+
+    #[cfg(unix)]
+    for &pid in &pids {
+        let _ = std::process::Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .status();
+        println!("[postiz] Sent SIGTERM to PID {}", pid);
+    }
+
+    // Wait up to 5 s for all processes to exit (poll every 100 ms).
+    #[cfg(unix)]
+    {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
+            let any_alive = pids.iter().any(|&pid| {
+                std::process::Command::new("kill")
+                    .args(["-0", &pid.to_string()])
+                    .status()
+                    .map(|s| s.success())
+                    .unwrap_or(false)
+            });
+            if !any_alive {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+
+    // SIGKILL any survivors (CommandChild::kill sends SIGKILL on Unix).
+    let count = children.len();
+    for (i, child) in children.drain(..).enumerate() {
+        let pid = child.pid();
+        match child.kill() {
+            Ok(_) => println!(
+                "[postiz] Stopped process {}/{} (PID {:?})",
+                i + 1,
+                count,
+                pid
+            ),
+            Err(e) => eprintln!(
+                "[postiz] Failed to stop PID {:?}: {}",
+                pid, e
+            ),
+        }
+    }
+
+    println!("[postiz] Shutdown complete");
+}
+
 // =============================================================================
 // Configuration System
 // Priority: CLI args > Environment variables > Config file > Default values
@@ -1115,24 +1176,19 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            // Fires when the user clicks the window close button (red ✕).
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                println!("[postiz] Shutting down...");
-
-                // Clean up child processes
                 let state = window.state::<AppState>();
-                let mut children = state.children.lock().unwrap();
-                let count = children.len();
-                for (i, child) in children.drain(..).enumerate() {
-                    let pid = child.pid();
-                    match child.kill() {
-                        Ok(_) => println!("[postiz] Stopped process {}/{} (PID {:?})", i + 1, count, pid),
-                        Err(e) => eprintln!("[postiz] Failed to stop PID {:?}: {}", pid, e),
-                    }
-                }
-
-                println!("[postiz] Shutdown complete");
+                kill_children_gracefully(&state);
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Fires on Cmd+Q, Dock → Quit, and other OS-level quit signals.
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                let state = app_handle.state::<AppState>();
+                kill_children_gracefully(&state);
+            }
+        });
 }
