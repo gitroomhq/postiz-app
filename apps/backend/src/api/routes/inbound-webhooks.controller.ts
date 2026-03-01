@@ -9,8 +9,11 @@ import {
   Logger,
   Param,
   Post,
+  Req,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { RawBodyRequest } from '@nestjs/common';
+import { Request } from 'express';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 /**
@@ -54,7 +57,8 @@ export class InboundWebhooksController {
   async handleWebhook(
     @Param('provider') provider: string,
     @Body() body: any,
-    @Headers() headers: Record<string, string>
+    @Headers() headers: Record<string, string>,
+    @Req() req: RawBodyRequest<Request>
   ) {
     let handler;
     try {
@@ -67,9 +71,21 @@ export class InboundWebhooksController {
       );
     }
 
-    // Optional signature / token verification
+    // Signature verification requires the raw, unparsed body — not the
+    // parsed JSON object — to produce a byte-for-byte HMAC match.
     if (handler.verifyWebhook) {
-      const isValid = await handler.verifyWebhook(body, headers);
+      const rawBody = req.rawBody;
+      if (!rawBody) {
+        this.logger.error(
+          `Raw body not available for provider ${provider}. ` +
+            'Ensure NestJS is bootstrapped with { rawBody: true }.'
+        );
+        throw new HttpException(
+          'Raw body not available for verification',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      const isValid = await handler.verifyWebhook(rawBody, headers);
       if (!isValid) {
         this.logger.warn(
           `Webhook verification failed for provider: ${provider}`

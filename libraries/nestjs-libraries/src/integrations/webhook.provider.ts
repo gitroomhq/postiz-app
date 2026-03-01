@@ -12,8 +12,8 @@ export interface WebhookProvider {
 
   /**
    * Process an incoming webhook payload from the external platform.
-   * @param payload - The parsed request body
-   * @param headers - The raw request headers (useful for signature verification)
+   * @param payload - The parsed request body (JSON)
+   * @param headers - The raw request headers
    * @returns An optional response body to send back to the caller
    */
   handleWebhook(
@@ -24,12 +24,16 @@ export interface WebhookProvider {
   /**
    * Optional: Verify the authenticity of an incoming webhook request.
    * Providers should implement this to validate signatures, tokens, etc.
-   * @param payload - The raw request body
+   *
+   * The rawBody parameter is the unparsed request buffer — use this for
+   * HMAC signature verification, NOT the parsed JSON payload.
+   *
+   * @param rawBody - The raw, unparsed request body as a Buffer
    * @param headers - The raw request headers
-   * @returns true if the request is valid
+   * @returns true if the request is authentic
    */
   verifyWebhook?(
-    payload: any,
+    rawBody: Buffer,
     headers?: Record<string, string>
   ): Promise<boolean>;
 }

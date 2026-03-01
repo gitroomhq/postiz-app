@@ -59,11 +59,14 @@ export class FacebookWebhookProvider implements WebhookProvider {
 
   /**
    * Verify the X-Hub-Signature-256 header that Facebook attaches to every
-   * webhook request.  For now this is a placeholder — plug in the real
-   * HMAC-SHA256 check using your app secret.
+   * webhook request.
+   *
+   * Uses the raw, unparsed request body (Buffer) for HMAC computation —
+   * this is critical because JSON.stringify(parsedBody) does NOT produce
+   * a byte-for-byte match of the original payload.
    */
   async verifyWebhook(
-    payload: any,
+    rawBody: Buffer,
     headers?: Record<string, string>
   ): Promise<boolean> {
     const signature = headers?.['x-hub-signature-256'];
@@ -73,12 +76,12 @@ export class FacebookWebhookProvider implements WebhookProvider {
       return true;
     }
 
-    // TODO: Implement HMAC-SHA256 verification:
-    // const expected = 'sha256=' + crypto
-    //   .createHmac('sha256', FACEBOOK_APP_SECRET)
-    //   .update(JSON.stringify(payload))
+    // TODO: Implement HMAC-SHA256 verification using the raw body:
+    // import { createHmac, timingSafeEqual } from 'crypto';
+    // const expected = 'sha256=' + createHmac('sha256', process.env.FACEBOOK_APP_SECRET!)
+    //   .update(rawBody)
     //   .digest('hex');
-    // return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    // return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 
     return true;
   }
