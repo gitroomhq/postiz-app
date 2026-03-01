@@ -9,6 +9,7 @@ import {
   Logger,
   Param,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -21,8 +22,9 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
  * Unified controller for inbound webhooks from external platforms.
  *
  * Routes:
- *   POST /inbound-webhooks/:provider  — dispatch to the matching WebhookProvider
- *   GET  /inbound-webhooks            — list registered providers (health-check / debug)
+ *   GET  /inbound-webhooks              — list registered providers (debug)
+ *   GET  /inbound-webhooks/:provider     — verification challenges (Facebook, etc.)
+ *   POST /inbound-webhooks/:provider     — event delivery
  *
  * This controller requires NO authentication — external platforms call it directly.
  */
@@ -45,8 +47,64 @@ export class InboundWebhooksController {
   }
 
   /**
-   * Receive an inbound webhook from an external platform and dispatch it
-   * to the correct WebhookProvider based on the :provider path param.
+   * Handle GET-based verification challenges from platforms like Facebook.
+   *
+   * Facebook sends: GET /inbound-webhooks/facebook?hub.mode=subscribe
+   *                     &hub.challenge=<token>&hub.verify_token=<token>
+   *
+   * The provider's handleVerification() reads query params and returns
+   * the challenge value as plain text.
+   */
+  @Get(':provider')
+  async handleVerification(
+    @Param('provider') provider: string,
+    @Query() query: Record<string, string>,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    let handler;
+    try {
+      handler = this.integrationManager.getWebhookProvider(provider);
+    } catch {
+      this.logger.warn(
+        `Verification request for unknown provider: ${provider}`
+      );
+      throw new HttpException(
+        `Unknown webhook provider: ${provider}`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    if (!handler.handleVerification) {
+      this.logger.warn(
+        `Provider ${provider} does not support GET verification`
+      );
+      throw new HttpException(
+        `Provider ${provider} does not support verification challenges`,
+        HttpStatus.METHOD_NOT_ALLOWED
+      );
+    }
+
+    try {
+      const result = await handler.handleVerification(query);
+      if (result?.contentType) {
+        res.setHeader('Content-Type', result.contentType);
+      }
+      return result?.body ?? '';
+    } catch (err: any) {
+      this.logger.error(
+        `Verification failed for ${provider}: ${err.message}`,
+        err.stack
+      );
+      throw new HttpException(
+        'Verification processing error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Receive an inbound webhook event (POST) from an external platform
+   * and dispatch it to the correct WebhookProvider.
    *
    * Examples:
    *   POST /inbound-webhooks/facebook
@@ -102,8 +160,7 @@ export class InboundWebhooksController {
     try {
       const result = await handler.handleWebhook(body, headers);
 
-      // Allow providers to control the Content-Type (e.g. text/plain for
-      // Facebook's hub.challenge verification response).
+      // Allow providers to control the Content-Type.
       if (result?.contentType) {
         res.setHeader('Content-Type', result.contentType);
       }

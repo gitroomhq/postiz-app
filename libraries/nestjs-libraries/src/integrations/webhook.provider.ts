@@ -4,14 +4,16 @@
  * Each social/integration provider that supports inbound webhooks
  * implements this interface and registers itself with the IntegrationManager.
  *
- * Routing is done via URL path: POST /inbound-webhooks/:providerName
+ * Routing:
+ *   POST /inbound-webhooks/:providerName  — event delivery
+ *   GET  /inbound-webhooks/:providerName  — verification challenges
  */
 export interface WebhookProvider {
   /** Unique identifier matching the provider name in the URL path */
   providerName: string;
 
   /**
-   * Process an incoming webhook payload from the external platform.
+   * Process an incoming webhook event (POST).
    * @param payload - The parsed request body (JSON)
    * @param headers - The raw request headers
    * @returns An optional response body to send back to the caller
@@ -22,8 +24,20 @@ export interface WebhookProvider {
   ): Promise<WebhookResponse>;
 
   /**
-   * Optional: Verify the authenticity of an incoming webhook request.
-   * Providers should implement this to validate signatures, tokens, etc.
+   * Optional: Handle a GET-based verification/challenge request.
+   *
+   * Many platforms (Facebook, WhatsApp, etc.) verify webhook ownership by
+   * sending a GET request with challenge parameters in the query string.
+   *
+   * @param query - The parsed query parameters (e.g. hub.mode, hub.challenge)
+   * @returns A response to satisfy the platform's verification check
+   */
+  handleVerification?(
+    query: Record<string, string>
+  ): Promise<WebhookResponse>;
+
+  /**
+   * Optional: Verify the authenticity of an incoming webhook event (POST).
    *
    * The rawBody parameter is the unparsed request buffer — use this for
    * HMAC signature verification, NOT the parsed JSON payload.

@@ -1,43 +1,69 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'crypto';
 import {
   WebhookProvider,
   WebhookResponse,
 } from '@gitroom/nestjs-libraries/integrations/webhook.provider';
 
 /**
- * Example inbound webhook provider for Facebook.
+ * Inbound webhook provider for Facebook.
  *
  * Handles:
- *  - Verification challenges (GET-style hub.challenge inside POST body)
- *  - Page/post engagement events (likes, comments, shares)
- *
- * Replace the logging with real business logic (e.g. update analytics,
- * trigger auto-replies, fire BullMQ jobs) once the pipeline is proven.
+ *  - GET verification challenges (hub.mode / hub.challenge / hub.verify_token)
+ *  - POST event delivery (page/post engagement: likes, comments, shares)
+ *  - HMAC-SHA256 signature verification on POST events
  */
 @Injectable()
 export class FacebookWebhookProvider implements WebhookProvider {
   readonly providerName = 'facebook';
   private readonly logger = new Logger(FacebookWebhookProvider.name);
 
+  // -- GET verification challenge ------------------------------------------
+
   /**
-   * Facebook sends a verification request when you first subscribe.
-   * The challenge token is echoed back to confirm ownership.
+   * Facebook verifies webhook ownership by sending a GET request with:
+   *   ?hub.mode=subscribe&hub.challenge=<token>&hub.verify_token=<token>
+   *
+   * We validate hub.verify_token against our configured secret and echo
+   * back hub.challenge as plain text.
+   */
+  async handleVerification(
+    query: Record<string, string>
+  ): Promise<WebhookResponse> {
+    const mode = query['hub.mode'];
+    const challenge = query['hub.challenge'];
+    const verifyToken = query['hub.verify_token'];
+
+    if (mode !== 'subscribe' || !challenge) {
+      this.logger.warn(
+        `Invalid Facebook verification request: mode=${mode}, challenge=${challenge}`
+      );
+      return { statusCode: 400, body: 'Invalid verification request' };
+    }
+
+    const expectedToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN;
+    if (expectedToken && verifyToken !== expectedToken) {
+      this.logger.warn('Facebook verify_token mismatch');
+      return { statusCode: 403, body: 'Verification token mismatch' };
+    }
+
+    this.logger.log('Facebook verification challenge accepted');
+    return {
+      statusCode: 200,
+      body: challenge,
+      contentType: 'text/plain',
+    };
+  }
+
+  // -- POST event handling -------------------------------------------------
+
+  /**
+   * Process incoming Facebook webhook events (likes, comments, shares, etc.).
    */
   async handleWebhook(
     payload: any,
     headers?: Record<string, string>
   ): Promise<WebhookResponse> {
-    // Facebook verification challenge (subscribe flow)
-    if (payload?.['hub.mode'] === 'subscribe' && payload?.['hub.challenge']) {
-      this.logger.log('Facebook verification challenge received');
-      return {
-        statusCode: 200,
-        body: payload['hub.challenge'],
-        contentType: 'text/plain',
-      };
-    }
-
-    // Normal webhook event
     const objectType = payload?.object; // "page", "user", etc.
     const entries = payload?.entry ?? [];
 
@@ -58,32 +84,50 @@ export class FacebookWebhookProvider implements WebhookProvider {
     return { statusCode: 200, body: { status: 'ok' } };
   }
 
+  // -- POST signature verification -----------------------------------------
+
   /**
-   * Verify the X-Hub-Signature-256 header that Facebook attaches to every
-   * webhook request.
+   * Verify the X-Hub-Signature-256 header using HMAC-SHA256.
    *
-   * Uses the raw, unparsed request body (Buffer) for HMAC computation —
-   * this is critical because JSON.stringify(parsedBody) does NOT produce
-   * a byte-for-byte match of the original payload.
+   * Facebook signs every POST payload with the app secret. We compute the
+   * expected signature from the raw request body and compare using
+   * timing-safe equality to prevent timing attacks.
    */
   async verifyWebhook(
     rawBody: Buffer,
     headers?: Record<string, string>
   ): Promise<boolean> {
     const signature = headers?.['x-hub-signature-256'];
-    if (!signature) {
-      this.logger.warn('Missing x-hub-signature-256 header');
-      // Allow unsigned requests in development; flip to `false` in production
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+
+    // If no app secret is configured, skip verification (dev mode only)
+    if (!appSecret) {
+      this.logger.warn(
+        'FACEBOOK_APP_SECRET not configured — skipping signature verification. ' +
+          'Set this in production to secure your webhook endpoint.'
+      );
       return true;
     }
 
-    // TODO: Implement HMAC-SHA256 verification using the raw body:
-    // import { createHmac, timingSafeEqual } from 'crypto';
-    // const expected = 'sha256=' + createHmac('sha256', process.env.FACEBOOK_APP_SECRET!)
-    //   .update(rawBody)
-    //   .digest('hex');
-    // return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    if (!signature) {
+      this.logger.warn('Missing x-hub-signature-256 header — rejecting request');
+      return false;
+    }
 
-    return true;
+    const expected =
+      'sha256=' +
+      createHmac('sha256', appSecret)
+        .update(new Uint8Array(rawBody))
+        .digest('hex');
+
+    try {
+      return timingSafeEqual(
+        new Uint8Array(Buffer.from(signature)),
+        new Uint8Array(Buffer.from(expected))
+      );
+    } catch {
+      // timingSafeEqual throws if buffers have different lengths
+      return false;
+    }
   }
 }
