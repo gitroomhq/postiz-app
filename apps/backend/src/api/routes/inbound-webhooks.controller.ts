@@ -89,6 +89,9 @@ export class InboundWebhooksController {
       if (result?.contentType) {
         res.setHeader('Content-Type', result.contentType);
       }
+      if (result?.statusCode && result.statusCode !== 200) {
+        res.status(result.statusCode);
+      }
       return result?.body ?? '';
     } catch (err: any) {
       this.logger.error(
@@ -163,6 +166,9 @@ export class InboundWebhooksController {
       // Allow providers to control the Content-Type.
       if (result?.contentType) {
         res.setHeader('Content-Type', result.contentType);
+      }
+      if (result?.statusCode && result.statusCode !== 200) {
+        res.status(result.statusCode);
       }
 
       return result?.body ?? { status: 'ok' };
