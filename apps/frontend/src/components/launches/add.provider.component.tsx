@@ -22,13 +22,18 @@ const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void) => {
   const modal = useModals();
   const fetch = useFetch();
+  const toaster = useToaster();
   return useCallback(async () => {
-    const data = await (await fetch('/integrations')).json();
-    modal.openModal({
-      title: 'Add Channel',
-      withCloseButton: true,
-      children: <AddProviderComponent update={update} {...data} />,
-    });
+    try {
+      const data = await (await fetch('/integrations')).json();
+      modal.openModal({
+        title: 'Add Channel',
+        withCloseButton: true,
+        children: <AddProviderComponent update={update} {...data} />,
+      });
+    } catch {
+      toaster.show('Could not load channels. Is the backend running?', 'warning');
+    }
   }, []);
 };
 export const AddProviderButton: FC<{

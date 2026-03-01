@@ -28,7 +28,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
         <button
           className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
           type="button"
-          onClick={modals.closeAll}
+          onClick={onClose}
         >
           <svg
             viewBox="0 0 15 15"
