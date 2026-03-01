@@ -14,7 +14,9 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
-  scopes = ['write:statuses', 'profile', 'write:media'];
+  // 'profile' is a Mastodon 4.3+ only scope and not universally supported.
+  // 'read:accounts' is the standard cross-version scope for reading profile info.
+  scopes = ['write:statuses', 'read:accounts', 'write:media'];
   editor = 'normal' as const;
   maxLength() {
     return 500;

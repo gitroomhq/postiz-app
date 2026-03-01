@@ -857,7 +857,7 @@ fn main() {
                 "USE_PGLITE", "JWT_SECRET", "STORAGE_PROVIDER", "UPLOAD_DIRECTORY",
                 "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE", "DESKTOP_COOKIE_MODE",
                 "PORT", "MAIN_URL", "FRONTEND_URL", "NEXT_PUBLIC_BACKEND_URL",
-                "BACKEND_URL", "BACKEND_INTERNAL_URL",
+                "BACKEND_URL", "BACKEND_INTERNAL_URL", "IS_GENERAL",
             ];
             let mut backend_cmd = shell
                 .sidecar("node")
@@ -888,7 +888,11 @@ fn main() {
                 // (CSRF protection) while dropping Secure (required for HTTP).
                 // The backend also sends the JWT in an `auth` response header
                 // so Next.js middleware can read it as a fallback.
-                .env("DESKTOP_COOKIE_MODE", "true");
+                .env("DESKTOP_COOKIE_MODE", "true")
+                // Required for self-hosted mode: enables multi-user registration,
+                // social platform integrations, and routes to /launches tab.
+                // All docker-compose self-host configs set this to true.
+                .env("IS_GENERAL", "true");
             // Forward user-supplied social platform credentials and any other
             // vars from postiz.env. Skip keys already set above to prevent
             // users accidentally overriding infrastructure configuration.
@@ -944,7 +948,10 @@ fn main() {
                 .env("STORAGE_PROVIDER", "local")
                 // Same flag so the Next.js middleware reads auth from the
                 // `auth` response header (sent by backend in DESKTOP_COOKIE_MODE).
-                .env("DESKTOP_COOKIE_MODE", "true");
+                .env("DESKTOP_COOKIE_MODE", "true")
+                // Required for self-hosted mode: Next.js server components read this at
+                // runtime to set isGeneral=true, enabling social integrations and /launches tab.
+                .env("IS_GENERAL", "true");
 
             let (mut rx, frontend_child) = frontend_cmd.spawn().expect("Failed to spawn frontend");
             println!("[frontend] Started with PID: {:?}", frontend_child.pid());
@@ -988,7 +995,8 @@ fn main() {
                 .env("TEMPORAL_ADDRESS", &temporal_address)
                 .env("TEMPORAL_NAMESPACE", "default")
                 .env("BACKEND_URL", &backend_url)
-                .env("FRONTEND_URL", &frontend_url);
+                .env("FRONTEND_URL", &frontend_url)
+                .env("IS_GENERAL", "true");
             // Forward user env vars to orchestrator (e.g. social platform webhooks).
             // The orchestrator's fixed_sidecar_keys list differs slightly from the backend
             // (no PORT/MAIN_URL/NEXT_PUBLIC_BACKEND_URL/BACKEND_INTERNAL_URL/DESKTOP_COOKIE_MODE)

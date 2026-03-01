@@ -26,14 +26,17 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
+  // Personal profile scopes only — organization scopes (rw_organization_admin,
+  // w_organization_social, r_organization_social) require LinkedIn Advertising API
+  // or Community Management API approval (legal entity required). Requesting them
+  // for a standard app causes OAuth to fail with "unauthorized_scope_error" for all
+  // users. Organization scopes are handled by LinkedinPageProvider which overrides
+  // these scopes and is used when connecting LinkedIn Company Pages.
   scopes = [
     'openid',
     'profile',
     'w_member_social',
     'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
   ];
   override maxConcurrentJob = 2; // LinkedIn has professional posting limits
   refreshWait = true;
