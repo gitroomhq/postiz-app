@@ -100,12 +100,6 @@ export default withProvider({
     }
     return true;
   },
-  maximumCharacters: (settings) => {
-    if (settings?.[0]?.value) {
-      return 4000;
-    }
-    return 280;
-  },
 });
 const checkVideoDuration = async (
   url: string,

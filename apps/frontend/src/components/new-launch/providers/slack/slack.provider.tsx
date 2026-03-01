@@ -22,6 +22,4 @@ export default withProvider({
   SettingsComponent: SlackComponent,
   CustomPreviewComponent: undefined,
   dto: SlackDto,
-  checkValidity: undefined,
-  maximumCharacters: 400000,
 });

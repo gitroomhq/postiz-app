@@ -1,7 +1,7 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
-import { MediaCapabilities } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { MediaCapabilities, PostingCapabilities, SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
@@ -177,6 +177,23 @@ export abstract class SocialAbstract {
       options.body!,
       handleError?.value || ''
     );
+  }
+
+  getPostingCapabilities(additionalSettings?: any): PostingCapabilities {
+    const self = this as unknown as SocialProvider & SocialAbstract;
+    return {
+      media: self.mediaCapabilities || this.mediaCapabilities,
+      maxLength: self.maxLength(additionalSettings),
+      editor: self.editor,
+      supportsComments: typeof self.comment === 'function',
+      supportsAnalytics: typeof self.analytics === 'function',
+      supportsMentions: Object.getOwnPropertyNames(
+        self.constructor.prototype
+      ).includes('mention'),
+      commentsMediaSupport: typeof self.comment === 'function'
+        ? (self.commentsMediaSupport ?? true)
+        : false,
+    };
   }
 
   checkScopes(required: string[], got: string | string[]) {

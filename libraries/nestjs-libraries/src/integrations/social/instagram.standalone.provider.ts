@@ -32,6 +32,7 @@ export class InstagramStandaloneProvider
     requiresMedia: false,
     requiresVideo: false,
   };
+  commentsMediaSupport = 'no-media' as const;
   scopes = [
     'instagram_business_basic',
     'instagram_business_content_publish',

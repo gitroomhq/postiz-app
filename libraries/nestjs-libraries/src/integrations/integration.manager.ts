@@ -166,7 +166,7 @@ export class IntegrationManager {
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
-  getSocialIntegration(integration: string): SocialProvider {
+  getSocialIntegration(integration: string): SocialAbstract & SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
   }
 }

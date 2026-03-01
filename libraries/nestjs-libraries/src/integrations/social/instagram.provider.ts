@@ -31,6 +31,7 @@ export class InstagramProvider
     requiresMedia: false,
     requiresVideo: false,
   };
+  commentsMediaSupport = 'no-media' as const;
   scopes = [
     'instagram_basic',
     'pages_show_list',

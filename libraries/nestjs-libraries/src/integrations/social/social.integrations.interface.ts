@@ -138,6 +138,16 @@ export type MediaCapabilities = {
   maxVideoDurationSeconds?: number;
 };
 
+export type PostingCapabilities = {
+  media: MediaCapabilities;
+  maxLength: number;
+  editor: 'none' | 'normal' | 'markdown' | 'html';
+  supportsComments: boolean;
+  supportsAnalytics: boolean;
+  supportsMentions: boolean;
+  commentsMediaSupport: boolean | 'no-media';
+};
+
 export type MediaValidationError = {
   field: string;
   message: string;
@@ -204,6 +214,7 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   mediaCapabilities?: MediaCapabilities;
+  commentsMediaSupport?: boolean | 'no-media';
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   refreshCron?: boolean;

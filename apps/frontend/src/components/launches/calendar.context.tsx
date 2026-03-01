@@ -80,6 +80,27 @@ export const CalendarContext = createContext({
   },
 });
 
+export interface MediaCapabilities {
+  maxImages: number;
+  maxVideos: number;
+  canMixMediaTypes: boolean;
+  requiresMedia: boolean;
+  requiresVideo: boolean;
+  maxImageSizeBytes?: number;
+  maxVideoSizeBytes?: number;
+  maxVideoDurationSeconds?: number;
+}
+
+export interface PostingCapabilities {
+  media: MediaCapabilities;
+  maxLength: number;
+  editor: 'none' | 'normal' | 'markdown' | 'html';
+  supportsComments: boolean;
+  supportsAnalytics: boolean;
+  supportsMentions: boolean;
+  commentsMediaSupport: boolean | 'no-media';
+}
+
 export interface Integrations {
   name: string;
   id: string;
@@ -93,6 +114,8 @@ export interface Integrations {
   changeProfilePicture: boolean;
   additionalSettings: string;
   changeNickName: boolean;
+  mediaCapabilities?: MediaCapabilities;
+  postingCapabilities?: PostingCapabilities;
   time: {
     time: number;
   }[];
