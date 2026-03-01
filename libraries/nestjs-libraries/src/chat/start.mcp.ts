@@ -20,44 +20,85 @@ export const startMcp = async (app: INestApplication) => {
     agents: { postiz: agent },
   });
 
-  app.use(
-    '/mcp',
-    async (req: Request, res: Response, next: () => void) => {
-      // Skip if this is the /mcp/:id route
-      if (req.path !== '/' && req.path !== '') {
-        next();
-        return;
-      }
+  app.use('/mcp', async (req: Request, res: Response, next: () => void) => {
+    // Skip if this is the /mcp/:id route
+    if (req.path !== '/' && req.path !== '') {
+      next();
+      return;
+    }
 
+    // @ts-ignore
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Expose-Headers', '*');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      res.status(401).send('Missing Authorization header');
+      return;
+    }
+
+    // @ts-ignore
+    req.auth = await organizationService.getOrgByApiKey(token);
+    // @ts-ignore
+    if (!req.auth) {
+      res.status(401).send('Invalid API Key');
+      return;
+    }
+
+    const url = new URL('/mcp', process.env.NEXT_PUBLIC_BACKEND_URL);
+
+    // @ts-ignore
+    await runWithContext({ requestId: token, auth: req.auth }, async () => {
+      await server.startHTTP({
+        url,
+        httpPath: url.pathname,
+        options: {
+          sessionIdGenerator: () => {
+            return randomUUID();
+          },
+        },
+        req,
+        res,
+      });
+    });
+  });
+
+  app.use('/mcp/:id', async (req: Request, res: Response) => {
+    // @ts-ignore
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Expose-Headers', '*');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+
+    // @ts-ignore
+    req.auth = await organizationService.getOrgByApiKey(req.params.id);
+    // @ts-ignore
+    if (!req.auth) {
+      res.status(400).send('Invalid API Key');
+      return;
+    }
+
+    const url = new URL(
+      `/mcp/${req.params.id}`,
+      process.env.NEXT_PUBLIC_BACKEND_URL
+    );
+
+    await runWithContext(
       // @ts-ignore
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', '*');
-      res.setHeader('Access-Control-Allow-Headers', '*');
-      res.setHeader('Access-Control-Expose-Headers', '*');
-
-      if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-        return;
-      }
-
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        res.status(401).send('Missing Authorization header');
-        return;
-      }
-
-      // @ts-ignore
-      req.auth = await organizationService.getOrgByApiKey(token);
-      // @ts-ignore
-      if (!req.auth) {
-        res.status(401).send('Invalid API Key');
-        return;
-      }
-
-      const url = new URL('/mcp', process.env.NEXT_PUBLIC_BACKEND_URL);
-
-      // @ts-ignore
-      await runWithContext({ requestId: token, auth: req.auth }, async () => {
+      { requestId: req.params.id, auth: req.auth },
+      async () => {
         await server.startHTTP({
           url,
           httpPath: url.pathname,
@@ -69,51 +110,44 @@ export const startMcp = async (app: INestApplication) => {
           req,
           res,
         });
-      });
+      }
+    );
+  });
+
+  app.use(['/sse/:id', '/message/:id'], async (req: Request, res: Response) => {
+    // @ts-ignore
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Expose-Headers', '*');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
     }
-  );
 
-  app.use(
-    '/mcp/:id',
-    async (req: Request, res: Response) => {
+    // @ts-ignore
+    req.auth = await organizationService.getOrgByApiKey(req.params.id);
+    // @ts-ignore
+    if (!req.auth) {
+      res.status(400).send('Invalid API Key');
+      return;
+    }
+
+    const url = new URL(req.originalUrl, process.env.NEXT_PUBLIC_BACKEND_URL);
+
+    await runWithContext(
       // @ts-ignore
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', '*');
-      res.setHeader('Access-Control-Allow-Headers', '*');
-      res.setHeader('Access-Control-Expose-Headers', '*');
-
-      if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-        return;
-      }
-
-      // @ts-ignore
-      req.auth = await organizationService.getOrgByApiKey(req.params.id);
-      // @ts-ignore
-      if (!req.auth) {
-        res.status(400).send('Invalid API Key');
-        return ;
-      }
-
-      const url = new URL(
-        `/mcp/${req.params.id}`,
-        process.env.NEXT_PUBLIC_BACKEND_URL
-      );
-
-      // @ts-ignore
-      await runWithContext({ requestId: req.params.id, auth: req.auth }, async () => {
-        await server.startHTTP({
+      { requestId: req.params.id, auth: req.auth },
+      async () => {
+        await server.startSSE({
           url,
-          httpPath: url.pathname,
-          options: {
-            sessionIdGenerator: () => {
-              return randomUUID();
-            },
-          },
+          ssePath: `/sse/${req.params.id}`,
+          messagePath: `/message/${req.params.id}`,
           req,
           res,
         });
-      });
-    }
-  );
+      }
+    );
+  });
 };
