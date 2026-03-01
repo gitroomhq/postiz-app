@@ -58,6 +58,27 @@ pnpm desktop:dev
 
 ---
 
+## Social Platform OAuth (Desktop)
+
+Social platform credentials go in `~/Library/Application Support/Postiz/postiz.env` (dotenv format). The Rust launcher reads this at startup and forwards all vars to the backend sidecar as env vars — same vars as the web `.env` file.
+
+```bash
+X_API_KEY=...          # https://developer.twitter.com
+X_API_SECRET=...
+GOOGLE_CLIENT_ID=...   # https://console.cloud.google.com
+GOOGLE_CLIENT_SECRET=...
+LINKEDIN_CLIENT_ID=... # https://www.linkedin.com/developers
+LINKEDIN_CLIENT_SECRET=...
+```
+
+OAuth callback URL to register: `http://localhost:4200/integrations/social/<platform>`
+
+Infrastructure vars (`DATABASE_URL`, `JWT_SECRET`, etc.) cannot be overridden from `postiz.env`.
+
+Without `postiz.env` (or with empty API keys), `generateAuthUrl()` throws → backend returns `{ err: true }` → frontend shows "Could not connect to the platform."
+
+Facebook/Instagram require HTTPS callbacks — those need a hosted deployment.
+
 ## Key Architecture (Desktop)
 
 - **Tauri binary** (`main.rs`): spawns backend, frontend, orchestrator as Node.js sidecars

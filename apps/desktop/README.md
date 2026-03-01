@@ -230,6 +230,42 @@ temporal_ui_port = 8233
 auto_find_ports = true
 ```
 
+### Social Platform Integrations (OAuth credentials)
+
+To connect social media accounts (X/Twitter, Google/YouTube, LinkedIn, etc.) you need to supply API credentials from each platform's developer portal. Create a file at:
+
+```
+~/Library/Application Support/Postiz/postiz.env
+```
+
+Use the same format as a standard `.env` file — one `KEY=VALUE` per line, `#` for comments:
+
+```bash
+# X (Twitter) — https://developer.twitter.com/en/portal
+X_API_KEY=your_api_key
+X_API_SECRET=your_api_secret
+
+# Google (YouTube, Google Business) — https://console.cloud.google.com
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+
+# LinkedIn — https://www.linkedin.com/developers
+LINKEDIN_CLIENT_ID=your_client_id
+LINKEDIN_CLIENT_SECRET=your_client_secret
+
+# Add any other Postiz-supported platform vars here
+```
+
+**OAuth callback URL to register in each platform's developer app:**
+
+```
+http://localhost:4200/integrations/social/<platform>
+```
+
+For example, register `http://localhost:4200/integrations/social/x` as the callback URL in your Twitter/X developer app. Most platforms (X, Google, LinkedIn) allow `http://localhost` for desktop/development use. Facebook and Instagram require HTTPS — those platforms require a hosted deployment.
+
+All variables from `postiz.env` are forwarded to the backend service on startup. The launcher's infrastructure settings (`DATABASE_URL`, `JWT_SECRET`, port assignments) take priority and cannot be overridden from this file.
+
 ---
 
 ## License

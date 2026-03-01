@@ -4,6 +4,7 @@
 use rand::Rng;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::net::TcpListener;
@@ -627,6 +628,64 @@ fn get_resources_dir(app: &tauri::App) -> PathBuf {
     base
 }
 
+/// Load user-supplied environment variables from `{data_dir}/postiz.env`.
+///
+/// This file mirrors the `.env` used by self-hosted web deployments. Users
+/// place their social platform API credentials here so the backend sidecar
+/// can authenticate with OAuth providers (Twitter/X, Google, LinkedIn, etc.).
+///
+/// Format: one `KEY=VALUE` per line; lines starting with `#` are comments.
+/// Values may optionally be surrounded by single or double quotes.
+///
+/// Example `~/Library/Application Support/Postiz/postiz.env`:
+///   # Twitter / X credentials (from developer.twitter.com)
+///   X_API_KEY=your_api_key
+///   X_API_SECRET=your_api_secret
+///   # Google credentials (from console.cloud.google.com)
+///   GOOGLE_CLIENT_ID=your_client_id
+///   GOOGLE_CLIENT_SECRET=your_client_secret
+///
+/// All vars in this file are forwarded to the backend and orchestrator
+/// sidecars as environment variables. Keys already set by the launcher
+/// (DATABASE_URL, JWT_SECRET, etc.) are NOT overridden by this file.
+fn load_env_file(data_dir: &std::path::Path) -> HashMap<String, String> {
+    let mut vars = HashMap::new();
+    let env_path = data_dir.join("postiz.env");
+    if !env_path.exists() {
+        return vars;
+    }
+    match fs::read_to_string(&env_path) {
+        Ok(contents) => {
+            for line in contents.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                if let Some(eq_pos) = line.find('=') {
+                    let key = line[..eq_pos].trim().to_string();
+                    let raw = line[eq_pos + 1..].trim();
+                    // Strip optional surrounding quotes
+                    let value = if (raw.starts_with('"') && raw.ends_with('"'))
+                        || (raw.starts_with('\'') && raw.ends_with('\''))
+                    {
+                        raw[1..raw.len() - 1].to_string()
+                    } else {
+                        raw.to_string()
+                    };
+                    if !key.is_empty() {
+                        vars.insert(key, value);
+                    }
+                }
+            }
+            println!("[postiz] Loaded {} env var(s) from {:?}", vars.len(), env_path);
+        }
+        Err(e) => {
+            eprintln!("[postiz] Warning: could not read {:?}: {}", env_path, e);
+        }
+    }
+    vars
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -657,6 +716,12 @@ fn main() {
             // Create data directory from config
             let data_dir = &config.data_dir;
             fs::create_dir_all(data_dir).ok();
+
+            // Load user-supplied env vars from postiz.env (social platform credentials, etc.)
+            // These are forwarded to backend + orchestrator sidecars but do NOT override
+            // the infrastructure vars set explicitly below (DATABASE_URL, JWT_SECRET, etc.).
+            let user_env = load_env_file(data_dir);
+
             let pglite_dir = data_dir.join("pglite-data");
             fs::create_dir_all(&pglite_dir).ok();
             let uploads_dir = data_dir.join("uploads");
@@ -785,7 +850,16 @@ fn main() {
             println!("[backend] Entry: {:?}", backend_entry);
 
             let backend_port_str = ports.backend.to_string();
-            let backend_cmd = shell
+            // Fixed infrastructure vars — these are always set by the launcher and
+            // must not be overridden by the user's postiz.env file.
+            let fixed_sidecar_keys: &[&str] = &[
+                "POSTIZ_MODE", "DATABASE_URL", "PGLITE_DATA_DIR", "PGLITE_SCHEMA_SQL",
+                "USE_PGLITE", "JWT_SECRET", "STORAGE_PROVIDER", "UPLOAD_DIRECTORY",
+                "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE", "DESKTOP_COOKIE_MODE",
+                "PORT", "MAIN_URL", "FRONTEND_URL", "NEXT_PUBLIC_BACKEND_URL",
+                "BACKEND_URL", "BACKEND_INTERNAL_URL",
+            ];
+            let mut backend_cmd = shell
                 .sidecar("node")
                 .expect("failed to create node sidecar for backend")
                 .args([backend_entry.to_str().unwrap_or("")])
@@ -815,6 +889,14 @@ fn main() {
                 // The backend also sends the JWT in an `auth` response header
                 // so Next.js middleware can read it as a fallback.
                 .env("DESKTOP_COOKIE_MODE", "true");
+            // Forward user-supplied social platform credentials and any other
+            // vars from postiz.env. Skip keys already set above to prevent
+            // users accidentally overriding infrastructure configuration.
+            for (k, v) in &user_env {
+                if !fixed_sidecar_keys.contains(&k.as_str()) {
+                    backend_cmd = backend_cmd.env(k, v);
+                }
+            }
 
             let (mut rx, backend_child) = backend_cmd.spawn().expect("Failed to spawn backend");
             println!("[backend] Started with PID: {:?}", backend_child.pid());
@@ -890,7 +972,7 @@ fn main() {
             println!("[orchestrator] Entry: {:?}", orchestrator_entry);
 
             let shell = app_handle.shell();
-            let orchestrator_cmd = shell
+            let mut orchestrator_cmd = shell
                 .sidecar("node")
                 .expect("failed to create node sidecar for orchestrator")
                 .args([orchestrator_entry.to_str().unwrap_or("")])
@@ -907,6 +989,15 @@ fn main() {
                 .env("TEMPORAL_NAMESPACE", "default")
                 .env("BACKEND_URL", &backend_url)
                 .env("FRONTEND_URL", &frontend_url);
+            // Forward user env vars to orchestrator (e.g. social platform webhooks).
+            // The orchestrator's fixed_sidecar_keys list differs slightly from the backend
+            // (no PORT/MAIN_URL/NEXT_PUBLIC_BACKEND_URL/BACKEND_INTERNAL_URL/DESKTOP_COOKIE_MODE)
+            // but sharing the same list is safe — unrecognised keys are simply unused.
+            for (k, v) in &user_env {
+                if !fixed_sidecar_keys.contains(&k.as_str()) {
+                    orchestrator_cmd = orchestrator_cmd.env(k, v);
+                }
+            }
 
             let (mut rx, orchestrator_child) =
                 orchestrator_cmd.spawn().expect("Failed to spawn orchestrator");
