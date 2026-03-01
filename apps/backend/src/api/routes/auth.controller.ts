@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
   Query,
   Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 
@@ -178,15 +180,34 @@ export class AuthController {
   @Post('/forgot')
   async forgot(@Body() body: ForgotPasswordDto) {
     try {
-      await this._authService.forgot(body.email);
-      return {
-        forgot: true,
-      };
+      const result = await this._authService.forgot(body.email);
+      return { forgot: true, ...result };
     } catch (e) {
-      return {
-        forgot: false,
-      };
+      return { forgot: false };
     }
+  }
+
+  @Post('/desktop-token')
+  async desktopToken(@Body('token') token: string) {
+    if (process.env.POSTIZ_MODE !== 'desktop') {
+      throw new ForbiddenException();
+    }
+    try {
+      return await this._authService.authenticateWithDesktopToken(token);
+    } catch (e) {
+      throw new UnauthorizedException();
+    }
+  }
+
+  @Get('/providers')
+  getAvailableProviders() {
+    return {
+      local: true,
+      google: !!(process.env.YOUTUBE_CLIENT_ID && process.env.YOUTUBE_CLIENT_SECRET),
+      github: !!(process.env.GITHUB_APP_CLIENT_ID && process.env.GITHUB_APP_CLIENT_SECRET),
+      genericOauth: !!process.env.POSTIZ_GENERIC_OAUTH,
+      neynar: !!process.env.NEYNAR_CLIENT_ID,
+    };
   }
 
   @Post('/forgot-return')

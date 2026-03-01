@@ -18,6 +18,7 @@ import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/perm
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
+import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
@@ -65,6 +66,14 @@ async function start() {
   loadSwagger(app);
 
   const port = process.env.PORT || 3000;
+
+  if (process.env.POSTIZ_MODE === 'desktop') {
+    try {
+      await app.get(AuthService).initDesktopAccount();
+    } catch (e) {
+      Logger.warn('Desktop account init failed: ' + e?.message, 'Desktop');
+    }
+  }
 
   try {
     await app.listen(port);

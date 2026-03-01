@@ -148,6 +148,19 @@ struct ConfigFile {
     auto_find_ports: Option<bool>,
     /// JWT Secret for authentication (auto-generated if missing)
     jwt_secret: Option<String>,
+    /// Desktop session token for auto-login (auto-generated if missing)
+    desktop_token: Option<String>,
+    /// Auto-login on app start using desktop_token (default: true; set to false for password flow)
+    auto_login: Option<bool>,
+}
+
+/// Generate a random alphanumeric token of the given length
+fn generate_token(len: usize) -> String {
+    rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(len)
+        .map(char::from)
+        .collect()
 }
 
 impl ConfigFile {
@@ -159,14 +172,18 @@ impl ConfigFile {
                 Ok(contents) => match toml::from_str::<ConfigFile>(&contents) {
                     Ok(mut config) => {
                         println!("[postiz] Loaded config from {:?}", config_path);
-                        // If JWT secret is missing in file, generate it and save back
+                        let mut needs_save = false;
+                        // Auto-generate jwt_secret if missing
                         if config.jwt_secret.is_none() {
-                            let secret: String = rand::thread_rng()
-                                .sample_iter(&rand::distributions::Alphanumeric)
-                                .take(32)
-                                .map(char::from)
-                                .collect();
-                            config.jwt_secret = Some(secret);
+                            config.jwt_secret = Some(generate_token(32));
+                            needs_save = true;
+                        }
+                        // Auto-generate desktop_token if missing
+                        if config.desktop_token.is_none() {
+                            config.desktop_token = Some(generate_token(32));
+                            needs_save = true;
+                        }
+                        if needs_save {
                             let _ = config.save();
                         }
                         return config;
@@ -181,14 +198,10 @@ impl ConfigFile {
             }
         }
         
-        // No config file, create one with a new JWT secret
-        let secret: String = rand::thread_rng()
-            .sample_iter(&rand::distributions::Alphanumeric)
-            .take(32)
-            .map(char::from)
-            .collect();
+        // No config file, create one with auto-generated secrets
         let config = Self {
-            jwt_secret: Some(secret),
+            jwt_secret: Some(generate_token(32)),
+            desktop_token: Some(generate_token(32)),
             ..Self::default()
         };
         let _ = config.save();
@@ -256,6 +269,8 @@ struct Config {
     data_dir: PathBuf,
     auto_find_ports: bool,
     jwt_secret: String,
+    desktop_token: String,
+    auto_login: bool,
 }
 
 impl Config {
@@ -303,6 +318,8 @@ impl Config {
             data_dir: get_path("POSTIZ_DATA_DIR", file_config.data_dir, get_data_dir()),
             auto_find_ports: get_bool("POSTIZ_AUTO_FIND_PORTS", file_config.auto_find_ports, true),
             jwt_secret: get_string("JWT_SECRET", file_config.jwt_secret, "change-me-postiz-desktop"),
+            desktop_token: get_string("DESKTOP_TOKEN", file_config.desktop_token, ""),
+            auto_login: get_bool("POSTIZ_AUTO_LOGIN", file_config.auto_login, true),
         }
     }
 }
@@ -960,6 +977,7 @@ fn main() {
                 "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE", "DESKTOP_COOKIE_MODE",
                 "PORT", "MAIN_URL", "FRONTEND_URL", "NEXT_PUBLIC_BACKEND_URL",
                 "BACKEND_URL", "BACKEND_INTERNAL_URL", "IS_GENERAL",
+                "DESKTOP_TOKEN", "DESKTOP_AUTO_LOGIN",
             ];
             let mut backend_cmd = shell
                 .sidecar("node")
@@ -994,7 +1012,10 @@ fn main() {
                 // Required for self-hosted mode: enables multi-user registration,
                 // social platform integrations, and routes to /launches tab.
                 // All docker-compose self-host configs set this to true.
-                .env("IS_GENERAL", "true");
+                .env("IS_GENERAL", "true")
+                // Desktop auto-login token — validated by POST /auth/desktop-token
+                .env("DESKTOP_TOKEN", &config.desktop_token)
+                .env("DESKTOP_AUTO_LOGIN", if config.auto_login { "true" } else { "false" });
             // Forward user-supplied social platform credentials and any other
             // vars from postiz.env. Skip keys already set above to prevent
             // users accidentally overriding infrastructure configuration.
@@ -1053,7 +1074,10 @@ fn main() {
                 .env("DESKTOP_COOKIE_MODE", "true")
                 // Required for self-hosted mode: Next.js server components read this at
                 // runtime to set isGeneral=true, enabling social integrations and /launches tab.
-                .env("IS_GENERAL", "true");
+                .env("IS_GENERAL", "true")
+                // Exposes desktop mode to Next.js layout (NEXT_PUBLIC_ prefix bakes it
+                // into server-rendered HTML so client components can read it).
+                .env("NEXT_PUBLIC_POSTIZ_MODE", "desktop");
 
             let (mut rx, frontend_child) = frontend_cmd.spawn().expect("Failed to spawn frontend");
             println!("[frontend] Started with PID: {:?}", frontend_child.pid());
@@ -1168,6 +1192,9 @@ fn main() {
             // This is done in a spawn to not block the setup
             if let Some(win) = window {
                 let frontend_url_clone = frontend_url.clone();
+                let backend_url_for_login = backend_url.clone();
+                let desktop_token_for_login = config.desktop_token.clone();
+                let auto_login = config.auto_login;
                 tauri::async_runtime::spawn(async move {
                     // Run health checks in a blocking context
                     let result = tauri::async_runtime::spawn_blocking(move || {
@@ -1177,14 +1204,43 @@ fn main() {
 
                     match result {
                         Ok(Ok(())) => {
-                            // Services are ready — navigate to the frontend.
-                            // If the user has a stale auth cookie (e.g. from a previous
-                            // session whose DB was wiped by prisma.service.ts crash recovery),
-                            // the first protected request will get a logout:true response.
-                            // afterRequest() in layout.context.tsx then navigates to
-                            // /auth/logout which lets Next.js middleware atomically clear the
-                            // HttpOnly cookie and redirect to /auth/login.
-                            if let Ok(url) = tauri::Url::parse(&frontend_url_clone) {
+                            // Services are ready. If auto_login is enabled, POST to
+                            // /auth/desktop-token to get a JWT and inject it via the
+                            // existing loggedAuth URL param mechanism (middleware.ts sets
+                            // the auth cookie from this param on first load).
+                            let nav_url = if auto_login && !desktop_token_for_login.is_empty() {
+                                let token = desktop_token_for_login.clone();
+                                let backend = backend_url_for_login.clone();
+                                let jwt_result = tauri::async_runtime::spawn_blocking(move || {
+                                    let client = reqwest::blocking::Client::new();
+                                    client
+                                        .post(format!("{}/auth/desktop-token", backend))
+                                        .json(&serde_json::json!({ "token": token }))
+                                        .send()
+                                        .ok()
+                                        .and_then(|r| r.json::<serde_json::Value>().ok())
+                                        .and_then(|j| {
+                                            j.get("jwt")
+                                                .and_then(|v| v.as_str())
+                                                .map(|s| s.to_string())
+                                        })
+                                })
+                                .await;
+
+                                match jwt_result {
+                                    Ok(Some(jwt)) => {
+                                        format!("{}?loggedAuth={}", frontend_url_clone, jwt)
+                                    }
+                                    _ => {
+                                        println!("[postiz] Auto-login failed, navigating without JWT");
+                                        frontend_url_clone.clone()
+                                    }
+                                }
+                            } else {
+                                frontend_url_clone.clone()
+                            };
+
+                            if let Ok(url) = tauri::Url::parse(&nav_url) {
                                 let _ = win.navigate(url);
                             }
                         }

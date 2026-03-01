@@ -5,7 +5,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
@@ -23,10 +24,24 @@ type Inputs = {
 };
 export function Login() {
   const t = useT();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
   const { isGeneral, neynarClientId, billingEnabled, genericOauth } =
     useVariables();
+  const fetchData = useFetch();
+  const [availableProviders, setAvailableProviders] = useState<{
+    google: boolean;
+    github: boolean;
+    neynar: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    fetchData('/auth/providers')
+      .then((r) => r.json())
+      .then(setAvailableProviders)
+      .catch(() => setAvailableProviders({ google: true, github: true, neynar: true }));
+  }, [fetchData]);
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -37,7 +52,6 @@ export function Login() {
       provider: 'LOCAL',
     },
   });
-  const fetchData = useFetch();
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoading(true);
     setNotActivated(false);
@@ -58,7 +72,11 @@ export function Login() {
         });
       }
       setLoading(false);
+      return;
     }
+    // Success: auth cookie set by backend — trigger Next.js middleware re-evaluation
+    // which detects the cookie and redirects to the app
+    router.refresh();
   };
   return (
     <FormProvider {...form}>
@@ -77,13 +95,19 @@ export function Login() {
               <OauthProvider />
             ) : !isGeneral ? (
               <GithubProvider />
-            ) : (
-              <div className="gap-[8px] flex">
-                <GoogleProvider />
-                {!!neynarClientId && <FarcasterProvider />}
-                {billingEnabled && <WalletProvider />}
-              </div>
-            )}
+            ) : (() => {
+              const showGoogle = availableProviders === null || availableProviders.google;
+              const showFarcaster = !!neynarClientId;
+              const showWallet = billingEnabled;
+              if (!showGoogle && !showFarcaster && !showWallet) return null;
+              return (
+                <div className="gap-[8px] flex">
+                  {showGoogle && <GoogleProvider />}
+                  {showFarcaster && <FarcasterProvider />}
+                  {showWallet && <WalletProvider />}
+                </div>
+              );
+            })()}
             <div className="h-[20px] mb-[24px] mt-[24px] relative">
               <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
               <div

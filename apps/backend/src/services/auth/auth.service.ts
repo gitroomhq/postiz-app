@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { Provider, User } from '@prisma/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -210,7 +211,7 @@ export class AuthService {
   async forgot(email: string) {
     const user = await this._userService.getUserByEmail(email);
     if (!user || user.providerName !== Provider.LOCAL) {
-      return false;
+      return {};
     }
 
     const resetValues = AuthChecker.signJWT({
@@ -218,11 +219,62 @@ export class AuthService {
       expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
     });
 
+    if (process.env.POSTIZ_MODE === 'desktop') {
+      // Desktop: return reset URL directly — no email needed
+      return { resetUrl: `${process.env.FRONTEND_URL}/auth/forgot/${resetValues}` };
+    }
+
+    if (!this._emailService.hasProvider()) {
+      return { noEmail: true };
+    }
+
     await this._notificationService.sendEmail(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your password. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
     );
+    return {};
+  }
+
+  async initDesktopAccount() {
+    const count = await this._organizationService.getCount();
+    if (count > 0) {
+      return; // Account already exists
+    }
+
+    // Create default org and admin user for zero-config first launch
+    const password = AuthChecker.hashPassword(randomBytes(32).toString('hex'));
+    const create = await this._organizationService.createOrgAndUser(
+      {
+        company: 'My Workspace',
+        email: 'admin@localhost',
+        password,
+        provider: Provider.LOCAL,
+      },
+      '127.0.0.1',
+      'desktop'
+    );
+
+    await this._userService.activateUser(create.users[0].user.id);
+    console.log('[desktop] Created default admin account: admin@localhost');
+  }
+
+  async authenticateWithDesktopToken(token: string): Promise<{ jwt: string }> {
+    if (process.env.POSTIZ_MODE !== 'desktop') {
+      throw new Error('Not in desktop mode');
+    }
+
+    const desktopToken = process.env.DESKTOP_TOKEN;
+    if (!desktopToken || token !== desktopToken) {
+      throw new Error('Invalid desktop token');
+    }
+
+    const user = await this._userService.getUserByEmail('admin@localhost');
+    if (!user) {
+      throw new Error('Desktop admin account not found');
+    }
+
+    return { jwt: await this.jwt(user) };
   }
 
   forgotReturn(body: ForgotReturnPasswordDto) {
@@ -281,11 +333,15 @@ export class AuthService {
     return true;
   }
 
-  oauthLink(provider: string, query?: any) {
-    const providerInstance = ProvidersFactory.loadProvider(
-      provider as Provider
-    );
-    return providerInstance.generateLink(query);
+  async oauthLink(provider: string, query?: any) {
+    try {
+      const providerInstance = ProvidersFactory.loadProvider(
+        provider as Provider
+      );
+      return await providerInstance.generateLink(query);
+    } catch (err: any) {
+      return { err: true, message: err.message };
+    }
   }
 
   async checkExists(provider: string, code: string) {
