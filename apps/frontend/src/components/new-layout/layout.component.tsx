@@ -70,16 +70,20 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-[16px] max-w-[420px] text-center p-[32px]">
-          <div className="text-[18px] font-[600] text-newTextColor">Could not load your account</div>
+          <div className="text-[18px] font-[600] text-newTextColor">Could not sign you in</div>
           <div className="text-[14px] text-textItemBlur">
-            {error?.message
-              ? `Error: ${error.message}`
-              : 'The backend did not return a valid session.'}
+            If Postiz just started, the backend may still be initializing — wait a few seconds, then press Refresh.
           </div>
-          <div className="text-[13px] text-textItemBlur">
-            If the app just started, the backend may still be initializing — wait a
-            moment, then refresh.
-          </div>
+          {error?.message && (
+            <details className="w-full text-left">
+              <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">
+                Technical details (for administrators)
+              </summary>
+              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] mt-[8px] break-all">
+                {error.message}
+              </div>
+            </details>
+          )}
           <button
             className="mt-[8px] px-[24px] py-[10px] bg-btnPrimary text-btnText rounded-[8px] text-[14px] font-[600] hover:opacity-90"
             onClick={() => window.location.reload()}

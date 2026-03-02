@@ -33,29 +33,38 @@ export default function AppError({
         }}
       >
         <div style={{ fontSize: 18, fontWeight: 600 }}>
-          Postiz encountered an error
+          This page could not load
         </div>
-        {error?.message && (
-          <div
-            style={{
-              fontSize: 13,
-              fontFamily: 'monospace',
-              background: '#1a1a1a',
-              borderRadius: 8,
-              padding: 12,
-              width: '100%',
-              textAlign: 'left',
-              wordBreak: 'break-all',
-              color: '#aaa',
-            }}
-          >
-            {error.message}
-          </div>
-        )}
-        {error?.digest && (
-          <div style={{ fontSize: 11, color: '#888' }}>
-            digest: {error.digest}
-          </div>
+        <div style={{ fontSize: 14, color: '#aaa' }}>
+          Press <strong>Retry</strong> to try again, or go to <strong>Launches</strong> to return to the main page.
+        </div>
+        {(error?.message || error?.digest) && (
+          <details style={{ width: '100%', textAlign: 'left' }}>
+            <summary style={{ fontSize: 12, color: '#888', cursor: 'pointer', userSelect: 'none' }}>
+              Technical details (for administrators)
+            </summary>
+            {error?.message && (
+              <div
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  background: '#1a1a1a',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 8,
+                  wordBreak: 'break-all',
+                  color: '#aaa',
+                }}
+              >
+                {error.message}
+              </div>
+            )}
+            {error?.digest && (
+              <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                digest: {error.digest}
+              </div>
+            )}
+          </details>
         )}
         <div style={{ display: 'flex', gap: 12 }}>
           <button

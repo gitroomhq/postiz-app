@@ -15,24 +15,27 @@ export default function SiteError({
   const toaster = useToaster();
 
   useEffect(() => {
-    toaster.show(
-      error?.message
-        ? `Page error: ${error.message}`
-        : 'This page encountered an error.',
-      'warning'
-    );
+    toaster.show('This page could not load. Try Retry or go to Launches.', 'warning');
   }, []);
 
   return (
     <div className="flex items-center justify-center flex-1">
       <div className="flex flex-col items-center gap-[16px] max-w-[560px] text-center p-[32px]">
         <div className="text-[18px] font-[600] text-newTextColor">
-          This page encountered an error
+          This page could not load
+        </div>
+        <div className="text-[14px] text-textItemBlur">
+          Press <strong>Retry</strong> to try again, or go to <strong>Launches</strong> to return to the main page.
         </div>
         {error?.message && (
-          <div className="text-[13px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] w-full text-left break-all">
-            {error.message}
-          </div>
+          <details className="w-full text-left">
+            <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">
+              Technical details (for administrators)
+            </summary>
+            <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] mt-[8px] break-all">
+              {error.message}
+            </div>
+          </details>
         )}
         <div className="flex gap-[12px]">
           <button

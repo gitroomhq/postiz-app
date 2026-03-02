@@ -32,11 +32,19 @@ export default function GlobalError({
     <html>
       <body style={{ margin: 0, background: '#0d0d0d', color: '#e5e5e5', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ maxWidth: 560, textAlign: 'center', padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontSize: 18, fontWeight: 600 }}>Postiz encountered an unexpected error</div>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Postiz could not load</div>
+          <div style={{ fontSize: 14, color: '#aaa' }}>
+            Press <strong>Reload</strong> to try again. If the problem persists, try restarting the app.
+          </div>
           {error?.message && (
-            <div style={{ fontSize: 13, fontFamily: 'monospace', background: '#1a1a1a', borderRadius: 8, padding: 12, width: '100%', textAlign: 'left', wordBreak: 'break-all', color: '#aaa' }}>
-              {error.message}
-            </div>
+            <details style={{ width: '100%', textAlign: 'left' }}>
+              <summary style={{ fontSize: 12, color: '#888', cursor: 'pointer', userSelect: 'none' }}>
+                Technical details (for administrators)
+              </summary>
+              <div style={{ fontSize: 12, fontFamily: 'monospace', background: '#1a1a1a', borderRadius: 8, padding: 12, marginTop: 8, wordBreak: 'break-all', color: '#aaa' }}>
+                {error.message}
+              </div>
+            </details>
           )}
           <button
             style={{ marginTop: 8, padding: '10px 24px', background: '#612bd3', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
