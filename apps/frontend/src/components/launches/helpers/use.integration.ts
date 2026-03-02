@@ -11,6 +11,7 @@ export const IntegrationContext = createContext<{
   value: Array<{
     content: string;
     id?: string;
+    hashtags?: string[];
     image?: Array<{
       path: string;
       id: string;

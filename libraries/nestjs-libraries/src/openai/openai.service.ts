@@ -226,6 +226,52 @@ export class OpenaiService {
     };
   }
 
+  async generateHashtags(prompt: string) {
+    const HashtagsResponse = z.object({
+      hashtags: z.array(
+        z.object({
+          platform: z.string(),
+          hashtags: z.array(z.string()),
+        })
+      ),
+    });
+
+    return (
+      (
+        await openai.chat.completions.parse({
+          model: 'gpt-4.1',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that generates relevant hashtags for social media posts. Follow these per-platform conventions:
+- x: 2-5 short hashtags
+- instagram, instagram-standalone: 5-20 hashtags, mix of niche and broad
+- tiktok: 3-8 hashtags, trending and niche
+- linkedin, linkedin-page: 3-5 professional hashtags
+- facebook: 2-5 hashtags
+- threads: 3-5 hashtags
+- youtube: 3-5 descriptive hashtags
+- pinterest: 2-5 keyword hashtags
+- bluesky: 2-5 hashtags
+- mastodon: 2-5 hashtags (important for discoverability)
+- vk: 3-5 hashtags
+- telegram: 2-5 hashtags
+
+Only generate hashtags for platforms the user mentions. For platforms that don't support hashtags (discord, slack, reddit, kick, twitch, dribbble, lemmy, medium, devto, hashnode, wordpress, listmonk, moltbook, skool, whop, gmb, nostr, wrapcast), return an empty hashtags array.
+If the user mentions a platform not listed above and hashtags are commonly used on that platform, generate an optimal number of hashtags for it.
+All hashtags must start with #.`,
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          response_format: zodResponseFormat(HashtagsResponse, 'hashtagsResponse'),
+        })
+      ).choices[0].message.parsed || { hashtags: [] }
+    );
+  }
+
   async generateSlidesFromText(text: string) {
     for (let i = 0; i < 3; i++) {
       try {

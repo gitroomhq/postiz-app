@@ -118,6 +118,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     setTags,
     setEditor,
     setRepeater,
+    setHashtags,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -129,6 +130,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       setTags: state.setTags,
       setEditor: state.setEditor,
       setRepeater: state.setRepeater,
+      setHashtags: state.setHashtags,
     }))
   );
 
@@ -161,6 +163,10 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           media: post.image as any[],
         }))
       );
+      const firstPostHashtags = existingData.posts[0].hashtags;
+      if (firstPostHashtags) {
+        setHashtags(existingData.integration, JSON.parse(firstPostHashtags));
+      }
       setCurrent(existingData.integration);
     } else {
       setEditor('normal');

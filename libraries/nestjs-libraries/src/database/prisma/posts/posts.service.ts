@@ -733,6 +733,10 @@ export class PostsService {
     return this._openaiService.separatePosts(content, len);
   }
 
+  async generateHashtags(content: string) {
+    return this._openaiService.generateHashtags(content);
+  }
+
   async changeState(id: string, state: State, err?: any, body?: any) {
     return this._postRepository.changeState(id, state, err, body);
   }

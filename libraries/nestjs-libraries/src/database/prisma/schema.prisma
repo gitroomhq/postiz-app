@@ -401,6 +401,7 @@ model Post {
   releaseId                  String?
   releaseURL                 String?
   settings                   String?
+  hashtags                   String?
   image                      String?
   submittedForOrderId        String?
   submittedForOrganizationId String?
