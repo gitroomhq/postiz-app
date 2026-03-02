@@ -14,7 +14,6 @@ import {
   copilotRuntimeNodeHttpEndpoint,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
-import OpenAI from 'openai';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -46,12 +45,9 @@ function aiNotConfiguredError(res: Response) {
 }
 
 function makeOpenAIAdapter() {
-  const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    ...(process.env.OPENAI_BASE_URL ? { baseURL: process.env.OPENAI_BASE_URL } : {}),
-  });
+  // Don't pass a custom OpenAI client — CopilotKit bundles openai v4 internally
+  // and reads OPENAI_API_KEY + OPENAI_BASE_URL from env vars automatically.
   return new OpenAIAdapter({
-    openai: client,
     model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
   });
 }
