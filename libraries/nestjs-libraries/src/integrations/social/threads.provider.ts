@@ -39,8 +39,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         value: string;
       }
     | undefined {
+    console.log(body);
     if (body.includes('Error validating access token')) {
       return { type: 'refresh-token', value: 'Threads access token expired' };
+    }
+
+    if (body.includes('text must be at most 500 characters')) {
+      return {
+        type: 'bad-body',
+        value: 'Post text exceeds 500 characters limit',
+      };
     }
 
     return undefined;
@@ -270,7 +278,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       form.append('quote_post_id', quoteId);
     }
 
-    const { id: contentId } = await (
+    const { id: contentId, ...all } = await (
       await this.fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
         method: 'POST',
         body: form,
