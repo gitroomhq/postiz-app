@@ -57,7 +57,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user, mutate, isLoading } = useSWR('/user/self', load, {
+  const { data: user, mutate, isLoading, error } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -66,7 +66,30 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   });
 
   if (isLoading) return <div className="flex items-center justify-center min-h-screen" />;
-  if (!user) return null;
+  if (error || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-primary">
+        <div className="flex flex-col items-center gap-[16px] max-w-[420px] text-center p-[32px]">
+          <div className="text-[18px] font-[600]">Could not load your account</div>
+          <div className="text-[14px] text-textItemBlur">
+            {error?.message
+              ? `Error: ${error.message}`
+              : 'The backend did not return a valid session.'}
+          </div>
+          <div className="text-[13px] text-textItemBlur">
+            If the app just started, the backend may still be initializing — wait a
+            moment, then refresh.
+          </div>
+          <button
+            className="mt-[8px] px-[24px] py-[10px] bg-primary text-white rounded-[8px] text-[14px] font-[600] hover:opacity-90"
+            onClick={() => window.location.reload()}
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ContextWrapper user={user}>
