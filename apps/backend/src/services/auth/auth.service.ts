@@ -242,12 +242,15 @@ export class AuthService {
       return; // Account already exists
     }
 
-    // Create default org and admin user for zero-config first launch
+    // Create default org and admin user for zero-config first launch.
+    // admin@postiz.local uses the RFC 6762 reserved .local domain — it is
+    // unroutable on the internet, clearly not a real email, and passes
+    // @IsEmail() validation (unlike admin@localhost which lacks a dot).
     const password = AuthChecker.hashPassword(randomBytes(32).toString('hex'));
     const create = await this._organizationService.createOrgAndUser(
       {
         company: 'My Workspace',
-        email: 'admin@localhost',
+        email: 'admin@postiz.local',
         password,
         provider: Provider.LOCAL,
         datafast_visitor_id: '',
