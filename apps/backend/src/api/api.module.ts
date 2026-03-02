@@ -35,7 +35,7 @@ import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.aut
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
 import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
 import { ApprovedAppsController } from '@gitroom/backend/api/routes/approved-apps.controller';
-import { OAuthController } from '@gitroom/backend/api/routes/oauth.controller';
+import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api/routes/oauth.controller';
 
 const authenticatedController = [
   UsersController,
@@ -54,6 +54,7 @@ const authenticatedController = [
   ThirdPartyController,
   OAuthAppController,
   ApprovedAppsController,
+  OAuthAuthorizedController,
 ];
 @Module({
   imports: [UploadModule],

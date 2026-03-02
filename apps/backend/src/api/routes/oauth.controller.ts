@@ -6,25 +6,19 @@ import {
   HttpStatus,
   Post,
   Query,
-  Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Request, Response } from 'express';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { User } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { User, Organization } from '@prisma/client';
 import { AuthorizeOAuthQueryDto, ApproveOAuthDto } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
 
 @ApiTags('OAuth')
 @Controller('/oauth')
 export class OAuthController {
-  constructor(
-    private _oauthService: OAuthService,
-    private _organizationService: OrganizationService
-  ) {}
+  constructor(private _oauthService: OAuthService) {}
 
   @Get('/authorize')
   async authorize(@Query() query: AuthorizeOAuthQueryDto) {
@@ -44,63 +38,6 @@ export class OAuthController {
     };
   }
 
-  @Post('/authorize')
-  async approveOrDeny(
-    @Body() body: ApproveOAuthDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
-  ) {
-    const auth = (req.headers as any).auth || req.cookies.auth;
-    if (!auth) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    }
-
-    let user: User;
-    try {
-      user = AuthService.verifyJWT(auth) as User;
-      if (!user) {
-        throw new Error();
-      }
-    } catch {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    }
-
-    const app = await this._oauthService.validateAuthorizationRequest(
-      body.client_id
-    );
-
-    if (body.action === 'deny') {
-      const redirectUrl = new URL(app.redirectUrl);
-      redirectUrl.searchParams.set('error', 'access_denied');
-      if (body.state) {
-        redirectUrl.searchParams.set('state', body.state);
-      }
-      return { redirect: redirectUrl.toString() };
-    }
-
-    const orgs = await this._organizationService.getOrgsByUserId(user.id);
-    const org = orgs.find((o: any) => !o.users?.[0]?.disabled);
-    if (!org) {
-      throw new HttpException(
-        'No active organization found',
-        HttpStatus.BAD_REQUEST
-      );
-    }
-
-    const code = await this._oauthService.createAuthorizationCode(
-      app.id,
-      user.id,
-      org.id
-    );
-
-    const redirectUrl = new URL(app.redirectUrl);
-    redirectUrl.searchParams.set('code', code);
-    if (body.state) {
-      redirectUrl.searchParams.set('state', body.state);
-    }
-    return { redirect: redirectUrl.toString() };
-  }
-
   @Post('/token')
   async token(@Body() body: TokenExchangeDto) {
     if (body.grant_type !== 'authorization_code') {
@@ -115,5 +52,44 @@ export class OAuthController {
       body.client_id,
       body.client_secret
     );
+  }
+}
+
+@ApiTags('OAuth')
+@Controller('/oauth')
+export class OAuthAuthorizedController {
+  constructor(private _oauthService: OAuthService) {}
+
+  @Post('/authorize')
+  async approveOrDeny(
+    @Body() body: ApproveOAuthDto,
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    const app = await this._oauthService.validateAuthorizationRequest(
+      body.client_id
+    );
+
+    if (body.action === 'deny') {
+      const redirectUrl = new URL(app.redirectUrl);
+      redirectUrl.searchParams.set('error', 'access_denied');
+      if (body.state) {
+        redirectUrl.searchParams.set('state', body.state);
+      }
+      return { redirect: redirectUrl.toString() };
+    }
+
+    const code = await this._oauthService.createAuthorizationCode(
+      app.id,
+      user.id,
+      org.id
+    );
+
+    const redirectUrl = new URL(app.redirectUrl);
+    redirectUrl.searchParams.set('code', code);
+    if (body.state) {
+      redirectUrl.searchParams.set('state', body.state);
+    }
+    return { redirect: redirectUrl.toString() };
   }
 }
