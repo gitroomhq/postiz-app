@@ -250,6 +250,7 @@ export class AuthService {
         email: 'admin@localhost',
         password,
         provider: Provider.LOCAL,
+        datafast_visitor_id: '',
       },
       '127.0.0.1',
       'desktop'

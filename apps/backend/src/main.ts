@@ -71,7 +71,7 @@ async function start() {
     try {
       await app.get(AuthService).initDesktopAccount();
     } catch (e) {
-      Logger.warn('Desktop account init failed: ' + e?.message, 'Desktop');
+      Logger.warn('Desktop account init failed: ' + (e instanceof Error ? e.message : String(e)), 'Desktop');
     }
   }
 
