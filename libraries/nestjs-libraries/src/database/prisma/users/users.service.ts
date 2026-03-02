@@ -16,6 +16,10 @@ export class UsersService {
     return this._usersRepository.getUserByEmail(email);
   }
 
+  getFirstLocalSuperadminUser() {
+    return this._usersRepository.getFirstLocalSuperadminUser();
+  }
+
   getUserById(id: string) {
     return this._usersRepository.getUserById(id);
   }

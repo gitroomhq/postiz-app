@@ -64,6 +64,28 @@ export class UsersRepository {
     });
   }
 
+  getFirstLocalSuperadminUser() {
+    return this._user.model.user.findFirst({
+      where: {
+        providerName: Provider.LOCAL,
+        organizations: {
+          some: {
+            role: 'SUPERADMIN',
+            disabled: false,
+          },
+        },
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
+      },
+    });
+  }
+
   activateUser(id: string) {
     return this._user.model.user.update({
       where: {
