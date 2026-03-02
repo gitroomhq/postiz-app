@@ -61,7 +61,7 @@ export default function AppError({
           <button
             style={{
               padding: '8px 20px',
-              background: '#4f46e5',
+              background: '#612bd3',
               color: 'white',
               borderRadius: 8,
               fontSize: 14,

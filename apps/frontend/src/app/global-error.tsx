@@ -39,7 +39,7 @@ export default function GlobalError({
             </div>
           )}
           <button
-            style={{ marginTop: 8, padding: '10px 24px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            style={{ marginTop: 8, padding: '10px 24px', background: '#612bd3', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             onClick={() => { window.location.href = '/launches'; }}
           >
             Go to Launches
