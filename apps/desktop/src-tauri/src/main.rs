@@ -936,6 +936,12 @@ fn main() {
             let backend_url = format!("http://localhost:{}", ports.backend);
             let frontend_url = format!("http://localhost:{}", ports.frontend);
 
+            // Suppress Postiz dock bounce during startup — set to Accessory (background)
+            // so the icon doesn't bounce while waiting for health checks. Switched back
+            // to Regular after the webview navigates to the actual frontend.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             // ===== Spawn Temporal server =====
             // Sidecar name must match the `name` field in capabilities/default.json,
             // which is "temporal" (Tauri resolves the platform triple automatically).
@@ -1008,13 +1014,18 @@ fn main() {
                 "TEMPORAL_ADDRESS", "TEMPORAL_NAMESPACE", "DESKTOP_COOKIE_MODE",
                 "PORT", "MAIN_URL", "FRONTEND_URL", "NEXT_PUBLIC_BACKEND_URL",
                 "BACKEND_URL", "BACKEND_INTERNAL_URL", "IS_GENERAL",
-                "DESKTOP_TOKEN", "DESKTOP_AUTO_LOGIN",
+                "DESKTOP_TOKEN", "DESKTOP_AUTO_LOGIN", "POSTIZ_CONFIG_PATH",
             ];
+            let config_toml_path = ConfigFile::config_path().to_string_lossy().to_string();
             let mut backend_cmd = shell
                 .sidecar("node")
                 .expect("failed to create node sidecar for backend")
                 .args([backend_entry.to_str().unwrap_or("")])
                 .current_dir(backend_dir.clone())
+                // Suppress macOS dock icon for child node processes.
+                // LSUIElement=1 tells macOS to treat the process as a background-only
+                // app (no dock icon, no menu bar, no Cmd-Tab entry).
+                .env("LSUIElement", "1")
                 .env("POSTIZ_MODE", "desktop")
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
@@ -1046,7 +1057,9 @@ fn main() {
                 .env("IS_GENERAL", "true")
                 // Desktop auto-login token — validated by POST /auth/desktop-token
                 .env("DESKTOP_TOKEN", &config.desktop_token)
-                .env("DESKTOP_AUTO_LOGIN", if config.auto_login { "true" } else { "false" });
+                .env("DESKTOP_AUTO_LOGIN", if config.auto_login { "true" } else { "false" })
+                // Path to config.toml — backend can write [ai] section for live AI config persistence.
+                .env("POSTIZ_CONFIG_PATH", &config_toml_path);
             // AI config from [ai] section of config.toml — lower priority than postiz.env.
             // Priority: postiz.env (user_env) > config.toml [ai] > defaults.
             if let Some(key) = &config.ai.api_key {
@@ -1106,6 +1119,7 @@ fn main() {
                 .expect("failed to create node sidecar for frontend")
                 .args([frontend_entry.to_str().unwrap_or("")])
                 .current_dir(frontend_dir)
+                .env("LSUIElement", "1")
                 .env("POSTIZ_MODE", "desktop")
                 .env("PORT", &frontend_port_str)
                 .env("HOSTNAME", "localhost")
@@ -1159,6 +1173,7 @@ fn main() {
                 .expect("failed to create node sidecar for orchestrator")
                 .args([orchestrator_entry.to_str().unwrap_or("")])
                 .current_dir(orchestrator_dir)
+                .env("LSUIElement", "1")
                 .env("POSTIZ_MODE", "desktop")
                 .env("DATABASE_URL", &database_url)
                 .env("PGLITE_DATA_DIR", &pglite_path)
@@ -1244,6 +1259,7 @@ fn main() {
                 let backend_url_for_login = backend_url.clone();
                 let desktop_token_for_login = config.desktop_token.clone();
                 let auto_login = config.auto_login;
+                let app_handle_for_activation = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
                     // Run health checks in a blocking context
                     let result = tauri::async_runtime::spawn_blocking(move || {
@@ -1292,6 +1308,10 @@ fn main() {
                             if let Ok(url) = tauri::Url::parse(&nav_url) {
                                 let _ = win.navigate(url);
                             }
+                            // Switch back to Regular activation policy — app is ready,
+                            // show dock icon and allow Cmd-Tab.
+                            #[cfg(target_os = "macos")]
+                            let _ = app_handle_for_activation.set_activation_policy(tauri::ActivationPolicy::Regular);
                         }
                         Ok(Err(e)) => {
                             // Health check failed

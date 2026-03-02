@@ -39,25 +39,43 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 type AiOption = 'openai' | 'lmstudio' | 'llamacpp' | 'other';
 
-const AI_OPTIONS: { id: AiOption; label: string; description: string; tomlBlock: string; envBlock: string }[] = [
+const AI_OPTIONS: {
+  id: AiOption;
+  label: string;
+  description: string;
+  defaultApiKey: string;
+  defaultBaseUrl: string;
+  defaultModel: string;
+  tomlBlock: string;
+  envBlock: string;
+}[] = [
   {
     id: 'openai',
     label: 'OpenAI',
     description: 'Cloud AI from OpenAI. Get an API key at platform.openai.com.',
+    defaultApiKey: '',
+    defaultBaseUrl: '',
+    defaultModel: '',
     tomlBlock: '[ai]\napi_key = "sk-proj-your-key-here"',
     envBlock: 'OPENAI_API_KEY=sk-proj-your-key-here',
   },
   {
     id: 'lmstudio',
     label: 'LM Studio',
-    description: 'Free, runs locally. Download at lmstudio.ai, load a model, then start the local server. Use your loaded model name for OPENAI_CHAT_MODEL.',
+    description: 'Free, runs locally. Download at lmstudio.ai, load a model, then start the local server.',
+    defaultApiKey: 'local',
+    defaultBaseUrl: 'http://localhost:1234/v1',
+    defaultModel: '',
     tomlBlock: '[ai]\napi_key = "local"\nbase_url = "http://localhost:1234/v1"\nchat_model = "your-loaded-model-name"',
     envBlock: 'OPENAI_API_KEY=local\nOPENAI_BASE_URL=http://localhost:1234/v1\nOPENAI_CHAT_MODEL=your-loaded-model-name',
   },
   {
     id: 'llamacpp',
     label: 'llama.cpp',
-    description: 'Free, runs locally. Build llama.cpp and run llama-server with your model file. Use your model name for OPENAI_CHAT_MODEL.',
+    description: 'Free, runs locally. Build llama.cpp and run llama-server with your model file.',
+    defaultApiKey: 'local',
+    defaultBaseUrl: 'http://localhost:8080/v1',
+    defaultModel: '',
     tomlBlock: '[ai]\napi_key = "local"\nbase_url = "http://localhost:8080/v1"\nchat_model = "your-model-name"',
     envBlock: 'OPENAI_API_KEY=local\nOPENAI_BASE_URL=http://localhost:8080/v1\nOPENAI_CHAT_MODEL=your-model-name',
   },
@@ -65,17 +83,35 @@ const AI_OPTIONS: { id: AiOption; label: string; description: string; tomlBlock:
     id: 'other',
     label: 'z.ai / other',
     description: 'Any OpenAI-compatible API — z.ai, Together AI, Groq, Ollama, Mistral, or self-hosted.',
+    defaultApiKey: '',
+    defaultBaseUrl: '',
+    defaultModel: '',
     tomlBlock: '[ai]\napi_key = "your-api-key"\nbase_url = "https://your-api-endpoint/v1"\nchat_model = "model-name"',
     envBlock: 'OPENAI_API_KEY=your-api-key\nOPENAI_BASE_URL=https://your-api-endpoint/v1\nOPENAI_CHAT_MODEL=model-name',
   },
 ];
 
-const AiSetupGuide: FC = () => {
+const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
   const { desktopMode } = useVariables();
+  const fetch = useFetch();
   const [activeOption, setActiveOption] = useState<AiOption>('openai');
+  const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [chatModel, setChatModel] = useState('');
+  const [error, setError] = useState('');
+  const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState('');
 
   const option = AI_OPTIONS.find((o) => o.id === activeOption)!;
+
+  // Pre-fill defaults when switching provider tabs
+  useEffect(() => {
+    const opt = AI_OPTIONS.find((o) => o.id === activeOption)!;
+    setApiKey(opt.defaultApiKey);
+    setBaseUrl(opt.defaultBaseUrl);
+    setChatModel(opt.defaultModel);
+    setError('');
+  }, [activeOption]);
 
   const copy = useCallback((key: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -83,15 +119,44 @@ const AiSetupGuide: FC = () => {
     setTimeout(() => setCopied(''), 2000);
   }, []);
 
+  const connect = useCallback(async () => {
+    if (!apiKey.trim()) {
+      setError('API key is required');
+      return;
+    }
+    setConnecting(true);
+    setError('');
+    try {
+      const res = await fetch('/copilot/configure', {
+        method: 'POST',
+        body: JSON.stringify({
+          apiKey: apiKey.trim(),
+          baseUrl: baseUrl.trim() || undefined,
+          chatModel: chatModel.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.configured) {
+        onConfigured();
+      } else {
+        setError('Configuration failed — API key may be invalid');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Failed to connect');
+    }
+    setConnecting(false);
+  }, [apiKey, baseUrl, chatModel, fetch, onConfigured]);
+
+  const inputClasses =
+    'w-full bg-newBgColor text-newTextColor border border-blockSeparator rounded-[8px] px-[12px] py-[10px] text-[13px] font-mono placeholder:text-textItemBlur focus:outline-none focus:border-btnPrimary';
+
   return (
     <div className="flex flex-col items-center justify-center flex-1 p-[32px] overflow-auto">
       <div className="max-w-[560px] w-full flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[8px]">
-          <div className="text-[20px] font-[600] text-newTextColor">AI is not configured</div>
+          <div className="text-[20px] font-[600] text-newTextColor">Configure AI</div>
           <div className="text-[14px] text-textItemBlur">
-            {desktopMode
-              ? 'Add AI settings to your Postiz config, then quit and restart the app.'
-              : 'Add AI settings to your server .env file, then restart the server.'}
+            Connect an AI provider to enable the Postiz agent. Settings are applied instantly.
           </div>
         </div>
 
@@ -114,65 +179,97 @@ const AiSetupGuide: FC = () => {
 
         <div className="text-[13px] text-textItemBlur">{option.description}</div>
 
-        {desktopMode ? (
-          <>
-            <div className="flex flex-col gap-[8px]">
-              <div className="text-[13px] font-[600] text-newTextColor">
-                Option A — config.toml{' '}
-                <span className="font-[400] text-textItemBlur">(recommended)</span>
-              </div>
-              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
-                ~/Library/Application Support/Postiz/config.toml
-              </div>
-              <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
-                <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.tomlBlock}</pre>
-                <button
-                  onClick={() => copy('toml', option.tomlBlock)}
-                  className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
-                >
-                  {copied === 'toml' ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
+        <div className="flex flex-col gap-[12px]">
+          <div className="flex flex-col gap-[4px]">
+            <label className="text-[13px] font-[500] text-newTextColor">API Key</label>
+            <input
+              type="password"
+              className={inputClasses}
+              placeholder={activeOption === 'openai' ? 'sk-proj-...' : 'local'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-[4px]">
+            <label className="text-[13px] font-[500] text-newTextColor">
+              Base URL <span className="font-[400] text-textItemBlur">(optional for OpenAI)</span>
+            </label>
+            <input
+              type="text"
+              className={inputClasses}
+              placeholder="https://api.openai.com/v1"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-[4px]">
+            <label className="text-[13px] font-[500] text-newTextColor">
+              Model <span className="font-[400] text-textItemBlur">(optional, defaults to gpt-4.1)</span>
+            </label>
+            <input
+              type="text"
+              className={inputClasses}
+              placeholder="gpt-4.1"
+              value={chatModel}
+              onChange={(e) => setChatModel(e.target.value)}
+            />
+          </div>
+        </div>
 
-            <div className="flex flex-col gap-[8px]">
-              <div className="text-[13px] font-[600] text-newTextColor">
-                Option B — postiz.env{' '}
-                <span className="font-[400] text-textItemBlur">(overrides config.toml)</span>
-              </div>
-              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
-                ~/Library/Application Support/Postiz/postiz.env
-              </div>
-              <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
-                <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
-                <button
-                  onClick={() => copy('env', option.envBlock)}
-                  className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
-                >
-                  {copied === 'env' ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
-
-            <div className="text-[13px] text-textItemBlur bg-newBgColor rounded-[8px] p-[12px]">
-              After saving, quit Postiz completely and relaunch it.
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col gap-[8px]">
-            <div className="text-[13px] font-[600] text-newTextColor">Add to your .env file</div>
-            <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
-              <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
-              <button
-                onClick={() => copy('env', option.envBlock)}
-                className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
-              >
-                {copied === 'env' ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <div className="text-[13px] text-textItemBlur">After saving, restart the server.</div>
+        {error && (
+          <div className="text-[13px] text-red-400 bg-red-400/10 rounded-[8px] px-[12px] py-[8px]">
+            {error}
           </div>
         )}
+
+        <button
+          onClick={connect}
+          disabled={connecting}
+          className={clsx(
+            'px-[24px] py-[12px] rounded-[8px] text-[14px] font-[600] transition-opacity',
+            connecting ? 'bg-btnPrimary/50 text-btnText cursor-wait' : 'bg-btnPrimary text-btnText hover:opacity-90'
+          )}
+        >
+          {connecting ? 'Connecting...' : 'Connect'}
+        </button>
+
+        {/* Manual config reference for advanced users */}
+        <details className="text-left">
+          <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">
+            Manual configuration (config file)
+          </summary>
+          <div className="mt-[12px] flex flex-col gap-[8px]">
+            {desktopMode ? (
+              <>
+                <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
+                  ~/Library/Application Support/Postiz/config.toml
+                </div>
+                <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
+                  <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.tomlBlock}</pre>
+                  <button
+                    onClick={() => copy('toml', option.tomlBlock)}
+                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                  >
+                    {copied === 'toml' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[12px] text-textItemBlur">Add to your .env file:</div>
+                <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
+                  <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
+                  <button
+                    onClick={() => copy('env', option.envBlock)}
+                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                  >
+                    {copied === 'env' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </details>
       </div>
     </div>
   );
@@ -228,7 +325,7 @@ export const AgentChat: FC = () => {
     return (await fetch('/copilot/status')).json();
   }, [fetch]);
 
-  const { data: status, isLoading: statusLoading } = useSWR('/copilot/status', loadStatus, {
+  const { data: status, isLoading: statusLoading, mutate: mutateStatus } = useSWR('/copilot/status', loadStatus, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -242,8 +339,11 @@ export const AgentChat: FC = () => {
     );
   }
 
-  if (!status?.configured) {
-    return <AiSetupGuide />;
+  // Only show guide if we got a definitive "not configured" response.
+  // If status is undefined (fetch error/401), fall through to CopilotKit —
+  // the ErrorBoundary catches runtime failures.
+  if (status && !status.configured) {
+    return <AiSetupGuide onConfigured={() => mutateStatus()} />;
   }
 
   return (

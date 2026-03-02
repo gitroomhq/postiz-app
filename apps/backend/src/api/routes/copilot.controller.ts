@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   Res,
+  Body,
   Query,
   Param,
 } from '@nestjs/common';
@@ -123,6 +124,71 @@ export class CopilotController {
       model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
       baseUrl: process.env.OPENAI_BASE_URL || null,
     };
+  }
+
+  @Post('/configure')
+  async configureAi(
+    @Body() body: { apiKey?: string; baseUrl?: string; chatModel?: string },
+    @Res() res: Response
+  ) {
+    // Mutate process.env — takes effect on next makeOpenAIAdapter() call
+    if (body.apiKey !== undefined) {
+      if (body.apiKey) {
+        process.env.OPENAI_API_KEY = body.apiKey;
+      } else {
+        delete process.env.OPENAI_API_KEY;
+      }
+    }
+    if (body.baseUrl !== undefined) {
+      if (body.baseUrl) {
+        process.env.OPENAI_BASE_URL = body.baseUrl;
+      } else {
+        delete process.env.OPENAI_BASE_URL;
+      }
+    }
+    if (body.chatModel !== undefined) {
+      if (body.chatModel) {
+        process.env.OPENAI_CHAT_MODEL = body.chatModel;
+      } else {
+        delete process.env.OPENAI_CHAT_MODEL;
+      }
+    }
+
+    // Persist to config.toml on desktop (so settings survive restart)
+    const configPath = process.env.POSTIZ_CONFIG_PATH;
+    if (configPath) {
+      try {
+        const fs = await import('fs');
+        let toml = '';
+        if (fs.existsSync(configPath)) {
+          toml = fs.readFileSync(configPath, 'utf-8');
+        }
+        // Remove existing [ai] section and its keys
+        toml = toml.replace(/\[ai\]\n(?:[a-z_]+ *= *[^\n]*\n?)*/g, '');
+        // Append new [ai] section
+        const aiLines: string[] = ['[ai]'];
+        if (process.env.OPENAI_API_KEY) {
+          aiLines.push(`api_key = "${process.env.OPENAI_API_KEY}"`);
+        }
+        if (process.env.OPENAI_BASE_URL) {
+          aiLines.push(`base_url = "${process.env.OPENAI_BASE_URL}"`);
+        }
+        if (process.env.OPENAI_CHAT_MODEL) {
+          aiLines.push(`chat_model = "${process.env.OPENAI_CHAT_MODEL}"`);
+        }
+        toml = toml.trimEnd() + '\n\n' + aiLines.join('\n') + '\n';
+        fs.writeFileSync(configPath, toml, 'utf-8');
+        Logger.log(`AI config persisted to ${configPath}`);
+      } catch (err) {
+        Logger.warn(`Failed to persist AI config to ${configPath}: ${err}`);
+      }
+    }
+
+    return res.json({
+      configured: !!process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+      baseUrl: process.env.OPENAI_BASE_URL || null,
+    });
   }
 
   @Get('/credits')
