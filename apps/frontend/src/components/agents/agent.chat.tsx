@@ -330,19 +330,11 @@ export const AgentChat: FC = () => {
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
   const t = useT();
-  const { data: status, isLoading: statusLoading, mutate: mutateStatus } = useAiStatus();
-
-  if (statusLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-[14px] text-customColor18">
-        Checking AI configuration...
-      </div>
-    );
-  }
+  const { data: status, mutate: mutateStatus } = useAiStatus();
 
   // Only show guide if we got a definitive "not configured" response.
-  // If status is undefined (fetch error/401), fall through to CopilotKit —
-  // the ErrorBoundary catches runtime failures.
+  // While loading or on error (undefined status), render CopilotKit immediately
+  // — identical to main's behavior. ErrorBoundary catches runtime failures.
   if (status && !status.configured) {
     return <AiSetupGuide onConfigured={() => mutateStatus()} />;
   }
