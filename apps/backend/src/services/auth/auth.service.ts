@@ -247,7 +247,7 @@ export class AuthService {
     const create = await this._organizationService.createOrgAndUser(
       {
         company: 'My Workspace',
-        email: 'admin@localhost',
+        email: 'admin@postiz.desktop',
         password,
         provider: Provider.LOCAL,
         datafast_visitor_id: '',
@@ -257,7 +257,7 @@ export class AuthService {
     );
 
     await this._userService.activateUser(create.users[0].user.id);
-    console.log('[desktop] Created default admin account: admin@localhost');
+    console.log('[desktop] Created default admin account: admin@postiz.desktop');
   }
 
   async authenticateWithDesktopToken(token: string): Promise<{ jwt: string }> {
@@ -270,7 +270,7 @@ export class AuthService {
       throw new Error('Invalid desktop token');
     }
 
-    const user = await this._userService.getUserByEmail('admin@localhost');
+    const user = await this._userService.getUserByEmail('admin@postiz.desktop');
     if (!user) {
       throw new Error('Desktop admin account not found');
     }
