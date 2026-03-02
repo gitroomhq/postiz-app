@@ -10,12 +10,14 @@ import { useRouter } from 'next/navigation';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.password.dto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 type Inputs = {
   email: string;
 };
 export function Forgot() {
   const t = useT();
   const router = useRouter();
+  const { desktopMode } = useVariables();
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<false | 'sent' | 'no-email'>(false);
   const resolver = useMemo(() => {
@@ -86,10 +88,15 @@ export function Forgot() {
           ) : state === 'no-email' ? (
             <>
               <div className="text-start mt-6">
-                {t(
-                  'email_not_configured_reset',
-                  'Email is not configured. To reset your password, add EMAIL_PROVIDER settings to ~/Library/Application Support/Postiz/postiz.env and restart the app.'
-                )}
+                {desktopMode
+                  ? t(
+                      'email_not_configured_reset_desktop',
+                      'Email is not configured. To reset your password, add EMAIL_PROVIDER settings to ~/Library/Application Support/Postiz/postiz.env and restart the app.'
+                    )
+                  : t(
+                      'email_not_configured_reset',
+                      'Email is not configured on this server. Contact your administrator to set up email, or ask them to reset your password directly.'
+                    )}
               </div>
               <p className="mt-4 text-sm">
                 <Link href="/auth/login" className="underline cursor-pointer">

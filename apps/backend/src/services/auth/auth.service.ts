@@ -237,6 +237,9 @@ export class AuthService {
   }
 
   async initDesktopAccount() {
+    if (process.env.POSTIZ_MODE !== 'desktop') {
+      throw new Error('initDesktopAccount called outside desktop mode');
+    }
     const count = await this._organizationService.getCount();
     if (count > 0) {
       return; // Account already exists
