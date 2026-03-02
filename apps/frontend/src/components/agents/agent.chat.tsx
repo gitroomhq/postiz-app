@@ -178,8 +178,47 @@ const AiSetupGuide: FC = () => {
   );
 };
 
+class CopilotErrorBoundary extends React.Component<
+  { children: React.ReactNode; desktopMode: boolean },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center justify-center flex-1 p-[32px]">
+          <div className="max-w-[480px] w-full flex flex-col gap-[16px] text-center">
+            <div className="text-[18px] font-[600] text-newTextColor">Could not connect to AI</div>
+            <div className="text-[14px] text-textItemBlur">
+              {this.props.desktopMode
+                ? 'Check your AI settings in ~/Library/Application Support/Postiz/config.toml or postiz.env and restart the app.'
+                : 'Check OPENAI_API_KEY and OPENAI_BASE_URL in your server .env and restart.'}
+            </div>
+            <details className="w-full text-left">
+              <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">Technical details</summary>
+              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] mt-[8px] break-all">
+                {this.state.error.message}
+              </div>
+            </details>
+            <button
+              className="mt-[8px] px-[24px] py-[10px] bg-btnPrimary text-btnText rounded-[8px] text-[14px] font-[600] hover:opacity-90"
+              onClick={() => this.setState({ error: null })}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const AgentChat: FC = () => {
-  const { backendUrl } = useVariables();
+  const { backendUrl, desktopMode } = useVariables();
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
   const fetch = useFetch();
@@ -196,7 +235,11 @@ export const AgentChat: FC = () => {
   });
 
   if (statusLoading) {
-    return <div className="flex flex-1 items-center justify-center" />;
+    return (
+      <div className="flex flex-1 items-center justify-center text-[14px] text-textItemBlur">
+        Checking AI configuration...
+      </div>
+    );
   }
 
   if (!status?.configured) {
@@ -204,34 +247,35 @@ export const AgentChat: FC = () => {
   }
 
   return (
-    <CopilotKit
-      {...(params.id === 'new' ? {} : { threadId: params.id })}
-      credentials="include"
-      runtimeUrl={backendUrl + '/copilot/agent'}
-      showDevConsole={false}
-      agent="postiz"
-      properties={{
-        integrations: properties,
-      }}
-    >
-      <Hooks />
-      <LoadMessages id={params.id} />
-      <div
-        style={
-          {
-            '--copilot-kit-primary-color': 'var(--new-btn-text)',
-            '--copilot-kit-background-color': 'var(--new-bg-color)',
-          } as CopilotKitCSSProperties
-        }
-        className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative"
+    <CopilotErrorBoundary desktopMode={desktopMode}>
+      <CopilotKit
+        {...(params.id === 'new' ? {} : { threadId: params.id })}
+        credentials="include"
+        runtimeUrl={backendUrl + '/copilot/agent'}
+        showDevConsole={false}
+        agent="postiz"
+        properties={{
+          integrations: properties,
+        }}
       >
-        <div className="absolute left-0 w-full h-full pb-[20px]">
-          <CopilotChat
-            className="w-full h-full"
-            labels={{
-              title: t('your_assistant', 'Your Assistant'),
-              initial: t('agent_welcome_message', `Hello, I am your Postiz agent 🙌🏻.
-              
+        <Hooks />
+        <LoadMessages id={params.id} />
+        <div
+          style={
+            {
+              '--copilot-kit-primary-color': 'var(--new-btn-text)',
+              '--copilot-kit-background-color': 'var(--new-bg-color)',
+            } as CopilotKitCSSProperties
+          }
+          className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative"
+        >
+          <div className="absolute left-0 w-full h-full pb-[20px]">
+            <CopilotChat
+              className="w-full h-full"
+              labels={{
+                title: t('your_assistant', 'Your Assistant'),
+                initial: t('agent_welcome_message', `Hello, I am your Postiz agent 🙌🏻.
+
 I can schedule a post or multiple posts to multiple channels and generate pictures and videos.
 
 You can select the channels you want to use from the left menu.
@@ -240,13 +284,14 @@ You can see your previous conversations from the right menu.
 
 You can also use me as an MCP Server, check Settings >> Public API
 `),
-            }}
-            UserMessage={Message}
-            Input={NewInput}
-          />
+              }}
+              UserMessage={Message}
+              Input={NewInput}
+            />
+          </div>
         </div>
-      </div>
-    </CopilotKit>
+      </CopilotKit>
+    </CopilotErrorBoundary>
   );
 };
 
