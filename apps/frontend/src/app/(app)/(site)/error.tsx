@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 export default function SiteError({
   error,
@@ -10,6 +12,16 @@ export default function SiteError({
   reset: () => void;
 }) {
   const router = useRouter();
+  const toaster = useToaster();
+
+  useEffect(() => {
+    toaster.show(
+      error?.message
+        ? `Page error: ${error.message}`
+        : 'This page encountered an error.',
+      'warning'
+    );
+  }, []);
 
   return (
     <div className="flex items-center justify-center flex-1">
@@ -20,11 +32,6 @@ export default function SiteError({
         {error?.message && (
           <div className="text-[13px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] w-full text-left break-all">
             {error.message}
-          </div>
-        )}
-        {error?.digest && (
-          <div className="text-[11px] text-textItemBlur">
-            digest: {error.digest}
           </div>
         )}
         <div className="flex gap-[12px]">

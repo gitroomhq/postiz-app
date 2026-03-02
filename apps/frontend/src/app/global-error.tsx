@@ -30,8 +30,27 @@ export default function GlobalError({
   }, [error]);
   return (
     <html>
-      <body>
-        <NextError statusCode={0} />
+      <body style={{ margin: 0, background: '#0d0d0d', color: '#e5e5e5', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ maxWidth: 560, textAlign: 'center', padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Postiz encountered an unexpected error</div>
+          {error?.message && (
+            <div style={{ fontSize: 13, fontFamily: 'monospace', background: '#1a1a1a', borderRadius: 8, padding: 12, width: '100%', textAlign: 'left', wordBreak: 'break-all', color: '#aaa' }}>
+              {error.message}
+            </div>
+          )}
+          <button
+            style={{ marginTop: 8, padding: '10px 24px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => { window.location.href = '/launches'; }}
+          >
+            Go to Launches
+          </button>
+          <button
+            style={{ padding: '10px 24px', background: '#1a1a1a', color: '#e5e5e5', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}
+            onClick={() => window.location.reload()}
+          >
+            Reload
+          </button>
+        </div>
       </body>
     </html>
   );
