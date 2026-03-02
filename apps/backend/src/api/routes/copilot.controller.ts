@@ -43,7 +43,7 @@ export class CopilotController {
       process.env.OPENAI_API_KEY === ''
     ) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return;
+      return res.status(503).json({ error: 'AI features are not configured. Add OPENAI_API_KEY to your environment and restart.' });
     }
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
@@ -68,8 +68,8 @@ export class CopilotController {
       process.env.OPENAI_API_KEY === undefined ||
       process.env.OPENAI_API_KEY === ''
     ) {
-      Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return;
+      Logger.warn('OpenAI API key not set, agent functionality will not work');
+      return res.status(503).json({ error: 'AI features are not configured. Add OPENAI_API_KEY to your environment and restart.' });
     }
     const mastra = await this._mastraService.mastra();
     const runtimeContext = new RuntimeContext<ChannelsContext>();
