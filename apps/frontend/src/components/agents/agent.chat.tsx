@@ -8,6 +8,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import clsx from 'clsx';
+import useSWR from 'swr';
 import {
   CopilotChat,
   CopilotKitCSSProperties,
@@ -35,11 +37,171 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
+type AiOption = 'openai' | 'lmstudio' | 'llamacpp' | 'other';
+
+const AI_OPTIONS: { id: AiOption; label: string; description: string; tomlBlock: string; envBlock: string }[] = [
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    description: 'Cloud AI from OpenAI. Get an API key at platform.openai.com.',
+    tomlBlock: '[ai]\napi_key = "sk-proj-your-key-here"',
+    envBlock: 'OPENAI_API_KEY=sk-proj-your-key-here',
+  },
+  {
+    id: 'lmstudio',
+    label: 'LM Studio',
+    description: 'Free, runs locally. Download at lmstudio.ai, load a model, then start the local server. Use your loaded model name for OPENAI_CHAT_MODEL.',
+    tomlBlock: '[ai]\napi_key = "local"\nbase_url = "http://localhost:1234/v1"\nchat_model = "your-loaded-model-name"',
+    envBlock: 'OPENAI_API_KEY=local\nOPENAI_BASE_URL=http://localhost:1234/v1\nOPENAI_CHAT_MODEL=your-loaded-model-name',
+  },
+  {
+    id: 'llamacpp',
+    label: 'llama.cpp',
+    description: 'Free, runs locally. Build llama.cpp and run llama-server with your model file. Use your model name for OPENAI_CHAT_MODEL.',
+    tomlBlock: '[ai]\napi_key = "local"\nbase_url = "http://localhost:8080/v1"\nchat_model = "your-model-name"',
+    envBlock: 'OPENAI_API_KEY=local\nOPENAI_BASE_URL=http://localhost:8080/v1\nOPENAI_CHAT_MODEL=your-model-name',
+  },
+  {
+    id: 'other',
+    label: 'z.ai / other',
+    description: 'Any OpenAI-compatible API — z.ai, Together AI, Groq, Ollama, Mistral, or self-hosted.',
+    tomlBlock: '[ai]\napi_key = "your-api-key"\nbase_url = "https://your-api-endpoint/v1"\nchat_model = "model-name"',
+    envBlock: 'OPENAI_API_KEY=your-api-key\nOPENAI_BASE_URL=https://your-api-endpoint/v1\nOPENAI_CHAT_MODEL=model-name',
+  },
+];
+
+const AiSetupGuide: FC = () => {
+  const { desktopMode } = useVariables();
+  const [activeOption, setActiveOption] = useState<AiOption>('openai');
+  const [copied, setCopied] = useState('');
+
+  const option = AI_OPTIONS.find((o) => o.id === activeOption)!;
+
+  const copy = useCallback((key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(''), 2000);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1 p-[32px] overflow-auto">
+      <div className="max-w-[560px] w-full flex flex-col gap-[24px]">
+        <div className="flex flex-col gap-[8px]">
+          <div className="text-[20px] font-[600] text-newTextColor">AI is not configured</div>
+          <div className="text-[14px] text-textItemBlur">
+            {desktopMode
+              ? 'Add AI settings to your Postiz config, then quit and restart the app.'
+              : 'Add AI settings to your server .env file, then restart the server.'}
+          </div>
+        </div>
+
+        <div className="flex gap-[8px] flex-wrap">
+          {AI_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setActiveOption(opt.id)}
+              className={clsx(
+                'px-[16px] py-[8px] rounded-[8px] text-[14px] font-[500] border transition-colors',
+                activeOption === opt.id
+                  ? 'bg-btnPrimary text-btnText border-transparent'
+                  : 'bg-transparent text-textItemBlur border-blockSeparator hover:text-newTextColor'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-[13px] text-textItemBlur">{option.description}</div>
+
+        {desktopMode ? (
+          <>
+            <div className="flex flex-col gap-[8px]">
+              <div className="text-[13px] font-[600] text-newTextColor">
+                Option A — config.toml{' '}
+                <span className="font-[400] text-textItemBlur">(recommended)</span>
+              </div>
+              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
+                ~/Library/Application Support/Postiz/config.toml
+              </div>
+              <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
+                <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.tomlBlock}</pre>
+                <button
+                  onClick={() => copy('toml', option.tomlBlock)}
+                  className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                >
+                  {copied === 'toml' ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-[8px]">
+              <div className="text-[13px] font-[600] text-newTextColor">
+                Option B — postiz.env{' '}
+                <span className="font-[400] text-textItemBlur">(overrides config.toml)</span>
+              </div>
+              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
+                ~/Library/Application Support/Postiz/postiz.env
+              </div>
+              <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
+                <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
+                <button
+                  onClick={() => copy('env', option.envBlock)}
+                  className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                >
+                  {copied === 'env' ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            <div className="text-[13px] text-textItemBlur bg-newBgColor rounded-[8px] p-[12px]">
+              After saving, quit Postiz completely and relaunch it.
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-[8px]">
+            <div className="text-[13px] font-[600] text-newTextColor">Add to your .env file</div>
+            <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
+              <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
+              <button
+                onClick={() => copy('env', option.envBlock)}
+                className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+              >
+                {copied === 'env' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <div className="text-[13px] text-textItemBlur">After saving, restart the server.</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const AgentChat: FC = () => {
   const { backendUrl } = useVariables();
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
+  const fetch = useFetch();
   const t = useT();
+
+  const loadStatus = useCallback(async () => {
+    return (await fetch('/copilot/status')).json();
+  }, [fetch]);
+
+  const { data: status, isLoading: statusLoading } = useSWR('/copilot/status', loadStatus, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+  });
+
+  if (statusLoading) {
+    return <div className="flex flex-1 items-center justify-center" />;
+  }
+
+  if (!status?.configured) {
+    return <AiSetupGuide />;
+  }
 
   return (
     <CopilotKit

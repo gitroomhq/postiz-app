@@ -131,6 +131,26 @@ fn kill_children_gracefully(state: &AppState) {
 /// Config file location: ~/Library/Application Support/Postiz/config.toml (macOS)
 ///                       ~/.config/postiz/config.toml (Linux)
 ///                       %APPDATA%\Postiz\config.toml (Windows)
+
+/// AI provider configuration — written as [ai] section in config.toml.
+/// Priority: env var in postiz.env > [ai] section in config.toml > built-in defaults.
+///
+/// Example config.toml:
+///   [ai]
+///   api_key = "sk-proj-..."           # OpenAI key, or "local" for local models
+///   base_url = "http://localhost:1234/v1"  # Optional: LM Studio, llama.cpp, z.ai, etc.
+///   chat_model = "your-model-name"    # Optional: defaults to gpt-4.1
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[serde(default)]
+struct AiConfig {
+    /// API key. Required. Use any non-empty value (e.g. "local") for local models.
+    api_key: Option<String>,
+    /// Base URL for OpenAI-compatible endpoint. Omit to use OpenAI's default.
+    base_url: Option<String>,
+    /// Chat model name. Defaults to gpt-4.1. Set to your local model name for LM Studio/llama.cpp.
+    chat_model: Option<String>,
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct ConfigFile {
@@ -152,6 +172,8 @@ struct ConfigFile {
     desktop_token: Option<String>,
     /// Auto-login on app start using desktop_token (default: true; set to false for password flow)
     auto_login: Option<bool>,
+    /// AI provider configuration. See [AiConfig] for details.
+    ai: AiConfig,
 }
 
 /// Generate a random alphanumeric token of the given length
@@ -271,6 +293,8 @@ struct Config {
     jwt_secret: String,
     desktop_token: String,
     auto_login: bool,
+    /// Resolved AI provider settings. postiz.env overrides these at sidecar launch time.
+    ai: AiConfig,
 }
 
 impl Config {
@@ -320,6 +344,13 @@ impl Config {
             jwt_secret: get_string("JWT_SECRET", file_config.jwt_secret, "change-me-postiz-desktop"),
             desktop_token: get_string("DESKTOP_TOKEN", file_config.desktop_token, ""),
             auto_login: get_bool("POSTIZ_AUTO_LOGIN", file_config.auto_login, true),
+            // AI: system env vars > config.toml [ai] > None (absent = unconfigured)
+            // postiz.env entries (loaded separately) take effect at sidecar launch time.
+            ai: AiConfig {
+                api_key: env::var("OPENAI_API_KEY").ok().or(file_config.ai.api_key),
+                base_url: env::var("OPENAI_BASE_URL").ok().or(file_config.ai.base_url),
+                chat_model: env::var("OPENAI_CHAT_MODEL").ok().or(file_config.ai.chat_model),
+            },
         }
     }
 }
@@ -1016,6 +1047,24 @@ fn main() {
                 // Desktop auto-login token — validated by POST /auth/desktop-token
                 .env("DESKTOP_TOKEN", &config.desktop_token)
                 .env("DESKTOP_AUTO_LOGIN", if config.auto_login { "true" } else { "false" });
+            // AI config from [ai] section of config.toml — lower priority than postiz.env.
+            // Priority: postiz.env (user_env) > config.toml [ai] > defaults.
+            if let Some(key) = &config.ai.api_key {
+                if !user_env.contains_key("OPENAI_API_KEY") {
+                    backend_cmd = backend_cmd.env("OPENAI_API_KEY", key);
+                }
+            }
+            if let Some(base_url) = &config.ai.base_url {
+                if !user_env.contains_key("OPENAI_BASE_URL") {
+                    backend_cmd = backend_cmd.env("OPENAI_BASE_URL", base_url);
+                }
+            }
+            if let Some(model) = &config.ai.chat_model {
+                if !user_env.contains_key("OPENAI_CHAT_MODEL") {
+                    backend_cmd = backend_cmd.env("OPENAI_CHAT_MODEL", model);
+                }
+            }
+
             // Forward user-supplied social platform credentials and any other
             // vars from postiz.env. Skip keys already set above to prevent
             // users accidentally overriding infrastructure configuration.

@@ -120,6 +120,15 @@ export class CopilotController {
     return copilotRuntimeHandler.handleRequest(req, res);
   }
 
+  @Get('/status')
+  getAiStatus() {
+    return {
+      configured: !!process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+      baseUrl: process.env.OPENAI_BASE_URL || null,
+    };
+  }
+
   @Get('/credits')
   calculateCredits(
     @GetOrgFromRequest() organization: Organization,
