@@ -134,6 +134,11 @@ export class CopilotController {
     @Body() body: { apiKey?: string; baseUrl?: string; chatModel?: string },
     @Res({ passthrough: false }) res: Response
   ) {
+    // Desktop only — on a shared server, the admin sets env vars directly.
+    if (process.env.POSTIZ_MODE !== 'desktop') {
+      return res.status(403).json({ error: 'Live configuration is only available in desktop mode. Set environment variables on your server.' });
+    }
+
     // Mutate process.env — takes effect on next makeOpenAIAdapter() call
     if (body.apiKey !== undefined) {
       if (body.apiKey) {

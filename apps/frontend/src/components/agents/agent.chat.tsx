@@ -104,8 +104,73 @@ const useAiStatus = () => {
   });
 };
 
-const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
+const AiSetupGuide: FC<{ onConfigured: () => void; errorMessage?: string }> = ({ onConfigured, errorMessage }) => {
   const { desktopMode } = useVariables();
+
+  // Server mode: admin configures env vars, not end users.
+  if (!desktopMode) {
+    return <AiSetupGuideServer />;
+  }
+
+  // Desktop mode: interactive form — configure and connect on the fly.
+  return <AiSetupGuideDesktop onConfigured={onConfigured} errorMessage={errorMessage} />;
+};
+
+const AiSetupGuideServer: FC = () => {
+  const [activeOption, setActiveOption] = useState<AiOption>('openai');
+  const [copied, setCopied] = useState('');
+  const option = AI_OPTIONS.find((o) => o.id === activeOption)!;
+
+  const copy = useCallback((key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(''), 2000);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1 p-[32px] overflow-auto">
+      <div className="max-w-[560px] w-full flex flex-col gap-[24px]">
+        <div className="flex flex-col gap-[8px]">
+          <div className="text-[20px] font-[600] text-textColor">AI Not Configured</div>
+          <div className="text-[14px] text-customColor18">
+            Your server administrator needs to set AI environment variables. Add the following to your server .env file and restart:
+          </div>
+        </div>
+
+        <div className="flex gap-[8px] flex-wrap">
+          {AI_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setActiveOption(opt.id)}
+              className={clsx(
+                'px-[16px] py-[8px] rounded-[8px] text-[14px] font-[500] border transition-colors',
+                activeOption === opt.id
+                  ? 'bg-forth text-white border-transparent'
+                  : 'bg-transparent text-customColor18 border-fifth hover:text-textColor'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-[14px] text-customColor18">{option.description}</div>
+
+        <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
+          <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.envBlock}</pre>
+          <button
+            onClick={() => copy('env', option.envBlock)}
+            className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
+          >
+            {copied === 'env' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AiSetupGuideDesktop: FC<{ onConfigured: () => void; errorMessage?: string }> = ({ onConfigured, errorMessage }) => {
   const fetch = useFetch();
   const [activeOption, setActiveOption] = useState<AiOption>('openai');
   const [apiKey, setApiKey] = useState('');
@@ -166,7 +231,9 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
         <div className="flex flex-col gap-[8px]">
           <div className="text-[20px] font-[600] text-textColor">Configure AI</div>
           <div className="text-[14px] text-customColor18">
-            Connect an AI provider to enable the Postiz agent. Settings are applied instantly.
+            {errorMessage
+              ? 'Could not connect to AI. Update your settings and try again.'
+              : 'Connect an AI provider to enable the Postiz agent. Settings are applied instantly.'}
           </div>
         </div>
 
@@ -232,8 +299,8 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
           </div>
         </div>
 
-        {error && (
-          <div className="text-red-400 text-[12px]">{error}</div>
+        {(error || errorMessage) && (
+          <div className="text-red-400 text-[12px]">{error || errorMessage}</div>
         )}
 
         <Button
@@ -244,41 +311,23 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
           Connect
         </Button>
 
-        {/* Manual config reference for advanced users */}
         <details className="text-left">
           <summary className="text-[12px] text-customColor18 cursor-pointer select-none">
             Manual configuration (config file)
           </summary>
           <div className="mt-[12px] flex flex-col gap-[8px]">
-            {desktopMode ? (
-              <>
-                <div className="text-[12px] text-customColor18 font-mono bg-newBgColorInner rounded-[8px] px-[10px] py-[6px] border border-newTableBorder">
-                  ~/Library/Application Support/Postiz/config.toml
-                </div>
-                <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
-                  <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.tomlBlock}</pre>
-                  <button
-                    onClick={() => copy('toml', option.tomlBlock)}
-                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
-                  >
-                    {copied === 'toml' ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-[12px] text-customColor18">Add to your .env file:</div>
-                <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
-                  <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.envBlock}</pre>
-                  <button
-                    onClick={() => copy('env', option.envBlock)}
-                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
-                  >
-                    {copied === 'env' ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="text-[12px] text-customColor18 font-mono bg-newBgColorInner rounded-[8px] px-[10px] py-[6px] border border-newTableBorder">
+              ~/Library/Application Support/Postiz/config.toml
+            </div>
+            <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
+              <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.tomlBlock}</pre>
+              <button
+                onClick={() => copy('toml', option.tomlBlock)}
+                className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
+              >
+                {copied === 'toml' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
           </div>
         </details>
       </div>
@@ -287,7 +336,7 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
 };
 
 class CopilotErrorBoundary extends React.Component<
-  { children: React.ReactNode; desktopMode: boolean },
+  { children: React.ReactNode; desktopMode: boolean; onConfigured: () => void },
   { error: Error | null }
 > {
   state = { error: null as Error | null };
@@ -296,14 +345,23 @@ class CopilotErrorBoundary extends React.Component<
   }
   render() {
     if (this.state.error) {
+      if (this.props.desktopMode) {
+        return (
+          <AiSetupGuide
+            onConfigured={() => {
+              this.setState({ error: null });
+              this.props.onConfigured();
+            }}
+            errorMessage={this.state.error.message}
+          />
+        );
+      }
       return (
         <div className="flex flex-col items-center justify-center flex-1 p-[32px]">
           <div className="max-w-[480px] w-full flex flex-col gap-[16px] text-center">
             <div className="text-[20px] font-[600] text-textColor">Could not connect to AI</div>
             <div className="text-[14px] text-customColor18">
-              {this.props.desktopMode
-                ? 'Check your AI settings in ~/Library/Application Support/Postiz/config.toml or postiz.env and restart the app.'
-                : 'Check OPENAI_API_KEY and OPENAI_BASE_URL in your server .env and restart.'}
+              Check OPENAI_API_KEY and OPENAI_BASE_URL in your server .env and restart.
             </div>
             <details className="w-full text-left">
               <summary className="text-[12px] text-customColor18 cursor-pointer select-none">Technical details</summary>
@@ -330,17 +388,26 @@ export const AgentChat: FC = () => {
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
   const t = useT();
-  const { data: status, mutate: mutateStatus } = useAiStatus();
 
-  // Only show guide if we got a definitive "not configured" response.
-  // While loading or on error (undefined status), render CopilotKit immediately
-  // — identical to main's behavior. ErrorBoundary catches runtime failures.
-  if (status && !status.configured) {
-    return <AiSetupGuide onConfigured={() => mutateStatus()} />;
+  // Desktop: check status so we can show the interactive config form.
+  // Server: skip the check entirely — render CopilotKit immediately, identical to main.
+  // The only server-side improvement is the backend returning a proper 503
+  // instead of hanging when the key is missing.
+  const { data: status, error: statusError, mutate: mutateStatus } = useAiStatus();
+
+  if (desktopMode) {
+    // Still loading status — show nothing briefly while fetch completes
+    if (!status && !statusError) {
+      return null;
+    }
+    // Not configured or fetch error — show interactive form
+    if (!status?.configured) {
+      return <AiSetupGuide onConfigured={() => mutateStatus()} />;
+    }
   }
 
   return (
-    <CopilotErrorBoundary desktopMode={desktopMode}>
+    <CopilotErrorBoundary desktopMode={desktopMode} onConfigured={() => mutateStatus()}>
       <CopilotKit
         {...(params.id === 'new' ? {} : { threadId: params.id })}
         credentials="include"
