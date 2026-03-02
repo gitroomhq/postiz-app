@@ -95,7 +95,7 @@ export function Forgot() {
                     )
                   : t(
                       'email_not_configured_reset',
-                      'Email is not configured on this server. Contact your administrator to set up email, or ask them to reset your password directly.'
+                      'Email is not configured on this server. To enable password reset emails, add EMAIL_PROVIDER settings to the server .env file and restart the server.'
                     )}
               </div>
               <p className="mt-4 text-sm">
