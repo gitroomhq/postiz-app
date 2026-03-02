@@ -67,20 +67,32 @@ async function start() {
 
   const port = process.env.PORT || 3000;
 
-  if (process.env.POSTIZ_MODE === 'desktop') {
-    try {
-      await app.get(AuthService).initDesktopAccount();
-    } catch (e) {
-      Logger.warn('Desktop account init failed: ' + (e instanceof Error ? e.message : String(e)), 'Desktop');
-    }
-  }
-
   try {
     await app.listen(port);
 
     checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
     Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
+
+    if (process.env.POSTIZ_MODE === 'desktop') {
+      // Run after listen so PGlite WASM has time to initialize on the first
+      // incoming HTTP request before we query the DB. Retry up to 5x.
+      (async () => {
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          try {
+            await new Promise((r) => setTimeout(r, attempt * 1000));
+            await app.get(AuthService).initDesktopAccount();
+            break;
+          } catch (e) {
+            Logger.warn(
+              `Desktop account init failed (attempt ${attempt}/5): ` +
+                (e instanceof Error ? e.message : String(e)),
+              'Desktop'
+            );
+          }
+        }
+      })();
+    }
   } catch (e) {
     Logger.error(`Backend failed to start on port ${port}`, e);
   }
