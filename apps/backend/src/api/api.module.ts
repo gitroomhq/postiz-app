@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, OnModuleInit } from '@nestjs/common';
 import { AuthController } from '@gitroom/backend/api/routes/auth.controller';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { UsersController } from '@gitroom/backend/api/routes/users.controller';
@@ -33,6 +33,8 @@ import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.co
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
 import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
+import { InboundWebhooksController } from '@gitroom/backend/api/routes/inbound-webhooks.controller';
+import { FacebookWebhookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.webhook.provider';
 
 const authenticatedController = [
   UsersController,
@@ -60,6 +62,7 @@ const authenticatedController = [
     MonitorController,
     EnterpriseController,
     NoAuthIntegrationsController,
+    InboundWebhooksController,
     ...authenticatedController,
   ],
   providers: [
@@ -72,6 +75,7 @@ const authenticatedController = [
     PermissionsService,
     CodesService,
     IntegrationManager,
+    FacebookWebhookProvider,
     TrackService,
     ShortLinkService,
     Nowpayments,
@@ -80,7 +84,22 @@ const authenticatedController = [
     return [...this.imports, ...this.providers];
   },
 })
-export class ApiModule implements NestModule {
+export class ApiModule implements NestModule, OnModuleInit {
+  constructor(
+    private readonly integrationManager: IntegrationManager,
+    private readonly facebookWebhookProvider: FacebookWebhookProvider
+  ) {}
+
+  /**
+   * Register all inbound webhook providers at startup.
+   * Add new providers here as they are implemented.
+   */
+  onModuleInit() {
+    this.integrationManager.registerWebhookProvider(
+      this.facebookWebhookProvider
+    );
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware).forRoutes(...authenticatedController);
   }
