@@ -10,7 +10,10 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
-export const PublicComponent = () => {
+import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
+import clsx from 'clsx';
+
+const PublicApiContent = () => {
   const user = useUser();
   const { backendUrl, frontEndUrl, mcpUrl } = useVariables();
   const toaster = useToaster();
@@ -162,6 +165,44 @@ export const PublicComponent = () => {
           </Button>
         </div>
       </div>
+    </div>
+  );
+};
+
+export const PublicComponent = () => {
+  const t = useT();
+  const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      <div className="flex gap-[4px] border-b border-fifth">
+        <button
+          type="button"
+          className={clsx(
+            'px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors',
+            subTab === 'api'
+              ? 'bg-sixth text-textColor border border-fifth border-b-0'
+              : 'text-customColor18 hover:text-textColor'
+          )}
+          onClick={() => setSubTab('api')}
+        >
+          {t('public_api', 'Public API')}
+        </button>
+        <button
+          type="button"
+          className={clsx(
+            'px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors',
+            subTab === 'developer'
+              ? 'bg-sixth text-textColor border border-fifth border-b-0'
+              : 'text-customColor18 hover:text-textColor'
+          )}
+          onClick={() => setSubTab('developer')}
+        >
+          {t('apps', 'Apps')}
+        </button>
+      </div>
+      {subTab === 'api' && <PublicApiContent />}
+      {subTab === 'developer' && <DeveloperComponent />}
     </div>
   );
 };

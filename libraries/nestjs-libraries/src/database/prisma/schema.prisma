@@ -41,6 +41,8 @@ model Organization {
   usedCodes         UsedCodes[]
   users             UserOrganization[]
   webhooks          Webhooks[]
+  oauthApp          OAuthApp?
+  oauthAuthorizations OAuthAuthorization[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -110,6 +112,7 @@ model User {
   sendSuccessEmails     Boolean            @default(true)
   sendFailureEmails     Boolean            @default(true)
   sendStreakEmails      Boolean            @default(true)
+  oauthAuthorizations   OAuthAuthorization[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -220,6 +223,7 @@ model Media {
   organization       Organization        @relation(fields: [organizationId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]
+  oauthApps          OAuthApp[]
 
   @@index([name])
   @@index([organizationId])
@@ -834,6 +838,51 @@ model mastra_workflow_snapshot {
   updatedAtZ    DateTime? @default(now()) @db.Timestamptz(6)
 
   @@unique([workflow_name, run_id], map: "public_mastra_workflow_snapshot_workflow_name_run_id_key")
+}
+
+model OAuthApp {
+  id             String              @id @default(uuid())
+  organizationId String              @unique
+  name           String
+  description    String?
+  pictureId      String?
+  redirectUrl    String
+  clientId       String              @unique
+  clientSecret   String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  picture        Media?              @relation(fields: [pictureId], references: [id])
+  authorizations OAuthAuthorization[]
+
+  @@index([clientId])
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model OAuthAuthorization {
+  id                String       @id @default(uuid())
+  oauthAppId        String
+  userId            String
+  organizationId    String
+  accessToken       String?
+  authorizationCode String?
+  codeExpiresAt     DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  oauthApp          OAuthApp     @relation(fields: [oauthAppId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  organization      Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([oauthAppId, userId, organizationId])
+  @@index([accessToken])
+  @@index([authorizationCode])
+  @@index([oauthAppId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([revokedAt])
 }
 
 enum OrderStatus {
