@@ -14,6 +14,7 @@ import {
   copilotRuntimeNodeHttpEndpoint,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
+import OpenAI from 'openai';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -30,6 +31,31 @@ export type ChannelsContext = {
   ui: string;
 };
 
+function aiNotConfiguredError(res: Response) {
+  const isDesktop = process.env.POSTIZ_MODE === 'desktop';
+  const msg = isDesktop
+    ? 'AI features require OPENAI_API_KEY in ~/Library/Application Support/Postiz/postiz.env. ' +
+      'For OpenAI: get a key at platform.openai.com. ' +
+      'For local AI (LM Studio, llama.cpp): set OPENAI_API_KEY=local and OPENAI_BASE_URL=http://localhost:1234/v1. ' +
+      'For z.ai or other compatible APIs: set OPENAI_API_KEY and OPENAI_BASE_URL to your endpoint. ' +
+      'Optionally set OPENAI_CHAT_MODEL to your model name. Restart the app after changes.'
+    : 'AI features require OPENAI_API_KEY. For OpenAI: get a key at platform.openai.com. ' +
+      'For local AI or compatible APIs (LM Studio, llama.cpp, z.ai): set OPENAI_BASE_URL to your endpoint ' +
+      'and OPENAI_API_KEY to any non-empty value. Optionally set OPENAI_CHAT_MODEL to your model name.';
+  return res.status(503).json({ error: msg });
+}
+
+function makeOpenAIAdapter() {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    ...(process.env.OPENAI_BASE_URL ? { baseURL: process.env.OPENAI_BASE_URL } : {}),
+  });
+  return new OpenAIAdapter({
+    openai: client,
+    model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+  });
+}
+
 @Controller('/copilot')
 export class CopilotController {
   constructor(
@@ -38,20 +64,15 @@ export class CopilotController {
   ) {}
   @Post('/chat')
   chatAgent(@Req() req: Request, @Res() res: Response) {
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
+    if (!process.env.OPENAI_API_KEY) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return res.status(503).json({ error: 'AI features are not configured. Add OPENAI_API_KEY to your environment and restart.' });
+      return aiNotConfiguredError(res);
     }
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
-      serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
-      }),
+      serviceAdapter: makeOpenAIAdapter(),
     });
 
     return copilotRuntimeHandler(req, res);
@@ -64,12 +85,9 @@ export class CopilotController {
     @Res() res: Response,
     @GetOrgFromRequest() organization: Organization
   ) {
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
+    if (!process.env.OPENAI_API_KEY) {
       Logger.warn('OpenAI API key not set, agent functionality will not work');
-      return res.status(503).json({ error: 'AI features are not configured. Add OPENAI_API_KEY to your environment and restart.' });
+      return aiNotConfiguredError(res);
     }
     const mastra = await this._mastraService.mastra();
     const runtimeContext = new RuntimeContext<ChannelsContext>();
@@ -96,9 +114,7 @@ export class CopilotController {
       endpoint: '/copilot/agent',
       runtime,
       // properties: req.body.variables.properties,
-      serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
-      }),
+      serviceAdapter: makeOpenAIAdapter(),
     });
 
     return copilotRuntimeHandler.handleRequest(req, res);
