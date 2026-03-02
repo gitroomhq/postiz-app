@@ -15,6 +15,7 @@ import {
   copilotRuntimeNodeHttpEndpoint,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
+import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -24,6 +25,7 @@ import { Request, Response } from 'express';
 import { RuntimeContext } from '@mastra/core/di';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 export type ChannelsContext = {
   integrations: string;
@@ -53,6 +55,7 @@ function makeOpenAIAdapter() {
   });
 }
 
+@ApiTags('Copilot')
 @Controller('/copilot')
 export class CopilotController {
   constructor(
@@ -127,9 +130,9 @@ export class CopilotController {
   }
 
   @Post('/configure')
-  async configureAi(
+  configureAi(
     @Body() body: { apiKey?: string; baseUrl?: string; chatModel?: string },
-    @Res() res: Response
+    @Res({ passthrough: false }) res: Response
   ) {
     // Mutate process.env — takes effect on next makeOpenAIAdapter() call
     if (body.apiKey !== undefined) {
@@ -158,10 +161,9 @@ export class CopilotController {
     const configPath = process.env.POSTIZ_CONFIG_PATH;
     if (configPath) {
       try {
-        const fs = await import('fs');
         let toml = '';
-        if (fs.existsSync(configPath)) {
-          toml = fs.readFileSync(configPath, 'utf-8');
+        if (existsSync(configPath)) {
+          toml = readFileSync(configPath, 'utf-8');
         }
         // Remove existing [ai] section and its keys
         toml = toml.replace(/\[ai\]\n(?:[a-z_]+ *= *[^\n]*\n?)*/g, '');
@@ -177,7 +179,7 @@ export class CopilotController {
           aiLines.push(`chat_model = "${process.env.OPENAI_CHAT_MODEL}"`);
         }
         toml = toml.trimEnd() + '\n\n' + aiLines.join('\n') + '\n';
-        fs.writeFileSync(configPath, toml, 'utf-8');
+        writeFileSync(configPath, toml, 'utf-8');
         Logger.log(`AI config persisted to ${configPath}`);
       } catch (err) {
         Logger.warn(`Failed to persist AI config to ${configPath}: ${err}`);

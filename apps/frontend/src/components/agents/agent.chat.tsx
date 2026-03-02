@@ -36,6 +36,7 @@ import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Button } from '@gitroom/react/form/button';
 
 type AiOption = 'openai' | 'lmstudio' | 'llamacpp' | 'other';
 
@@ -90,6 +91,18 @@ const AI_OPTIONS: {
     envBlock: 'OPENAI_API_KEY=your-api-key\nOPENAI_BASE_URL=https://your-api-endpoint/v1\nOPENAI_CHAT_MODEL=model-name',
   },
 ];
+
+const useAiStatus = () => {
+  const fetch = useFetch();
+  const loadStatus = useCallback(async () => {
+    return (await fetch('/copilot/status')).json();
+  }, [fetch]);
+  return useSWR('/copilot/status', loadStatus, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+  });
+};
 
 const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
   const { desktopMode } = useVariables();
@@ -147,15 +160,12 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
     setConnecting(false);
   }, [apiKey, baseUrl, chatModel, fetch, onConfigured]);
 
-  const inputClasses =
-    'w-full bg-newBgColor text-newTextColor border border-blockSeparator rounded-[8px] px-[12px] py-[10px] text-[13px] font-mono placeholder:text-textItemBlur focus:outline-none focus:border-btnPrimary';
-
   return (
     <div className="flex flex-col items-center justify-center flex-1 p-[32px] overflow-auto">
       <div className="max-w-[560px] w-full flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[8px]">
-          <div className="text-[20px] font-[600] text-newTextColor">Configure AI</div>
-          <div className="text-[14px] text-textItemBlur">
+          <div className="text-[20px] font-[600] text-textColor">Configure AI</div>
+          <div className="text-[14px] text-customColor18">
             Connect an AI provider to enable the Postiz agent. Settings are applied instantly.
           </div>
         </div>
@@ -168,8 +178,8 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
               className={clsx(
                 'px-[16px] py-[8px] rounded-[8px] text-[14px] font-[500] border transition-colors',
                 activeOption === opt.id
-                  ? 'bg-btnPrimary text-btnText border-transparent'
-                  : 'bg-transparent text-textItemBlur border-blockSeparator hover:text-newTextColor'
+                  ? 'bg-forth text-white border-transparent'
+                  : 'bg-transparent text-customColor18 border-fifth hover:text-textColor'
               )}
             >
               {opt.label}
@@ -177,78 +187,79 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
           ))}
         </div>
 
-        <div className="text-[13px] text-textItemBlur">{option.description}</div>
+        <div className="text-[14px] text-customColor18">{option.description}</div>
 
-        <div className="flex flex-col gap-[12px]">
-          <div className="flex flex-col gap-[4px]">
-            <label className="text-[13px] font-[500] text-newTextColor">API Key</label>
-            <input
-              type="password"
-              className={inputClasses}
-              placeholder={activeOption === 'openai' ? 'sk-proj-...' : 'local'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
+        <div className="flex flex-col gap-[16px]">
+          <div className="flex flex-col gap-[6px]">
+            <div className="text-[14px]">API Key</div>
+            <div className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] flex items-center">
+              <input
+                type="password"
+                className="h-full bg-transparent outline-none flex-1 text-[14px] text-textColor px-[16px] placeholder-textColor"
+                placeholder={activeOption === 'openai' ? 'sk-proj-...' : 'local'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-[4px]">
-            <label className="text-[13px] font-[500] text-newTextColor">
-              Base URL <span className="font-[400] text-textItemBlur">(optional for OpenAI)</span>
-            </label>
-            <input
-              type="text"
-              className={inputClasses}
-              placeholder="https://api.openai.com/v1"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-            />
+          <div className="flex flex-col gap-[6px]">
+            <div className="text-[14px]">
+              Base URL <span className="text-customColor18">(optional for OpenAI)</span>
+            </div>
+            <div className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] flex items-center">
+              <input
+                type="text"
+                className="h-full bg-transparent outline-none flex-1 text-[14px] text-textColor px-[16px] placeholder-textColor"
+                placeholder="https://api.openai.com/v1"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-[4px]">
-            <label className="text-[13px] font-[500] text-newTextColor">
-              Model <span className="font-[400] text-textItemBlur">(optional, defaults to gpt-4.1)</span>
-            </label>
-            <input
-              type="text"
-              className={inputClasses}
-              placeholder="gpt-4.1"
-              value={chatModel}
-              onChange={(e) => setChatModel(e.target.value)}
-            />
+          <div className="flex flex-col gap-[6px]">
+            <div className="text-[14px]">
+              Model <span className="text-customColor18">(optional, defaults to gpt-4.1)</span>
+            </div>
+            <div className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] flex items-center">
+              <input
+                type="text"
+                className="h-full bg-transparent outline-none flex-1 text-[14px] text-textColor px-[16px] placeholder-textColor"
+                placeholder="gpt-4.1"
+                value={chatModel}
+                onChange={(e) => setChatModel(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
         {error && (
-          <div className="text-[13px] text-red-400 bg-red-400/10 rounded-[8px] px-[12px] py-[8px]">
-            {error}
-          </div>
+          <div className="text-red-400 text-[12px]">{error}</div>
         )}
 
-        <button
+        <Button
           onClick={connect}
-          disabled={connecting}
-          className={clsx(
-            'px-[24px] py-[12px] rounded-[8px] text-[14px] font-[600] transition-opacity',
-            connecting ? 'bg-btnPrimary/50 text-btnText cursor-wait' : 'bg-btnPrimary text-btnText hover:opacity-90'
-          )}
+          loading={connecting}
+          className="rounded-[8px]"
         >
-          {connecting ? 'Connecting...' : 'Connect'}
-        </button>
+          Connect
+        </Button>
 
         {/* Manual config reference for advanced users */}
         <details className="text-left">
-          <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">
+          <summary className="text-[12px] text-customColor18 cursor-pointer select-none">
             Manual configuration (config file)
           </summary>
           <div className="mt-[12px] flex flex-col gap-[8px]">
             {desktopMode ? (
               <>
-                <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[6px] px-[10px] py-[6px]">
+                <div className="text-[12px] text-customColor18 font-mono bg-newBgColorInner rounded-[8px] px-[10px] py-[6px] border border-newTableBorder">
                   ~/Library/Application Support/Postiz/config.toml
                 </div>
-                <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
-                  <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.tomlBlock}</pre>
+                <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
+                  <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.tomlBlock}</pre>
                   <button
                     onClick={() => copy('toml', option.tomlBlock)}
-                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
                   >
                     {copied === 'toml' ? 'Copied!' : 'Copy'}
                   </button>
@@ -256,12 +267,12 @@ const AiSetupGuide: FC<{ onConfigured: () => void }> = ({ onConfigured }) => {
               </>
             ) : (
               <>
-                <div className="text-[12px] text-textItemBlur">Add to your .env file:</div>
-                <div className="bg-newBgColor rounded-[8px] p-[16px] font-mono text-[13px] relative">
-                  <pre className="whitespace-pre-wrap text-newTextColor pr-[60px]">{option.envBlock}</pre>
+                <div className="text-[12px] text-customColor18">Add to your .env file:</div>
+                <div className="bg-newBgColorInner rounded-[8px] p-[16px] font-mono text-[13px] relative border border-newTableBorder">
+                  <pre className="whitespace-pre-wrap text-textColor pr-[60px]">{option.envBlock}</pre>
                   <button
                     onClick={() => copy('env', option.envBlock)}
-                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-btnSimple text-btnText rounded-[6px] text-[12px]"
+                    className="absolute top-[8px] right-[8px] px-[10px] py-[6px] bg-forth text-white rounded-[8px] text-[12px]"
                   >
                     {copied === 'env' ? 'Copied!' : 'Copy'}
                   </button>
@@ -288,20 +299,20 @@ class CopilotErrorBoundary extends React.Component<
       return (
         <div className="flex flex-col items-center justify-center flex-1 p-[32px]">
           <div className="max-w-[480px] w-full flex flex-col gap-[16px] text-center">
-            <div className="text-[18px] font-[600] text-newTextColor">Could not connect to AI</div>
-            <div className="text-[14px] text-textItemBlur">
+            <div className="text-[20px] font-[600] text-textColor">Could not connect to AI</div>
+            <div className="text-[14px] text-customColor18">
               {this.props.desktopMode
                 ? 'Check your AI settings in ~/Library/Application Support/Postiz/config.toml or postiz.env and restart the app.'
                 : 'Check OPENAI_API_KEY and OPENAI_BASE_URL in your server .env and restart.'}
             </div>
             <details className="w-full text-left">
-              <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">Technical details</summary>
-              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] mt-[8px] break-all">
+              <summary className="text-[12px] text-customColor18 cursor-pointer select-none">Technical details</summary>
+              <div className="text-[12px] text-customColor18 font-mono bg-newBgColorInner rounded-[8px] p-[12px] mt-[8px] break-all border border-newTableBorder">
                 {this.state.error.message}
               </div>
             </details>
             <button
-              className="mt-[8px] px-[24px] py-[10px] bg-btnPrimary text-btnText rounded-[8px] text-[14px] font-[600] hover:opacity-90"
+              className="mt-[8px] bg-forth text-white px-[24px] h-[40px] rounded-[8px] text-[14px] font-[600] hover:opacity-90"
               onClick={() => this.setState({ error: null })}
             >
               Retry
@@ -318,22 +329,12 @@ export const AgentChat: FC = () => {
   const { backendUrl, desktopMode } = useVariables();
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
-  const fetch = useFetch();
   const t = useT();
-
-  const loadStatus = useCallback(async () => {
-    return (await fetch('/copilot/status')).json();
-  }, [fetch]);
-
-  const { data: status, isLoading: statusLoading, mutate: mutateStatus } = useSWR('/copilot/status', loadStatus, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-  });
+  const { data: status, isLoading: statusLoading, mutate: mutateStatus } = useAiStatus();
 
   if (statusLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-[14px] text-textItemBlur">
+      <div className="flex flex-1 items-center justify-center text-[14px] text-customColor18">
         Checking AI configuration...
       </div>
     );
