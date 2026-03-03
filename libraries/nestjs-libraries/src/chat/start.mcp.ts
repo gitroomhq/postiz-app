@@ -4,10 +4,21 @@ import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 import { MCPServer } from '@mastra/mcp';
 import { randomUUID } from 'crypto';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
+  const oauthService = app.get(OAuthService, { strict: false });
+
+  const resolveAuth = async (token: string) => {
+    if (token.startsWith('pos_')) {
+      const authorization = await oauthService.getOrgByOAuthToken(token);
+      if (!authorization) return null;
+      return authorization.organization;
+    }
+    return organizationService.getOrgByApiKey(token);
+  };
 
   const mastra = await mastraService.mastra();
   const agent = mastra.getAgent('postiz');
@@ -47,10 +58,10 @@ export const startMcp = async (app: INestApplication) => {
     }
 
     // @ts-ignore
-    req.auth = await organizationService.getOrgByApiKey(token);
+    req.auth = await resolveAuth(token);
     // @ts-ignore
     if (!req.auth) {
-      res.status(401).send('Invalid API Key');
+      res.status(401).send('Invalid API Key or OAuth token');
       return;
     }
 
