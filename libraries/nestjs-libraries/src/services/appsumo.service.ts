@@ -1,7 +1,10 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import crypto from 'crypto';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { Provider } from '@prisma/client';
 
 const APPSUMO_TIER_MAP: Record<number, 'STANDARD' | 'TEAM' | 'PRO'> = {
   1: 'STANDARD',
@@ -11,7 +14,13 @@ const APPSUMO_TIER_MAP: Record<number, 'STANDARD' | 'TEAM' | 'PRO'> = {
 
 export interface AppSumoWebhookPayload {
   license_key: string;
-  event: 'purchase' | 'activate' | 'upgrade' | 'downgrade' | 'deactivate' | 'migrate';
+  event:
+    | 'purchase'
+    | 'activate'
+    | 'upgrade'
+    | 'downgrade'
+    | 'deactivate'
+    | 'migrate';
   license_status: string;
   event_timestamp: number;
   created_at: number;
@@ -22,13 +31,13 @@ export interface AppSumoWebhookPayload {
 
 @Injectable()
 export class AppSumoService {
-  constructor(private _subscriptionService: SubscriptionService) {}
+  constructor(
+    private _subscriptionService: SubscriptionService,
+    private _usersService: UsersService,
+    private _organizationService: OrganizationService
+  ) {}
 
-  validateSignature(
-    rawBody: Buffer,
-    timestamp: string,
-    signature: string
-  ) {
+  validateSignature(rawBody: Buffer, timestamp: string, signature: string) {
     const apiKey = process.env.APPSUMO_API_KEY;
     if (!apiKey) {
       throw new HttpException('AppSumo API key not configured', 500);
@@ -56,9 +65,8 @@ export class AppSumoService {
     }
 
     switch (payload.event) {
-      case 'purchase':
       case 'activate':
-        return { success: true, event: payload.event };
+        return this.handlePurchaseOrActivate(payload);
       case 'upgrade':
         return this.handleUpgradeOrDowngrade(payload);
       case 'downgrade':
@@ -68,6 +76,50 @@ export class AppSumoService {
       default:
         return { success: true, event: payload.event };
     }
+  }
+
+  private async handlePurchaseOrActivate(payload: AppSumoWebhookPayload) {
+    const orgId = await this.findOrgByLicenseKey(payload.license_key);
+
+    if (!orgId) {
+      return { success: true, event: payload.event };
+    }
+
+    const billing = APPSUMO_TIER_MAP[payload.tier] || 'STANDARD';
+    await this._subscriptionService.createOrUpdateSubscription(
+      false,
+      payload.license_key,
+      payload.license_key,
+      pricing[billing].channel!,
+      billing,
+      'YEARLY',
+      null,
+      payload.license_key,
+      orgId
+    );
+
+    return { success: true, event: payload.event };
+  }
+
+  private async findOrgByLicenseKey(licenseKey: string) {
+    const subscription =
+      await this._subscriptionService.getSubscriptionByIdentifier(licenseKey);
+
+    if (subscription) {
+      return subscription.organizationId;
+    }
+
+    const user = await this._usersService.getUserByProvider(
+      `appsumo_${licenseKey}`,
+      Provider.APPSUMO
+    );
+
+    if (!user) {
+      return null;
+    }
+
+    const orgs = await this._organizationService.getOrgsByUserId(user.id);
+    return orgs[0]?.id || null;
   }
 
   private async handleUpgradeOrDowngrade(payload: AppSumoWebhookPayload) {
@@ -101,7 +153,7 @@ export class AppSumoService {
 
     if (subscription) {
       await this._subscriptionService.deleteSubscription(
-        subscription.organization.paymentId || subscription.organizationId
+        subscription.organization.paymentId
       );
     }
 

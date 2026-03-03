@@ -176,7 +176,9 @@ export class AuthService {
     await NewsletterService.register(providerUser.email);
 
     try {
-      await providerInstance.postRegistration(body.providerToken, create.id);
+      if (providerInstance?.postRegistration) {
+        await providerInstance.postRegistration(body.providerToken, create.id);
+      }
     } catch (err) {
       // Don't fail registration if postRegistration fails
     }
