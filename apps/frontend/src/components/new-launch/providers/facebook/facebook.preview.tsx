@@ -5,6 +5,7 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 
 const Icons = () => {
   return (
@@ -65,6 +66,8 @@ export const FacebookPreview: FC<{
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
+  const { watch } = useSettings();
+  const postType = watch('post_type');
 
   const renderContent = topValue.map((p) => {
     const newContent = stripHtmlValidation(
@@ -98,6 +101,52 @@ export const FacebookPreview: FC<{
 
     return { text: finalValue, images: p.image };
   });
+
+  if (postType === 'story') {
+    const storyMedia = renderContent?.[0]?.images?.[0];
+    return (
+      <div className="relative w-full aspect-[9/16] max-h-[585px] bg-black rounded-[12px] overflow-hidden flex items-end">
+        {storyMedia ? (
+          <a
+            className="absolute inset-0"
+            href={mediaDir.set(storyMedia.path)}
+            target="_blank"
+          >
+            <VideoOrImage
+              autoplay={true}
+              src={mediaDir.set(storyMedia.path)}
+              imageClassName="w-full h-full object-cover"
+              videoClassName="w-full h-full object-cover"
+            />
+          </a>
+        ) : (
+          <div
+            style={{ background: 'url(/no-video-youtube.png)' }}
+            className="absolute inset-0 !bg-cover"
+          />
+        )}
+        <div className="relative z-10 w-full p-[16px] bg-gradient-to-t from-black/70 to-transparent">
+          <div className="flex items-center gap-[8px] mb-[8px]">
+            <img
+              src={integration?.picture || '/no-picture.jpg'}
+              alt="social"
+              className="rounded-full w-[32px] h-[32px] border-2 border-white"
+            />
+            <div className="text-white text-[13px] font-[600]">
+              {integration?.name}
+            </div>
+            <div className="text-white/70 text-[12px]">30m</div>
+          </div>
+        </div>
+        <div className="absolute top-[12px] left-[12px] right-[12px] z-10">
+          <div className="h-[2px] bg-white/40 rounded-full">
+            <div className="h-full w-1/3 bg-white rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-[15px] flex flex-col px-[15px] w-full gap-[20px] bg-bgFacebook rounded-[12px]">
       <div className="flex gap-[8px]">
