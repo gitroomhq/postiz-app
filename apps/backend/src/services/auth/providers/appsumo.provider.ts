@@ -22,7 +22,7 @@ export class AppSumoProvider extends AuthProviderAbstract {
   generateLink() {
     const params = new URLSearchParams({
       client_id: process.env.APPSUMO_CLIENT_ID!,
-      redirect_uri: `${process.env.FRONTEND_URL}/settings`,
+      redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/appsumo`,
       response_type: 'code',
       scope: 'openid',
     });
