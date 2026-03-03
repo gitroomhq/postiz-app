@@ -923,6 +923,7 @@ enum Provider {
   FARCASTER
   WALLET
   GENERIC
+  APPSUMO
 }
 
 enum Role {
