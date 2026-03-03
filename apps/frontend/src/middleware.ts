@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
+    nextUrl.href.indexOf('appsumo') === -1 &&
     nextUrl.pathname.startsWith('/integrations/social/') &&
     nextUrl.href.indexOf('state=login') === -1
   ) {
