@@ -51,7 +51,7 @@ function makeOpenAIAdapter() {
   // Don't pass a custom OpenAI client — CopilotKit bundles openai v4 internally
   // and reads OPENAI_API_KEY + OPENAI_BASE_URL from env vars automatically.
   return new OpenAIAdapter({
-    model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+    model: process.env.OPENAI_CHAT_MODEL || undefined,
   });
 }
 
@@ -124,7 +124,7 @@ export class CopilotController {
   getAiStatus() {
     return {
       configured: !!process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+      model: process.env.OPENAI_CHAT_MODEL || undefined,
       baseUrl: process.env.OPENAI_BASE_URL || null,
     };
   }
@@ -193,9 +193,37 @@ export class CopilotController {
 
     return res.json({
       configured: !!process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4.1',
+      model: process.env.OPENAI_CHAT_MODEL || undefined,
       baseUrl: process.env.OPENAI_BASE_URL || null,
     });
+  }
+
+  @Post('/probe')
+  async probeProvider(
+    @Body() body: { apiKey: string; baseUrl?: string },
+    @Res({ passthrough: false }) res: Response
+  ) {
+    const base = (body.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const resp = await globalThis.fetch(`${base}/models`, {
+        headers: { Authorization: `Bearer ${body.apiKey}` },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) {
+        return res.json({ connected: false, error: `HTTP ${resp.status}` });
+      }
+      const json = await resp.json();
+      const models: string[] = (json.data || [])
+        .map((m: any) => m.id as string)
+        .filter(Boolean)
+        .sort();
+      return res.json({ connected: true, models });
+    } catch (err: any) {
+      return res.json({ connected: false, error: err?.message || 'Connection failed' });
+    }
   }
 
   @Get('/credits')

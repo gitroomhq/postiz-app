@@ -23,15 +23,58 @@ struct AppState {
     children: Mutex<Vec<(String, CommandChild)>>,
 }
 
-/// Send SIGTERM to `pids`, poll until all exit or `timeout` elapses,
-/// then SIGKILL any survivors. Returns the set of PIDs that are still
-/// alive after the SIGKILL (should always be empty).
+/// Recursively discover all descendant PIDs of a given process via `pgrep -P`.
+/// Returns the full descendant tree (children, grandchildren, etc.) in
+/// depth-first order. Used during shutdown to kill process trees like
+/// `node` → `next-server` that would otherwise survive as orphans.
+#[cfg(unix)]
+fn get_descendant_pids(pid: u32) -> Vec<u32> {
+    let output = std::process::Command::new("pgrep")
+        .args(["-P", &pid.to_string()])
+        .output();
+    match output {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let children: Vec<u32> = stdout
+                .lines()
+                .filter_map(|line| line.trim().parse().ok())
+                .collect();
+            let mut all = children.clone();
+            for cpid in children {
+                all.extend(get_descendant_pids(cpid));
+            }
+            all
+        }
+        Err(_) => vec![],
+    }
+}
+
+/// Send SIGTERM to `pids` and all their descendant processes, poll until
+/// all exit or `timeout` elapses, then SIGKILL any survivors.
+///
+/// Descendant discovery (via `pgrep -P`) ensures grandchild processes like
+/// `next-server` (spawned by the Node.js frontend sidecar) are also killed,
+/// preventing orphan processes that hold ports open after app quit.
 #[cfg(unix)]
 fn sigterm_wait_sigkill(label: &str, pids: &[u32], timeout: Duration) {
     if pids.is_empty() {
         return;
     }
+    // Expand to include all descendant PIDs before sending signals.
+    let mut all_pids: Vec<u32> = Vec::new();
     for &pid in pids {
+        let descendants = get_descendant_pids(pid);
+        if !descendants.is_empty() {
+            println!(
+                "[postiz] {} (PID {}) has {} descendant(s): {:?}",
+                label, pid, descendants.len(), descendants
+            );
+        }
+        all_pids.push(pid);
+        all_pids.extend(descendants);
+    }
+
+    for &pid in &all_pids {
         let _ = std::process::Command::new("kill")
             .args(["-TERM", &pid.to_string()])
             .status();
@@ -39,7 +82,7 @@ fn sigterm_wait_sigkill(label: &str, pids: &[u32], timeout: Duration) {
     }
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
-        let any_alive = pids.iter().any(|&pid| {
+        let any_alive = all_pids.iter().any(|&pid| {
             std::process::Command::new("kill")
                 .args(["-0", &pid.to_string()])
                 .status()
@@ -52,7 +95,7 @@ fn sigterm_wait_sigkill(label: &str, pids: &[u32], timeout: Duration) {
         std::thread::sleep(Duration::from_millis(100));
     }
     // Grace period exhausted — SIGKILL survivors.
-    for &pid in pids {
+    for &pid in &all_pids {
         let _ = std::process::Command::new("kill")
             .args(["-KILL", &pid.to_string()])
             .status();
