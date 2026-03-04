@@ -601,7 +601,7 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3
       twitter-api-v2:
-        specifier: ^1.24.0
+        specifier: ^1.29.0
         version: 1.29.0
       twitter-text:
         specifier: ^3.1.0
