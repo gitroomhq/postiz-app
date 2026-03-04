@@ -565,17 +565,27 @@ const AiSetupGuideDesktop: FC<{ onConfigured: () => void; errorMessage?: string 
           </div>
           <div className="flex flex-col gap-[6px]">
             <div className="text-[14px]">
-              Model <span className="text-customColor18">(optional)</span>
+              Model{' '}
+              <span className="text-customColor18">
+                {availableModels.length > 0
+                  ? `\u2014 auto-detected ${availableModels.length} available`
+                  : probeStatus === 'connected'
+                    ? '\u2014 using provider default'
+                    : '(optional)'}
+              </span>
             </div>
             {availableModels.length > 0 && chatModel !== '__custom__' ? (
               <div className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] flex items-center">
                 <select
-                  className="h-full bg-transparent outline-none flex-1 text-[14px] text-textColor px-[12px] cursor-pointer"
+                  className={clsx(
+                    'h-full bg-transparent outline-none flex-1 text-[14px] px-[12px] cursor-pointer',
+                    chatModel ? 'text-textColor' : 'text-customColor18'
+                  )}
                   style={inputStyle}
                   value={chatModel}
                   onChange={(e) => setChatModel(e.target.value)}
                 >
-                  <option value="">{option.defaultModel ? `Default (${option.defaultModel})` : 'Provider default'}</option>
+                  <option value="" className="text-customColor18">{option.defaultModel ? `Default (${option.defaultModel})` : 'Provider default'}</option>
                   {availableModels.map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
