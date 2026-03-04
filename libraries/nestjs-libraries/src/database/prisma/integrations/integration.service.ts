@@ -255,10 +255,10 @@ export class IntegrationService {
     const integrations = (
       await this._integrationRepository.getIntegrationsList(org)
     ).filter((f) => !f.disabled);
-    if (
-      !!process.env.STRIPE_PUBLISHABLE_KEY &&
-      integrations.length >= totalChannels
-    ) {
+    const usePostizBilling = process.env.USE_POSTIZ_BILLING === 'true';
+    const shouldEnforceLimit =
+      !usePostizBilling || !!process.env.STRIPE_PUBLISHABLE_KEY;
+    if (shouldEnforceLimit && integrations.length >= totalChannels) {
       throw new Error('You have reached the maximum number of channels');
     }
 

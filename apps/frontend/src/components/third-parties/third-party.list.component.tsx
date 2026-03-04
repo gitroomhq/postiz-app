@@ -11,6 +11,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 export const ApiModal: FC<{
   identifier: string;
@@ -116,7 +117,6 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
     (title: string, identifier: string) => () => {
       modals.openModal({
         title: `Add API key for ${title}`,
-        withCloseButton: false,
         children: (
           <ApiModal identifier={identifier} title={title} update={reload} />
         ),
@@ -134,9 +134,13 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
           className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
         >
           <div>
-            <img
+            <ImageWithFallback
+              fallbackSrc={`/icons/third-party/${p.identifier}.png`}
+              src={`/icons/third-party/${p.identifier}.svg`}
               className="w-[32px] h-[32px]"
-              src={`/icons/third-party/${p.identifier}.png`}
+              alt={p.title}
+              width={32}
+              height={32}
             />
           </div>
           <div className="whitespace-pre-wrap text-left text-lg">{p.title}</div>

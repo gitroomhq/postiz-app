@@ -62,19 +62,22 @@ export const FirstBillingComponent = () => {
   }, []);
 
   const loadCheckout = useCallback(async () => {
-    return (
-      await fetch('/billing/embedded', {
-        method: 'POST',
-        body: JSON.stringify({
-          billing: tier,
-          period: period,
-          ...(datafast_visitor_id && datafast_session_id
-            ? { datafast_visitor_id, datafast_session_id }
-            : {}),
-          ...(dub ? { dub } : {}),
-        }),
-      })
-    ).json();
+    const res = await fetch('/billing/embedded', {
+      method: 'POST',
+      body: JSON.stringify({
+        billing: tier,
+        period: period,
+        ...(datafast_visitor_id && datafast_session_id
+          ? { datafast_visitor_id, datafast_session_id }
+          : {}),
+        ...(dub ? { dub } : {}),
+      }),
+    });
+    const data = await res.json();
+    if (data.redirect) {
+      return { redirect: data.redirect };
+    }
+    return data;
   }, [tier, period]);
 
   const showYouTube = () => {
@@ -197,7 +200,24 @@ export const FirstBillingComponent = () => {
           <div className="block tablet:hidden">
             <JoinOver />
           </div>
-          {!isLoading && data && stripe ? (
+          {!isLoading && data?.redirect ? (
+            <div className="flex flex-col gap-6 p-6 rounded-xl border border-newColColor bg-newBgColorInner">
+              <p className="text-lg">
+                {t(
+                  'billing_managed_on_letstok',
+                  'Your plan is managed through LetsTok. Upgrade or manage your subscription there.'
+                )}
+              </p>
+              <a
+                href={data.redirect}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-[10px] bg-primary text-white font-medium hover:opacity-90"
+              >
+                {t('manage_plan_on_letstok', 'Manage your plan on LetsTok')}
+              </a>
+            </div>
+          ) : !isLoading && data && stripe ? (
             <EmbeddedBilling
               stripe={stripe}
               secret={data.client_secret}

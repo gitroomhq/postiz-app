@@ -21,9 +21,17 @@ export function setCookie(cname: string, cvalue: string, exdays: number) {
   const expires = 'expires=' + d.toUTCString();
   document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/';
 }
+const getLetstokPricingUrl = () =>
+  process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL
+    ? `${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`
+    : null;
+
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
   const { backendUrl, isGeneral, isSecured } = useVariables();
+  const letstokPricingUrl = getLetstokPricingUrl();
+  const billingRedirectUrl =
+    isGeneral && letstokPricingUrl ? letstokPricingUrl : '/billing';
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (
@@ -96,7 +104,12 @@ function LayoutContextInner(params: { children: ReactNode }) {
 
           )
         ) {
-          window.open('/billing?finishTrial=true', '_blank');
+          window.open(
+            isGeneral && letstokPricingUrl
+              ? `${letstokPricingUrl}?finishTrial=true`
+              : '/billing?finishTrial=true',
+            '_blank'
+          );
           return false;
         }
         return false;
@@ -112,14 +125,14 @@ function LayoutContextInner(params: { children: ReactNode }) {
             'Payment Required'
           )
         ) {
-          window.open('/billing', '_blank');
+          window.open(billingRedirectUrl, '_blank');
           return false;
         }
         return true;
       }
       return true;
     },
-    []
+    [isGeneral, letstokPricingUrl, billingRedirectUrl, returnUrl, isSecured]
   );
   return (
     <FetchWrapperComponent baseUrl={backendUrl} afterRequest={afterRequest}>

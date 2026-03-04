@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -32,6 +34,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { PlanSyncService } from '@gitroom/nestjs-libraries/services/plan-sync.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -40,7 +43,8 @@ export class IntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _postService: PostsService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _planSyncService: PlanSyncService
   ) {}
 
   @Get('/:identifier/internal-plugs')
@@ -201,6 +205,23 @@ export class IntegrationsController {
 
     if (integrationProvider.externalUrl && !externalUrl) {
       throw new Error('Missing external url');
+    }
+
+    const fallbackChannels =
+      (org as any)?.subscription?.totalChannels ?? pricing.FREE.channel ?? 0;
+    const totalChannels = await this._planSyncService.getEffectiveChannelLimit(
+      org.id,
+      fallbackChannels
+    );
+    const integrations = (
+      await this._integrationService.getIntegrationsList(org.id)
+    ).filter((f) => !f.disabled);
+    if (integrations.length >= totalChannels) {
+      return {
+        channelLimitReached: true,
+        current: integrations.length,
+        max: totalChannels,
+      };
     }
 
     try {
@@ -371,16 +392,40 @@ export class IntegrationsController {
   }
 
   @Post('/enable')
-  enableChannel(
+  async enableChannel(
     @GetOrgFromRequest() org: Organization,
     @Body('id') id: string
   ) {
-    return this._integrationService.enableChannel(
+    const fallbackChannels =
+      (org as any)?.subscription?.totalChannels ?? pricing.FREE.channel ?? 0;
+    const totalChannels = await this._planSyncService.getEffectiveChannelLimit(
       org.id,
-      // @ts-ignore
-      org?.subscription?.totalChannels || pricing.FREE.channel,
-      id
+      fallbackChannels
     );
+    try {
+      return await this._integrationService.enableChannel(
+        org.id,
+        totalChannels,
+        id
+      );
+    } catch (err: any) {
+      if (
+        err?.message === 'You have reached the maximum number of channels'
+      ) {
+        const integrations = (
+          await this._integrationService.getIntegrationsList(org.id)
+        ).filter((f) => !f.disabled);
+        throw new HttpException(
+          {
+            channelLimitReached: true,
+            current: integrations.length,
+            max: totalChannels,
+          },
+          HttpStatus.FORBIDDEN
+        );
+      }
+      throw err;
+    }
   }
 
   @Delete('/')

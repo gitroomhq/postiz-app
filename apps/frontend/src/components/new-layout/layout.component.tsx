@@ -40,6 +40,45 @@ import { StreakComponent } from '@gitroom/frontend/components/layout/streak.comp
 import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
+import { usePlan } from '@gitroom/frontend/components/layout/use-plan.hook';
+
+const planColorByName: Record<string, string> = {
+  Free: '#6b7280',
+  Basic: '#2196f3',
+  Starter: '#2196f3',
+  Premium: '#e91e63',
+  Growth: '#10B981',
+  Grow: '#4caf50',
+  'Video Creator': '#8B5CF6',
+  'Agency Pro': '#10B981',
+};
+
+const PlanBadge = () => {
+  const { data: plan } = usePlan();
+  const planName = plan?.planName || 'Free';
+  const color = planColorByName[planName] || '#6b7280';
+
+  return (
+    <a
+      href={`${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL || ''}/pricing`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-[5px] rounded-md px-[8px] py-[3px] text-[12px] font-medium text-white transition-opacity hover:opacity-80"
+      style={{ backgroundColor: color }}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+      </svg>
+      {planName} Plan
+    </a>
+  );
+};
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -116,6 +155,50 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <Title />
                       </div>
                       <div className="flex gap-[20px] text-textItemBlur">
+                        {process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL && isGeneral && (
+                          <>
+                            <a
+                              href={process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 hover:text-newTextColor transition-colors"
+                            >
+                              <img
+                                src="/icons/letstok-favicon.svg"
+                                alt="Letstok AI"
+                                width={18}
+                                height={18}
+                                className="rounded-full"
+                              />
+                              <span className="text-sm font-medium">Letstok AI</span>
+                            </a>
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 hover:text-newTextColor transition-colors"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+                                <path d="M7 7h.01" />
+                              </svg>
+                              <span className="text-sm font-medium">Pricing</span>
+                            </a>
+                            <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                          </>
+                        )}
+                        <PlanBadge />
+                        <div className="w-[1px] h-[20px] bg-blockSeparator" />
                         <StreakComponent />
                         <div className="w-[1px] h-[20px] bg-blockSeparator" />
                         <OrganizationSelector />

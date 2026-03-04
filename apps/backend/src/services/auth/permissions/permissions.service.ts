@@ -7,6 +7,7 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import dayjs from 'dayjs';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { AuthorizationActions, Sections } from './permission.exception.class';
+import { PlanSyncService } from '@gitroom/nestjs-libraries/services/plan-sync.service';
 
 export type AppAbility = Ability<[AuthorizationActions, Sections]>;
 
@@ -16,22 +17,35 @@ export class PermissionsService {
     private _subscriptionService: SubscriptionService,
     private _postsService: PostsService,
     private _integrationService: IntegrationService,
-    private _webhooksService: WebhooksService
+    private _webhooksService: WebhooksService,
+    private _planSyncService: PlanSyncService
   ) {}
   async getPackageOptions(orgId: string) {
     const subscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
 
-    const tier =
-      subscription?.subscriptionTier ||
-      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'PRO' : 'FREE');
+    const planDetails = await this._planSyncService.getPlanDetailsForOrg(orgId);
+    const usePostizBilling = process.env.USE_POSTIZ_BILLING === 'true';
 
-    const { channel, ...all } = pricing[tier];
+    let tier: string;
+    let channelLimit: number;
+    if (planDetails && !usePostizBilling) {
+      tier = planDetails.postizTier;
+      channelLimit = planDetails.socialChannels;
+    } else {
+      tier =
+        subscription?.subscriptionTier ||
+        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'PRO' : 'FREE');
+      const { channel } = pricing[tier];
+      channelLimit = tier === 'FREE' ? channel : subscription?.totalChannels ?? -10;
+    }
+
+    const { channel, ...all } = pricing[tier] ?? pricing.FREE;
     return {
       subscription,
       options: {
         ...all,
-        ...{ channel: tier === 'FREE' ? channel : -10 },
+        ...{ channel: channelLimit },
       },
     };
   }
@@ -46,10 +60,11 @@ export class PermissionsService {
       Ability<[AuthorizationActions, Sections]>
     >(Ability as AbilityClass<AppAbility>);
 
-    if (
+    const usePostizBilling = process.env.USE_POSTIZ_BILLING === 'true';
+    const skipPermissionCheck =
       requestedPermission.length === 0 ||
-      !process.env.STRIPE_PUBLISHABLE_KEY
-    ) {
+      (usePostizBilling && !process.env.STRIPE_PUBLISHABLE_KEY);
+    if (skipPermissionCheck) {
       for (const [action, section] of requestedPermission) {
         can(action, section);
       }

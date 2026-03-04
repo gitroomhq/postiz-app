@@ -254,8 +254,12 @@ export const MainBillingComponent: FC<{
     setSubscription(sub);
   }, [sub]);
   const updatePayment = useCallback(async () => {
-    const { portal } = await (await fetch('/billing/portal')).json();
-    window.location.href = portal;
+    const data = await (await fetch('/billing/portal')).json();
+    if (data.redirect) {
+      window.location.href = data.redirect;
+      return;
+    }
+    window.location.href = data.portal;
   }, []);
   const currentPackage = useMemo(() => {
     if (!subscription) {
@@ -379,7 +383,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal } = await (
+        const data = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -390,6 +394,12 @@ export const MainBillingComponent: FC<{
             }),
           })
         ).json();
+        if (data.redirect) {
+          window.location.href = data.redirect;
+          setLoading(false);
+          return;
+        }
+        const { url, portal } = data;
         if (url) {
           await track(TrackEnum.InitiateCheckout, {
             value:

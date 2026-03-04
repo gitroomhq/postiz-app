@@ -17,6 +17,12 @@ import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.p
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+
+const USE_POSTIZ_AUTH = process.env.NEXT_PUBLIC_USE_POSTIZ_AUTH === 'true';
+const STUDIO_TOOLS_URL =
+  process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL || 'https://studio-tools.letstok.com';
+const LETSTOK_WEBSITE_URL =
+  process.env.NEXT_PUBLIC_LETSTOK_WEBSITE_URL || 'https://www.letstok.com';
 type Inputs = {
   email: string;
   password: string;
@@ -125,6 +131,10 @@ export function Login() {
       setLoading(false);
     }
   };
+  const loginWithLetsTok = () => {
+    window.location.href = `${STUDIO_TOOLS_URL}/login?redirect=social`;
+  };
+
   return (
     <FormProvider {...form}>
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
@@ -138,26 +148,100 @@ export function Login() {
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
-            {isGeneral && genericOauth ? (
-              <OauthProvider />
-            ) : !isGeneral ? (
-              <GithubProvider />
-            ) : (
-              <div className="gap-[8px] flex">
-                <GoogleProvider />
-                {!!neynarClientId && <FarcasterProvider />}
-                {billingEnabled && <WalletProvider />}
-              </div>
+            {!USE_POSTIZ_AUTH && (
+              <>
+                <Button
+                  type="button"
+                  className="w-full rounded-[10px] !h-[52px] mb-4"
+                  onClick={loginWithLetsTok}
+                >
+                  {t('login_with_letstok', 'Login with LetsTok')}
+                </Button>
+                <p className="mt-4 text-sm text-center">
+                  {t('sign_in_via_letstok', 'Sign in with your LetsTok account to access social scheduling.')}
+                </p>
+                <div className="h-[20px] mb-[24px] mt-[24px] relative">
+                  <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+                  <div className="absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex">
+                    <div className="px-[16px]">{t('or', 'or')}</div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-[12px]">
+                  <div className="text-textColor">
+                    <Input
+                      label="Email"
+                      translationKey="label_email"
+                      {...form.register('email')}
+                      type="email"
+                      placeholder={t('email_address', 'Email Address')}
+                    />
+                    <Input
+                      label="Password"
+                      translationKey="label_password"
+                      {...form.register('password')}
+                      autoComplete="off"
+                      type="password"
+                      placeholder={t('label_password', 'Password')}
+                    />
+                  </div>
+                  {notActivated && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-[10px] p-4 mb-4">
+                      <p className="text-amber-400 text-sm mb-2">
+                        {t(
+                          'account_not_activated',
+                          'Your account is not activated yet. Please check your email for the activation link.'
+                        )}
+                      </p>
+                      <Link
+                        href="/auth/activate"
+                        className="text-amber-400 underline hover:font-bold text-sm"
+                      >
+                        {t('resend_activation_email', 'Resend Activation Email')}
+                      </Link>
+                    </div>
+                  )}
+                  <div className="text-center mt-6">
+                    <div className="w-full flex">
+                      <Button
+                        type="submit"
+                        className="flex-1 rounded-[10px] !h-[52px]"
+                        loading={loading}
+                      >
+                        {t('sign_in_1', 'Sign in')}
+                      </Button>
+                    </div>
+                    <p className="mt-4 text-sm">
+                      {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
+                      <a href={`${LETSTOK_WEBSITE_URL}/pricing`} className="underline cursor-pointer">
+                        {t('sign_up', 'Sign Up')}
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
-            <div className="h-[20px] mb-[24px] mt-[24px] relative">
-              <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
-              <div
-                className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
-              >
-                <div className="px-[16px]">{t('or', 'or')}</div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-[12px]">
+            {USE_POSTIZ_AUTH && (
+              <>
+                {isGeneral && genericOauth ? (
+                  <OauthProvider />
+                ) : !isGeneral ? (
+                  <GithubProvider />
+                ) : (
+                  <div className="gap-[8px] flex">
+                    <GoogleProvider />
+                    {!!neynarClientId && <FarcasterProvider />}
+                    {billingEnabled && <WalletProvider />}
+                  </div>
+                )}
+                <div className="h-[20px] mb-[24px] mt-[24px] relative">
+                  <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+                  <div
+                    className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
+                  >
+                    <div className="px-[16px]">{t('or', 'or')}</div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-[12px]">
               <div className="text-textColor">
                 <Input
                   label="Email"
@@ -203,20 +287,14 @@ export function Login() {
                 </div>
                 <p className="mt-4 text-sm">
                   {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="underline cursor-pointer">
+                  <a href={`${LETSTOK_WEBSITE_URL}/pricing`} className="underline cursor-pointer">
                     {t('sign_up', 'Sign Up')}
-                  </Link>
-                </p>
-                <p className="mt-4 text-sm">
-                  <Link
-                    href="/auth/forgot"
-                    className="underline hover:font-bold cursor-pointer"
-                  >
-                    {t('forgot_password', 'Forgot password')}
-                  </Link>
+                  </a>
                 </p>
               </div>
             </div>
+              </>
+            )}
           </div>
         </div>
       </form>

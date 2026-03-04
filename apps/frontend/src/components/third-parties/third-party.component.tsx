@@ -173,7 +173,7 @@ export const ThirdPartyComponent = () => {
                       >
                         <ImageWithFallback
                           fallbackSrc={`/icons/third-party/${p.identifier}.png`}
-                          src={`/icons/third-party/${p.identifier}.png`}
+                          src={`/icons/third-party/${p.identifier}.svg`}
                           className="rounded-full"
                           alt={p.title}
                           width={32}

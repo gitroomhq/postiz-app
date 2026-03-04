@@ -11,6 +11,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { ThirdPartyManager } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.manager';
 import * as admin from 'firebase-admin';
 
 @Injectable()
@@ -19,7 +20,8 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _thirdPartyManager: ThirdPartyManager
   ) {}
   async canRegister(provider: string) {
     if (
@@ -349,6 +351,7 @@ export class AuthService {
       Provider.FIREBASE
     );
     if (existingUser) {
+      await this.autoConnectLetstok(existingUser.id, email);
       return { jwt: await this.jwt(existingUser) };
     }
 
@@ -369,6 +372,35 @@ export class AuthService {
       'Firebase SSO'
     );
     await NewsletterService.register(email);
+    await this.autoConnectLetstok(create.users[0].user.id, email);
     return { jwt: await this.jwt(create.users[0].user) };
+  }
+
+  private async autoConnectLetstok(userId: string, email: string) {
+    try {
+      const orgs = await this._organizationService.getOrgsByUserId(userId);
+      if (!orgs.length) return;
+
+      const orgId = orgs[0].id;
+      const existing =
+        await this._thirdPartyManager.getAllThirdPartiesByOrganization(orgId);
+      if (existing.some((i: any) => i.identifier === 'letstok')) return;
+
+      const letstokProvider =
+        this._thirdPartyManager.getThirdPartyByName('letstok');
+      if (!letstokProvider) return;
+
+      const connect = await letstokProvider.instance.checkConnection(email);
+      if (connect) {
+        await this._thirdPartyManager.saveIntegration(
+          orgId,
+          'letstok',
+          email,
+          connect
+        );
+      }
+    } catch (e) {
+      console.error('Auto-connect LetsTok failed:', e);
+    }
   }
 }

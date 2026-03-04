@@ -63,12 +63,18 @@ export class BillingController {
   }
 
   @Post('/embedded')
-  embedded(
+  async embedded(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (process.env.USE_POSTIZ_BILLING !== 'true') {
+      const studioToolsUrl =
+        process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL ||
+        'https://studio-tools.letstok.com';
+      return { redirect: `${studioToolsUrl}/pricing` };
+    }
     const uniqueId = req?.cookies?.track;
     return this._stripeService.embedded(
       uniqueId,
@@ -80,12 +86,18 @@ export class BillingController {
   }
 
   @Post('/subscribe')
-  subscribe(
+  async subscribe(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (process.env.USE_POSTIZ_BILLING !== 'true') {
+      const studioToolsUrl =
+        process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL ||
+        'https://studio-tools.letstok.com';
+      return { redirect: `${studioToolsUrl}/pricing` };
+    }
     const uniqueId = req?.cookies?.track;
     return this._stripeService.subscribe(
       uniqueId,
@@ -98,6 +110,12 @@ export class BillingController {
 
   @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
+    if (process.env.USE_POSTIZ_BILLING !== 'true') {
+      const studioToolsUrl =
+        process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL ||
+        'https://studio-tools.letstok.com';
+      return { redirect: `${studioToolsUrl}/pricing`, portal: null };
+    }
     const customer = await this._stripeService.getCustomerByOrganizationId(
       org.id
     );

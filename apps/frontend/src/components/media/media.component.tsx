@@ -50,6 +50,7 @@ import {
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { LetstokImportButton } from '@gitroom/frontend/components/media/letstok.import';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -427,7 +428,12 @@ export const MediaBox: FC<{
             className="hidden"
             multiple={true}
           />
-          {!isLoading && !!data?.results?.length && btn}
+          {!isLoading && !!data?.results?.length && (
+            <div className="flex gap-[8px]">
+              <LetstokImportButton onImported={mutate} />
+              {btn}
+            </div>
+          )}
         </div>
         <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
@@ -481,7 +487,10 @@ export const MediaBox: FC<{
                     'You can also drag & drop pictures.'
                   )}
                 </div>
-                <div className="forceChange">{btn}</div>
+                <div className="flex gap-[8px] forceChange">
+                  <LetstokImportButton onImported={mutate} />
+                  {btn}
+                </div>
               </>
             )}
             {isLoading && (

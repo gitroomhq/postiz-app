@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Query,
@@ -25,6 +26,9 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import axios from 'axios';
+import { Readable } from 'stream';
+import { lookup } from 'mime-types';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -116,6 +120,63 @@ export class MediaController {
       name,
       process.env.CLOUDFLARE_BUCKET_URL + '/' + name,
       originalName || undefined
+    );
+  }
+
+  @Post('/import-from-url')
+  async importFromUrl(
+    @GetOrgFromRequest() org: Organization,
+    @Body('url') url: string,
+    @Body('originalName') originalName?: string
+  ) {
+    if (!url) {
+      throw new HttpException('url is required', 400);
+    }
+
+    let response;
+    try {
+      response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        maxRedirects: 10,
+        timeout: 60000,
+        validateStatus: (status) => status < 400,
+      });
+    } catch (err: any) {
+      console.error(
+        `[importFromUrl] Failed to fetch URL: ${url.substring(0, 200)}...`,
+        `Status: ${err?.response?.status}`,
+        `Message: ${err?.message}`
+      );
+      throw new HttpException(
+        `Failed to fetch media from URL (${err?.response?.status || err?.message})`,
+        err?.response?.status || 500
+      );
+    }
+
+    const buffer = Buffer.from(response.data);
+    const cleanUrl = url.split('?')[0];
+    const mime = lookup(cleanUrl) || 'video/mp4';
+    const ext = cleanUrl.split('.').pop() || 'mp4';
+    const name = originalName || `letstok-import-${Date.now()}.${ext}`;
+
+    const getFile = await this.storage.uploadFile({
+      buffer,
+      mimetype: mime,
+      size: buffer.length,
+      path: '',
+      fieldname: '',
+      destination: '',
+      stream: new Readable(),
+      filename: '',
+      originalname: name,
+      encoding: '',
+    });
+
+    return this._mediaService.saveFile(
+      org.id,
+      getFile.originalname,
+      getFile.path,
+      name
     );
   }
 

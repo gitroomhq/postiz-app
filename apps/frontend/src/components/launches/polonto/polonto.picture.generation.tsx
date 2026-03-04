@@ -17,9 +17,15 @@ const GenerateTab = observer(({ store }: any) => {
   const inputRef = React.useRef<any>(null);
   const [image, setImage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
-  const { billingEnabled } = useVariables();
+  const { billingEnabled, isGeneral } = useVariables();
   const fetch = useFetch();
   const toast = useToaster();
+  const getUpgradeUrl = () => {
+    if (isGeneral && process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL) {
+      return `${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`;
+    }
+    return '/billing';
+  };
   const loadCredits = useCallback(async () => {
     if (!billingEnabled) {
       return {
@@ -37,7 +43,7 @@ const GenerateTab = observer(({ store }: any) => {
 
   const handleGenerate = async () => {
     if (data?.credits <= 0) {
-      window.open('/billing', '_blank');
+      window.open(getUpgradeUrl(), '_blank');
       return;
     }
     if (!inputRef.current.value) {

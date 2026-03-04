@@ -3,14 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
-/**
- * Firebase SSO callback - receives token from studio-tools redirect,
- * exchanges for Letstok Social session, then redirects to app.
- */
+function setCookie(name: string, value: string, days: number) {
+  if (typeof document === 'undefined') return;
+  const d = new Date();
+  d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/';
+}
+
 export default function FirebaseCallbackPage() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const fetchData = useFetch();
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -19,19 +24,22 @@ export default function FirebaseCallbackPage() {
       return;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-    fetch(`${apiUrl}/auth/firebase-sso`, {
+    fetchData('/auth/firebase-sso', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
-      credentials: 'include',
     })
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || 'Firebase SSO failed');
         }
-        // Redirect directly to Letstok Social dashboard (/launches)
+
+        const authHeader =
+          res.headers.get('auth') || res.headers.get('Auth');
+        if (authHeader) {
+          setCookie('auth', authHeader, 365);
+        }
+
         window.location.href = '/launches';
       })
       .catch((e) => {

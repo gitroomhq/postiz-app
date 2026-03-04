@@ -10,7 +10,8 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { ThirdPartyManager } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.manager';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
@@ -121,6 +122,77 @@ export class ThirdPartyController {
     );
   }
 
+  @Post('/auto-connect')
+  async autoConnect(
+    @GetOrgFromRequest() organization: Organization,
+    @GetUserFromRequest() user: User
+  ) {
+    if (user.providerName !== 'FIREBASE') {
+      return { connected: false, reason: 'not_firebase_user' };
+    }
+
+    const existing =
+      await this._thirdPartyManager.getAllThirdPartiesByOrganization(
+        organization.id
+      );
+    const letstokExists = existing.find(
+      (i: any) => i.identifier === 'letstok'
+    );
+    if (letstokExists) {
+      const { description, fields, position, title, identifier } =
+        this._thirdPartyManager.getThirdPartyByName('letstok');
+      return {
+        connected: true,
+        integration: {
+          ...letstokExists,
+          title,
+          position,
+          fields,
+          description,
+        },
+      };
+    }
+
+    const letstokProvider =
+      this._thirdPartyManager.getThirdPartyByName('letstok');
+    if (!letstokProvider) {
+      return { connected: false, reason: 'provider_not_available' };
+    }
+
+    const connect = await letstokProvider.instance.checkConnection(user.email);
+    if (!connect) {
+      return { connected: false, reason: 'user_not_found_on_letstok' };
+    }
+
+    try {
+      const save = await this._thirdPartyManager.saveIntegration(
+        organization.id,
+        'letstok',
+        user.email,
+        connect
+      );
+
+      const { description, fields, position, title, identifier } =
+        this._thirdPartyManager.getThirdPartyByName('letstok');
+
+      return {
+        connected: true,
+        integration: {
+          ...save,
+          title,
+          position,
+          fields,
+          description,
+          name: connect.name,
+          identifier: 'letstok',
+        },
+      };
+    } catch (e) {
+      console.error('Auto-connect LetsTok failed:', e);
+      return { connected: false, reason: 'save_failed' };
+    }
+  }
+
   @Post('/:identifier')
   async addApiKey(
     @GetOrgFromRequest() organization: Organization,
@@ -134,7 +206,12 @@ export class ThirdPartyController {
 
     const connect = await thirdParty.instance.checkConnection(api);
     if (!connect) {
-      throw new HttpException('Invalid API key', 400);
+      throw new HttpException(
+        identifier === 'letstok'
+          ? 'Could not verify this email. Make sure the Letstok AI server is running and the email is registered.'
+          : 'Invalid API key',
+        400
+      );
     }
 
     try {

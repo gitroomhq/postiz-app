@@ -288,6 +288,45 @@ const ExtensionNotFound: FC = () => {
   );
 };
 
+export const ChannelLimitUpgradeModal: FC<{
+  current: number;
+  max: number;
+  onClose: () => void;
+}> = ({ current, max, onClose }) => {
+  const t = useT();
+  const modals = useModals();
+  const studioToolsUrl =
+    process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL ||
+    'https://studio-tools.letstok.com';
+  return (
+    <div className="flex flex-col gap-[16px] pt-[8px]">
+      <p className="text-[14px] text-textColor/80">
+        {t(
+          'channel_limit_reached_upgrade',
+          `You've reached your channel limit (${current}/${max}). Upgrade your plan to add more channels.`
+        )}
+      </p>
+      <div className="flex gap-[10px]">
+        <a
+          href={`${studioToolsUrl}/pricing`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex flex-1 items-center justify-center rounded-[8px] bg-primary px-4 py-3 text-white font-medium hover:opacity-90"
+        >
+          {t('upgrade_plan', 'Upgrade your plan')}
+        </a>
+        <Button
+          type="button"
+          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          onClick={() => modals.closeAll()}
+        >
+          {t('cancel', 'Cancel')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const ChromeExtensionWarning: FC<{
   onConfirm: () => void;
   onCancel: () => void;
@@ -408,13 +447,31 @@ export const AddProviderComponent: FC<{
           const { component: Web3Providers } = web3List.find(
             (item) => item.identifier === identifier
           )!;
-          const { url } = await (
+          const web3Data = await (
             await fetch(
               `/integrations/social/${identifier}${
                 onboarding ? '?onboarding=true' : ''
               }`
             )
           ).json();
+          if (web3Data.channelLimitReached) {
+            modal.openModal({
+              title: t('channel_limit_reached', 'Channel Limit Reached'),
+              withCloseButton: true,
+              classNames: {
+                modal: 'bg-transparent text-textColor',
+              },
+              children: (
+                <ChannelLimitUpgradeModal
+                  current={web3Data.current}
+                  max={web3Data.max}
+                  onClose={() => modal.closeCurrent()}
+                />
+              ),
+            });
+            return;
+          }
+          const { url } = web3Data;
           modal.openModal({
             title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
@@ -441,12 +498,29 @@ export const AddProviderComponent: FC<{
           ]
             .filter(Boolean)
             .join('&');
-          const { url, err } = await (
+          const data = await (
             await fetch(
               `/integrations/social/${identifier}${params ? `?${params}` : ''}`
             )
           ).json();
-          if (err) {
+          if (data.channelLimitReached) {
+            modal.openModal({
+              title: t('channel_limit_reached', 'Channel Limit Reached'),
+              withCloseButton: true,
+              classNames: {
+                modal: 'bg-transparent text-textColor',
+              },
+              children: (
+                <ChannelLimitUpgradeModal
+                  current={data.current}
+                  max={data.max}
+                  onClose={() => modal.closeCurrent()}
+                />
+              ),
+            });
+            return;
+          }
+          if (data.err) {
             toaster.show(
               t(
                 'could_not_connect_to_platform',
@@ -457,6 +531,7 @@ export const AddProviderComponent: FC<{
             return;
           }
 
+          const { url } = data;
           if (invite) {
             toaster.show(
               'Invite link copied to clipboard, link will be available for 1 hour',
@@ -551,13 +626,32 @@ export const AddProviderComponent: FC<{
               );
               return;
             }
-            const { url } = await (
+            const extData = await (
               await fetch(
                 `/integrations/social/${identifier}${
                   onboarding ? '?onboarding=true' : ''
                 }`
               )
             ).json();
+            if (extData.channelLimitReached) {
+              modal.closeAll();
+              modal.openModal({
+                title: t('channel_limit_reached', 'Channel Limit Reached'),
+                withCloseButton: true,
+                classNames: {
+                  modal: 'bg-transparent text-textColor',
+                },
+                children: (
+                  <ChannelLimitUpgradeModal
+                    current={extData.current}
+                    max={extData.max}
+                    onClose={() => modal.closeCurrent()}
+                  />
+                ),
+              });
+              return;
+            }
+            const { url } = extData;
             modal.closeAll();
             window.location.href = `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
               JSON.stringify(cookieResponse.cookies)

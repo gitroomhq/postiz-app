@@ -3,9 +3,21 @@ import { useSearchParams } from 'next/navigation';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+
+const getLetstokPricingUrl = () =>
+  process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL
+    ? `${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`
+    : null;
 
 export const PreConditionComponentModal: FC = () => {
   const modal = useModals();
+  const { isGeneral } = useVariables();
+  const letstokPricingUrl = getLetstokPricingUrl();
+  const billingUrl =
+    isGeneral && letstokPricingUrl
+      ? `${letstokPricingUrl}?finishTrial=true`
+      : '/billing?finishTrial=true';
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="whitespace-pre-line">
@@ -17,9 +29,7 @@ export const PreConditionComponentModal: FC = () => {
         and the charge is final.
       </div>
       <div className="flex gap-[2px] justify-center">
-        <Button
-          onClick={() => (window.location.href = '/billing?finishTrial=true')}
-        >
+        <Button onClick={() => (window.location.href = billingUrl)}>
           Fast track - Charge me now
         </Button>
         <Button onClick={modal.closeCurrent} secondary={true}>Cancel</Button>

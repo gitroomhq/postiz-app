@@ -17,6 +17,9 @@ export class StripeController {
 
   @Post('/')
   stripe(@Req() req: RawBodyRequest<Request>) {
+    if (process.env.USE_POSTIZ_BILLING !== 'true') {
+      return { ok: true };
+    }
     const event = this._stripeService.validateRequest(
       req.rawBody,
       // @ts-ignore

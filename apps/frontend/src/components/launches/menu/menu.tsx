@@ -23,7 +23,10 @@ import { BotPicture } from '@gitroom/frontend/components/launches/bot.picture';
 import { CustomerModal } from '@gitroom/frontend/components/launches/customer.modal';
 import { Integration } from '@prisma/client';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
-import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  ChannelLimitUpgradeModal,
+  CustomVariables,
+} from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -170,16 +173,39 @@ export const Menu: FC<{
   }, [t, extensionId, id]);
 
   const enableChannel = useCallback(async () => {
-    await fetch('/integrations/enable', {
+    const res = await fetch('/integrations/enable', {
       method: 'POST',
       body: JSON.stringify({
         id,
       }),
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && data.channelLimitReached) {
+      setShow(false);
+      modal.openModal({
+        title: t('channel_limit_reached', 'Channel Limit Reached'),
+        withCloseButton: true,
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        children: (
+          <ChannelLimitUpgradeModal
+            current={data.current}
+            max={data.max}
+            onClose={() => modal.closeCurrent()}
+          />
+        ),
+      });
+      return;
+    }
+    if (!res.ok) {
+      toast.show(t('channel_enabled_error', 'Could not enable channel'), 'error');
+      return;
+    }
     toast.show(t('channel_enabled', 'Channel Enabled'), 'success');
     setShow(false);
     onChange(false);
-  }, [t]);
+  }, [t, modal]);
 
   const editTimeTable = useCallback(() => {
     const findIntegration = integrations.find(

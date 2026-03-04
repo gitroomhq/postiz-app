@@ -30,6 +30,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { PlanSyncService } from '@gitroom/nestjs-libraries/services/plan-sync.service';
 
 @ApiTags('User')
 @Controller('/user')
@@ -40,7 +41,8 @@ export class UsersController {
     private _authService: AuthService,
     private _orgService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _planSyncService: PlanSyncService
   ) {}
   @Get('/self')
   async getSelf(
@@ -52,15 +54,34 @@ export class UsersController {
       throw new HttpForbiddenException();
     }
 
+    const usePostizBilling = process.env.USE_POSTIZ_BILLING === 'true';
+    const fallbackChannels = !process.env.STRIPE_PUBLISHABLE_KEY
+      ? 10000
+      : (organization as any)?.subscription?.totalChannels ?? pricing.FREE.channel ?? 0;
+    const fallbackTier =
+      (organization as any)?.subscription?.subscriptionTier ||
+      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE');
+    const totalChannels = await this._planSyncService.getEffectiveChannelLimit(
+      organization.id,
+      fallbackChannels
+    );
+    const planDetails = await this._planSyncService.getPlanDetailsForOrg(
+      organization.id
+    );
+    const tier =
+      planDetails && !usePostizBilling
+        ? planDetails.postizTier
+        : fallbackTier;
+
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
     // @ts-ignore
     return {
       ...user,
       orgId: organization.id,
       // @ts-ignore
-      totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY ? 10000 : organization?.subscription?.totalChannels || pricing.FREE.channel,
+      totalChannels,
       // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      tier,
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
@@ -72,6 +93,35 @@ export class UsersController {
       streakSince: organization?.streakSince || null,
       // @ts-ignore
       publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey : '',
+    };
+  }
+
+  @Get('/plan')
+  async getPlan(@GetOrgFromRequest() organization: Organization) {
+    if (!organization) {
+      throw new HttpForbiddenException();
+    }
+    const planDetails = await this._planSyncService.getPlanDetailsForOrg(
+      organization.id
+    );
+    const usePostizBilling = process.env.USE_POSTIZ_BILLING === 'true';
+    if (planDetails && !usePostizBilling) {
+      return {
+        planName: planDetails.planName,
+        postizTier: planDetails.postizTier,
+        socialChannels: planDetails.socialChannels,
+        source: 'studio-tools',
+      };
+    }
+    const subscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organization.id
+      );
+    return {
+      planName: subscription?.subscriptionTier ?? 'Free',
+      postizTier: subscription?.subscriptionTier ?? 'FREE',
+      socialChannels: subscription?.totalChannels ?? pricing.FREE.channel ?? 0,
+      source: 'postiz',
     };
   }
 

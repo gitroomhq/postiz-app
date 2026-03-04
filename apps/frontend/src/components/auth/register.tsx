@@ -23,6 +23,12 @@ import dynamic from 'next/dynamic';
 import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/placeholder/wallet.ui.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useCookie from 'react-use-cookie';
+
+const USE_POSTIZ_AUTH = process.env.NEXT_PUBLIC_USE_POSTIZ_AUTH === 'true';
+const STUDIO_TOOLS_URL =
+  process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL || 'https://studio-tools.letstok.com';
+const LETSTOK_WEBSITE_URL =
+  process.env.NEXT_PUBLIC_LETSTOK_WEBSITE_URL || 'https://www.letstok.com';
 const WalletProvider = dynamic(
   () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
   {
@@ -47,6 +53,7 @@ function inferProviderFromSearchParams(searchParams: ReturnType<typeof useSearch
 }
 
 export function Register() {
+  const t = useT();
   const getQuery = useSearchParams();
   const fetch = useFetch();
   const [provider] = useState(() => inferProviderFromSearchParams(getQuery));
@@ -93,6 +100,39 @@ export function Register() {
     }
   }, [provider, code]);
   if (!code && !provider) {
+    if (!USE_POSTIZ_AUTH) {
+      return (
+        <div className="flex flex-col flex-1">
+          <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start">
+            {t('sign_up', 'Sign Up')}
+          </h1>
+          <div className="text-[14px] mt-[32px] mb-[12px]">
+            {t('continue_with', 'Continue With')}
+          </div>
+          <Button
+            type="button"
+            className="w-full rounded-[10px] !h-[52px] mb-4"
+            onClick={() => {
+              window.location.href = `${LETSTOK_WEBSITE_URL}/pricing`;
+            }}
+          >
+            {t('sign_up_with_letstok', 'Sign up with LetsTok')}
+          </Button>
+          <p className="mt-4 text-sm text-center">
+            {t(
+              'sign_up_via_letstok',
+              'Create a LetsTok account to access social scheduling.',
+            )}
+          </p>
+          <p className="mt-4 text-sm">
+            {t('already_have_an_account', 'Already Have An Account?')}{' '}
+            <Link href="/auth/login" className="underline cursor-pointer">
+              {t('sign_in', 'Sign In')}
+            </Link>
+          </p>
+        </div>
+      );
+    }
     return <RegisterAfter token="" provider="LOCAL" />;
   }
   if (loadError) {

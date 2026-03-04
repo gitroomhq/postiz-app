@@ -15,7 +15,9 @@ import React, {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import './providers/heygen.provider';
+import './providers/letstok.provider';
 import { thirdPartyList } from '@gitroom/frontend/components/third-parties/third-party.wrapper';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -105,9 +107,13 @@ export const ThirdPartyPopup: FC<{
               className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-third hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
             >
               <div>
-                <img
+                <ImageWithFallback
+                  fallbackSrc={`/icons/third-party/${p.identifier}.png`}
+                  src={`/icons/third-party/${p.identifier}.svg`}
                   className="w-[32px] h-[32px]"
-                  src={`/icons/third-party/${p.identifier}.png`}
+                  alt={p.title}
+                  width={32}
+                  height={32}
                 />
               </div>
               <div className="whitespace-pre-wrap text-left text-lg">

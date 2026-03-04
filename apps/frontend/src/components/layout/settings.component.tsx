@@ -19,6 +19,7 @@ import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { usePlan } from '@gitroom/frontend/components/layout/use-plan.hook';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -80,11 +81,12 @@ export const SettingsPopup: FC<{
     close();
   }, []);
 
-  const [tab, setTab] = useState('global_settings');
+  const [tab, setTab] = useState('account');
 
   const t = useT();
   const list = useMemo(() => {
     const arr = [];
+    arr.push({ tab: 'account', label: t('account', 'Account') });
     arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
     // Populate tabs based on user permissions
     if (user?.tier?.team_members && isGeneral) {
@@ -158,6 +160,9 @@ export const SettingsPopup: FC<{
                 !getRef && 'rounded-[4px]'
               )}
             >
+              {tab === 'account' && (
+                <AccountDetails />
+              )}
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />
@@ -208,6 +213,69 @@ export const SettingsPopup: FC<{
     </>
   );
 };
+const planColorByName: Record<string, string> = {
+  Free: '#6b7280',
+  Basic: '#2196f3',
+  Starter: '#2196f3',
+  Premium: '#e91e63',
+  Growth: '#10B981',
+  Grow: '#4caf50',
+  'Video Creator': '#8B5CF6',
+  'Agency Pro': '#10B981',
+};
+
+const AccountDetails: FC = () => {
+  const user = useUser();
+  const t = useT();
+  const { data: plan } = usePlan();
+  const planName = plan?.planName || 'Free';
+  const planColor = planColorByName[planName] || '#6b7280';
+
+  return (
+    <div className="flex flex-col gap-[24px]">
+      <h3 className="text-[20px]">{t('account', 'Account')}</h3>
+      <div className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[4px]">
+          <span className="text-[13px] text-textItemBlur">
+            {t('email', 'Email')}
+          </span>
+          <span className="text-[15px]">{user?.email || '—'}</span>
+        </div>
+        <div className="flex flex-col gap-[4px]">
+          <span className="text-[13px] text-textItemBlur">
+            {t('name', 'Name')}
+          </span>
+          <span className="text-[15px]">
+            {[user?.name, user?.lastName].filter(Boolean).join(' ') || '—'}
+          </span>
+        </div>
+        <div className="flex flex-col gap-[4px]">
+          <span className="text-[13px] text-textItemBlur">
+            {t('plan', 'Plan')}
+          </span>
+          <div className="flex items-center gap-[8px]">
+            <span
+              className="inline-flex items-center gap-[6px] rounded-md px-[10px] py-[4px] text-[13px] font-medium text-white"
+              style={{ backgroundColor: planColor }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+              </svg>
+              {planName} Plan
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const SettingsComponent = () => {
   const settings = useModals();
   const user = useUser();

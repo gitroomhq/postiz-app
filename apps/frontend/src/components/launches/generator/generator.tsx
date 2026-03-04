@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 
 const FirstStep: FC = (props) => {
@@ -293,6 +294,11 @@ export const GeneratorComponent = () => {
   const router = useRouter();
   const modal = useModals();
   const all = useCalendar();
+  const { isGeneral } = useVariables();
+  const upgradeUrl =
+    isGeneral && process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL
+      ? `${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`
+      : '/billing';
   const generate = useCallback(async () => {
     if (!user?.tier?.ai) {
       if (
@@ -302,7 +308,11 @@ export const GeneratorComponent = () => {
           t('payment_required', 'Payment Required')
         )
       ) {
-        router.push('/billing');
+        if (upgradeUrl.startsWith('http')) {
+          window.open(upgradeUrl, '_blank');
+        } else {
+          router.push(upgradeUrl);
+        }
       }
       return;
     }
@@ -319,7 +329,7 @@ export const GeneratorComponent = () => {
         </CalendarWeekProvider>
       ),
     });
-  }, [user, all]);
+  }, [user, all, upgradeUrl, t, modal]);
   return (
     <div
       className="h-[44px] w-[44px] group-[.sidebar]:w-full bg-ai justify-center items-center flex rounded-[8px] cursor-pointer"

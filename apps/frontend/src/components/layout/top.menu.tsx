@@ -13,11 +13,19 @@ interface MenuItemInterface {
   role?: string[];
   hide?: boolean;
   requireBilling?: boolean;
+  external?: boolean;
 }
+
+const getLetstokPricingUrl = () =>
+  process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL
+    ? `${process.env.NEXT_PUBLIC_STUDIO_TOOLS_URL}/pricing`
+    : null;
 
 export const useMenuItem = () => {
   const { isGeneral } = useVariables();
   const t = useT();
+  const letstokPricingUrl = getLetstokPricingUrl();
+  const useLetstokPricing = isGeneral && !!letstokPricingUrl;
 
   const firstMenu = [
     {
@@ -223,7 +231,8 @@ export const useMenuItem = () => {
           />
         </svg>
       ),
-      path: '/billing',
+      path: useLetstokPricing ? letstokPricingUrl! : '/billing',
+      external: useLetstokPricing,
       role: ['ADMIN', 'SUPERADMIN'],
       requireBilling: true,
     },
@@ -299,6 +308,7 @@ export const TopMenu: FC = () => {
                   label={item.name}
                   icon={item.icon}
                   key={item.name}
+                  external={item.external}
                 />
               ))
         }
@@ -326,6 +336,7 @@ export const TopMenu: FC = () => {
               label={item.name}
               icon={item.icon}
               key={item.name}
+              external={item.external}
             />
           ))}
       </div>
