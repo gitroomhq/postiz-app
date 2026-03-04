@@ -131,7 +131,12 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     const gmbClientId = process.env.GOOGLE_GMB_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID;
     const gmbClientSecret = process.env.GOOGLE_GMB_CLIENT_SECRET || process.env.YOUTUBE_CLIENT_SECRET;
     if (!gmbClientId || !gmbClientSecret) {
-      throw new Error('Google Business credentials not configured');
+      throw new Error(
+        'Google Business requires GOOGLE_GMB_CLIENT_ID and GOOGLE_GMB_CLIENT_SECRET (or YOUTUBE_CLIENT_ID/YOUTUBE_CLIENT_SECRET). ' +
+        'Create a project at console.cloud.google.com and request access to the Business Profile API (requires approval). ' +
+        'Once approved, add credentials to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(7);
     const { client } = clientAndGmb();

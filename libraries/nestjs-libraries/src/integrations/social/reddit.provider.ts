@@ -69,7 +69,12 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.REDDIT_CLIENT_ID || !process.env.REDDIT_CLIENT_SECRET) {
-      throw new Error('Reddit credentials not configured');
+      throw new Error(
+        'Reddit requires REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET. ' +
+        'Apply for API access at reddit.com/prefs/apps (requires approval since Nov 2025). ' +
+        'Once approved, add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(6);
     const codeVerifier = makeId(30);

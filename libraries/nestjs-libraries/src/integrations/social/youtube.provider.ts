@@ -160,7 +160,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.YOUTUBE_CLIENT_ID || !process.env.YOUTUBE_CLIENT_SECRET) {
-      throw new Error('YouTube credentials not configured');
+      throw new Error(
+        'YouTube requires YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET. ' +
+        'Create a free project at console.cloud.google.com, enable the YouTube Data API v3, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(7);
     const { client } = clientAndYoutube();

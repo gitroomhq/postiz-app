@@ -340,7 +340,13 @@ export class InstagramProvider
 
   async generateAuthUrl() {
     if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
-      throw new Error('Facebook/Instagram credentials not configured');
+      throw new Error(
+        'Instagram requires FACEBOOK_APP_ID and FACEBOOK_APP_SECRET from developers.facebook.com. ' +
+        'Note: Instagram OAuth requires HTTPS callbacks, so it cannot work with localhost. ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? 'Desktop users need an HTTPS tunnel (e.g., ngrok) to use Instagram. Add credentials to your ' + SocialAbstract.desktopEnvHint
+          : 'Add these to your .env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {

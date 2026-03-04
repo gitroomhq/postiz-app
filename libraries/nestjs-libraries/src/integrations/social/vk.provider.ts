@@ -76,7 +76,11 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.VK_ID) {
-      throw new Error('VK credentials not configured');
+      throw new Error(
+        'VK requires VK_ID. ' +
+        'Create an app at vk.com/dev, then add VK_ID to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(32);
     const codeVerifier = randomBytes(64).toString('base64url');

@@ -7,6 +7,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
@@ -122,7 +123,11 @@ export class LinkedinPageProvider
 
   override async generateAuthUrl() {
     if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
-      throw new Error('LinkedIn credentials not configured');
+      throw new Error(
+        'LinkedIn Pages requires LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET. ' +
+        'Create a free app at developer.linkedin.com, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(6);
     const codeVerifier = makeId(30);

@@ -86,7 +86,11 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.DRIBBBLE_CLIENT_ID || !process.env.DRIBBBLE_CLIENT_SECRET) {
-      throw new Error('Dribbble credentials not configured');
+      throw new Error(
+        'Dribbble requires DRIBBBLE_CLIENT_ID and DRIBBBLE_CLIENT_SECRET. ' +
+        'Register an app at dribbble.com/account/applications, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {

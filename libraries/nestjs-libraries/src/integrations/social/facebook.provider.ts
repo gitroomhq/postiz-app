@@ -172,7 +172,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
-      throw new Error('Facebook credentials not configured');
+      throw new Error(
+        'Facebook requires FACEBOOK_APP_ID and FACEBOOK_APP_SECRET from developers.facebook.com. ' +
+        'Note: Facebook OAuth requires HTTPS callbacks, so it cannot work with localhost. ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? 'Desktop users need an HTTPS tunnel (e.g., ngrok) to use Facebook. Add credentials to your ' + SocialAbstract.desktopEnvHint
+          : 'Add these to your .env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {

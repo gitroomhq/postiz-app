@@ -123,7 +123,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
-      throw new Error('LinkedIn credentials not configured');
+      throw new Error(
+        'LinkedIn requires LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET. ' +
+        'Create a free app at developer.linkedin.com, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(6);
     const codeVerifier = makeId(30);

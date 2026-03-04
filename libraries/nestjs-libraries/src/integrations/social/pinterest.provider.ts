@@ -99,7 +99,11 @@ export class PinterestProvider
 
   async generateAuthUrl() {
     if (!process.env.PINTEREST_CLIENT_ID || !process.env.PINTEREST_CLIENT_SECRET) {
-      throw new Error('Pinterest credentials not configured');
+      throw new Error(
+        'Pinterest requires PINTEREST_CLIENT_ID and PINTEREST_CLIENT_SECRET. ' +
+        'Create a free app at developers.pinterest.com, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {

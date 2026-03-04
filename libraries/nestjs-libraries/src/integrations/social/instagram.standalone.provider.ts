@@ -78,7 +78,13 @@ export class InstagramStandaloneProvider
 
   async generateAuthUrl() {
     if (!process.env.INSTAGRAM_APP_ID || !process.env.INSTAGRAM_APP_SECRET) {
-      throw new Error('Instagram credentials not configured');
+      throw new Error(
+        'Instagram (standalone) requires INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET from developers.facebook.com. ' +
+        'Note: Instagram OAuth requires HTTPS callbacks, so it cannot work with localhost. ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? 'Desktop users need an HTTPS tunnel (e.g., ngrok). Add credentials to your ' + SocialAbstract.desktopEnvHint
+          : 'Add these to your .env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {

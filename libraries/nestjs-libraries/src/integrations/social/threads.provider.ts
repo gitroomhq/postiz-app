@@ -70,7 +70,12 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     if (!process.env.THREADS_APP_ID || !process.env.THREADS_APP_SECRET) {
-      throw new Error('Threads credentials not configured');
+      throw new Error(
+        'Threads requires THREADS_APP_ID and THREADS_APP_SECRET from developers.facebook.com. ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? 'Add these to your ' + SocialAbstract.desktopEnvHint
+          : 'Add these to your .env file or server environment.')
+      );
     }
     const state = makeId(6);
     return {
