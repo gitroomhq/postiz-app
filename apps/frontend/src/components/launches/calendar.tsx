@@ -47,6 +47,7 @@ import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
+import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
@@ -214,7 +215,26 @@ const usePostActions = (onMutate?: () => void) => {
     [modal, t]
   );
 
-  return { editPost, deletePost, openStatistics };
+  const openMissingRelease = useCallback(
+    (id: string) => () => {
+      modal.openModal({
+        title: t('connect_post', 'Connect Post'),
+        closeOnClickOutside: true,
+        closeOnEscape: true,
+        withCloseButton: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[800px]',
+        },
+        children: (
+          <MissingReleaseModal postId={id} onSuccess={mutate} />
+        ),
+        size: '60%',
+      });
+    },
+    [modal, t, mutate]
+  );
+
+  return { editPost, deletePost, openStatistics, openMissingRelease };
 };
 
 export const DayView = () => {
@@ -452,7 +472,7 @@ export const ListView = () => {
   const { integrations, loading, listPosts } = useCalendar();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics } = usePostActions();
+  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
@@ -502,6 +522,7 @@ export const ListView = () => {
                   date={newDayjs(post.publishDate)}
                   state={post.state}
                   statistics={openStatistics(post.id)}
+                  missingRelease={openMissingRelease(post.id)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   post={post}
@@ -557,7 +578,7 @@ export const CalendarColumn: FC<{
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics } = usePostActions();
+  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -820,6 +841,7 @@ export const CalendarColumn: FC<{
                   date={getDate}
                   state={post.state}
                   statistics={openStatistics(post.id)}
+                  missingRelease={openMissingRelease(post.id)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   post={post}
@@ -929,6 +951,7 @@ const CalendarItem: FC<{
   duplicatePost: () => void;
   deletePost: () => void;
   statistics: () => void;
+  missingRelease?: () => void;
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
@@ -952,6 +975,7 @@ const CalendarItem: FC<{
     display,
     deletePost,
     showTime,
+    missingRelease,
   } = props;
   const { disableXAnalytics } = useVariables();
   const preview = useCallback(() => {
@@ -1016,7 +1040,17 @@ const CalendarItem: FC<{
         </div>{' '}
         {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
-        ) : (
+        ) : post.releaseId === 'missing' && missingRelease ? (
+          <div
+            className={clsx(
+              'hidden group-hover:block hover:underline cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={missingRelease}
+          >
+            <Statistics />
+          </div>
+        ) : post.releaseId !== 'missing' ? (
           <div
             className={clsx(
               'hidden group-hover:block hover:underline cursor-pointer',
@@ -1026,6 +1060,8 @@ const CalendarItem: FC<{
           >
             <Statistics />
           </div>
+        ) : (
+          <></>
         )}{' '}
         <div
           className={clsx(

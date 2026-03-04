@@ -13,6 +13,7 @@
 </a>
 </p>
 
+<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
@@ -99,6 +100,9 @@ Integrate powerful social media scheduling capabilities into your SaaS. <br />Mu
 | Sponsor |                                  Logo                                   | Description     |
 |---------|:-----------------------------------------------------------------------:|-----------------|
 | [Hostinger](https://www.hostinger.com/?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
+| [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
+
+
 
 # Intro
 

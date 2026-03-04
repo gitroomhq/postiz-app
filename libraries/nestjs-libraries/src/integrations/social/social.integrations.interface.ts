@@ -44,6 +44,10 @@ export interface IAuthenticator {
     accessToken: string,
     url: string
   ): Promise<{ url: string }>;
+  missing?(
+    id: string,
+    accessToken: string
+  ): Promise<{ id: string; url: string }[]>;
 }
 
 export interface AnalyticsData {

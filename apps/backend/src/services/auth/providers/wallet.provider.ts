@@ -1,16 +1,17 @@
-import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+import {
+  AuthProvider,
+  AuthProviderAbstract,
+} from '@gitroom/backend/services/auth/providers.interface';
 import { randomBytes } from 'crypto';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 
 function hexToUint8Array(hex) {
-  // Remove any potential "0x" prefix
   if (hex.startsWith('0x')) {
     hex = hex.slice(2);
   }
 
-  // Ensure the hex string has an even length
   if (hex.length % 2 !== 0) {
     throw new Error('Invalid hex string. It must have an even length.');
   }
@@ -19,16 +20,15 @@ function hexToUint8Array(hex) {
   const uint8Array = new Uint8Array(byteLength);
 
   for (let i = 0; i < byteLength; i++) {
-    // Get two characters from the hex string
     const byteHex = hex.substr(i * 2, 2);
-    // Parse the two characters as a hexadecimal number
     uint8Array[i] = parseInt(byteHex, 16);
   }
 
   return uint8Array;
 }
 
-export class WalletProvider implements ProvidersInterface {
+@AuthProvider({ provider: 'WALLET' })
+export class WalletProvider extends AuthProviderAbstract {
   async generateLink(params: { publicKey: string }) {
     if (!params.publicKey) {
       return;

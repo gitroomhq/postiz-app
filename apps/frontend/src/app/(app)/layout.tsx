@@ -70,6 +70,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
           oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
+          mcpUrl={process.env.MCP_URL}
           dub={!!process.env.STRIPE_PUBLISHABLE_KEY}
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}

@@ -5,7 +5,7 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
-import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/providers.factory';
+import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import dayjs from 'dayjs';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
@@ -18,7 +18,8 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _providerManager: AuthProviderManager
   ) {}
   async canRegister(provider: string) {
     if (
@@ -136,7 +137,7 @@ export class AuthService {
     ip: string,
     userAgent: string
   ) {
-    const providerInstance = ProvidersFactory.loadProvider(provider);
+    const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
 
     if (!providerUser) {
@@ -173,6 +174,14 @@ export class AuthService {
     );
 
     await NewsletterService.register(providerUser.email);
+
+    try {
+      if (providerInstance?.postRegistration) {
+        await providerInstance.postRegistration(body.providerToken, create.id);
+      }
+    } catch (err) {
+      // Don't fail registration if postRegistration fails
+    }
 
     return create.users[0].user;
   }
@@ -277,16 +286,12 @@ export class AuthService {
   }
 
   oauthLink(provider: string, query?: any) {
-    const providerInstance = ProvidersFactory.loadProvider(
-      provider as Provider
-    );
+    const providerInstance = this._providerManager.getProvider(provider);
     return providerInstance.generateLink(query);
   }
 
   async checkExists(provider: string, code: string) {
-    const providerInstance = ProvidersFactory.loadProvider(
-      provider as Provider
-    );
+    const providerInstance = this._providerManager.getProvider(provider);
     const token = await providerInstance.getToken(code);
     const user = await providerInstance.getUser(token);
     if (!user) {

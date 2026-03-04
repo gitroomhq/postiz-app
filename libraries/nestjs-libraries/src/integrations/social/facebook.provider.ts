@@ -262,13 +262,64 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async pages(accessToken: string) {
-    const { data } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
-      )
-    ).json();
+    const seenIds = new Set<string>();
+    const allPages: any[] = [];
 
-    return data;
+    const fetchPaginated = async (startUrl: string) => {
+      let nextUrl: string | undefined = startUrl;
+      while (nextUrl) {
+        const response = await (await fetch(nextUrl)).json();
+        if (response.data) {
+          for (const page of response.data) {
+            if (!seenIds.has(page.id)) {
+              seenIds.add(page.id);
+              allPages.push(page);
+            }
+          }
+        }
+        nextUrl = response.paging?.next;
+      }
+    };
+
+    // Fetch pages the user explicitly shared during the OAuth dialog
+    await fetchPaginated(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+    );
+
+    // Also fetch pages via Business Manager API to discover pages
+    // not selected during the OAuth page selection step
+    try {
+      let bizUrl: string | undefined =
+        `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+
+      while (bizUrl) {
+        const bizResponse = await (await fetch(bizUrl)).json();
+        if (bizResponse.data) {
+          for (const business of bizResponse.data) {
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+          }
+        }
+        bizUrl = bizResponse.paging?.next;
+      }
+    } catch {
+      // Business Manager API not available for all users
+    }
+
+    return allPages;
   }
 
   async fetchPageInformation(accessToken: string, data: { page: string }) {
