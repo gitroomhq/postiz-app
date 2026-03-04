@@ -5,7 +5,7 @@ import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/s
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
-import { capitalize, groupBy } from 'lodash';
+import { groupBy } from 'lodash';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -21,9 +21,7 @@ const stripe = new Proxy({} as Stripe, {
           'Stripe is not configured. Add STRIPE_SECRET_KEY to ~/Library/Application Support/Postiz/postiz.env to enable billing.'
         );
       }
-      _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-04-10',
-      });
+      _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     }
     return (_stripe as any)[prop];
   },
@@ -115,17 +113,15 @@ export class StripeService {
   }
 
   async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const {
       uniqueId,
       billing,
       period,
-    }: {
+    } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
-    } = event.data.object.metadata;
+    };
 
     try {
       const check = await this.checkValidCard(event);
@@ -147,17 +143,15 @@ export class StripeService {
     );
   }
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const {
       uniqueId,
       billing,
       period,
-    }: {
+    } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
-    } = event.data.object.metadata;
+    };
 
     const check = await this.checkValidCard(event);
     if (!check) {
@@ -212,8 +206,7 @@ export class StripeService {
 
     const productsList = groupBy(
       products.data.map((p) => ({
-        // @ts-ignore
-        name: p.product?.name,
+        name: (p.product as Stripe.Product)?.name,
         recurring: p?.recurring?.interval!,
         price: p?.tiers?.[0]?.unit_amount! / 100,
       })),
@@ -284,19 +277,21 @@ export class StripeService {
     };
 
     try {
-      const price = await stripe.invoices.retrieveUpcoming({
+      const price = await stripe.invoices.createPreview({
         customer,
         subscription: currentUserSubscription?.data?.[0]?.id,
-        subscription_proration_behavior: 'create_prorations',
-        subscription_billing_cycle_anchor: 'now',
-        subscription_items: [
-          {
-            id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
-            price: findPrice?.id!,
-            quantity: 1,
-          },
-        ],
-        subscription_proration_date: proration_date,
+        subscription_details: {
+          proration_behavior: 'create_prorations',
+          billing_cycle_anchor: 'now',
+          items: [
+            {
+              id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
+              price: findPrice?.id!,
+              quantity: 1,
+            },
+          ],
+          proration_date: proration_date,
+        },
       });
 
       return {
@@ -325,21 +320,49 @@ export class StripeService {
         await stripe.subscriptions.list({
           customer,
           status: 'all',
+          expand: ['data.latest_invoice'],
         })
       ).data.filter((f) => f.status !== 'canceled'),
     };
 
-    const { cancel_at } = await stripe.subscriptions.update(
-      currentUserSubscription.data[0].id,
-      {
-        cancel_at_period_end:
-          !currentUserSubscription.data[0].cancel_at_period_end,
-        metadata: {
-          service: 'gitroom',
-          id,
-        },
-      }
-    );
+    const sub = currentUserSubscription.data[0];
+
+    // If the user is toggling back (un-cancelling), just remove the cancel
+    if (sub.cancel_at_period_end) {
+      const { cancel_at } = await stripe.subscriptions.update(sub.id, {
+        cancel_at_period_end: false,
+        metadata: { service: 'gitroom', id },
+      });
+
+      return {
+        id,
+        cancel_at: cancel_at ? new Date(cancel_at * 1000) : undefined,
+      };
+    }
+
+    // Check if the latest invoice has a failed payment
+    const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
+    const hasFailedPayment =
+      sub.status === 'past_due' ||
+      latestInvoice?.status === 'open' ||
+      latestInvoice?.status === 'uncollectible';
+
+    if (hasFailedPayment) {
+      // Payment already failed — cancel immediately and delete subscription
+      await stripe.subscriptions.cancel(sub.id);
+      await this._subscriptionService.deleteSubscription(customer);
+
+      return {
+        id,
+        cancel_at: new Date(),
+      };
+    }
+
+    // Payment succeeded — cancel at end of billing period
+    const { cancel_at } = await stripe.subscriptions.update(sub.id, {
+      cancel_at_period_end: true,
+      metadata: { service: 'gitroom', id },
+    });
 
     return {
       id,
@@ -374,11 +397,16 @@ export class StripeService {
       const now = Math.floor(Date.now() / 1000);
 
       for (const promoCode of promotionCodes.data) {
+        const coupon =
+          typeof promoCode.promotion.coupon === 'string'
+            ? null
+            : promoCode.promotion.coupon;
+
         // Check if it has autoapply metadata set to true (check both promo and coupon metadata)
         const autoApply = Object.assign(
           {},
           promoCode.metadata,
-          promoCode.coupon.metadata
+          coupon?.metadata
         )?.autoapply;
         if (autoApply !== 'true') continue;
 
@@ -386,8 +414,7 @@ export class StripeService {
         if (promoCode.expires_at && promoCode.expires_at < now) continue;
 
         // Check if the coupon has expired (redeem_by)
-        if (promoCode.coupon.redeem_by && promoCode.coupon.redeem_by < now)
-          continue;
+        if (coupon?.redeem_by && coupon.redeem_by < now) continue;
 
         // Check if max redemptions reached
         if (
@@ -416,15 +443,10 @@ export class StripeService {
     userId: string,
     allowTrial: boolean
   ) {
-    const stripeCustom = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      // @ts-ignore
-      apiVersion: '2025-03-31.basil',
-    });
-
     const user = await this._userService.getUserById(userId);
 
     try {
-      await stripeCustom.customers.update(customer, {
+      await stripe.customers.update(customer, {
         email: user.email,
         ...(body.dub
           ? {
@@ -444,9 +466,7 @@ export class StripeService {
     }
 
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
-    // @ts-ignore
-    const { client_secret } = await stripeCustom.checkout.sessions.create({
-      // @ts-ignore
+    const { client_secret } = await stripe.checkout.sessions.create({
       ui_mode: 'custom',
       customer,
       return_url:
@@ -818,8 +838,13 @@ export class StripeService {
 
   async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
     // get subscription from payment
+    const subscriptionId =
+      event.data.object.parent?.subscription_details?.subscription;
+    if (!subscriptionId) {
+      return { ok: true };
+    }
     const subscription = await stripe.subscriptions.retrieve(
-      event.data.object.subscription as string
+      typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
     );
 
     const { userId, ud } = subscription.metadata;

@@ -132,7 +132,7 @@ export class SubscriptionRepository {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'PRO',
+    billing: 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,
@@ -195,6 +195,18 @@ export class SubscriptionRepository {
         },
       });
     }
+  }
+
+  getSubscriptionByIdentifier(identifier: string) {
+    return this._subscription.model.subscription.findFirst({
+      where: {
+        identifier,
+        deletedAt: null,
+      },
+      include: {
+        organization: true,
+      },
+    });
   }
 
   getSubscription(organizationId: string) {

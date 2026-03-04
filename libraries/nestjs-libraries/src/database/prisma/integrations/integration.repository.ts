@@ -161,9 +161,22 @@ export class IntegrationRepository {
     });
 
     if (existing) {
-      await this._integration.model.integration.delete({
+      await this._posts.model.post.updateMany({
+        where: {
+          integrationId: id,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+
+      await this._integration.model.integration.update({
         where: {
           id,
+        },
+        data: {
+          internalId: `deleted_${params.internalId}_${makeId(10)}`,
+          deletedAt: new Date(),
         },
       });
     }

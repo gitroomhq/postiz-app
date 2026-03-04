@@ -56,7 +56,7 @@ export class SubscriptionService {
   async modifySubscription(
     customerId: string,
     totalChannels: number,
-    billing: 'FREE' | 'STANDARD' | 'PRO'
+    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'
   ) {
     if (!customerId) {
       return false;
@@ -121,7 +121,7 @@ export class SubscriptionService {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'PRO',
+    billing: 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,
@@ -152,6 +152,10 @@ export class SubscriptionService {
       code,
       org ? { id: org } : undefined
     );
+  }
+
+  getSubscriptionByIdentifier(identifier: string) {
+    return this._subscriptionRepository.getSubscriptionByIdentifier(identifier);
   }
 
   async getSubscription(organizationId: string) {

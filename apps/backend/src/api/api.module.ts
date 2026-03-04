@@ -33,6 +33,18 @@ import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.co
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
 import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
+import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
+import { ApprovedAppsController } from '@gitroom/backend/api/routes/approved-apps.controller';
+import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api/routes/oauth.controller';
+import { AppSumoController } from '@gitroom/backend/api/routes/appsumo.controller';
+import { AppSumoService } from '@gitroom/nestjs-libraries/services/appsumo.service';
+import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
+import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.provider';
+import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
+import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
+import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
+import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
+import { AppSumoProvider } from '@gitroom/backend/services/auth/providers/appsumo.provider';
 
 const authenticatedController = [
   UsersController,
@@ -49,22 +61,28 @@ const authenticatedController = [
   AutopostController,
   SetsController,
   ThirdPartyController,
+  OAuthAppController,
+  ApprovedAppsController,
+  OAuthAuthorizedController,
 ];
 @Module({
   imports: [UploadModule],
   controllers: [
     RootController,
     StripeController,
+    AppSumoController,
     AuthController,
     PublicController,
     MonitorController,
     EnterpriseController,
     NoAuthIntegrationsController,
+    OAuthController,
     ...authenticatedController,
   ],
   providers: [
     AuthService,
     StripeService,
+    AppSumoService,
     OpenaiService,
     ExtractContentService,
     AuthMiddleware,
@@ -75,6 +93,13 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
+    AuthProviderManager,
+    GithubProvider,
+    GoogleProvider,
+    FarcasterProvider,
+    WalletProvider,
+    OauthProvider,
+    AppSumoProvider,
   ],
   get exports() {
     return [...this.imports, ...this.providers];
