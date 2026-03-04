@@ -22,6 +22,7 @@ import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -197,14 +198,22 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
 };
 
 export const PropertiesContext = createContext({ properties: [] });
+export const AgentConfigContext = createContext({
+  showConfig: false,
+  setShowConfig: (_show: boolean) => {},
+});
+
 export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
+  const [showConfig, setShowConfig] = useState(false);
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <AgentList onChange={setProperties} />
-      <div className="bg-newBgColorInner flex flex-1">{children}</div>
-      <Threads />
+      <AgentConfigContext.Provider value={{ showConfig, setShowConfig }}>
+        <AgentList onChange={setProperties} />
+        <div className="bg-newBgColorInner flex flex-1">{children}</div>
+        <Threads />
+      </AgentConfigContext.Provider>
     </PropertiesContext.Provider>
   );
 };
@@ -214,6 +223,8 @@ const Threads: FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const t = useT();
+  const { desktopMode } = useVariables();
+  const { setShowConfig } = React.useContext(AgentConfigContext);
   const threads = useCallback(async () => {
     return (await fetch('/copilot/list')).json();
   }, []);
@@ -255,6 +266,19 @@ const Threads: FC = () => {
             </div>
           </Link>
         </div>
+        {desktopMode && (
+          <button
+            type="button"
+            onClick={() => setShowConfig(true)}
+            className="w-full mb-[15px] flex items-center gap-[8px] px-[12px] py-[10px] rounded-[8px] text-[14px] text-customColor18 hover:text-textColor hover:bg-newBgColor transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            {t('ai_settings', 'AI Settings')}
+          </button>
+        )}
         <div className="flex flex-col gap-[1px]">
           {data?.threads?.map((p: any) => (
             <Link

@@ -10,6 +10,7 @@ export const Toaster = () => {
   const [toasterType, setToasterType] = useState<'success' | 'warning' | ''>(
     ''
   );
+  const timerRef = { current: null as ReturnType<typeof setTimeout> | null };
   useEffect(() => {
     toaster.on(
       'show',
@@ -18,13 +19,15 @@ export const Toaster = () => {
         setToasterText(text);
         setToasterType(type || 'success');
         setShowToaster(true);
-        setTimeout(() => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
           setShowToaster(false);
-        }, 4200);
+        }, type === 'warning' ? 10000 : 4200);
       }
     );
     return () => {
       toaster.removeAllListeners();
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
   if (!showToaster) {
@@ -33,11 +36,11 @@ export const Toaster = () => {
   return (
     <div
       className={clsx(
-        'animate-fadeDown rounded-[8px] gap-[18px] flex items-center overflow-hidden bg-customColor8 p-[16px] min-w-[319px] fixed start-[50%] text-white z-[900] top-[32px] -translate-x-[50%] h-[56px]',
+        'animate-fadeDown rounded-[8px] gap-[14px] flex items-start overflow-hidden bg-customColor8 p-[16px] min-w-[319px] max-w-[560px] fixed start-[50%] text-white z-[900] top-[32px] -translate-x-[50%]',
         toasterType === 'success' ? 'shadow-greenToast' : 'shadow-yellowToast'
       )}
     >
-      <div>
+      <div className="shrink-0 mt-[2px]">
         {toasterType === 'success' ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -66,48 +69,16 @@ export const Toaster = () => {
           </svg>
         )}
       </div>
-      <div className="flex-1 text-textColor">{toasterText}</div>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="60"
-        height="56"
-        viewBox="0 0 60 56"
-        fill="none"
-        className="absolute top-0 start-0"
+      <div className="flex-1 text-textColor text-[14px] leading-[20px]">{toasterText}</div>
+      <button
+        type="button"
+        onClick={() => setShowToaster(false)}
+        className="shrink-0 mt-[2px] text-white/60 hover:text-white transition-colors"
       >
-        <g filter="url(#filter0_f_376_2968)">
-          <ellipse
-            cx="-12"
-            cy="28"
-            rx="28"
-            ry="13"
-            fill={toasterType === 'success' ? '#6CE9A6' : '#FEC84B'}
-          />
-        </g>
-        <defs>
-          <filter
-            id="filter0_f_376_2968"
-            x="-84"
-            y="-29"
-            width="144"
-            height="114"
-            filterUnits="userSpaceOnUse"
-            colorInterpolationFilters="sRGB"
-          >
-            <feFlood floodOpacity="0" result="BackgroundImageFix" />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="BackgroundImageFix"
-              result="shape"
-            />
-            <feGaussianBlur
-              stdDeviation="22"
-              result="effect1_foregroundBlur_376_2968"
-            />
-          </filter>
-        </defs>
-      </svg>
+        <svg width="14" height="14" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
+        </svg>
+      </button>
     </div>
   );
 };
