@@ -24,9 +24,24 @@ export class MediaService {
     private _videoManager: VideoManager
   ) {}
 
-  async deleteMedia(org: string, id: string) {
-    return this._mediaRepository.deleteMedia(org, id);
+ async deleteMedia(org: string, id: string) {
+  const media = await this._mediaRepository.getMediaById(id);
+
+  // Security: verify media belongs to this organization before deleting
+  if (!media || media.organizationId !== org) {
+    throw new HttpException('Media not found or access denied', 404);
   }
+
+  if (media?.path) {
+    try {
+      await this.storage.removeFile(media.path);
+    } catch (err) {
+      console.error('Failed to remove file from storage:', err);
+    }
+  }
+
+  return this._mediaRepository.deleteMedia(org, id);
+}
 
   getMediaById(id: string) {
     return this._mediaRepository.getMediaById(id);
