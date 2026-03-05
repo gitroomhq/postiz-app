@@ -10,8 +10,4 @@ export default withProvider({
   SettingsComponent: null,
   CustomPreviewComponent: undefined,
   dto: undefined,
-  checkValidity: async () => {
-    return true;
-  },
-  maximumCharacters: 4096,
 });

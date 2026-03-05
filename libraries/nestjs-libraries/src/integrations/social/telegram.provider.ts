@@ -24,6 +24,13 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   name = 'Telegram';
   isBetweenSteps = false;
   isWeb3 = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 10,
+    canMixMediaTypes: true,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   editor = 'html' as const;
   maxLength() {

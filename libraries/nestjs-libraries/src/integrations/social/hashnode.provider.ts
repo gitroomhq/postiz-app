@@ -18,6 +18,13 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'hashnode';
   name = 'Hashnode';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   editor = 'markdown' as const;
   maxLength() {

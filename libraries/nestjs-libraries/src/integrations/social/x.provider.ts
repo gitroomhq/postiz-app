@@ -27,6 +27,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 4,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =

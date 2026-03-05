@@ -23,6 +23,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   name = 'Tiktok';
   isBetweenSteps = false;
   convertToJPEG = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: true,
+    requiresVideo: false,
+  };
   scopes = [
     'video.list',
     'user.info.basic',

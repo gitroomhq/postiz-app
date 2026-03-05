@@ -10,6 +10,4 @@ export default withProvider({
   SettingsComponent: null,
   CustomPreviewComponent: undefined,
   dto: undefined,
-  checkValidity: undefined,
-  maximumCharacters: 500,
 });

@@ -22,6 +22,13 @@ export class WordpressProvider
   identifier = 'wordpress';
   name = 'WordPress';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'html' as const;
   scopes = [] as string[];
   override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits

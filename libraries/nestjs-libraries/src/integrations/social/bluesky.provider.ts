@@ -149,8 +149,16 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
   name = 'Bluesky';
-  toolTip = "We don’t currently support two-factor authentication. If it’s enabled on Bluesky, you’ll need to disable it."
+  toolTip = "We don't currently support two-factor authentication. If it's enabled on Bluesky, you'll need to disable it."
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 4,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+    maxImageSizeBytes: 976000,
+  };
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
   maxLength() {

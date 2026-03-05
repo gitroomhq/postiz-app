@@ -28,6 +28,4 @@ export default withProvider({
   SettingsComponent: FacebookSettings,
   CustomPreviewComponent: FacebookPreview,
   dto: FacebookDto,
-  checkValidity: undefined,
-  maximumCharacters: 63206,
 });
