@@ -3,6 +3,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  SocialProviderCapabilities,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
@@ -22,6 +23,14 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
+  capabilities: SocialProviderCapabilities = {
+    supportsThreads: false,
+    supportsPolling: false,
+    supportsMedia: true,
+    maxMediaCount: 1,
+    supportsComments: false,
+    supportsAnalytics: true,
+  };
   oneTimeToken = true;
 
   isBetweenSteps = false;

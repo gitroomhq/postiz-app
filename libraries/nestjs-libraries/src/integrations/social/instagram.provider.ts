@@ -4,6 +4,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  SocialProviderCapabilities,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -22,6 +23,14 @@ export class InstagramProvider
 {
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
+  capabilities: SocialProviderCapabilities = {
+    supportsThreads: false,
+    supportsPolling: false,
+    supportsMedia: true,
+    maxMediaCount: 10,
+    supportsComments: false,
+    supportsAnalytics: true,
+  };
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [

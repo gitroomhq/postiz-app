@@ -5,6 +5,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  SocialProviderCapabilities,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
@@ -26,6 +27,14 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
+  capabilities: SocialProviderCapabilities = {
+    supportsThreads: true,
+    supportsPolling: true,
+    supportsMedia: true,
+    maxMediaCount: 4,
+    supportsComments: true,
+    supportsAnalytics: true,
+  };
   isBetweenSteps = false;
   scopes = [] as string[];
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
