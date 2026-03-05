@@ -44,7 +44,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
-    nextUrl.href.indexOf('appsumo') === -1 &&
     nextUrl.pathname.startsWith('/integrations/social/') &&
     nextUrl.href.indexOf('state=login') === -1
   ) {
@@ -74,7 +73,7 @@ export async function middleware(request: NextRequest) {
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
   if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
-    const providers = ['google', 'appsumo', 'settings'];
+    const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex
       ? ''
