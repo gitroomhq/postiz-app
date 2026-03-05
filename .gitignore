@@ -4,6 +4,9 @@
 dist
 tmp
 
+# Local notes (planning docs, PR descriptions, scratch files)
+notes/
+
 # Desktop app - PGlite test artifacts (production data goes in ~/Library/Application Support/Postiz)
 pglite-tmp/
 /out-tsc
