@@ -977,6 +977,7 @@ const CalendarItem: FC<{
     showTime,
     missingRelease,
   } = props;
+  const [tagsExpanded, setTagsExpanded] = useState(false);
   const { disableXAnalytics } = useVariables();
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
@@ -1004,6 +1005,30 @@ const CalendarItem: FC<{
         opacity,
       }}
     >
+      {display === 'month' && post.tags.length > 0 && (
+        <div className="flex items-center gap-[2px] mb-[2px] flex-wrap">
+          {(tagsExpanded ? post.tags : post.tags.slice(0, 2)).map((p) => (
+            <span
+              key={p.tag.name}
+              className="text-white text-[9px] px-[4px] py-[1px] rounded-full leading-tight truncate max-w-[60px]"
+              style={{ backgroundColor: p.tag.color || '#8B5CF6' }}
+            >
+              {p.tag.name}
+            </span>
+          ))}
+          {post.tags.length > 2 && (
+            <span
+              className="text-textColor/60 text-[9px] px-[3px] py-[1px] rounded-full bg-newColColor leading-tight cursor-pointer hover:text-textColor"
+              onClick={(e) => {
+                e.stopPropagation();
+                setTagsExpanded(!tagsExpanded);
+              }}
+            >
+              {tagsExpanded ? '−' : `+${post.tags.length - 2}`}
+            </span>
+          )}
+        </div>
+      )}
       <div
         className={clsx(
           'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
@@ -1014,11 +1039,13 @@ const CalendarItem: FC<{
       >
         <div
           className={clsx(
-            post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
+            display === 'month' ? 'text-textColor' : (post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : ''),
             'group-hover:hidden cursor-pointer'
           )}
         >
-          {post.tags.map((p) => p.tag.name).join(', ')}
+          {display === 'month'
+            ? newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')
+            : post.tags.map((p) => p.tag.name).join(', ')}
         </div>
         <div
           className={clsx(
@@ -1102,7 +1129,7 @@ const CalendarItem: FC<{
               </div>
             </div>
         </div>
-        {showTime && (
+        {showTime && display !== 'month' && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
             {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
