@@ -52,6 +52,4 @@ export default withProvider({
   SettingsComponent: DevtoSettings,
   CustomPreviewComponent: undefined, // DevtoPreview,
   dto: DevToSettingsDto,
-  checkValidity: undefined,
-  maximumCharacters: 100000,
 });

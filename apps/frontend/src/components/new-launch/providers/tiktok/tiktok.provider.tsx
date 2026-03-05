@@ -318,5 +318,4 @@ export default withProvider({
     }
     return true;
   },
-  maximumCharacters: 2000,
 });

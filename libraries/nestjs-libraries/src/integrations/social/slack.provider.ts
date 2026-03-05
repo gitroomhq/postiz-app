@@ -16,6 +16,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'normal' as const;
   scopes = [
     'channels:read',
