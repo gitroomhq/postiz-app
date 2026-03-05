@@ -39,7 +39,7 @@
     "docker-build": "./var/docker/docker-build.sh",
     "docker-create": "./var/docker/docker-create.sh",
     "postinstall": "pnpm run prisma-generate",
-    "test": "jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
+    "test": "NODE_OPTIONS='--max-old-space-size=8192' jest --coverage --detectOpenHandles --reporters=default --reporters=jest-junit"
   },
   "dependencies": {
     "@ag-ui/mastra": "0.2.0",
@@ -321,7 +321,22 @@
       "next": "14.2.35"
     },
     "onlyBuiltDependencies": [
-      "bcrypt"
+      "bcrypt",
+      "@prisma/client",
+      "@prisma/engines",
+      "@swc/core",
+      "sharp",
+      "canvas",
+      "bufferutil",
+      "utf-8-validate",
+      "prisma",
+      "esbuild",
+      "@sentry/cli",
+      "@sentry-internal/node-cpu-profiler",
+      "@temporalio/core-bridge",
+      "@parcel/watcher",
+      "protobufjs",
+      "unrs-resolver"
     ]
   }
 }
