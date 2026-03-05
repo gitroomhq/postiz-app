@@ -28,6 +28,23 @@ async function getAudioDuration(buffer: Buffer): Promise<number> {
   return metadata.format.duration || 0;
 }
 
+
+function buildPublicUploadUrl(baseUrl: string | undefined, filePath: string) {
+  if (filePath.indexOf('http') > -1) {
+    return filePath;
+  }
+
+  const trimmedBaseUrl = (baseUrl || '').replace(/\/$/, '');
+  const uploadStaticDirectory = (
+    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY || ''
+  ).trim().replace(/^\/+|\/+$/g, '');
+  const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+
+  return uploadStaticDirectory
+    ? `${trimmedBaseUrl}/${uploadStaticDirectory}${normalizedPath}`
+    : `${trimmedBaseUrl}${normalizedPath}`;
+}
+
 class ImagesSlidesParams {
   @JSONSchema({
     description: 'Elevenlabs voice id, use a special tool to get it, this is a required filed',
@@ -128,13 +145,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
 
             res({
               len: await getAudioDuration(buffer),
-              url:
-                path.indexOf('http') === -1
-                  ? process.env.FRONTEND_URL +
-                    '/' +
-                    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                    path
-                  : path,
+              url: buildPublicUploadUrl(process.env.FRONTEND_URL, path),
             });
           })
         );
