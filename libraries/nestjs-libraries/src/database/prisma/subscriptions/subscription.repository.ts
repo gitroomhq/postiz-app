@@ -109,6 +109,14 @@ export class SubscriptionRepository {
     });
   }
 
+  async getSubscriptionByOrgId(orgId: string) {
+    return this._subscription.model.subscription.findFirst({
+      where: {
+        organizationId: orgId,
+      },
+    });
+  }
+
   async getSubscriptionByCustomerId(customerId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
