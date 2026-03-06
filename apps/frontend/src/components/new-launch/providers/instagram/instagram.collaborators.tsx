@@ -65,7 +65,7 @@ const InstagramCollaborators: FC<{
         />
       )}
 
-      {postCurrentType && (
+      {postCurrentType !== 'story' && (
         <InstagramCollaboratorsTags
           label="Tag users (max 20, images only) - accounts can't be private"
           maxTags={20}
