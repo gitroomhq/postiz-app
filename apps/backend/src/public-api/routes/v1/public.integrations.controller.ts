@@ -34,7 +34,10 @@ import axios from 'axios';
 import { Readable } from 'stream';
 import { lookup, extension } from 'mime-types';
 import * as Sentry from '@sentry/nestjs';
-import { socialIntegrationList, IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import {
+  socialIntegrationList,
+  IntegrationManager,
+} from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -85,7 +88,9 @@ export class PublicIntegrationsController {
     });
 
     const buffer = Buffer.from(response.data);
-    const responseMime = response.headers?.['content-type']?.split(';')[0]?.trim();
+    const responseMime = response.headers?.['content-type']
+      ?.split(';')[0]
+      ?.trim();
     const urlMime = lookup(body?.url?.split?.('?')?.[0]);
     const mimetype = (urlMime || responseMime || 'image/jpeg') as string;
     const ext = extension(mimetype) || 'jpg';
@@ -217,7 +222,9 @@ export class PublicIntegrationsController {
 
     if (integrationProvider.externalUrl) {
       throw new HttpException(
-        { msg: 'This integration requires an external URL and is not supported via the public API' },
+        {
+          msg: 'This integration requires an external URL and is not supported via the public API',
+        },
         400
       );
     }
@@ -300,11 +307,6 @@ export class PublicIntegrationsController {
       id
     );
 
-    const verified =
-      JSON.parse(loadIntegration.additionalSettings || '[]')?.find(
-        (p: any) => p?.title === 'Verified'
-      )?.value || false;
-
     const integration = socialIntegrationList.find(
       (p) => p.identifier === loadIntegration.providerIdentifier
     )!;
@@ -315,7 +317,10 @@ export class PublicIntegrationsController {
       };
     }
 
-    const maxLength = integration.maxLength(verified);
+    const { maxCharacters } = this._integrationManager.getComposerMetadata(
+      loadIntegration.providerIdentifier,
+      loadIntegration.additionalSettings
+    );
     const schemas = !integration.dto
       ? false
       : getValidationSchemas()[integration.dto.name];
@@ -325,7 +330,7 @@ export class PublicIntegrationsController {
     return {
       output: {
         rules: rules[integration.identifier],
-        maxLength,
+        maxLength: maxCharacters,
         settings: !schemas ? 'No additional settings required' : schemas,
         tools: tools[integration.identifier],
       },
