@@ -31,6 +31,21 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
+// Cookie security options based on deployment context. See auth.controller.ts for rationale.
+function cookieSecurityOptions(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: 'none' };
+}
+
+function shouldSendAuthHeader(): boolean {
+  return !!(process.env.DESKTOP_COOKIE_MODE || process.env.NOT_SECURED);
+}
+
 @ApiTags('User')
 @Controller('/user')
 export class UsersController {
@@ -104,17 +119,11 @@ export class UsersController {
 
     response.cookie('impersonate', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
 
-    if (process.env.NOT_SECURED) {
+    if (shouldSendAuthHeader()) {
       response.header('impersonate', id);
     }
   }
@@ -201,17 +210,11 @@ export class UsersController {
   ) {
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
 
-    if (process.env.NOT_SECURED) {
+    if (shouldSendAuthHeader()) {
       response.header('showorg', id);
     }
 
@@ -223,39 +226,21 @@ export class UsersController {
     response.header('logout', 'true');
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       maxAge: -1,
       expires: new Date(0),
     });
 
     response.cookie('showorg', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       maxAge: -1,
       expires: new Date(0),
     });
 
     response.cookie('impersonate', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       maxAge: -1,
       expires: new Date(0),
     });
@@ -287,13 +272,7 @@ export class UsersController {
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: 'none',
-            }
-          : {}),
+        ...cookieSecurityOptions(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
     }

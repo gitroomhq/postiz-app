@@ -43,6 +43,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
+    if (!process.env.SLACK_ID || !process.env.SLACK_SECRET) {
+      throw new Error(
+        'Slack requires SLACK_ID and SLACK_SECRET. ' +
+        'Create a free app at api.slack.com/apps, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(6);
 
     return {

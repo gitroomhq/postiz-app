@@ -18,6 +18,7 @@ import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/perm
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
+import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
@@ -28,13 +29,14 @@ async function start() {
         'Content-Type',
         'Authorization',
         'x-copilotkit-runtime-client-gql-version',
+        ...((process.env.NOT_SECURED || process.env.DESKTOP_COOKIE_MODE) ? ['auth', 'showorg', 'impersonate'] : []),
       ],
       exposedHeaders: [
         'reload',
         'onboarding',
         'activate',
         'x-copilotkit-runtime-client-gql-version',
-        ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
+        ...((process.env.NOT_SECURED || process.env.DESKTOP_COOKIE_MODE) ? ['auth', 'showorg', 'impersonate'] : []),
       ],
       origin: [
         process.env.FRONTEND_URL,
@@ -71,6 +73,26 @@ async function start() {
     checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
     Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
+
+    if (process.env.POSTIZ_MODE === 'desktop') {
+      // Run after listen so PGlite WASM has time to initialize on the first
+      // incoming HTTP request before we query the DB. Retry up to 5x.
+      (async () => {
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          try {
+            await new Promise((r) => setTimeout(r, attempt * 1000));
+            await app.get(AuthService).initDesktopAccount();
+            break;
+          } catch (e) {
+            Logger.warn(
+              `Desktop account init failed (attempt ${attempt}/5): ` +
+                (e instanceof Error ? e.message : String(e)),
+              'Desktop'
+            );
+          }
+        }
+      })();
+    }
   } catch (e) {
     Logger.error(`Backend failed to start on port ${port}`, e);
   }

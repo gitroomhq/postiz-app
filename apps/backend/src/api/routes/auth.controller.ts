@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
   Query,
   Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 
@@ -23,6 +25,28 @@ import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
 import * as Sentry from '@sentry/nestjs';
+
+// Cookie security options based on deployment context.
+// Desktop (DESKTOP_COOKIE_MODE): WKWebView rejects Secure cookies on http://
+// localhost (WebKit limitation). Use { secure:false, httpOnly:true, sameSite:lax }
+// to keep XSS protection (HttpOnly) and CSRF protection (Lax) without Secure.
+// Production (default): full Secure+HttpOnly+SameSite=None for HTTPS.
+// NOT_SECURED: legacy dev/HTTP mode — no flags, for backward compatibility.
+function cookieSecurityOptions(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: 'none' };
+}
+
+// Send JWT in response headers (in addition to cookie) so Next.js middleware
+// can read it as a fallback on HTTP deployments where cookies may not persist.
+function shouldSendAuthHeader(): boolean {
+  return !!(process.env.DESKTOP_COOKIE_MODE || process.env.NOT_SECURED);
+}
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -71,34 +95,22 @@ export class AuthController {
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: 'none',
-            }
-          : {}),
+        ...cookieSecurityOptions(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
 
-      if (process.env.NOT_SECURED) {
+      if (shouldSendAuthHeader()) {
         response.header('auth', jwt);
       }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
           domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          ...(!process.env.NOT_SECURED
-            ? {
-                secure: true,
-                httpOnly: true,
-                sameSite: 'none',
-              }
-            : {}),
+          ...cookieSecurityOptions(),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         });
 
-        if (process.env.NOT_SECURED) {
+        if (shouldSendAuthHeader()) {
           response.header('showorg', addedOrg.organizationId);
         }
       }
@@ -136,34 +148,22 @@ export class AuthController {
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: 'none',
-            }
-          : {}),
+        ...cookieSecurityOptions(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
 
-      if (process.env.NOT_SECURED) {
+      if (shouldSendAuthHeader()) {
         response.header('auth', jwt);
       }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
           domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          ...(!process.env.NOT_SECURED
-            ? {
-                secure: true,
-                httpOnly: true,
-                sameSite: 'none',
-              }
-            : {}),
+          ...cookieSecurityOptions(),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         });
 
-        if (process.env.NOT_SECURED) {
+        if (shouldSendAuthHeader()) {
           response.header('showorg', addedOrg.organizationId);
         }
       }
@@ -180,15 +180,34 @@ export class AuthController {
   @Post('/forgot')
   async forgot(@Body() body: ForgotPasswordDto) {
     try {
-      await this._authService.forgot(body.email);
-      return {
-        forgot: true,
-      };
+      const result = await this._authService.forgot(body.email);
+      return { forgot: true, ...result };
     } catch (e) {
-      return {
-        forgot: false,
-      };
+      return { forgot: false };
     }
+  }
+
+  @Post('/desktop-token')
+  async desktopToken(@Body('token') token: string) {
+    if (process.env.POSTIZ_MODE !== 'desktop') {
+      throw new ForbiddenException();
+    }
+    try {
+      return await this._authService.authenticateWithDesktopToken(token);
+    } catch (e) {
+      throw new UnauthorizedException();
+    }
+  }
+
+  @Get('/providers')
+  getAvailableProviders() {
+    return {
+      local: true,
+      google: !!(process.env.YOUTUBE_CLIENT_ID && process.env.YOUTUBE_CLIENT_SECRET),
+      github: !!(process.env.GITHUB_APP_CLIENT_ID && process.env.GITHUB_APP_CLIENT_SECRET),
+      genericOauth: !!process.env.POSTIZ_GENERIC_OAUTH,
+      neynar: !!process.env.NEYNAR_CLIENT_ID,
+    };
   }
 
   @Post('/forgot-return')
@@ -217,17 +236,11 @@ export class AuthController {
 
     response.cookie('auth', activate, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
 
-    if (process.env.NOT_SECURED) {
+    if (shouldSendAuthHeader()) {
       response.header('auth', activate);
     }
 
@@ -265,17 +278,11 @@ export class AuthController {
 
     response.cookie('auth', jwt, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
+      ...cookieSecurityOptions(),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
     });
 
-    if (process.env.NOT_SECURED) {
+    if (shouldSendAuthHeader()) {
       response.header('auth', jwt);
     }
 

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Postiz",
+  "identifier": "com.postiz.desktop",
+  "version": "2.12.1",
+  "build": {
+    "devUrl": "http://localhost:4200",
+    "frontendDist": "../dist",
+    "beforeBuildCommand": "",
+    "beforeDevCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Postiz - Social Media Scheduling",
+        "width": 1480,
+        "height": 1000,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:*; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "externalBin": [
+      "binaries/node",
+      "binaries/temporal"
+    ],
+    "resources": [
+      "resources/node_modules/**/*",
+      "resources/backend/**/*",
+      "resources/orchestrator/**/*",
+      "resources/frontend/**/*"
+    ],
+    "icon": [
+      "icons/Postiz.iconset/icon_32x32.png",
+      "icons/Postiz.iconset/icon_128x128.png",
+      "icons/Postiz.iconset/icon_256x256.png",
+      "icons/Postiz.iconset/icon_512x512.png",
+      "icons/icon.icns"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "frameworks": [],
+      "entitlements": null,
+      "signingIdentity": null
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "windows": {
+      "wix": null,
+      "nsis": null
+    }
+  }
+}

@@ -5,11 +5,15 @@ import {
   AuthProviderAbstract,
 } from '@gitroom/backend/services/auth/providers.interface';
 
-const clientAndYoutube = () => {
+// Login redirect URI: must match the frontend route that handles ?provider=GOOGLE&code=XXX
+const googleLoginRedirectUri = () =>
+  `${process.env.FRONTEND_URL}/auth?provider=GOOGLE`;
+
+const clientAndYoutube = (redirectUri?: string) => {
   const client = new google.auth.OAuth2({
     clientId: process.env.YOUTUBE_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
-    redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
+    redirectUri: redirectUri ?? `${process.env.FRONTEND_URL}/integrations/social/youtube`,
   });
 
   const youtube = (newClient: OAuth2Client) =>
@@ -36,13 +40,15 @@ const clientAndYoutube = () => {
 @AuthProvider({ provider: 'GOOGLE' })
 export class GoogleProvider extends AuthProviderAbstract {
   generateLink() {
-    const state = 'login';
-    const { client } = clientAndYoutube();
+    if (!process.env.YOUTUBE_CLIENT_ID || !process.env.YOUTUBE_CLIENT_SECRET) {
+      throw new Error('Google credentials not configured');
+    }
+    const loginRedirectUri = googleLoginRedirectUri();
+    const { client } = clientAndYoutube(loginRedirectUri);
     return client.generateAuthUrl({
       access_type: 'online',
       prompt: 'consent',
-      state,
-      redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
+      state: 'login',
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
@@ -51,7 +57,7 @@ export class GoogleProvider extends AuthProviderAbstract {
   }
 
   async getToken(code: string) {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, oauth2 } = clientAndYoutube(googleLoginRedirectUri());
     const { tokens } = await client.getToken(code);
     return tokens.access_token;
   }

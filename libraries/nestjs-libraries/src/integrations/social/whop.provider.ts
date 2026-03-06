@@ -99,6 +99,13 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.WHOP_CLIENT_ID) {
+      throw new Error(
+        'Whop requires WHOP_CLIENT_ID. ' +
+        'Get this from your Whop developer settings at whop.com, then add it to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(6);
     const codeVerifier = randomBytes(32).toString('base64url');
     const codeChallenge = this.generateCodeChallenge(codeVerifier);

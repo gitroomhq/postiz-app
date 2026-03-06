@@ -54,6 +54,13 @@ export class TwitchProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+      throw new Error(
+        'Twitch requires TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET. ' +
+        'Create a free app at dev.twitch.tv/console, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(32);
 
     const redirectUri = `${process.env.FRONTEND_URL}/integrations/social/twitch`;

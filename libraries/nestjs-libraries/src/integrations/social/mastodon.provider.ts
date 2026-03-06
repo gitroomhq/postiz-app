@@ -14,7 +14,9 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
-  scopes = ['write:statuses', 'profile', 'write:media'];
+  // 'profile' is a Mastodon 4.3+ only scope and not universally supported.
+  // 'read:accounts' is the standard cross-version scope for reading profile info.
+  scopes = ['write:statuses', 'read:accounts', 'write:media'];
   editor = 'normal' as const;
   maxLength() {
     return 500;
@@ -43,11 +45,20 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.MASTODON_CLIENT_ID || !process.env.MASTODON_CLIENT_SECRET) {
+      throw new Error(
+        'Mastodon requires MASTODON_CLIENT_ID and MASTODON_CLIENT_SECRET. ' +
+        'Register an app on your Mastodon instance (Settings > Development > New Application), then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? SocialAbstract.desktopEnvHint
+          : '.env file or server environment.')
+      );
+    }
     const state = makeId(6);
     const url = this.generateUrlDynamic(
       process.env.MASTODON_URL || 'https://mastodon.social',
       state,
-      process.env.MASTODON_CLIENT_ID!,
+      process.env.MASTODON_CLIENT_ID,
       process.env.FRONTEND_URL!
     );
     return {

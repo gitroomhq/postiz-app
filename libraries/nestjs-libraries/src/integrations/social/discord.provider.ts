@@ -60,6 +60,13 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
+    if (!process.env.DISCORD_CLIENT_ID || !process.env.DISCORD_CLIENT_SECRET) {
+      throw new Error(
+        'Discord requires DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET. ' +
+        'Create a free app at discord.com/developers, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(6);
     return {
       url: `https://discord.com/oauth2/authorize?client_id=${

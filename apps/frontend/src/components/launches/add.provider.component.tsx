@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -24,15 +24,20 @@ const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
   const fetch = useFetch();
+  const toaster = useToaster();
   return useCallback(async () => {
-    const data = await (await fetch('/integrations')).json();
-    modal.openModal({
-      title: 'Add Channel',
-      withCloseButton: true,
-      children: (
-        <AddProviderComponent invite={!!invite} update={update} {...data} />
-      ),
-    });
+    try {
+      const data = await (await fetch('/integrations')).json();
+      modal.openModal({
+        title: 'Add Channel',
+        withCloseButton: true,
+        children: (
+          <AddProviderComponent invite={!!invite} update={update} {...data} />
+        ),
+      });
+    } catch {
+      toaster.show('Could not load channels. Is the backend running?', 'warning');
+    }
   }, []);
 };
 export const AddProviderButton: FC<{
@@ -354,6 +359,131 @@ const ChromeExtensionWarning: FC<{
   );
 };
 
+// Shown in desktop mode while user completes OAuth in system browser.
+// Polls /integrations/list every 3s to auto-detect when the new integration appears.
+const OAuthWaitingModal: FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const fetch = useFetch();
+  const initialCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await fetch('/integrations/list');
+        const data = await res.json();
+        const count = data?.integrations?.length ?? 0;
+        if (initialCountRef.current === null) {
+          initialCountRef.current = count;
+        } else if (count > initialCountRef.current) {
+          if (active) onComplete();
+          return;
+        }
+      } catch {}
+      if (active) setTimeout(poll, 3000);
+    };
+    poll();
+    return () => { active = false; };
+  }, [fetch, onComplete]);
+
+  return (
+    <div className="flex flex-col items-center gap-[16px] p-[24px]">
+      <div className="text-[16px] font-[500] text-textColor">
+        Complete authorization in your browser
+      </div>
+      <div className="text-[13px] text-customColor18 text-center">
+        This dialog will close automatically when the connection is complete.
+      </div>
+      <button
+        type="button"
+        onClick={onComplete}
+        className="mt-[12px] px-[16px] py-[8px] text-[13px] text-customColor18 hover:text-textColor border border-fifth rounded-[6px]"
+      >
+        Done
+      </button>
+    </div>
+  );
+};
+
+// Desktop-only: shown when a provider requires API credentials that aren't configured.
+// Parses the backend error message to show structured setup instructions.
+const ProviderSetupError: FC<{
+  message: string;
+  identifier: string;
+  onClose: () => void;
+}> = ({ message, identifier, onClose }) => {
+  // Cross-platform config file path (detected at runtime in the user's browser/desktop)
+  const envFilePath = useMemo(() => {
+    const platform = (navigator as any).userAgentData?.platform || navigator.platform || '';
+    if (/mac|darwin/i.test(platform)) return '~/Library/Application Support/Postiz/postiz.env';
+    if (/win/i.test(platform)) return '%APPDATA%\\Postiz\\postiz.env';
+    return '~/.local/share/postiz/postiz.env';
+  }, []);
+
+  // Extract env var names from the message (e.g., "X_API_KEY and X_API_SECRET")
+  const envVarMatch = message.match(/requires? ([A-Z_]+(?: and [A-Z_]+)*)/);
+  const envVars = envVarMatch ? envVarMatch[1] : null;
+
+  // Extract developer portal URL from the message
+  const urlMatch = message.match(/(?:at|from) ([a-z]+\.[a-z.]+(?:\/[a-z._-]*)*)/i);
+  const devPortalHint = urlMatch ? urlMatch[1] : null;
+
+  // Check for HTTPS warning
+  const httpsWarning = message.includes('HTTPS');
+
+  return (
+    <div className="flex flex-col gap-[16px]">
+      <div className="text-[15px] text-textColor">
+        To connect <span className="font-[600]">{capitalize(identifier)}</span>, you need to add API credentials.
+      </div>
+
+      <div className="flex flex-col gap-[8px]">
+        <div className="text-[13px] text-textColor font-[500]">Steps:</div>
+        <ol className="list-decimal list-inside text-[13px] text-customColor18 flex flex-col gap-[6px]">
+          {devPortalHint && (
+            <li>
+              Go to{' '}
+              <button
+                type="button"
+                onClick={() => window.open(`https://${devPortalHint}`, '_blank')}
+                className="text-textColor underline hover:opacity-80"
+              >
+                {devPortalHint}
+              </button>
+              {' '}and create an app
+            </li>
+          )}
+          {envVars && (
+            <li>
+              Copy your credentials: <span className="font-mono text-textColor">{envVars}</span>
+            </li>
+          )}
+          <li>
+            Add them to your config file:{' '}
+            <span className="font-mono text-[12px] text-textColor break-all">{envFilePath}</span>
+          </li>
+          <li>Restart Postiz</li>
+        </ol>
+      </div>
+
+      {httpsWarning && (
+        <div className="text-[12px] text-yellow-500 bg-yellow-500/10 rounded-[6px] p-[10px]">
+          Note: {capitalize(identifier)} requires HTTPS callbacks and cannot work directly with localhost. You would need an HTTPS tunnel like ngrok.
+        </div>
+      )}
+
+      <div className="flex gap-[8px] mt-[4px]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 px-[16px] py-[8px] text-[13px] text-textColor border border-fifth rounded-[6px] hover:bg-fifth/20"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
@@ -382,7 +512,7 @@ export const AddProviderComponent: FC<{
   onboarding?: boolean;
 }> = (props) => {
   const { update, social, article, onboarding } = props;
-  const { isGeneral, extensionId } = useVariables();
+  const { isGeneral, extensionId, desktopMode } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
   const fetch = useFetch();
@@ -441,19 +571,33 @@ export const AddProviderComponent: FC<{
           ]
             .filter(Boolean)
             .join('&');
-          const { url, err } = await (
+          const { url, err, message: errMessage } = await (
             await fetch(
               `/integrations/social/${identifier}${params ? `?${params}` : ''}`
             )
           ).json();
           if (err) {
-            toaster.show(
-              t(
-                'could_not_connect_to_platform',
-                'Could not connect to the platform'
-              ),
-              'warning'
-            );
+            if (errMessage && desktopMode) {
+              modal.openModal({
+                title: `Setup Required — ${capitalize(identifier)}`,
+                withCloseButton: true,
+                children: (
+                  <ProviderSetupError
+                    message={errMessage}
+                    identifier={identifier}
+                    onClose={() => modal.closeAll()}
+                  />
+                ),
+              });
+            } else {
+              toaster.show(
+                errMessage || t(
+                  'could_not_connect_to_platform',
+                  'Could not connect to the platform. Ask your administrator to configure API credentials for this provider.'
+                ),
+                'warning'
+              );
+            }
             return;
           }
 
@@ -467,6 +611,27 @@ export const AddProviderComponent: FC<{
             return;
           }
 
+          if (desktopMode) {
+            // RFC 8252: OAuth for native apps must use system browser
+            window.open(url, '_blank');
+            modal.openModal({
+              title: t('connect_account', 'Connect Account'),
+              withCloseButton: true,
+              classNames: {
+                modal: 'bg-transparent text-textColor',
+              },
+              children: (
+                <OAuthWaitingModal
+                  onComplete={() => {
+                    modal.closeAll();
+                    if (update) update();
+                    router.refresh();
+                  }}
+                />
+              ),
+            });
+            return;
+          }
           window.location.href = url;
         };
         if (isWeb3) {
@@ -604,7 +769,7 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    [onboarding]
+    [onboarding, desktopMode]
   );
 
   const t = useT();

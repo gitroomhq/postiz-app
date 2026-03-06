@@ -232,8 +232,8 @@ export class IntegrationsController {
       );
 
       return { url };
-    } catch (err) {
-      return { err: true };
+    } catch (err: any) {
+      return { err: true, message: err?.message || 'Could not connect to the platform' };
     }
   }
 

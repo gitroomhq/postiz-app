@@ -64,14 +64,17 @@ export class ConfigurationChecker {
 
   checkRedis() {
     if (!this.cfg.REDIS_URL) {
-      this.issues.push('REDIS_URL not set');
+      // Redis is optional - MockRedis fallback exists in redis.service.ts
+      // Desktop mode uses in-memory cache which is suitable for single-user
+      console.log('ℹ️  REDIS_URL not set - using in-memory cache (suitable for desktop/dev)');
+      return;
     }
 
     try {
       const redisUrl = new URL(this.cfg.REDIS_URL);
 
-      if (redisUrl.protocol !== 'redis:') {
-        this.issues.push('REDIS_URL must start with redis://');
+      if (redisUrl.protocol !== 'redis:' && redisUrl.protocol !== 'rediss:') {
+        this.issues.push('REDIS_URL must start with redis:// or rediss://');
       }
     } catch (error) {
       this.issues.push('REDIS_URL is not a valid URL');

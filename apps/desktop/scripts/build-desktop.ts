@@ -1,0 +1,1072 @@
+#!/usr/bin/env ts-node
+/**
+ * Postiz Desktop App - Build Script
+ *
+ * Single command to build the complete macOS desktop app:
+ *   pnpm run desktop:build
+ *
+ * Or from this directory:
+ *   npx ts-node scripts/build-desktop.ts           # Prepare resources only
+ *   npx ts-node scripts/build-desktop.ts --full    # Full build + package
+ *
+ * This script:
+ * 1. Downloads Node.js binary for the target platform (sidecar)
+ * 2. Downloads Temporal CLI (via download-temporal.sh)
+ * 3. Builds backend, frontend, and orchestrator (if --full)
+ * 4. Uses pnpm deploy to create minimal production deployments
+ * 5. Builds Tauri app and creates DMG (if --full)
+ *
+ * Configuration:
+ * - POSTIZ_SKIP_DEPS=1    Skip pnpm install
+ * - POSTIZ_SKIP_BUILD=1   Skip app building (use existing dist/)
+ *
+ * Prerequisites:
+ * - Rust toolchain (rustup)
+ * - Node.js 22+
+ * - pnpm
+ */
+
+import { spawnSync } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as https from 'https';
+import * as crypto from 'crypto';
+
+const NODE_VERSION = '22.13.1'; // LTS version
+
+// Node.js download URLs per platform
+const NODE_DOWNLOADS: Record<string, { url: string; dirname: string }> = {
+  'aarch64-apple-darwin': {
+    url: `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-arm64.tar.gz`,
+    dirname: `node-v${NODE_VERSION}-darwin-arm64`,
+  },
+  'x86_64-apple-darwin': {
+    url: `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-x64.tar.gz`,
+    dirname: `node-v${NODE_VERSION}-darwin-x64`,
+  },
+  'x86_64-unknown-linux-gnu': {
+    url: `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz`,
+    dirname: `node-v${NODE_VERSION}-linux-x64`,
+  },
+  'aarch64-unknown-linux-gnu': {
+    url: `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-arm64.tar.gz`,
+    dirname: `node-v${NODE_VERSION}-linux-arm64`,
+  },
+  'x86_64-pc-windows-msvc': {
+    url: `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-win-x64.zip`,
+    dirname: `node-v${NODE_VERSION}-win-x64`,
+  },
+};
+
+function detectTargetTriple(): string {
+  const platform = process.platform;
+  const arch = process.arch;
+
+  if (platform === 'darwin' && arch === 'arm64') return 'aarch64-apple-darwin';
+  if (platform === 'darwin' && arch === 'x64') return 'x86_64-apple-darwin';
+  if (platform === 'linux' && arch === 'x64') return 'x86_64-unknown-linux-gnu';
+  if (platform === 'linux' && arch === 'arm64') return 'aarch64-unknown-linux-gnu';
+  if (platform === 'win32' && arch === 'x64') return 'x86_64-pc-windows-msvc';
+
+  throw new Error(`Unsupported platform: ${platform}-${arch}`);
+}
+
+const ROOT_DIR = path.resolve(__dirname, '..', '..', '..');
+const DESKTOP_DIR = path.resolve(__dirname, '..');
+const BINARIES_DIR = path.join(DESKTOP_DIR, 'src-tauri', 'binaries');
+const RESOURCES_DIR = path.join(DESKTOP_DIR, 'src-tauri', 'resources');
+const CACHE_DIR = path.join(ROOT_DIR, '.cache');
+const SHARED_NODE_MODULES_DIR = path.join(RESOURCES_DIR, 'node_modules');
+
+function ensureDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+async function downloadFile(url: string, dest: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(url, (response) => {
+      if (response.statusCode === 302 || response.statusCode === 301) {
+        https.get(response.headers.location!, (redirectResponse) => {
+          redirectResponse.pipe(file);
+          file.on('finish', () => { file.close(); resolve(); });
+        }).on('error', reject);
+      } else {
+        response.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+      }
+    }).on('error', reject);
+  });
+}
+
+async function downloadNodeBinary(targetTriple: string): Promise<void> {
+  const nodeInfo = NODE_DOWNLOADS[targetTriple];
+  if (!nodeInfo) {
+    throw new Error(`No Node.js download for: ${targetTriple}`);
+  }
+
+  ensureDir(CACHE_DIR);
+  ensureDir(BINARIES_DIR);
+
+  const archivePath = path.join(CACHE_DIR, path.basename(nodeInfo.url));
+  const extractDir = path.join(CACHE_DIR, nodeInfo.dirname);
+  const isWindows = targetTriple.includes('windows');
+  const nodeSrc = isWindows
+    ? path.join(extractDir, 'node.exe')
+    : path.join(extractDir, 'bin', 'node');
+  const nodeDest = path.join(BINARIES_DIR, `node-${targetTriple}${isWindows ? '.exe' : ''}`);
+
+  // Check if already exists
+  if (fs.existsSync(nodeDest)) {
+    console.log(`✓ Node.js binary exists: ${nodeDest}`);
+    return;
+  }
+
+  // Download if needed
+  if (!fs.existsSync(archivePath)) {
+    console.log(`Downloading Node.js v${NODE_VERSION}...`);
+    await downloadFile(nodeInfo.url, archivePath);
+  }
+
+  // Extract if needed
+  if (!fs.existsSync(nodeSrc)) {
+    console.log('Extracting Node.js...');
+    if (archivePath.endsWith('.tar.gz')) {
+      spawnSync('tar', ['-xzf', archivePath, '-C', CACHE_DIR], { stdio: 'inherit' });
+    } else {
+      spawnSync('unzip', ['-q', '-o', archivePath, '-d', CACHE_DIR], { stdio: 'inherit' });
+    }
+  }
+
+  // Copy node binary
+  console.log(`Copying Node.js to: ${nodeDest}`);
+  fs.copyFileSync(nodeSrc, nodeDest);
+  fs.chmodSync(nodeDest, 0o755);
+  console.log(`✓ Node.js binary ready`);
+}
+
+function copyDirSync(src: string, dest: string): void {
+  if (!fs.existsSync(src)) return;
+  ensureDir(dest);
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else if (entry.isSymbolicLink()) {
+      // Skip symlinks (e.g., .bin directory entries) to avoid broken references
+      continue;
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function getDirSize(dir: string): string {
+  const result = spawnSync('du', ['-sh', dir], { encoding: 'utf-8' });
+  if (result.status === 0 && result.stdout) {
+    return result.stdout.split('\t')[0].trim();
+  }
+  return 'N/A';
+}
+
+/**
+ * Get directory size in bytes for validation
+ */
+function getDirSizeBytes(dir: string): number {
+  const result = spawnSync('du', ['-sk', dir], { encoding: 'utf-8' });
+  if (result.status === 0 && result.stdout) {
+    return parseInt(result.stdout.split('\t')[0]) * 1024; // Convert KB to bytes
+  }
+  return 0;
+}
+
+// =============================================================================
+// Build Validation & Verification
+// =============================================================================
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Clean all resources directory at start of build
+ */
+function cleanAllResources(): void {
+  console.log('\n🧹 Cleaning previous resources...');
+  const dirs = ['backend', 'orchestrator', 'frontend', 'node_modules'];
+  let cleaned = false;
+  for (const dir of dirs) {
+    const fullPath = path.join(RESOURCES_DIR, dir);
+    if (fs.existsSync(fullPath)) {
+      // Use shell rm -rf because fs.rmSync can fail with ENOTEMPTY on macOS
+      // when the directory contains deep pnpm symlink trees in node_modules.
+      const result = spawnSync('rm', ['-rf', fullPath], { stdio: 'inherit' });
+      if (result.status !== 0) {
+        throw new Error(`Failed to remove ${fullPath}: exit code ${result.status}`);
+      }
+      console.log(`  ✓ Removed ${dir}/`);
+      cleaned = true;
+    }
+  }
+  if (!cleaned) {
+    console.log('  (no previous resources to clean)');
+  }
+}
+
+/**
+ * Validate source files exist before build
+ */
+function validateSourceFiles(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const requiredFiles = [
+    { path: 'apps/backend/dist/apps/backend/src/main.js', desc: 'Backend entry' },
+    { path: 'apps/orchestrator/dist/apps/orchestrator/src/main.js', desc: 'Orchestrator entry' },
+    { path: 'apps/frontend/.next/standalone/apps/frontend/server.js', desc: 'Frontend entry' },
+    { path: 'apps/frontend/.next/static', desc: 'Frontend static assets', isDir: true },
+    { path: 'node_modules/.prisma/client', desc: 'Prisma generated client', isDir: true },
+    { path: 'libraries/nestjs-libraries/src/database/prisma/schema.prisma', desc: 'Prisma schema' },
+  ];
+
+  for (const file of requiredFiles) {
+    const fullPath = path.join(ROOT_DIR, file.path);
+    if (!fs.existsSync(fullPath)) {
+      errors.push(`Missing ${file.desc}: ${file.path}`);
+    }
+  }
+
+  // Validate frontend standalone size (should be >100MB with all deps when DESKTOP_BUILD=1)
+  const standalonePath = path.join(ROOT_DIR, 'apps/frontend/.next/standalone');
+  if (fs.existsSync(standalonePath)) {
+    const size = getDirSizeBytes(standalonePath);
+    const sizeMB = size / 1024 / 1024;
+    if (sizeMB < 50) {
+      warnings.push(`Frontend standalone smaller than expected (${sizeMB.toFixed(0)}MB) - verify DESKTOP_BUILD=1 was set`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Verify build artifacts after resource preparation
+ */
+function verifyBuildArtifacts(): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const requiredArtifacts = [
+    { path: 'backend/dist/apps/backend/src/main.js', minSize: 500, desc: 'Backend entry' },
+    { path: 'backend/prisma/schema.sql', minSize: 500, desc: 'PGlite schema SQL (for desktop init)' },
+    { path: 'orchestrator/dist/apps/orchestrator/src/main.js', minSize: 500, desc: 'Orchestrator entry' },
+    { path: 'node_modules/.prisma/client/index.js', minSize: 1000, desc: 'Shared Prisma client' },
+    { path: 'frontend/standalone/apps/frontend/server.js', minSize: 500, desc: 'Frontend entry' },
+    { path: 'frontend/standalone/apps/frontend/.next/static', isDir: true, desc: 'Frontend static assets' },
+  ];
+
+  for (const artifact of requiredArtifacts) {
+    const fullPath = path.join(RESOURCES_DIR, artifact.path);
+    if (!fs.existsSync(fullPath)) {
+      errors.push(`Missing artifact: ${artifact.path} (${artifact.desc})`);
+    } else if (!artifact.isDir && artifact.minSize) {
+      const stat = fs.statSync(fullPath);
+      if (stat.size < artifact.minSize) {
+        errors.push(`Artifact too small: ${artifact.path} (${stat.size} bytes, expected >${artifact.minSize})`);
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Generate SHA256 checksums for critical files
+ */
+function generateChecksums(): Map<string, string> {
+  const checksums = new Map<string, string>();
+
+  const criticalFiles = [
+    'backend/dist/apps/backend/src/main.js',
+    'orchestrator/dist/apps/orchestrator/src/main.js',
+    'frontend/standalone/apps/frontend/server.js',
+  ];
+
+  for (const file of criticalFiles) {
+    const fullPath = path.join(RESOURCES_DIR, file);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath);
+      const hash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 12);
+      checksums.set(file, hash);
+    }
+  }
+
+  return checksums;
+}
+
+/**
+ * Write build manifest with checksums and metadata
+ */
+function writeBuildManifest(): void {
+  const checksums = generateChecksums();
+
+  const manifest = {
+    buildTime: new Date().toISOString(),
+    nodeVersion: NODE_VERSION,
+    platform: process.platform,
+    arch: process.arch,
+    checksums: Object.fromEntries(checksums),
+    sizes: {
+      backend: getDirSize(path.join(RESOURCES_DIR, 'backend')),
+      orchestrator: getDirSize(path.join(RESOURCES_DIR, 'orchestrator')),
+      frontend: getDirSize(path.join(RESOURCES_DIR, 'frontend')),
+      sharedNodeModules: getDirSize(SHARED_NODE_MODULES_DIR),
+    },
+  };
+
+  const manifestPath = path.join(RESOURCES_DIR, 'build-manifest.json');
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log(`  ✓ Build manifest written to ${manifestPath}`);
+}
+
+/**
+ * Packages that are dev-only or not needed at runtime.
+ * These get pulled in via pnpm workspace hoisting but aren't actually used.
+ * NOTE: Keep webpack and webpack-cli - needed by @temporalio/worker for bundling workflows
+ */
+const PACKAGES_TO_PRUNE = [
+  // Build tools (not needed at runtime)
+  // NOTE: webpack/webpack-cli are NOT pruned - needed by @temporalio/worker at runtime
+  'typescript', '@types', 'ts-node', 'ts-loader',
+  'webpack-dev-server', 'webpack-merge',
+  'fork-ts-checker-webpack-plugin', 'terser-webpack-plugin',
+  'esbuild', '@esbuild', 'rollup', '@rollup',
+  '@swc', 'swc-loader',
+  '@angular-devkit', '@angular', 'angular',
+
+  // Testing (not needed at runtime)
+  'vitest', '@vitest', 'jest', '@jest', 'mocha', 'chai',
+  'cypress', 'playwright', '@playwright',
+  'happy-dom', 'jsdom', '@testing-library',
+
+  // Linting (not needed at runtime)
+  'eslint', '@eslint', 'prettier', '@prettier',
+  'stylelint', '@stylelint',
+
+  // Frontend-only packages (not needed in backend)
+  'next', '@next',
+  '@blueprintjs',
+  'react-native', '@react-native', 'hermes-compiler', 'metro',
+  '@mui', '@emotion', '@chakra-ui',
+  'lucide-react', 'react-icons', '@icons',
+  'emoji-picker-react', '@meronex',
+  'posthog-js',
+  '@mantine', '@tabler',
+  'hls.js',
+  '@radix-ui',
+  'framer-motion',
+  '@headlessui',
+
+  // Documentation
+  'typedoc', '@typedoc', 'storybook', '@storybook',
+
+  // Dev utilities
+  '@types', 'nodemon', 'concurrently', 'cross-env',
+];
+
+/**
+ * Prune unnecessary packages from node_modules to reduce bundle size
+ */
+function pruneNodeModules(nodeModulesDir: string): void {
+  if (!fs.existsSync(nodeModulesDir)) return;
+
+  console.log('  Pruning unnecessary packages...');
+  let removedCount = 0;
+  let removedSize = 0;
+
+  const entries = fs.readdirSync(nodeModulesDir);
+  for (const entry of entries) {
+    const shouldPrune = PACKAGES_TO_PRUNE.some(pkg => {
+      if (pkg.startsWith('@')) {
+        return entry === pkg || entry.startsWith(pkg + '/');
+      }
+      return entry === pkg;
+    });
+
+    if (shouldPrune) {
+      const entryPath = path.join(nodeModulesDir, entry);
+      try {
+        const sizeResult = spawnSync('du', ['-sk', entryPath], { encoding: 'utf-8' });
+        if (sizeResult.status === 0) {
+          removedSize += parseInt(sizeResult.stdout.split('\t')[0]) || 0;
+        }
+        fs.rmSync(entryPath, { recursive: true, force: true });
+        removedCount++;
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    // Handle scoped packages (@org/package)
+    const entryFullPath = path.join(nodeModulesDir, entry);
+    if (entry.startsWith('@') && fs.existsSync(entryFullPath) && fs.statSync(entryFullPath).isDirectory()) {
+      const scopedDir = entryFullPath;
+      const scopedEntries = fs.readdirSync(scopedDir);
+      for (const scopedEntry of scopedEntries) {
+        const fullName = `${entry}/${scopedEntry}`;
+        const shouldPruneScoped = PACKAGES_TO_PRUNE.some(pkg =>
+          fullName === pkg || fullName.startsWith(pkg + '/')
+        );
+        if (shouldPruneScoped) {
+          const entryPath = path.join(scopedDir, scopedEntry);
+          try {
+            const sizeResult = spawnSync('du', ['-sk', entryPath], { encoding: 'utf-8' });
+            if (sizeResult.status === 0) {
+              removedSize += parseInt(sizeResult.stdout.split('\t')[0]) || 0;
+            }
+            fs.rmSync(entryPath, { recursive: true, force: true });
+            removedCount++;
+          } catch {
+            // Ignore errors
+          }
+        }
+      }
+      // Remove empty scoped directory
+      try {
+        const remaining = fs.readdirSync(scopedDir);
+        if (remaining.length === 0) {
+          fs.rmdirSync(scopedDir);
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+
+  // Also prune the .pnpm directory for removed packages
+  const pnpmDir = path.join(nodeModulesDir, '.pnpm');
+  if (fs.existsSync(pnpmDir)) {
+    const pnpmEntries = fs.readdirSync(pnpmDir);
+    for (const entry of pnpmEntries) {
+      const shouldPrune = PACKAGES_TO_PRUNE.some(pkg => {
+        const normalizedPkg = pkg.replace('/', '+');
+        return entry.startsWith(normalizedPkg + '@') || entry.startsWith(normalizedPkg + '+');
+      });
+      if (shouldPrune) {
+        try {
+          fs.rmSync(path.join(pnpmDir, entry), { recursive: true, force: true });
+        } catch {
+          // Ignore errors
+        }
+      }
+    }
+  }
+
+  // Remove all .bin directories recursively (contain symlinks that break Tauri build)
+  console.log('  Removing .bin directories...');
+  const result = spawnSync('find', [nodeModulesDir, '-type', 'd', '-name', '.bin', '-exec', 'rm', '-rf', '{}', '+'], {
+    stdio: 'pipe',
+    encoding: 'utf-8'
+  });
+  // Also remove any broken symlinks
+  spawnSync('find', [nodeModulesDir, '-type', 'l', '!', '-exec', 'test', '-e', '{}', ';', '-delete'], {
+    stdio: 'pipe'
+  });
+
+  const removedMB = (removedSize / 1024).toFixed(1);
+  console.log(`  Removed ${removedCount} packages (~${removedMB} MB)`);
+}
+
+/**
+ * Deploy a package using pnpm deploy --prod
+ * This creates a minimal production deployment with all dependencies
+ */
+function deployWithPnpm(packageFilter: string, targetDir: string): boolean {
+  console.log(`  Using pnpm deploy for ${packageFilter}...`);
+
+  // Clean target directory
+  if (fs.existsSync(targetDir)) {
+    fs.rmSync(targetDir, { recursive: true });
+  }
+
+  // Use pnpm deploy with --legacy flag for workspace compatibility
+  const result = spawnSync(
+    'pnpm',
+    ['--filter', packageFilter, '--prod', 'deploy', '--legacy', targetDir],
+    {
+      stdio: 'inherit',
+      cwd: ROOT_DIR,
+    }
+  );
+
+  // Check if deploy actually created content (pnpm returns 0 even when no matches)
+  const hasContent = fs.existsSync(targetDir) &&
+    fs.existsSync(path.join(targetDir, 'node_modules'));
+
+  if (result.status === 0 && !hasContent) {
+    console.log(`  ⚠️ pnpm deploy returned success but no content created`);
+    return false;
+  }
+
+  return result.status === 0 && hasContent;
+}
+
+async function prepareBackendResources(): Promise<void> {
+  console.log('\n📦 Preparing backend resources...');
+
+  const backendDir = path.join(RESOURCES_DIR, 'backend');
+
+  // Try pnpm deploy first
+  if (deployWithPnpm('postiz-backend', backendDir)) {
+    // Copy compiled dist folders (not included in pnpm deploy)
+    // NestJS outputs to apps/backend/dist/ not dist/apps/backend/
+    console.log('  Copying compiled backend dist...');
+    copyDirSync(
+      path.join(ROOT_DIR, 'apps/backend/dist'),
+      path.join(backendDir, 'dist')
+    );
+
+    // Copy generated Prisma client (prisma generate outputs to root node_modules/.prisma/)
+    console.log('  Copying generated Prisma client...');
+    const prismaClientSrc = path.join(ROOT_DIR, 'node_modules/.prisma/client');
+    const prismaClientDest = path.join(backendDir, 'node_modules/.prisma/client');
+    if (fs.existsSync(prismaClientSrc)) {
+      ensureDir(path.dirname(prismaClientDest));
+      copyDirSync(prismaClientSrc, prismaClientDest);
+    }
+
+    // Prune dev-only and unnecessary packages
+    pruneNodeModules(path.join(backendDir, 'node_modules'));
+
+    // Copy Prisma schema to expected location
+    const prismaSrc = path.join(
+      ROOT_DIR,
+      'libraries/nestjs-libraries/src/database/prisma/schema.prisma'
+    );
+    const prismaDest = path.join(backendDir, 'prisma', 'schema.prisma');
+    ensureDir(path.dirname(prismaDest));
+    if (fs.existsSync(prismaSrc)) {
+      fs.copyFileSync(prismaSrc, prismaDest);
+    }
+    console.log('✓ Backend resources ready (pnpm deploy)');
+  } else {
+    console.log('  pnpm deploy failed, falling back to manual copy...');
+    await prepareBackendResourcesManual(backendDir);
+  }
+}
+
+async function prepareBackendResourcesManual(backendDir: string): Promise<void> {
+  if (fs.existsSync(backendDir)) {
+    fs.rmSync(backendDir, { recursive: true });
+  }
+  ensureDir(backendDir);
+
+  // Copy compiled JS (NestJS outputs to apps/backend/dist/)
+  console.log('  Copying compiled backend dist...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'apps/backend/dist'),
+    path.join(backendDir, 'dist')
+  );
+
+  // Copy entire node_modules (required for NestJS)
+  console.log('  Copying node_modules (this may take a while)...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'node_modules'),
+    path.join(backendDir, 'node_modules')
+  );
+
+  // Prune dev-only and unnecessary packages
+  console.log('  Pruning unnecessary packages...');
+  pruneNodeModules(path.join(backendDir, 'node_modules'));
+
+  // Copy Prisma schema
+  console.log('  Copying Prisma schema...');
+  const prismaDest = path.join(backendDir, 'prisma');
+  ensureDir(prismaDest);
+  fs.copyFileSync(
+    path.join(ROOT_DIR, 'libraries/nestjs-libraries/src/database/prisma/schema.prisma'),
+    path.join(prismaDest, 'schema.prisma')
+  );
+
+  console.log('✓ Backend resources ready (manual copy)');
+}
+
+async function prepareOrchestratorResources(): Promise<void> {
+  console.log('\n📦 Preparing orchestrator resources...');
+
+  const orchestratorDir = path.join(RESOURCES_DIR, 'orchestrator');
+
+  // Try pnpm deploy first
+  if (deployWithPnpm('postiz-orchestrator', orchestratorDir)) {
+    // Copy compiled dist folders (not included in pnpm deploy)
+    // NestJS outputs to apps/orchestrator/dist/ not dist/apps/orchestrator/
+    console.log('  Copying compiled orchestrator dist...');
+    copyDirSync(
+      path.join(ROOT_DIR, 'apps/orchestrator/dist'),
+      path.join(orchestratorDir, 'dist')
+    );
+
+    // Copy generated Prisma client (prisma generate outputs to root node_modules/.prisma/)
+    console.log('  Copying generated Prisma client...');
+    const prismaClientSrc = path.join(ROOT_DIR, 'node_modules/.prisma/client');
+    const prismaClientDest = path.join(orchestratorDir, 'node_modules/.prisma/client');
+    if (fs.existsSync(prismaClientSrc)) {
+      ensureDir(path.dirname(prismaClientDest));
+      copyDirSync(prismaClientSrc, prismaClientDest);
+    }
+
+    // Prune dev-only and unnecessary packages
+    pruneNodeModules(path.join(orchestratorDir, 'node_modules'));
+
+    // Copy Prisma schema
+    const prismaSrc = path.join(
+      ROOT_DIR,
+      'libraries/nestjs-libraries/src/database/prisma/schema.prisma'
+    );
+    const prismaDest = path.join(orchestratorDir, 'prisma', 'schema.prisma');
+    ensureDir(path.dirname(prismaDest));
+    if (fs.existsSync(prismaSrc)) {
+      fs.copyFileSync(prismaSrc, prismaDest);
+    }
+    console.log('✓ Orchestrator resources ready (pnpm deploy)');
+  } else {
+    console.log('  pnpm deploy failed, falling back to manual copy...');
+    await prepareOrchestratorResourcesManual(orchestratorDir);
+  }
+}
+
+async function prepareOrchestratorResourcesManual(orchestratorDir: string): Promise<void> {
+  if (fs.existsSync(orchestratorDir)) {
+    fs.rmSync(orchestratorDir, { recursive: true });
+  }
+  ensureDir(orchestratorDir);
+
+  // Copy compiled JS (NestJS outputs to apps/orchestrator/dist/)
+  console.log('  Copying compiled orchestrator dist...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'apps/orchestrator/dist'),
+    path.join(orchestratorDir, 'dist')
+  );
+
+  // Copy node_modules
+  console.log('  Copying node_modules (this may take a while)...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'node_modules'),
+    path.join(orchestratorDir, 'node_modules')
+  );
+
+  // Prune dev-only and unnecessary packages
+  console.log('  Pruning unnecessary packages...');
+  pruneNodeModules(path.join(orchestratorDir, 'node_modules'));
+
+  // Copy Prisma schema
+  console.log('  Copying Prisma schema...');
+  const prismaDest = path.join(orchestratorDir, 'prisma');
+  ensureDir(prismaDest);
+  fs.copyFileSync(
+    path.join(ROOT_DIR, 'libraries/nestjs-libraries/src/database/prisma/schema.prisma'),
+    path.join(prismaDest, 'schema.prisma')
+  );
+
+  console.log('✓ Orchestrator resources ready (manual copy)');
+}
+
+/**
+ * Consolidate backend and orchestrator node_modules into a single shared directory.
+ *
+ * Both services deploy from the same pnpm lockfile, so shared packages have
+ * identical resolved versions — merging is safe.
+ *
+ * Node.js module resolution walks up directories, so placing node_modules at
+ * resources/node_modules/ is automatically found by both:
+ *   resources/backend/dist/.../main.js  → walks up to resources/
+ *   resources/orchestrator/dist/.../main.js → walks up to resources/
+ */
+function consolidateNodeModules(): void {
+  console.log('\n🔗 Consolidating node_modules...');
+
+  const backendNm = path.join(RESOURCES_DIR, 'backend', 'node_modules');
+  const orchestratorNm = path.join(RESOURCES_DIR, 'orchestrator', 'node_modules');
+
+  if (!fs.existsSync(backendNm) && !fs.existsSync(orchestratorNm)) {
+    console.log('  (no per-service node_modules to consolidate)');
+    return;
+  }
+
+  ensureDir(SHARED_NODE_MODULES_DIR);
+
+  // Base pass: copy backend's node_modules into shared
+  if (fs.existsSync(backendNm)) {
+    console.log('  Copying backend node_modules to shared...');
+    copyDirSync(backendNm, SHARED_NODE_MODULES_DIR);
+  }
+
+  // Merge pass: add orchestrator-only packages to shared (skip existing)
+  if (fs.existsSync(orchestratorNm)) {
+    console.log('  Merging orchestrator node_modules into shared...');
+    const entries = fs.readdirSync(orchestratorNm, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(orchestratorNm, entry.name);
+      const destPath = path.join(SHARED_NODE_MODULES_DIR, entry.name);
+      if (!fs.existsSync(destPath)) {
+        // Entire entry not in shared — copy it (package or scoped namespace dir)
+        copyDirSync(srcPath, destPath);
+      } else if (entry.isDirectory() && entry.name.startsWith('@')) {
+        // Scoped namespace dir (@temporalio, @nestjs, etc.) exists in both —
+        // recurse one level to add any orchestrator-only packages within it.
+        // Without this, a top-level skip would silently drop orchestrator packages
+        // (e.g. @temporalio/activity) that are absent from the backend.
+        const scopedEntries = fs.readdirSync(srcPath, { withFileTypes: true });
+        for (const scopedEntry of scopedEntries) {
+          const scopedDest = path.join(destPath, scopedEntry.name);
+          if (!fs.existsSync(scopedDest)) {
+            copyDirSync(path.join(srcPath, scopedEntry.name), scopedDest);
+          }
+        }
+      }
+      // else: non-scoped package already in shared → same version (shared lockfile), skip
+    }
+  }
+
+  console.log(`  Shared node_modules: ${getDirSize(SHARED_NODE_MODULES_DIR)}`);
+
+  // Remove per-service node_modules — use shell rm -rf to avoid ENOTEMPTY on macOS
+  for (const nm of [backendNm, orchestratorNm]) {
+    if (fs.existsSync(nm)) {
+      spawnSync('rm', ['-rf', nm], { stdio: 'inherit' });
+    }
+  }
+
+  console.log('✓ node_modules consolidated');
+}
+
+async function prepareFrontendResources(): Promise<void> {
+  console.log('\n📦 Preparing frontend resources...');
+
+  const frontendDir = path.join(RESOURCES_DIR, 'frontend');
+  if (fs.existsSync(frontendDir)) {
+    fs.rmSync(frontendDir, { recursive: true });
+  }
+  ensureDir(frontendDir);
+
+  // Next.js standalone already includes all production dependencies
+  console.log('  Copying .next/standalone...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'apps/frontend/.next/standalone'),
+    path.join(frontendDir, 'standalone')
+  );
+
+  // Copy static files to the correct location
+  console.log('  Copying .next/static...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'apps/frontend/.next/static'),
+    path.join(frontendDir, 'standalone/apps/frontend/.next/static')
+  );
+
+  // Copy public folder
+  console.log('  Copying public...');
+  copyDirSync(
+    path.join(ROOT_DIR, 'apps/frontend/public'),
+    path.join(frontendDir, 'standalone/apps/frontend/public')
+  );
+
+  console.log('✓ Frontend resources ready');
+}
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const isFullBuild = args.includes('--full') || args.includes('-f');
+const showHelp = args.includes('--help') || args.includes('-h');
+
+function printHelp(): void {
+  console.log(`
+Postiz Desktop App - Build Script
+
+Usage:
+  npx ts-node scripts/build-desktop.ts [options]
+
+Options:
+  --full, -f    Full build: install deps, build apps, prepare resources, build Tauri
+  --help, -h    Show this help message
+
+Environment Variables:
+  POSTIZ_SKIP_DEPS=1    Skip pnpm install (use existing node_modules)
+  POSTIZ_SKIP_BUILD=1   Skip app building (use existing dist/)
+
+Examples:
+  # Prepare resources only (for development)
+  npx ts-node scripts/build-desktop.ts
+
+  # Full build from scratch
+  npx ts-node scripts/build-desktop.ts --full
+
+  # Full build but skip npm install
+  POSTIZ_SKIP_DEPS=1 npx ts-node scripts/build-desktop.ts --full
+`);
+}
+
+function runCommand(command: string, args: string[], options: { cwd?: string; env?: Record<string, string> } = {}): boolean {
+  console.log(`  $ ${command} ${args.join(' ')}`);
+  const result = spawnSync(command, args, {
+    stdio: 'inherit',
+    cwd: options.cwd || ROOT_DIR,
+    env: { ...process.env, ...options.env },
+  });
+  return result.status === 0;
+}
+
+function checkPrerequisites(): boolean {
+  console.log('\n🔍 Checking prerequisites...');
+  let allGood = true;
+
+  // Check Rust (only needed for --full)
+  if (isFullBuild) {
+    const rustResult = spawnSync('rustc', ['--version'], { encoding: 'utf-8' });
+    if (rustResult.status === 0) {
+      console.log(`  ✓ Rust: ${rustResult.stdout.trim()}`);
+    } else {
+      console.log('  ✗ Rust not found. Install from https://rustup.rs');
+      allGood = false;
+    }
+  }
+
+  // Check pnpm
+  const pnpmResult = spawnSync('pnpm', ['--version'], { encoding: 'utf-8' });
+  if (pnpmResult.status === 0) {
+    console.log(`  ✓ pnpm: ${pnpmResult.stdout.trim()}`);
+  } else {
+    console.log('  ✗ pnpm not found. Install with: npm install -g pnpm');
+    allGood = false;
+  }
+
+  // Check Node.js version
+  const nodeVersion = process.version.match(/^v(\d+)/)?.[1];
+  if (nodeVersion && parseInt(nodeVersion) >= 22) {
+    console.log(`  ✓ Node.js: ${process.version}`);
+  } else {
+    console.log(`  ⚠ Node.js 22+ recommended (found ${process.version})`);
+  }
+
+  return allGood;
+}
+
+async function main(): Promise<void> {
+  if (showHelp) {
+    printHelp();
+    process.exit(0);
+  }
+
+  const startTime = Date.now();
+  const targetTriple = detectTargetTriple();
+
+  console.log('='.repeat(60));
+  console.log('  Postiz Desktop - Build Script');
+  console.log('='.repeat(60));
+  console.log(`Target: ${targetTriple}`);
+  console.log(`Mode: ${isFullBuild ? 'Full build (--full)' : 'Prepare resources only'}`);
+
+  // Check prerequisites
+  if (!checkPrerequisites()) {
+    console.log('\n✗ Prerequisites not met. Please install missing tools.');
+    process.exit(1);
+  }
+
+  // Clean previous resources at start
+  cleanAllResources();
+
+  // Full build: Step 1 - Install dependencies
+  if (isFullBuild && !process.env.POSTIZ_SKIP_DEPS) {
+    console.log('\n📦 [1/5] Installing dependencies...');
+    if (!runCommand('pnpm', ['install', '--frozen-lockfile'])) {
+      console.log('✗ Failed to install dependencies');
+      console.log('  Hint: Run "pnpm install" locally first to update lockfile');
+      process.exit(1);
+    }
+    console.log('✓ Dependencies installed');
+  }
+
+  // Full build: Step 2 - Build apps
+  if (isFullBuild && !process.env.POSTIZ_SKIP_BUILD) {
+    console.log('\n🔨 [2/5] Building backend, frontend, and orchestrator...');
+    // DESKTOP_BUILD=1 enables Next.js standalone output for bundling.
+    // STORAGE_PROVIDER=local is required at build time: next.config.js evaluates
+    // process.env.STORAGE_PROVIDER in rewrites() to route /uploads/:path* →
+    // /api/uploads/:path*. Without it the rewrite goes to /404 and file serving breaks.
+    // NEXT_PUBLIC_BACKEND_URL bakes the default backend URL into any client bundles
+    // that reference it directly.
+    if (!runCommand('pnpm', ['run', 'build'], { env: { DESKTOP_BUILD: '1', STORAGE_PROVIDER: 'local', NEXT_PUBLIC_BACKEND_URL: 'http://localhost:3000' } })) {
+      console.log('✗ Failed to build apps');
+      process.exit(1);
+    }
+    console.log('✓ Apps built');
+  }
+
+  // Validate source files exist
+  console.log('\n🔍 Validating source files...');
+  const sourceValidation = validateSourceFiles();
+  if (sourceValidation.warnings.length > 0) {
+    for (const warning of sourceValidation.warnings) {
+      console.log(`  ⚠ ${warning}`);
+    }
+  }
+  if (!sourceValidation.valid) {
+    console.log('✗ Source file validation failed:');
+    for (const error of sourceValidation.errors) {
+      console.log(`  ✗ ${error}`);
+    }
+    console.log('\nHint: Run "pnpm run build" first to compile the apps');
+    process.exit(1);
+  }
+  console.log('✓ Source files validated');
+
+  // Step 3 - Download sidecars
+  console.log(`\n📥 ${isFullBuild ? '[3/5]' : '[1/3]'} Preparing sidecars...`);
+
+  // Download Node.js
+  console.log('  Downloading Node.js sidecar...');
+  await downloadNodeBinary(targetTriple);
+
+  // Download Temporal (use existing script)
+  const temporalPath = path.join(BINARIES_DIR, `temporal-${targetTriple}`);
+  if (!fs.existsSync(temporalPath)) {
+    console.log('  Downloading Temporal sidecar...');
+    const temporalScript = path.join(DESKTOP_DIR, 'scripts', 'download-temporal.sh');
+    if (fs.existsSync(temporalScript)) {
+      runCommand('bash', [temporalScript], { cwd: DESKTOP_DIR });
+    }
+  } else {
+    console.log('  ✓ Temporal sidecar already exists');
+  }
+
+  // Step 4 - Prepare resources
+  console.log(`\n📦 ${isFullBuild ? '[4/5]' : '[2/3]'} Preparing resources...`);
+  await prepareBackendResources();
+  await prepareOrchestratorResources();
+  await prepareFrontendResources();
+  consolidateNodeModules();
+
+  // Step: Generate PGlite schema SQL for desktop initialization
+  // prisma db push cannot connect to embedded PGlite (no TCP server), so we
+  // pre-generate the schema SQL at build time and bundle it with the app.
+  // prisma.service.ts reads this file via PGLITE_SCHEMA_SQL at runtime.
+  console.log('\n📋 Generating PGlite schema SQL...');
+  const schemaSrc = path.join(ROOT_DIR, 'libraries/nestjs-libraries/src/database/prisma/schema.prisma');
+  const schemaSqlDest = path.join(RESOURCES_DIR, 'backend/prisma/schema.sql');
+  const prismaCliLocal = path.join(ROOT_DIR, 'node_modules/.bin/prisma');
+  const hasPrismaLocal = fs.existsSync(prismaCliLocal);
+  const diffResult = spawnSync(
+    hasPrismaLocal ? prismaCliLocal : 'npx',
+    hasPrismaLocal
+      ? ['migrate', 'diff', '--from-empty', '--to-schema-datamodel', schemaSrc, '--script']
+      : ['prisma', 'migrate', 'diff', '--from-empty', '--to-schema-datamodel', schemaSrc, '--script'],
+    {
+      encoding: 'utf-8',
+      cwd: ROOT_DIR,
+      env: { ...process.env, DATABASE_URL: 'postgresql://localhost:5432/postiz' },
+    }
+  );
+  if (diffResult.status === 0 && diffResult.stdout && diffResult.stdout.trim().length > 100) {
+    ensureDir(path.dirname(schemaSqlDest));
+    fs.writeFileSync(schemaSqlDest, diffResult.stdout);
+    console.log(`  ✓ Schema SQL written (${(diffResult.stdout.length / 1024).toFixed(1)} KB)`);
+  } else {
+    console.log('  ⚠ Could not generate schema SQL (prisma migrate diff failed)');
+    if (diffResult.stderr) console.log('  ', diffResult.stderr.slice(0, 200));
+  }
+
+  // Verify build artifacts
+  console.log('\n🔍 Verifying build artifacts...');
+  const artifactValidation = verifyBuildArtifacts();
+  if (!artifactValidation.valid) {
+    console.log('✗ Artifact verification failed:');
+    for (const error of artifactValidation.errors) {
+      console.log(`  ✗ ${error}`);
+    }
+    process.exit(1);
+  }
+  console.log('✓ All build artifacts verified');
+
+  // Write build manifest
+  console.log('\n📋 Writing build manifest...');
+  writeBuildManifest();
+
+  // Report sizes
+  console.log('\n' + '='.repeat(60));
+  console.log('✅ Sidecars and resources prepared!');
+  console.log('');
+
+  console.log('Sidecars (binaries/):');
+  if (fs.existsSync(BINARIES_DIR)) {
+    const binFiles = fs.readdirSync(BINARIES_DIR);
+    for (const file of binFiles) {
+      const filePath = path.join(BINARIES_DIR, file);
+      const stat = fs.statSync(filePath);
+      console.log(`  - ${file} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`);
+    }
+  }
+
+  console.log('\nResources (resources/):');
+  console.log(`  - backend: ${getDirSize(path.join(RESOURCES_DIR, 'backend'))}`);
+  console.log(`  - orchestrator: ${getDirSize(path.join(RESOURCES_DIR, 'orchestrator'))}`);
+  console.log(`  - frontend: ${getDirSize(path.join(RESOURCES_DIR, 'frontend'))}`);
+  console.log(`  - shared node_modules: ${getDirSize(SHARED_NODE_MODULES_DIR)}`);
+
+  // Full build: Step 5 - Build Tauri
+  if (isFullBuild) {
+    console.log(`\n🚀 [5/5] Building Tauri app...`);
+    if (!runCommand('pnpm', ['run', 'build'], { cwd: DESKTOP_DIR })) {
+      console.log('✗ Failed to build Tauri app');
+      process.exit(1);
+    }
+
+    // Show final results
+    const bundleDir = path.join(DESKTOP_DIR, 'src-tauri', 'target', 'release', 'bundle', 'macos');
+    const appPath = path.join(bundleDir, 'Postiz.app');
+
+    if (fs.existsSync(appPath)) {
+      const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+
+      console.log('\n' + '='.repeat(60));
+      console.log('  ✅ BUILD SUCCESSFUL');
+      console.log('='.repeat(60));
+      console.log(`\n  App:  ${appPath}`);
+      console.log(`  Size: ${getDirSize(appPath)}`);
+
+      // Find DMG (lives in bundle/dmg/, sibling of bundle/macos/)
+      const dmgDir = path.join(DESKTOP_DIR, 'src-tauri', 'target', 'release', 'bundle', 'dmg');
+      if (fs.existsSync(dmgDir)) {
+        const dmgFiles = fs.readdirSync(dmgDir).filter(f => f.endsWith('.dmg'));
+        if (dmgFiles.length > 0) {
+          // Sort and pick the newest (highest semver)
+          dmgFiles.sort().reverse();
+          const dmgPath = path.join(dmgDir, dmgFiles[0]);
+          console.log(`\n  DMG:  ${dmgPath}`);
+          console.log(`  Size: ${getDirSize(dmgPath)}`);
+        }
+      }
+
+      console.log(`\n  Build time: ${elapsed} minutes`);
+      console.log('\n  To test:');
+      console.log(`    open "${appPath}"`);
+      console.log('='.repeat(60));
+    } else {
+      console.log('✗ App bundle not found');
+      process.exit(1);
+    }
+  } else {
+    console.log('\nNext steps:');
+    console.log('  pnpm run desktop:build    # or run with --full flag');
+    console.log('='.repeat(60));
+  }
+}
+
+main().catch((error) => {
+  console.error('✗ Build failed:', error.message);
+  process.exit(1);
+});

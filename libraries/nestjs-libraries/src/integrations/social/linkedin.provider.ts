@@ -25,14 +25,21 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
+  // Default: personal profile scopes only. Organization scopes (rw_organization_admin,
+  // w_organization_social, r_organization_social) require LinkedIn Advertising API or
+  // Community Management API approval (legal entity verification required). For standard
+  // apps, requesting them causes LinkedIn to reject OAuth with "unauthorized_scope_error".
+  // Set LINKEDIN_INCLUDE_ORG_SCOPES=true in your .env / postiz.env to opt-in for apps
+  // that have been granted LinkedIn MDP access. LinkedIn Pages always use org scopes via
+  // LinkedinPageProvider (which overrides this list).
   scopes = [
     'openid',
     'profile',
     'w_member_social',
     'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
+    ...(process.env.LINKEDIN_INCLUDE_ORG_SCOPES === 'true'
+      ? ['rw_organization_admin', 'w_organization_social', 'r_organization_social']
+      : []),
   ];
   override maxConcurrentJob = 2; // LinkedIn has professional posting limits
   refreshWait = true;
@@ -115,6 +122,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
+      throw new Error(
+        'LinkedIn requires LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET. ' +
+        'Create a free app at developer.linkedin.com, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(6);
     const codeVerifier = makeId(30);
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${

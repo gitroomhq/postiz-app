@@ -24,6 +24,16 @@ export function setCookie(cname: string, cvalue: string, exdays: number) {
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
   const { backendUrl, isGeneral, isSecured } = useVariables();
+  // In desktop/local mode, WKWebView's cookie store may not sync document.cookie
+  // writes to the HTTP layer before a full-page navigation fires. To ensure the
+  // Next.js middleware can authenticate the user on the navigation request, we
+  // pass the JWT as a ?loggedAuth= query parameter. The middleware reads it,
+  // sets a proper HttpOnly cookie, and redirects to the clean URL.
+  // Only done for localhost to avoid JWT exposure in URLs on production.
+  const isLocalhost =
+    typeof backendUrl === 'string' &&
+    (backendUrl.startsWith('http://localhost') ||
+      backendUrl.startsWith('http://127.'));
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (
@@ -63,29 +73,64 @@ function LayoutContextInner(params: { children: ReactNode }) {
       if (reloadOrOnboarding) {
         const getAndClear = returnUrl.getAndClear();
         if (getAndClear) {
-          window.location.href = getAndClear;
+          // In localhost mode, include loggedAuth so the middleware can
+          // authenticate via URL param even if cookies haven't synced yet.
+          const authParam =
+            isLocalhost && headerAuth
+              ? `${getAndClear.includes('?') ? '&' : '?'}loggedAuth=${encodeURIComponent(headerAuth)}`
+              : '';
+          window.location.href = getAndClear + authParam;
           return true;
         }
       }
       if (response?.headers?.get('onboarding')) {
+        // Include loggedAuth param for localhost/desktop: WKWebView's async cookie
+        // sync means the Set-Cookie from the backend may not reach the Next.js
+        // middleware before this navigation fires. The middleware will strip it,
+        // set a proper cookie, and redirect to the clean URL.
+        const authParam =
+          isLocalhost && headerAuth
+            ? `&loggedAuth=${encodeURIComponent(headerAuth)}`
+            : '';
         window.location.href = isGeneral
-          ? '/launches?onboarding=true'
-          : '/analytics?onboarding=true';
+          ? `/launches?onboarding=true${authParam}`
+          : `/analytics?onboarding=true${authParam}`;
         return true;
       }
 
       if (response?.headers?.get('reload')) {
-        window.location.reload();
+        if (isLocalhost && headerAuth) {
+          // In desktop/localhost mode, reload() depends on WKWebView syncing
+          // document.cookie to its HTTP cookie store before the request fires.
+          // Instead, navigate to the current URL with loggedAuth so the middleware
+          // sets a persistent HttpOnly cookie and redirects to the clean URL.
+          const reloadUrl = new URL(window.location.href);
+          reloadUrl.searchParams.set('loggedAuth', headerAuth);
+          window.location.href = reloadUrl.toString();
+        } else {
+          window.location.reload();
+        }
         return true;
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
-        if (!isSecured) {
-          setCookie('auth', '', -10);
-          setCookie('showorg', '', -10);
-          setCookie('impersonate', '', -10);
+        // Always clear JavaScript-accessible auth cookies regardless of isSecured.
+        // In desktop (DESKTOP_COOKIE_MODE) mode the JWT is stored in document.cookie
+        // via setCookie() and must be cleared here to prevent a redirect loop where
+        // a stale cookie causes repeated 401s (e.g. after a database wipe on restart).
+        // In production HTTPS mode these document.cookie values are empty (the real
+        // auth uses HTTP-only cookies set by the server), so clearing them is a no-op.
+        setCookie('auth', '', -10);
+        setCookie('showorg', '', -10);
+        setCookie('impersonate', '', -10);
+        // Don't navigate away from auth pages (e.g. wrong password on login form).
+        // Navigating away would swallow the error before the form can display it.
+        // Use /auth/logout so Next.js middleware atomically clears HttpOnly cookies
+        // and redirects to /auth/login, preventing redirect loops with stale tokens.
+        if (!window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth/logout';
         }
-        window.location.href = '/';
+        return true;
       }
       if (response.status === 406) {
         if (

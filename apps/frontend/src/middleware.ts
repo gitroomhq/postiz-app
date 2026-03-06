@@ -11,9 +11,70 @@ import {
 } from '@gitroom/react/translation/i18n.config';
 acceptLanguage.languages(languages);
 
+// Cookie security options based on deployment context.
+// Desktop (DESKTOP_COOKIE_MODE): WKWebView rejects Secure cookies on http://localhost.
+// Production (default): full Secure+HttpOnly+SameSite for HTTPS.
+// NOT_SECURED: legacy dev/HTTP mode — no flags, for backward compatibility.
+function middlewareCookieFlags(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: false };
+}
+
+// Includes path and domain — for cookies where those were inside the conditional block.
+function middlewareCookieWithPathDomain(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return {
+      path: '/',
+      secure: false,
+      httpOnly: true,
+      sameSite: 'lax',
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: false,
+    domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+  };
+}
+
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
+
+  // Desktop/non-secured mode: when navigating to a page with ?loggedAuth=JWT in the URL,
+  // the middleware sets a proper HttpOnly auth cookie and redirects to the clean URL.
+  // This handles WKWebView's async cookie-store sync: JS cookies set via document.cookie
+  // may not appear in native HTTP requests immediately. By including loggedAuth in the
+  // URL we guarantee the middleware can authenticate and set a persistent server cookie.
+  // Only enabled for DESKTOP_COOKIE_MODE or NOT_SECURED environments — never production.
+  const loggedAuthInUrl = nextUrl.searchParams.get('loggedAuth');
+  if (
+    loggedAuthInUrl &&
+    (process.env.DESKTOP_COOKIE_MODE || process.env.NOT_SECURED)
+  ) {
+    const destUrl = new URL(nextUrl.href);
+    destUrl.searchParams.delete('loggedAuth');
+    const resp = NextResponse.redirect(destUrl);
+    resp.cookies.set('auth', loggedAuthInUrl, {
+      path: '/',
+      ...middlewareCookieFlags(),
+      maxAge: 365 * 24 * 60 * 60,
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    });
+    return resp;
+  }
+
   const authCookie =
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
@@ -57,13 +118,7 @@ export async function middleware(request: NextRequest) {
     );
     response.cookies.set('auth', '', {
       path: '/',
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: false,
-          }
-        : {}),
+      ...middlewareCookieFlags(),
       maxAge: -1,
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
@@ -97,15 +152,7 @@ export async function middleware(request: NextRequest) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
-        ...(!process.env.NOT_SECURED
-          ? {
-              path: '/',
-              secure: true,
-              httpOnly: true,
-              sameSite: false,
-              domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-            }
-          : {}),
+        ...middlewareCookieWithPathDomain(),
         expires: new Date(Date.now() + 15 * 60 * 1000),
       });
       return redirect;
@@ -127,15 +174,7 @@ export async function middleware(request: NextRequest) {
       );
       if (id) {
         redirect.cookies.set('showorg', id, {
-          ...(!process.env.NOT_SECURED
-            ? {
-                path: '/',
-                secure: true,
-                httpOnly: true,
-                sameSite: false,
-                domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-              }
-            : {}),
+          ...middlewareCookieWithPathDomain(),
           expires: new Date(Date.now() + 15 * 60 * 1000),
         });
       }

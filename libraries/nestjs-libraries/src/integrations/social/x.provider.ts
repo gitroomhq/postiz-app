@@ -231,6 +231,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.X_API_KEY || !process.env.X_API_SECRET) {
+      throw new Error(
+        'X (Twitter) requires X_API_KEY and X_API_SECRET. ' +
+        'Create an app at developer.x.com (paid API access required). ' +
+        (process.env.POSTIZ_MODE === 'desktop'
+          ? 'Add these to your ' + SocialAbstract.desktopEnvHint
+          : 'Ask your administrator to add these to the server .env file.')
+      );
+    }
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,

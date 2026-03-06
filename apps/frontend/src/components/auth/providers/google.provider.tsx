@@ -2,13 +2,31 @@
 
 import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const GoogleProvider = () => {
   const fetch = useFetch();
   const t = useT();
+  const toaster = useToaster();
   const gotoLogin = useCallback(async () => {
-    const link = await (await fetch('/auth/oauth/GOOGLE')).text();
-    window.location.href = link;
+    const resp = await fetch('/auth/oauth/GOOGLE');
+    const text = await resp.text();
+    try {
+      const json = JSON.parse(text);
+      if (json.err) {
+        toaster.show(
+          t(
+            'google_not_configured',
+            'Google login is not set up. Add YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET to ~/Library/Application Support/Postiz/postiz.env and restart the app.'
+          ),
+          'warning'
+        );
+        return;
+      }
+    } catch {
+      // Not JSON — it's a URL string, proceed normally
+    }
+    window.location.href = text;
   }, []);
   return (
     <div

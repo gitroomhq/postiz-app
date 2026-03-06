@@ -20,6 +20,17 @@ import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
+
+// Cookie security options based on deployment context. See auth.controller.ts for rationale.
+function cookieSecurityOptions(): object {
+  if (process.env.DESKTOP_COOKIE_MODE) {
+    return { secure: false, httpOnly: true, sameSite: 'lax' };
+  }
+  if (process.env.NOT_SECURED) {
+    return {};
+  }
+  return { secure: true, httpOnly: true, sameSite: 'none' };
+}
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -119,13 +130,7 @@ export class PublicController {
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-            }
-          : {}),
-        sameSite: 'none',
+        ...cookieSecurityOptions(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
     }
@@ -133,13 +138,7 @@ export class PublicController {
     if (body.fbclid && !req.cookies.fbclid) {
       res.cookie('fbclid', body.fbclid, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-            }
-          : {}),
-        sameSite: 'none',
+        ...cookieSecurityOptions(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
     }

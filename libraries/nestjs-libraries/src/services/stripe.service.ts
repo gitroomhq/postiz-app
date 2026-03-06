@@ -12,7 +12,31 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+let _stripe: Stripe | null = null;
+const stripe = new Proxy({} as Stripe, {
+  get(_target, prop: string | symbol) {
+    if (!_stripe) {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        if (process.env.POSTIZ_MODE === 'desktop') {
+          const configPath =
+            process.platform === 'win32'
+              ? '%APPDATA%\\Postiz\\postiz.env'
+              : process.platform === 'linux'
+              ? '~/.local/share/postiz/postiz.env'
+              : '~/Library/Application Support/Postiz/postiz.env';
+          throw new Error(
+            `Stripe is not configured. Add STRIPE_SECRET_KEY to ${configPath} to enable billing.`
+          );
+        }
+        throw new Error(
+          'Stripe is not configured. Set STRIPE_SECRET_KEY in your server environment or .env file to enable billing.'
+        );
+      }
+      _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    }
+    return (_stripe as any)[prop];
+  },
+});
 
 @Injectable()
 export class StripeService {

@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           }
           stripeClient=""
           environment={process.env.NODE_ENV!}
-          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+          backendUrl={process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
@@ -51,6 +51,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          desktopMode={process.env.NEXT_PUBLIC_POSTIZ_MODE === 'desktop'}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
               ? [

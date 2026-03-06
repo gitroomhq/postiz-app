@@ -57,7 +57,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user, mutate } = useSWR('/user/self', load, {
+  const { data: user, mutate, isLoading, error } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -65,7 +65,35 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     refreshWhenHidden: false,
   });
 
-  if (!user) return null;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen" />;
+  if (error || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-[16px] max-w-[420px] text-center p-[32px]">
+          <div className="text-[18px] font-[600] text-newTextColor">Could not sign you in</div>
+          <div className="text-[14px] text-textItemBlur">
+            If Postiz just started, the backend may still be initializing — wait a few seconds, then press Refresh.
+          </div>
+          {error?.message && (
+            <details className="w-full text-left">
+              <summary className="text-[12px] text-textItemBlur cursor-pointer select-none">
+                Technical details (for administrators)
+              </summary>
+              <div className="text-[12px] text-textItemBlur font-mono bg-newBgColor rounded-[8px] p-[12px] mt-[8px] break-all">
+                {error.message}
+              </div>
+            </details>
+          )}
+          <button
+            className="mt-[8px] px-[24px] py-[10px] bg-btnPrimary text-btnText rounded-[8px] text-[14px] font-[600] hover:opacity-90"
+            onClick={() => window.location.reload()}
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ContextWrapper user={user}>

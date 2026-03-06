@@ -283,6 +283,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.TIKTOK_CLIENT_ID || !process.env.TIKTOK_CLIENT_SECRET) {
+      throw new Error(
+        'TikTok requires TIKTOK_CLIENT_ID and TIKTOK_CLIENT_SECRET. ' +
+        'Create an app at developers.tiktok.com, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = Math.random().toString(36).substring(2);
 
     return {

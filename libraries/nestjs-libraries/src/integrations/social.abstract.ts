@@ -50,6 +50,16 @@ export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
 
+  /**
+   * Returns a cross-platform description of where the postiz.env config file lives.
+   * Used in credential guard error messages for desktop mode.
+   */
+  static get desktopEnvHint(): string {
+    if (process.platform === 'win32') return 'postiz.env file (%APPDATA%\\Postiz\\postiz.env).';
+    if (process.platform === 'linux') return 'postiz.env file (~/.local/share/postiz/postiz.env).';
+    return 'postiz.env file (~/Library/Application Support/Postiz/postiz.env).';
+  }
+
   public handleErrors(
     body: string
   ):

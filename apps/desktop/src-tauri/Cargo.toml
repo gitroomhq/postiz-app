@@ -1,0 +1,28 @@
+[package]
+name = "postiz-desktop"
+version = "2.12.1"
+description = "Postiz Desktop App"
+authors = ["Postiz"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+dirs = "5"
+urlencoding = "2"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+rand = "0.8"
+ctrlc = { version = "3", features = ["termination"] }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

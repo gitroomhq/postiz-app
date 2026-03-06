@@ -68,6 +68,13 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
+    if (!process.env.KICK_CLIENT_ID || !process.env.KICK_SECRET) {
+      throw new Error(
+        'Kick requires KICK_CLIENT_ID and KICK_SECRET. ' +
+        'Create an app at kick.com/settings/developer, then add these to your ' +
+        (process.env.POSTIZ_MODE === 'desktop' ? SocialAbstract.desktopEnvHint : '.env file or server environment.')
+      );
+    }
     const state = makeId(32);
     const { codeVerifier, codeChallenge } = this.generatePKCE();
 

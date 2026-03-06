@@ -10,5 +10,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "optionalDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "pglite-prisma-adapter": "0.4.1"
+  }
 }
