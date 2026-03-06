@@ -571,8 +571,9 @@ export class InstagramProvider
             : ``;
 
         const isVideo = m.path.indexOf('.mp4') > -1;
+        const isCarouselItem = (firstPost?.media?.length || 0) > 1 && !isStory;
         const userTags =
-          firstPost?.settings?.user_tags?.length && !isVideo
+          firstPost?.settings?.user_tags?.length && !isVideo && !isStory && !isCarouselItem
             ? `&user_tags=${encodeURIComponent(
                 JSON.stringify(
                   firstPost.settings.user_tags.map((t) => ({
