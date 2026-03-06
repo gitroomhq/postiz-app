@@ -12,7 +12,16 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+let _stripeInstance: Stripe | null = null;
+const stripe = new Proxy({} as Stripe, {
+  get(_, prop: string | symbol) {
+    if (!_stripeInstance) {
+      _stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    }
+    const value = (_stripeInstance as any)[prop];
+    return typeof value === 'function' ? value.bind(_stripeInstance) : value;
+  },
+});
 
 @Injectable()
 export class StripeService {
