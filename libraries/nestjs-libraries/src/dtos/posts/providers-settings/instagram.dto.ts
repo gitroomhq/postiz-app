@@ -3,9 +3,12 @@ import {
   IsArray,
   IsDefined,
   IsIn,
+  IsNumber,
   IsString,
   ValidateNested,
   IsOptional,
+  Max,
+  Min,
 } from 'class-validator';
 
 export class Collaborators {
@@ -13,6 +16,33 @@ export class Collaborators {
   @IsString()
   label: string;
 }
+
+export class UserTag {
+  @IsDefined()
+  @IsString()
+  label: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  x?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  y?: number;
+}
+
+export class UserTagsForImage {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserTag)
+  @IsOptional()
+  tags?: UserTag[];
+}
+
 export class InstagramDto {
   @IsIn(['post', 'story'])
   @IsDefined()
@@ -30,4 +60,10 @@ export class InstagramDto {
   @IsArray()
   @IsOptional()
   collaborators: Collaborators[];
+
+  @Type(() => UserTagsForImage)
+  @ValidateNested({ each: true })
+  @IsArray()
+  @IsOptional()
+  user_tags: UserTagsForImage[];
 }
