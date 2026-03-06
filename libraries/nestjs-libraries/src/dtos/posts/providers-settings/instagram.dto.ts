@@ -13,6 +13,13 @@ export class Collaborators {
   @IsString()
   label: string;
 }
+
+export class UserTag {
+  @IsDefined()
+  @IsString()
+  label: string;
+}
+
 export class InstagramDto {
   @IsIn(['post', 'story'])
   @IsDefined()
@@ -30,4 +37,10 @@ export class InstagramDto {
   @IsArray()
   @IsOptional()
   collaborators: Collaborators[];
+
+  @Type(() => UserTag)
+  @ValidateNested({ each: true })
+  @IsArray()
+  @IsOptional()
+  user_tags: UserTag[];
 }
