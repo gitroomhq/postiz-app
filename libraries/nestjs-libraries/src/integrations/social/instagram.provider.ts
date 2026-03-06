@@ -570,9 +570,23 @@ export class InstagramProvider
               )}`
             : ``;
 
+        const isVideo = m.path.indexOf('.mp4') > -1;
+        const userTags =
+          firstPost?.settings?.user_tags?.length && !isVideo
+            ? `&user_tags=${encodeURIComponent(
+                JSON.stringify(
+                  firstPost.settings.user_tags.map((t) => ({
+                    username: t.label,
+                    x: 0.5,
+                    y: 0.5,
+                  }))
+                )
+              )}`
+            : ``;
+
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${userTags}${trialParams}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
