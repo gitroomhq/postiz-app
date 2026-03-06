@@ -8,13 +8,42 @@ const nextConfig = {
   },
   // Document-Policy header for browser profiling
   async headers() {
-    return [{
-      source: "/:path*",
-      headers: [{
-        key: "Document-Policy",
-        value: "js-profiling",
-      }, ],
-    }, ];
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self'; script-src 'self' https://js.stripe.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'",
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'geolocation=(), microphone=(), camera=()',
+          },
+          {
+            key: 'Document-Policy',
+            value: 'js-profiling',
+          },
+        ],
+      },
+    ];
   },
   reactStrictMode: false,
   transpilePackages: ['crypto-hash'],
