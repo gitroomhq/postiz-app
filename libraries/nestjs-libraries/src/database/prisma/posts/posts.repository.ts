@@ -516,6 +516,7 @@ export class PostsRepository {
             }),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
+        hashtags: value.hashtags ? JSON.stringify(value.hashtags) : null,
         organization: {
           connect: {
             id: orgId,

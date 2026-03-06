@@ -46,6 +46,7 @@ interface StoreState {
   selectedIntegrations: SelectedIntegrations[];
   global: Values[];
   internal: Internal[];
+  platformHashtags: Record<string, string[]>;
   addGlobalValue: (index: number, value: Values[]) => void;
   setGlobalDelay: (index: number, minutes: number) => void;
   setInternalDelay: (
@@ -133,6 +134,7 @@ interface StoreState {
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
   setComments: (comments: boolean | 'no-media') => void;
+  setHashtags: (integrationId: string, hashtags: string[]) => void;
 }
 
 const initialState = {
@@ -154,6 +156,7 @@ const initialState = {
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
   internal: [] as Internal[],
+  platformHashtags: {},
   chars: {},
 };
 
@@ -650,5 +653,12 @@ export const useLaunchStore = create<StoreState>()((set) => ({
             }
           : item
       ),
+    })),
+  setHashtags: (integrationId: string, hashtags: string[]) =>
+    set((state) => ({
+      platformHashtags: {
+        ...state.platformHashtags,
+        [integrationId]: hashtags,
+      },
     })),
 }));

@@ -93,6 +93,7 @@ export const withProvider = function <T extends object>(params: {
       setChars,
       setComments,
       setHide,
+      platformHashtags,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -112,6 +113,7 @@ export const withProvider = function <T extends object>(params: {
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
         setChars: state.setChars,
+        platformHashtags: state.platformHashtags[props.id],
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
         ),
@@ -253,9 +255,10 @@ export const withProvider = function <T extends object>(params: {
           date,
           integration: selectedIntegration.integration,
           allIntegrations,
-          value: value.map((p) => ({
+          value: value.map((p, index) => ({
             id: p.id,
             content: p.content,
+            hashtags: index === 0 ? (platformHashtags || []) : [],
             image: p.media,
           })),
         }}

@@ -65,6 +65,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const { addEditSets, mutate, customClose, dummy } = props;
 
+  const [showHashtags, setShowHashtags] = useState(false);
+
   const {
     selectedIntegrations,
     hide,
@@ -80,6 +82,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     current,
     activateExitButton,
     setHide,
+    platformHashtags,
+    setHashtags,
   } = useLaunchStore(
     useShallow((state) => ({
       hide: state.hide,
@@ -96,8 +100,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       setSelectedIntegrations: state.setSelectedIntegrations,
       locked: state.locked,
       activateExitButton: state.activateExitButton,
+      platformHashtags: state.platformHashtags,
+      setHashtags: state.setHashtags,
     }))
   );
+
+  const allHashtagEntries = selectedIntegrations
+    .filter((i) => (platformHashtags[i.integration.id] || []).length > 0)
+    .map((i) => ({
+      integrationId: i.integration.id,
+      name: i.integration.name,
+      identifier: i.integration.identifier,
+      hashtags: platformHashtags[i.integration.id],
+    }));
 
   useEffect(() => {
     if (hide) {
@@ -378,10 +393,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           },
           group,
           settings: { ...(post.settings || {}) },
-          value: post.values.map((value: any) => ({
+          value: post.values.map((value: any, index: number) => ({
             ...(value.id ? { id: value.id } : {}),
             content: value.content,
             delay: value.delay || 0,
+            hashtags: index === 0 ? (platformHashtags[post.integration.id] || []) : [],
             image:
               (value?.media || []).map(
                 ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
@@ -439,7 +455,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
+    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData, platformHashtags]
   );
 
   return (
@@ -450,15 +466,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
             </div>
-            <div className="flex-1 flex flex-col gap-[16px]">
+            <div className="flex-1 flex flex-col">
               <div
-                className={clsx('flex-1 relative', showSettings && 'hidden')}
+                className={clsx('flex-1 relative', (showSettings || showHashtags) && 'hidden')}
               >
                 <div
                   id="social-content"
-                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                  className="gap-[16px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
                 >
-                  <div className="flex w-full">
+                  <div className="flex w-full pb-[16px] border-b border-newBorder">
                     <div className="flex flex-1">
                       <PicksSocialsComponent toolTip={true} />
                     </div>
@@ -471,8 +487,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-1 gap-[6px] flex-col">
-                    <div>{!existingData.integration && <SelectCurrent />}</div>
+                  <div className="flex flex-1 flex-col">
+                    <div className="pb-[16px]">
+                      {!existingData.integration && <SelectCurrent />}
+                    </div>
                     <div className="flex-1 flex">
                       {!hide && <EditorWrapper totalPosts={1} value="" />}
                     </div>
@@ -487,48 +505,152 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 </div>
               </div>
               <div
-                id="wrapper-settings"
                 className={clsx(
-                  'pb-[20px] px-[20px] select-none',
-                  showSettings && 'flex-1 flex pt-[20px]',
-                  current === 'global' && 'hidden'
+                  'flex flex-col gap-[8px] px-[20px] py-[4px] select-none',
+                  (showSettings || showHashtags) && 'flex-1 pt-[20px]'
                 )}
               >
-                <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings">
-                  <div
-                    onClick={() => setShowSettings(!showSettings)}
-                    className={clsx(
-                      'bg-[#612BD3] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
-                      showSettings ? '!rounded-b-none' : ''
-                    )}
-                  >
-                    <div className="flex-1 text-[14px] font-[600] text-white">
-                      {currentIntegrationText}
+                <div
+                  id="wrapper-settings"
+                  className={clsx(
+                    showSettings && 'flex-1 flex flex-col',
+                    current === 'global' && 'hidden'
+                  )}
+                >
+                  <div className="flex-1 flex flex-col rounded-[12px] overflow-hidden bg-newSettings">
+                    <div
+                      onClick={() => {
+                        setShowSettings(!showSettings);
+                        if (!showSettings) setShowHashtags(false);
+                      }}
+                      className={clsx(
+                        'bg-[#612BD3] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
+                        showSettings ? '!rounded-b-none' : ''
+                      )}
+                    >
+                      <div className="flex-1 text-[14px] font-[600] text-white">
+                        {currentIntegrationText}
+                      </div>
+                      <div>
+                        <ChevronDownIcon
+                          rotated={showSettings}
+                          className="text-white"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <ChevronDownIcon
-                        rotated={showSettings}
-                        className="text-white"
-                      />
+                    <div
+                      className={clsx(
+                        !showSettings ? 'hidden' : 'flex-1',
+                        'text-[14px] text-textColor font-[500] relative'
+                      )}
+                    >
+                      <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                        <div
+                          id="social-settings"
+                          className="flex flex-col gap-[20px] bg-newBgColor"
+                        />
+                      </div>
                     </div>
+                    <style>
+                      {`#social-settings [data-id="${current}"] {display: block !important;}`}
+                    </style>
                   </div>
-                  <div
-                    className={clsx(
-                      !showSettings ? 'hidden' : 'flex-1',
-                      'text-[14px] text-textColor font-[500] relative'
-                    )}
-                  >
-                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
-                      <div
-                        id="social-settings"
-                        className="flex flex-col gap-[20px] bg-newBgColor"
-                      />
-                    </div>
-                  </div>
-                  <style>
-                    {`#social-settings [data-id="${current}"] {display: block !important;}`}
-                  </style>
                 </div>
+                {allHashtagEntries.length > 0 && (
+                    <div
+                      className={clsx(
+                        showHashtags && 'flex-1 flex flex-col pb-2'
+                      )}
+                    >
+                      <div className="flex-1 flex flex-col rounded-[12px] overflow-hidden bg-newSettings">
+                        <div
+                          onClick={() => {
+                            setShowHashtags(!showHashtags);
+                            if (!showHashtags) setShowSettings(false);
+                          }}
+                          className={clsx(
+                            'bg-[#612BD3] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
+                            showHashtags ? '!rounded-b-none' : ''
+                          )}
+                        >
+                          <div className="flex-1 text-[14px] font-[600] text-white">
+                            <div className="flex items-center gap-[10px]">
+                              <div>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="15"
+                                  height="15"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M3.33 6h9.34M3.33 10h9.34M6.5 2L5 14M11 2l-1.5 12"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </div>
+                              <div>Hashtags</div>
+                            </div>
+                          </div>
+                          <div>
+                            <ChevronDownIcon
+                              rotated={showHashtags}
+                              className="text-white"
+                            />
+                          </div>
+                        </div>
+                        <div
+                          className={clsx(
+                            !showHashtags ? 'hidden' : 'flex-1',
+                            'text-[14px] text-textColor font-[500] relative'
+                          )}
+                        >
+                          <div className="absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor p-[12px]">
+                            <div className="flex flex-col gap-[20px]">
+                              {allHashtagEntries.map((entry) => (
+                                <div key={entry.integrationId}>
+                                  <div className="flex items-center gap-[10px] mb-[8px]">
+                                    <img
+                                      src={`/icons/platforms/${entry.identifier}.png`}
+                                      className="w-[20px] h-[20px] rounded-[4px]"
+                                      alt={entry.identifier}
+                                    />
+                                    <span className="text-[14px] font-[600]">
+                                      {entry.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-[6px]">
+                                    {entry.hashtags.map((tag: string, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="flex items-center gap-[4px] bg-newBgColor rounded-[6px] px-[8px] py-[4px] text-[12px]"
+                                      >
+                                        <span>{tag}</span>
+                                        <button
+                                          onClick={() => {
+                                            const updated = entry.hashtags.filter(
+                                              (_: string, i: number) => i !== idx
+                                            );
+                                            setHashtags(entry.integrationId, updated);
+                                          }}
+                                          className="cursor-pointer text-red-400 hover:text-red-300 ml-[2px]"
+                                        >
+                                          <CloseIcon className="w-[12px] h-[12px]" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                )}
               </div>
             </div>
           </div>
