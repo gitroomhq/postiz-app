@@ -530,7 +530,7 @@ export class InstagramProvider
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = !!firstPost.settings.is_trial_reel;
     const medias = await Promise.all(
-      firstPost?.media?.map(async (m) => {
+      firstPost?.media?.map(async (m, mediaIndex) => {
         const caption =
           firstPost.media?.length === 1
             ? `&caption=${encodeURIComponent(firstPost.message)}`
@@ -571,15 +571,15 @@ export class InstagramProvider
             : ``;
 
         const isVideo = m.path.indexOf('.mp4') > -1;
-        const isCarouselItem = (firstPost?.media?.length || 0) > 1 && !isStory;
+        const tagsForThisImage = firstPost?.settings?.user_tags?.[mediaIndex]?.tags;
         const userTags =
-          firstPost?.settings?.user_tags?.length && !isVideo && !isStory && !isCarouselItem
+          tagsForThisImage?.length && !isVideo && !isStory
             ? `&user_tags=${encodeURIComponent(
                 JSON.stringify(
-                  firstPost.settings.user_tags.map((t) => ({
+                  tagsForThisImage.map((t) => ({
                     username: t.label,
-                    x: 0.5,
-                    y: 0.5,
+                    x: t.x ?? 0.5,
+                    y: t.y ?? 0.5,
                   }))
                 )
               )}`

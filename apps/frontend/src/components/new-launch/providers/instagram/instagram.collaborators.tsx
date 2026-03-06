@@ -10,6 +10,7 @@ import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
+import { InstagramUserTagPlacer } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.user.tags';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { InstagramPreview } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.preview';
 const postType = [
@@ -66,9 +67,7 @@ const InstagramCollaborators: FC<{
       )}
 
       {postCurrentType && (
-        <InstagramCollaboratorsTags
-          label="Tag users (max 20, images only) - accounts can't be private"
-          maxTags={20}
+        <InstagramUserTagPlacer
           {...register('user_tags', {
             value: [],
           })}
