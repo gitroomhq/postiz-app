@@ -72,10 +72,6 @@ export class SubscriptionService {
         organizationId
       ))!;
 
-    if (getCurrentSubscription && getCurrentSubscription?.isLifetime) {
-      return false;
-    }
-
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
