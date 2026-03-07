@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UsePipes,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -29,6 +30,7 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 @ApiTags('Media')
 @Controller('/media')
 export class MediaController {
+  private readonly logger = new Logger(MediaController.name);
   private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
@@ -36,8 +38,26 @@ export class MediaController {
   ) {}
 
   @Delete('/:id')
-  deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
-    return this._mediaService.deleteMedia(org.id, id);
+  async deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+    this.logger.log(
+      `Media deletion initiated - Organization ID: ${org.id}, Media ID: ${id}, Timestamp: ${new Date().toISOString()}`
+    );
+    
+    try {
+      const result = await this._mediaService.deleteMedia(org.id, id);
+      
+      this.logger.log(
+        `Media deletion completed successfully - Organization ID: ${org.id}, Media ID: ${id}, Timestamp: ${new Date().toISOString()}`
+      );
+      
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Media deletion failed - Organization ID: ${org.id}, Media ID: ${id}, Error: ${error.message}, Timestamp: ${new Date().toISOString()}`,
+        error.stack
+      );
+      throw error;
+    }
   }
 
   @Post('/generate-video')
