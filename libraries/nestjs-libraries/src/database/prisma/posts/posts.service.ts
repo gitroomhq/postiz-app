@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   ValidationPipe,
 } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
@@ -37,6 +38,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -45,6 +47,7 @@ type PostWithConditionals = Post & {
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
   private storage = UploadFactory.createStorage();
   constructor(
     private _postRepository: PostsRepository,
@@ -54,7 +57,8 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _webhooksService: WebhooksService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -586,6 +590,13 @@ export class PostsService {
   }
 
   async deletePost(orgId: string, group: string) {
+    // fetch post data before soft-delete for webhook payload
+    const postsInGroup = await this._postRepository.getPostsByGroup(
+      orgId,
+      group
+    );
+    const firstPost = postsInGroup?.[0];
+
     const post = await this._postRepository.deletePost(orgId, group);
 
     if (post?.id) {
@@ -611,6 +622,38 @@ export class PostsService {
           } catch (err) {}
         }
       } catch (err) {}
+    }
+
+    // send webhook for post.deleted
+    if (firstPost) {
+      try {
+        const data = {
+          id: firstPost.id,
+          content: firstPost.content,
+          publishDate: firstPost.publishDate,
+          releaseURL: firstPost.releaseURL,
+          state: firstPost.state,
+          integration: firstPost.integration
+            ? {
+                id: firstPost.integration.id,
+                name: firstPost.integration.name,
+                providerIdentifier: firstPost.integration.providerIdentifier,
+                picture: firstPost.integration.picture,
+                type: firstPost.integration.type,
+              }
+            : undefined,
+        };
+        await this._webhooksService.sendPostEvent(
+          orgId,
+          firstPost.integrationId,
+          'post.deleted',
+          data as Record<string, unknown>
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Webhook send failed for post.deleted (postId=${firstPost.id}, orgId=${orgId}): ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
     }
 
     return { error: true };
@@ -717,6 +760,24 @@ export class PostsService {
           orgId,
           posts[0].state
         ).catch((err) => {});
+      }
+
+      // send webhook for post.created or post.updated
+      try {
+        const webhookData = await this.getPostByForWebhookId(posts[0].id);
+        const data = Array.isArray(webhookData) ? webhookData[0] : webhookData;
+        if (data) {
+          await this._webhooksService.sendPostEvent(
+            orgId,
+            post.integration.id,
+            body.type === 'update' ? 'post.updated' : 'post.created',
+            data as Record<string, unknown>
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Webhook send failed for ${body.type === 'update' ? 'post.updated' : 'post.created'} (postId=${posts[0].id}, orgId=${orgId}): ${err instanceof Error ? err.message : String(err)}`
+        );
       }
 
       Sentry.metrics.count('post_created', 1);

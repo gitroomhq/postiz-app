@@ -198,6 +198,13 @@ export async function postWorkflowV101({
           const refresh = await refreshToken(post.integration);
           if (!refresh || !refresh.accessToken) {
             await changeState(postsList[0].id, 'ERROR', err, postsList);
+            await sendWebhooks(
+              post.organizationId,
+              post.integration.id,
+              'post.failed',
+              postsList[0].id,
+              err?.message ?? String(err)
+            );
             return false;
           }
 
@@ -207,6 +214,13 @@ export async function postWorkflowV101({
 
         // for other errors, change state and inform the user if needed
         await changeState(postsList[0].id, 'ERROR', err, postsList);
+        await sendWebhooks(
+          post.organizationId,
+          post.integration.id,
+          'post.failed',
+          postsList[0].id,
+          err?.message ?? String(err)
+        );
 
         // specific case for bad body errors
         if (
@@ -237,11 +251,12 @@ export async function postWorkflowV101({
     }
   }
 
-  // send webhooks for the post
+  // send webhooks for the post (use internal post id)
   await sendWebhooks(
-    postsResults[0].postId,
     post.organizationId,
-    post.integration.id
+    post.integration.id,
+    'post.published',
+    postsList[0].id
   );
 
   // load internal plugs like repost by other users
