@@ -15,6 +15,7 @@ export class UploadFactory {
           process.env.CLOUDFLARE_ACCESS_KEY!,
           process.env.CLOUDFLARE_SECRET_ACCESS_KEY!,
           process.env.CLOUDFLARE_REGION!,
+          process.env.CLOUDFLARE_ENDPOINT!,
           process.env.CLOUDFLARE_BUCKETNAME!,
           process.env.CLOUDFLARE_BUCKET_URL!
         );
