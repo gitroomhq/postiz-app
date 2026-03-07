@@ -63,7 +63,7 @@ async function start() {
 
   loadSwagger(app);
 
-  const port = process.env.PORT || 3000;
+  const port = 3000;
 
   try {
     await app.listen(port);
