@@ -1,9 +1,10 @@
 'use client';
 
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, useCallback } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 
 interface MenuItemInterface {
@@ -13,11 +14,25 @@ interface MenuItemInterface {
   role?: string[];
   hide?: boolean;
   requireBilling?: boolean;
+  onClick?: () => void;
 }
 
 export const useMenuItem = () => {
   const { isGeneral } = useVariables();
   const t = useT();
+  const fetch = useFetch();
+
+  const handleAgentMediaClick = useCallback(async () => {
+    try {
+      const response = await fetch('/user/agent-media-sso');
+      const data = await response.json();
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [fetch]);
 
   const firstMenu = [
     {
@@ -174,9 +189,10 @@ export const useMenuItem = () => {
           </g>
         </svg>
       ),
-      path: 'https://agent-media.ai',
+      path: '#',
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
+      onClick: handleAgentMediaClick,
     },
     {
       name: t('affiliate', 'Affiliate'),
@@ -331,6 +347,7 @@ export const TopMenu: FC = () => {
                   label={item.name}
                   icon={item.icon}
                   key={item.name}
+                  onClick={item.onClick}
                 />
               ))
         }
@@ -358,6 +375,7 @@ export const TopMenu: FC = () => {
               label={item.name}
               icon={item.icon}
               key={item.name}
+              onClick={item.onClick}
             />
           ))}
       </div>
