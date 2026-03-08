@@ -179,8 +179,8 @@ export const AddOrEditWebhook: FC<{
         body: JSON.stringify({
           ...(data?.id
             ? {
-                id: data.id,
-              }
+              id: data.id,
+            }
             : {}),
           ...values,
         }),
@@ -203,7 +203,7 @@ export const AddOrEditWebhook: FC<{
       await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
         method: 'POST',
         headers: {
-          contentType: 'application/json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify([
           {
