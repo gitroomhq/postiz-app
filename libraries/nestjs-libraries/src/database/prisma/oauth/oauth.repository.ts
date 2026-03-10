@@ -70,8 +70,10 @@ export class OAuthRepository {
   ) {
     return this._oauthApp.model.oAuthApp.update({
       where: {
-        organizationId: orgId,
-        deletedAt: null,
+        organizationId_deletedAt: {
+          organizationId: orgId,
+          deletedAt: null,
+        },
       },
       data,
       include: {
@@ -83,7 +85,10 @@ export class OAuthRepository {
   deleteApp(orgId: string) {
     return this._oauthApp.model.oAuthApp.update({
       where: {
-        organizationId: orgId,
+        organizationId_deletedAt: {
+          organizationId: orgId,
+          deletedAt: null,
+        },
       },
       data: {
         deletedAt: new Date(),
@@ -94,8 +99,10 @@ export class OAuthRepository {
   updateClientSecret(orgId: string, newSecret: string) {
     return this._oauthApp.model.oAuthApp.update({
       where: {
-        organizationId: orgId,
-        deletedAt: null,
+        organizationId_deletedAt: {
+          organizationId: orgId,
+          deletedAt: null,
+        },
       },
       data: {
         clientSecret: newSecret,
