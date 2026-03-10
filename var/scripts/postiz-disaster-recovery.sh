@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # 🚀 POSTIZ DISASTER RECOVERY & BACKUP (v1.0)
 # Conceptualized by: Ioana Gabriela / Data Harmony Cluster
 # This script handles automated backups of the Postiz PostgreSQL Database and the uploads volume.
@@ -54,7 +55,14 @@ echo "📤 Synchronizing with Remote Storage..."
 # S3 Upload (If configured)
 if [ -n "$AWS_S3_BUCKET" ] && command -v aws > /dev/null; then
     echo "☁️  Uploading to AWS S3 ($AWS_S3_BUCKET)..."
-    aws s3 cp "$DB_BACKUP_FILE" "s3://${AWS_S3_BUCKET}/db_backups/"
+    
+    if [ -f "$DB_BACKUP_FILE" ]; then
+        aws s3 cp "$DB_BACKUP_FILE" "s3://${AWS_S3_BUCKET}/db_backups/"
+    else
+        echo "❌ Database backup file not found, skipping S3 DB upload."
+        exit 1
+    fi
+    
     if [ -f "$UPLOADS_BACKUP_FILE" ]; then
         aws s3 cp "$UPLOADS_BACKUP_FILE" "s3://${AWS_S3_BUCKET}/upload_backups/"
     fi
