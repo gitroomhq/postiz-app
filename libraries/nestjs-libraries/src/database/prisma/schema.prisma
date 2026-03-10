@@ -9,39 +9,39 @@ datasource db {
 }
 
 model Organization {
-  id                String              @id @default(uuid())
-  name              String
-  description       String?
-  apiKey            String?
-  paymentId         String?
-  streakSince       DateTime?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  allowTrial        Boolean             @default(false)
-  isTrailing        Boolean             @default(false)
-  shortlink         ShortLinkPreference @default(ASK)
-  autoPost          AutoPost[]
-  Comments          Comments[]
-  credits           Credits[]
-  customers         Customer[]
-  errors            Errors[]
-  github            GitHub[]
-  Integration       Integration[]
-  media             Media[]
-  buyerOrganization MessagesGroup[]
-  notifications     Notifications[]
-  plugs             Plugs[]
-  post              Post[]              @relation("organization")
-  submittedPost     Post[]              @relation("submittedForOrg")
-  sets              Sets[]
-  signatures        Signatures[]
-  subscription      Subscription?
-  tags              Tags[]
-  thirdParty        ThirdParty[]
-  usedCodes         UsedCodes[]
-  users             UserOrganization[]
-  webhooks          Webhooks[]
-  oauthApp          OAuthApp?
+  id                  String               @id @default(uuid())
+  name                String
+  description         String?
+  apiKey              String?
+  paymentId           String?
+  streakSince         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  allowTrial          Boolean              @default(false)
+  isTrailing          Boolean              @default(false)
+  shortlink           ShortLinkPreference  @default(ASK)
+  autoPost            AutoPost[]
+  Comments            Comments[]
+  credits             Credits[]
+  customers           Customer[]
+  errors              Errors[]
+  github              GitHub[]
+  Integration         Integration[]
+  media               Media[]
+  buyerOrganization   MessagesGroup[]
+  notifications       Notifications[]
+  plugs               Plugs[]
+  post                Post[]               @relation("organization")
+  submittedPost       Post[]               @relation("submittedForOrg")
+  sets                Sets[]
+  signatures          Signatures[]
+  subscription        Subscription?
+  tags                Tags[]
+  thirdParty          ThirdParty[]
+  usedCodes           UsedCodes[]
+  users               UserOrganization[]
+  webhooks            Webhooks[]
+  oauthApp            OAuthApp[]
   oauthAuthorizations OAuthAuthorization[]
 
   @@index([apiKey])
@@ -77,41 +77,41 @@ model TagsPosts {
 }
 
 model User {
-  id                    String             @id @default(uuid())
+  id                    String               @id @default(uuid())
   email                 String
   password              String?
   providerName          Provider
   name                  String?
   lastName              String?
-  isSuperAdmin          Boolean            @default(false)
+  isSuperAdmin          Boolean              @default(false)
   bio                   String?
-  audience              Int                @default(0)
+  audience              Int                  @default(0)
   pictureId             String?
   providerId            String?
   timezone              Int
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  lastReadNotifications DateTime           @default(now())
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  lastReadNotifications DateTime             @default(now())
   inviteId              String?
-  activated             Boolean            @default(true)
+  activated             Boolean              @default(true)
   account               String?
-  connectedAccount      Boolean            @default(false)
-  lastOnline            DateTime           @default(now())
+  connectedAccount      Boolean              @default(false)
+  lastOnline            DateTime             @default(now())
   ip                    String?
   agent                 String?
   comments              Comments[]
   items                 ItemUser[]
-  groupBuyer            MessagesGroup[]    @relation("groupBuyer")
-  groupSeller           MessagesGroup[]    @relation("groupSeller")
-  orderBuyer            Orders[]           @relation("orderBuyer")
-  orderSeller           Orders[]           @relation("orderSeller")
+  groupBuyer            MessagesGroup[]      @relation("groupBuyer")
+  groupSeller           MessagesGroup[]      @relation("groupSeller")
+  orderBuyer            Orders[]             @relation("orderBuyer")
+  orderSeller           Orders[]             @relation("orderSeller")
   payoutProblems        PayoutProblems[]
   agencies              SocialMediaAgency?
-  picture               Media?             @relation(fields: [pictureId], references: [id])
+  picture               Media?               @relation(fields: [pictureId], references: [id])
   organizations         UserOrganization[]
-  sendSuccessEmails     Boolean            @default(true)
-  sendFailureEmails     Boolean            @default(true)
-  sendStreakEmails      Boolean            @default(true)
+  sendSuccessEmails     Boolean              @default(true)
+  sendFailureEmails     Boolean              @default(true)
+  sendStreakEmails      Boolean              @default(true)
   oauthAuthorizations   OAuthAuthorization[]
 
   @@unique([email, providerName])
@@ -841,21 +841,22 @@ model mastra_workflow_snapshot {
 }
 
 model OAuthApp {
-  id             String              @id @default(uuid())
-  organizationId String              @unique
+  id             String               @id @default(uuid())
+  organizationId String
   name           String
   description    String?
   pictureId      String?
   redirectUrl    String
-  clientId       String              @unique
+  clientId       String               @unique
   clientSecret   String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   deletedAt      DateTime?
-  organization   Organization        @relation(fields: [organizationId], references: [id])
-  picture        Media?              @relation(fields: [pictureId], references: [id])
+  organization   Organization         @relation(fields: [organizationId], references: [id])
+  picture        Media?               @relation(fields: [pictureId], references: [id])
   authorizations OAuthAuthorization[]
 
+  @@unique([organizationId, deletedAt])
   @@index([clientId])
   @@index([organizationId])
   @@index([deletedAt])
