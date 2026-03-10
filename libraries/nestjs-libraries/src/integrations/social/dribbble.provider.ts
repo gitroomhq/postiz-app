@@ -156,6 +156,12 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     formData.append('title', postDetails[0].settings.title);
     formData.append('description', postDetails[0].message);
 
+    if (postDetails[0].settings?.tags?.length) {
+      for (const tag of postDetails[0].settings.tags) {
+        formData.append('tags[]', tag.label);
+      }
+    }
+
     const data2 = await axios.post(
       'https://api.dribbble.com/v2/shots',
       formData,
