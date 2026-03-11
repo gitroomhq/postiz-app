@@ -203,7 +203,7 @@ export const AddOrEditWebhook: FC<{
       await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
         method: 'POST',
         headers: {
-          contentType: 'application/json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify([
           {
