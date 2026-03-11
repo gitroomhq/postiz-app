@@ -18,25 +18,33 @@ export const getTemporalModule = (
     logLevel: 'error',
     ...(isWorkers
       ? {
-          workers: [
-            { identifier: 'main', maxConcurrentJob: undefined },
-            ...socialIntegrationList,
-          ]
-            .filter((f) => f.identifier.indexOf('-') === -1)
-            .map((integration) => ({
-              taskQueue: integration.identifier.split('-')[0],
-              workflowsPath: path!,
-              activityClasses: activityClasses!,
-              autoStart: true,
-              ...(integration.maxConcurrentJob
-                ? {
-                    workerOptions: {
-                      maxConcurrentActivityTaskExecutions:
-                        integration.maxConcurrentJob,
-                    },
-                  }
-                : {}),
-            })),
+          workers: (() => {
+            const seenQueues = new Set<string>();
+            return [
+              { identifier: 'main', maxConcurrentJob: undefined },
+              ...socialIntegrationList,
+            ]
+              .filter((integration) => {
+                const queue = integration.identifier.split('-')[0];
+                if (seenQueues.has(queue)) return false;
+                seenQueues.add(queue);
+                return true;
+              })
+              .map((integration) => ({
+                taskQueue: integration.identifier.split('-')[0],
+                workflowsPath: path!,
+                activityClasses: activityClasses!,
+                autoStart: true,
+                ...(integration.maxConcurrentJob
+                  ? {
+                      workerOptions: {
+                        maxConcurrentActivityTaskExecutions:
+                          integration.maxConcurrentJob,
+                      },
+                    }
+                  : {}),
+              }));
+          })(),
         }
       : {}),
   });
