@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { Integration, Post, Media, From, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { shuffle } from 'lodash';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -17,6 +18,7 @@ import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { minifyPostsList, minifyPosts } from '@gitroom/helpers/utils/posts.list.minify';
 import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -63,15 +65,83 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
+  async getMissingContent(
+    orgId: string,
+    postId: string,
+    forceRefresh = false
+  ): Promise<{ id: string; url: string }[]> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || post.releaseId !== 'missing') {
+      return [];
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.missing) {
+      return [];
+    }
+
+    const getIntegration = post.integration!;
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return [];
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return [];
+      }
+    }
+
+    try {
+      return await integrationProvider.missing(
+        getIntegration.internalId,
+        getIntegration.token
+      );
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken) {
+        return this.getMissingContent(orgId, postId, true);
+      }
+    }
+
+    return [];
+  }
+
+  async updateReleaseId(orgId: string, postId: string, releaseId: string) {
+    return this._postRepository.updateReleaseId(postId, orgId, releaseId);
+  }
+
   async checkPostAnalytics(
     orgId: string,
     postId: string,
     date: number,
     forceRefresh = false
-  ): Promise<AnalyticsData[]> {
+  ): Promise<AnalyticsData[] | { missing: true }> {
     const post = await this._postRepository.getPostById(postId, orgId);
     if (!post || !post.releaseId) {
       return [];
+    }
+
+    if (post.releaseId === 'missing') {
+      return { missing: true };
     }
 
     const integrationProvider = this._integrationManager.getSocialIntegration(
@@ -180,6 +250,7 @@ export class PostsService {
           }
 
           return {
+            type: replaceDraft ? 'schedule' : body.type,
             ...post,
             settings: {
               ...(post.settings || ({} as any)),
@@ -236,6 +307,18 @@ export class PostsService {
 
   async getPosts(orgId: string, query: GetPostsDto) {
     return this._postRepository.getPosts(orgId, query);
+  }
+
+  async getPostsMinified(orgId: string, query: GetPostsDto) {
+    return minifyPosts({
+      posts: await this._postRepository.getPosts(orgId, query),
+    });
+  }
+
+  async getPostsList(orgId: string, query: GetPostsListDto) {
+    return minifyPostsList(
+      await this._postRepository.getPostsList(orgId, query)
+    );
   }
 
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
@@ -541,7 +624,12 @@ export class PostsService {
     return this._postRepository.getPostByForWebhookId(id);
   }
 
-  async startWorkflow(taskQueue: string, postId: string, orgId: string) {
+  async startWorkflow(
+    taskQueue: string,
+    postId: string,
+    orgId: string,
+    state: State
+  ) {
     try {
       const workflows = this._temporalService.client
         .getRawClient()
@@ -564,12 +652,17 @@ export class PostsService {
       }
     } catch (err) {}
 
+    if (state === 'DRAFT') {
+      return;
+    }
+
     try {
       await this._temporalService.client
         .getRawClient()
         ?.workflow.start('postWorkflowV101', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
           args: [
             {
               taskQueue: taskQueue,
@@ -617,11 +710,14 @@ export class PostsService {
         return [] as any[];
       }
 
-      this.startWorkflow(
-        post.settings.__type.split('-')[0].toLowerCase(),
-        posts[0].id,
-        orgId
-      ).catch((err) => {});
+      if (body.type !== 'update') {
+        this.startWorkflow(
+          post.settings.__type.split('-')[0].toLowerCase(),
+          posts[0].id,
+          orgId,
+          posts[0].state
+        ).catch((err) => {});
+      }
 
       Sentry.metrics.count('post_created', 1);
       postList.push({
@@ -641,17 +737,34 @@ export class PostsService {
     return this._postRepository.changeState(id, state, err, body);
   }
 
-  async changeDate(orgId: string, id: string, date: string) {
+  async changeDate(
+    orgId: string,
+    id: string,
+    date: string,
+    action: 'schedule' | 'update' = 'schedule'
+  ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
-    const newDate = await this._postRepository.changeDate(orgId, id, date);
 
-    try {
-      await this.startWorkflow(
-        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
-        getPostById.id,
-        orgId
-      );
-    } catch (err) {}
+    // schedule: Set status to QUEUE and change date (reschedule the post)
+    // update: Just change the date without changing the status
+    const newDate = await this._postRepository.changeDate(
+      orgId,
+      id,
+      date,
+      getPostById.state === 'DRAFT',
+      action
+    );
+
+    if (action === 'schedule') {
+      try {
+        await this.startWorkflow(
+          getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+          getPostById.id,
+          orgId,
+          getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
+        );
+      } catch (err) {}
+    }
 
     return newDate;
   }
@@ -809,6 +922,10 @@ export class PostsService {
 
   editTag(id: string, orgId: string, body: CreateTagDto) {
     return this._postRepository.editTag(id, orgId, body);
+  }
+
+  deleteTag(id: string, orgId: string) {
+    return this._postRepository.deleteTag(id, orgId);
   }
 
   createComment(

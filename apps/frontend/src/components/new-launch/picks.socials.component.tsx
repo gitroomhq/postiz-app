@@ -7,6 +7,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
@@ -64,28 +65,21 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                         : 'border-[#622FF6]'
                     )}
                   >
-                    <div
-                      className="rounded-full min-w-[42px] min-h-[42px] bg-contain bg-center bg-no-repeat"
-                      style={{ backgroundImage: `url(/no-picture.jpg)` }}
-                    >
-                      <Image
-                        src={integration.picture || '/no-picture.jpg'}
-                        className={clsx(
-                          'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
-                          selectedIntegrations.findIndex(
-                            (p) => p.integration.id === integration.id
-                          ) === -1
-                            ? 'border-transparent'
-                            : 'border-[#000]'
-                        )}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                        alt={integration.identifier}
-                        width={42}
-                        height={42}
-                      />
-                    </div>
+                    <ImageWithFallback
+                      fallbackSrc="/no-picture.jpg"
+                      src={integration.picture || '/no-picture.jpg'}
+                      className={clsx(
+                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
+                        selectedIntegrations.findIndex(
+                          (p) => p.integration.id === integration.id
+                        ) === -1
+                          ? 'border-transparent'
+                          : 'border-[#000]'
+                      )}
+                      alt={integration.identifier}
+                      width={42}
+                      height={42}
+                    />
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"

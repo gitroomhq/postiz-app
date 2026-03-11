@@ -44,6 +44,10 @@ export interface IAuthenticator {
     accessToken: string,
     url: string
   ): Promise<{ url: string }>;
+  missing?(
+    id: string,
+    accessToken: string
+  ): Promise<{ id: string; url: string }[]>;
 }
 
 export interface AnalyticsData {
@@ -141,7 +145,9 @@ export interface SocialProvider
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
   isWeb3?: boolean;
-  editor: 'normal' | 'markdown' | 'html';
+  isChromeExtension?: boolean;
+  extensionCookies?: { name: string; domain: string }[];
+  editor: 'none' | 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;

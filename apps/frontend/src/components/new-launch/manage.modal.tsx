@@ -42,6 +42,8 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
+import dayjs from 'dayjs';
+import { Button } from '@gitroom/react/form/button';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -108,14 +110,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return (
         <div className="flex items-center gap-[10px]">
           <div className="relative">
-            <SettingsIcon
-              size={15}
-              className="text-white"
-            />
+            <SettingsIcon size={15} className="text-white" />
           </div>
-          <div>
-            Settings
-          </div>
+          <div>Settings</div>
         </div>
       );
     }
@@ -202,38 +199,83 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [existingData, mutate, modal]);
 
   const schedule = useCallback(
-    (type: 'draft' | 'now' | 'schedule') => async () => {
-      setLoading(true);
-      const checkAllValid = await ref.current.checkAllValid();
-      if (type !== 'draft') {
-        const notEnoughChars = checkAllValid.filter((p: any) => {
-          return p.values.some((a: any) => {
-            return (
-              countCharacters(
-                stripHtmlValidation('normal', a.content, true),
-                p?.integration?.identifier || ''
-              ) === 0 && a.media?.length === 0
-            );
+    (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
+      if (
+        (type === 'now' || type === 'schedule') &&
+        (existingData?.posts?.[0]?.state === 'PUBLISHED' ||
+          (existingData?.posts?.[0]?.state === 'QUEUE' &&
+            dayjs().isAfter(date.utc())))
+      ) {
+        const whatToDo = await new Promise((resolve) => {
+          modal.openModal({
+            title: 'What do you want to do?',
+            children: (
+              <div className="flex flex-col">
+                <div className="text-[20px] mb-[20px]">
+                  This post was already published, what do you want to do?
+                </div>
+                <div className="flex w-full gap-[10px]">
+                  <div className="flex-1 flex">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => resolve('update')}
+                    >
+                      Just update the post details
+                    </Button>
+                  </div>
+                  <div className="flex-1 flex">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => resolve('republish')}
+                    >
+                      Republish the post
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ),
           });
         });
 
-        for (const item of notEnoughChars) {
-          toaster.show(
-            `${capitalize(item.integration.identifier.split('-')[0])} (${
-              item.integration.name
-            }):` +
-              ' ' +
-              t(
-                'post_needs_content_or_image',
-                'Your post should have at least one character or one image.'
-              ),
-            'warning'
-          );
-          setLoading(false);
-          item.preview();
-          return;
+        if (whatToDo === 'update') {
+          type = 'update';
         }
+      }
 
+      setLoading(true);
+      const checkAllValid = await ref.current.checkAllValid();
+
+      const notEnoughChars = checkAllValid.filter((p: any) => {
+        return p.values.some((a: any) => {
+          return (
+            countCharacters(
+              stripHtmlValidation('normal', a.content, true),
+              p?.integration?.identifier || ''
+            ) === 0 && a.media?.length === 0
+          );
+        });
+      });
+
+      for (const item of notEnoughChars) {
+        toaster.show(
+          `${capitalize(item.integration.identifier.split('-')[0])} (${
+            item.integration.name
+          }):` +
+            ' ' +
+            t(
+              'post_needs_content_or_image',
+              'Your post should have at least one character or one image.'
+            ),
+          'warning'
+        );
+        setLoading(false);
+        item.preview();
+        return;
+      }
+
+      if (type !== 'draft') {
         for (const item of checkAllValid) {
           if (item.valid === false) {
             toaster.show(
@@ -476,10 +518,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       'text-[14px] text-textColor font-[500] relative'
                     )}
                   >
-                    <div
-                      className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor"
-                    >
-                      <div id="social-settings" className="flex flex-col gap-[20px] bg-newBgColor" />
+                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                      <div
+                        id="social-settings"
+                        className="flex flex-col gap-[20px] bg-newBgColor"
+                      />
                     </div>
                   </div>
                   <style>

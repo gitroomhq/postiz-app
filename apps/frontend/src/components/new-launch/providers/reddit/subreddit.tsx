@@ -21,7 +21,7 @@ export const RenderOptions: FC<{
 }> = (props) => {
   const { options, onClick, value } = props;
   const mapValues = useMemo(() => {
-    return options.map((p) => ({
+    return options?.map((p) => ({
       children: (
         <>
           {p === 'self'
@@ -35,7 +35,7 @@ export const RenderOptions: FC<{
       ),
       id: p,
       onClick: () => onClick(p),
-    }));
+    })) || [];
   }, [options]);
   return (
     <div className="flex">
@@ -216,7 +216,7 @@ export const Subreddit: FC<{
             name="flair"
           >
             <option value="">{t('select_flair', '--Select Flair--')}</option>
-            {value.flairs.map((f: any) => (
+            {value?.flairs?.map((f: any) => (
               <option key={f.name} value={f.id}>
                 {f.name}
               </option>

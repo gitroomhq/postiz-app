@@ -13,6 +13,7 @@
 </a>
 </p>
 
+<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
@@ -67,6 +68,19 @@
 
 <br />
 
+## New - Postiz-as-a-service - Enterprise (Cloud)
+
+Integrate powerful social media scheduling capabilities into your SaaS. <br />Multi-tenant architecture designed for SaaS companies who want to offer social media management to their users.
+- **Skip App Approvals** - Use Postiz apps directly without going through lengthy social platform approval processes. Get the full power of Postiz instantly.
+- **Multi-Tenant Architecture** - each of your customers gets their own isolated environment with separate accounts, channels, and team management.
+- **Headless API** - Full REST API access to build your own frontend experience. Complete control over the user interface and branding.
+- **Full OAuth Support** - Connect all major social platforms including Facebook, Instagram, Twitter, LinkedIn, TikTok, and more.
+
+
+[Check it here](https://postiz.com/enterprise)
+
+<br /><br />
+
 ## 🔌 See the leading Postiz features
 
 <p align="center">
@@ -80,6 +94,15 @@
 | ![Image 1](https://github.com/user-attachments/assets/a27ee220-beb7-4c7e-8c1b-2c44301f82ef) | ![Image 2](https://github.com/user-attachments/assets/eb5f5f15-ed90-47fc-811c-03ccba6fa8a2) |
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
+
+### Our Sponsors
+
+| Sponsor |                                  Logo                                   | Description     |
+|---------|:-----------------------------------------------------------------------:|-----------------|
+| [Hostinger](https://www.hostinger.com/?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
+| [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
+
+
 
 # Intro
 

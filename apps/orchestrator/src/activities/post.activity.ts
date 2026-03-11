@@ -22,6 +22,7 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
 @Injectable()
 @Activity()
@@ -33,7 +34,8 @@ export class PostActivity {
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _subscriptionService: SubscriptionService
   ) {}
 
   @ActivityMethod()
@@ -83,7 +85,18 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    const getPosts = await this._postService.getPostsRecursively(postId, true, orgId);
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(orgId);
+      if (!subscription) {
+        return [];
+      }
+    }
+
+    const getPosts = await this._postService.getPostsRecursively(
+      postId,
+      true,
+      orgId
+    );
     if (!getPosts || getPosts.length === 0 || getPosts[0].parentPostId) {
       return [];
     }
@@ -155,7 +168,7 @@ export class PostActivity {
       posts
     );
 
-    return getIntegration.post(
+    const postNow = await getIntegration.post(
       integration.internalId,
       integration.token,
       await Promise.all(
@@ -179,6 +192,23 @@ export class PostActivity {
       ),
       integration
     );
+
+    await this._temporalService.client
+      .getRawClient()
+      .workflow.start('streakWorkflow', {
+        args: [{ organizationId: integration.organizationId }],
+        workflowId: `streak_${integration.organizationId}`,
+        taskQueue: 'main',
+        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+        typedSearchAttributes: new TypedSearchAttributes([
+          {
+            key: organizationId,
+            value: integration.organizationId,
+          },
+        ]),
+      });
+
+    return postNow;
   }
 
   @ActivityMethod()

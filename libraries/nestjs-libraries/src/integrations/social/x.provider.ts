@@ -511,7 +511,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
 
     const until = dayjs().endOf('day');
-    const since = dayjs().subtract(date, 'day');
+    const since = dayjs().subtract(date > 100 ? 100 : date, 'day');
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({

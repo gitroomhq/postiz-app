@@ -1,6 +1,10 @@
-import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+import {
+  AuthProvider,
+  AuthProviderAbstract,
+} from '@gitroom/backend/services/auth/providers.interface';
 
-export class GithubProvider implements ProvidersInterface {
+@AuthProvider({ provider: 'GITHUB' })
+export class GithubProvider extends AuthProviderAbstract {
   generateLink(): string {
     return `https://github.com/login/oauth/authorize?client_id=${
       process.env.GITHUB_CLIENT_ID

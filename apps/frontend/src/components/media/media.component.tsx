@@ -534,6 +534,7 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
+                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div

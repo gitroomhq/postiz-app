@@ -25,6 +25,8 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import Image from 'next/image';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import useCookie from 'react-use-cookie';
+import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -53,6 +55,8 @@ export const FirstBillingComponent = () => {
   const fetch = useFetch();
   const modals = useModals();
   const t = useT();
+  const [datafast_visitor_id] = useCookie('datafast_visitor_id', '');
+  const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
     setStripe(loadStripe(stripeClient));
@@ -65,6 +69,9 @@ export const FirstBillingComponent = () => {
         body: JSON.stringify({
           billing: tier,
           period: period,
+          ...(datafast_visitor_id && datafast_session_id
+            ? { datafast_visitor_id, datafast_session_id }
+            : {}),
           ...(dub ? { dub } : {}),
         }),
       })
@@ -182,7 +189,12 @@ export const FirstBillingComponent = () => {
             <LanguageComponent />
             <div className="w-[1px] h-[20px] bg-blockSeparator" />
             <AttachToFeedbackIcon />
-            <NotificationComponent />
+            {/*<NotificationComponent />*/}
+            <div className="hover:text-newTextColor">
+              {user?.tier.current === 'FREE' && (
+                <LogoutComponent isIcon={true} />
+              )}
+            </div>
           </div>
         </div>
       </div>

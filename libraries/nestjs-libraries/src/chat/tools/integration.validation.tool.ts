@@ -6,7 +6,7 @@ import {
   IntegrationManager,
   socialIntegrationList,
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
+import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
@@ -88,7 +88,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
         const maxLength = integration.maxLength(context.isPremium);
         const schemas = !integration.dto
           ? false
-          : validationMetadatasToSchemas()[integration.dto.name];
+          : getValidationSchemas()[integration.dto.name];
         const tools = this._integrationManager.getAllTools();
         const rules = this._integrationManager.getAllRulesDescription();
 

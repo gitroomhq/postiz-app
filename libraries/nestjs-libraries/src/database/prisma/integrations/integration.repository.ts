@@ -151,12 +151,44 @@ export class IntegrationRepository {
       params.picture = await this.storage.uploadSimple(params.picture);
     }
 
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: params.organizationId!,
+          internalId: params.internalId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this._posts.model.post.updateMany({
+        where: {
+          integrationId: id,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+
+      await this._integration.model.integration.update({
+        where: {
+          id,
+        },
+        data: {
+          internalId: `deleted_${params.internalId}_${makeId(10)}`,
+          deletedAt: new Date(),
+        },
+      });
+    }
+
     return this._integration.model.integration.update({
       where: {
-        id,
+        ...(existing ? { id: existing.id } : { id }),
       },
       data: {
         ...params,
+        disabled: false,
+        deletedAt: null,
       },
     });
   }
@@ -279,7 +311,6 @@ export class IntegrationRepository {
           id: {
             not: upsert.id,
           },
-          organizationId: org,
           rootInternalId: rootId,
         },
         data: {

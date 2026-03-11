@@ -52,8 +52,8 @@ export class MediaService {
     return generating;
   }
 
-  saveFile(org: string, fileName: string, filePath: string) {
-    return this._mediaRepository.saveFile(org, fileName, filePath);
+  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
+    return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
   }
 
   getMedia(org: string, page: number) {

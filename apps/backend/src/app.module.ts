@@ -15,6 +15,8 @@ import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
 import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { TemporalRegisterMissingSearchAttributesModule } from '@gitroom/nestjs-libraries/temporal/temporal.register';
 import { InfiniteWorkflowRegisterModule } from '@gitroom/nestjs-libraries/temporal/infinite.workflow.register';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
 @Global()
 @Module({
@@ -30,12 +32,15 @@ import { InfiniteWorkflowRegisterModule } from '@gitroom/nestjs-libraries/tempor
     getTemporalModule(false),
     TemporalRegisterMissingSearchAttributesModule,
     InfiniteWorkflowRegisterModule,
-    ThrottlerModule.forRoot([
-      {
-        ttl: 3600000,
-        limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 30,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 3600000,
+          limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 30,
+        },
+      ],
+      storage: new ThrottlerStorageRedisService(ioRedis),
+    }),
   ],
   controllers: [],
   providers: [

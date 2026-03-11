@@ -144,6 +144,13 @@ module.exports = {
         menu: 'var(--menu-shadow)',
         previewShadow: 'var(--preview-box-shadow)',
       },
+      dropShadow: {
+        glow: [
+          '0 0 6px rgba(250,204,21,0.6)',
+          '0 0 12px rgba(250,204,21,0.5)',
+          '0 0 24px rgba(250,204,21,0.4)',
+        ],
+      },
       // that is actual animation
       keyframes: (theme) => ({
         fadeOut: {

@@ -35,6 +35,10 @@ import { PostComment } from '@gitroom/frontend/components/new-launch/providers/h
 import WordpressProvider from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.provider';
 import ListmonkProvider from '@gitroom/frontend/components/new-launch/providers/listmonk/listmonk.provider';
 import GmbProvider from '@gitroom/frontend/components/new-launch/providers/gmb/gmb.provider';
+import MoltbookProvider from '@gitroom/frontend/components/new-launch/providers/moltbook/moltbook.provider';
+import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/skool/skool.provider';
+import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
+import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
 import WebhookProvider from '@gitroom/frontend/components/new-launch/providers/webhook/webhook.provider';
 
 export const Providers = [
@@ -153,6 +157,22 @@ export const Providers = [
   {
     identifier: 'gmb',
     component: GmbProvider,
+  },
+  {
+    identifier: 'moltbook',
+    component: MoltbookProvider,
+  },
+  {
+    identifier: 'skool',
+    component: SkoolProvider,
+  },
+  {
+    identifier: 'whop',
+    component: WhopProvider,
+  },
+  {
+    identifier: 'mewe',
+    component: MeweProvider,
   },
   {
     identifier: 'webhook',

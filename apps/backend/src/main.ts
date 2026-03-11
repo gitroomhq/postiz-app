@@ -1,5 +1,6 @@
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 initializeSentry('backend', true);
+import compression from 'compression';
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 import { json } from 'express';
@@ -51,11 +52,12 @@ async function start() {
     })
   );
 
-  app.use('/copilot/*', (req: any, res: any, next: any) => {
+  app.use(['/copilot/*', '/posts'], (req: any, res: any, next: any) => {
     json({ limit: '50mb' })(req, res, next);
   });
 
   app.use(cookieParser());
+  app.use(compression());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 

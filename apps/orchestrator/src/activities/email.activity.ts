@@ -25,4 +25,9 @@ export class EmailActivity {
   async getUserOrgs(id: string) {
     return this._organizationService.getTeam(id);
   }
+
+  @ActivityMethod()
+  async setStreak(organizationId: string, type: 'start' | 'end') {
+    return this._organizationService.setStreak(organizationId, type);
+  }
 }

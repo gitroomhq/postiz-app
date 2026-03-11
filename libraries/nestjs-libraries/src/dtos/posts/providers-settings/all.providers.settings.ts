@@ -20,6 +20,10 @@ import { ListmonkDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import { GmbSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/gmb.settings.dto';
 import { FarcasterDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/farcaster.dto';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
+import { MoltbookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/moltbook.dto';
+import { SkoolDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/skool.dto';
+import { WhopDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/whop.dto';
+import { MeweDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/mewe.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -52,6 +56,11 @@ export type AllProvidersSettings =
   | ProviderExtension<'telegram', None>
   | ProviderExtension<'nostr', None>
   | ProviderExtension<'vk', None>
+  | ProviderExtension<'moltbook', MoltbookDto>
+  | ProviderExtension<'vk', None>
+  | ProviderExtension<'skool', SkoolDto>
+  | ProviderExtension<'mewe', MeweDto>
+  | ProviderExtension<'whop', WhopDto>
   | ProviderExtension<'webhook', None>;
 
 type None = NonNullable<unknown>;
@@ -87,6 +96,10 @@ export const allProviders = (setEmpty?: any) => {
     { value: setEmpty, name: 'telegram' },
     { value: setEmpty, name: 'nostr' },
     { value: setEmpty, name: 'vk' },
+    { value: MoltbookDto, name: 'moltbook' },
+    { value: SkoolDto, name: 'skool' },
+    { value: WhopDto, name: 'whop' },
+    { value: MeweDto, name: 'mewe' },
     { value: setEmpty, name: 'webhook' },
   ].filter((f) => f.value);
 };

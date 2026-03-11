@@ -27,7 +27,9 @@ export class BadBody extends ApplicationFailure {
 }
 
 export class NotEnoughScopes {
-  constructor(public message = 'Not enough scopes') {}
+  constructor(
+    public message = 'Not enough scopes, when choosing a provider, please add all the scopes'
+  ) {}
 }
 
 function safeStringify(obj: any) {
@@ -119,9 +121,11 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    const handleError = this.handleErrors(json || '{}');
+
     if (
       request.status === 429 ||
-      request.status === 500 ||
+      (request.status === 500 && !handleError) ||
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
@@ -134,8 +138,6 @@ export abstract class SocialAbstract {
         ignoreConcurrency
       );
     }
-
-    const handleError = this.handleErrors(json || '{}');
 
     if (handleError?.type === 'retry') {
       await timer(5000);
