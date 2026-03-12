@@ -45,6 +45,11 @@ export class PostContent {
   @Type(() => MediaDto)
   @ValidateNested({ each: true })
   image: MediaDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  hashtags?: string[];
 }
 
 export class Post {
