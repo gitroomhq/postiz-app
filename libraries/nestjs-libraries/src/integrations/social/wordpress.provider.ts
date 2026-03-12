@@ -138,23 +138,27 @@ export class WordpressProvider
     }
   }
 
-  @Tool({
-    description: 'Get list of post types',
-    dataSchema: [],
-  })
-  async postTypes(token: string) {
+  private parseToken(token: string) {
     const body = JSON.parse(Buffer.from(token, 'base64').toString()) as {
       domain: string;
       username: string;
       password: string;
     };
-
     const auth = Buffer.from(`${body.username}:${body.password}`).toString(
       'base64'
     );
+    return { ...body, auth };
+  }
+
+  @Tool({
+    description: 'Get list of post types',
+    dataSchema: [],
+  })
+  async postTypes(token: string) {
+    const { domain, auth } = this.parseToken(token);
 
     const postTypes = await (
-      await this.fetch(`${body.domain}/wp-json/wp/v2/types`, {
+      await this.fetch(`${domain}/wp-json/wp/v2/types`, {
         headers: {
           Authorization: `Basic ${auth}`,
         },
@@ -179,21 +183,76 @@ export class WordpressProvider
     }, []);
   }
 
+  @Tool({
+    description: 'Get list of authors',
+    dataSchema: [],
+  })
+  async authors(token: string) {
+    const { domain, auth } = this.parseToken(token);
+
+    const users = await (
+      await this.fetch(`${domain}/wp-json/wp/v2/users?per_page=100`, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+      })
+    ).json();
+
+    return (users as any[]).map((u: any) => ({
+      id: u.id,
+      name: u.name,
+    }));
+  }
+
+  @Tool({
+    description: 'Get list of categories',
+    dataSchema: [],
+  })
+  async categories(token: string) {
+    const { domain, auth } = this.parseToken(token);
+
+    const categories = await (
+      await this.fetch(`${domain}/wp-json/wp/v2/categories?per_page=100`, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+      })
+    ).json();
+
+    return (categories as any[]).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+    }));
+  }
+
+  @Tool({
+    description: 'Get list of tags',
+    dataSchema: [],
+  })
+  async tags(token: string) {
+    const { domain, auth } = this.parseToken(token);
+
+    const tags = await (
+      await this.fetch(`${domain}/wp-json/wp/v2/tags?per_page=100`, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+      })
+    ).json();
+
+    return (tags as any[]).map((t: any) => ({
+      id: t.id,
+      name: t.name,
+    }));
+  }
+
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails<WordpressDto>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const body = JSON.parse(Buffer.from(accessToken, 'base64').toString()) as {
-      domain: string;
-      username: string;
-      password: string;
-    };
-
-    const auth = Buffer.from(`${body.username}:${body.password}`).toString(
-      'base64'
-    );
+    const { domain, auth } = this.parseToken(accessToken);
 
     let mediaId = '';
     if (postDetails?.[0]?.settings?.main_image?.path) {
@@ -207,7 +266,7 @@ export class WordpressProvider
       ).then((r) => r.blob());
 
       const mediaResponse = await (
-        await this.fetch(`${body.domain}/wp-json/wp/v2/media`, {
+        await this.fetch(`${domain}/wp-json/wp/v2/media`, {
           method: 'POST',
           headers: {
             Authorization: `Basic ${auth}`,
@@ -223,9 +282,11 @@ export class WordpressProvider
       mediaId = mediaResponse.id;
     }
 
+    const settings = postDetails?.[0]?.settings;
+
     const submit = await (
       await this.fetch(
-        `${body.domain}/wp-json/wp/v2/${postDetails?.[0]?.settings?.type}`,
+        `${domain}/wp-json/wp/v2/${settings?.type}`,
         {
           headers: {
             Authorization: `Basic ${auth}`,
@@ -233,15 +294,23 @@ export class WordpressProvider
           },
           method: 'POST',
           body: JSON.stringify({
-            title: postDetails?.[0]?.settings?.title,
+            title: settings?.title,
             content: postDetails?.[0]?.message,
-            slug: slugify(postDetails?.[0]?.settings?.title, {
+            slug: settings?.slug || slugify(settings?.title, {
               lower: true,
               strict: true,
               trim: true,
             }),
-            status: 'publish',
+            status: settings?.status || 'publish',
             ...(mediaId ? { featured_media: mediaId } : {}),
+            ...(settings?.author ? { author: settings.author } : {}),
+            ...(settings?.excerpt ? { excerpt: settings.excerpt } : {}),
+            ...(settings?.categories?.length
+              ? { categories: settings.categories.map((c) => c.value) }
+              : {}),
+            ...(settings?.tags?.length
+              ? { tags: settings.tags.map((t) => t.value) }
+              : {}),
           }),
         }
       )

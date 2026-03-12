@@ -1,5 +1,7 @@
 import {
+  IsArray,
   IsDefined,
+  IsNumber,
   IsOptional,
   IsString,
   MinLength,
@@ -7,6 +9,22 @@ import {
 } from 'class-validator';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
+
+export class WordpressTagDto {
+  @IsString()
+  value: string;
+
+  @IsString()
+  label: string;
+}
+
+export class WordpressCategoryDto {
+  @IsNumber()
+  value: number;
+
+  @IsString()
+  label: string;
+}
 
 export class WordpressDto {
   @IsString()
@@ -22,4 +40,32 @@ export class WordpressDto {
   @IsString()
   @IsDefined()
   type: string;
+
+  @IsOptional()
+  @IsString()
+  excerpt?: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
+  @IsNumber()
+  author?: number;
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => WordpressCategoryDto)
+  @ValidateNested({ each: true })
+  categories?: WordpressCategoryDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => WordpressTagDto)
+  @ValidateNested({ each: true })
+  tags?: WordpressTagDto[];
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
