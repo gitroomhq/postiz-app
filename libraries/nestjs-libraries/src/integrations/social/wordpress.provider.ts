@@ -10,10 +10,7 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 import slugify from 'slugify';
-// import FormData from 'form-data';
-import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
-import { string } from 'yup';
 
 export class WordpressProvider
   extends SocialAbstract
@@ -190,13 +187,20 @@ export class WordpressProvider
   async authors(token: string) {
     const { domain, auth } = this.parseToken(token);
 
-    const users = await (
-      await this.fetch(`${domain}/wp-json/wp/v2/users?per_page=100`, {
+    const response = await this.fetch(
+      `${domain}/wp-json/wp/v2/users?per_page=100`,
+      {
         headers: {
           Authorization: `Basic ${auth}`,
         },
-      })
-    ).json();
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const users = await response.json();
 
     return (users as any[]).map((u: any) => ({
       id: u.id,
@@ -211,17 +215,24 @@ export class WordpressProvider
   async categories(token: string) {
     const { domain, auth } = this.parseToken(token);
 
-    const categories = await (
-      await this.fetch(`${domain}/wp-json/wp/v2/categories?per_page=100`, {
+    const response = await this.fetch(
+      `${domain}/wp-json/wp/v2/categories?per_page=100`,
+      {
         headers: {
           Authorization: `Basic ${auth}`,
         },
-      })
-    ).json();
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const categories = await response.json();
 
     return (categories as any[]).map((c: any) => ({
-      id: c.id,
-      name: c.name,
+      value: c.id,
+      label: c.name,
     }));
   }
 
@@ -232,17 +243,24 @@ export class WordpressProvider
   async tags(token: string) {
     const { domain, auth } = this.parseToken(token);
 
-    const tags = await (
-      await this.fetch(`${domain}/wp-json/wp/v2/tags?per_page=100`, {
+    const response = await this.fetch(
+      `${domain}/wp-json/wp/v2/tags?per_page=100`,
+      {
         headers: {
           Authorization: `Basic ${auth}`,
         },
-      })
-    ).json();
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const tags = await response.json();
 
     return (tags as any[]).map((t: any) => ({
-      id: t.id,
-      name: t.name,
+      value: t.id,
+      label: t.name,
     }));
   }
 

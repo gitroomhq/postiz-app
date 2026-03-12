@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsDefined,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -11,8 +12,8 @@ import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
 
 export class WordpressTagDto {
-  @IsString()
-  value: string;
+  @IsNumber()
+  value: number;
 
   @IsString()
   label: string;
@@ -67,5 +68,6 @@ export class WordpressDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(['publish', 'draft', 'pending', 'private', 'future'])
   status?: string;
 }
