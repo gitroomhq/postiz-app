@@ -8,6 +8,7 @@ import {
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { DribbbleTeams } from '@gitroom/frontend/components/new-launch/providers/dribbble/dribbble.teams';
+import { DribbbleTags } from '@gitroom/frontend/components/new-launch/providers/dribbble/dribbble.tags';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 const DribbbleSettings: FC = () => {
   const { register, control } = useSettings();
@@ -15,6 +16,9 @@ const DribbbleSettings: FC = () => {
     <div className="flex flex-col">
       <Input label={'Title'} {...register('title')} />
       <DribbbleTeams {...register('team')} />
+      <div>
+        <DribbbleTags label="Tags (Maximum 12)" {...register('tags')} />
+      </div>
     </div>
   );
 };
