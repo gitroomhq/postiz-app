@@ -30,8 +30,6 @@ export class InstagramProvider
     'pages_read_engagement',
     'business_management',
     'instagram_content_publish',
-    'instagram_manage_comments',
-    'instagram_manage_insights',
   ];
   override maxConcurrentJob = 400;
   editor = 'normal' as const;

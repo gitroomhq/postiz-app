@@ -1,0 +1,79 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Runs weekly on Monday at 9am UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/gitroomhq/postiz-app.git || true
+
+      - name: Fetch upstream
+        run: git fetch upstream
+
+      - name: Check for updates
+        id: check
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "behind=$BEHIND" >> $GITHUB_OUTPUT
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "::notice::$BEHIND commits behind upstream"
+          fi
+
+      - name: Create sync branch and PR
+        if: steps.check.outputs.behind > 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="sync-upstream-$(date +%Y%m%d)"
+          git checkout -b $BRANCH
+          git merge upstream/main --no-edit || true
+
+          # Check if there are conflicts
+          if git diff --name-only --diff-filter=U | grep -q .; then
+            echo "::warning::Merge conflicts detected - manual resolution required"
+            git merge --abort
+            git checkout main
+
+            # Create issue instead of PR
+            gh issue create \
+              --title "Upstream sync has conflicts - $(date +%Y-%m-%d)" \
+              --body "Upstream has updates but automatic merge failed due to conflicts.
+
+          **Commits behind:** ${{ steps.check.outputs.behind }}
+
+          To resolve manually:
+          \`\`\`bash
+          git fetch upstream
+          git merge upstream/main
+          # resolve conflicts
+          git commit
+          git push
+          \`\`\`"
+          else
+            git push origin $BRANCH
+            gh pr create \
+              --title "Sync upstream changes - $(date +%Y-%m-%d)" \
+              --body "Automated PR to sync with upstream Postiz repository.
+
+          **Commits behind:** ${{ steps.check.outputs.behind }}
+
+          Review the changes and merge when ready." \
+              --base main \
+              --head $BRANCH
+          fi
