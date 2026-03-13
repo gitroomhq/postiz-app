@@ -32,7 +32,5 @@ export default withProvider({
   SettingsComponent: SkoolComponent,
   CustomPreviewComponent: undefined,
   dto: SkoolDto,
-  checkValidity: undefined,
-  maximumCharacters: 50000,
   postComment: PostComment.ALL,
 });

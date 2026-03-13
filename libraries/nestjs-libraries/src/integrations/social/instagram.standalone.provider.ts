@@ -25,6 +25,14 @@ export class InstagramStandaloneProvider
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
   refreshCron = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
+  commentsMediaSupport = 'no-media' as const;
   scopes = [
     'instagram_business_basic',
     'instagram_business_content_publish',
