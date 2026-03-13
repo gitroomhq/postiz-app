@@ -22,7 +22,12 @@ export const getTemporalModule = (
             { identifier: 'main', maxConcurrentJob: undefined },
             ...socialIntegrationList,
           ]
-            .filter((f) => f.identifier.indexOf('-') === -1)
+            .filter(
+              (f, i, arr) =>
+                arr.findIndex(
+                  (g) => g.identifier.split('-')[0] === f.identifier.split('-')[0]
+                ) === i
+            )
             .map((integration) => ({
               taskQueue: integration.identifier.split('-')[0],
               workflowsPath: path!,
