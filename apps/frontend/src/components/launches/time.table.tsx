@@ -128,7 +128,7 @@ export const TimeTable: FC<{
   }, [currentTimes]);
 
   return (
-    <div className="relative w-full max-w-[400px] mx-auto">
+    <div className="relative w-full max-w-[400px] mobile:max-w-full mx-auto mobile:px-[16px]">
       {/* Add Time Slot Section */}
       <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
         <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">

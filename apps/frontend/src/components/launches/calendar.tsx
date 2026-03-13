@@ -14,6 +14,7 @@ import {
   Integrations,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
+import { useMobile } from '@gitroom/frontend/components/hooks/use-mobile';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import 'dayjs/locale/he';
@@ -318,9 +319,109 @@ export const DayView = () => {
     </div>
   );
 };
+// Mobile-friendly week view that shows posts as cards grouped by day
+export const MobileWeekView = () => {
+  const { startDate, posts, integrations } = useCalendar();
+  const t = useT();
+  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+
+  // Generate days for the week
+  const weekDays = useMemo(() => {
+    const days = [];
+    const weekStart = newDayjs(startDate);
+    for (let i = 0; i < 7; i++) {
+      const day = weekStart.add(i, 'day');
+      days.push({
+        name: day.format('dddd'),
+        date: day.format('L'),
+        dayjs: day,
+      });
+    }
+    return days;
+  }, [startDate]);
+
+  // Group posts by day
+  const postsByDay = useMemo(() => {
+    const grouped: { [key: string]: any[] } = {};
+    weekDays.forEach((day) => {
+      const dateKey = day.dayjs.format('YYYY-MM-DD');
+      grouped[dateKey] = posts.filter((post) => {
+        const postDate = dayjs.utc(post.publishDate).local();
+        return postDate.format('YYYY-MM-DD') === dateKey;
+      });
+    });
+    return grouped;
+  }, [posts, weekDays]);
+
+  return (
+    <div className="flex flex-col text-textColor flex-1 overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+      <div className="px-[16px] py-[12px]">
+        {weekDays.map((day) => {
+          const dateKey = day.dayjs.format('YYYY-MM-DD');
+          const dayPosts = postsByDay[dateKey] || [];
+          const isToday = day.date === newDayjs().format('L');
+
+          return (
+            <div key={dateKey} className="mb-[20px]">
+              {/* Day header */}
+              <div
+                className={clsx(
+                  'text-[16px] font-[600] mb-[12px] pb-[8px] border-b border-newTableBorder flex items-center gap-[8px]',
+                  isToday && 'text-newTableTextFocused'
+                )}
+              >
+                {isToday && (
+                  <div className="w-[8px] h-[8px] bg-newTableTextFocused rounded-full" />
+                )}
+                <span>{day.name}</span>
+                <span className="text-[14px] font-[400] text-newTableText">
+                  {day.date}
+                </span>
+              </div>
+
+              {/* Posts for this day */}
+              {dayPosts.length === 0 ? (
+                <div className="text-center py-[16px] text-newTextColor/40 text-[14px]">
+                  {t('no_posts_scheduled', 'No posts scheduled')}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-[12px]">
+                  {dayPosts.map((post) => (
+                    <CalendarItem
+                      key={post.id}
+                      display="day"
+                      isBeforeNow={dayjs.utc(post.publishDate).local().isBefore(newDayjs())}
+                      date={dayjs.utc(post.publishDate).local()}
+                      state={post.state}
+                      statistics={openStatistics(post.id)}
+                      missingRelease={openMissingRelease(post.id)}
+                      editPost={editPost(post, false)}
+                      duplicatePost={editPost(post, true)}
+                      post={post}
+                      integrations={integrations}
+                      deletePost={deletePost(post)}
+                      showTime={true}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const WeekView = () => {
   const { startDate, endDate } = useCalendar();
   const t = useT();
+  const isMobile = useMobile();
+
+  // Use mobile view on small screens
+  if (isMobile) {
+    return <MobileWeekView />;
+  }
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -390,9 +491,118 @@ export const WeekView = () => {
     </div>
   );
 };
+// Mobile-friendly month view showing posts as list grouped by day
+export const MobileMonthView = () => {
+  const { startDate, posts, integrations } = useCalendar();
+  const t = useT();
+  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+
+  const calendarDays = useMemo(() => {
+    const monthStart = newDayjs(startDate);
+    const currentMonth = monthStart.month();
+    const currentYear = monthStart.year();
+
+    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
+    const endOfMonth = startOfMonth.endOf('month');
+
+    const calendarDays = [];
+    let currentDay = startOfMonth;
+    
+    while (currentDay.isSameOrBefore(endOfMonth)) {
+      calendarDays.push(currentDay);
+      currentDay = currentDay.add(1, 'day');
+    }
+    
+    return calendarDays;
+  }, [startDate]);
+
+  // Group posts by day
+  const postsByDay = useMemo(() => {
+    const grouped: { [key: string]: any[] } = {};
+    calendarDays.forEach((day) => {
+      const dateKey = day.format('YYYY-MM-DD');
+      grouped[dateKey] = posts.filter((post) => {
+        const postDate = dayjs.utc(post.publishDate).local();
+        return postDate.format('YYYY-MM-DD') === dateKey;
+      });
+    });
+    return grouped;
+  }, [posts, calendarDays]);
+
+  return (
+    <div className="flex flex-col text-textColor flex-1 overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+      <div className="px-[16px] py-[12px]">
+        {calendarDays.map((day) => {
+          const dateKey = day.format('YYYY-MM-DD');
+          const dayPosts = postsByDay[dateKey] || [];
+          const isToday = day.format('L') === newDayjs().format('L');
+
+          // Only show days that have posts
+          if (dayPosts.length === 0) {
+            return null;
+          }
+
+          return (
+            <div key={dateKey} className="mb-[20px]">
+              {/* Day header */}
+              <div
+                className={clsx(
+                  'text-[16px] font-[600] mb-[12px] pb-[8px] border-b border-newTableBorder flex items-center gap-[8px]',
+                  isToday && 'text-newTableTextFocused'
+                )}
+              >
+                {isToday && (
+                  <div className="w-[8px] h-[8px] bg-newTableTextFocused rounded-full" />
+                )}
+                <span>{day.format('dddd')}</span>
+                <span className="text-[14px] font-[400] text-newTableText">
+                  {day.format('L')}
+                </span>
+              </div>
+
+              {/* Posts for this day */}
+              <div className="flex flex-col gap-[12px]">
+                {dayPosts.map((post) => (
+                  <CalendarItem
+                    key={post.id}
+                    display="day"
+                    isBeforeNow={dayjs.utc(post.publishDate).local().isBefore(newDayjs())}
+                    date={dayjs.utc(post.publishDate).local()}
+                    state={post.state}
+                    statistics={openStatistics(post.id)}
+                    missingRelease={openMissingRelease(post.id)}
+                    editPost={editPost(post, false)}
+                    duplicatePost={editPost(post, true)}
+                    post={post}
+                    integrations={integrations}
+                    deletePost={deletePost(post)}
+                    showTime={true}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        
+        {calendarDays.every((day) => (postsByDay[day.format('YYYY-MM-DD')] || []).length === 0) && (
+          <div className="text-center py-[32px] text-newTextColor/40 text-[14px]">
+            {t('no_posts_this_month', 'No posts scheduled this month')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const MonthView = () => {
   const { startDate } = useCalendar();
   const t = useT();
+  const isMobile = useMobile();
+
+  // Use mobile view on small screens
+  if (isMobile) {
+    return <MobileMonthView />;
+  }
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -564,6 +774,7 @@ export const CalendarColumn: FC<{
   const { getDate, randomHour } = props;
   const [num, setNum] = useState(0);
   const user = useUser();
+  const isMobile = useMobile();
   const {
     integrations,
     posts,
@@ -632,8 +843,9 @@ export const CalendarColumn: FC<{
   }, []);
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
+    canDrop: () => !isMobile, // Disable drag-and-drop on mobile
     drop: async (item: any) => {
-      if (isBeforeNow) return;
+      if (isBeforeNow || isMobile) return;
 
       // Find the post to check its state
       const post = posts.find((p) => p.id === item.id);
@@ -964,6 +1176,7 @@ const CalendarItem: FC<{
   };
 }> = memo((props) => {
   const t = useT();
+  const isMobile = useMobile();
   const {
     editPost,
     statistics,
@@ -984,6 +1197,7 @@ const CalendarItem: FC<{
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
+      canDrag: () => !isMobile, // Disable dragging on mobile
       item: {
         id: post.id,
         interval: !!post.intervalInDays,
@@ -993,7 +1207,7 @@ const CalendarItem: FC<{
         opacity: monitor.isDragging() ? 0 : 1,
       }),
     }),
-    []
+    [isMobile]
   );
   return (
     <div
