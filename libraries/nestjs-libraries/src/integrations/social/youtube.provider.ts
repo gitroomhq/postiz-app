@@ -56,8 +56,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = true;
   dto = YoutubeSettingsDto;
   scopes = [
-    'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/youtube',
     'https://www.googleapis.com/auth/youtube.force-ssl',
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -136,25 +134,34 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, youtube } = clientAndYoutube();
     client.setCredentials({ refresh_token });
     const { credentials } = await client.refreshAccessToken();
-    const user = oauth2(client);
+
+    // Get user info from YouTube channel instead of userinfo API
+    const youtubeClient = youtube(client);
+    const response = await youtubeClient.channels.list({
+      part: ['snippet'],
+      mine: true,
+    });
+    const channel = response.data.items?.[0];
+    if (!channel?.id) {
+      throw new Error('No YouTube channel found for this account');
+    }
+
     const expiryDate = new Date(credentials.expiry_date!);
     const unixTimestamp =
       Math.floor(expiryDate.getTime() / 1000) -
       Math.floor(new Date().getTime() / 1000);
 
-    const { data } = await user.userinfo.get();
-
     return {
       accessToken: credentials.access_token!,
       expiresIn: unixTimestamp!,
       refreshToken: credentials.refresh_token!,
-      id: data.id!,
-      name: data.name!,
-      picture: data?.picture || '',
-      username: '',
+      id: channel.id,
+      name: channel?.snippet?.title || '',
+      picture: channel?.snippet?.thumbnails?.default?.url || '',
+      username: channel?.snippet?.customUrl || '',
     };
   }
 
@@ -164,7 +171,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
-        prompt: 'consent',
+        prompt: 'consent select_account',
         state,
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
@@ -179,14 +186,23 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, youtube } = clientAndYoutube();
     const { tokens } = await client.getToken(params.code);
     client.setCredentials(tokens);
     const { scopes } = await client.getTokenInfo(tokens.access_token!);
     this.checkScopes(this.scopes, scopes);
 
-    const user = oauth2(client);
-    const { data } = await user.userinfo.get();
+    // Get user info from YouTube channel instead of userinfo API
+    // to avoid requiring userinfo scopes that block Brand Account picker
+    const youtubeClient = youtube(client);
+    const response = await youtubeClient.channels.list({
+      part: ['snippet'],
+      mine: true,
+    });
+    const channel = response.data.items?.[0];
+    if (!channel) {
+      throw new Error('No YouTube channel found for this account');
+    }
 
     const expiryDate = new Date(tokens.expiry_date!);
     const unixTimestamp =
@@ -197,10 +213,10 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       accessToken: tokens.access_token!,
       expiresIn: unixTimestamp,
       refreshToken: tokens.refresh_token!,
-      id: data.id!,
-      name: data.name!,
-      picture: data?.picture || '',
-      username: '',
+      id: `yt-pending-${makeId(10)}`,
+      name: channel?.snippet?.title || '',
+      picture: channel?.snippet?.thumbnails?.default?.url || '',
+      username: channel?.snippet?.customUrl || '',
     };
   }
 
