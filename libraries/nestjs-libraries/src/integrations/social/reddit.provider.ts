@@ -23,6 +23,13 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   identifier = 'reddit';
   name = 'Reddit';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 1,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = ['read', 'identity', 'submit', 'flair'];
   editor = 'normal' as const;
   dto = RedditSettingsDto;

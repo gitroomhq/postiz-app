@@ -85,6 +85,11 @@ export class IntegrationsController {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );
+          const parsedSettings = JSON.parse(p.additionalSettings || '[]');
+          const verified = parsedSettings?.find(
+            (s: any) => s?.title === 'Verified'
+          )?.value || false;
+
           return {
             name: p.name,
             id: p.id,
@@ -106,6 +111,8 @@ export class IntegrationsController {
             changeNickName: !!findIntegration?.changeNickname,
             customer: p.customer,
             additionalSettings: p.additionalSettings || '[]',
+            mediaCapabilities: findIntegration.mediaCapabilities,
+            postingCapabilities: findIntegration.getPostingCapabilities(verified),
           };
         })
       ),

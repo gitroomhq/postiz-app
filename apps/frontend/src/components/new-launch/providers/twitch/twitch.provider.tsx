@@ -90,6 +90,4 @@ export default withProvider({
   SettingsComponent: TwitchSettings,
   CustomPreviewComponent: undefined,
   dto: TwitchDto,
-  checkValidity: undefined,
-  maximumCharacters: 500,
 });

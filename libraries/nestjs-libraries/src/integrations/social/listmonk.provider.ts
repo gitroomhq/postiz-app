@@ -18,6 +18,13 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
   identifier = 'listmonk';
   name = 'ListMonk';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   editor = 'html' as const;
   dto = ListmonkDto;

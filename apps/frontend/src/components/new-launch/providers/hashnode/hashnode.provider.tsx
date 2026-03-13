@@ -48,6 +48,4 @@ export default withProvider({
   SettingsComponent: HashnodeSettings,
   CustomPreviewComponent: undefined, // HashnodePreview,
   dto: HashnodeSettingsDto,
-  checkValidity: undefined,
-  maximumCharacters: 10000,
 });

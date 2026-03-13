@@ -165,26 +165,4 @@ export default withProvider({
   SettingsComponent: GmbSettings,
   CustomPreviewComponent: undefined,
   dto: GmbSettingsDto,
-  checkValidity: async (items, settings: any) => {
-    // GMB posts can have text only, or text with one image
-    if ((items?.length ?? 0) > 0 && (items?.[0]?.length ?? 0) > 1) {
-      return 'Google My Business posts can only have one image';
-    }
-
-    // Check for video - GMB doesn't support video in local posts
-    if ((items?.length ?? 0) > 0 && (items?.[0]?.length ?? 0) > 0) {
-      const media = items?.[0]?.[0];
-      if ((media?.path?.indexOf?.('mp4') ?? -1) > -1) {
-        return 'Google My Business posts do not support video attachments';
-      }
-    }
-
-    // Event posts require a title
-    if (settings?.topicType === 'EVENT' && !settings?.eventTitle) {
-      return 'Event posts require an event title';
-    }
-
-    return true;
-  },
-  maximumCharacters: 1500,
 });

@@ -28,6 +28,13 @@ export class FarcasterProvider
   name = 'Farcaster';
   isBetweenSteps = false;
   isWeb3 = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   override maxConcurrentJob = 3; // Farcaster has moderate limits
   editor = 'normal' as const;
