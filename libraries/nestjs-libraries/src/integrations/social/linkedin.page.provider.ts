@@ -136,20 +136,39 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements, ...all } = await (
-      await fetch(
-        'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202601',
-          },
-        }
-      )
-    ).json();
+    const roles = ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'];
+    const allElements: any[] = [];
 
-    return (elements || []).map((e: any) => ({
+    for (const role of roles) {
+      try {
+        const { elements } = await (
+          await fetch(
+            `https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=${role}&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'X-Restli-Protocol-Version': '2.0.0',
+                'LinkedIn-Version': '202601',
+              },
+            }
+          )
+        ).json();
+        allElements.push(...(elements || []));
+      } catch (e) {
+        // Continue with other roles if one fails
+      }
+    }
+
+    // Deduplicate by organizational target
+    const seen = new Set<string>();
+    const uniqueElements = allElements.filter((e: any) => {
+      const id = e.organizationalTarget;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    return uniqueElements.map((e: any) => ({
       id: e.organizationalTarget.split(':').pop(),
       page: e.organizationalTarget.split(':').pop(),
       username: e['organizationalTarget~'].vanityName,
