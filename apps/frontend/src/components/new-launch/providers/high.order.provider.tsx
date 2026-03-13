@@ -40,6 +40,43 @@ interface CharacterCondition {
   maximumCharacters: number;
 }
 
+const parseAdditionalSettings = (additionalSettings?: string) => {
+  if (!additionalSettings) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(additionalSettings);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getMaximumCharacters = (
+  integrationMaximumCharacters: number | undefined,
+  maximumCharacters: number | ((settings: any) => number) | undefined,
+  additionalSettings: any
+) => {
+  if (
+    typeof integrationMaximumCharacters === 'number' &&
+    Number.isFinite(integrationMaximumCharacters) &&
+    integrationMaximumCharacters > 0
+  ) {
+    return integrationMaximumCharacters;
+  }
+
+  if (typeof maximumCharacters === 'number') {
+    return maximumCharacters;
+  }
+
+  if (typeof maximumCharacters === 'function') {
+    return maximumCharacters(additionalSettings);
+  }
+
+  return 1000000;
+};
+
 export const withProvider = function <T extends object>(params: {
   comments?: boolean | 'no-media';
   postComment: PostComment;
@@ -118,21 +155,33 @@ export const withProvider = function <T extends object>(params: {
       }))
     );
 
+    const additionalSettings = useMemo(
+      () =>
+        parseAdditionalSettings(
+          selectedIntegration?.integration.additionalSettings
+        ),
+      [selectedIntegration?.integration.additionalSettings]
+    );
+    const resolvedMaximumCharacters = useMemo(
+      () =>
+        getMaximumCharacters(
+          selectedIntegration?.integration.maxCharacters,
+          maximumCharacters,
+          additionalSettings
+        ),
+      [
+        additionalSettings,
+        maximumCharacters,
+        selectedIntegration?.integration.maxCharacters,
+      ]
+    );
+
     useEffect(() => {
       if (!setTotalChars) {
         return;
       }
 
-      setChars(
-        props.id,
-        typeof maximumCharacters === 'number'
-          ? maximumCharacters
-          : maximumCharacters(
-              JSON.parse(
-                selectedIntegration.integration.additionalSettings || '[]'
-              )
-            )
-      );
+      setChars(props.id, resolvedMaximumCharacters);
 
       if (isGlobal) {
         setComments(true);
@@ -147,17 +196,23 @@ export const withProvider = function <T extends object>(params: {
         );
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
-        setTotalChars(
-          typeof maximumCharacters === 'number'
-            ? maximumCharacters
-            : maximumCharacters(
-                JSON.parse(
-                  selectedIntegration.integration.additionalSettings || '[]'
-                )
-              )
-        );
+        setTotalChars(resolvedMaximumCharacters);
       }
-    }, [justCurrent, current, isGlobal, setTotalChars]);
+    }, [
+      current,
+      isGlobal,
+      justCurrent,
+      params.comments,
+      postComment,
+      props.id,
+      resolvedMaximumCharacters,
+      selectedIntegration?.integration.editor,
+      setChars,
+      setComments,
+      setEditor,
+      setPostComment,
+      setTotalChars,
+    ]);
 
     const getInternalPlugs = useCallback(async () => {
       return (
@@ -207,21 +262,12 @@ export const withProvider = function <T extends object>(params: {
               ? await checkValidity(
                   value.map((p) => p.media || []),
                   settings,
-                  JSON.parse(
-                    selectedIntegration.integration.additionalSettings || '[]'
-                  )
+                  additionalSettings
                 )
               : true,
             settings,
             values: value,
-            maximumCharacters:
-              typeof maximumCharacters === 'number'
-                ? maximumCharacters
-                : maximumCharacters(
-                    JSON.parse(
-                      selectedIntegration.integration.additionalSettings || '[]'
-                    )
-                  ),
+            maximumCharacters: resolvedMaximumCharacters,
             fix: () => {
               setCurrent(props.id);
               setHide(true);
@@ -284,34 +330,23 @@ export const withProvider = function <T extends object>(params: {
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={resolvedMaximumCharacters}
                 />
               ) : (
                 <GeneralPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={resolvedMaximumCharacters}
                 />
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&
               createPortal(
-                <div data-id={props.id} className={isGlobal ? 'bg-newSettings pb-[12px] px-[12px]' : 'hidden bg-newSettings px-[12px] pb-[12px]'}>
+                <div
+                  data-id={props.id}
+                  className={
+                    isGlobal
+                      ? 'bg-newSettings pb-[12px] px-[12px]'
+                      : 'hidden bg-newSettings px-[12px] pb-[12px]'
+                  }
+                >
                   {isGlobal && (
                     <style>{`#wrapper-settings {display: flex !important} #social-empty {display: block !important;}`}</style>
                   )}
@@ -333,7 +368,9 @@ export const withProvider = function <T extends object>(params: {
                           src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
                         />
                       </div>
-                      <div className="text-[20px]">{selectedIntegration?.integration.name}</div>
+                      <div className="text-[20px]">
+                        {selectedIntegration?.integration.name}
+                      </div>
                     </div>
                   )}
                   <SettingsComponent />

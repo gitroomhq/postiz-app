@@ -35,8 +35,21 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   dto = XDto;
 
-  maxLength(isTwitterPremium: boolean) {
-    return isTwitterPremium ? 4000 : 200;
+  maxLength(
+    additionalSettings?:
+      | boolean
+      | {
+          title: string;
+          value: any;
+        }[]
+  ) {
+    const isTwitterPremium =
+      typeof additionalSettings === 'boolean'
+        ? additionalSettings
+        : !!additionalSettings?.find((setting) => setting?.title === 'Verified')
+            ?.value;
+
+    return isTwitterPremium ? 4000 : 280;
   }
 
   override handleErrors(body: string):
