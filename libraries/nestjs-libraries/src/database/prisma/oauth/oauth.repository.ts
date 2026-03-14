@@ -59,7 +59,7 @@ export class OAuthRepository {
     });
   }
 
-  updateApp(
+  async updateApp(
     orgId: string,
     data: {
       name?: string;
@@ -68,11 +68,17 @@ export class OAuthRepository {
       redirectUrl?: string;
     }
   ) {
-    return this._oauthApp.model.oAuthApp.update({
+    const app = await this._oauthApp.model.oAuthApp.findFirst({
       where: {
         organizationId: orgId,
         deletedAt: null,
       },
+    });
+    if (!app) {
+      return null;
+    }
+    return this._oauthApp.model.oAuthApp.update({
+      where: { id: app.id },
       data,
       include: {
         picture: true,
@@ -80,23 +86,36 @@ export class OAuthRepository {
     });
   }
 
-  deleteApp(orgId: string) {
-    return this._oauthApp.model.oAuthApp.update({
+  async deleteApp(orgId: string) {
+    const app = await this._oauthApp.model.oAuthApp.findFirst({
       where: {
         organizationId: orgId,
+        deletedAt: null,
       },
+    });
+    if (!app) {
+      return null;
+    }
+    return this._oauthApp.model.oAuthApp.update({
+      where: { id: app.id },
       data: {
         deletedAt: new Date(),
       },
     });
   }
 
-  updateClientSecret(orgId: string, newSecret: string) {
-    return this._oauthApp.model.oAuthApp.update({
+  async updateClientSecret(orgId: string, newSecret: string) {
+    const app = await this._oauthApp.model.oAuthApp.findFirst({
       where: {
         organizationId: orgId,
         deletedAt: null,
       },
+    });
+    if (!app) {
+      return null;
+    }
+    return this._oauthApp.model.oAuthApp.update({
+      where: { id: app.id },
       data: {
         clientSecret: newSecret,
       },
