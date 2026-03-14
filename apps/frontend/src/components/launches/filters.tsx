@@ -46,7 +46,7 @@ export const Filters = () => {
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
-  dayjs.locale();
+  dayjs.locale(currentLanguage);
 
   // Calculate display date range text
   const getDisplayText = () => {
