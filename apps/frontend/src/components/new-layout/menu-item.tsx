@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 
-export const MenuItem: FC<{ label: string; icon: ReactNode; path: string; onClick?: () => void }> = ({
+export const MenuItem: FC<{ label: ReactNode; icon: ReactNode; path: string; onClick?: () => void }> = ({
   label,
   icon,
   path,
