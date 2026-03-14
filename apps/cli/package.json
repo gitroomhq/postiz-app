@@ -1,10 +1,10 @@
 {
-  "name": "postiz",
+  "name": "postra",
   "version": "2.0.5",
-  "description": "Postiz CLI - Command line interface for the Postiz social media scheduling API",
+  "description": "Postra CLI - Command line interface for the Postra social media scheduling API",
   "main": "dist/index.js",
   "bin": {
-    "postiz": "./dist/index.js"
+    "postra": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsup --watch",
@@ -18,7 +18,7 @@
     "SKILL.md"
   ],
   "keywords": [
-    "postiz",
+    "postra",
     "cli",
     "social media",
     "scheduling",
@@ -26,15 +26,15 @@
     "ai-agent",
     "command-line"
   ],
-  "author": "Nevo David",
+  "author": "KrisRz",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gitroomhq/postiz-app.git",
+    "url": "https://github.com/KrisRz/postiz-app.git",
     "directory": "apps/cli"
   },
-  "homepage": "https://postiz.com",
+  "homepage": "https://postra.pl",
   "bugs": {
-    "url": "https://github.com/gitroomhq/postiz-app/issues"
+    "url": "https://github.com/KrisRz/postiz-app/issues"
   }
 }

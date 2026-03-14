@@ -79,12 +79,12 @@ export const FirstBillingComponent = () => {
 
   const showYouTube = () => {
     modals.openModal({
-      title: 'Grow Fast With Postiz (Play the video)',
+      title: 'Grow Fast With Postra (Play the video)',
       children: (
         <iframe
           className="h-full aspect-video min-w-[800px]"
           src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-          title="Postiz Tutorial"
+          title="Postra Tutorial"
           allow="autoplay"
           allowFullScreen
         />
@@ -114,13 +114,13 @@ export const FirstBillingComponent = () => {
       <>
         <div className="text-[46px] font-[600] leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
           {t('billing_join_over', 'Join Over')}{' '}
-          <span className="text-[#FC69FF]">
+          <span className="text-[#a78bfa]">
             {t('billing_entrepreneurs_count', '20,000+ Entrepreneurs')}
           </span>{' '}
           {t('billing_who_use', 'who use')}{' '}
           {t(
             'billing_postiz_grow_social',
-            'Postiz To Grow Their Social Presence'
+            'Postra To Grow Their Social Presence'
           )}
         </div>
 
@@ -135,7 +135,7 @@ export const FirstBillingComponent = () => {
                 alt="YouTube"
               />
             </div>
-            <div>See the power of Postiz (click here)</div>
+            <div>See the power of Postra (click here)</div>
           </div>
         </div>
 
@@ -239,7 +239,7 @@ export const FirstBillingComponent = () => {
                   onClick={() => setPeriod('YEARLY')}
                 >
                   <div>{t('billing_yearly', 'Yearly')}</div>
-                  <div className="bg-[#AA0FA4] text-[white] px-[8px] rounded-[4px] mobile:hidden">
+                  <div className="bg-[#a78bfa] text-[white] px-[8px] rounded-[4px] mobile:hidden">
                     {t('billing_20_percent_off', '20% Off')}
                   </div>
                 </div>

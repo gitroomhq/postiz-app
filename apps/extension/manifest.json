@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Postiz",
+  "name": "Postra",
   "version": "2.0.0",
-  "description": "Postiz browser extension for social media scheduling",
+  "description": "Postra browser extension for social media scheduling",
   "icons": {
     "32": "icon-32.png",
     "128": "icon-128.png"
@@ -23,7 +23,7 @@
     "matches": [
       "http://localhost/*",
       "https://localhost/*",
-      "https://*.postiz.com/*"
+      "https://*.postra.pl/*"
     ]
   }
 }

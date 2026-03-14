@@ -14,7 +14,7 @@ export class MastraService {
       new Mastra({
         storage: pStore,
         agents: {
-          postiz: await this._loadToolsService.agent(),
+          postra: await this._loadToolsService.agent(),
         },
         logger: new ConsoleLogger({
           level: 'info',
