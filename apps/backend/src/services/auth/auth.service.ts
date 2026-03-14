@@ -71,8 +71,8 @@ export class AuthService {
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
         await this._emailService.sendEmail(
           body.email,
-          'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
+          'Aktywuj swoje konto',
+          `Aby aktywować konto, kliknij <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">tutaj</a>.<br />Link aktywacyjny otworzy stronę Postra i pozwoli dokończyć rejestrację.`,
           'top'
         );
         return obj;
@@ -215,8 +215,8 @@ export class AuthService {
 
     await this._notificationService.sendEmail(
       user.email,
-      'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      'Zresetuj swoje hasło',
+      `Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta.<br />Kliknij <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">tutaj</a>, aby ustawić nowe hasło.<br />Link wygaśnie za 20 minut.`
     );
   }
 
@@ -268,8 +268,8 @@ export class AuthService {
 
     await this._emailService.sendEmail(
       user.email,
-      'Activate your account',
-      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
+      'Aktywuj swoje konto',
+      `Aby aktywować konto, kliknij <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">tutaj</a>.<br />Link aktywacyjny otworzy stronę Postra i pozwoli dokończyć rejestrację.`,
       'top'
     );
 

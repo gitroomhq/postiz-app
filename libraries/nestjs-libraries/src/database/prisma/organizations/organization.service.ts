@@ -86,8 +86,8 @@ export class OrganizationService {
     if (body.sendEmail) {
       await this._notificationsService.sendEmail(
         body.email,
-        'You have been invited to join an organization',
-        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 1 hour.`
+        'Zaproszenie do organizacji w Postra',
+        `Otrzymujesz zaproszenie do dołączenia do organizacji w Postra.<br />Kliknij <a href="${url}">tutaj</a>, aby dołączyć.<br />Link wygaśnie za 1 godzinę.`
       );
     }
     return { url };
