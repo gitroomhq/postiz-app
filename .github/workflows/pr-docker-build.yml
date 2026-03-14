@@ -4,7 +4,9 @@ on:
   pull_request_target:
     types: [opened, synchronize]
 
-permissions: write-all
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-publish:
@@ -24,12 +26,12 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
       - name: Set image tag
         id: vars
-        run: echo "IMAGE_TAG=ghcr.io/gitroomhq/postiz-app-pr:${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+        run: echo "IMAGE_TAG=ghcr.io/${{ github.repository_owner }}/postra-app-pr:${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
       - name: Build Docker image from Dockerfile.dev
         run: docker build -f Dockerfile.dev -t $IMAGE_TAG .
