@@ -86,7 +86,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('app_version_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'In order to use the TikTok upload feature, you have to update your app to the latest version',
+        value:
+          'In order to use the TikTok upload feature, you have to update your app to the latest version',
       };
     }
 
@@ -138,6 +139,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body' as const,
         value:
           'TikTok says your daily post limit reached, please try again tomorrow',
+      };
+    }
+
+    if (body.indexOf('spam_risk_too_many_pending_share') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'TikTok limit the maximum of pending posts to 5, please check your TikTok inbox at your TikTok mobile app',
       };
     }
 
@@ -213,7 +222,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('picture_size_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Picture / Video size is invalid, must be at least 720p',
+        value: 'Video must be at least 720p, Picture must no exceed 1080p',
       };
     }
 

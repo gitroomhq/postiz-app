@@ -21,7 +21,11 @@ export class SubscriptionService {
     );
   }
 
-  useCredit<T>(organization: Organization, type = 'ai_images', func: () => Promise<T>) : Promise<T> {
+  useCredit<T>(
+    organization: Organization,
+    type = 'ai_images',
+    func: () => Promise<T>
+  ): Promise<T> {
     return this._subscriptionRepository.useCredit(organization, type, func);
   }
 
@@ -53,10 +57,60 @@ export class SubscriptionService {
       subscriptionId
     );
   }
+
+  async modifySubscriptionByOrg(
+    organizationId: string,
+    totalChannels: number,
+    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'
+  ) {
+    if (!organizationId) {
+      return false;
+    }
+
+    const getCurrentSubscription =
+      (await this._subscriptionRepository.getSubscriptionByOrgId(
+        organizationId
+      ))!;
+
+    const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
+    const to = pricing[billing];
+
+    const currentTotalChannels = (
+      await this._integrationService.getIntegrationsList(organizationId)
+    ).filter((f) => !f.disabled);
+
+    if (currentTotalChannels.length > totalChannels) {
+      await this._integrationService.disableIntegrations(
+        organizationId,
+        currentTotalChannels.length - totalChannels
+      );
+    }
+
+    if (from.team_members && !to.team_members) {
+      await this._organizationService.disableOrEnableNonSuperAdminUsers(
+        organizationId,
+        true
+      );
+    }
+
+    if (!from.team_members && to.team_members) {
+      await this._organizationService.disableOrEnableNonSuperAdminUsers(
+        organizationId,
+        false
+      );
+    }
+
+    if (billing === 'FREE') {
+      await this._integrationService.changeActiveCron(organizationId);
+    }
+
+    return true;
+  }
+
   async modifySubscription(
     customerId: string,
     totalChannels: number,
-    billing: 'FREE' | 'STANDARD' | 'PRO'
+    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'
   ) {
     if (!customerId) {
       return false;
@@ -121,7 +175,7 @@ export class SubscriptionService {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'PRO',
+    billing: 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,
@@ -154,6 +208,10 @@ export class SubscriptionService {
     );
   }
 
+  getSubscriptionByIdentifier(identifier: string) {
+    return this._subscriptionRepository.getSubscriptionByIdentifier(identifier);
+  }
+
   async getSubscription(organizationId: string) {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
@@ -173,7 +231,10 @@ export class SubscriptionService {
     }
 
     const checkFromMonth = date.subtract(1, 'month');
-    const imageGenerationCount = checkType === 'ai_images' ? pricing[type].image_generation_count : pricing[type].generate_videos
+    const imageGenerationCount =
+      checkType === 'ai_images'
+        ? pricing[type].image_generation_count
+        : pricing[type].generate_videos;
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(
       organization.id,

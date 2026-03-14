@@ -1,7 +1,9 @@
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import { ProvidersInterface } from '@gitroom/backend/services/auth/providers.interface';
+import {
+  AuthProvider,
+  AuthProviderAbstract,
+} from '@gitroom/backend/services/auth/providers.interface';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -31,7 +33,8 @@ const clientAndYoutube = () => {
   return { client, youtube, oauth2, youtubeAnalytics };
 };
 
-export class GoogleProvider implements ProvidersInterface {
+@AuthProvider({ provider: 'GOOGLE' })
+export class GoogleProvider extends AuthProviderAbstract {
   generateLink() {
     const state = 'login';
     const { client } = clientAndYoutube();

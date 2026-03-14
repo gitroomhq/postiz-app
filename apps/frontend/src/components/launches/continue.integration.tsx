@@ -77,6 +77,19 @@ export const ContinueIntegration: FC<{
       };
     }
 
+    if (provider === 'mewe') {
+      const hash =
+        typeof window !== 'undefined'
+          ? window.location.hash.substring(1)
+          : '';
+      const hashParams = new URLSearchParams(hash);
+      return {
+        state: hashParams.get('state') || searchParams.state || '',
+        code: hashParams.get('loginRequestToken') || '',
+        refresh: searchParams.refresh || '',
+      };
+    }
+
     return searchParams;
   }, []);
 

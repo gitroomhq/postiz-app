@@ -10,9 +10,12 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
-export const PublicComponent = () => {
+import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
+import clsx from 'clsx';
+
+const PublicApiContent = () => {
   const user = useUser();
-  const { backendUrl, frontEndUrl } = useVariables();
+  const { backendUrl, frontEndUrl, mcpUrl } = useVariables();
   const toaster = useToaster();
   const fetch = useFetch();
   const decision = useDecisionModal();
@@ -25,7 +28,7 @@ export const PublicComponent = () => {
   }, [user]);
   const copyToClipboard2 = useCallback(() => {
     toaster.show('MCP copied to clipboard', 'success');
-    copy(`${backendUrl}/mcp/` + user?.publicApi);
+    copy(`${mcpUrl || backendUrl}/mcp/` + user?.publicApi);
   }, [user]);
 
   const rotateKey = useCallback(async () => {
@@ -121,13 +124,13 @@ export const PublicComponent = () => {
         <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
           <div className="flex items-center">
             {reveal2 ? (
-              `${backendUrl}/mcp/` + user.publicApi
+              `${mcpUrl || backendUrl}/mcp/` + user.publicApi
             ) : (
               <>
                 <div className="blur-sm">
-                  {(`${backendUrl}/mcp/` + user.publicApi).slice(0, -5)}
+                  {(`${mcpUrl || backendUrl}/mcp/` + user.publicApi).slice(0, -5)}
                 </div>
-                <div>{(`${backendUrl}/mcp/` + user.publicApi).slice(-5)}</div>
+                <div>{(`${mcpUrl || backendUrl}/mcp/` + user.publicApi).slice(-5)}</div>
               </>
             )}
           </div>
@@ -162,6 +165,44 @@ export const PublicComponent = () => {
           </Button>
         </div>
       </div>
+    </div>
+  );
+};
+
+export const PublicComponent = () => {
+  const t = useT();
+  const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
+
+  return (
+    <div className="flex flex-col gap-[20px]">
+      <div className="flex gap-[4px] border-b border-fifth">
+        <button
+          type="button"
+          className={clsx(
+            'px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors',
+            subTab === 'api'
+              ? 'bg-sixth text-textColor border border-fifth border-b-0'
+              : 'text-customColor18 hover:text-textColor'
+          )}
+          onClick={() => setSubTab('api')}
+        >
+          {t('public_api', 'Public API')}
+        </button>
+        <button
+          type="button"
+          className={clsx(
+            'px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors',
+            subTab === 'developer'
+              ? 'bg-sixth text-textColor border border-fifth border-b-0'
+              : 'text-customColor18 hover:text-textColor'
+          )}
+          onClick={() => setSubTab('developer')}
+        >
+          {t('apps', 'Apps')}
+        </button>
+      </div>
+      {subTab === 'api' && <PublicApiContent />}
+      {subTab === 'developer' && <DeveloperComponent />}
     </div>
   );
 };
