@@ -65,6 +65,16 @@ const InstagramCollaborators: FC<{
         />
       )}
 
+      {postCurrentType !== 'story' && (
+        <InstagramCollaboratorsTags
+          label="Tag users (max 20, images only) - accounts can't be private"
+          maxTags={20}
+          {...register('user_tags', {
+            value: [],
+          })}
+        />
+      )}
+
       {postCurrentType === 'post' && (
         <div className="mt-[18px] flex flex-col gap-[18px]">
           <Checkbox
