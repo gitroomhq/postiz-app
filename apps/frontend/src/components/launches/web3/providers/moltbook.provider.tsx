@@ -37,7 +37,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
         method: 'POST',
         body: JSON.stringify({
           name: agentName.trim(),
-          description: agentDescription.trim() || 'Postiz social media scheduler',
+          description: agentDescription.trim() || 'Postra social media scheduler',
         }),
       });
 
@@ -105,7 +105,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
               name="agentName"
               disableForm={true}
               onChange={(e) => setAgentName(e.target.value)}
-              placeholder="MyPostizAgent"
+              placeholder="MyPostraAgent"
             />
             <Input
               label={t('description_optional', 'Description (optional)')}

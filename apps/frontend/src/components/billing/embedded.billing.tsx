@@ -376,7 +376,7 @@ const AppliedCouponDisplay: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#AA0FA4]/30 bg-[#AA0FA4]/10">
+      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#a78bfa]/30 bg-[#a78bfa]/10">
         <div className="flex-1">
           <div className="flex items-center gap-[8px] flex-wrap">
             <svg
@@ -385,7 +385,7 @@ const AppliedCouponDisplay: FC<{
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#FC69FF"
+              stroke="#a78bfa"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -393,7 +393,7 @@ const AppliedCouponDisplay: FC<{
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            <span className="font-[600] text-[#FC69FF]">{appliedCode}</span>
+            <span className="font-[600] text-[#a78bfa]">{appliedCode}</span>
             <span className="text-[14px] text-textColor/70">
               {t('billing_discount_applied', 'applied')}
               {discountDisplay && ` (${discountDisplay})`}

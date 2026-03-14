@@ -147,7 +147,14 @@ export const useMenuItem = () => {
 
   const secondMenu = [
     {
-      name: t('affiliate', 'Affiliate'),
+      name: (
+        <span className="flex items-center gap-2 opacity-40">
+          {t('affiliate', 'Affiliate')}
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-white/10">
+            Soon
+          </span>
+        </span>
+      ),
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -200,7 +207,7 @@ export const useMenuItem = () => {
           />
         </svg>
       ),
-      path: 'https://affiliate.postiz.com',
+      path: '#',
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
     },

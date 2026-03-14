@@ -9,7 +9,7 @@ export const PreConditionComponentModal: FC = () => {
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="whitespace-pre-line">
-        This social channel was connected previously to another Postiz account.
+        This social channel was connected previously to another Postra account.
         {'\n'}
         To continue, please fast-track your trial for an immediate charge.{'\n'}
         {'\n'}

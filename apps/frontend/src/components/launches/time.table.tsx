@@ -132,7 +132,7 @@ export const TimeTable: FC<{
       {/* Add Time Slot Section */}
       <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
         <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
-          <DelayIcon size={18} className="text-[#612BD3]" />
+          <DelayIcon size={18} className="text-[#38bdf8]" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
 
@@ -172,7 +172,7 @@ export const TimeTable: FC<{
           <button
             type="button"
             onClick={addHour}
-            className="h-[42px] px-[16px] bg-[#612BD3] hover:bg-[#7640e0] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
+            className="h-[42px] px-[16px] bg-[#38bdf8] hover:bg-[#0ea5e9] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}
@@ -199,11 +199,11 @@ export const TimeTable: FC<{
                   'group flex items-center justify-between',
                   'h-[48px] px-[16px] rounded-[8px]',
                   'bg-newBgColorInner border border-newTableBorder',
-                  'hover:border-[#612BD3]/40 transition-colors'
+                  'hover:border-[#38bdf8]/40 transition-colors'
                 )}
               >
                 <div className="flex items-center gap-[12px]">
-                  <div className="w-[8px] h-[8px] rounded-full bg-[#612BD3]" />
+                  <div className="w-[8px] h-[8px] rounded-full bg-[#38bdf8]" />
                   <span className="text-[15px] font-medium tabular-nums">
                     {timeSlot.formatted}
                   </span>
