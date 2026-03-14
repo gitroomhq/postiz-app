@@ -15,6 +15,7 @@ concurrency:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repo
@@ -37,6 +38,8 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
       - name: Test
         run: pnpm test --passWithNoTests
