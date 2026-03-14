@@ -1,0 +1,133 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REPOSITORY: postra-app
+  IMAGE_TAG_SHA: sha-${{ github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image URIs
+        id: image
+        run: |
+          echo "image_latest=${ECR_REGISTRY}/${ECR_REPOSITORY}:latest" >> "$GITHUB_OUTPUT"
+          echo "image_sha=${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f Dockerfile.dev \
+            --build-arg NEXT_PUBLIC_VERSION=${GITHUB_SHA} \
+            -t "${{ steps.image.outputs.image_latest }}" \
+            -t "${{ steps.image.outputs.image_sha }}" \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push "${{ steps.image.outputs.image_latest }}"
+          docker push "${{ steps.image.outputs.image_sha }}"
+
+      - name: Deploy on EC2 via SSM
+        id: ssm
+        run: |
+          IMAGE_URI="${{ steps.image.outputs.image_sha }}"
+          COMMANDS_JSON=$(jq -nc --arg region "${AWS_REGION}" --arg registry "${ECR_REGISTRY}" --arg image "${IMAGE_URI}" '{
+            commands: [
+              "set -e",
+              "cd /opt/postra",
+              "aws ecr get-login-password --region \($region) | docker login --username AWS --password-stdin \($registry)",
+              "docker pull \($image)",
+              "cat > docker-compose.override.yml <<EOF\nservices:\n  app:\n    image: \($image)\nEOF",
+              "docker compose up -d app",
+              "docker image prune -af --filter '\''until=24h'\'' || true"
+            ]
+          }')
+          COMMAND_ID=$(
+            aws ssm send-command \
+              --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+              --document-name "AWS-RunShellScript" \
+              --comment "Deploy ${GITHUB_SHA} to app-dev.postra.pl" \
+              --parameters "${COMMANDS_JSON}" \
+              --query "Command.CommandId" \
+              --output text
+          )
+
+          echo "command_id=${COMMAND_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for SSM command
+        run: |
+          COMMAND_ID="${{ steps.ssm.outputs.command_id }}"
+          INSTANCE_ID="${{ secrets.EC2_INSTANCE_ID }}"
+
+          for attempt in $(seq 1 60); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "Status" \
+              --output text 2>/dev/null || true)
+
+            echo "Attempt ${attempt}: ${STATUS}"
+
+            if [ "$STATUS" = "Success" ]; then
+              exit 0
+            fi
+
+            if [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ] || [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelling" ]; then
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --output json
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for SSM deploy command"
+          exit 1
+
+      - name: Health check
+        run: |
+          for attempt in $(seq 1 30); do
+            STATUS=$(curl -s -o /tmp/postra-health.txt -w "%{http_code}" https://app-dev.postra.pl/api/monitor/queue/main || true)
+            if [ "$STATUS" = "200" ]; then
+              cat /tmp/postra-health.txt
+              exit 0
+            fi
+
+            echo "Health check attempt ${attempt} failed with status: ${STATUS}"
+            sleep 10
+          done
+
+          echo "Health check failed"
+          exit 1

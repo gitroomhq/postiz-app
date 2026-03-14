@@ -7,6 +7,10 @@ on:
     tags:
       - '*'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-containers-common:
     runs-on: ubuntu-latest
@@ -41,7 +45,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
       - name: Build and Push Image
@@ -51,12 +55,12 @@ jobs:
         run: |
           docker buildx build --platform linux/${{ matrix.arch }} \
             -f Dockerfile.dev \
-            -t ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
+            -t ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-${{ matrix.arch }} \
             --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
             --pull \
             --no-cache \
             --provenance=false --sbom=false \
-            --output "type=registry,name=ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
+            --output "type=registry,name=ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-${{ matrix.arch }}" .
 
   build-container-manifest:
     needs: [build-containers, build-containers-common]
@@ -66,7 +70,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
       - name: Create Docker Manifest
@@ -75,29 +79,29 @@ jobs:
         run: |
           # Verify the architecture images
           echo "Verifying AMD64 image:"
-          docker buildx imagetools inspect ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64
+          docker buildx imagetools inspect ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-amd64
           
           echo "Verifying ARM64 image:"
-          docker buildx imagetools inspect ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker buildx imagetools inspect ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-arm64
           
           # Try to remove any existing manifests first
-          docker manifest rm ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }} || true
-          docker manifest rm ghcr.io/gitroomhq/postiz-app:latest || true
+          docker manifest rm ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }} || true
+          docker manifest rm ghcr.io/${{ github.repository_owner }}/postra-app:latest || true
           
           # Create and push the version-specific manifest
-          docker manifest create ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }} \
-            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64 \
-            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }} \
+            --amend ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-arm64
 
-          docker manifest push ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}
+          docker manifest push ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}
 
           # Create and push the latest manifest
-          docker manifest create ghcr.io/gitroomhq/postiz-app:latest \
-            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-amd64 \
-            --amend ghcr.io/gitroomhq/postiz-app:${{ env.CONTAINERVER }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/postra-app:latest \
+            --amend ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/postra-app:${{ env.CONTAINERVER }}-arm64
 
-          docker manifest push ghcr.io/gitroomhq/postiz-app:latest
+          docker manifest push ghcr.io/${{ github.repository_owner }}/postra-app:latest
 
       - name: Verify Manifest
         run: |
-          docker manifest inspect ghcr.io/gitroomhq/postiz-app:latest
+          docker manifest inspect ghcr.io/${{ github.repository_owner }}/postra-app:latest

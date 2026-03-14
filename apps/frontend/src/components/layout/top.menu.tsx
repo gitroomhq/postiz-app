@@ -8,7 +8,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 
 interface MenuItemInterface {
-  name: string;
+  name: ReactNode;
   icon: ReactNode;
   path: string;
   role?: string[];
@@ -353,7 +353,7 @@ export const TopMenu: FC = () => {
                   path={item.path}
                   label={item.name}
                   icon={item.icon}
-                  key={item.name}
+                  key={`first-${index}`}
                   onClick={item.onClick}
                 />
               ))
@@ -381,7 +381,7 @@ export const TopMenu: FC = () => {
               path={item.path}
               label={item.name}
               icon={item.icon}
-              key={item.name}
+              key={`second-${index}`}
               onClick={item.onClick}
             />
           ))}
