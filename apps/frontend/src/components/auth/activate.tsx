@@ -69,11 +69,11 @@ export function Activate() {
   return (
     <div className="flex flex-col flex-1">
       <div>
-        <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+        <h1 className="mb-4 cursor-pointer text-start text-[40px] font-[700] tracking-[-0.04em] text-white">
           {t('activate_your_account', 'Activate your account')}
         </h1>
       </div>
-      <div className="text-textColor">
+      <div className="rounded-[16px] border border-white/8 bg-white/[0.03] p-[16px] text-textColor/78">
         {t('thank_you_for_registering', 'Thank you for registering!')}
         <br />
         {t(
@@ -82,13 +82,13 @@ export function Activate() {
         )}
       </div>
 
-      <div className="mt-8 border-t border-fifth pt-6">
-        <h2 className="text-lg font-semibold mb-4">
+      <div className="mt-8 border-t border-white/8 pt-6">
+        <h2 className="mb-4 text-[18px] font-semibold text-textColor">
           {t('didnt_receive_email', "Didn't receive the email?")}
         </h2>
         {status === 'sent' ? (
           <div className="flex flex-col gap-4">
-            <div className="text-green-400">
+            <div className="rounded-[14px] border border-emerald-400/20 bg-emerald-500/10 p-[14px] text-emerald-300">
               {t(
                 'activation_email_sent',
                 'Activation email has been sent! Please check your inbox.'
@@ -101,7 +101,7 @@ export function Activate() {
             ) : (
               <Button
                 onClick={resetToForm}
-                className="rounded-[10px] !h-[52px]"
+                className="rounded-[12px] !h-[52px]"
               >
                 {t('send_again', 'Send Again')}
               </Button>
@@ -109,14 +109,14 @@ export function Activate() {
           </div>
         ) : status === 'already_activated' ? (
           <div className="flex flex-col gap-4">
-            <div className="text-green-400">
+            <div className="rounded-[14px] border border-emerald-400/20 bg-emerald-500/10 p-[14px] text-emerald-300">
               {t(
                 'account_already_activated',
                 'Great news! Your account is already activated.'
               )}
             </div>
             <Link href="/auth/login">
-              <Button className="rounded-[10px] !h-[52px] w-full">
+              <Button className="rounded-[12px] !h-[52px] w-full">
                 {t('go_to_login', 'Go to Login')}
               </Button>
             </Link>
@@ -133,7 +133,7 @@ export function Activate() {
               />
               <Button
                 type="submit"
-                className="rounded-[10px] !h-[52px]"
+                className="rounded-[12px] !h-[52px]"
                 loading={loading}
                 disabled={cooldown > 0}
               >
@@ -145,9 +145,9 @@ export function Activate() {
           </FormProvider>
         )}
         {status !== 'already_activated' && (
-          <p className="mt-4 text-sm text-textColor">
+          <p className="mt-4 text-sm text-textColor/66">
             {t('already_activated', 'Already activated?')}&nbsp;
-            <Link href="/auth/login" className="underline cursor-pointer">
+            <Link href="/auth/login" className="underline underline-offset-4 cursor-pointer hover:text-[#38bdf8]">
               {t('sign_in', 'Sign In')}
             </Link>
           </p>

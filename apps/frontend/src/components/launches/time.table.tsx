@@ -130,8 +130,8 @@ export const TimeTable: FC<{
   return (
     <div className="relative w-full max-w-[400px] mx-auto">
       {/* Add Time Slot Section */}
-      <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
-        <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
+      <div className="rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(30,41,59,0.6),rgba(15,23,42,0.9))] p-[20px] shadow-[0_24px_60px_rgba(2,6,23,0.22)] backdrop-blur-xl">
+        <div className="mb-[16px] flex items-center gap-[8px] text-[15px] font-semibold text-textColor">
           <DelayIcon size={18} className="text-[#38bdf8]" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
@@ -172,7 +172,7 @@ export const TimeTable: FC<{
           <button
             type="button"
             onClick={addHour}
-            className="h-[42px] px-[16px] bg-[#38bdf8] hover:bg-[#0ea5e9] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
+            className="flex h-[42px] items-center gap-[6px] rounded-[12px] bg-[linear-gradient(135deg,#38bdf8,#a78bfa)] px-[16px] text-[14px] font-semibold text-[#0a0e1a] shadow-[0_16px_32px_rgba(56,189,248,0.18)] transition-all hover:-translate-y-[1px] hover:shadow-[0_20px_36px_rgba(56,189,248,0.24)]"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}
@@ -182,12 +182,12 @@ export const TimeTable: FC<{
 
       {/* Time Slots List */}
       <div className="mt-[20px]">
-        <div className="text-[14px] text-newTextColor/60 mb-[12px]">
+        <div className="mb-[12px] text-[12px] font-[600] uppercase tracking-[0.08em] text-textColor/55">
           {t('scheduled_times', 'Scheduled Times')} ({times.length})
         </div>
 
         {times.length === 0 ? (
-          <div className="text-center py-[32px] text-newTextColor/40 text-[14px] border border-dashed border-newTableBorder rounded-[12px]">
+          <div className="rounded-[16px] border border-dashed border-white/10 bg-[rgba(15,23,42,0.42)] py-[32px] text-center text-[14px] text-textColor/40">
             {t('no_time_slots', 'No time slots added yet')}
           </div>
         ) : (
@@ -197,21 +197,21 @@ export const TimeTable: FC<{
                 key={`${timeSlot.value}-${index}`}
                 className={clsx(
                   'group flex items-center justify-between',
-                  'h-[48px] px-[16px] rounded-[8px]',
-                  'bg-newBgColorInner border border-newTableBorder',
-                  'hover:border-[#38bdf8]/40 transition-colors'
+                  'h-[48px] px-[16px] rounded-[14px]',
+                  'border border-white/8 bg-[linear-gradient(180deg,rgba(30,41,59,0.56),rgba(15,23,42,0.84))]',
+                  'transition-all hover:border-[#38bdf8]/35 hover:bg-[linear-gradient(180deg,rgba(51,65,85,0.65),rgba(15,23,42,0.92))] hover:shadow-[0_16px_32px_rgba(56,189,248,0.08)]'
                 )}
               >
                 <div className="flex items-center gap-[12px]">
-                  <div className="w-[8px] h-[8px] rounded-full bg-[#38bdf8]" />
-                  <span className="text-[15px] font-medium tabular-nums">
+                  <div className="h-[8px] w-[8px] rounded-full bg-[#38bdf8] shadow-[0_0_10px_rgba(56,189,248,0.7)]" />
+                  <span className="tabular-nums text-[15px] font-medium text-textColor">
                     {timeSlot.formatted}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={removeSlot(index)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-[8px] hover:bg-red-500/10 rounded-[6px] text-red-400 hover:text-red-500"
+                  className="rounded-[10px] p-[8px] text-red-300/70 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
                 >
                   <TrashIcon size={16} />
                 </button>
@@ -223,7 +223,7 @@ export const TimeTable: FC<{
 
       {/* Save Button */}
       <div className="mt-[24px]">
-        <Button type="button" className="w-full rounded-[8px]" onClick={save}>
+        <Button type="button" className="w-full rounded-[12px]" onClick={save}>
           {t('save_changes', 'Save Changes')}
         </Button>
       </div>

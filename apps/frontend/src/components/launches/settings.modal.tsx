@@ -14,9 +14,9 @@ export const Element: FC<{
   const { setting, onChange } = props;
   const [value, setValue] = useState(setting.value);
   return (
-    <div className="flex flex-col gap-[10px]">
-      <div>{setting.title}</div>
-      <div className="text-[14px]">{setting.description}</div>
+    <div className="flex flex-col gap-[10px] rounded-[16px] border border-white/8 bg-[linear-gradient(180deg,rgba(30,41,59,0.56),rgba(15,23,42,0.84))] p-[16px] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <div className="text-[15px] font-[600] text-textColor">{setting.title}</div>
+      <div className="text-[14px] text-textColor/62">{setting.description}</div>
       <Slider
         value={value === true ? 'on' : 'off'}
         onChange={() => {
@@ -63,8 +63,8 @@ export const SettingsModal: FC<{
     onClose();
   }, [values, integration]);
   return (
-    <div>
-      <div className="mt-[16px]">
+    <div className="rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(10,14,26,0.9))] p-[18px] shadow-[0_24px_60px_rgba(2,6,23,0.22)] backdrop-blur-xl">
+      <div className="mt-[4px] flex flex-col gap-[12px]">
         {values.map((setting: any, index: number) => (
           <Element
             key={setting.title}
@@ -74,8 +74,10 @@ export const SettingsModal: FC<{
         ))}
       </div>
 
-      <div className="my-[16px] flex gap-[10px]">
-        <Button onClick={save}>{t('save', 'Save')}</Button>
+      <div className="mb-[4px] mt-[18px] flex gap-[10px]">
+        <Button className="rounded-[12px]" onClick={save}>
+          {t('save', 'Save')}
+        </Button>
       </div>
     </div>
   );

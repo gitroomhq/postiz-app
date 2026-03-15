@@ -49,13 +49,19 @@ export const CustomerModal: FC<{
   );
   const { data } = useSWR('/customers', loadCustomers);
   return (
-    <div className="relative w-full">
+    <div className="relative w-full rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(10,14,26,0.9))] p-[18px] shadow-[0_24px_60px_rgba(2,6,23,0.22)] backdrop-blur-xl">
       <div className="mb-[80px]">
         <Autocomplete
           value={customer}
           onChange={setCustomer}
           classNames={{
-            label: 'text-white',
+            label: 'text-textColor font-[600]',
+            input:
+              'bg-[rgba(15,23,42,0.82)] border border-white/10 text-textColor rounded-[12px] focus:border-[#38bdf8]/45',
+            dropdown:
+              'rounded-[14px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(10,14,26,0.98))] shadow-[0_24px_60px_rgba(2,6,23,0.4)] backdrop-blur-xl',
+            item:
+              'text-textColor hover:bg-white/6',
           }}
           label={t('select_customer_label', 'Select Customer')}
           placeholder={t('start_typing', 'Start typing...')}
@@ -63,10 +69,15 @@ export const CustomerModal: FC<{
         />
       </div>
 
-      <div className="my-[16px] flex gap-[10px]">
-        <Button onClick={() => saveCustomer()}>{t('save', 'Save')}</Button>
+      <div className="mb-[4px] mt-[16px] flex gap-[10px]">
+        <Button className="rounded-[12px]" onClick={() => saveCustomer()}>
+          {t('save', 'Save')}
+        </Button>
         {!!integration?.customer?.name && (
-          <Button className="bg-red-700" onClick={removeFromCustomer}>
+          <Button
+            className="rounded-[12px] bg-[rgba(190,24,93,0.9)] text-white hover:bg-[rgba(190,24,93,1)]"
+            onClick={removeFromCustomer}
+          >
             {t('remove_from_customer', 'Remove from customer')}
           </Button>
         )}

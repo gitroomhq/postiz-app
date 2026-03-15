@@ -40,9 +40,15 @@ export function Forgot() {
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div>
-            <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+            <h1 className="mb-4 cursor-pointer text-start text-[40px] font-[700] tracking-[-0.04em] text-white">
               {t('forgot_password_1', 'Forgot Password')}
             </h1>
+            <p className="mb-6 text-[15px] text-textColor/58">
+              {t(
+                'forgot_password_subtitle',
+                'We will send you a secure link to reset your password.'
+              )}
+            </p>
           </div>
           {!state ? (
             <>
@@ -57,15 +63,15 @@ export function Forgot() {
               </div>
               <div className="text-center mt-6">
                 <div className="w-full flex">
-                  <Button type="submit" className="flex-1 !h-[52px] !rounded-[10px]" loading={loading}>
+                  <Button type="submit" className="flex-1 !h-[52px] !rounded-[12px]" loading={loading}>
                     {t(
                       'send_password_reset_email',
                       'Send Password Reset Email'
                     )}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
-                  <Link href="/auth/login" className="underline cursor-pointer">
+                <p className="mt-4 text-sm text-textColor/66">
+                  <Link href="/auth/login" className="underline underline-offset-4 cursor-pointer hover:text-[#38bdf8]">
                     {t('go_back_to_login', 'Go back to login')}
                   </Link>
                 </p>
@@ -73,14 +79,14 @@ export function Forgot() {
             </>
           ) : (
             <>
-              <div className="text-start mt-6">
+              <div className="mt-6 rounded-[16px] border border-white/8 bg-white/[0.03] p-[16px] text-start text-textColor/78">
                 {t(
                   'we_have_send_you_an_email_with_a_link_to_reset_your_password',
                   'We have send you an email with a link to reset your password.'
                 )}
               </div>
-              <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="underline cursor-pointer">
+              <p className="mt-4 text-sm text-textColor/66">
+                <Link href="/auth/login" className="underline underline-offset-4 cursor-pointer hover:text-[#38bdf8]">
                   {t('go_back_to_login', 'Go back to login')}
                 </Link>
               </p>

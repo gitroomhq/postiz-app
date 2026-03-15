@@ -26,7 +26,7 @@ export const ButtonCaster: FC<{
     >
       <NeynarAuthButton onLogin={login}>
         <div
-          className={`cursor-pointer bg-white h-[52px] flex-1 rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px]`}
+          className="flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-[10px] rounded-[14px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.92))] text-[#0E0E0E] shadow-[0_16px_32px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-[1px] hover:shadow-[0_20px_38px_rgba(15,23,42,0.18)]"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +51,7 @@ export const ButtonCaster: FC<{
               </clipPath>
             </defs>
           </svg>
-          <div className="block xs:hidden">{t('farcaster', 'Farcaster')}</div>
+          <div className="block xs:hidden font-[600]">{t('farcaster', 'Farcaster')}</div>
         </div>
       </NeynarAuthButton>
     </NeynarContextProvider>

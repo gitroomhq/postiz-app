@@ -5,7 +5,7 @@ export const WalletUiProvider: FC = () => {
   const t = useT();
   return (
     <div
-      className={`cursor-pointer bg-white flex-1 h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px]`}
+      className="flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-[10px] rounded-[14px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.92))] text-[#0E0E0E] shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -23,7 +23,7 @@ export const WalletUiProvider: FC = () => {
           fill="#0E0E0E"
         />
       </svg>
-      <div className="block xs:hidden">Wallet</div>
+      <div className="block xs:hidden font-[600]">Wallet</div>
     </div>
   );
 };

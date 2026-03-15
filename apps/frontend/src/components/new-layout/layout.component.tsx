@@ -87,7 +87,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <ContinueProvider />
             <div
               className={clsx(
-                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
+                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[14px] relative',
                 jakartaSans.className
               )}
             >
@@ -97,10 +97,10 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               ) : (
                 <div className="flex-1 flex gap-[8px]">
                   <Support />
-                  <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                  <div className="flex flex-col w-[84px] rounded-[18px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl">
                     <div
                       className={clsx(
-                        'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
+                        'fixed h-full w-[68px] start-[21px] flex flex-1 top-0',
                         user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                       )}
                     >
@@ -110,8 +110,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                    <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
+                  <div className="flex-1 rounded-[20px] overflow-hidden flex flex-col gap-[1px] blurMe border border-white/10 shadow-[0_32px_120px_rgba(2,6,23,0.42)] bg-[rgba(15,23,42,0.72)] backdrop-blur-xl">
+                    <div className="flex bg-[rgba(15,23,42,0.82)] backdrop-blur-xl h-[84px] px-[24px] items-center border-b border-white/10">
                       <div className="text-[24px] font-[600] flex flex-1">
                         <Title />
                       </div>
@@ -130,7 +130,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <NotificationComponent />
                       </div>
                     </div>
-                    <div className="flex flex-1 gap-[1px]">{children}</div>
+                    <div className="flex flex-1 gap-[1px] bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(8,14,28,0.96))]">
+                      {children}
+                    </div>
                   </div>
                 </div>
               )}

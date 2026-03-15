@@ -150,11 +150,17 @@ export function RegisterAfter({
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="cursor-pointer text-start text-[40px] font-[700] tracking-[-0.04em] text-white">
               {t('sign_up', 'Sign Up')}
             </h1>
+            <p className="mt-[8px] text-[15px] text-textColor/58">
+              {t(
+                'auth_register_subtitle',
+                'Create your Postra workspace and start planning content faster.'
+              )}
+            </p>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">
+          <div className="mb-[12px] mt-[28px] text-[12px] font-[600] uppercase tracking-[0.08em] text-textColor/55">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -174,11 +180,13 @@ export function RegisterAfter({
               ))}
             {!isAfterProvider && (
               <div className="h-[20px] mb-[24px] mt-[24px] relative">
-                <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+                <div className="absolute top-[50%] h-[1px] w-full -translate-y-[50%] bg-white/10" />
                 <div
                   className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
                 >
-                  <div className="px-[16px]">{t('or', 'or')}</div>
+                  <div className="rounded-full border border-white/8 bg-[rgba(15,23,42,0.92)] px-[16px] py-[4px] text-[11px] font-[700] uppercase tracking-[0.08em] text-textColor/52">
+                    {t('or', 'or')}
+                  </div>
                 </div>
               </div>
             )}
@@ -212,7 +220,7 @@ export function RegisterAfter({
                   placeholder={t('label_company', 'Company')}
                 />
               </div>
-              <div className={clsx('text-[12px]')}>
+              <div className={clsx('rounded-[14px] border border-white/8 bg-white/[0.025] px-[14px] py-[12px] text-[12px] text-textColor/68')}>
                 {t(
                   'by_registering_you_agree_to_our',
                   'By registering you agree to our'
@@ -220,7 +228,7 @@ export function RegisterAfter({
                 &nbsp;
                 <a
                   href={`https://postra.pl/terms`}
-                  className="underline hover:font-bold"
+                  className="underline underline-offset-4 hover:text-[#38bdf8]"
                   rel="nofollow"
                 >
                   {t('terms_of_service', 'Terms of Service')}
@@ -230,7 +238,7 @@ export function RegisterAfter({
                 <a
                   href={`https://postra.pl/privacy`}
                   rel="nofollow"
-                  className="underline hover:font-bold"
+                  className="underline underline-offset-4 hover:text-[#38bdf8]"
                 >
                   {t('privacy_policy', 'Privacy Policy')}
                 </a>
@@ -240,18 +248,18 @@ export function RegisterAfter({
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 rounded-[10px] !h-[52px]"
+                    className="flex-1 rounded-[12px] !h-[52px]"
                     loading={loading}
                   >
                     {t('create_account', 'Create Account')}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
+                <p className="mt-4 text-sm text-textColor/66">
                   {t('already_have_an_account', 'Already Have An Account?')}
                   &nbsp;
                   <Link
                     href="/auth/login"
-                    className="underline  cursor-pointer"
+                    className="underline underline-offset-4 cursor-pointer text-textColor hover:text-[#38bdf8]"
                   >
                     {t('sign_in', 'Sign In')}
                   </Link>

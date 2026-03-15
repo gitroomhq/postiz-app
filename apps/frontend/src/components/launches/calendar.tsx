@@ -116,9 +116,7 @@ const usePostActions = (onMutate?: () => void) => {
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
-      const publishDate = dayjs
-        .utc(date || data.posts[0].publishDate)
-        .local();
+      const publishDate = dayjs.utc(date || data.posts[0].publishDate).local();
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -226,9 +224,7 @@ const usePostActions = (onMutate?: () => void) => {
         classNames: {
           modal: 'w-[100%] max-w-[800px]',
         },
-        children: (
-          <MissingReleaseModal postId={id} onSuccess={mutate} />
-        ),
+        children: <MissingReleaseModal postId={id} onSuccess={mutate} />,
         size: '60%',
       });
     },
@@ -344,25 +340,24 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
+        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[6px] rounded-[18px] absolute h-full start-0 top-0 w-full overflow-auto border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(10,14,26,0.94))] p-[6px] shadow-[0_28px_80px_rgba(2,6,23,0.28)] backdrop-blur-xl scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          <div className="z-10 flex justify-center items-center flex-col h-[62px] rounded-[14px] border border-white/8 bg-[rgba(15,23,42,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
+              className="p-2 text-center flex justify-center items-center flex-col h-[62px] rounded-[14px] border border-white/8 bg-[rgba(15,23,42,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sticky top-0 z-[20] backdrop-blur-xl"
             >
-              <div className="text-[14px] font-[500] text-newTableText">
+              <div className="text-[13px] font-[500] uppercase tracking-[0.08em] text-textColor/55">
                 {day.name}
               </div>
               <div
                 className={clsx(
-                  'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L') &&
-                    'text-newTableTextFocused'
+                  'text-[14px] font-[700] flex items-center justify-center gap-[6px] text-textColor/85',
+                  day.day === newDayjs().format('L') && 'text-[#a78bfa]'
                 )}
               >
                 {day.day === newDayjs().format('L') && (
-                  <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
+                  <div className="w-[6px] h-[6px] bg-[#38bdf8] rounded-full shadow-[0_0_12px_rgba(56,189,248,0.8)]" />
                 )}
                 {day.day}
               </div>
@@ -370,7 +365,7 @@ export const WeekView = () => {
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
+              <div className="p-2 pe-4 text-center items-center justify-center flex text-[13px] font-[600] uppercase tracking-[0.08em] text-textColor/50">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {localizedDays.map((day, indexDay) => (
@@ -443,13 +438,15 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[6px] rounded-[18px] absolute start-0 top-0 overflow-auto w-full h-full border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(10,14,26,0.94))] p-[6px] shadow-[0_28px_80px_rgba(2,6,23,0.28)] backdrop-blur-xl scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="z-[20] p-2 flex justify-center items-center flex-col h-[62px] rounded-[14px] border border-white/8 bg-[rgba(15,23,42,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sticky top-0 backdrop-blur-xl"
             >
-              <div>{day}</div>
+              <div className="text-[13px] font-[600] uppercase tracking-[0.08em] text-textColor/70">
+                {day}
+              </div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
@@ -473,7 +470,8 @@ export const ListView = () => {
   const { integrations, loading, listPosts } = useCalendar();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, openStatistics, openMissingRelease } =
+    usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
@@ -512,7 +510,9 @@ export const ListView = () => {
         {groupedPosts.map(([dateKey, datePosts]) => (
           <Fragment key={dateKey}>
             <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
-              {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
+              {newDayjs(dateKey).format(
+                isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY'
+              )}
             </div>
             <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
               {datePosts.map((post) => (
@@ -579,7 +579,8 @@ export const CalendarColumn: FC<{
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, openStatistics, openMissingRelease } =
+    usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -631,94 +632,103 @@ export const CalendarColumn: FC<{
       stop();
     };
   }, []);
-  const [{ canDrop }, drop] = useDrop(() => ({
-    accept: 'post',
-    drop: async (item: any) => {
-      if (isBeforeNow) return;
+  const [{ canDrop }, drop] = useDrop(
+    () => ({
+      accept: 'post',
+      drop: async (item: any) => {
+        if (isBeforeNow) return;
 
-      // Find the post to check its state
-      const post = posts.find((p) => p.id === item.id);
-      let action: 'schedule' | 'update' = 'schedule';
+        // Find the post to check its state
+        const post = posts.find((p) => p.id === item.id);
+        let action: 'schedule' | 'update' = 'schedule';
 
-      // Check if post is already published or queued in the past
-      if (
-        post &&
-        (post.state === 'PUBLISHED' ||
-          (post.state === 'QUEUE' && dayjs().isAfter(dayjs.utc(post.publishDate))))
-      ) {
-        const whatToDo = await new Promise<'schedule' | 'update' | 'cancel'>(
-          (resolve) => {
-            modal.openModal({
-              title: t('what_do_you_want_to_do', 'What do you want to do?'),
-              children: (
-                <div className="flex flex-col">
-                  <div className="text-[20px] mb-[20px]">
-                    {t(
-                      'post_already_published_drag',
-                      'This post was already published, what do you want to do?'
-                    )}
-                  </div>
-                  <div className="flex w-full gap-[10px]">
-                    <div className="flex-1 flex">
-                      <Button
-                        type="button"
-                        className="flex-1"
-                        onClick={() => {
-                          modal.closeAll();
-                          resolve('update');
-                        }}
-                      >
-                        {t('just_update_post_details', 'Just update the post details')}
-                      </Button>
+        // Check if post is already published or queued in the past
+        if (
+          post &&
+          (post.state === 'PUBLISHED' ||
+            (post.state === 'QUEUE' &&
+              dayjs().isAfter(dayjs.utc(post.publishDate))))
+        ) {
+          const whatToDo = await new Promise<'schedule' | 'update' | 'cancel'>(
+            (resolve) => {
+              modal.openModal({
+                title: t('what_do_you_want_to_do', 'What do you want to do?'),
+                children: (
+                  <div className="flex flex-col">
+                    <div className="text-[20px] mb-[20px]">
+                      {t(
+                        'post_already_published_drag',
+                        'This post was already published, what do you want to do?'
+                      )}
                     </div>
-                    <div className="flex-1 flex">
-                      <Button
-                        type="button"
-                        className="flex-1"
-                        onClick={() => {
-                          modal.closeAll();
-                          resolve('schedule');
-                        }}
-                      >
-                        {t('reschedule_post', 'Reschedule the post')}
-                      </Button>
+                    <div className="flex w-full gap-[10px]">
+                      <div className="flex-1 flex">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          onClick={() => {
+                            modal.closeAll();
+                            resolve('update');
+                          }}
+                        >
+                          {t(
+                            'just_update_post_details',
+                            'Just update the post details'
+                          )}
+                        </Button>
+                      </div>
+                      <div className="flex-1 flex">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          onClick={() => {
+                            modal.closeAll();
+                            resolve('schedule');
+                          }}
+                        >
+                          {t('reschedule_post', 'Reschedule the post')}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ),
-              onClose: () => resolve('cancel'),
-            });
+                ),
+                onClose: () => resolve('cancel'),
+              });
+            }
+          );
+
+          if (whatToDo === 'cancel') {
+            return;
           }
-        );
+          action = whatToDo;
+        }
 
-        if (whatToDo === 'cancel') {
+        if (!item.interval) {
+          changeDate(item.id, getDate);
+        }
+        const { status } = await fetch(`/posts/${item.id}/date`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+            action,
+          }),
+        });
+        if (status !== 500) {
+          if (item.interval || action === 'schedule') {
+            reloadCalendarView();
+            return;
+          }
           return;
         }
-        action = whatToDo;
-      }
-
-      if (!item.interval) {
-        changeDate(item.id, getDate);
-      }
-      const { status } = await fetch(`/posts/${item.id}/date`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
-          action,
-        }),
-      });
-      if (status !== 500) {
-        if (item.interval || action === 'schedule') {
-          reloadCalendarView();
-          return;
-        }
-        return;
-      }
-    },
-    collect: (monitor) => ({
-      canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
+      },
+      collect: (monitor) => ({
+        canDrop: isBeforeNow
+          ? false
+          : !!monitor.canDrop() && !!monitor.isOver(),
+      }),
     }),
-  }), [posts]);
+    [posts]
+  );
 
   const addModal = useCallback(async () => {
     const set: any = !sets.length
@@ -803,17 +813,24 @@ export const CalendarColumn: FC<{
         loading && 'animate-pulse',
         isBeforeNow
           ? 'cursor-not-allowed'
-          : 'border border-newTextColor/5 rounded-[8px]'
+          : 'border border-white/8 rounded-[14px] bg-[rgba(15,23,42,0.58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-md'
       )}
       ref={drop as any}
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div
+          className={clsx(
+            'pt-[6px] ps-[8px] text-[14px] font-[700] text-textColor/70'
+          )}
+        >
+          {getDate.date()}
+        </div>
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
-          canDrop && 'border border-[#38bdf8]'
+          'relative flex flex-col flex-1 text-white rounded-[14px] min-h-[70px] transition-all duration-200',
+          canDrop &&
+            'border border-[#38bdf8]/80 bg-[rgba(56,189,248,0.08)] shadow-[0_0_0_1px_rgba(56,189,248,0.24),0_0_30px_rgba(56,189,248,0.18)]'
         )}
       >
         <div
@@ -825,7 +842,7 @@ export const CalendarColumn: FC<{
         >
           {loading && (
             <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
-              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+              <div className="h-full w-full rounded-[12px] border border-white/8 bg-[linear-gradient(180deg,rgba(30,41,59,0.7),rgba(15,23,42,0.86))]" />
             </div>
           )}
           {list.map((post) => (
@@ -854,7 +871,7 @@ export const CalendarColumn: FC<{
           ))}
           {!showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px] text-textColor"
+              className="text-center py-[8px] text-[12px] font-[600] uppercase tracking-[0.08em] text-textColor/65 hover:text-[#38bdf8] transition-colors"
               onClick={showAllFunc}
             >
               {t('show_more', '+ Show more')} ({postList.length - 3})
@@ -862,7 +879,7 @@ export const CalendarColumn: FC<{
           )}
           {showAll && postList.length > 3 && (
             <div
-              className="text-center hover:underline py-[5px]"
+              className="text-center py-[8px] text-[12px] font-[600] uppercase tracking-[0.08em] text-textColor/65 hover:text-[#38bdf8] transition-colors"
               onClick={showLessFunc}
             >
               {t('show_less', '- Show less')}
@@ -887,18 +904,16 @@ export const CalendarColumn: FC<{
               {display !== 'day' && (
                 <div
                   className={clsx(
-                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                    'group w-full h-full rounded-[12px] flex justify-center items-center text-white'
                   )}
                 >
-                  <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
-                  />
+                  <div className="flex w-full h-full max-w-[42px] max-h-[42px] items-center justify-center rounded-[12px] pb-[1px] text-[24px] font-[500] text-transparent transition-all group-hover:bg-[linear-gradient(135deg,#38bdf8,#a78bfa)] group-hover:text-[#0a0e1a] group-hover:shadow-[0_16px_32px_rgba(56,189,248,0.18)]">
+                    +
+                  </div>
                 </div>
               )}
               {display === 'day' && (
-                <div
-                  className={`w-full h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
-                >
+                <div className="w-full h-full rounded-[12px] border border-dashed border-white/8 py-[10px] flex-wrap flex justify-center items-center gap-[20px] opacity-40 grayscale transition-all hover:border-[#38bdf8]/55 hover:bg-[rgba(56,189,248,0.05)] hover:grayscale-0 hover:opacity-100">
                   {integrations.map((selectedIntegrations) => (
                     <div
                       className="relative"
@@ -1039,7 +1054,8 @@ const CalendarItem: FC<{
         >
           <Preview />
         </div>{' '}
-        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
+        {(post.integration.providerIdentifier === 'x' && disableXAnalytics) ||
+        !post.releaseId ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
           <div
@@ -1077,7 +1093,7 @@ const CalendarItem: FC<{
       <div
         onClick={editPost}
         className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
+          'gap-[5px] w-full flex h-full flex-1 rounded-br-[12px] rounded-bl-[12px] p-[8px] text-[14px] border border-white/6 bg-[linear-gradient(180deg,rgba(30,41,59,0.72),rgba(15,23,42,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all hover:border-[#38bdf8]/30 hover:bg-[linear-gradient(180deg,rgba(51,65,85,0.75),rgba(15,23,42,0.95))]',
           'relative',
           isBeforeNow && '!grayscale'
         )}
@@ -1096,16 +1112,18 @@ const CalendarItem: FC<{
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
-            <div className="w-full relative">
-              <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
-                {stripHtmlValidation('none', post.content, false, true, false) ||
-                  t('no_content', 'no content')}
-              </div>
+          <div className="w-full relative">
+            <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
+              {stripHtmlValidation('none', post.content, false, true, false) ||
+                t('no_content', 'no content')}
             </div>
+          </div>
         </div>
         {showTime && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+            {newDayjs(post.publishDate)
+              .local()
+              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
         )}
       </div>
@@ -1208,11 +1226,11 @@ export const SetSelectionModal: FC<{
           <div
             key={set.id}
             onClick={() => onSelect(set)}
-            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:transition-colors"
+            className="cursor-pointer rounded-[14px] border border-white/8 bg-[linear-gradient(180deg,rgba(30,41,59,0.56),rgba(15,23,42,0.82))] p-3 transition-all hover:border-[#38bdf8]/40 hover:bg-[linear-gradient(180deg,rgba(51,65,85,0.65),rgba(15,23,42,0.9))] hover:shadow-[0_16px_32px_rgba(56,189,248,0.08)]"
           >
             <div className="font-medium">{set.name}</div>
             {set.description && (
-              <div className="text-sm text-gray-400 mt-1">
+              <div className="mt-1 text-sm text-textColor/60">
                 {set.description}
               </div>
             )}
@@ -1220,10 +1238,10 @@ export const SetSelectionModal: FC<{
         ))}
       </div>
 
-      <div className="flex gap-2 pt-2 border-t border-tableBorder">
+      <div className="flex gap-2 border-t border-white/8 pt-2">
         <button
           onClick={onContinueWithoutSet}
-          className="flex-1 px-4 py-2 text-textColor rounded-lg hover:transition-colors"
+          className="flex-1 rounded-[12px] border border-white/8 px-4 py-2 text-textColor/80 transition-all hover:border-[#38bdf8]/40 hover:bg-white/5 hover:text-textColor"
         >
           {t('continue_without_set', 'Continue without set')}
         </button>

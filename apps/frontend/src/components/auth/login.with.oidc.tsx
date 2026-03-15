@@ -15,13 +15,13 @@ export const LoginWithOidc = () => {
   return (
     <>
       <div>
-        <h1 className="text-center text-3xl font-bold text-start mb-4 cursor-pointer">
+        <h1 className="mb-4 cursor-pointer text-start text-[40px] font-[700] tracking-[-0.04em] text-white">
           {t('sign_up', 'Sign Up')}
         </h1>
       </div>
       <OauthProvider />
       <div className="h-[20px] mb-[24px] mt-[24px] relative">
-        <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+        <div className="absolute top-[50%] h-[1px] w-full -translate-y-[50%] bg-white/10" />
         <div
           className={`absolute z-[1] justify-center items-center w-full start-0 top-0 flex`}
         />

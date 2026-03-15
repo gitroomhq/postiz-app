@@ -54,8 +54,8 @@ export const SVGLine = () => {
           y2="-28.6843"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#662FDA" />
-          <stop offset="1" stopColor="#5720CB" />
+          <stop stopColor="#38BDF8" />
+          <stop offset="1" stopColor="#0EA5E9" />
         </linearGradient>
         <radialGradient
           id="paint1_radial_1930_1119"
@@ -65,8 +65,8 @@ export const SVGLine = () => {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(1.19333 7.45342) rotate(21.2064) scale(16.1503 188.627)"
         >
-          <stop stopColor="#8C66FF" />
-          <stop offset="1" stopColor="#8C66FF" stopOpacity="0" />
+          <stop stopColor="#A78BFA" />
+          <stop offset="1" stopColor="#A78BFA" stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>
@@ -261,7 +261,7 @@ export const MenuComponent: FC<
         : {})}
       key={integration.id}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[12px] items-center border border-transparent bg-white/[0.03] hover:bg-white/[0.05] hover:border-sky-300/15 group/profile transition-all rounded-[14px] px-[10px] py-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -271,7 +271,7 @@ export const MenuComponent: FC<
           integration.disabled && 'opacity-50'
         )}
       >
-        <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+        <div className="h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
           <SVGLine />
         </div>
         {(integration.inBetweenSteps || integration.refreshNeeded) && (
@@ -286,7 +286,7 @@ export const MenuComponent: FC<
             <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
+      <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
           </div>
         )}
         <ImageWithFallback
@@ -487,7 +487,7 @@ export const LaunchesComponent = () => {
   }, []);
   if (isLoading || reload) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(10,14,26,0.92))] backdrop-blur-xl">
         <LoadingComponent />
       </div>
     );
@@ -506,18 +506,18 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor rounded-[20px] border-e border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(10,14,26,0.94))] backdrop-blur-xl'
             )}
           >
             <div className="flex items-center">
-              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[600] tracking-[-0.02em]">
                 {t('channels')}
               </h2>
               <div
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-white/[0.06] border border-white/10 rounded-[10px] w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-white/[0.1] transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -593,7 +593,7 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="flex-1 flex-col flex p-[20px] gap-[14px] rounded-[20px] border-s border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.76),rgba(10,14,26,0.9))] backdrop-blur-xl">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />

@@ -45,16 +45,16 @@ export const AfterActivate = () => {
       {showLoader ? (
         <LoadingComponent />
       ) : (
-        <>
+        <div className="rounded-[16px] border border-white/8 bg-white/[0.03] p-[18px] text-textColor/78">
           This user is already activated,
           <br />
-          <Link href="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline underline-offset-4 hover:text-[#38bdf8]">
             {t(
               'click_here_to_go_back_to_login',
               'Click here to go back to login'
             )}
           </Link>
-        </>
+        </div>
       )}
     </>
   );
