@@ -15,6 +15,13 @@ export class TwitchProvider extends SocialAbstract implements SocialProvider {
   identifier = 'twitch';
   name = 'Twitch';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'normal' as const;
   scopes = ['user:write:chat', 'user:read:chat', 'moderator:manage:announcements'];
   dto = TwitchDto;

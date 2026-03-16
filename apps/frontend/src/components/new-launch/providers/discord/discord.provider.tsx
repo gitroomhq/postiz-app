@@ -22,6 +22,4 @@ export default withProvider({
   SettingsComponent: DiscordComponent,
   CustomPreviewComponent: undefined,
   dto: DiscordDto,
-  checkValidity: undefined,
-  maximumCharacters: 1980,
 });

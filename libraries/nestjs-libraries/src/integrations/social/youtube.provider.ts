@@ -55,6 +55,13 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   name = 'YouTube';
   isBetweenSteps = true;
   dto = YoutubeSettingsDto;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: true,
+    requiresVideo: true,
+  };
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',

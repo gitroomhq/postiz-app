@@ -40,6 +40,4 @@ export default withProvider({
   SettingsComponent: MediumSettings,
   CustomPreviewComponent: undefined, //MediumPreview,
   dto: MediumSettingsDto,
-  checkValidity: undefined,
-  maximumCharacters: 100000,
 });

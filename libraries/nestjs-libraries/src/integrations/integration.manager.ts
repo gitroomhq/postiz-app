@@ -89,6 +89,7 @@ export class IntegrationManager {
           isChromeExtension: !!p.isChromeExtension,
           ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
+          mediaCapabilities: p.mediaCapabilities,
         }))
       ),
       article: [] as any[],
@@ -167,7 +168,7 @@ export class IntegrationManager {
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
-  getSocialIntegration(integration: string): SocialProvider {
+  getSocialIntegration(integration: string): SocialAbstract & SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
   }
 }

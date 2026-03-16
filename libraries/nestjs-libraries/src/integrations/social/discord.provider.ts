@@ -15,6 +15,13 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   identifier = 'discord';
   name = 'Discord';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 10,
+    canMixMediaTypes: true,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'markdown' as const;
   scopes = ['identify', 'guilds'];
   maxLength() {

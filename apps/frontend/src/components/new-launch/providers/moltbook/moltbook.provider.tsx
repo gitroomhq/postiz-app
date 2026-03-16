@@ -31,5 +31,4 @@ export default withProvider({
   SettingsComponent: MoltbookSettings,
   CustomPreviewComponent: undefined,
   dto: MoltbookDto,
-  maximumCharacters: 300,
 });
