@@ -3,6 +3,7 @@ export const languages = [
   fallbackLng,
   'he',
   'ru',
+  'sr',
   'zh',
   'fr',
   'es',
