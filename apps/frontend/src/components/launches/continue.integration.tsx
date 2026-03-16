@@ -207,7 +207,9 @@ export const ContinueIntegration: FC<{
 
       try {
         // Use public or authenticated endpoint based on the flow
-        const endpoint = `/integrations/provider/${twoStepState.integrationId}/connect`;
+        const endpoint = logged
+          ? `/integrations/provider/${twoStepState.integrationId}/connect`
+          : `/integrations/public/provider/${twoStepState.integrationId}/connect`;
 
         const response = await fetch(endpoint, {
           method: 'POST',

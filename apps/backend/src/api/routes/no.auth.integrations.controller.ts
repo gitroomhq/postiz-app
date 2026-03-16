@@ -306,7 +306,7 @@ export class NoAuthIntegrationsController {
     };
   }
 
-  @Post('/provider/:id/connect')
+  @Post('/public/provider/:id/connect')
   async saveProviderPage(@Param('id') id: string, @Body() body: any) {
     if (!body.state) {
       throw new Error('Invalid state');
