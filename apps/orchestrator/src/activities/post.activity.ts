@@ -205,8 +205,7 @@ export class PostActivity {
           args: [{ organizationId: integration.organizationId }],
           workflowId: `streak_${integration.organizationId}`,
           taskQueue: 'main',
-          workflowIdConflictPolicy:
-            WorkflowIdConflictPolicy.WORKFLOW_ID_CONFLICT_POLICY_TERMINATE_EXISTING,
+          workflowIdConflictPolicy: WorkflowIdConflictPolicy.TERMINATE_EXISTING,
           typedSearchAttributes: new TypedSearchAttributes([
             {
               key: organizationId,
