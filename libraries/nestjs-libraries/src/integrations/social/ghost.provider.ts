@@ -997,16 +997,17 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
    * Used for canceling scheduled posts or removing drafts
    */
   async delete(
-    id: string,
     accessToken: string,
-    ghostPostId: string
+    ghostPostId: string,
+    internalId?: string,
+    integration?: Integration
   ): Promise<{ id: string; success: boolean }> {
     const credentials = this.parseCredentials(accessToken);
     const api = this.createAdminAPI(credentials);
 
     try {
       await api.posts.delete({ id: ghostPostId });
-      return { id, success: true };
+      return { id: internalId || '', success: true };
     } catch (err: any) {
       console.error('Ghost post deletion error:', err?.message || err);
       throw new Error(`Failed to delete Ghost post: ${err?.message || 'unknown error'}`);
@@ -1019,7 +1020,9 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
    */
   async getStatus(
     accessToken: string,
-    ghostPostId: string
+    ghostPostId: string,
+    internalId?: string,
+    integration?: Integration
   ): Promise<{
     id: string;
     status: 'draft' | 'published' | 'scheduled' | 'sent';
@@ -1058,11 +1061,12 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
    * - any status → scheduled (with published_at)
    */
   async changeStatus(
-    id: string,
     accessToken: string,
     ghostPostId: string,
     newStatus: 'draft' | 'published' | 'scheduled',
-    publishedAt?: string
+    publishedAt?: string,
+    internalId?: string,
+    integration?: Integration
   ): Promise<PostResponse> {
     const credentials = this.parseCredentials(accessToken);
     const api = this.createAdminAPI(credentials);
@@ -1092,7 +1096,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       }
 
       return {
-        id,
+        id: internalId || '',
         postId: String(updatedPost.id),
         releaseURL: updatedPost.url || '',
         status: updatedPost.status,

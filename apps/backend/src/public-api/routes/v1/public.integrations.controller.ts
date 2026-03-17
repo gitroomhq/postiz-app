@@ -436,7 +436,6 @@ export class PublicIntegrationsController {
           }
 
           const { accessToken } = data;
-
           if (accessToken) {
             getIntegration.token = accessToken;
 
@@ -449,6 +448,257 @@ export class PublicIntegrationsController {
         }
         throw new HttpException({ msg: 'Unexpected error' }, 500);
       }
+    }
+  }
+
+  // ===== Ghost-specific post management endpoints =====
+
+  @Put('/posts/:id/date')
+  async updatePostDate(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { date: string; action?: 'schedule' | 'update' }
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const action = body.action || 'schedule';
+
+    // Validate date format
+    const newDate = new Date(body.date);
+    if (isNaN(newDate.getTime())) {
+      throw new HttpException({ msg: 'Invalid date format. Use ISO 8601.' }, 400);
+    }
+
+    // Update the publish date - PostsService.changeDate handles:
+    // - schedule: sets state to QUEUE (or DRAFT if it was draft), resets releaseId/releaseURL
+    // - update: just changes the date
+    const result = await this._postsService.changeDate(
+      org.id,
+      id,
+      body.date,
+      action
+    );
+
+    return { success: true, postId: id, publishDate: result.publishDate };
+  }
+
+  @Get('/integration/:id/post/:postId/status')
+  async getPostStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') integrationId: string,
+    @Param('postId') providerPostId: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      integrationId
+    );
+
+    if (!getIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
+    const provider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!provider) {
+      throw new HttpException({ msg: 'Integration provider not found' }, 404);
+    }
+
+    // Check if provider supports getStatus
+    // @ts-ignore
+    if (typeof provider.getStatus !== 'function') {
+      throw new HttpException(
+        { msg: 'This integration does not support status queries' },
+        400
+      );
+    }
+
+    try {
+      // @ts-ignore
+      const status = await provider.getStatus(
+        getIntegration.token,
+        providerPostId,
+        getIntegration.internalId,
+        getIntegration
+      );
+      return { status };
+    } catch (err: any) {
+      if (err instanceof RefreshToken) {
+        const data = await this._refreshIntegrationService.refresh(
+          getIntegration
+        );
+        if (!data) {
+          throw new HttpException(
+            { msg: 'Failed to refresh token' },
+            401
+          );
+        }
+        // Retry with refreshed token
+        // @ts-ignore
+        const status = await provider.getStatus(
+          data.accessToken,
+          providerPostId,
+          getIntegration.internalId,
+          getIntegration
+        );
+        return { status };
+      }
+      throw new HttpException(
+        { msg: err.message || 'Failed to get post status' },
+        500
+      );
+    }
+  }
+
+  @Put('/integration/:id/post/:postId/status')
+  async changePostStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') integrationId: string,
+    @Param('postId') providerPostId: string,
+    @Body() body: { status: 'draft' | 'published' | 'scheduled'; publishedAt?: string }
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      integrationId
+    );
+
+    if (!getIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
+    const provider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!provider) {
+      throw new HttpException({ msg: 'Integration provider not found' }, 404);
+    }
+
+    // Check if provider supports changeStatus
+    // @ts-ignore
+    if (typeof provider.changeStatus !== 'function') {
+      throw new HttpException(
+        { msg: 'This integration does not support status changes' },
+        400
+      );
+    }
+
+    const validStatuses = ['draft', 'published', 'scheduled'];
+    if (!validStatuses.includes(body.status)) {
+      throw new HttpException(
+        { msg: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        400
+      );
+    }
+
+    try {
+      // @ts-ignore
+      const result = await provider.changeStatus(
+        getIntegration.token,
+        providerPostId,
+        body.status,
+        body.publishedAt,
+        getIntegration.internalId,
+        getIntegration
+      );
+      return { success: true, result };
+    } catch (err: any) {
+      if (err instanceof RefreshToken) {
+        const data = await this._refreshIntegrationService.refresh(
+          getIntegration
+        );
+        if (!data) {
+          throw new HttpException(
+            { msg: 'Failed to refresh token' },
+            401
+          );
+        }
+        // @ts-ignore
+        const result = await provider.changeStatus(
+          data.accessToken,
+          providerPostId,
+          body.status,
+          body.publishedAt,
+          getIntegration.internalId,
+          getIntegration
+        );
+        return { success: true, result };
+      }
+      throw new HttpException(
+        { msg: err.message || 'Failed to change post status' },
+        500
+      );
+    }
+  }
+
+  @Delete('/integration/:id/post/:postId')
+  async deleteProviderPost(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') integrationId: string,
+    @Param('postId') providerPostId: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      integrationId
+    );
+
+    if (!getIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
+    const provider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!provider) {
+      throw new HttpException({ msg: 'Integration provider not found' }, 404);
+    }
+
+    // Check if provider supports delete
+    // @ts-ignore
+    if (typeof provider.delete !== 'function') {
+      throw new HttpException(
+        { msg: 'This integration does not support post deletion' },
+        400
+      );
+    }
+
+    try {
+      // @ts-ignore
+      await provider.delete(
+        getIntegration.token,
+        providerPostId,
+        getIntegration.internalId,
+        getIntegration
+      );
+      return { success: true };
+    } catch (err: any) {
+      if (err instanceof RefreshToken) {
+        const data = await this._refreshIntegrationService.refresh(
+          getIntegration
+        );
+        if (!data) {
+          throw new HttpException(
+            { msg: 'Failed to refresh token' },
+            401
+          );
+        }
+        // @ts-ignore
+        await provider.delete(
+          data.accessToken,
+          providerPostId,
+          getIntegration.internalId,
+          getIntegration
+        );
+        return { success: true };
+      }
+      throw new HttpException(
+        { msg: err.message || 'Failed to delete post' },
+        500
+      );
     }
   }
 }
