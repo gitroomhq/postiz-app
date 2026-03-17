@@ -11,6 +11,8 @@ import { Select } from '@gitroom/react/form/select';
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { GhostTags } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.tags';
 import { GhostAuthors } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.authors';
+import { GhostNewsletters } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.newsletters';
+import { GhostTiers } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.tiers';
 import { GhostDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/ghost.dto';
 
 const GhostSettings: FC = () => {
@@ -67,6 +69,23 @@ const GhostSettings: FC = () => {
         <div className="text-[14px] font-semibold text-white">Organization</div>
         <GhostTags label="Tags" {...form.register('tags', { value: [] })} />
         <GhostAuthors label="Authors" {...form.register('authors', { value: [] })} />
+      </div>
+
+      {/* Newsletter Settings */}
+      <div className="flex flex-col gap-[12px] mt-[16px]">
+        <div className="text-[14px] font-semibold text-white">Newsletter</div>
+        <GhostNewsletters label="Newsletter" {...form.register('newsletter_id')} />
+        <Input
+          label="Email Subject (optional)"
+          {...form.register('email_subject')}
+          placeholder="Custom subject line for email newsletter"
+        />
+      </div>
+
+      {/* Paid Content Settings */}
+      <div className="flex flex-col gap-[12px] mt-[16px]">
+        <div className="text-[14px] font-semibold text-white">Paid Content</div>
+        <GhostTiers label="Membership Tiers" {...form.register('tiers', { value: [] })} />
       </div>
 
       {/* SEO Settings */}
@@ -126,16 +145,6 @@ const GhostSettings: FC = () => {
           label="Twitter Image URL"
           {...form.register('twitter_image')}
           placeholder="https://example.com/twitter-image.jpg"
-        />
-      </div>
-
-      {/* Email Settings */}
-      <div className="flex flex-col gap-[12px] mt-[16px]">
-        <div className="text-[14px] font-semibold text-white">Email Newsletter</div>
-        <Input
-          label="Email Subject (optional)"
-          {...form.register('email_subject')}
-          placeholder="Custom subject line for email newsletter"
         />
       </div>
     </>

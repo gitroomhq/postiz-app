@@ -111,4 +111,20 @@ export class GhostDto {
   @IsOptional()
   @IsString()
   email_subject?: string;
+
+  // Newsletter settings
+  @IsOptional()
+  @IsString()
+  newsletter_id?: string;
+
+  // Visibility tiers for paid content (array of tier IDs)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tiers?: string[];
+
+  // Publish to email newsletter
+  @IsOptional()
+  @IsString()
+  email_only?: boolean;
 }

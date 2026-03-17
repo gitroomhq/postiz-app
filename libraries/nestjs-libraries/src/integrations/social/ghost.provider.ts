@@ -198,6 +198,122 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @Tool({ description: 'Get Ghost newsletters', dataSchema: [] })
+  async newsletters(token: string): Promise<Array<{ value: string; label: string }>> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const newsletters = await api.newsletters.browse();
+
+      return (newsletters || []).map((nl: any) => ({
+        value: nl.id,
+        label: nl.name,
+      }));
+    } catch (err) {
+      console.error('Ghost newsletters fetch error:', err);
+      return [];
+    }
+  }
+
+  @Tool({ description: 'Get Ghost themes', dataSchema: [] })
+  async themes(token: string): Promise<Array<{ value: string; label: string; active: boolean }>> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/themes/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Ghost themes fetch failed:', response.status, response.statusText);
+        return [];
+      }
+
+      const data = await response.json() as { themes: Array<{ name: string; active?: boolean }> };
+      const themes = data.themes || [];
+
+      return themes.map((theme) => ({
+        value: theme.name,
+        label: theme.name,
+        active: theme.active || false,
+      }));
+    } catch (err) {
+      console.error('Ghost themes fetch error:', err);
+      return [];
+    }
+  }
+
+  @Tool({ description: 'Preview a Ghost post', dataSchema: [] })
+  async preview(
+    token: string,
+    postData: {
+      title: string;
+      html?: string;
+      mobiledoc?: string;
+      lexical?: string;
+    }
+  ): Promise<{ previewUrl: string } | { error: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      // Ghost preview API creates a temporary preview post
+      // The preview endpoint is POST /ghost/api/admin/posts/?source=html
+      const body: any = {
+        posts: [{
+          title: postData.title,
+        }]
+      };
+
+      // Ghost accepts html, mobiledoc, or lexical format
+      if (postData.html) {
+        body.posts[0].html = postData.html;
+      } else if (postData.mobiledoc) {
+        body.posts[0].mobiledoc = postData.mobiledoc;
+      } else if (postData.lexical) {
+        body.posts[0].lexical = postData.lexical;
+      }
+
+      const response = await fetch(`${url}/ghost/api/admin/posts/?source=html&preview=true`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Content-Type': 'application/json',
+          'Accept-Version': 'v6.0',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ghost preview failed:', response.status, errorText);
+        return { error: `Preview failed: ${response.status}` };
+      }
+
+      const data = await response.json() as { posts: Array<{ id: string; uuid: string }> };
+      const post = data.posts?.[0];
+
+      if (!post) {
+        return { error: 'No preview created' };
+      }
+
+      // Generate preview URL
+      const previewUrl = `${url}/p/${post.uuid}/`;
+
+      return { previewUrl };
+    } catch (err: any) {
+      console.error('Ghost preview error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
   /**
    * Generate JWT token from Admin API Key for direct API calls
    * The Ghost Admin SDK does this internally, but we need it for endpoints not in the SDK
@@ -216,24 +332,6 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       expiresIn: '5m',
       audience: '/admin/'
     });
-  }
-
-  @Tool({ description: 'Get Ghost newsletters', dataSchema: [] })
-  async newsletters(token: string): Promise<Array<{ value: string; label: string }>> {
-    try {
-      const credentials = this.parseCredentials(token);
-      const api = this.createAdminAPI(credentials);
-
-      const newsletters = await api.newsletters.browse();
-
-      return (newsletters || []).map((nl: any) => ({
-        value: nl.id,
-        label: nl.name,
-      }));
-    } catch (err) {
-      console.error('Ghost newsletters fetch error:', err);
-      return [];
-    }
   }
 
   private async uploadImage(
@@ -392,6 +490,21 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       postData.visibility = settings.visibility;
     }
 
+    // Tiers for paid content (if visibility is 'paid')
+    if (settings?.tiers && settings.tiers.length > 0) {
+      postData.tiers = settings.tiers.map((tierId: string) => ({ id: tierId }));
+    }
+
+    // Newsletter
+    if (settings?.newsletter_id) {
+      postData.newsletter = { id: settings.newsletter_id };
+    }
+
+    // Email settings
+    if (settings?.email_subject) {
+      postData.email_subject = settings.email_subject;
+    }
+
     // SEO/Meta fields
     if (settings?.meta_title) {
       postData.meta_title = settings.meta_title;
@@ -425,11 +538,6 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     // Canonical URL
     if (settings?.canonical_url) {
       postData.canonical_url = settings.canonical_url;
-    }
-
-    // Email settings
-    if (settings?.email_subject) {
-      postData.email_subject = settings.email_subject;
     }
 
     // Scheduled publishing
