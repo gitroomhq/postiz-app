@@ -314,6 +314,124 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @Tool({ description: 'Get custom theme settings for the active theme (variants like colors, typography, layouts)', dataSchema: [] })
+  async themeSettings(token: string): Promise<Array<{
+    key: string;
+    type: 'select' | 'boolean' | 'color' | 'text' | 'number';
+    value: string | boolean | number;
+    options?: string[];
+    default?: string | boolean | number;
+    group?: string;
+    description?: string;
+  }>> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      // Fetch custom theme settings for active theme
+      const response = await fetch(`${url}/ghost/api/admin/custom_theme_settings/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Ghost theme settings fetch failed:', response.status, response.statusText);
+        return [];
+      }
+
+      const data = await response.json() as { custom_theme_settings: Array<any> };
+      return (data.custom_theme_settings || []).map((setting) => ({
+        key: setting.key,
+        type: setting.type,
+        value: setting.value,
+        options: setting.options,
+        default: setting.default,
+        group: setting.group,
+        description: setting.description,
+      }));
+    } catch (err) {
+      console.error('Ghost theme settings fetch error:', err);
+      return [];
+    }
+  }
+
+  @Tool({ description: 'Update custom theme settings for the active theme', dataSchema: [] })
+  async updateThemeSettings(
+    token: string,
+    settings: Array<{ key: string; value: string | boolean | number }>
+  ): Promise<{ success: boolean; settings?: any[]; error?: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/custom_theme_settings/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Content-Type': 'application/json',
+          'Accept-Version': 'v6.0',
+        },
+        body: JSON.stringify({
+          custom_theme_settings: settings,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ghost theme settings update failed:', response.status, errorText);
+        return { success: false, error: `Update failed: ${response.status}` };
+      }
+
+      const data = await response.json() as { custom_theme_settings: Array<any> };
+      return {
+        success: true,
+        settings: data.custom_theme_settings,
+      };
+    } catch (err: any) {
+      console.error('Ghost theme settings update error:', err);
+      return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Activate a Ghost theme', dataSchema: [] })
+  async activateTheme(
+    token: string,
+    themeName: string
+  ): Promise<{ success: boolean; theme?: any; error?: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/themes/activate/?name=${encodeURIComponent(themeName)}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ghost theme activation failed:', response.status, errorText);
+        return { success: false, error: `Activation failed: ${response.status}` };
+      }
+
+      const data = await response.json() as { themes: Array<any> };
+      return {
+        success: true,
+        theme: data.themes?.[0],
+      };
+    } catch (err: any) {
+      console.error('Ghost theme activation error:', err);
+      return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
   /**
    * Generate JWT token from Admin API Key for direct API calls
    * The Ghost Admin SDK does this internally, but we need it for endpoints not in the SDK
