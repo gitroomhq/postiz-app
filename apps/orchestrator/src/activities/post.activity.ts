@@ -188,6 +188,7 @@ export class PostActivity {
             JSON.parse(p.image || '[]'),
             getIntegration?.convertToJPEG || false
           ),
+          publishDate: p.publishDate,  // Pass scheduled publish date to provider
         }))
       ),
       integration

@@ -864,9 +864,21 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       postData.canonical_url = settings.canonical_url;
     }
 
-    // Scheduled publishing
-    if (settings?.published_at) {
-      postData.published_at = settings.published_at;
+    // Scheduled publishing - use Ghost's native scheduling
+    // Priority: 1) settings.published_at, 2) postDetails.publishDate from Postiz
+    // Ghost expects ISO 8601 format for published_at
+    const scheduledDate = settings?.published_at 
+      ? new Date(settings.published_at)
+      : firstPost.publishDate 
+        ? new Date(firstPost.publishDate)
+        : null;
+    
+    if (scheduledDate) {
+      postData.published_at = scheduledDate.toISOString();
+      // Use 'scheduled' status if publishing in the future
+      if (scheduledDate > new Date() && settings?.status !== 'draft') {
+        postData.status = 'scheduled';
+      }
     }
 
     // Tags (can be array of names or objects with name property)
@@ -902,6 +914,192 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     } catch (err: any) {
       console.error('Ghost post creation error:', err?.message || err);
       throw new Error(`Failed to create Ghost post: ${err?.message || 'unknown error'}`);
+    }
+  }
+
+  /**
+   * Update an existing Ghost post
+   * Used for editing scheduled/draft posts or changing post status
+   */
+  async update(
+    id: string,
+    accessToken: string,
+    ghostPostId: string,
+    updates: {
+      title?: string;
+      html?: string;
+      status?: 'draft' | 'published' | 'scheduled';
+      published_at?: string;
+      feature_image?: string;
+      visibility?: string;
+      tags?: string[];
+      authors?: string[];
+      [key: string]: any;
+    }
+  ): Promise<PostResponse> {
+    const credentials = this.parseCredentials(accessToken);
+    const api = this.createAdminAPI(credentials);
+
+    const updateData: any = { id: ghostPostId };
+
+    // Apply updates
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.html !== undefined) updateData.html = updates.html;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.published_at !== undefined) {
+      updateData.published_at = updates.published_at;
+      // Auto-set status to 'scheduled' if published_at is in the future
+      const publishDate = new Date(updates.published_at);
+      if (publishDate > new Date() && updates.status !== 'draft') {
+        updateData.status = 'scheduled';
+      }
+    }
+    if (updates.feature_image !== undefined) updateData.feature_image = updates.feature_image;
+    if (updates.visibility !== undefined) updateData.visibility = updates.visibility;
+    if (updates.tags !== undefined) {
+      updateData.tags = updates.tags.map((tag: string) => ({ name: tag }));
+    }
+    if (updates.authors !== undefined) {
+      updateData.authors = updates.authors.map((authorId: string) => ({ id: authorId }));
+    }
+
+    // Copy any additional fields
+    for (const [key, value] of Object.entries(updates)) {
+      if (!['title', 'html', 'status', 'published_at', 'feature_image', 'visibility', 'tags', 'authors'].includes(key)) {
+        updateData[key] = value;
+      }
+    }
+
+    try {
+      const updatedPost = await api.posts.edit(updateData, {
+        source: 'html',
+        include: 'tags,authors'
+      });
+
+      if (!updatedPost) {
+        throw new Error('Failed to update Ghost post - no response');
+      }
+
+      return {
+        id,
+        postId: String(updatedPost.id),
+        releaseURL: updatedPost.url || '',
+        status: updatedPost.status || 'updated',
+      };
+    } catch (err: any) {
+      console.error('Ghost post update error:', err?.message || err);
+      throw new Error(`Failed to update Ghost post: ${err?.message || 'unknown error'}`);
+    }
+  }
+
+  /**
+   * Delete a Ghost post
+   * Used for canceling scheduled posts or removing drafts
+   */
+  async delete(
+    id: string,
+    accessToken: string,
+    ghostPostId: string
+  ): Promise<{ id: string; success: boolean }> {
+    const credentials = this.parseCredentials(accessToken);
+    const api = this.createAdminAPI(credentials);
+
+    try {
+      await api.posts.delete({ id: ghostPostId });
+      return { id, success: true };
+    } catch (err: any) {
+      console.error('Ghost post deletion error:', err?.message || err);
+      throw new Error(`Failed to delete Ghost post: ${err?.message || 'unknown error'}`);
+    }
+  }
+
+  /**
+   * Get the status of a Ghost post
+   * Returns: draft, published, scheduled, or sent (for email newsletters)
+   */
+  async getStatus(
+    accessToken: string,
+    ghostPostId: string
+  ): Promise<{
+    id: string;
+    status: 'draft' | 'published' | 'scheduled' | 'sent';
+    publishedAt?: string;
+    url?: string;
+    title?: string;
+  }> {
+    const credentials = this.parseCredentials(accessToken);
+    const api = this.createAdminAPI(credentials);
+
+    try {
+      const post = await api.posts.read({ id: ghostPostId }, { include: 'tags,authors' });
+
+      if (!post) {
+        throw new Error('Post not found');
+      }
+
+      return {
+        id: String(post.id),
+        status: post.status,
+        publishedAt: post.published_at,
+        url: post.url,
+        title: post.title,
+      };
+    } catch (err: any) {
+      console.error('Ghost post status error:', err?.message || err);
+      throw new Error(`Failed to get Ghost post status: ${err?.message || 'unknown error'}`);
+    }
+  }
+
+  /**
+   * Change a post's status
+   * - draft → published (publish now)
+   * - scheduled → draft (cancel schedule)
+   * - published → draft (unpublish)
+   * - any status → scheduled (with published_at)
+   */
+  async changeStatus(
+    id: string,
+    accessToken: string,
+    ghostPostId: string,
+    newStatus: 'draft' | 'published' | 'scheduled',
+    publishedAt?: string
+  ): Promise<PostResponse> {
+    const credentials = this.parseCredentials(accessToken);
+    const api = this.createAdminAPI(credentials);
+
+    const updateData: any = {
+      id: ghostPostId,
+      status: newStatus,
+    };
+
+    // For scheduled posts, include published_at
+    if (newStatus === 'scheduled' && publishedAt) {
+      updateData.published_at = publishedAt;
+    }
+
+    // For published status, clear published_at if not provided (publish now)
+    if (newStatus === 'published') {
+      updateData.published_at = publishedAt || new Date().toISOString();
+    }
+
+    try {
+      const updatedPost = await api.posts.edit(updateData, {
+        include: 'tags,authors'
+      });
+
+      if (!updatedPost) {
+        throw new Error('Failed to change Ghost post status - no response');
+      }
+
+      return {
+        id,
+        postId: String(updatedPost.id),
+        releaseURL: updatedPost.url || '',
+        status: updatedPost.status,
+      };
+    } catch (err: any) {
+      console.error('Ghost post status change error:', err?.message || err);
+      throw new Error(`Failed to change Ghost post status: ${err?.message || 'unknown error'}`);
     }
   }
 }
