@@ -18,7 +18,10 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
-import { TypedSearchAttributes } from '@temporalio/common';
+import {
+  TypedSearchAttributes,
+  WorkflowIdConflictPolicy,
+} from '@temporalio/common';
 import {
   organizationId,
   postId as postIdSearchParam,
@@ -202,7 +205,8 @@ export class PostActivity {
           args: [{ organizationId: integration.organizationId }],
           workflowId: `streak_${integration.organizationId}`,
           taskQueue: 'main',
-          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          workflowIdConflictPolicy:
+            WorkflowIdConflictPolicy.WORKFLOW_ID_CONFLICT_POLICY_TERMINATE_EXISTING,
           typedSearchAttributes: new TypedSearchAttributes([
             {
               key: organizationId,
