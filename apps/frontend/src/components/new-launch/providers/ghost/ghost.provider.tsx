@@ -14,6 +14,7 @@ import { GhostAuthors } from '@gitroom/frontend/components/new-launch/providers/
 import { GhostNewsletters } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.newsletters';
 import { GhostTiers } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.tiers';
 import { GhostDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/ghost.dto';
+import { GhostPreviewComponent } from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.preview';
 
 const GhostSettings: FC = () => {
   const form = useSettings();
@@ -155,7 +156,7 @@ export default withProvider({
   postComment: PostComment.POST,
   minimumCharacters: [],
   SettingsComponent: GhostSettings,
-  CustomPreviewComponent: undefined,
+  CustomPreviewComponent: GhostPreviewComponent,
   dto: GhostDto,
   checkValidity: undefined,
   maximumCharacters: 100000,
