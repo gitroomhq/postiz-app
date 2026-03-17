@@ -175,6 +175,8 @@
     "image-to-pdf": "^3.0.2",
     "ioredis": "^5.3.2",
     "json-to-graphql-query": "^2.2.5",
+    "@tryghost/admin-api": "^1.14.6",
+    "@tryghost/content-api": "^1.12.5",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mastra": "^0.13.2",
