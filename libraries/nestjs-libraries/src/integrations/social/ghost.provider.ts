@@ -15,6 +15,7 @@ import GhostAdminAPI from '@tryghost/admin-api';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import * as jwt from 'jsonwebtoken';
 
 interface GhostCredentials {
   domain: string;
@@ -166,11 +167,28 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
   async tiers(token: string): Promise<Array<{ value: string; label: string }>> {
     try {
       const credentials = this.parseCredentials(token);
-      const api = this.createAdminAPI(credentials);
 
-      const tiers = await api.tiers.browse();
+      // Ghost Admin SDK doesn't expose tiers endpoint, but the API supports it
+      // Make a direct HTTP call to /ghost/api/admin/tiers/
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
 
-      return (tiers || []).map((tier: any) => ({
+      const response = await fetch(`${url}/ghost/api/admin/tiers/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Ghost tiers fetch failed:', response.status, response.statusText);
+        return [];
+      }
+
+      const data = await response.json() as { tiers: Array<{ id: string; name: string }> };
+      const tiers = data.tiers || [];
+
+      return tiers.map((tier) => ({
         value: tier.id,
         label: tier.name,
       }));
@@ -178,6 +196,26 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       console.error('Ghost tiers fetch error:', err);
       return [];
     }
+  }
+
+  /**
+   * Generate JWT token from Admin API Key for direct API calls
+   * The Ghost Admin SDK does this internally, but we need it for endpoints not in the SDK
+   */
+  private generateAuthToken(adminApiKey: string): string {
+    const [id, secret] = adminApiKey.split(':');
+    if (!id || !secret) {
+      throw new Error('Invalid Admin API Key format');
+    }
+
+    // Create JWT token matching Ghost Admin API format
+    // Audience is /admin/ for admin API calls
+    return jwt.sign({}, Buffer.from(secret, 'hex'), {
+      keyid: id,
+      algorithm: 'HS256',
+      expiresIn: '5m',
+      audience: '/admin/'
+    });
   }
 
   @Tool({ description: 'Get Ghost newsletters', dataSchema: [] })
