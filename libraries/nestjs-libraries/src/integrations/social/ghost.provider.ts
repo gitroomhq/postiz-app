@@ -280,6 +280,47 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  /**
+   * Process inline images in HTML content by rehosting them to Ghost's image storage.
+   * Ghost does NOT automatically rehost external images - they stay as external URLs
+   * which can break if the source becomes unavailable.
+   */
+  private async processInlineImages(
+    api: GhostAdminAPI,
+    html: string
+  ): Promise<string> {
+    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/gi;
+    const uploads: Map<string, Promise<string | null>> = new Map();
+    
+    // Find all image URLs
+    let match;
+    while ((match = imgRegex.exec(html)) !== null) {
+      const url = match[1];
+      // Only process external URLs (not already Ghost-hosted)
+      if (!url.includes('/content/images/') && !uploads.has(url)) {
+        uploads.set(url, this.uploadImage(api, url));
+      }
+    }
+    
+    // Wait for all uploads to complete
+    const urlMappings: Map<string, string> = new Map();
+    for (const [oldUrl, uploadPromise] of uploads) {
+      const newUrl = await uploadPromise;
+      if (newUrl) {
+        urlMappings.set(oldUrl, newUrl);
+      }
+    }
+    
+    // Replace URLs in HTML
+    let processedHtml = html;
+    for (const [oldUrl, newUrl] of urlMappings) {
+      // Replace all occurrences of this URL
+      processedHtml = processedHtml.split(oldUrl).join(newUrl);
+    }
+    
+    return processedHtml;
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -301,6 +342,10 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       }
     }
 
+    // Process inline images - rehost external images to Ghost's storage
+    // Ghost does NOT auto-rehost external images, so we handle it here
+    const processedHtml = await this.processInlineImages(api, firstPost.message);
+
     // Extract title from first line of message if not provided in settings
     const messageLines = firstPost.message.split('\n').filter((l) => l.trim());
     const extractedTitle =
@@ -319,7 +364,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     // Build post data using Ghost SDK format
     const postData: any = {
       title: postTitle,
-      html: firstPost.message,
+      html: processedHtml,  // Use processed HTML with rehosted images
       slug: postSlug,
       status: settings?.status || 'published',
     };
@@ -404,7 +449,11 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Use Ghost Admin API to create post
-      const createdPost = await api.posts.add(postData, { include: 'tags,authors' });
+      // IMPORTANT: source: 'html' tells Ghost to convert HTML to Lexical/Mobiledoc format
+      const createdPost = await api.posts.add(postData, { 
+        source: 'html',
+        include: 'tags,authors' 
+      });
 
       if (!createdPost) {
         throw new Error('Failed to create Ghost post - no response');
