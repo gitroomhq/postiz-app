@@ -19,11 +19,18 @@ const {
   CLOUDFLARE_SECRET_ACCESS_KEY,
   CLOUDFLARE_BUCKETNAME,
   CLOUDFLARE_BUCKET_URL,
+  CLOUDFLARE_REGION,
+  CLOUDFLARE_ENDPOINT,
 } = process.env;
 
+// Use custom endpoint if provided, otherwise fallback to default US endpoint
+// EU region example: https://{account_id}.eu.r2.cloudflare.com
+// US region (default): https://{account_id}.r2.cloudflarestorage.com
+const endpoint = CLOUDFLARE_ENDPOINT || `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+
 const R2 = new S3Client({
-  region: 'auto',
-  endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  region: CLOUDFLARE_REGION || 'auto',
+  endpoint,
   credentials: {
     accessKeyId: CLOUDFLARE_ACCESS_KEY!,
     secretAccessKey: CLOUDFLARE_SECRET_ACCESS_KEY!,
