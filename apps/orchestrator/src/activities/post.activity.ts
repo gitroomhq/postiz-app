@@ -1,4 +1,3 @@
-import { TypedSearchAttributes } from '@temporalio/common';
 import { WorkflowExecutionAlreadyStartedError } from '@temporalio/client';
 import { Injectable } from '@nestjs/common';
 import {
