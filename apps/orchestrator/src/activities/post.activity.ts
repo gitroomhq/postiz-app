@@ -198,35 +198,20 @@ export class PostActivity {
       integration,
     );
 
-    try {
-      await this._temporalService.client
-        .getRawClient()
-        .workflow.start('streakWorkflow', {
-          args: [{ organizationId: integration.organizationId }],
-          workflowId: `streak_${integration.organizationId}`,
-          taskQueue: 'main',
-          workflowIdConflictPolicy: WorkflowIdConflictPolicy.TERMINATE_EXISTING,
-          typedSearchAttributes: new TypedSearchAttributes([
-            {
-              key: organizationId,
-              value: integration.organizationId,
-            },
-          ]),
-        });
-    } catch (error) {
-      if (
-        error instanceof WorkflowExecutionAlreadyStartedError ||
-        (error as Error)?.name === 'WorkflowExecutionAlreadyStartedError'
-      ) {
-        // Safely catch the idempotency collision so the social post activity succeeds
-        console.warn(
-          `[Ignored] streakWorkflow already started for org: ${integration.organizationId}`,
-        );
-      } else {
-        // Re-throw any genuine infrastructure errors so Temporal can retry appropriately
-        throw error;
-      }
-    }
+    await this._temporalService.client
+      .getRawClient()
+      .workflow.start('streakWorkflow', {
+        args: [{ organizationId: integration.organizationId }],
+        workflowId: `streak_${integration.organizationId}`,
+        taskQueue: 'main',
+        workflowIdConflictPolicy: WorkflowIdConflictPolicy.USE_EXISTING,
+        typedSearchAttributes: new TypedSearchAttributes([
+          {
+            key: organizationId,
+            value: integration.organizationId,
+          },
+        ]),
+      });
 
     return postNow;
   }
