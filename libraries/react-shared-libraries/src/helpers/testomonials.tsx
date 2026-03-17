@@ -17,7 +17,7 @@ export const testimonials1 = [
     description: 'AI & Tech Consultant',
     content: (
       <>
-        I just found out about Postiz, a tool for scheduling social media.{' '}
+        I just found out about Postra, a tool for scheduling social media.{' '}
         {'\n'}
         Exactly what I wish there was a few years back, I even thought of
         building one myself at one point, but didn't have the time to. {'\n'}
@@ -31,7 +31,7 @@ export const testimonials1 = [
         I've used a few scheduling tools before and most of them are either
         expensive or try to be "all-in-one marketing platforms." {'\n'}
         {'\n'}
-        Postiz seems to focus on just doing one thing well. {'\n'}
+        Postra seems to focus on just doing one thing well. {'\n'}
         {'\n'}
       </>
     ),
@@ -42,7 +42,7 @@ export const testimonials1 = [
     description: 'CEO',
     content: (
       <>
-        As a privacy-first company we appreciate being able to self-host Postiz!
+        As a privacy-first company we appreciate being able to self-host Postra!
         It brings all the core functionality of a social media scheduler plus a
         lot of AI to make things faster. It's also very easy to deploy and use,
         great work!
@@ -66,9 +66,9 @@ export const testimonials1 = [
     description: 'Data Analyst',
     content: (
       <>
-        Postiz changed how we manage our social media presence by aggregating
+        Postra changed how we manage our social media presence by aggregating
         our platforms into one effective tool. Post scheduling, and AI post
-        ideation are two of the many features that come with Postiz, and have
+        ideation are two of the many features that come with Postra, and have
         made our management of social media simple and effective! Highly
         recommend
       </>
@@ -81,7 +81,7 @@ export const testimonials1 = [
     content: (
       <>
         It only takes 10 minutes to set up your X scheduling automation. {'\n'}
-        n8n + Postiz =🔥Never miss a day of posting again: {'\n\n'}→ Easy to get
+        n8n + Postra =🔥Never miss a day of posting again: {'\n\n'}→ Easy to get
         started {'\n'}→ Tutorial video included {'\n'}→ Automated content
         creation {'\n'}→ Multi-platform publishing {'\n'}→ Self-hosted (no
         monthly fees) {'\n'}→ Open-source (customize everything) {'\n'}
@@ -106,7 +106,7 @@ export const testimonials1 = [
     description: 'AI Specialist',
     content: (
       <>
-        Manage all your social media accounts from a single place: Postiz, a
+        Manage all your social media accounts from a single place: Postra, a
         really cool tool I recently discovered :D! {'\n'}
         It comes with a bunch of cool tools for posting at specific times,
         posting across multiple platforms simultaneously, etc. And all of this
@@ -124,18 +124,18 @@ export const testimonials2 = [
     description: 'Senior frontend developer',
     content: (
       <>
-        🌟 Exciting news! 🚀 I've just started using Postiz, a fantastic new
+        🌟 Exciting news! 🚀 I've just started using Postra, a fantastic new
         tool for scheduling my social media content! {'\n\n'}
-        Why did I choose Postiz? The ability to self-host it means significant
+        Why did I choose Postra? The ability to self-host it means significant
         savings for me! 💰 {'\n\n'}
-        Postiz is an open-source scheduling tool that allows you to plan and
+        Postra is an open-source scheduling tool that allows you to plan and
         automate posts across 19+ platforms, including X, LinkedIn, BlueSky, and
         Mastodon. {'\n\n'}
         With its powerful editor, you can easily connect your accounts, create
         rich scheduled posts, and manage multiple channels all in one place.
         Plus, it supports image uploads, recurring posts, and timezone-aware
         scheduling! 📅✨ {'\n\n'}
-        Built with privacy and flexibility in mind, Postiz can run on your own
+        Built with privacy and flexibility in mind, Postra can run on your own
         infrastructure or be used as a hosted service. It's perfect for
         individuals, teams, and communities looking for control and automation
         without the unnecessary bloat. {'\n\n'}
@@ -173,7 +173,7 @@ export const testimonials2 = [
     description: 'Digital Marketing Manager',
     content: (
       <>
-        Postiz makes it so easy to plan ahead. The AI suggestions are relevant,
+        Postra makes it so easy to plan ahead. The AI suggestions are relevant,
         and the platform feels lightweight but powerful
       </>
     ),
@@ -187,7 +187,7 @@ export const testimonials2 = [
         Good tool for social media campaigns. The great thing is that the
         platform constantly evolves - new features appear all the time, so I can
         follow the latest trends (latest AI developments) without leaving
-        Postiz.
+        Postra.
       </>
     ),
   },
