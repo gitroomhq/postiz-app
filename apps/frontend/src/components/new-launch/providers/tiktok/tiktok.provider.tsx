@@ -270,7 +270,7 @@ const TikTokSettings: FC<{
               brand_organic_toggle || brand_content_toggle ? (
                 <a
                   target="_blank"
-                  className="text-[#B69DEC] hover:underline"
+                  className="text-[#d4785c] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
                 >
                   {t('music_usage_confirmation', 'Music Usage Confirmation')}
@@ -280,7 +280,7 @@ const TikTokSettings: FC<{
               brand_content_toggle ? (
                 <a
                   target="_blank"
-                  className="text-[#B69DEC] hover:underline"
+                  className="text-[#d4785c] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/bc-policy/en"
                 >
                   {t('branded_content_policy', 'Branded Content Policy')}
