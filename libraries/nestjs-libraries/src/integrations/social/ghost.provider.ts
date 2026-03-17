@@ -12,6 +12,9 @@ import { GhostDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setting
 import slugify from 'slugify';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import GhostAdminAPI from '@tryghost/admin-api';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 interface GhostCredentials {
   domain: string;
@@ -209,16 +212,30 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
 
       const blob = await response.blob();
       const buffer = Buffer.from(await blob.arrayBuffer());
-      const filename = imageUrl.split('/').pop() || 'image.jpg';
-
-      // Upload via Ghost Admin API
-      const result = await api.images.upload({
-        file: buffer,
-        filename,
-        purpose: 'image',
-      });
-
-      return result?.url || null;
+      
+      // Extract filename from URL or generate one
+      const urlPath = new URL(imageUrl).pathname;
+      const filename = path.basename(urlPath) || `image-${Date.now()}.jpg`;
+      
+      // Write to temp file - Ghost SDK expects a file path, not a Buffer
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ghost-upload-'));
+      const tmpPath = path.join(tmpDir, filename);
+      
+      try {
+        fs.writeFileSync(tmpPath, buffer);
+        
+        // Upload via Ghost Admin API using file path
+        const result = await api.images.upload({
+          file: tmpPath,
+          filename,
+          purpose: 'image',
+        });
+        
+        return result?.url || null;
+      } finally {
+        // Cleanup temp directory
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
     } catch (err) {
       console.error('Ghost image upload error:', err);
       return null;

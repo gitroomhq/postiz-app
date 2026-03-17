@@ -26,6 +26,7 @@ export const GhostAuthors: FC<{
   const customFunc = useCustomProviderFunction();
   const [suggestions, setSuggestions] = useState<GhostAuthor[]>([]);
   const [tagValue, setTagValue] = useState<TagSelected[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const onDelete = useCallback(
     (tagIndex: number) => {
@@ -52,17 +53,35 @@ export const GhostAuthors: FC<{
   );
 
   useEffect(() => {
-    // Fetch existing authors from Ghost
+    // Fetch available authors from Ghost
     customFunc.get('authors').then((data: GhostAuthor[]) => {
       setSuggestions(data || []);
-    });
 
-    // Load existing values
-    const settings = getValues()[name];
-    if (settings && Array.isArray(settings)) {
-      setTagValue(settings.map((t: string) => ({ value: t, label: t })));
-    }
-  }, []);
+      // Now that we have suggestions, restore existing values
+      const settings = getValues()[name];
+      if (settings && Array.isArray(settings)) {
+        // Map author IDs back to their display names using suggestions
+        const restoredTags = settings.map((id: string) => {
+          const authorFound = (data || []).find((a) => a.value === id);
+          return {
+            value: id,
+            label: authorFound ? authorFound.label : id,
+          };
+        });
+        setTagValue(restoredTags);
+      }
+      setIsInitialized(true);
+    });
+  }, [name, customFunc, getValues, form]);
+
+  if (!isInitialized) {
+    return (
+      <div>
+        <div className="text-[14px] mb-[6px]">{label}</div>
+        <div className="text-[12px] text-white/60">Loading authors...</div>
+      </div>
+    );
+  }
 
   return (
     <div>
