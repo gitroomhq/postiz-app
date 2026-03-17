@@ -1,8 +1,4 @@
 import { TypedSearchAttributes } from '@temporalio/common';
-import {
-  organizationId,
-  postId as postIdSearchParam,
-} from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { WorkflowExecutionAlreadyStartedError } from '@temporalio/client';
 import { Injectable } from '@nestjs/common';
 import {
@@ -218,7 +214,7 @@ export class PostActivity {
     } catch (error) {
       if (
         error instanceof WorkflowExecutionAlreadyStartedError ||
-        error?.name === 'WorkflowExecutionAlreadyStartedError'
+        (error as Error)?.name === 'WorkflowExecutionAlreadyStartedError'
       ) {
         // Safely catch the idempotency collision so the social post activity succeeds
         console.warn(
