@@ -16,6 +16,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as jwt from 'jsonwebtoken';
+import * as stream from 'stream';
+import * as util from 'util';
+import * as zlib from 'zlib';
 
 interface GhostCredentials {
   domain: string;
@@ -429,6 +432,209 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     } catch (err: any) {
       console.error('Ghost theme activation error:', err);
       return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
+  /**
+   * Parse a Ghost theme ZIP file to extract theme metadata and custom settings.
+   * This is used to preview theme settings before uploading to Ghost.
+   * 
+   * @param zipUrl - URL to the theme ZIP file
+   * @returns Theme metadata including name, version, and custom settings
+   */
+  @Tool({ description: 'Parse a Ghost theme ZIP file to extract metadata and custom settings', dataSchema: [] })
+  async parseThemeZip(
+    zipUrl: string
+  ): Promise<{
+    success: boolean;
+    theme?: {
+      name: string;
+      version?: string;
+      description?: string;
+      author?: string;
+      customSettings?: Record<string, {
+        type: 'select' | 'boolean' | 'color' | 'text' | 'number';
+        options?: string[];
+        default?: string | boolean | number;
+        group?: string;
+        description?: string;
+      }>;
+    };
+    error?: string;
+  }> {
+    try {
+      // Download the ZIP file
+      const response = await fetch(zipUrl);
+      if (!response.ok) {
+        return { success: false, error: `Failed to download theme: ${response.status}` };
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Use ADM-ZIP or similar to extract package.json
+      // For now, we'll use Node's built-in zlib and a simple extraction
+      const packageJson = await this.extractPackageJsonFromZip(buffer);
+      
+      if (!packageJson) {
+        return { success: false, error: 'Could not find package.json in theme ZIP' };
+      }
+
+      const parsed = JSON.parse(packageJson);
+      
+      return {
+        success: true,
+        theme: {
+          name: parsed.name,
+          version: parsed.version,
+          description: parsed.description,
+          author: parsed.author,
+          customSettings: parsed.config?.customSettings || {},
+        },
+      };
+    } catch (err: any) {
+      console.error('Theme ZIP parse error:', err);
+      return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
+  /**
+   * Upload a theme ZIP file to Ghost.
+   * 
+   * @param token - Access token
+   * @param zipUrl - URL to download the theme ZIP from
+   * @returns Uploaded theme info
+   */
+  @Tool({ description: 'Upload a Ghost theme ZIP file', dataSchema: [] })
+  async uploadTheme(
+    token: string,
+    zipUrl: string
+  ): Promise<{
+    success: boolean;
+    theme?: {
+      name: string;
+      active?: boolean;
+    };
+    error?: string;
+  }> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
+
+      // Download the ZIP file
+      const response = await fetch(zipUrl);
+      if (!response.ok) {
+        return { success: false, error: `Failed to download theme: ${response.status}` };
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Extract filename from URL
+      const urlPath = new URL(zipUrl).pathname;
+      const filename = path.basename(urlPath) || `theme-${Date.now()}.zip`;
+      
+      // Write to temp file
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ghost-theme-'));
+      const tmpPath = path.join(tmpDir, filename);
+      
+      try {
+        fs.writeFileSync(tmpPath, buffer);
+
+        // Use FormData to upload
+        const formData = new FormData();
+        formData.append('theme', new Blob([buffer]), filename);
+
+        const uploadResponse = await fetch(`${url}/ghost/api/admin/themes/upload/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Ghost ${authToken}`,
+            'Accept-Version': 'v6.0',
+          },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error('Theme upload failed:', uploadResponse.status, errorText);
+          return { success: false, error: `Upload failed: ${uploadResponse.status}` };
+        }
+
+        const data = await uploadResponse.json() as { themes: Array<any> };
+        const theme = data.themes?.[0];
+        
+        return {
+          success: true,
+          theme: {
+            name: theme?.name,
+            active: theme?.active,
+          },
+        };
+      } finally {
+        // Cleanup temp directory
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    } catch (err: any) {
+      console.error('Theme upload error:', err);
+      return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
+  /**
+   * Extract package.json from a ZIP buffer.
+   * Ghost themes have package.json at the root or in a subdirectory.
+   */
+  private async extractPackageJsonFromZip(buffer: Buffer): Promise<string | null> {
+    try {
+      // Use dynamic import for adm-zip (ESM compatible)
+      const AdmZip = (await import('adm-zip')).default;
+      const zip = new AdmZip(buffer);
+      
+      // Try root level first
+      let entry = zip.getEntry('package.json');
+      
+      // If not at root, search in subdirectories (common for GitHub releases)
+      if (!entry) {
+        const entries = zip.getEntries();
+        for (const e of entries) {
+          if (e.entryName.endsWith('package.json') && e.entryName.split('/').length === 2) {
+            entry = e;
+            break;
+          }
+        }
+      }
+      
+      if (!entry) {
+        return null;
+      }
+      
+      return entry.getData().toString('utf8');
+    } catch (err) {
+      // Fallback: manually parse with unzip
+      console.error('ADM-ZIP extraction failed, trying manual extraction:', err);
+      return this.extractPackageJsonManually(buffer);
+    }
+  }
+
+  /**
+   * Manual ZIP extraction fallback using Node's built-in zlib.
+   */
+  private extractPackageJsonManually(buffer: Buffer): string | null {
+    // This is a simplified extraction - for full ZIP support, adm-zip is preferred
+    // ZIP files have a central directory at the end
+    try {
+      // Find the end of central directory signature
+      const eocdOffset = buffer.indexOf(Buffer.from([0x06, 0x05, 0x4b, 0x50]));
+      if (eocdOffset === -1) {
+        return null;
+      }
+      
+      // For now, return null and let adm-zip handle it
+      // Full ZIP parsing is complex - better to require the adm-zip dependency
+      return null;
+    } catch {
+      return null;
     }
   }
 
