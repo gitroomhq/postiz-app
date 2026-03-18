@@ -70,6 +70,13 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  if (
+    nextUrl.pathname.startsWith('/auth/register') &&
+    process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true'
+  ) {
+    return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
+  }
+
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
   if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
