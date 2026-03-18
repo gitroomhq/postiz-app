@@ -13,29 +13,61 @@ export const MenuItem: FC<{ label: string; icon: ReactNode; path: string; onClic
   const currentPath = usePathname();
   const isActive = currentPath.indexOf(path) === 0;
 
-  const className = clsx(
-    'w-full minCustom:h-[54px] custom:h-[30px] py-[8px] px-[6px] gap-[4px] flex flex-col custom:flex-row text-[10px] font-[600] items-center minCustom:justify-center rounded-[12px] hover:text-textItemFocused hover:bg-boxFocused',
-    isActive ? 'text-textItemFocused bg-boxFocused' : 'text-textItemBlur'
+  const wrapperClassName = clsx(
+    'nav-item relative',
+    isActive && 'active'
+  );
+
+  const linkClassName = clsx(
+    'block h-[52px] w-[90px] overflow-hidden rounded-[14px] relative transition-colors duration-200',
+    !isActive && 'hover:bg-boxFocused/30'
+  );
+
+  const content = (
+    <div className="nav-slide-content h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)]">
+      <span className={clsx(
+        'flex justify-center items-center h-[52px] w-full text-[11px] font-[600] tracking-wide',
+        isActive ? 'text-textItemFocused' : 'text-textItemBlur'
+      )}>
+        {label}
+      </span>
+      <span className={clsx(
+        'flex justify-center items-center h-[52px] w-full text-[18px]',
+        isActive ? 'text-textItemFocused' : 'text-textItemBlur'
+      )}>
+        {icon}
+      </span>
+    </div>
   );
 
   if (onClick) {
     return (
-      <button onClick={onClick} className={className}>
-        <div className="custom:hidden">{icon}</div>
-        <div className="text-[10px]">{label}</div>
-      </button>
+      <div className={wrapperClassName}>
+        <button onClick={onClick} className={linkClassName}>
+          {content}
+        </button>
+        <div className={clsx(
+          'nav-indicator absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-[20px] h-[3px] rounded-full transition-transform duration-400',
+          isActive ? 'scale-x-100 bg-[#c15f3c] shadow-[0_0_10px_rgba(193,95,60,0.6)]' : 'scale-x-0'
+        )} />
+      </div>
     );
   }
 
   return (
-    <Link
-      prefetch={true}
-      href={path}
-      {...path.indexOf('http') === 0 && { target: '_blank' }}
-      className={className}
-    >
-      <div className="custom:hidden">{icon}</div>
-      <div className="text-[10px]">{label}</div>
-    </Link>
+    <div className={wrapperClassName}>
+      <Link
+        prefetch={true}
+        href={path}
+        {...(path.indexOf('http') === 0 ? { target: '_blank' } : {})}
+        className={linkClassName}
+      >
+        {content}
+      </Link>
+      <div className={clsx(
+        'nav-indicator absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-[20px] h-[3px] rounded-full transition-transform duration-400',
+        isActive ? 'scale-x-100 bg-[#c15f3c] shadow-[0_0_10px_rgba(193,95,60,0.6)]' : 'scale-x-0'
+      )} />
+    </div>
   );
 };

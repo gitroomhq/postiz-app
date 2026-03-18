@@ -6,7 +6,7 @@ import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { DM_Sans, Instrument_Serif } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
@@ -27,10 +27,18 @@ import Script from 'next/script';
 //   }
 // );
 
-const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500'],
+const dmSans = DM_Sans({
+  weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
+  variable: '--font-dm-sans',
+});
+
+const instrumentSerif = Instrument_Serif({
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+  variable: '--font-instrument-serif',
 });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -52,7 +60,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         )}
       </head>
       <body
-        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+        className={clsx(dmSans.variable, instrumentSerif.variable, dmSans.className, 'dark text-primary !bg-primary')}
       >
         <VariableContextComponent
           storageProvider={

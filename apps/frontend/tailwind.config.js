@@ -122,7 +122,8 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['Helvetica Neue'],
+        sans: ['var(--font-dm-sans)', 'DM Sans', 'Helvetica Neue', 'sans-serif'],
+        display: ['var(--font-instrument-serif)', 'Instrument Serif', 'Georgia', 'serif'],
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
@@ -143,6 +144,8 @@ module.exports = {
         greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
         menu: 'var(--menu-shadow)',
         previewShadow: 'var(--preview-box-shadow)',
+        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
+        soft: '0 2px 20px rgba(0, 0, 0, 0.06)',
       },
       dropShadow: {
         glow: [

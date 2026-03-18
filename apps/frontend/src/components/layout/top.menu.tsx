@@ -317,68 +317,59 @@ export const TopMenu: FC = () => {
   const user = useUser();
   const { firstMenu, secondMenu } = useMenuItem();
   const { isGeneral, billingEnabled } = useVariables();
+
+  const filterItems = (items: MenuItemInterface[]) =>
+    items.filter((f) => {
+      if (f.hide) return false;
+      if (f.requireBilling && !billingEnabled) return false;
+      if (f.name === 'Billing' && user?.isLifetime) return false;
+      if (f.role) return f.role.includes(user?.role!);
+      return true;
+    });
+
+  const filteredFirst = filterItems(firstMenu);
+  const filteredSecond = filterItems(secondMenu);
+
+  // Separate Settings from secondMenu for the right side of the navbar
+  const settingsItem = filteredSecond.find((item) => item.path === '/settings');
+  const otherSecondItems = filteredSecond.filter((item) => item.path !== '/settings');
+
+  // Combine all center nav items (first menu + second menu minus settings)
+  const centerItems = [
+    ...(
+      // @ts-ignore
+      user?.orgId &&
+      // @ts-ignore
+      (user.tier !== 'FREE' || !isGeneral || !billingEnabled)
+        ? filteredFirst
+        : []
+    ),
+    ...otherSecondItems,
+  ];
+
   return (
     <>
-      <div className="flex flex-1 flex-col minCustom:gap-[16px] blurMe">
-        {
-          // @ts-ignore
-          user?.orgId &&
-            // @ts-ignore
-            (user.tier !== 'FREE' || !isGeneral || !billingEnabled) &&
-            firstMenu
-              .filter((f) => {
-                if (f.hide) {
-                  return false;
-                }
-                if (f.requireBilling && !billingEnabled) {
-                  return false;
-                }
-                if (f.name === 'Billing' && user?.isLifetime) {
-                  return false;
-                }
-                if (f.role) {
-                  return f.role.includes(user?.role!);
-                }
-                return true;
-              })
-              .map((item, index) => (
-                <MenuItem
-                  path={item.path}
-                  label={item.name}
-                  icon={item.icon}
-                  key={item.name}
-                  onClick={item.onClick}
-                />
-              ))
-        }
+      <div className="flex items-center gap-[4px] blurMe">
+        {centerItems.map((item) => (
+          <MenuItem
+            path={item.path}
+            label={item.name}
+            icon={item.icon}
+            key={item.name}
+            onClick={item.onClick}
+          />
+        ))}
       </div>
-      <div className="flex flex-col minCustom:gap-[16px] blurMe">
-        {secondMenu
-          .filter((f) => {
-            if (f.hide) {
-              return false;
-            }
-            if (f.requireBilling && !billingEnabled) {
-              return false;
-            }
-            if (f.name === 'Billing' && user?.isLifetime) {
-              return false;
-            }
-            if (f.role) {
-              return f.role.includes(user?.role!);
-            }
-            return true;
-          })
-          .map((item, index) => (
-            <MenuItem
-              path={item.path}
-              label={item.name}
-              icon={item.icon}
-              key={item.name}
-              onClick={item.onClick}
-            />
-          ))}
-      </div>
+      {settingsItem && (
+        <div className="flex items-center blurMe">
+          <MenuItem
+            path={settingsItem.path}
+            label={settingsItem.name}
+            icon={settingsItem.icon}
+            key={settingsItem.name}
+          />
+        </div>
+      )}
     </>
   );
 };

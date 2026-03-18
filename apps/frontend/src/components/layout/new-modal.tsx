@@ -136,7 +136,7 @@ export const Component: FC<{
           !modal.fullScreen
             ? 'pb-[50px] min-w-full min-h-full'
             : 'w-full h-full',
-          'fixed flex left-0 top-0 bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
+          'fixed flex left-0 top-0 bg-popup backdrop-blur-lg transition-all animate-fadeIn overflow-y-auto text-newTextColor',
           !isLast && '!overflow-hidden'
         )}
       >
@@ -170,7 +170,7 @@ export const Component: FC<{
         onClick={closeModalFunction}
         style={{ zIndex }}
         className={clsx(
-          'fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
+          'fixed flex left-0 top-0 min-w-full min-h-full bg-popup backdrop-blur-lg transition-all animate-fadeIn overflow-y-auto text-newTextColor',
           !modal.fullScreen && 'pb-[50px]'
         )}
       >
@@ -196,7 +196,7 @@ export const Component: FC<{
             <div
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
+                'bg-newBgColorInner/95 backdrop-blur-xl backdrop-saturate-150 shadow-glass mx-auto flex flex-col w-fit rounded-[24px] border border-newBorder/20 relative',
                 modal.size ? '' : 'min-w-[600px]',
                 modal.fullScreen && 'h-full'
               )}

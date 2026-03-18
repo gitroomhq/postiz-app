@@ -24,6 +24,8 @@ body * {
 }
 #tooltip {
   z-index: 10000;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 .box:after {
   border-radius: 50px;
@@ -641,6 +643,8 @@ html[dir='rtl'] [dir='ltr'] {
   flex-direction: column;
   overflow: auto;
   position: relative;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 
   button {
     align-items: center;
@@ -788,4 +792,18 @@ html[dir='rtl'] [dir='ltr'] {
 .text-shadow-tags {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
+}
+
+/* Glass navbar — hover slide-up effect */
+.nav-item:hover .nav-slide-content,
+.nav-item.active .nav-slide-content {
+  transform: translateY(-100%);
+}
+
+.nav-item .nav-slide-content {
+  transition: transform 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
+
+.glass-navbar {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
