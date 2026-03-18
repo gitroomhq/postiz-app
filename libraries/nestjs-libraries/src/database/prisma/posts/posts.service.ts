@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   ValidationPipe,
 } from '@nestjs/common';
@@ -744,6 +745,10 @@ export class PostsService {
     action: 'schedule' | 'update' = 'schedule'
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
+
+    if (!getPostById) {
+      throw new HttpException({ msg: 'Post not found' }, 404);
+    }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
     // update: Just change the date without changing the status
