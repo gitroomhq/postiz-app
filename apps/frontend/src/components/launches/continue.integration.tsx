@@ -334,6 +334,7 @@ export const ContinueIntegration: FC<{
                 allIntegrations: [],
                 integration: {
                   editor: 'normal',
+                  maxCharacters: 1000000,
                   additionalSettings: '',
                   display: '',
                   time: [{ time: 0 }],

@@ -91,6 +91,7 @@ const ModalContent: FC<{
         allIntegrations: [],
         integration: {
           editor: 'normal',
+          maxCharacters: 1000000,
           additionalSettings: '',
           display: '',
           time: [

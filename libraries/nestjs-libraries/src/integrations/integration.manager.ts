@@ -76,6 +76,36 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
 
 @Injectable()
 export class IntegrationManager {
+  private parseAdditionalSettings(additionalSettings?: string | unknown) {
+    if (Array.isArray(additionalSettings)) {
+      return additionalSettings;
+    }
+
+    if (!additionalSettings || typeof additionalSettings !== 'string') {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(additionalSettings);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  getComposerMetadata(
+    identifier: string,
+    additionalSettings?: string | unknown
+  ) {
+    const integration = this.getSocialIntegration(identifier);
+    return {
+      editor: integration.editor,
+      maxCharacters: integration.maxLength(
+        this.parseAdditionalSettings(additionalSettings)
+      ),
+    };
+  }
+
   async getAllIntegrations() {
     return {
       social: await Promise.all(
@@ -87,7 +117,9 @@ export class IntegrationManager {
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
+          ...(p.extensionCookies
+            ? { extensionCookies: p.extensionCookies }
+            : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),

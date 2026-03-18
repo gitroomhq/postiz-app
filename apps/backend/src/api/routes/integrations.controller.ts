@@ -92,15 +92,22 @@ export class IntegrationsController {
         (
           await this._integrationService.getIntegrationsList(org.id)
         ).map(async (p) => {
+          const additionalSettings = p.additionalSettings || '[]';
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );
+          const composerMetadata = this._integrationManager.getComposerMetadata(
+            p.providerIdentifier,
+            additionalSettings
+          );
+
           return {
             name: p.name,
             id: p.id,
             internalId: p.internalId,
             disabled: p.disabled,
-            editor: findIntegration.editor,
+            editor: composerMetadata.editor,
+            maxCharacters: composerMetadata.maxCharacters,
             picture: p.picture || '/no-picture.jpg',
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
@@ -115,7 +122,7 @@ export class IntegrationsController {
             changeProfilePicture: !!findIntegration?.changeProfilePicture,
             changeNickName: !!findIntegration?.changeNickname,
             customer: p.customer,
-            additionalSettings: p.additionalSettings || '[]',
+            additionalSettings,
           };
         })
       ),
@@ -448,9 +455,7 @@ export class IntegrationsController {
   }
 
   @Post('/moltbook/register')
-  async moltbookRegister(
-    @Body() body: { name: string; description: string }
-  ) {
+  async moltbookRegister(@Body() body: { name: string; description: string }) {
     try {
       const provider = new MoltbookProvider();
       const result = await provider.registerAgent(body.name, body.description);
