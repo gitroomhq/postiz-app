@@ -55,11 +55,13 @@ export type AllProvidersSettings =
   | ProviderExtension<'bluesky', None>
   | ProviderExtension<'telegram', None>
   | ProviderExtension<'nostr', None>
+  | ProviderExtension<'vk', None>
   | ProviderExtension<'moltbook', MoltbookDto>
   | ProviderExtension<'vk', None>
   | ProviderExtension<'skool', SkoolDto>
   | ProviderExtension<'mewe', MeweDto>
-  | ProviderExtension<'whop', WhopDto>;
+  | ProviderExtension<'whop', WhopDto>
+  | ProviderExtension<'webhook', None>;
 
 type None = NonNullable<unknown>;
 
@@ -98,6 +100,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: SkoolDto, name: 'skool' },
     { value: WhopDto, name: 'whop' },
     { value: MeweDto, name: 'mewe' },
+    { value: setEmpty, name: 'webhook' },
   ].filter((f) => f.value);
 };
 
