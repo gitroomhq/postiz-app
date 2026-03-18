@@ -13,6 +13,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { calculatePercentageChange } from './analytics.utils';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
@@ -571,10 +572,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         }
       );
 
-      return Object.entries(metrics).map(([key, value]) => ({
-        label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
-        percentageChange: 5,
-        data: [
+      return Object.entries(metrics).map(([key, value]) => {
+        const data = [
           {
             total: String(0),
             date: since.format('YYYY-MM-DD'),
@@ -583,8 +582,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             total: String(value),
             date: until.format('YYYY-MM-DD'),
           },
-        ],
-      }));
+        ];
+        return {
+          label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
+          percentageChange: calculatePercentageChange(data),
+          data,
+        };
+      });
     } catch (err) {
       console.log(err);
     }

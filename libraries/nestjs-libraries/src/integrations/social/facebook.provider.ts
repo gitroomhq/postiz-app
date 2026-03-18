@@ -11,6 +11,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
+import { calculatePercentageChange } from './analytics.utils';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -546,23 +547,26 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     return (
-      data?.map((d: any) => ({
-        label:
-          d.name === 'page_impressions_unique'
-            ? 'Page Impressions'
-            : d.name === 'page_post_engagements'
-            ? 'Posts Engagement'
-            : d.name === 'page_daily_follows'
-            ? 'Page followers'
-            : d.name === 'page_video_views'
-            ? 'Videos views'
-            : 'Posts Impressions',
-        percentageChange: 5,
-        data: d?.values?.map((v: any) => ({
+      data?.map((d: any) => {
+        const mappedData = d?.values?.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        })),
-      })) || []
+        })) || [];
+        return {
+          label:
+            d.name === 'page_impressions_unique'
+              ? 'Page Impressions'
+              : d.name === 'page_post_engagements'
+              ? 'Posts Engagement'
+              : d.name === 'page_daily_follows'
+              ? 'Page followers'
+              : d.name === 'page_video_views'
+              ? 'Videos views'
+              : 'Posts Impressions',
+          percentageChange: calculatePercentageChange(mappedData),
+          data: mappedData,
+        };
+      }) || []
     );
   }
 

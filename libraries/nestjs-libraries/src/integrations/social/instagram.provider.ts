@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
+import { calculatePercentageChange } from './analytics.utils';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 @Rules(
@@ -816,7 +817,10 @@ export class InstagramProvider
     analytics.push(
       ...(data?.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: calculatePercentageChange(d.values.map((v: any) => ({
+          total: v.value,
+          date: dayjs(v.end_time).format('YYYY-MM-DD'),
+        }))),
         data: d.values.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
@@ -827,7 +831,7 @@ export class InstagramProvider
     analytics.push(
       ...data2.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: [
           {
             total: d.total_value.value,
