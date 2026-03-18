@@ -2194,7 +2194,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
    */
   async update(
     id: string,
-    accessToken: string,
+    token: string,
     ghostPostId: string,
     updates: {
       title?: string;
@@ -2208,7 +2208,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       [key: string]: any;
     }
   ): Promise<PostResponse> {
-    const credentials = this.parseCredentials(accessToken);
+    const credentials = this.parseCredentials(token);
     const api = this.createAdminAPI(credentials);
 
     const updateData: any = { id: ghostPostId };
@@ -2340,7 +2340,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
    * - any status → scheduled (with published_at)
    */
   async changeStatus(
-    accessToken: string,
+    token: string,
     ghostPostId: string,
     newStatus: 'draft' | 'published' | 'scheduled',
     publishedAt?: string,
