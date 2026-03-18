@@ -252,7 +252,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  @Tool({ description: 'Preview a Ghost post', dataSchema: [] })
+  @Tool({ description: 'Preview a Ghost post with member status and includes', dataSchema: [] })
   async preview(
     token: string,
     postData: {
@@ -260,22 +260,54 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       html?: string;
       mobiledoc?: string;
       lexical?: string;
+      /** Member access level for preview - affects visibility of member-only content */
+      member_status?: 'public' | 'members' | 'paid';
+      /** Resources to include in preview response */
+      include?: Array<'tags' | 'authors' | 'tiers'>;
+      /** Feature image URL */
+      feature_image?: string;
+      /** Post excerpt */
+      custom_excerpt?: string;
+      /** Post visibility */
+      visibility?: 'public' | 'members' | 'paid' | 'tiers';
+      /** Tag IDs to associate */
+      tags?: string[];
+      /** Author IDs to associate */
+      authors?: string[];
     }
-  ): Promise<{ previewUrl: string } | { error: string }> {
+  ): Promise<{
+    previewUrl: string;
+    /** Full preview URL with Ghost-native parameters */
+    previewUrlWithParams?: string;
+    /** Preview data returned from Ghost */
+    post?: {
+      id: string;
+      uuid: string;
+      url: string;
+    };
+    /** Included resources if requested */
+    included?: {
+      tags?: Array<{ id: string; name: string; slug: string }>;
+      authors?: Array<{ id: string; name: string; slug: string }>;
+      tiers?: Array<{ id: string; name: string }>;
+    };
+    /** Suggested CSS variables from active theme settings */
+    themeVariables?: Record<string, string>;
+    error?: string;
+  }> {
     try {
-      const credentials = this.parseCredentials(token);
+      const credentials=this.p...en);
       const url = credentials.domain.replace(/\/$/, '');
-      const authToken = this.generateAuthToken(credentials.adminApiKey);
+      const authToken=this.g...ey);
 
-      // Ghost preview API creates a temporary preview post
-      // The preview endpoint is POST /ghost/api/admin/posts/?source=html
+      // Build post body
       const body: any = {
         posts: [{
           title: postData.title,
         }]
       };
 
-      // Ghost accepts html, mobiledoc, or lexical format
+      // Content format handling
       if (postData.html) {
         body.posts[0].html = postData.html;
       } else if (postData.mobiledoc) {
@@ -284,7 +316,36 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
         body.posts[0].lexical = postData.lexical;
       }
 
-      const response = await fetch(`${url}/ghost/api/admin/posts/?source=html&preview=true`, {
+      // FEATURE: Include tags, authors, tiers in post data
+      if (postData.tags && postData.tags.length > 0) {
+        body.posts[0].tags = postData.tags.map(id => ({ id }));
+      }
+      if (postData.authors && postData.authors.length > 0) {
+        body.posts[0].authors = postData.authors.map(id => ({ id }));
+      }
+
+      // Additional post metadata
+      if (postData.feature_image) {
+        body.posts[0].feature_image = postData.feature_image;
+      }
+      if (postData.custom_excerpt) {
+        body.posts[0].custom_excerpt = postData.custom_excerpt;
+      }
+      if (postData.visibility) {
+        body.posts[0].visibility = postData.visibility;
+      }
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.set('source', 'html');
+      queryParams.set('preview', 'true');
+
+      // FEATURE: Include additional resources in response
+      if (postData.include && postData.include.length > 0) {
+        queryParams.set('include', postData.include.join(','));
+      }
+
+      const response = await fetch(`${url}/ghost/api/admin/posts/?${queryParams.toString()}`, {
         method: 'POST',
         headers: {
           'Authorization': `Ghost ${authToken}`,
@@ -297,23 +358,98 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Ghost preview failed:', response.status, errorText);
-        return { error: `Preview failed: ${response.status}` };
+        return { previewUrl: '', error: `Preview failed: ${response.status}` };
       }
 
-      const data = await response.json() as { posts: Array<{ id: string; uuid: string }> };
+      const data = await response.json() as { posts: Array<{
+        id: string;
+        uuid: string;
+        url: string;
+        tags?: Array<{ id: string; name: string; slug: string }>;
+        authors?: Array<{ id: string; name: string; slug: string }>;
+        tiers?: Array<{ id: string; name: string }>;
+      }> };
       const post = data.posts?.[0];
 
       if (!post) {
-        return { error: 'No preview created' };
+        return { previewUrl: '', error: 'No preview created' };
       }
 
-      // Generate preview URL
+      // Generate base preview URL
       const previewUrl = `${url}/p/${post.uuid}/`;
 
-      return { previewUrl };
+      // FEATURE: Build preview URL with member_status query parameter
+      // Ghost preview endpoint accepts ?member_status= for access testing
+      const previewUrlWithParams = new URL(previewUrl);
+      if (postData.member_status) {
+        previewUrlWithParams.searchParams.set('member_status', postData.member_status);
+      }
+
+      // Extract included resources
+      const included: any = {};
+      if (postData.include) {
+        if (postData.include.includes('tags') && post.tags) {
+          included.tags = post.tags;
+        }
+        if (postData.include.includes('authors') && post.authors) {
+          included.authors = post.authors;
+        }
+        if (postData.include.includes('tiers') && post.tiers) {
+          included.tiers = post.tiers;
+        }
+      }
+
+      // FEATURE: Fetch theme variables for CSS injection
+      let themeVariables: Record<string, string> | undefined;
+      try {
+        const themeSettingsResponse = await fetch(`${url}/ghost/api/admin/custom_theme_settings/`, {
+          headers: {
+            'Authorization': `Ghost ${authToken}`,
+            'Accept-Version': 'v6.0',
+          },
+        });
+
+        if (themeSettingsResponse.ok) {
+          const themeData = await themeSettingsResponse.json() as { custom_theme_settings: Array<{
+            key: string;
+            type: string;
+            value: string | boolean | number;
+          }> };
+
+          // Convert theme settings to CSS variables
+          if (themeData.custom_theme_settings) {
+            themeVariables = {};
+            for (const setting of themeData.custom_theme_settings) {
+              // Convert setting key to CSS variable format (e.g., "brand_color" -> "--brand-color")
+              const cssVarName = `--${setting.key.replace(/_/g, '-')}`;
+              if (setting.type === 'color' && typeof setting.value === 'string') {
+                themeVariables[cssVarName] = setting.value;
+              } else if (setting.type === 'select' && typeof setting.value === 'string') {
+                // For select, use the selected value
+                themeVariables[cssVarName] = setting.value;
+              }
+            }
+          }
+        }
+      } catch (themeErr) {
+        // Theme settings fetch is optional, don't fail the preview
+        console.warn('Could not fetch theme settings for preview:', themeErr);
+      }
+
+      return {
+        previewUrl,
+        previewUrlWithParams: previewUrlWithParams.toString(),
+        post: {
+          id: post.id,
+          uuid: post.uuid,
+          url: post.url,
+        },
+        included: Object.keys(included).length > 0 ? included : undefined,
+        themeVariables: Object.keys(themeVariables || {}).length > 0 ? themeVariables : undefined,
+      };
     } catch (err: any) {
       console.error('Ghost preview error:', err);
-      return { error: err?.message || 'Unknown error' };
+      return { previewUrl: '', error: err?.message || 'Unknown error' };
     }
   }
 
@@ -578,6 +714,1141 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     } catch (err: any) {
       console.error('Theme upload error:', err);
       return { success: false, error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // POSTS API @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'List Ghost posts with optional filtering', dataSchema: [] })
+  async listPosts(
+    token: string,
+    options?: {
+      filter?: string;
+      include?: string;
+      fields?: string;
+      order?: string;
+      limit?: number;
+      page?: number;
+    }
+  ): Promise<{
+    posts: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      status: string;
+      visibility: string;
+      published_at?: string;
+      updated_at: string;
+      url: string;
+      feature_image?: string;
+      excerpt?: string;
+      tags?: Array<{ id: string; name: string }>;
+      authors?: Array<{ id: string; name: string }>;
+    }>;
+    meta?: { pagination: { page: number; limit: number; total: number } };
+  }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const params = new URLSearchParams();
+      if (options?.filter) params.append('filter', options.filter);
+      if (options?.include) params.append('include', options.include);
+      if (options?.fields) params.append('fields', options.fields);
+      if (options?.order) params.append('order', options.order);
+      if (options?.limit) params.append('limit', String(options.limit));
+      if (options?.page) params.append('page', String(options.page));
+
+      const response = await fetch(`${url}/ghost/api/admin/posts/?${params.toString()}`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Ghost posts list failed:', response.status);
+        return { posts: [] };
+      }
+
+      const data = await response.json();
+      return {
+        posts: (data.posts || []).map((post: any) => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug,
+          status: post.status,
+          visibility: post.visibility,
+          published_at: post.published_at,
+          updated_at: post.updated_at,
+          url: post.url,
+          feature_image: post.feature_image,
+          excerpt: post.excerpt || post.custom_excerpt,
+          tags: post.tags,
+          authors: post.authors,
+        })),
+        meta: data.meta,
+      };
+    } catch (err: any) {
+      console.error('Ghost posts list error:', err);
+      return { posts: [] };
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost post by ID', dataSchema: [] })
+  async getPost(
+    token: string,
+    postId: string,
+    options?: { include?: string }
+  ): Promise<{
+    id: string;
+    title: string;
+    slug: string;
+    html?: string;
+    status: string;
+    visibility: string;
+    published_at?: string;
+    updated_at: string;
+    url: string;
+    feature_image?: string;
+    feature_image_caption?: string;
+    excerpt?: string;
+    tags?: Array<{ id: string; name: string }>;
+    authors?: Array<{ id: string; name: string }>;
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const post = await api.posts.read(
+        { id: postId },
+        { include: options?.include || 'tags,authors' }
+      );
+
+      if (!post) {
+        return null;
+      }
+
+      return {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        html: post.html,
+        status: post.status,
+        visibility: post.visibility,
+        published_at: post.published_at,
+        updated_at: post.updated_at,
+        url: post.url,
+        feature_image: post.feature_image,
+        feature_image_caption: post.feature_image_caption,
+        excerpt: post.excerpt || post.custom_excerpt,
+        tags: post.tags,
+        authors: post.authors,
+      };
+    } catch (err: any) {
+      console.error('Ghost post get error:', err);
+      return null;
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost post by slug', dataSchema: [] })
+  async getPostBySlug(
+    token: string,
+    slug: string,
+    options?: { include?: string }
+  ): Promise<{
+    id: string;
+    title: string;
+    slug: string;
+    html?: string;
+    status: string;
+    visibility: string;
+    published_at?: string;
+    updated_at: string;
+    url: string;
+    feature_image?: string;
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const params = new URLSearchParams();
+      params.append('slug', slug);
+      if (options?.include) params.append('include', options.include);
+
+      const response = await fetch(`${url}/ghost/api/admin/posts/slug/${slug}/?${params.toString()}`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const post = data.posts?.[0];
+      if (!post) return null;
+
+      return {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        html: post.html,
+        status: post.status,
+        visibility: post.visibility,
+        published_at: post.published_at,
+        updated_at: post.updated_at,
+        url: post.url,
+        feature_image: post.feature_image,
+      };
+    } catch (err: any) {
+      console.error('Ghost post by slug error:', err);
+      return null;
+    }
+  }
+
+  @Tool({ description: 'Create a Ghost post', dataSchema: [] })
+  async createPost(
+    token: string,
+    postData: {
+      title: string;
+      html?: string;
+      status?: 'draft' | 'published' | 'scheduled';
+      published_at?: string;
+      slug?: string;
+      feature_image?: string;
+      feature_image_caption?: string;
+      custom_excerpt?: string;
+      visibility?: 'public' | 'members' | 'paid';
+      tags?: string[];
+      authors?: string[];
+      newsletter_id?: string;
+      tiers?: string[];
+    }
+  ): Promise<{ id: string; url: string; status: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const payload: any = {
+        title: postData.title,
+      };
+
+      if (postData.html) payload.html = postData.html;
+      if (postData.status) payload.status = postData.status;
+      if (postData.published_at) payload.published_at = postData.published_at;
+      if (postData.slug) payload.slug = postData.slug;
+      if (postData.feature_image) payload.feature_image = postData.feature_image;
+      if (postData.feature_image_caption) payload.feature_image_caption = postData.feature_image_caption;
+      if (postData.custom_excerpt) payload.custom_excerpt = postData.custom_excerpt;
+      if (postData.visibility) payload.visibility = postData.visibility;
+      if (postData.tags) payload.tags = postData.tags.map(tag => ({ name: tag }));
+      if (postData.authors) payload.authors = postData.authors.map(id => ({ id }));
+      if (postData.newsletter_id) payload.newsletter = { id: postData.newsletter_id };
+      if (postData.tiers) payload.tiers = postData.tiers.map(id => ({ id }));
+
+      const createdPost = await api.posts.add(payload, {
+        source: 'html',
+        include: 'tags,authors',
+      });
+
+      if (!createdPost) {
+        return { error: 'Failed to create post - no response' };
+      }
+
+      return {
+        id: String(createdPost.id),
+        url: createdPost.url || `${credentials.domain}/${postData.slug || postData.title.toLowerCase().replace(/\s+/g, '-')}/`,
+        status: createdPost.status || 'draft',
+      };
+    } catch (err: any) {
+      console.error('Ghost create post error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Update a Ghost post', dataSchema: [] })
+  async updatePost(
+    token: string,
+    postId: string,
+    updates: {
+      title?: string;
+      html?: string;
+      status?: 'draft' | 'published' | 'scheduled';
+      published_at?: string;
+      feature_image?: string;
+      feature_image_caption?: string;
+      visibility?: 'public' | 'members' | 'paid';
+      tags?: string[];
+      authors?: string[];
+    }
+  ): Promise<{ id: string; url: string; status: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      // Fetch current post for updated_at (required for optimistic concurrency)
+      const currentPost = await api.posts.read({ id: postId });
+      if (!currentPost) {
+        return { error: 'Post not found' };
+      }
+
+      const payload: any = {
+        id: postId,
+        updated_at: currentPost.updated_at,
+      };
+
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.html !== undefined) payload.html = updates.html;
+      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.published_at !== undefined) {
+        payload.published_at = updates.published_at;
+        // Auto-set status to 'scheduled' if published_at is in the future
+        const publishDate = new Date(updates.published_at);
+        if (publishDate > new Date() && updates.status !== 'draft') {
+          payload.status = 'scheduled';
+        }
+      }
+      if (updates.feature_image !== undefined) payload.feature_image = updates.feature_image;
+      if (updates.feature_image_caption !== undefined) payload.feature_image_caption = updates.feature_image_caption;
+      if (updates.visibility !== undefined) payload.visibility = updates.visibility;
+      if (updates.tags !== undefined) payload.tags = updates.tags.map(tag => ({ name: tag }));
+      if (updates.authors !== undefined) payload.authors = updates.authors.map(id => ({ id }));
+
+      const updatedPost = await api.posts.edit(payload, {
+        source: 'html',
+        include: 'tags,authors',
+      });
+
+      if (!updatedPost) {
+        return { error: 'Failed to update post - no response' };
+      }
+
+      return {
+        id: String(updatedPost.id),
+        url: updatedPost.url || '',
+        status: updatedPost.status || 'updated',
+      };
+    } catch (err: any) {
+      console.error('Ghost update post error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Delete a Ghost post', dataSchema: [] })
+  async deletePost(token: string, postId: string): Promise<{ success: boolean } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      await api.posts.delete({ id: postId });
+      return { success: true };
+    } catch (err: any) {
+      console.error('Ghost delete post error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // POST STATUS @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'Get Ghost post status', dataSchema: [] })
+  async getPostStatus(
+    token: string,
+    postId: string
+  ): Promise<{
+    id: string;
+    status: string;
+    publishedAt?: string;
+    url?: string;
+    title?: string;
+  } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const post = await api.posts.read({ id: postId }, { include: 'tags,authors' });
+
+      if (!post) {
+        return { error: 'Post not found' };
+      }
+
+      return {
+        id: String(post.id),
+        status: post.status,
+        publishedAt: post.published_at,
+        url: post.url,
+        title: post.title,
+      };
+    } catch (err: any) {
+      console.error('Ghost post status error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Change Ghost post status (publish, unpublish, schedule)', dataSchema: [] })
+  async changePostStatus(
+    token: string,
+    postId: string,
+    newStatus: 'draft' | 'published' | 'scheduled',
+    publishedAt?: string
+  ): Promise<{ id: string; url: string; status: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      // Fetch current post for updated_at
+      const currentPost = await api.posts.read({ id: postId });
+      if (!currentPost) {
+        return { error: 'Post not found' };
+      }
+
+      const payload: any = {
+        id: postId,
+        status: newStatus,
+        updated_at: currentPost.updated_at,
+      };
+
+      if (newStatus === 'scheduled' && publishedAt) {
+        payload.published_at = publishedAt;
+      }
+
+      if (newStatus === 'published') {
+        payload.published_at = publishedAt || new Date().toISOString();
+      }
+
+      const updatedPost = await api.posts.edit(payload, { include: 'tags,authors' });
+
+      if (!updatedPost) {
+        return { error: 'Failed to change post status' };
+      }
+
+      return {
+        id: String(updatedPost.id),
+        url: updatedPost.url || '',
+        status: updatedPost.status,
+      };
+    } catch (err: any) {
+      console.error('Ghost post status change error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // IMAGE UPLOAD @Tool METHOD
+  // ============================================
+
+  @Tool({ description: 'Upload an image to Ghost from URL', dataSchema: [] })
+  async uploadImageFromUrl(
+    token: string,
+    imageUrl: string,
+    purpose: 'image' | 'profile_image' = 'image'
+  ): Promise<{ url: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      // Fetch image from URL
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return { error: `Failed to fetch image: ${response.status}` };
+      }
+
+      const blob = await response.blob();
+      const buffer = Buffer.from(await blob.arrayBuffer());
+
+      // Extract filename from URL
+      const urlPath = new URL(imageUrl).pathname;
+      const filename = path.basename(urlPath) || `image-${Date.now()}.jpg`;
+
+      // Write to temp file
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ghost-upload-'));
+      const tmpPath = path.join(tmpDir, filename);
+
+      try {
+        fs.writeFileSync(tmpPath, buffer);
+
+        // Upload via Ghost Admin API
+        const result = await api.images.upload({
+          file: tmpPath,
+          filename,
+          purpose,
+        });
+
+        if (!result?.url) {
+          return { error: 'Upload failed - no URL returned' };
+        }
+
+        return { url: result.url };
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    } catch (err: any) {
+      console.error('Ghost image upload error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // UNSPLASH @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'Search Unsplash photos for Ghost posts', dataSchema: [] })
+  async searchUnsplash(
+    token: string,
+    query: string,
+    options?: {
+      orientation?: 'landscape' | 'portrait' | 'squarish';
+      perPage?: number;
+      page?: number;
+    }
+  ): Promise<Array<{
+    id: string;
+    description: string;
+    width: number;
+    height: number;
+    userName: string;
+    userUsername: string;
+    url: string;
+    isPlus: boolean;
+  }> | { error: string }> {
+    try {
+      const params = new URLSearchParams();
+      params.append('query', query);
+      if (options?.orientation) params.append('orientation', options.orientation);
+      if (options?.perPage) params.append('per_page', String(options.perPage));
+      if (options?.page) params.append('page', String(options.page));
+
+      const response = await fetch(`https://unsplash.com/napi/search/photos?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!response.ok) {
+        return { error: `Unsplash search failed: ${response.status}` };
+      }
+
+      const data = await response.json() as any;
+
+      return (data.results || []).map((photo: any) => ({
+        id: photo.id,
+        description: photo.description || photo.alt_description || '',
+        width: photo.width,
+        height: photo.height,
+        userName: photo.user.name,
+        userUsername: photo.user.username,
+        url: `${photo.urls.raw}&w=1600`,
+        isPlus: photo.plus || false,
+      }));
+    } catch (err: any) {
+      console.error('Unsplash search error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Set Unsplash photo as Ghost post feature image', dataSchema: [] })
+  async setUnsplashFeatureImage(
+    token: string,
+    postId: string,
+    photoId: string
+  ): Promise<{ success: boolean; url?: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      // Fetch photo metadata from Unsplash
+      const photoResponse = await fetch(`https://unsplash.com/napi/photos/${photoId}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!photoResponse.ok) {
+        return { error: `Failed to fetch photo metadata: ${photoResponse.status}` };
+      }
+
+      const photoData = await photoResponse.json() as any;
+      const imageUrl = `${photoData.urls.raw}&w=1600`;
+
+      // Build attribution caption
+      const userName = photoData.user.name;
+      const userUsername = photoData.user.username;
+      const utm = 'utm_source=ghost&utm_medium=referral';
+      const caption = `Photo by <a href="https://unsplash.com/@${userUsername}?${utm}">${userName}</a> on <a href="https://unsplash.com/?${utm}">Unsplash</a>`;
+
+      // Fetch current post for updated_at
+      const getResponse = await fetch(`${url}/ghost/api/admin/posts/${postId}/?include=tags,authors`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!getResponse.ok) {
+        return { error: 'Post not found' };
+      }
+
+      const currentData = await getResponse.json() as any;
+      const currentPost = currentData.posts?.[0];
+      if (!currentPost) {
+        return { error: 'Post not found' };
+      }
+
+      // Update post with feature image and caption
+      const updateResponse = await fetch(`${url}/ghost/api/admin/posts/${postId}/?source=html`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Content-Type': 'application/json',
+          'Accept-Version': 'v6.0',
+        },
+        body: JSON.stringify({
+          posts: [{
+            id: postId,
+            feature_image: imageUrl,
+            feature_image_caption: caption,
+            updated_at: currentPost.updated_at,
+          }],
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        return { error: `Failed to update post: ${updateResponse.status} - ${errorText}` };
+      }
+
+      const updateData = await updateResponse.json() as any;
+      const updatedPost = updateData.posts?.[0];
+
+      return {
+        success: true,
+        url: updatedPost?.url || imageUrl,
+      };
+    } catch (err: any) {
+      console.error('Set Unsplash feature image error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // MEMBERS @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'List Ghost members', dataSchema: [] })
+  async listMembers(
+    token: string,
+    options?: {
+      filter?: string;
+      include?: string;
+      order?: string;
+      limit?: number;
+      page?: number;
+    }
+  ): Promise<{
+    members: Array<{
+      id: string;
+      email: string;
+      name?: string;
+      note?: string;
+      created_at: string;
+      updated_at: string;
+    }>;
+    meta?: { pagination: { page: number; limit: number; total: number } };
+  }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const params = new URLSearchParams();
+      if (options?.filter) params.append('filter', options.filter);
+      if (options?.include) params.append('include', options.include);
+      if (options?.order) params.append('order', options.order);
+      if (options?.limit) params.append('limit', String(options.limit));
+      if (options?.page) params.append('page', String(options.page));
+
+      const response = await fetch(`${url}/ghost/api/admin/members/?${params.toString()}`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Ghost members list failed:', response.status);
+        return { members: [] };
+      }
+
+      const data = await response.json();
+      return {
+        members: (data.members || []).map((member: any) => ({
+          id: member.id,
+          email: member.email,
+          name: member.name,
+          note: member.note,
+          created_at: member.created_at,
+          updated_at: member.updated_at,
+        })),
+        meta: data.meta,
+      };
+    } catch (err: any) {
+      console.error('Ghost members list error:', err);
+      return { members: [] };
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost member by ID', dataSchema: [] })
+  async getMember(
+    token: string,
+    memberId: string
+  ): Promise<{
+    id: string;
+    email: string;
+    name?: string;
+    note?: string;
+    created_at: string;
+    updated_at: string;
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/members/${memberId}/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const member = data.members?.[0];
+      if (!member) return null;
+
+      return {
+        id: member.id,
+        email: member.email,
+        name: member.name,
+        note: member.note,
+        created_at: member.created_at,
+        updated_at: member.updated_at,
+      };
+    } catch (err: any) {
+      console.error('Ghost member get error:', err);
+      return null;
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost member by email', dataSchema: [] })
+  async getMemberByEmail(
+    token: string,
+    email: string
+  ): Promise<{
+    id: string;
+    email: string;
+    name?: string;
+    note?: string;
+    created_at: string;
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/members/email/${encodeURIComponent(email)}/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const member = data.members?.[0];
+      if (!member) return null;
+
+      return {
+        id: member.id,
+        email: member.email,
+        name: member.name,
+        note: member.note,
+        created_at: member.created_at,
+      };
+    } catch (err: any) {
+      console.error('Ghost member by email error:', err);
+      return null;
+    }
+  }
+
+  @Tool({ description: 'Create a Ghost member', dataSchema: [] })
+  async createMember(
+    token: string,
+    data: {
+      email: string;
+      name?: string;
+      note?: string;
+      labels?: string[];
+      newsletters?: string[];
+    }
+  ): Promise<{ id: string; email: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const payload: any = {
+        email: data.email,
+      };
+      if (data.name) payload.name = data.name;
+      if (data.note) payload.note = data.note;
+      if (data.labels) payload.labels = data.labels;
+      if (data.newsletters) payload.newsletters = data.newsletters.map(id => ({ id }));
+
+      const response = await fetch(`${url}/ghost/api/admin/members/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Content-Type': 'application/json',
+          'Accept-Version': 'v6.0',
+        },
+        body: JSON.stringify({ members: [payload] }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { error: `Create failed: ${response.status} - ${errorText}` };
+      }
+
+      const result = await response.json();
+      const member = result.members?.[0];
+
+      return {
+        id: member.id,
+        email: member.email,
+      };
+    } catch (err: any) {
+      console.error('Ghost member create error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Update a Ghost member', dataSchema: [] })
+  async updateMember(
+    token: string,
+    memberId: string,
+    data: {
+      name?: string;
+      note?: string;
+      labels?: string[];
+      newsletters?: string[];
+    }
+  ): Promise<{ success: boolean } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      // Fetch current member for updated_at
+      const getResponse = await fetch(`${url}/ghost/api/admin/members/${memberId}/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!getResponse.ok) {
+        return { error: 'Member not found' };
+      }
+
+      const currentData = await getResponse.json();
+      const currentMember = currentData.members?.[0];
+      if (!currentMember) {
+        return { error: 'Member not found' };
+      }
+
+      const payload: any = {
+        id: memberId,
+        updated_at: currentMember.updated_at,
+      };
+      if (data.name !== undefined) payload.name = data.name;
+      if (data.note !== undefined) payload.note = data.note;
+      if (data.labels !== undefined) payload.labels = data.labels;
+      if (data.newsletters !== undefined) payload.newsletters = data.newsletters.map(id => ({ id }));
+
+      const response = await fetch(`${url}/ghost/api/admin/members/${memberId}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Content-Type': 'application/json',
+          'Accept-Version': 'v6.0',
+        },
+        body: JSON.stringify({ members: [payload] }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { error: `Update failed: ${response.status} - ${errorText}` };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Ghost member update error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Delete a Ghost member', dataSchema: [] })
+  async deleteMember(token: string, memberId: string): Promise<{ success: boolean } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/members/${memberId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok && response.status !== 204) {
+        return { error: `Delete failed: ${response.status}` };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Ghost member delete error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // TAGS CRUD @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'Create a Ghost tag', dataSchema: [] })
+  async createTag(
+    token: string,
+    data: {
+      name: string;
+      slug?: string;
+      description?: string;
+      visibility?: 'public' | 'internal';
+      feature_image?: string;
+    }
+  ): Promise<{ id: string; name: string; slug: string } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const payload: any = { name: data.name };
+      if (data.slug) payload.slug = data.slug;
+      if (data.description) payload.description = data.description;
+      if (data.visibility) payload.visibility = data.visibility;
+      if (data.feature_image) payload.feature_image = data.feature_image;
+
+      const result = await api.tags.add(payload);
+
+      if (!result) {
+        return { error: 'Failed to create tag' };
+      }
+
+      return {
+        id: result.id,
+        name: result.name,
+        slug: result.slug,
+      };
+    } catch (err: any) {
+      console.error('Ghost tag create error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Update a Ghost tag', dataSchema: [] })
+  async updateTag(
+    token: string,
+    tagId: string,
+    data: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      visibility?: 'public' | 'internal';
+      feature_image?: string;
+    }
+  ): Promise<{ success: boolean } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      // Fetch current tag for updated_at
+      const currentTag = await api.tags.read({ id: tagId });
+      if (!currentTag) {
+        return { error: 'Tag not found' };
+      }
+
+      const payload: any = {
+        id: tagId,
+        updated_at: currentTag.updated_at,
+      };
+      if (data.name !== undefined) payload.name = data.name;
+      if (data.slug !== undefined) payload.slug = data.slug;
+      if (data.description !== undefined) payload.description = data.description;
+      if (data.visibility !== undefined) payload.visibility = data.visibility;
+      if (data.feature_image !== undefined) payload.feature_image = data.feature_image;
+
+      await api.tags.edit(payload);
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Ghost tag update error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Delete a Ghost tag', dataSchema: [] })
+  async deleteTag(token: string, tagId: string): Promise<{ success: boolean } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      await api.tags.delete({ id: tagId });
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Ghost tag delete error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost tag by ID', dataSchema: [] })
+  async getTag(
+    token: string,
+    tagId: string
+  ): Promise<{
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    visibility: string;
+    created_at: string;
+    updated_at: string;
+    count?: { posts: number };
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const tag = await api.tags.read({ id: tagId });
+
+      if (!tag) return null;
+
+      return {
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        description: tag.description,
+        visibility: tag.visibility,
+        created_at: tag.created_at,
+        updated_at: tag.updated_at,
+        count: tag.count,
+      };
+    } catch (err: any) {
+      console.error('Ghost tag get error:', err);
+      return null;
+    }
+  }
+
+  @Tool({ description: 'Get a Ghost tag by slug', dataSchema: [] })
+  async getTagBySlug(
+    token: string,
+    slug: string
+  ): Promise<{
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    visibility: string;
+  } | null> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const url = credentials.domain.replace(/\/$/, '');
+      const authToken=this.generateAuthToken(credentials.adminApiKey);
+
+      const response = await fetch(`${url}/ghost/api/admin/tags/slug/${slug}/`, {
+        headers: {
+          'Authorization': `Ghost ${authToken}`,
+          'Accept-Version': 'v6.0',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const tag = data.tags?.[0];
+      if (!tag) return null;
+
+      return {
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        description: tag.description,
+        visibility: tag.visibility,
+      };
+    } catch (err: any) {
+      console.error('Ghost tag by slug error:', err);
+      return null;
+    }
+  }
+
+  // ============================================
+  // SITE @Tool METHOD
+  // ============================================
+
+  @Tool({ description: 'Get Ghost site information', dataSchema: [] })
+  async getSiteInfo(token: string): Promise<{
+    title: string;
+    description?: string;
+    url: string;
+    icon?: string;
+    logo?: string;
+    cover_image?: string;
+  } | { error: string }> {
+    try {
+      const credentials=this.parseCredentials(token);
+      const api = this.createAdminAPI(credentials);
+
+      const site = await api.site.read();
+
+      if (!site) {
+        return { error: 'Failed to get site info' };
+      }
+
+      return {
+        title: site.title,
+        description: site.description,
+        url: site.url,
+        icon: site.icon,
+        logo: site.logo,
+        cover_image: site.cover_image,
+      };
+    } catch (err: any) {
+      console.error('Ghost site info error:', err);
+      return { error: err?.message || 'Unknown error' };
     }
   }
 
@@ -1076,7 +2347,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     internalId?: string,
     integration?: Integration
   ): Promise<PostResponse> {
-    const credentials = this.parseCredentials(accessToken);
+    const credentials=this.p...en);
     const api = this.createAdminAPI(credentials);
 
     const updateData: any = {
@@ -1120,6 +2391,201 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     } catch (err: any) {
       console.error('Ghost post status change error:', err?.message || err);
       throw new Error(`Failed to change Ghost post status: ${err?.message || 'unknown error'}`);
+    }
+  }
+
+  // ============================================
+  // IMAGE UPLOAD (BASE64) @Tool METHOD
+  // ============================================
+
+  @Tool({ 
+    description: 'Upload an image to Ghost from base64 encoded data', 
+    dataSchema: [] 
+  })
+  async uploadImage(
+    token: string,
+    imageData: {
+      base64: string;
+      filename: string;
+      purpose?: 'image' | 'profile_image';
+      ref?: string;
+    }
+  ): Promise<{ url: string; ref?: string } | { error: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+
+      // Convert base64 to buffer
+      const buffer = Buffer.from(imageData.base64, 'base64');
+      
+      // Create form data for upload
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('file', buffer, { filename: imageData.filename });
+      form.append('purpose', imageData.purpose || 'image');
+      if (imageData.ref) {
+        form.append('ref', imageData.ref);
+      }
+
+      // Upload directly to Ghost API (SDK doesn't support image upload)
+      const authToken = this.generateAuthToken(credentials.apiKey);
+      const response = await fetch(`${credentials.domain}/ghost/api/admin/images/upload/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          ...form.getHeaders(),
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        return { error: `Upload failed: ${error}` };
+      }
+
+      const result = await response.json();
+      return {
+        url: result.images?.[0]?.url || result.url,
+        ref: imageData.ref,
+      };
+    } catch (err: any) {
+      console.error('Ghost image upload error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // SITE SETTINGS @Tool METHODS
+  // ============================================
+
+  @Tool({ description: 'Get Ghost site settings (title, description, timezone, navigation, etc.)', dataSchema: [] })
+  async getSiteSettings(token: string): Promise<Record<string, any> | { error: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+
+      // Ghost Admin SDK doesn't have a settings.read method, use direct API
+      const authToken = this.generateAuthToken(credentials.apiKey);
+      const response = await fetch(`${credentials.domain}/ghost/api/admin/settings/`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        return { error: `Failed to get settings: ${error}` };
+      }
+
+      const data = await response.json() as { settings: Array<{ key: string; value: any }> };
+      
+      // Convert array to object for easier use
+      const settings: Record<string, any> = {};
+      if (data.settings) {
+        for (const setting of data.settings) {
+          settings[setting.key] = setting.value;
+        }
+      }
+
+      return settings;
+    } catch (err: any) {
+      console.error('Ghost settings error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  @Tool({ description: 'Update Ghost site settings', dataSchema: [] })
+  async updateSiteSettings(
+    token: string,
+    settings: Record<string, any>
+  ): Promise<Record<string, any> | { error: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+
+      // Ghost expects settings as array of {key, value} objects
+      const settingsArray = Object.entries(settings).map(([key, value]) => ({
+        key,
+        value,
+      }));
+
+      const authToken = this.generateAuthToken(credentials.apiKey);
+      const response = await fetch(`${credentials.domain}/ghost/api/admin/settings/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings: settingsArray }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        return { error: `Failed to update settings: ${error}` };
+      }
+
+      const data = await response.json() as { settings: Array<{ key: string; value: any }> };
+      
+      // Convert array to object for easier use
+      const result: Record<string, any> = {};
+      if (data.settings) {
+        for (const setting of data.settings) {
+          result[setting.key] = setting.value;
+        }
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Ghost settings update error:', err);
+      return { error: err?.message || 'Unknown error' };
+    }
+  }
+
+  // ============================================
+  // THEME UPLOAD (BASE64) @Tool METHOD
+  // ============================================
+
+  @Tool({ 
+    description: 'Upload a Ghost theme from base64 encoded ZIP file', 
+    dataSchema: [] 
+  })
+  async uploadThemeFile(
+    token: string,
+    themeData: {
+      base64: string;
+      filename: string;
+    }
+  ): Promise<{ name: string; package: any } | { error: string }> {
+    try {
+      const credentials = this.parseCredentials(token);
+      const buffer = Buffer.from(themeData.base64, 'base64');
+      
+      // Create form data for upload
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('file', buffer, { filename: themeData.filename });
+
+      // Upload to Ghost themes API
+      const authToken = this.generateAuthToken(credentials.apiKey);
+      const response = await fetch(`${credentials.domain}/ghost/api/admin/themes/upload/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          ...form.getHeaders(),
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        return { error: `Theme upload failed: ${error}` };
+      }
+
+      const result = await response.json();
+      return {
+        name: result.themes?.[0]?.name,
+        package: result.themes?.[0]?.package,
+      };
+    } catch (err: any) {
+      console.error('Ghost theme upload error:', err);
+      return { error: err?.message || 'Unknown error' };
     }
   }
 }
