@@ -1,0 +1,38 @@
+name: Disaster Recovery & Automated Backup
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # Runs daily at 2:30 AM
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  db_assets_backup:
+    name: Postiz Disaster Recovery Backup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        if: secrets.AWS_ACCESS_KEY_ID != ''
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run Disaster Recovery Script
+        env:
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          ENABLE_GIT_CONFIG_BACKUP: "false" # Keep false for GH Actions by default
+        run: |
+          chmod +x ./var/scripts/postiz-disaster-recovery.sh
+          ./var/scripts/postiz-disaster-recovery.sh
+
+      - name: Success Notification
+        if: success()
+        run: echo "✅ Disaster recovery backup completed successfully."
