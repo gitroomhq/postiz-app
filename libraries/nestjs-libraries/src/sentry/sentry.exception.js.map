@@ -1,0 +1,1 @@
+{"version":3,"file":"sentry.exception.js","sourceRoot":"","sources":["sentry.exception.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAC1C,OAAO,EAAE,kBAAkB,EAAE,MAAM,sBAAsB,CAAC;AAE1D,MAAM,CAAC,MAAM,MAAM,GAAG;IACpB,OAAO,EAAE,UAAU;IACnB,QAAQ,EAAE,kBAAkB;CAC7B,CAAC"}

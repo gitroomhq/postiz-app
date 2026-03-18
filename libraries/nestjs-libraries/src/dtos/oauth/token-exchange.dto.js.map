@@ -1,0 +1,1 @@
+{"version":3,"file":"token-exchange.dto.js","sourceRoot":"","sources":["token-exchange.dto.ts"],"names":[],"mappings":";AAAA,OAAO,EAAE,SAAS,EAAE,QAAQ,EAAE,MAAM,iBAAiB,CAAC;AAEtD,MAAM,OAAO,gBAAgB;CAgB5B;AAbC;IAFC,QAAQ,EAAE;IACV,SAAS,EAAE;;oDACO;AAInB;IAFC,QAAQ,EAAE;IACV,SAAS,EAAE;;8CACC;AAIb;IAFC,QAAQ,EAAE;IACV,SAAS,EAAE;;mDACM;AAIlB;IAFC,QAAQ,EAAE;IACV,SAAS,EAAE;;uDACU"}

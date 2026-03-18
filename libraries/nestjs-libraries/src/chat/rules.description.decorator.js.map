@@ -1,0 +1,1 @@
+{"version":3,"file":"rules.description.decorator.js","sourceRoot":"","sources":["rules.description.decorator.ts"],"names":[],"mappings":"AAAA,OAAO,kBAAkB,CAAC;AAE1B,MAAM,UAAU,KAAK,CAAC,WAAmB;IACvC,OAAO,UAAU,MAAW;QAC1B,iFAAiF;QACjF,OAAO,CAAC,cAAc,CACpB,0BAA0B,EAC1B,WAAW,EACX,MAAM,CACP,CAAC;IACJ,CAAC,CAAC;AACJ,CAAC"}

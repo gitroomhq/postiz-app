@@ -1,0 +1,311 @@
+'use client';
+import { __awaiter } from "tslib";
+import React, { Fragment, useCallback, useState } from 'react';
+import { useFetch } from "../../../../../libraries/helpers/src/utils/custom.fetch";
+import useSWR from 'swr';
+import { Button } from "../../../../../libraries/react-shared-libraries/src/form/button";
+import { useModals } from "../layout/new-modal";
+import { Input } from "../../../../../libraries/react-shared-libraries/src/form/input";
+import { FormProvider, useForm } from 'react-hook-form';
+import { array, boolean, object, string } from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Select } from "../../../../../libraries/react-shared-libraries/src/form/select";
+import { PickPlatforms } from "../launches/helpers/pick.platform.component";
+import { useToaster } from "../../../../../libraries/react-shared-libraries/src/toaster/toaster";
+import clsx from 'clsx';
+import { deleteDialog } from "../../../../../libraries/react-shared-libraries/src/helpers/delete.dialog";
+import { CopilotTextarea } from '@copilotkit/react-textarea';
+import { Slider } from "../../../../../libraries/react-shared-libraries/src/form/slider";
+import { useT } from "../../../../../libraries/react-shared-libraries/src/translation/get.transation.service.client";
+export const Autopost = () => {
+    const fetch = useFetch();
+    const t = useT();
+    const modal = useModals();
+    const toaster = useToaster();
+    const list = useCallback(() => __awaiter(void 0, void 0, void 0, function* () {
+        return (yield fetch('/autopost')).json();
+    }), []);
+    const { data, mutate } = useSWR('autopost', list);
+    const addWebhook = useCallback((data) => () => {
+        modal.openModal({
+            title: data ? t('edit_autopost', 'Edit Autopost') : t('add_autopost_title', 'Add Autopost'),
+            withCloseButton: true,
+            children: <AddOrEditWebhook data={data} reload={mutate}/>,
+        });
+    }, []);
+    const deleteHook = useCallback((data) => () => __awaiter(void 0, void 0, void 0, function* () {
+        if (yield deleteDialog(t('are_you_sure_you_want_to_delete', `Are you sure you want to delete ${data.name}?`, { name: data.name }))) {
+            yield fetch(`/autopost/${data.id}`, {
+                method: 'DELETE',
+            });
+            mutate();
+            toaster.show(t('webhook_deleted_successfully', 'Webhook deleted successfully'), 'success');
+        }
+    }), []);
+    const changeActive = useCallback((data) => (ac) => __awaiter(void 0, void 0, void 0, function* () {
+        yield fetch(`/autopost/${data.id}/active`, {
+            body: JSON.stringify({
+                active: ac === 'on',
+            }),
+            method: 'POST',
+        });
+        mutate();
+    }), [mutate]);
+    return (<div className="flex flex-col">
+      <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
+      <div className="text-customColor18 mt-[4px]">
+        {t('autopost_can_automatically_posts_your_rss_new_items_to_social_media', 'Autopost can automatically posts your RSS new items to social media')}
+      </div>
+      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
+        <div className="flex flex-col w-full">
+          {!!(data === null || data === void 0 ? void 0 : data.length) && (<div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
+              <div>{t('title', 'Title')}</div>
+              <div>{t('url', 'URL')}</div>
+              <div>{t('edit', 'Edit')}</div>
+              <div>{t('delete', 'Delete')}</div>
+              <div>{t('active', 'Active')}</div>
+              {data === null || data === void 0 ? void 0 : data.map((p) => (<Fragment key={p.id}>
+                  <div className="flex flex-col justify-center">{p.title}</div>
+                  <div className="flex flex-col justify-center">{p.url}</div>
+                  <div className="flex flex-col justify-center">
+                    <div>
+                      <Button onClick={addWebhook(p)}>
+                        {t('edit', 'Edit')}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <div>
+                      <Button onClick={deleteHook(p)}>
+                        {t('delete', 'Delete')}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Slider value={p.active ? 'on' : 'off'} onChange={changeActive(p)} fill={true}/>
+                  </div>
+                </Fragment>))}
+            </div>)}
+          <div>
+            <Button onClick={addWebhook()} className={clsx(((data === null || data === void 0 ? void 0 : data.length) || 0) > 0 && 'my-[16px]')}>
+              {t('add_an_autopost', 'Add an autopost')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>);
+};
+const details = object().shape({
+    title: string().required(),
+    content: string(),
+    onSlot: boolean().required(),
+    syncLast: boolean().required(),
+    url: string().url().required(),
+    active: boolean().required(),
+    addPicture: boolean().required(),
+    generateContent: boolean().required(),
+    integrations: array().of(object().shape({
+        id: string().required(),
+    })),
+});
+const getOptions = (t) => [
+    {
+        label: t('all_integrations', 'All integrations'),
+        value: 'all',
+    },
+    {
+        label: t('specific_integrations', 'Specific integrations'),
+        value: 'specific',
+    },
+];
+const getOptionsChoose = (t) => [
+    {
+        label: t('yes', 'Yes'),
+        value: true,
+    },
+    {
+        label: t('no', 'No'),
+        value: false,
+    },
+];
+const getPostImmediately = (t) => [
+    {
+        label: t('post_on_next_available_slot', 'Post on the next available slot'),
+        value: true,
+    },
+    {
+        label: t('post_immediately', 'Post Immediately'),
+        value: false,
+    },
+];
+export const AddOrEditWebhook = (props) => {
+    var _a, _b, _c;
+    const { data, reload } = props;
+    const fetch = useFetch();
+    const t = useT();
+    const options = getOptions(t);
+    const optionsChoose = getOptionsChoose(t);
+    const postImmediately = getPostImmediately(t);
+    const [allIntegrations, setAllIntegrations] = useState((((_a = JSON.parse((data === null || data === void 0 ? void 0 : data.integrations) || '[]')) === null || _a === void 0 ? void 0 : _a.length) || 0) > 0
+        ? options[1]
+        : options[0]);
+    const modal = useModals();
+    const toast = useToaster();
+    const [valid, setValid] = useState((data === null || data === void 0 ? void 0 : data.url) || '');
+    const [lastUrl, setLastUrl] = useState((data === null || data === void 0 ? void 0 : data.lastUrl) || '');
+    const form = useForm({
+        resolver: yupResolver(details),
+        values: {
+            title: (data === null || data === void 0 ? void 0 : data.title) || '',
+            content: (data === null || data === void 0 ? void 0 : data.content) || '',
+            onSlot: (data === null || data === void 0 ? void 0 : data.onSlot) || false,
+            syncLast: (data === null || data === void 0 ? void 0 : data.syncLast) || false,
+            url: (data === null || data === void 0 ? void 0 : data.url) || '',
+            // eslint-disable-next-line no-prototype-builtins
+            active: ((_b = data === null || data === void 0 ? void 0 : data.hasOwnProperty) === null || _b === void 0 ? void 0 : _b.call(data, 'active')) ? data === null || data === void 0 ? void 0 : data.active : true,
+            addPicture: (data === null || data === void 0 ? void 0 : data.addPicture) || false,
+            // eslint-disable-next-line no-prototype-builtins
+            generateContent: ((_c = data === null || data === void 0 ? void 0 : data.hasOwnProperty) === null || _c === void 0 ? void 0 : _c.call(data, 'generateContent'))
+                ? data === null || data === void 0 ? void 0 : data.generateContent
+                : true,
+            integrations: JSON.parse((data === null || data === void 0 ? void 0 : data.integrations) || '[]') || [],
+        },
+    });
+    const generateContent = form.watch('generateContent');
+    const content = form.watch('content');
+    const url = form.watch('url');
+    const syncLast = form.watch('syncLast');
+    const integrations = form.watch('integrations');
+    const integration = useCallback(() => __awaiter(void 0, void 0, void 0, function* () {
+        return (yield fetch('/integrations/list')).json();
+    }), []);
+    const changeIntegration = useCallback((e) => {
+        const findValue = options.find((option) => option.value === e.target.value);
+        setAllIntegrations(findValue);
+        if (findValue.value === 'all') {
+            form.setValue('integrations', []);
+        }
+    }, []);
+    const { data: dataList, isLoading } = useSWR('integrations', integration, {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        revalidateIfStale: false,
+        revalidateOnMount: true,
+        refreshWhenHidden: false,
+        refreshWhenOffline: false,
+    });
+    const callBack = useCallback((values) => __awaiter(void 0, void 0, void 0, function* () {
+        yield fetch((data === null || data === void 0 ? void 0 : data.id) ? `/autopost/${data === null || data === void 0 ? void 0 : data.id}` : '/autopost', {
+            method: (data === null || data === void 0 ? void 0 : data.id) ? 'PUT' : 'POST',
+            body: JSON.stringify(Object.assign(Object.assign(Object.assign({}, ((data === null || data === void 0 ? void 0 : data.id)
+                ? {
+                    id: data.id,
+                }
+                : {})), values), (!syncLast
+                ? {
+                    lastUrl,
+                }
+                : {
+                    lastUrl: '',
+                }))),
+        });
+        toast.show((data === null || data === void 0 ? void 0 : data.id)
+            ? t('autopost_updated_successfully', 'Autopost updated successfully')
+            : t('autopost_added_successfully', 'Autopost added successfully'), 'success');
+        modal.closeAll();
+        reload();
+    }), [data, integrations, lastUrl, syncLast]);
+    const sendTest = useCallback(() => __awaiter(void 0, void 0, void 0, function* () {
+        const url = form.getValues('url');
+        try {
+            const { success, url: newUrl } = yield (yield fetch(`/autopost/send?url=${encodeURIComponent(url)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })).json();
+            if (!success) {
+                setValid('');
+                toast.show(t('could_not_use_rss_feed', 'Could not use this RSS feed'), 'warning');
+                return;
+            }
+            toast.show(t('rss_valid', 'RSS valid!'), 'success');
+            setValid(url);
+            setLastUrl(newUrl);
+        }
+        catch (e) {
+            /** empty **/
+        }
+    }), []);
+    return (<FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(callBack)}>
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 pt-0">
+          <div>
+            <Input label="Title" translationKey="label_title" {...form.register('title')}/>
+            <Input label="URL" translationKey="label_url" {...form.register('url')}/>
+            <Select label="Should we sync the current last post?" translationKey="label_should_sync_last_post" {...form.register('syncLast', {
+        setValueAs: (value) => {
+            return value === 'true' || value === true;
+        },
+    })}>
+              {optionsChoose.map((option) => (<option key={String(option.value)} value={String(option.value)}>
+                  {option.label}
+                </option>))}
+            </Select>
+            <Select label="When should we post it?" translationKey="label_when_post" {...form.register('onSlot', {
+        setValueAs: (value) => value === 'true' || value === true,
+    })}>
+              {postImmediately.map((option) => (<option key={String(option.value)} value={String(option.value)}>
+                  {option.label}
+                </option>))}
+            </Select>
+            <Select label="Autogenerate content" translationKey="label_autogenerate_content" {...form.register('generateContent', {
+        setValueAs: (value) => value === 'true' || value === true,
+    })}>
+              {optionsChoose.map((option) => (<option key={String(option.value)} value={String(option.value)}>
+                  {option.label}
+                </option>))}
+            </Select>
+            {!generateContent && (<>
+                <div className={`text-[14px] mb-[6px]`}>
+                  {t('post_content', 'Post content')}
+                </div>
+                <CopilotTextarea disableBranding={true} className={clsx('!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none mb-[16px] border-fifth border rounded-[4px]')} value={content} onChange={(e) => {
+                form.setValue('content', e.target.value);
+            }} placeholder={t('write_your_post_placeholder', 'Write your post...')} autosuggestionsConfig={{
+                textareaPurpose: `Assist me in writing social media post`,
+                chatApiConfigs: {},
+            }}/>
+              </>)}
+            <Select label="Generate Picture?" translationKey="label_generate_picture" {...form.register('addPicture', {
+        setValueAs: (value) => value === 'true' || value === true,
+    })}>
+              {optionsChoose.map((option) => (<option key={String(option.value)} value={String(option.value)}>
+                  {option.label}
+                </option>))}
+            </Select>
+            <Select value={allIntegrations.value} name="integrations" label="Integrations" translationKey="label_integrations" disableForm={true} onChange={changeIntegration}>
+              {options.map((option) => (<option key={option.value} value={option.value}>
+                  {option.label}
+                </option>))}
+            </Select>
+            {allIntegrations.value === 'specific' && dataList && !isLoading && (<PickPlatforms integrations={dataList.integrations} selectedIntegrations={integrations} onChange={(e) => form.setValue('integrations', e)} singleSelect={false} toolTip={true} isMain={true}/>)}
+            <div className="flex gap-[10px]">
+              {valid === url && (syncLast || !!lastUrl) && (<Button type="submit" className="mt-[24px]" disabled={valid !== url ||
+                !form.formState.isValid ||
+                (allIntegrations.value === 'specific' &&
+                    !(integrations === null || integrations === void 0 ? void 0 : integrations.length))}>
+                  {t('save', 'Save')}
+                </Button>)}
+              <Button type="button" className="mt-[24px]" onClick={sendTest} disabled={!form.formState.isValid ||
+            (allIntegrations.value === 'specific' &&
+                !(integrations === null || integrations === void 0 ? void 0 : integrations.length))}>
+                {t('send_test', 'Send Test')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </FormProvider>);
+};
+//# sourceMappingURL=autopost.js.map

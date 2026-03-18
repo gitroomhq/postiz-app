@@ -296,9 +296,9 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     error?: string;
   }> {
     try {
-      const credentials=this.p...en);
+      const credentials = this.parseCredentials(token);
       const url = credentials.domain.replace(/\/$/, '');
-      const authToken=this.g...ey);
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
 
       // Build post body
       const body: any = {
@@ -2347,7 +2347,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     internalId?: string,
     integration?: Integration
   ): Promise<PostResponse> {
-    const credentials=this.p...en);
+    const credentials = this.parseCredentials(token);
     const api = this.createAdminAPI(credentials);
 
     const updateData: any = {
@@ -2402,7 +2402,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     description: 'Upload an image to Ghost from base64 encoded data', 
     dataSchema: [] 
   })
-  async uploadImage(
+  async uploadImageBase64(
     token: string,
     imageData: {
       base64: string;
@@ -2427,7 +2427,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       }
 
       // Upload directly to Ghost API (SDK doesn't support image upload)
-      const authToken = this.generateAuthToken(credentials.apiKey);
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
       const response = await fetch(`${credentials.domain}/ghost/api/admin/images/upload/`, {
         method: 'POST',
         headers: {
@@ -2463,7 +2463,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       const credentials = this.parseCredentials(token);
 
       // Ghost Admin SDK doesn't have a settings.read method, use direct API
-      const authToken = this.generateAuthToken(credentials.apiKey);
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
       const response = await fetch(`${credentials.domain}/ghost/api/admin/settings/`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -2506,7 +2506,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
         value,
       }));
 
-      const authToken = this.generateAuthToken(credentials.apiKey);
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
       const response = await fetch(`${credentials.domain}/ghost/api/admin/settings/`, {
         method: 'PUT',
         headers: {
@@ -2563,7 +2563,7 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       form.append('file', buffer, { filename: themeData.filename });
 
       // Upload to Ghost themes API
-      const authToken = this.generateAuthToken(credentials.apiKey);
+      const authToken = this.generateAuthToken(credentials.adminApiKey);
       const response = await fetch(`${credentials.domain}/ghost/api/admin/themes/upload/`, {
         method: 'POST',
         headers: {

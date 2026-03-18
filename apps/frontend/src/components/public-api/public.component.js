@@ -1,0 +1,152 @@
+'use client';
+import { __awaiter } from "tslib";
+import { useState, useCallback } from 'react';
+import { useSWRConfig } from 'swr';
+import { useUser } from '../layout/user.context';
+import { Button } from "../../../../../libraries/react-shared-libraries/src/form/button";
+import copy from 'copy-to-clipboard';
+import { useToaster } from "../../../../../libraries/react-shared-libraries/src/toaster/toaster";
+import { useVariables } from "../../../../../libraries/react-shared-libraries/src/helpers/variable.context";
+import { useT } from "../../../../../libraries/react-shared-libraries/src/translation/get.transation.service.client";
+import { useFetch } from "../../../../../libraries/helpers/src/utils/custom.fetch";
+import { useDecisionModal } from "../layout/new-modal";
+import { DeveloperComponent } from "../developer/developer.component";
+import clsx from 'clsx';
+const PublicApiContent = () => {
+    const user = useUser();
+    const { backendUrl, frontEndUrl, mcpUrl } = useVariables();
+    const toaster = useToaster();
+    const fetch = useFetch();
+    const decision = useDecisionModal();
+    const { mutate } = useSWRConfig();
+    const [reveal, setReveal] = useState(false);
+    const [reveal2, setReveal2] = useState(false);
+    const copyToClipboard = useCallback(() => {
+        toaster.show('API Key copied to clipboard', 'success');
+        copy(user === null || user === void 0 ? void 0 : user.publicApi);
+    }, [user]);
+    const copyToClipboard2 = useCallback(() => {
+        toaster.show('MCP copied to clipboard', 'success');
+        copy(`${mcpUrl || backendUrl}/mcp/` + (user === null || user === void 0 ? void 0 : user.publicApi));
+    }, [user]);
+    const rotateKey = useCallback(() => __awaiter(void 0, void 0, void 0, function* () {
+        const approved = yield decision.open({
+            title: 'Rotate API Key?',
+            description: 'This will generate a new API key and invalidate the current one. Any integrations using the old key will stop working.',
+            approveLabel: 'Rotate',
+            cancelLabel: 'Cancel',
+        });
+        if (!approved)
+            return;
+        yield fetch('/user/api-key/rotate', { method: 'POST' });
+        yield mutate('/user/self');
+        setReveal(false);
+        setReveal2(false);
+        toaster.show('API Key rotated successfully', 'success');
+    }), [decision, fetch, mutate, toaster]);
+    const t = useT();
+    if (!user || !user.publicApi) {
+        return null;
+    }
+    return (<div className="flex flex-col gap-[20px]">
+      <div className="flex flex-col">
+        <h3 className="text-[20px]">{t('public_api', 'Public API')}</h3>
+        <div className="text-customColor18 mt-[4px]">
+          {t('use_postiz_api_to_integrate_with_your_tools', 'Use Postiz API to integrate with your tools.')}
+          <br />
+          <a className="underline hover:font-bold hover:underline" href="https://docs.postiz.com/public-api" target="_blank">
+            {t('read_how_to_use_it_over_the_documentation', 'Read how to use it over the documentation.')}
+          </a>
+          <a className="underline hover:font-bold hover:underline" href="https://www.npmjs.com/package/n8n-nodes-postiz" target="_blank">
+            <br />
+            {t('check_n8n', 'Check out our N8N custom node for Postiz.')}
+          </a>
+        </div>
+        <div className="flex flex-col">
+          <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
+            <div className="flex items-center">
+              {reveal ? (user.publicApi) : (<>
+                  <div className="blur-sm">{user.publicApi.slice(0, -5)}</div>
+                  <div>{user.publicApi.slice(-5)}</div>
+                </>)}
+            </div>
+            <div>
+              {!reveal ? (<Button onClick={() => setReveal(true)}>
+                  {t('reveal', 'Reveal')}
+                </Button>) : (<Button onClick={copyToClipboard}>
+                  {t('copy_key', 'Copy Key')}
+                </Button>)}
+            </div>
+          </div>
+          <div>
+            <Button onClick={rotateKey}>
+              {t('rotate_key', 'Rotate Key')}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col">
+        <h3 className="text-[20px]">{t('mcp', 'MCP')}</h3>
+        <div className="text-customColor18 mt-[4px]">
+          {t('connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster', 'Connect Postiz MCP server to your client (Http streaming) to schedule your posts faster.')}
+        </div>
+        <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
+          <div className="flex items-center">
+            {reveal2 ? (`${mcpUrl || backendUrl}/mcp/` + user.publicApi) : (<>
+                <div className="blur-sm">
+                  {(`${mcpUrl || backendUrl}/mcp/` + user.publicApi).slice(0, -5)}
+                </div>
+                <div>{(`${mcpUrl || backendUrl}/mcp/` + user.publicApi).slice(-5)}</div>
+              </>)}
+          </div>
+          <div>
+            {!reveal2 ? (<Button onClick={() => setReveal2(true)}>
+                {t('reveal', 'Reveal')}
+              </Button>) : (<Button onClick={copyToClipboard2}>
+                {t('copy_key', 'Copy Key')}
+              </Button>)}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col">
+        <h3 className="text-[20px]">Building your Postiz payload</h3>
+        <div className="text-customColor18 mt-[4px] whitespace-pre-line">
+          Sending a POST request to <strong className="text-textColor">/posts</strong> might feel a bit overwhelming as many
+          platforms have different requirements.{'\n'}
+          We have created an easy way to build your Postiz payload to schedule
+          posts. {'\n'}
+          You can use the Postiz wizard, and schedule a post with our UI, after
+          you added all your text and settings, the wizard will generate the
+          payload for you.{'\n'}
+        </div>
+        <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
+          <Button onClick={() => window.open(`${frontEndUrl}/modal/dark/all`, '_blank')}>
+            Open the payload wizard
+          </Button>
+        </div>
+      </div>
+    </div>);
+};
+export const PublicComponent = () => {
+    const t = useT();
+    const [subTab, setSubTab] = useState('api');
+    return (<div className="flex flex-col gap-[20px]">
+      <div className="flex gap-[4px] border-b border-fifth">
+        <button type="button" className={clsx('px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors', subTab === 'api'
+            ? 'bg-sixth text-textColor border border-fifth border-b-0'
+            : 'text-customColor18 hover:text-textColor')} onClick={() => setSubTab('api')}>
+          {t('public_api', 'Public API')}
+        </button>
+        <button type="button" className={clsx('px-[16px] py-[8px] text-[14px] rounded-t-[4px] transition-colors', subTab === 'developer'
+            ? 'bg-sixth text-textColor border border-fifth border-b-0'
+            : 'text-customColor18 hover:text-textColor')} onClick={() => setSubTab('developer')}>
+          {t('apps', 'Apps')}
+        </button>
+      </div>
+      {subTab === 'api' && <PublicApiContent />}
+      {subTab === 'developer' && <DeveloperComponent />}
+    </div>);
+};
+//# sourceMappingURL=public.component.js.map

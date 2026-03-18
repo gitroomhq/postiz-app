@@ -1,0 +1,1 @@
+{"version":3,"file":"mastodon.provider.js","sourceRoot":"","sources":["mastodon.provider.tsx"],"names":[],"mappings":"AAAA,YAAY,CAAC;AAEb,OAAO,EACL,WAAW,EACX,YAAY,GACb,+BAA8E;AAC/E,eAAe,YAAY,CAAC;IAC1B,WAAW,EAAE,WAAW,CAAC,IAAI;IAC7B,iBAAiB,EAAE,EAAE;IACrB,iBAAiB,EAAE,IAAI;IACvB,sBAAsB,EAAE,SAAS;IACjC,GAAG,EAAE,SAAS;IACd,aAAa,EAAE,SAAS;IACxB,iBAAiB,EAAE,GAAG;CACvB,CAAC,CAAC"}
