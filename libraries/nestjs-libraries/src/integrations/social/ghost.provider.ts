@@ -971,6 +971,14 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
 
     try {
+      // Ghost requires updated_at for optimistic concurrency control
+      // Fetch current post to get its updated_at timestamp
+      const currentPost = await api.posts.read({ id: ghostPostId }, { include: 'tags,authors' });
+      if (!currentPost) {
+        throw new Error('Post not found');
+      }
+      updateData.updated_at = currentPost.updated_at;
+
       const updatedPost = await api.posts.edit(updateData, {
         source: 'html',
         include: 'tags,authors'
@@ -1087,6 +1095,14 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
     }
 
     try {
+      // Ghost requires updated_at for optimistic concurrency control
+      // Fetch current post to get its updated_at timestamp
+      const currentPost = await api.posts.read({ id: ghostPostId });
+      if (!currentPost) {
+        throw new Error('Post not found');
+      }
+      updateData.updated_at = currentPost.updated_at;
+
       const updatedPost = await api.posts.edit(updateData, {
         include: 'tags,authors'
       });
