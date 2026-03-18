@@ -24,6 +24,7 @@ import { MoltbookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-sett
 import { SkoolDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/skool.dto';
 import { WhopDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/whop.dto';
 import { MeweDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/mewe.dto';
+import { GhostDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/ghost.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -58,6 +59,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'moltbook', MoltbookDto>
   | ProviderExtension<'vk', None>
   | ProviderExtension<'skool', SkoolDto>
+  | ProviderExtension<'ghost', GhostDto>
   | ProviderExtension<'mewe', MeweDto>
   | ProviderExtension<'whop', WhopDto>;
 
@@ -96,6 +98,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: setEmpty, name: 'vk' },
     { value: MoltbookDto, name: 'moltbook' },
     { value: SkoolDto, name: 'skool' },
+    { value: GhostDto, name: 'ghost' },
     { value: WhopDto, name: 'whop' },
     { value: MeweDto, name: 'mewe' },
   ].filter((f) => f.value);

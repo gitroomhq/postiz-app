@@ -112,6 +112,7 @@ export type PostDetails<T = any> = {
   settings: T;
   media?: MediaContent[];
   poll?: PollDetails;
+  publishDate?: Date;  // Scheduled publish date from Postiz (used for native scheduling)
 };
 
 export type PollDetails = {
