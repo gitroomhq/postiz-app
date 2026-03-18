@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true'
+    process.env.DISABLE_REGISTRATION === 'true'
   ) {
     return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }
