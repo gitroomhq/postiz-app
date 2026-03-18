@@ -1,0 +1,48 @@
+services:
+  postiz:
+    image: postiz-ghost:latest
+    container_name: postiz
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "4007:5000"
+    depends_on:
+      - postiz-postgres
+      - postiz-redis
+    networks:
+      - postiz-network
+    volumes:
+      - postiz-uploads:/uploads
+
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postiz-local-pwd
+      POSTGRES_USER: postiz-local
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - postiz-network
+
+  postiz-redis:
+    image: redis:7-alpine
+    container_name: postiz-redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - postiz-network
+
+networks:
+  postiz-network:
+    driver: bridge
+
+volumes:
+  postgres-volume:
+  postiz-uploads:
