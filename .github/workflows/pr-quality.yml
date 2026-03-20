@@ -17,14 +17,22 @@ jobs:
         with:
           # Overall
           max-failures: 3
+
+          # Other
           require-maintainer-can-modify: true
+          max-negative-reactions: 3
+          require-conventional-title: true
 
           # Description
           max-emoji-count: 2
           max-code-references: 3
+          blocked-terms: "Generated with Claude Code,Generated with Codex"
 
           # PR Template
           require-pr-template: true
+          strict-pr-template-sections: "What kind of change does this PR introduce?,Why was this change needed?,Checklist:"
+          optional-pr-template-sections: "Other information:"
+          max-additional-pr-template-sections: 2
 
           # User
           detect-spam-usernames: true
@@ -35,6 +43,7 @@ jobs:
           # Exemptions
           exempt-author-association: "OWNER,MEMBER,COLLABORATOR"
           exempt-users: "nevo-david,egelhaus"
+          exempt-bots: true
 
           # Actions
           exempt-label: "exempt"
