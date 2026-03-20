@@ -40,4 +40,4 @@ jobs:
           exempt-label: "exempt"
           close-pr: true
           failure-add-pr-labels: "spam"
-          failure-pr-message: "This PR has been marked as Spam, please re-open if this is a mistake.
+          failure-pr-message: "This PR has been marked as Spam, please re-open if this is a mistake."
