@@ -15,4 +15,28 @@ jobs:
     steps:
       - uses: peakoss/anti-slop@v0
         with:
-          max-failures: 4
+          # Overall
+          max-failures: 2
+          require-maintainer-can-modify: true
+
+          # Description
+          max-emoji-count: 2
+          max-code-references: 3
+
+          # PR Template
+          require-pr-template: true
+
+          # User
+          detect-spam-usernames: true
+          min-account-age: 30
+          max-daily-forks: 5
+          min-profile-completeness: 4
+
+          # Exemptions
+          exempt-author-association: "OWNER,MEMBER,COLLABORATOR"
+          exempt-users: "nevo-david,egelhaus"
+
+          # Actions
+          exempt-label: "exempt"
+          close-pr: true
+          failure-add-pr-labels: "spam"
