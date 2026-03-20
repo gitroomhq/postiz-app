@@ -45,7 +45,11 @@ export const GeneralPreviewComponent: FC<{
       }) +
       `</mark>`;
 
-    return { text: finalValue, images: p.image };
+    const finalValueWithHashtags = p.hashtags?.length
+      ? finalValue + '<p>' + p.hashtags.join(' ') + '</p>'
+      : finalValue;
+
+    return { text: finalValueWithHashtags, images: p.image };
   });
 
   return (

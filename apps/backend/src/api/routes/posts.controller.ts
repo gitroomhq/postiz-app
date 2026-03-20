@@ -207,6 +207,14 @@ export class PostsController {
     return this._postsService.changeDate(org.id, id, date, action);
   }
 
+  @Post('/generate-hashtags')
+  async generateHashtags(
+    @GetOrgFromRequest() org: Organization,
+    @Body('content') content: string
+  ) {
+    return this._postsService.generateHashtags(content);
+  }
+
   @Post('/separate-posts')
   async separatePosts(
     @GetOrgFromRequest() org: Organization,

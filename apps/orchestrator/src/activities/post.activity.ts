@@ -172,23 +172,31 @@ export class PostActivity {
       integration.internalId,
       integration.token,
       await Promise.all(
-        (newPosts || []).map(async (p) => ({
-          id: p.id,
-          message: stripHtmlValidation(
+        (newPosts || []).map(async (p) => {
+          const baseMessage = stripHtmlValidation(
             getIntegration.editor,
             p.content,
             true,
             false,
             !/<\/?[a-z][\s\S]*>/i.test(p.content),
             getIntegration.mentionFormat
-          ),
-          settings: JSON.parse(p.settings || '{}'),
-          media: await this._postService.updateMedia(
-            p.id,
-            JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
-          ),
-        }))
+          );
+          const parsedHashtags: string[] = p.hashtags ? JSON.parse(p.hashtags) : [];
+          const hashtagSuffix = parsedHashtags.length
+            ? '\n' + parsedHashtags.join(' ')
+            : '';
+
+          return {
+            id: p.id,
+            message: baseMessage + hashtagSuffix,
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this._postService.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration?.convertToJPEG || false
+            ),
+          };
+        })
       ),
       integration
     );
