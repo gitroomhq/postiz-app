@@ -50,6 +50,14 @@ export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
 
+  /**
+   * Whether this provider supports native scheduling.
+   * When true, Temporal workflow will post immediately and let the provider
+   * handle scheduling (e.g., Ghost CMS 'scheduled' status).
+   * When false, Temporal will wait until publishDate before calling the provider.
+   */
+  supportsNativeScheduling = false;
+
   public handleErrors(
     body: string
   ):

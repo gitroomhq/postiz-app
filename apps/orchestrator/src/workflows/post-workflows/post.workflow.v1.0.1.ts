@@ -35,6 +35,7 @@ const {
   updatePost,
   sendWebhooks,
   isCommentable,
+  supportsNativeScheduling,
 } = proxyActivities<PostActivity>({
   startToCloseTimeout: '10 minute',
   retry: {
@@ -86,8 +87,13 @@ export async function postWorkflowV101({
     return;
   }
 
+  // Check if provider supports native scheduling (e.g., Ghost)
+  // If so, post immediately and let the provider handle scheduling
+  const useNativeScheduling = !postNow && post.integration && await supportsNativeScheduling(post.integration);
+
   // if it's a repeatable post, we should ignore this.
-  if (!postNow) {
+  // For providers that support native scheduling, skip the wait and post immediately
+  if (!postNow && !useNativeScheduling) {
     await sleep(
       dayjs(post.publishDate).isBefore(dayjs())
         ? 0

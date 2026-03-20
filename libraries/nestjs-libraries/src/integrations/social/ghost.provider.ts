@@ -35,6 +35,9 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5;
   dto = GhostDto;
 
+  // Ghost supports native scheduling via 'scheduled' status and 'published_at' field
+  override supportsNativeScheduling = true;
+
   maxLength() {
     return 100000;
   }

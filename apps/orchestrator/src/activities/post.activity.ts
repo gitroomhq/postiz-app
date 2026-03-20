@@ -114,6 +114,15 @@ export class PostActivity {
   }
 
   @ActivityMethod()
+  async supportsNativeScheduling(integration: Integration) {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    return !!getIntegration.supportsNativeScheduling;
+  }
+
+  @ActivityMethod()
   async postComment(
     postId: string,
     lastPostId: string | undefined,

@@ -163,6 +163,12 @@ export interface SocialProvider
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
+  /**
+   * Whether this provider supports native scheduling.
+   * When true, Temporal workflow posts immediately and lets the provider
+   * handle scheduling (e.g., Ghost CMS 'scheduled' status).
+   */
+  supportsNativeScheduling?: boolean;
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
