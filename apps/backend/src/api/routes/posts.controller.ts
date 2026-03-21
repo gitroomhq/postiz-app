@@ -218,11 +218,6 @@ export class PostsController {
   ) {
     return (async () => {
       const res = await this._postsService.changeDate(org.id, id, date, action);
-      if (action === 'schedule') {
-          try {
-          Sentry.metrics.count('posts.scheduled', 1, { attributes: { scheduleType: action } } as any);
-        } catch (e) {}
-      }
 
       return res;
     })();
