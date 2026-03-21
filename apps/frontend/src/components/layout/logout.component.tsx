@@ -6,6 +6,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { clearSentryUserContext } from '@gitroom/react/sentry/sentry.user.context';
+export const LogoutComponent = () => {
 export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
   const fetch = useFetch();
   const { isGeneral, isSecured } = useVariables();
@@ -21,6 +23,9 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
         t('yes_logout', 'Yes logout')
       )
     ) {
+      // Clear Sentry user context on logout
+      clearSentryUserContext();
+      
       if (!isSecured) {
         setCookie('auth', '', -10);
       } else {
