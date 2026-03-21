@@ -138,13 +138,17 @@ export class OAuthService {
 
     const token = 'pos_' + makeId(40);
     const encryptedToken = AuthService.fixedEncryption(token);
-    const { organizationId } = await this._oauthRepository.exchangeCodeForToken(
+    const {
+      organizationId,
+      organization: { paymentId },
+    } = await this._oauthRepository.exchangeCodeForToken(
       auth.id,
       encryptedToken
     );
 
     return {
       id: organizationId,
+      cus: paymentId,
       access_token: token,
       token_type: 'bearer',
     };

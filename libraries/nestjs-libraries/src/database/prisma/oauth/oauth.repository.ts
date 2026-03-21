@@ -165,6 +165,14 @@ export class OAuthRepository {
   exchangeCodeForToken(id: string, encryptedToken: string) {
     return this._oauthAuth.model.oAuthAuthorization.update({
       where: { id },
+      select: {
+        organizationId: true,
+        organization: {
+          select: {
+            paymentId: true,
+          }
+        }
+      },
       data: {
         accessToken: encryptedToken,
         authorizationCode: null,
