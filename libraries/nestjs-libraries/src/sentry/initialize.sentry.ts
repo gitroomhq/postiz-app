@@ -31,6 +31,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           recordInputs: true,
           recordOutputs: true,
         }),
+        Sentry.langChainIntegration({
+          recordInputs: true,
+          recordOutputs: true,
+        }),
       ],
       tracesSampleRate: 1.0,
       enableLogs: true,
