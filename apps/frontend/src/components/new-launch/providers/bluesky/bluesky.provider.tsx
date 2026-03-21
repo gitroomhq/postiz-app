@@ -18,14 +18,14 @@ export default withProvider({
   dto: undefined,
   checkValidity: async (posts) => {
     if (
-      posts.some(
-        (p) => p.some((a) => a.path.indexOf('mp4') > -1) && p.length > 1
+      posts?.some(
+        (p) => p?.some((a) => (a?.path?.indexOf?.('mp4') ?? -1) > -1) && (p?.length ?? 0) > 1
       )
     ) {
       return 'You can only upload one video per post.';
     }
 
-    if (posts.some((p) => p.length > 4)) {
+    if (posts?.some((p) => (p?.length ?? 0) > 4)) {
       return 'There can be maximum 4 pictures in a post.';
     }
     return true;

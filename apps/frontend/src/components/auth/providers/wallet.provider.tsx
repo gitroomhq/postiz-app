@@ -174,7 +174,7 @@ const InnerWallet = () => {
     }
   }, [buttonState]);
   return (
-    <div onClick={() => walletModal.setVisible(true)}>
+    <div onClick={() => walletModal.setVisible(true)} className="flex-1">
       <WalletUiProvider />
     </div>
   );

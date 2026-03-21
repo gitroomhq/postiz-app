@@ -358,4 +358,79 @@ export class PinterestProvider
       ]
     );
   }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+    // Use a very long date range (2 years) to capture lifetime metrics for older posts
+    const since = dayjs().subtract(2, 'year').format('YYYY-MM-DD');
+
+    try {
+      // Fetch pin analytics from Pinterest API
+      const response = await this.fetch(
+        `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data || !data.all) {
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+      const metrics = data.all;
+
+      if (metrics.lifetime_metrics) {
+        const lifetimeMetrics = metrics.lifetime_metrics;
+
+        if (lifetimeMetrics.IMPRESSION !== undefined) {
+          result.push({
+            label: 'Impressions',
+            percentageChange: 0,
+            data: [{ total: String(lifetimeMetrics.IMPRESSION), date: today }],
+          });
+        }
+
+        if (lifetimeMetrics.PIN_CLICK !== undefined) {
+          result.push({
+            label: 'Pin Clicks',
+            percentageChange: 0,
+            data: [{ total: String(lifetimeMetrics.PIN_CLICK), date: today }],
+          });
+        }
+
+        if (lifetimeMetrics.OUTBOUND_CLICK !== undefined) {
+          result.push({
+            label: 'Outbound Clicks',
+            percentageChange: 0,
+            data: [{ total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today }],
+          });
+        }
+
+        if (lifetimeMetrics.SAVE !== undefined) {
+          result.push({
+            label: 'Saves',
+            percentageChange: 0,
+            data: [{ total: String(lifetimeMetrics.SAVE), date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Pinterest post analytics:', err);
+      return [];
+    }
+  }
 }

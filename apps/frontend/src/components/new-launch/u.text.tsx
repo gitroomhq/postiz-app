@@ -81,36 +81,25 @@ export const UText: FC<{
   };
   return (
     <div
+      data-tooltip-id="tooltip"
+      data-tooltip-content="Underline"
       onClick={mark}
-      className="select-none cursor-pointer w-[40px] p-[5px] text-center"
+      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
     >
       <svg
-        width="25"
-        height="24"
-        viewBox="0 0 25 24"
-        fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
       >
-        <g clipPath="url(#clip0_31_12620)">
-          <path
-            d="M10.4119 6.47V12.77C10.4119 13.4 10.5669 13.885 10.8769 14.225C11.1869 14.565 11.6419 14.735 12.2419 14.735C12.8419 14.735 13.3019 14.565 13.6219 14.225C13.9419 13.885 14.1019 13.4 14.1019 12.77V6.47H16.6669V12.755C16.6669 13.695 16.4669 14.49 16.0669 15.14C15.6669 15.79 15.1269 16.28 14.4469 16.61C13.7769 16.94 13.0269 17.105 12.1969 17.105C11.3669 17.105 10.6219 16.945 9.96191 16.625C9.31191 16.295 8.79691 15.805 8.41691 15.155C8.03691 14.495 7.84691 13.695 7.84691 12.755V6.47H10.4119Z"
-            fill="currentColor"
-          />
-          <path
-            d="M6.96191 18.5H17.5369V19.25H6.96191V18.5Z"
-            fill="currentColor"
-          />
-        </g>
-        <defs>
-          <clipPath id="clip0_31_12620">
-            <rect
-              width="24"
-              height="24"
-              fill="white"
-              transform="translate(0.25)"
-            />
-          </clipPath>
-        </defs>
+        <path
+          d="M11.9993 2.66699V7.33366C11.9993 9.5428 10.2085 11.3337 7.99935 11.3337C5.79021 11.3337 3.99935 9.5428 3.99935 7.33366V2.66699M2.66602 14.0003H13.3327"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );

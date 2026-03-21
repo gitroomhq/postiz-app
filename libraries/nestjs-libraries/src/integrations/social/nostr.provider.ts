@@ -7,29 +7,33 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent } from 'nostr-tools';
+import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { Integration } from '@prisma/client';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
 
 const list = [
-  'wss://relay.primal.net',
+  'wss://nos.lol',
   'wss://relay.damus.io',
   'wss://relay.snort.social',
-  'wss://nostr.wine',
-  'wss://nos.lol',
-  'wss://relay.primal.net',
+  'wss://temp.iris.to',
+  'wss://vault.iris.to',
 ];
 
+const pool = new SimplePool();
+
 export class NostrProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 5; // Nostr relays typically have generous limits
+  override maxConcurrentJob = 5;
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
+  toolTip = 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to'
 
   maxLength() {
     return 100000;
@@ -61,36 +65,32 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(17);
     return {
-      url: '',
+      url: state,
       codeVerifier: makeId(10),
       state,
     };
   }
 
   private async findRelayInformation(pubkey: string) {
-    for (const relay of list) {
-      const relayInstance = await Relay.connect(relay);
-      const value = await new Promise<any>((resolve) => {
-        console.log('connecting');
-        relayInstance.subscribe([{ kinds: [0], authors: [pubkey] }], {
-          eoseTimeout: 6000,
-          onevent: (event) => {
-            resolve(event);
-          },
-          oneose: () => {
-            resolve({});
-          },
-          onclose: () => {
-            resolve({});
-          },
-        });
-      });
+    // This queries ALL relays in parallel and resolves with
+    // the first matching event from ANY relay.
+    const evt = await pool.get(list, {
+      kinds: [0],
+      authors: [pubkey],
+      limit: 1,
+    });
 
-      relayInstance.close();
-      const content = JSON.parse(value?.content || '{}');
-      if (content.name || content.displayName || content.display_name) {
-        return content;
-      }
+    if (!evt) return {};
+
+    let content: any = {};
+    try {
+      content = JSON.parse(evt.content || '{}');
+    } catch {
+      return {};
+    }
+
+    if (content.name || content.displayName || content.display_name) {
+      return content;
     }
 
     return {};
@@ -146,8 +146,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       const user = await this.findRelayInformation(pubkey);
 
       return {
-        id: String(user.pubkey),
-        name: user.display_name || user.displayName || 'No Name',
+        id: pubkey,
+        name: user.display_name || user.displayName || user.name || 'No Name',
         accessToken: AuthService.signJWT({ password: body.password }),
         refreshToken: '',
         expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
@@ -160,43 +160,77 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  private buildContent(post: PostDetails): string {
+    const mediaContent = post.media?.map((m) => m.path).join('\n\n') || '';
+    return mediaContent
+      ? `${post.message}\n\n${mediaContent}`
+      : post.message;
+  }
+
   async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const [firstPost] = postDetails;
 
-    let lastId = '';
-    const ids: PostResponse[] = [];
-    for (const post of postDetails) {
-      const textEvent = finalizeEvent(
-        {
-          kind: 1, // Text note
-          content:
-            post.message + '\n\n' + post.media?.map((m) => m.path).join('\n\n'),
-          tags: [
-            ...(lastId
-              ? [
-                  ['e', lastId, '', 'reply'],
-                  ['p', id],
-                ]
-              : []),
-          ], // Include delegation token in the event
-          created_at: Math.floor(Date.now() / 1000),
-        },
-        password
-      );
+    const textEvent = finalizeEvent(
+      {
+        kind: 1, // Text note
+        content: this.buildContent(firstPost),
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
 
-      lastId = await this.publish(id, textEvent);
-      ids.push({
-        id: post.id,
-        postId: String(lastId),
-        releaseURL: `https://primal.net/e/${lastId}`,
+    const eventId = await this.publish(id, textEvent);
+
+    return [
+      {
+        id: firstPost.id,
+        postId: String(eventId),
+        releaseURL: `https://primal.net/e/${eventId}`,
         status: 'completed',
-      });
-    }
+      },
+    ];
+  }
 
-    return ids;
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const { password } = AuthService.verifyJWT(accessToken) as any;
+    const [commentPost] = postDetails;
+    const replyToId = lastCommentId || postId;
+
+    const textEvent = finalizeEvent(
+      {
+        kind: 1, // Text note
+        content: this.buildContent(commentPost),
+        tags: [
+          ['e', replyToId, '', 'reply'],
+          ['p', id],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    const eventId = await this.publish(id, textEvent);
+
+    return [
+      {
+        id: commentPost.id,
+        postId: String(eventId),
+        releaseURL: `https://primal.net/e/${eventId}`,
+        status: 'completed',
+      },
+    ];
   }
 }

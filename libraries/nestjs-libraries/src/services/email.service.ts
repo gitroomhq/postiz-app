@@ -3,12 +3,13 @@ import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface
 import { ResendProvider } from '@gitroom/nestjs-libraries/emails/resend.provider';
 import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
 import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer.provider';
-import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
+import { TemporalService } from 'nestjs-temporal-core';
+import { timer } from '@gitroom/helpers/utils/timer';
 
 @Injectable()
 export class EmailService {
   emailService: EmailInterface;
-  constructor() {
+  constructor(private _temporalService: TemporalService) {
     this.emailService = this.selectProvider(process.env.EMAIL_PROVIDER!);
     console.log('Email service provider:', this.emailService.name);
     for (const key of this.emailService.validateEnvKeys) {
@@ -33,7 +34,31 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to: string, subject: string, html: string, replyTo?: string) {
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+    addTo: 'top' | 'bottom',
+    replyTo?: string
+  ) {
+    return this._temporalService.client
+      .getRawClient()
+      ?.workflow.signalWithStart('sendEmailWorkflow', {
+        taskQueue: 'main',
+        workflowId: 'send_email',
+        signal: 'sendEmail',
+        args: [{ queue: [] }],
+        signalArgs: [{ to, subject, html, replyTo, addTo }],
+        workflowIdConflictPolicy: 'USE_EXISTING',
+      });
+  }
+
+  async sendEmailSync(
+    to: string,
+    subject: string,
+    html: string,
+    replyTo?: string
+  ) {
     if (to.indexOf('@') === -1) {
       return;
     }
@@ -90,24 +115,36 @@ export class EmailService {
                         color: #1f2937;
                         margin: 0;
                     ">${process.env.EMAIL_FROM_NAME}</h2>
+                    <div style="font-size: 12px">
+                      You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/settings">account settings.</a>
+                     </div>
                 </div>
             </div>
         </div>
     </div>
     `;
 
-    try {
-      const sends = await this.emailService.sendEmail(
-        to,
-        subject,
-        modifiedHtml,
-        process.env.EMAIL_FROM_NAME,
-        process.env.EMAIL_FROM_ADDRESS,
-        replyTo
-      );
-      console.log(sends);
-    } catch (err) {
-      console.log(err);
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const sends = await this.emailService.sendEmail(
+          to,
+          subject,
+          modifiedHtml,
+          process.env.EMAIL_FROM_NAME,
+          process.env.EMAIL_FROM_ADDRESS,
+          replyTo
+        );
+        console.log(sends);
+        return;
+      } catch (err) {
+        lastErr = err;
+        console.log(`Email attempt ${attempt + 1}/3 failed:`, err);
+        if (attempt < 2) {
+          await timer(700);
+        }
+      }
     }
+    console.log(`Email to ${to} failed after 3 attempts:`, lastErr);
   }
 }

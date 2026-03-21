@@ -13,6 +13,7 @@ import slugify from 'slugify';
 // import FormData from 'form-data';
 import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { string } from 'yup';
 
 export class WordpressProvider
   extends SocialAbstract
@@ -32,7 +33,7 @@ export class WordpressProvider
   async generateAuthUrl() {
     const state = makeId(6);
     return {
-      url: '',
+      url: state,
       codeVerifier: makeId(10),
       state,
     };
@@ -48,6 +49,19 @@ export class WordpressProvider
       picture: '',
       username: '',
     };
+  }
+  override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.indexOf('rest_cannot_create') > -1) {
+      return {
+        type: 'bad-body',
+        value: 'The connect user has insufficient permissions to create posts',
+      };
+    }
+    return undefined;
   }
 
   async customFields() {
@@ -87,13 +101,17 @@ export class WordpressProvider
       const auth = Buffer.from(`${body.username}:${body.password}`).toString(
         'base64'
       );
-      const { id, name, avatar_urls } = await (
+      const { id, name, avatar_urls, code } = await (
         await fetch(`${body.domain}/wp-json/wp/v2/users/me`, {
           headers: {
             Authorization: `Basic ${auth}`,
           },
         })
       ).json();
+
+      if (code) {
+        throw "Invalid credentials";
+      }
 
       const biggestImage = Object.entries(avatar_urls || {}).reduce(
         (all, current) => {

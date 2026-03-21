@@ -42,6 +42,14 @@ export async function middleware(request: NextRequest) {
   ) {
     return topResponse;
   }
+
+  if (
+    nextUrl.pathname.startsWith('/integrations/social/') &&
+    nextUrl.href.indexOf('state=login') === -1
+  ) {
+    return topResponse;
+  }
+
   // If the URL is logout, delete the cookie and redirect to login
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
     const response = NextResponse.redirect(
@@ -62,9 +70,16 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  if (
+    nextUrl.pathname.startsWith('/auth/register') &&
+    process.env.DISABLE_REGISTRATION === 'true'
+  ) {
+    return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
+  }
+
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
-  if (nextUrl.href.indexOf('/auth') === -1 && !authCookie) {
+  if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
     const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex
@@ -82,10 +97,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // If the url is /auth and the cookie exists, redirect to /
-  if (nextUrl.href.indexOf('/auth') > -1 && authCookie) {
+  if (nextUrl.pathname.startsWith('/auth') && authCookie) {
     return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
-  if (nextUrl.href.indexOf('/auth') > -1 && !authCookie) {
+  if (nextUrl.pathname.startsWith('/auth') && !authCookie) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {

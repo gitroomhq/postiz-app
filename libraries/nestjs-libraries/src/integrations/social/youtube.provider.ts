@@ -50,10 +50,10 @@ const clientAndYoutube = () => {
 
 @Rules('YouTube must have on video attachment, it cannot be empty')
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 1; // YouTube has strict upload quotas
+  override maxConcurrentJob = 200; // YouTube has strict upload quotas
   identifier = 'youtube';
   name = 'YouTube';
-  isBetweenSteps = false;
+  isBetweenSteps = true;
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -114,6 +114,21 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.',
+      };
+    }
+
+    if (body.includes('Unauthorized')) {
+      return {
+        type: 'refresh-token',
+        value:
+          'Token expired or invalid, please reconnect your YouTube account.',
+      };
+    }
+
+    if (body.includes('UNAUTHENTICATED') || body.includes('invalid_grant')) {
+      return {
+        type: 'refresh-token',
+        value: 'Please re-authenticate your YouTube account',
       };
     }
 
@@ -186,6 +201,92 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       name: data.name!,
       picture: data?.picture || '',
       username: '',
+    };
+  }
+
+  async pages(accessToken: string) {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    try {
+      // Get all channels the user has access to
+      const response = await youtubeClient.channels.list({
+        part: ['snippet', 'contentDetails', 'statistics'],
+        mine: true,
+      });
+
+      const channels = response.data.items || [];
+
+      return channels.map((channel) => ({
+        id: channel.id!,
+        name: channel.snippet?.title || 'Unnamed Channel',
+        picture: {
+          data: {
+            url: channel.snippet?.thumbnails?.default?.url || '',
+          },
+        },
+        username: channel.snippet?.customUrl || '',
+        subscriberCount: channel.statistics?.subscriberCount || '0',
+      }));
+    } catch (error) {
+      console.error('Failed to fetch YouTube channels:', error);
+      return [];
+    }
+  }
+
+  async fetchPageInformation(accessToken: string, data: { id: string }) {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    try {
+      const response = await youtubeClient.channels.list({
+        part: ['snippet', 'contentDetails', 'statistics'],
+        id: [data.id],
+      });
+
+      const channel = response.data.items?.[0];
+
+      if (!channel) {
+        throw new Error('Channel not found');
+      }
+
+      return {
+        id: channel.id!,
+        name: channel.snippet?.title || 'Unnamed Channel',
+        access_token: accessToken,
+        picture: channel.snippet?.thumbnails?.default?.url || '',
+        username: channel.snippet?.customUrl || '',
+      };
+    } catch (error) {
+      console.error('Failed to fetch YouTube channel information:', error);
+      throw error;
+    }
+  }
+
+  async reConnect(
+    id: string,
+    requiredId: string,
+    accessToken: string
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
+    const pages = await this.pages(accessToken);
+    const findPage = pages.find((p) => p.id === requiredId);
+
+    if (!findPage) {
+      throw new Error('Channel not found');
+    }
+
+    const information = await this.fetchPageInformation(accessToken, {
+      id: requiredId,
+    });
+
+    return {
+      id: information.id,
+      name: information.name,
+      accessToken: information.access_token,
+      picture: information.picture,
+      username: information.username,
     };
   }
 
@@ -345,6 +446,73 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
       return acc;
     } catch (err) {
+      return [];
+    }
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      const { client, youtube } = clientAndYoutube();
+      client.setCredentials({ access_token: accessToken });
+      const youtubeClient = youtube(client);
+
+      // Fetch video statistics
+      const response = await youtubeClient.videos.list({
+        part: ['statistics', 'snippet'],
+        id: [postId],
+      });
+
+      const video = response.data.items?.[0];
+
+      if (!video || !video.statistics) {
+        return [];
+      }
+
+      const stats = video.statistics;
+      const result: AnalyticsData[] = [];
+
+      if (stats.viewCount !== undefined) {
+        result.push({
+          label: 'Views',
+          percentageChange: 0,
+          data: [{ total: String(stats.viewCount), date: today }],
+        });
+      }
+
+      if (stats.likeCount !== undefined) {
+        result.push({
+          label: 'Likes',
+          percentageChange: 0,
+          data: [{ total: String(stats.likeCount), date: today }],
+        });
+      }
+
+      if (stats.commentCount !== undefined) {
+        result.push({
+          label: 'Comments',
+          percentageChange: 0,
+          data: [{ total: String(stats.commentCount), date: today }],
+        });
+      }
+
+      if (stats.favoriteCount !== undefined) {
+        result.push({
+          label: 'Favorites',
+          percentageChange: 0,
+          data: [{ total: String(stats.favoriteCount), date: today }],
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching YouTube post analytics:', err);
       return [];
     }
   }

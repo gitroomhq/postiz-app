@@ -65,7 +65,7 @@ export default withProvider({
   dto: undefined,
   checkValidity: async (list) => {
     if (
-      list.some((item) => item.some((field) => field.path.indexOf('mp4') > -1))
+      list?.some((item) => item?.some((field) => (field?.path?.indexOf?.('mp4') ?? -1) > -1))
     ) {
       return 'Can only accept images';
     }

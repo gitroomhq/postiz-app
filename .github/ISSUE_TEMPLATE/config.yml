@@ -1,0 +1,14 @@
+# Disable the default option to open a blank issue
+blank_issues_enabled: true 
+
+# Define your custom links
+contact_links:
+  # The first link definition
+  - name: 🙏 Installation Issue
+    url: https://discord.postiz.com
+    about: If you have an installation / configuration issue.
+
+  # You can add more links if needed
+  - name: Security Issue
+    url: https://github.com/gitroomhq/postiz-app/security/advisories/new
+    about: Please submit security Issues our GitHub Security Advisories.

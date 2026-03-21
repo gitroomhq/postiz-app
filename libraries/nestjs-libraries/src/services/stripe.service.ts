@@ -5,17 +5,14 @@ import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/s
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
-import { capitalize, groupBy } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+import { groupBy } from 'lodash';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-04-10',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
 
 @Injectable()
 export class StripeService {
@@ -23,26 +20,10 @@ export class StripeService {
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
-    private _messagesService: MessagesService,
     private _trackService: TrackService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
-  }
-
-  async updateAccount(event: Stripe.AccountUpdatedEvent) {
-    if (!event.account) {
-      return;
-    }
-
-    const accountCharges =
-      event.data.object.payouts_enabled &&
-      event.data.object.charges_enabled &&
-      !event?.data?.object?.requirements?.disabled_reason;
-    await this._subscriptionService.updateConnectedStatus(
-      event.account!,
-      accountCharges
-    );
   }
 
   async checkValidCard(
@@ -119,17 +100,15 @@ export class StripeService {
   }
 
   async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const {
       uniqueId,
       billing,
       period,
-    }: {
+    } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
-    } = event.data.object.metadata;
+    };
 
     try {
       const check = await this.checkValidCard(event);
@@ -151,17 +130,15 @@ export class StripeService {
     );
   }
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const {
       uniqueId,
       billing,
       period,
-    }: {
+    } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
-    } = event.data.object.metadata;
+    };
 
     const check = await this.checkValidCard(event);
     if (!check) {
@@ -190,7 +167,9 @@ export class StripeService {
       return organization.paymentId;
     }
 
+    const users = await this._organizationService.getTeam(organization.id);
     const customer = await stripe.customers.create({
+      email: users.users[0].user.email,
       name: organization.name,
     });
     await this._subscriptionService.updateCustomerId(
@@ -214,8 +193,7 @@ export class StripeService {
 
     const productsList = groupBy(
       products.data.map((p) => ({
-        // @ts-ignore
-        name: p.product?.name,
+        name: (p.product as Stripe.Product)?.name,
         recurring: p?.recurring?.interval!,
         price: p?.tiers?.[0]?.unit_amount! / 100,
       })),
@@ -286,19 +264,21 @@ export class StripeService {
     };
 
     try {
-      const price = await stripe.invoices.retrieveUpcoming({
+      const price = await stripe.invoices.createPreview({
         customer,
         subscription: currentUserSubscription?.data?.[0]?.id,
-        subscription_proration_behavior: 'create_prorations',
-        subscription_billing_cycle_anchor: 'now',
-        subscription_items: [
-          {
-            id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
-            price: findPrice?.id!,
-            quantity: 1,
-          },
-        ],
-        subscription_proration_date: proration_date,
+        subscription_details: {
+          proration_behavior: 'create_prorations',
+          billing_cycle_anchor: 'now',
+          items: [
+            {
+              id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
+              price: findPrice?.id!,
+              quantity: 1,
+            },
+          ],
+          proration_date: proration_date,
+        },
       });
 
       return {
@@ -327,21 +307,49 @@ export class StripeService {
         await stripe.subscriptions.list({
           customer,
           status: 'all',
+          expand: ['data.latest_invoice'],
         })
       ).data.filter((f) => f.status !== 'canceled'),
     };
 
-    const { cancel_at } = await stripe.subscriptions.update(
-      currentUserSubscription.data[0].id,
-      {
-        cancel_at_period_end:
-          !currentUserSubscription.data[0].cancel_at_period_end,
-        metadata: {
-          service: 'gitroom',
-          id,
-        },
-      }
-    );
+    const sub = currentUserSubscription.data[0];
+
+    // If the user is toggling back (un-cancelling), just remove the cancel
+    if (sub.cancel_at_period_end) {
+      const { cancel_at } = await stripe.subscriptions.update(sub.id, {
+        cancel_at_period_end: false,
+        metadata: { service: 'gitroom', id },
+      });
+
+      return {
+        id,
+        cancel_at: cancel_at ? new Date(cancel_at * 1000) : undefined,
+      };
+    }
+
+    // Check if the latest invoice has a failed payment
+    const latestInvoice = sub.latest_invoice as Stripe.Invoice | null;
+    const hasFailedPayment =
+      sub.status === 'past_due' ||
+      latestInvoice?.status === 'open' ||
+      latestInvoice?.status === 'uncollectible';
+
+    if (hasFailedPayment) {
+      // Payment already failed — cancel immediately and delete subscription
+      await stripe.subscriptions.cancel(sub.id);
+      await this._subscriptionService.deleteSubscription(customer);
+
+      return {
+        id,
+        cancel_at: new Date(),
+      };
+    }
+
+    // Payment succeeded — cancel at end of billing period
+    const { cancel_at } = await stripe.subscriptions.update(sub.id, {
+      cancel_at_period_end: true,
+      metadata: { service: 'gitroom', id },
+    });
 
     return {
       id,
@@ -361,6 +369,131 @@ export class StripeService {
     });
   }
 
+  /**
+   * Find an active promotion code with autoapply: true metadata
+   * Only returns codes that are active and not expired
+   * Returns the promotion code string (not the ID) for frontend auto-apply
+   */
+  private async findAutoApplyPromotionCode(): Promise<string | null> {
+    try {
+      const promotionCodes = await stripe.promotionCodes.list({
+        active: true,
+        limit: 100,
+      });
+
+      const now = Math.floor(Date.now() / 1000);
+
+      for (const promoCode of promotionCodes.data) {
+        const coupon =
+          typeof promoCode.promotion.coupon === 'string'
+            ? null
+            : promoCode.promotion.coupon;
+
+        // Check if it has autoapply metadata set to true (check both promo and coupon metadata)
+        const autoApply = Object.assign(
+          {},
+          promoCode.metadata,
+          coupon?.metadata
+        )?.autoapply;
+        if (autoApply !== 'true') continue;
+
+        // Check if the promotion code has expired
+        if (promoCode.expires_at && promoCode.expires_at < now) continue;
+
+        // Check if the coupon has expired (redeem_by)
+        if (coupon?.redeem_by && coupon.redeem_by < now) continue;
+
+        // Check if max redemptions reached
+        if (
+          promoCode.max_redemptions &&
+          promoCode.times_redeemed >= promoCode.max_redemptions
+        )
+          continue;
+
+        // Found a valid auto-apply promotion code - return the code string for frontend
+        return promoCode.code;
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error finding auto-apply promotion code:', err);
+      return null;
+    }
+  }
+
+  private async createEmbeddedCheckout(
+    ud: string,
+    uniqueId: string,
+    customer: string,
+    body: BillingSubscribeDto,
+    price: string,
+    userId: string,
+    allowTrial: boolean
+  ) {
+    const user = await this._userService.getUserById(userId);
+
+    try {
+      await stripe.customers.update(customer, {
+        email: user.email,
+        ...(body.dub
+          ? {
+              metadata: {
+                dubCustomerExternalId: userId,
+                dubClickId: body.dub,
+              },
+            }
+          : {}),
+      });
+    } catch (err) {}
+
+    // Check for auto-apply promotion code (only for monthly plans)
+    let autoApplyPromoCode: string | null = null;
+    if (body.period === 'MONTHLY') {
+      autoApplyPromoCode = await this.findAutoApplyPromotionCode();
+    }
+
+    const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
+    const { client_secret } = await stripe.checkout.sessions.create({
+      ui_mode: 'custom',
+      customer,
+      return_url:
+        process.env['FRONTEND_URL'] +
+        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
+      mode: 'subscription',
+      subscription_data: {
+        ...(allowTrial ? { trial_period_days: 7 } : {}),
+        metadata: {
+          service: 'gitroom',
+          ...body,
+          userId,
+          uniqueId,
+          ud,
+        },
+      },
+      ...(body.datafast_session_id && body.datafast_visitor_id
+        ? {
+            metadata: {
+              datafast_visitor_id: body.datafast_visitor_id,
+              datafast_session_id: body.datafast_session_id,
+            },
+          }
+        : {}),
+      allow_promotion_codes: body.period === 'MONTHLY',
+      line_items: [
+        {
+          price,
+          quantity: 1,
+        },
+      ],
+    });
+
+    // Return auto-apply promo code for frontend to apply
+    return {
+      client_secret,
+      ...(autoApplyPromoCode ? { auto_apply_coupon: autoApplyPromoCode } : {}),
+    };
+  }
+
   private async createCheckoutSession(
     ud: string,
     uniqueId: string,
@@ -371,6 +504,16 @@ export class StripeService {
     allowTrial: boolean
   ) {
     const isUtm = body.utm ? `&utm_source=${body.utm}` : '';
+
+    if (body.dub) {
+      await stripe.customers.update(customer, {
+        metadata: {
+          dubCustomerExternalId: userId,
+          dubClickId: body.dub,
+        },
+      });
+    }
+
     const { url } = await stripe.checkout.sessions.create({
       customer,
       cancel_url: process.env['FRONTEND_URL'] + `/billing?cancel=true${isUtm}`,
@@ -388,13 +531,6 @@ export class StripeService {
           ud,
         },
       },
-      ...(body.tolt
-        ? {
-            metadata: {
-              tolt_referral: body.tolt,
-            },
-          }
-        : {}),
       allow_promotion_codes: body.period === 'MONTHLY',
       line_items: [
         {
@@ -407,62 +543,6 @@ export class StripeService {
     return { url };
   }
 
-  async createAccountProcess(userId: string, email: string, country: string) {
-    const account = await this._subscriptionService.getUserAccount(userId);
-
-    if (account?.account && account?.connectedAccount) {
-      return { url: await this.addBankAccount(account.account) };
-    }
-
-    if (account?.account && !account?.connectedAccount) {
-      await stripe.accounts.del(account.account);
-    }
-
-    const createAccount = await this.createAccount(userId, email, country);
-
-    return { url: await this.addBankAccount(createAccount) };
-  }
-
-  async createAccount(userId: string, email: string, country: string) {
-    const account = await stripe.accounts.create({
-      type: 'custom',
-      capabilities: {
-        transfers: {
-          requested: true,
-        },
-        card_payments: {
-          requested: true,
-        },
-      },
-      tos_acceptance: {
-        service_agreement: 'full',
-      },
-      metadata: {
-        service: 'gitroom',
-      },
-      country,
-      email,
-    });
-
-    await this._subscriptionService.updateAccount(userId, account.id);
-
-    return account.id;
-  }
-
-  async addBankAccount(userId: string) {
-    const accountLink = await stripe.accountLinks.create({
-      account: userId,
-      refresh_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
-      return_url: process.env['FRONTEND_URL'] + '/marketplace/seller',
-      type: 'account_onboarding',
-      collection_options: {
-        fields: 'eventually_due',
-      },
-    });
-
-    return accountLink.url;
-  }
-
   async finishTrial(paymentId: string) {
     const list = (
       await stripe.subscriptions.list({
@@ -473,6 +553,72 @@ export class StripeService {
     return stripe.subscriptions.update(list[0].id, {
       trial_end: 'now',
     });
+  }
+
+  async checkDiscount(customer: string) {
+    if (!process.env.STRIPE_DISCOUNT_ID) {
+      return false;
+    }
+
+    const list = await stripe.charges.list({
+      customer,
+      limit: 1,
+    });
+
+    if (!list.data.filter((f) => f.amount > 1000).length) {
+      return false;
+    }
+
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
+    };
+
+    if (!currentUserSubscription) {
+      return false;
+    }
+
+    if (
+      currentUserSubscription.data?.items.data[0]?.price.recurring?.interval ===
+        'year' ||
+      currentUserSubscription.data?.discounts.length
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async applyDiscount(customer: string) {
+    const check = this.checkDiscount(customer);
+    if (!check) {
+      return false;
+    }
+
+    const currentUserSubscription = {
+      data: (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
+    };
+
+    await stripe.subscriptions.update(currentUserSubscription.data.id, {
+      discounts: [
+        {
+          coupon: process.env.STRIPE_DISCOUNT_ID!,
+        },
+      ],
+    });
+
+    return true;
   }
 
   async checkSubscription(organizationId: string, subscriptionId: string) {
@@ -503,61 +649,70 @@ export class StripeService {
     return 0;
   }
 
-  async payAccountStepOne(
+  async embedded(
+    uniqueId: string,
+    organizationId: string,
     userId: string,
-    organization: Organization,
-    seller: User,
-    orderId: string,
-    ordersItems: Array<{
-      integrationType: string;
-      quantity: number;
-      price: number;
-    }>,
-    groupId: string
+    body: BillingSubscribeDto,
+    allowTrial: boolean
   ) {
-    const customer = (await this.createOrGetCustomer(organization))!;
-
-    const price = ordersItems.reduce((all, current) => {
-      return all + current.price * current.quantity;
-    }, 0);
-
-    const { url } = await stripe.checkout.sessions.create({
-      customer,
-      mode: 'payment',
-      currency: 'usd',
-      success_url: process.env['FRONTEND_URL'] + `/messages/${groupId}`,
-      metadata: {
-        orderId,
-        service: 'gitroom',
-        type: 'marketplace',
-      },
-      line_items: [
-        ...ordersItems,
-        {
-          integrationType: `Gitroom Fee (${+process.env.FEE_AMOUNT! * 100}%)`,
-          quantity: 1,
-          price: price * +process.env.FEE_AMOUNT!,
-        },
-      ].map((item) => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            // @ts-ignore
-            name:
-              (!item.price ? 'Platform: ' : '') +
-              capitalize(item.integrationType),
-          },
-          // @ts-ignore
-          unit_amount: item.price * 100,
-        },
-        quantity: item.quantity,
-      })),
-      payment_intent_data: {
-        transfer_group: orderId,
-      },
+    const id = makeId(10);
+    const priceData = pricing[body.billing];
+    const org = await this._organizationService.getOrgById(organizationId);
+    const customer = await this.createOrGetCustomer(org!);
+    const allProducts = await stripe.products.list({
+      active: true,
+      expand: ['data.prices'],
     });
 
-    return { url };
+    const findProduct =
+      allProducts.data.find(
+        (product) => product.name.toUpperCase() === body.billing.toUpperCase()
+      ) ||
+      (await stripe.products.create({
+        active: true,
+        name: body.billing,
+      }));
+
+    const pricesList = await stripe.prices.list({
+      active: true,
+      product: findProduct!.id,
+    });
+
+    const findPrice =
+      pricesList.data.find(
+        (p) =>
+          p?.recurring?.interval?.toLowerCase() ===
+            (body.period === 'MONTHLY' ? 'month' : 'year') &&
+          p?.unit_amount ===
+            (body.period === 'MONTHLY'
+              ? priceData.month_price
+              : priceData.year_price) *
+              100
+      ) ||
+      (await stripe.prices.create({
+        active: true,
+        product: findProduct!.id,
+        currency: 'usd',
+        nickname: body.billing + ' ' + body.period,
+        unit_amount:
+          (body.period === 'MONTHLY'
+            ? priceData.month_price
+            : priceData.year_price) * 100,
+        recurring: {
+          interval: body.period === 'MONTHLY' ? 'month' : 'year',
+        },
+      }));
+
+    return this.createEmbeddedCheckout(
+      uniqueId,
+      id,
+      customer,
+      body,
+      findPrice!.id,
+      userId,
+      allowTrial
+    );
   }
 
   async subscribe(
@@ -670,8 +825,13 @@ export class StripeService {
 
   async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
     // get subscription from payment
+    const subscriptionId =
+      event.data.object.parent?.subscription_details?.subscription;
+    if (!subscriptionId) {
+      return { ok: true };
+    }
     const subscription = await stripe.subscriptions.retrieve(
-      event.data.object.subscription as string
+      typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
     );
 
     const { userId, ud } = subscription.metadata;
@@ -685,19 +845,75 @@ export class StripeService {
     return { ok: true };
   }
 
-  async payout(
-    orderId: string,
-    charge: string,
-    account: string,
-    price: number
-  ) {
-    return stripe.transfers.create({
-      amount: price * 100,
-      currency: 'usd',
-      destination: account,
-      source_transaction: charge,
-      transfer_group: orderId,
+  async getCharges(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return [];
+    }
+
+    const charges = await stripe.charges.list({
+      customer: org.paymentId,
+      limit: 100,
     });
+
+    return charges.data
+      .filter((f) => f.status === 'succeeded')
+      .map((charge) => ({
+        id: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        created: charge.created,
+        status: charge.status,
+        refunded: charge.refunded,
+        amount_refunded: charge.amount_refunded,
+        description: charge.description,
+      }));
+  }
+
+  async refundCharges(organizationId: string, chargeIds: string[]) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      throw new Error('No payment customer found for this organization');
+    }
+
+    const refunded: string[] = [];
+    const failed: string[] = [];
+
+    for (const chargeId of chargeIds) {
+      try {
+        await stripe.refunds.create({ charge: chargeId });
+        refunded.push(chargeId);
+      } catch (err) {
+        failed.push(chargeId);
+      }
+    }
+
+    return { refunded, failed };
+  }
+
+  async cancelSubscription(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      throw new Error('No payment customer found for this organization');
+    }
+
+    const customer = org.paymentId;
+
+    const subscriptions = (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+      })
+    ).data.filter((f) => f.status !== 'canceled');
+
+    if (!subscriptions.length) {
+      throw new Error('No active subscription found');
+    }
+
+    await stripe.subscriptions.cancel(subscriptions[0].id);
+    await this._subscriptionService.deleteSubscription(customer);
+
+    return { cancelled: true };
   }
 
   async lifetimeDeal(organizationId: string, code: string) {

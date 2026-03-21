@@ -145,6 +145,16 @@ export const stripHtmlValidation = (
 
   const value = serialize(parseFragment(val));
 
+  if (type === 'none') {
+    return striptags(value)
+      .replace(/&gt;/gi, '>')
+      .replace(/&lt;/gi, '<')
+      .replace(/&amp;/gi, '&')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+
   if (type === 'html') {
     return striptags(convertMention(value, convertMentionFunction), [
       'ul',
@@ -245,7 +255,11 @@ export const stripHtmlValidation = (
 
     return striptags(processedHtml)
       .replace(/&gt;/gi, '>')
-      .replace(/&lt;/gi, '<');
+      .replace(/&lt;/gi, '<')
+      .replace(/&𝗹𝘁;/gi, '<')
+      .replace(/&𝗴𝘁;/gi, '>')
+      .replace(/&g̲t̲;/gi, '>')
+      .replace(/&l̲t̲;/gi, '<');
   }
 
   // Strip all other tags

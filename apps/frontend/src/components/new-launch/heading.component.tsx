@@ -13,20 +13,27 @@ export const HeadingComponent: FC<{
   };
 
   return (
-    <div className="select-none cursor-pointer w-[40px] p-[5px] text-center relative group">
+    <div className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center group relative">
       <svg
-        width="20"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
       >
         <path
-          d="M22 0H2C1.46957 0 0.960859 0.210714 0.585786 0.585786C0.210714 0.960859 0 1.46957 0 2V22C0 22.5304 0.210714 23.0391 0.585786 23.4142C0.960859 23.7893 1.46957 24 2 24H22C22.5304 24 23.0391 23.7893 23.4142 23.4142C23.7893 23.0391 24 22.5304 24 22V2C24 1.46957 23.7893 0.960859 23.4142 0.585786C23.0391 0.210714 22.5304 0 22 0ZM19 18C19 18.2652 18.8946 18.5196 18.7071 18.7071C18.5196 18.8946 18.2652 19 18 19C17.7348 19 17.4804 18.8946 17.2929 18.7071C17.1054 18.5196 17 18.2652 17 18V13H7V18C7 18.2652 6.89464 18.5196 6.70711 18.7071C6.51957 18.8946 6.26522 19 6 19C5.73478 19 5.48043 18.8946 5.29289 18.7071C5.10536 18.5196 5 18.2652 5 18V6C5 5.73478 5.10536 5.48043 5.29289 5.29289C5.48043 5.10536 5.73478 5 6 5C6.26522 5 6.51957 5.10536 6.70711 5.29289C6.89464 5.48043 7 5.73478 7 6V11H17V6C17 5.73478 17.1054 5.48043 17.2929 5.29289C17.4804 5.10536 17.7348 5 18 5C18.2652 5 18.5196 5.10536 18.7071 5.29289C18.8946 5.48043 19 5.73478 19 6V18Z"
-          fill="currentColor"
+          d="M3.9974 2.66602V13.3327M11.9974 2.66602V13.3327M5.33073 2.66602H2.66406M11.9974 7.99935L3.9974 7.99935M5.33073 13.3327H2.66406M13.3307 13.3327H10.6641M13.3307 2.66602H10.6641"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
-      <div className="flex p-[10px] gap-[5px] -left-[50%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-customColor55 border border-customColor3 z-[100] absolute transition-all">
+      <div
+        data-tooltip-id="tooltip"
+        data-tooltip-content="Title"
+        className="flex p-[10px] gap-[5px] -left-[50%] rounded-[6px] bottom-[100%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-newColColor border border-newColColor z-[100] absolute transition-all"
+      >
         <div onClick={setHeading(1)}>
           <svg
             width="20"

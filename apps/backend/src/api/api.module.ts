@@ -16,13 +16,10 @@ import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
-import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
-import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
-import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -34,6 +31,17 @@ import { AutopostController } from '@gitroom/backend/api/routes/autopost.control
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
+import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
+import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
+import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
+import { ApprovedAppsController } from '@gitroom/backend/api/routes/approved-apps.controller';
+import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api/routes/oauth.controller';
+import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
+import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.provider';
+import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
+import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
+import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
+import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 
 const authenticatedController = [
   UsersController,
@@ -44,15 +52,15 @@ const authenticatedController = [
   MediaController,
   BillingController,
   NotificationsController,
-  MarketplaceController,
-  MessagesController,
   CopilotController,
-  AgenciesController,
   WebhookController,
   SignatureController,
   AutopostController,
   SetsController,
   ThirdPartyController,
+  OAuthAppController,
+  ApprovedAppsController,
+  OAuthAuthorizedController,
 ];
 @Module({
   imports: [UploadModule],
@@ -62,6 +70,9 @@ const authenticatedController = [
     AuthController,
     PublicController,
     MonitorController,
+    EnterpriseController,
+    NoAuthIntegrationsController,
+    OAuthController,
     ...authenticatedController,
   ],
   providers: [
@@ -77,6 +88,12 @@ const authenticatedController = [
     TrackService,
     ShortLinkService,
     Nowpayments,
+    AuthProviderManager,
+    GithubProvider,
+    GoogleProvider,
+    FarcasterProvider,
+    WalletProvider,
+    OauthProvider,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

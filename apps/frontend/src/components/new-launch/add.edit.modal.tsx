@@ -128,7 +128,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       internal: state.internal,
       setTags: state.setTags,
       setEditor: state.setEditor,
-      setRepeater: state.setRepeater
+      setRepeater: state.setRepeater,
     }))
   );
 
@@ -148,6 +148,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         0,
         existingData.integration,
         existingData.posts.map((post) => ({
+          delay: post.delay,
           content:
             post.content.indexOf('<p>') > -1
               ? post.content
@@ -161,8 +162,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         }))
       );
       setCurrent(existingData.integration);
-    }
-    else {
+    } else {
       setEditor('normal');
     }
 
@@ -187,10 +187,13 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         : props.set?.posts?.length
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
-            content: p.content
-              .split('\n')
-              .map((line: string) => `<p>${line}</p>`)
-              .join(''),
+            content:
+              p.content.indexOf('<p>') > -1
+                ? p.content
+                : p.content
+                    .split('\n')
+                    .map((line: string) => `<p>${line}</p>`)
+                    .join(''),
             // @ts-ignore
             media: p.media,
           }))
@@ -212,5 +215,12 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     return null;
   }
 
-  return <ManageModal {...props} />;
+  return (
+    <>
+      <style>
+        {`#support-discord {display: none !important;}`}
+      </style>
+      <ManageModal {...props} />
+    </>
+  );
 };

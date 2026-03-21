@@ -15,7 +15,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   }, [params]);
   return (
     <div
-      className={`hideCopilot ${style} h-[100vh] !padding-[50px] w-full text-textColor flex flex-col !bg-none`}
+      className={`hideCopilot ${style} h-[100vh] w-full text-textColor flex flex-1 flex-col !bg-none`}
     >
       <style>
         {`

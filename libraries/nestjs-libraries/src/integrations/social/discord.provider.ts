@@ -140,11 +140,76 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    let channel = postDetails[0].settings.channel;
-    if (postDetails.length > 1) {
+    const [firstPost] = postDetails;
+    const channel = firstPost.settings.channel;
+
+    const form = new FormData();
+    form.append(
+      'payload_json',
+      JSON.stringify({
+        content: firstPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
+          return `<${p1}>`;
+        }),
+        attachments: firstPost.media?.map((p, index) => ({
+          id: index,
+          description: `Picture ${index}`,
+          filename: p.path.split('/').pop(),
+        })),
+      })
+    );
+
+    let index = 0;
+    for (const media of firstPost.media || []) {
+      const loadMedia = await fetch(media.path);
+
+      form.append(
+        `files[${index}]`,
+        await loadMedia.blob(),
+        media.path.split('/').pop()
+      );
+      index++;
+    }
+
+    const data = await (
+      await fetch(`https://discord.com/api/channels/${channel}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+        },
+        body: form,
+      })
+    ).json();
+
+    return [
+      {
+        id: firstPost.id,
+        releaseURL: `https://discord.com/channels/${id}/${channel}/${data.id}`,
+        postId: data.id,
+        status: 'success',
+      },
+    ];
+  }
+
+  async comment(
+    id: string,
+    postId: string,
+    lastCommentId: string | undefined,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [commentPost] = postDetails;
+    const channel = commentPost.settings.channel;
+
+    // For Discord, we create a thread from the original message for comments
+    // If we don't have a thread yet, create one
+    let threadChannel = channel;
+
+    // Create thread if this is the first comment
+    if (!lastCommentId) {
       const { id: threadId } = await (
         await fetch(
-          `https://discord.com/api/channels/${postDetails[0].settings.channel}/threads`,
+          `https://discord.com/api/channels/${channel}/messages/${postId}/threads`,
           {
             method: 'POST',
             headers: {
@@ -152,64 +217,66 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name: postDetails[0].message,
+              name: 'Thread',
               auto_archive_duration: 1440,
-              type: 11, // Public thread type
             }),
           }
         )
       ).json();
-      channel = threadId;
+      threadChannel = threadId;
+    } else {
+      // Extract thread channel from the last comment's URL or use channel directly
+      threadChannel = channel;
     }
 
-    const finalData = [];
-    for (const post of postDetails) {
-      const form = new FormData();
+    const form = new FormData();
+    form.append(
+      'payload_json',
+      JSON.stringify({
+        content: commentPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
+          return `<${p1}>`;
+        }),
+        attachments: commentPost.media?.map((p, index) => ({
+          id: index,
+          description: `Picture ${index}`,
+          filename: p.path.split('/').pop(),
+        })),
+      })
+    );
+
+    let index = 0;
+    for (const media of commentPost.media || []) {
+      const loadMedia = await fetch(media.path);
+
       form.append(
-        'payload_json',
-        JSON.stringify({
-          content: post.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
-            return `<${p1}>`;
-          }),
-          attachments: post.media?.map((p, index) => ({
-            id: index,
-            description: `Picture ${index}`,
-            filename: p.path.split('/').pop(),
-          })),
-        })
+        `files[${index}]`,
+        await loadMedia.blob(),
+        media.path.split('/').pop()
       );
+      index++;
+    }
 
-      let index = 0;
-      for (const media of post.media || []) {
-        const loadMedia = await fetch(media.path);
-
-        form.append(
-          `files[${index}]`,
-          await loadMedia.blob(),
-          media.path.split('/').pop()
-        );
-        index++;
-      }
-
-      const data = await (
-        await fetch(`https://discord.com/api/channels/${channel}/messages`, {
+    const data = await (
+      await fetch(
+        `https://discord.com/api/channels/${threadChannel}/messages`,
+        {
           method: 'POST',
           headers: {
             Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
           },
           body: form,
-        })
-      ).json();
+        }
+      )
+    ).json();
 
-      finalData.push({
-        id: post.id,
-        releaseURL: `https://discord.com/channels/${id}/${channel}/${data.id}`,
+    return [
+      {
+        id: commentPost.id,
+        releaseURL: `https://discord.com/channels/${id}/${threadChannel}/${data.id}`,
         postId: data.id,
         status: 'success',
-      });
-    }
-
-    return finalData;
+      },
+    ];
   }
 
   async changeNickname(id: string, accessToken: string, name: string) {

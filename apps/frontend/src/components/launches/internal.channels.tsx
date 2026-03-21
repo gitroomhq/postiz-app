@@ -7,6 +7,8 @@ import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pic
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Select } from '@gitroom/react/form/select';
 import { Slider } from '@gitroom/react/form/slider';
+import { Input } from '@gitroom/react/form/input';
+import { Textarea } from '@gitroom/react/form/textarea';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -68,6 +70,37 @@ export const InternalChannels: FC<{
     </div>
   );
 };
+const PlugField: FC<{
+  plugIdentifier: string;
+  field: {
+    name: string;
+    description: string;
+    type: string;
+    placeholder: string;
+    validation?: RegExp;
+  };
+}> = ({ plugIdentifier, field }) => {
+  const fieldName = `plug--${plugIdentifier}--${field.name}`;
+
+  if (field.type === 'textarea') {
+    return (
+      <Textarea
+        label={field.description}
+        name={fieldName}
+        placeholder={field.placeholder}
+      />
+    );
+  }
+
+  return (
+    <Input
+      label={field.description}
+      name={fieldName}
+      placeholder={field.placeholder}
+    />
+  );
+};
+
 const Plug: FC<{
   plug: {
     identifier: string;
@@ -151,6 +184,17 @@ const Plug: FC<{
                 </option>
               ))}
             </Select>
+            {plug.fields.length > 0 && (
+              <div className="flex flex-col gap-[10px]">
+                {plug.fields.map((field) => (
+                  <PlugField
+                    key={field.name}
+                    plugIdentifier={plug.identifier}
+                    field={field}
+                  />
+                ))}
+              </div>
+            )}
             <div>
               {t('accounts_that_will_engage', 'Accounts that will engage:')}
             </div>

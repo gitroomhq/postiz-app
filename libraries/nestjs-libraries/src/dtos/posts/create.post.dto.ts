@@ -1,9 +1,24 @@
 import {
-  ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsNumber, IsOptional, IsString, MinLength, Validate, ValidateIf, ValidateNested
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsDefined,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Validate,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
-import { allProviders, type AllProvidersSettings, EmptySettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
+import {
+  allProviders,
+  type AllProvidersSettings,
+  EmptySettings,
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { ValidContent } from '@gitroom/helpers/utils/valid.images';
 
 export class Integration {
@@ -22,6 +37,10 @@ export class PostContent {
   @IsString()
   id: string;
 
+  @IsOptional()
+  @IsNumber()
+  delay: number;
+
   @IsArray()
   @Type(() => MediaDto)
   @ValidateNested({ each: true })
@@ -29,6 +48,8 @@ export class PostContent {
 }
 
 export class Post {
+  type?: string;
+
   @IsDefined()
   @Type(() => Integration)
   @ValidateNested()
@@ -45,6 +66,7 @@ export class Post {
   @IsString()
   group: string;
 
+  @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {
     keepDiscriminatorProperty: true,
@@ -68,8 +90,8 @@ class Tags {
 
 export class CreatePostDto {
   @IsDefined()
-  @IsIn(['draft', 'schedule', 'now'])
-  type: 'draft' | 'schedule' | 'now';
+  @IsIn(['draft', 'schedule', 'now', 'update'])
+  type: 'draft' | 'schedule' | 'now' | 'update';
 
   @IsOptional()
   @IsString()
@@ -92,7 +114,6 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   tags: Tags[];
 
-  @ValidateIf((o) => o.type !== 'draft')
   @IsDefined()
   @Type(() => Post)
   @IsArray()

@@ -21,6 +21,7 @@ import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.co
 import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -39,13 +40,14 @@ export const MediaPortal: FC<{
   }) => void;
 }> = ({ media, setMedia, value }) => {
   const waitForClass = useWaitForClass('copilotKitMessages');
+  const t = useT();
   if (!waitForClass) return null;
   return (
     <div className="pl-[14px] pr-[24px] whitespace-nowrap editor rm-bg">
       <MultiMediaComponent
         allData={[{ content: value }]}
         text={value}
-        label="Attachments"
+        label={t('attachments', 'Attachments')}
         description=""
         value={media}
         dummy={false}
@@ -62,6 +64,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   onChange,
 }) => {
   const fetch = useFetch();
+  const t = useT();
   const [selected, setSelected] = useState([]);
 
   const load = useCallback(async () => {
@@ -111,7 +114,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
         <div className="flex items-center">
           <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
-            Select Channels
+            {t('select_channels', 'Select Channels')}
           </h2>
           <div
             onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
@@ -210,6 +213,7 @@ const Threads: FC = () => {
   const fetch = useFetch();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useT();
   const threads = useCallback(async () => {
     return (await fetch('/copilot/list')).json();
   }, []);
@@ -247,7 +251,7 @@ const Threads: FC = () => {
               />
             </svg>
             <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
-              Start a new chat
+              {t('start_a_new_chat', 'Start a new chat')}
             </div>
           </Link>
         </div>

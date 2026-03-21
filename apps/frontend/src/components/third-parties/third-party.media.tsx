@@ -182,9 +182,9 @@ export const ThirdPartyMedia: FC<{
   return (
     <>
       <div className="relative group">
-        <Button
+        <div
           className={clsx(
-            'relative ms-[10px] !px-[10px] rounded-[4px] gap-[8px] !text-primary justify-center items-center flex border border-dashed border-newBgLineColor bg-newColColor'
+            'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]'
           )}
           onClick={() => {
             modals.openModal({
@@ -204,8 +204,8 @@ export const ThirdPartyMedia: FC<{
           <div className={clsx('flex gap-[5px] items-center')}>
             <div>
               <svg
-                width="24"
-                height="24"
+                width="16"
+                height="16"
                 viewBox="0 0 32 32"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -216,11 +216,11 @@ export const ThirdPartyMedia: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[12px] font-[500] !text-current">
+            <div className="text-[10px] font-[600] iconBreak:hidden block">
               {t('integrations', 'Integrations')}
             </div>
           </div>
-        </Button>
+        </div>
       </div>
     </>
   );

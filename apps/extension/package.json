@@ -1,14 +1,10 @@
 {
   "name": "postiz-extension",
-  "version": "1.0.3",
-  "description": "A simple chrome & firefox extension template with Vite, React, TypeScript and Tailwind CSS.",
+  "version": "2.0.0",
+  "description": "Postiz browser extension for cookie-based platform authentication",
   "scripts": {
-    "build": "rm -rf dist && vite build --config vite.config.chrome.ts && zip -r extension.zip dist",
-    "build:chrome": "vite build --config vite.config.chrome.ts",
-    "build:firefox": "vite build --config vite.config.firefox.ts",
-    "dev": "rm -rf dist && dotenv -e ../../.env -- vite build --config vite.config.chrome.ts --mode development --watch",
-    "dev:chrome": "nodemon --config nodemon.chrome.json",
-    "dev:firefox": "nodemon --config nodemon.firefox.json"
+    "build": "rm -rf dist && vite build && cp manifest.json dist/manifest.json && cd dist && zip -r ../extension.zip .",
+    "dev": "rm -rf dist && HOT_RELOAD_EXTENSION_VITE_PORT=8081 NODE_ENV=development dotenv -e ../../.env -- vite build --config vite.config.chrome.ts --mode development --watch"
   },
   "type": "module"
 }

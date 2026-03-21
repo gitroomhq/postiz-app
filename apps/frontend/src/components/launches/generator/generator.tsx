@@ -1,3 +1,5 @@
+'use client';
+
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
@@ -19,7 +21,7 @@ import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
-import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
   const modal = useModals();
@@ -150,15 +152,16 @@ const FirstStep: FC = (props) => {
       });
       setShowStep('');
       modal.openModal({
+        id: 'add-edit-modal',
         closeOnClickOutside: false,
+        removeLayout: true,
         closeOnEscape: false,
         withCloseButton: false,
-        removeLayout: true,
         askClose: true,
+        fullScreen: true,
         classNames: {
-          modal: 'w-[100%] max-w-[1400px] bg-transparent text-textColor',
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
         },
-        id: 'add-edit-modal',
         children: (
           <AddEditModal
             allIntegrations={integrations.map((p) => ({
@@ -294,9 +297,9 @@ export const GeneratorComponent = () => {
     if (!user?.tier?.ai) {
       if (
         await deleteDialog(
-          'You need to upgrade to use this feature',
-          'Move to billing',
-          'Payment Required'
+          t('upgrade_required', 'You need to upgrade to use this feature'),
+          t('move_to_billing', 'Move to billing'),
+          t('payment_required', 'Payment Required')
         )
       ) {
         router.push('/billing');
@@ -304,7 +307,7 @@ export const GeneratorComponent = () => {
       return;
     }
     modal.openModal({
-      title: 'Generate Posts',
+      title: t('generate_posts', 'Generate Posts'),
       withCloseButton: false,
       classNames: {
         modal: 'bg-transparent text-textColor',
@@ -329,7 +332,7 @@ export const GeneratorComponent = () => {
         viewBox="0 0 20 20"
         fill="none"
       >
-        <g clip-path="url(#clip0_1930_7370)">
+        <g clipPath="url(#clip0_1930_7370)">
           <path
             d="M5.41675 10.8337L6.07046 12.1411C6.2917 12.5836 6.40232 12.8048 6.55011 12.9965C6.68124 13.1667 6.83375 13.3192 7.00388 13.4503C7.19559 13.5981 7.41684 13.7087 7.85932 13.9299L9.16675 14.5837L7.85932 15.2374C7.41684 15.4586 7.19559 15.5692 7.00388 15.717C6.83375 15.8482 6.68124 16.0007 6.55011 16.1708C6.40232 16.3625 6.2917 16.5837 6.07046 17.0262L5.41675 18.3337L4.76303 17.0262C4.54179 16.5837 4.43117 16.3625 4.28339 16.1708C4.15225 16.0007 3.99974 15.8482 3.82962 15.717C3.6379 15.5692 3.41666 15.4586 2.97418 15.2374L1.66675 14.5837L2.97418 13.9299C3.41666 13.7087 3.6379 13.5981 3.82962 13.4503C3.99974 13.3192 4.15225 13.1667 4.28339 12.9965C4.43117 12.8048 4.54179 12.5836 4.76303 12.1411L5.41675 10.8337Z"
             stroke="white"

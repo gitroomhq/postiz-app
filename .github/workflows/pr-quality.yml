@@ -1,0 +1,52 @@
+name: PR Quality
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+jobs:
+  anti-slop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peakoss/anti-slop@v0
+        with:
+          # Overall
+          max-failures: 3
+
+          # Other
+          require-maintainer-can-modify: true
+          max-negative-reactions: 3
+          require-conventional-title: true
+
+          # Description
+          max-emoji-count: 2
+          max-code-references: 3
+          blocked-terms: "Generated with Claude Code,Generated with Codex"
+
+          # PR Template
+          require-pr-template: true
+          strict-pr-template-sections: "What kind of change does this PR introduce?,Why was this change needed?,Checklist:"
+          optional-pr-template-sections: "Other information:"
+          max-additional-pr-template-sections: 2
+
+          # User
+          detect-spam-usernames: true
+          min-account-age: 30
+          max-daily-forks: 5
+          min-profile-completeness: 4
+
+          # Exemptions
+          exempt-author-association: "OWNER,MEMBER,COLLABORATOR"
+          exempt-users: "nevo-david,egelhaus"
+          exempt-bots: true
+
+          # Actions
+          exempt-label: "exempt"
+          close-pr: true
+          failure-add-pr-labels: "spam"
+          failure-pr-message: "This PR has been marked as Spam, please re-open if this is a mistake."

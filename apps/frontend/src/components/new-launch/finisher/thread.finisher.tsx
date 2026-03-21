@@ -50,6 +50,7 @@ export const ThreadFinisher = () => {
             <div className="flex gap-[4px]">
               <div className="flex-1 editor text-textColor">
                 <Editor
+                  comments={true}
                   chars={{}}
                   selectedIntegration={[]}
                   onChange={(val) => setValue('thread_finisher', val)}

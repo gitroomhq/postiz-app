@@ -218,15 +218,15 @@ export default withProvider({
     if (
       settings?.subreddit?.some(
         (p: any, index: number) =>
-          p?.value?.type === 'media' && posts[0].length !== 1
+          p?.value?.type === 'media' && posts?.[0]?.length !== 1
       )
     ) {
       return 'When posting a media post, you must attached exactly one media file.';
     }
 
     if (
-      posts.some((p) =>
-        p.some((a) => !a.thumbnail && a.path.indexOf('mp4') > -1)
+      posts?.some((p) =>
+        p?.some((a) => !a?.thumbnail && (a?.path?.indexOf?.('mp4') ?? -1) > -1)
       )
     ) {
       return 'You must attach a thumbnail to your video post.';

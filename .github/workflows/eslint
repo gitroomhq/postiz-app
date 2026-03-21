@@ -39,7 +39,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: |
-            **/package-lock.json
+            **/pnpm-lock.yaml
 
       - name: Install ESLint
         run: |

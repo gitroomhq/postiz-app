@@ -1,10 +1,4 @@
 <p align="center">
-  <a href="https://github.com/growchief/growchief">
-    <img alt="automate" src="https://github.com/user-attachments/assets/d760188d-8d56-4b05-a6c1-c57e67ef25cd" />
-  </a>
-</p>
-
-<p align="center">
   <a href="https://postiz.com/" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/765e9d72-3ee7-4a56-9d59-a2c9befe2311">
@@ -19,6 +13,7 @@
 </a>
 </p>
 
+<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
@@ -73,8 +68,25 @@
 
 <br />
 
+## New - Postiz-as-a-service - Enterprise (Cloud)
+
+Integrate powerful social media scheduling capabilities into your SaaS. <br />Multi-tenant architecture designed for SaaS companies who want to offer social media management to their users.
+- **Skip App Approvals** - Use Postiz apps directly without going through lengthy social platform approval processes. Get the full power of Postiz instantly.
+- **Multi-Tenant Architecture** - each of your customers gets their own isolated environment with separate accounts, channels, and team management.
+- **Headless API** - Full REST API access to build your own frontend experience. Complete control over the user interface and branding.
+- **Full OAuth Support** - Connect all major social platforms including Facebook, Instagram, Twitter, LinkedIn, TikTok, and more.
+
+
+[Check it here](https://postiz.com/enterprise)
+
+<br /><br />
+
+## 🔌 See the leading Postiz features
+
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/05436a01-19c8-4827-b57f-05a5e7637a67" width="100%" />
+  <a href="https://www.youtube.com/watch?v=BdsCVvEYgHU" target="_blank">
+    <img alt="Postiz" src="https://github.com/user-attachments/assets/8b9b7939-da1a-4be5-95be-42c6fce772de" />
+  </a>
 </p>
 
 ## ✨ Features
@@ -83,6 +95,15 @@
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | ![Image 3](https://github.com/user-attachments/assets/d51786ee-ddd8-4ef8-8138-5192e9cfe7c3) | ![Image 4](https://github.com/user-attachments/assets/91f83c89-22f6-43d6-b7aa-d2d3378289fb) |
 
+### Our Sponsors
+
+| Sponsor |                                  Logo                                   | Description     |
+|---------|:-----------------------------------------------------------------------:|-----------------|
+| [Hostinger](https://www.hostinger.com/?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
+| [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
+
+
+
 # Intro
 
 - Schedule all your social media posts (many AI features)
@@ -90,14 +111,15 @@
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
 - At the moment there is no difference between the hosted version to the self-hosted version
+- Perfect for automation (API) with platforms like N8N, Make.com, Zapier, etc.
 
 ## Tech Stack
 
-- NX (Monorepo)
+- Pnpm workspaces (Monorepo)
 - NextJS (React)
 - NestJS
 - Prisma (Default to PostgreSQL)
-- Redis (BullMQ)
+- Temporal
 - Resend (email notifications)
 
 ## Quick Start
@@ -124,7 +146,7 @@ Link: https://opencollective.com/postiz
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=gitroomhq/postiz-app&type=Date)](https://www.star-history.com/#gitroomhq/postiz-app&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=gitroomhq/postiz-app&type=date&legend=top-left)](https://www.star-history.com/#gitroomhq/postiz-app&type=date&legend=top-left)
 
 ## License
 

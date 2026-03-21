@@ -24,9 +24,9 @@ export default withProvider({
   SettingsComponent: DribbbleSettings,
   CustomPreviewComponent: undefined,
   dto: DribbbleDto,
-  checkValidity: async ([firstItem, ...otherItems]) => {
-    const isMp4 = firstItem?.find((item) => item.path.indexOf('mp4') > -1);
-    if (firstItem.length !== 1) {
+  checkValidity: async ([firstItem, ...otherItems] = []) => {
+    const isMp4 = firstItem?.find((item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1);
+    if (firstItem?.length !== 1) {
       return 'Requires one item';
     }
     if (isMp4) {
@@ -41,7 +41,7 @@ export default withProvider({
         // @ts-ignore
         resolve({ width: this.width, height: this.height });
       };
-      url.src = firstItem[0].path;
+      url.src = firstItem?.[0]?.path;
     });
     if (
       (details?.width === 400 && details?.height === 300) ||

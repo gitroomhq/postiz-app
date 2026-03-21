@@ -53,7 +53,6 @@ export const StandaloneModal: FC = () => {
           '*'
         );
       }}
-      padding="50px"
       mutate={() => {}}
       integrations={integrations}
       reopenModal={() => {}}
