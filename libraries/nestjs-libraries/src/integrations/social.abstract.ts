@@ -111,7 +111,7 @@ export abstract class SocialAbstract {
       request = await fetch(url, options);
       const latency = Date.now() - start;
         try {
-        Sentry.metrics.distribution('provider.api_latency_ms', latency, { tags: { provider: this.identifier, endpoint: url, status: 'success' } } as any);
+        Sentry.metrics.distribution('provider.api_latency_ms', latency, { attributes: { provider: this.identifier, endpoint: url, status: 'success' } } as any);
       } catch (e) {}
 
       if (request.status === 200 || request.status === 201) {
@@ -120,7 +120,7 @@ export abstract class SocialAbstract {
     } catch (err) {
       const latency = Date.now() - start;
       try {
-        Sentry.metrics.distribution('provider.api_latency_ms', latency, { tags: { provider: this.identifier, endpoint: url, status: 'failure' } } as any);
+        Sentry.metrics.distribution('provider.api_latency_ms', latency, { attributes: { provider: this.identifier, endpoint: url, status: 'failure' } } as any);
       } catch (e) {}
       throw err;
     }
@@ -145,7 +145,7 @@ export abstract class SocialAbstract {
       json.includes('Rate limit')
     ) {
       try {
-        Sentry.metrics.count('provider.rate_limited', 1, { tags: { provider: this.identifier } } as any);
+        Sentry.metrics.count('provider.rate_limited', 1, { attributes: { provider: this.identifier } } as any);
       } catch (e) {}
       await timer(5000);
       return this.fetch(

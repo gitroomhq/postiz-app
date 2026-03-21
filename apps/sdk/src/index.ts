@@ -22,7 +22,7 @@ export default class Postiz {
 
   async post(posts: CreatePostDto) {
     try {
-      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'post' } } as any);
+      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'post' } } as any);
     } catch (e) {}
 
     return (
@@ -39,7 +39,7 @@ export default class Postiz {
 
   async postList(filters: GetPostsDto) {
     try {
-      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'list' } } as any);
+      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'list' } } as any);
     } catch (e) {}
 
     return (
@@ -55,7 +55,7 @@ export default class Postiz {
 
   async upload(file: Buffer, extension: string) {
     try {
-      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'upload' } } as any);
+      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'upload' } } as any);
     } catch (e) {}
 
     const formData = new FormData();
@@ -87,7 +87,7 @@ export default class Postiz {
 
   async integrations() {
     try {
-      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'integrations' } } as any);
+      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'integrations' } } as any);
     } catch (e) {}
 
     return (
@@ -103,7 +103,7 @@ export default class Postiz {
 
   deletePost(id: string) {
     try {
-      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'delete' } } as any);
+      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'delete' } } as any);
     } catch (e) {}
 
     return fetch(`${this._path}/public/v1/posts/${id}`, {

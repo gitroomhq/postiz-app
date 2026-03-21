@@ -171,7 +171,7 @@ export class AuthController {
       response.header('reload', 'true');
       try {
         Sentry.metrics.count('auth.login.success', 1, {
-          tags: { provider: body.provider || 'LOCAL', organizationId: (addedOrg as any)?.organizationId || 'unknown' },
+          attributes: { provider: body.provider || 'LOCAL' },
         } as any);
       } catch (e) {}
       response.status(200).json({
@@ -180,7 +180,7 @@ export class AuthController {
     } catch (e: any) {
       try {
         Sentry.metrics.count('auth.login.failure', 1, {
-          tags: { provider: body?.provider || 'LOCAL' },
+          attributes: { provider: body?.provider || 'LOCAL' },
         } as any);
       } catch (er) {}
       response.status(400).send(e.message);
@@ -271,7 +271,7 @@ export class AuthController {
 
     if (token) {
       try {
-        Sentry.metrics.count('oauth.connects', 1, { tags: { provider } } as any);
+        Sentry.metrics.count('oauth.connects', 1, { attributes: { provider } } as any);
       } catch (e) {}
       return response.json({ token });
     }

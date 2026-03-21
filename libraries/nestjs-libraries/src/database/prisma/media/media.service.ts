@@ -44,8 +44,8 @@ export class MediaService {
       async () => {
         const start = Date.now();
         try {
-          try {
-            Sentry.metrics.count('media.generate_attempt', 1, { tags: { media_type: 'image' } } as any);
+            try {
+            Sentry.metrics.count('media.generate_attempt', 1, { attributes: { media_type: 'image' } } as any);
           } catch (e) {}
 
           if (generatePromptFirst) {
@@ -56,14 +56,14 @@ export class MediaService {
           const res = await this._openAi.generateImage(prompt, !!generatePromptFirst);
 
             try {
-            Sentry.metrics.count('media.generate_success', 1, { tags: { media_type: 'image' } } as any);
-            Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { tags: { media_type: 'image' } } as any);
+            Sentry.metrics.count('media.generate_success', 1, { attributes: { media_type: 'image' } } as any);
+            Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { attributes: { media_type: 'image' } } as any);
           } catch (e) {}
 
           return res;
         } catch (err) {
           try {
-            Sentry.metrics.count('media.generate_failure', 1, { tags: { media_type: 'image' } } as any);
+            Sentry.metrics.count('media.generate_failure', 1, { attributes: { media_type: 'image' } } as any);
           } catch (e) {}
           throw err;
         }
@@ -130,7 +130,7 @@ export class MediaService {
     const start = Date.now();
     try {
       try {
-        Sentry.metrics.count('media.generate_attempt', 1, { tags: { media_type: 'video' } } as any);
+        Sentry.metrics.count('media.generate_attempt', 1, { attributes: { media_type: 'video' } } as any);
       } catch (e) {}
 
       const result = await this._subscriptionService.useCredit(
@@ -148,14 +148,14 @@ export class MediaService {
       );
 
       try {
-        Sentry.metrics.count('media.generate_success', 1, { tags: { media_type: 'video' } } as any);
-        Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { tags: { media_type: 'video' } } as any);
+        Sentry.metrics.count('media.generate_success', 1, { attributes: { media_type: 'video' } } as any);
+        Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { attributes: { media_type: 'video' } } as any);
       } catch (e) {}
 
       return result;
     } catch (err) {
       try {
-        Sentry.metrics.count('media.generate_failure', 1, { tags: { media_type: 'video' } } as any);
+        Sentry.metrics.count('media.generate_failure', 1, { attributes: { media_type: 'video' } } as any);
       } catch (e) {}
       throw err;
     }

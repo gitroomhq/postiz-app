@@ -697,7 +697,7 @@ export class PostsService {
         }
 
         try {
-          Sentry.metrics.gauge('posts.queued_per_org', count, { tags: { taskQueue } } as any);
+          Sentry.metrics.gauge('posts.queued', count, { attributes: { taskQueue } } as any);
         } catch (err) {}
       } catch (err) {}
     } catch (err) {}

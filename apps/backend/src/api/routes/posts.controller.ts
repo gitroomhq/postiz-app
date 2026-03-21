@@ -170,7 +170,7 @@ export class PostsController {
         const providerRaw = (p?.settings && p.settings.__type) || (p?.integration && p.integration.id) || '';
         const provider = (typeof providerRaw === 'string' ? providerRaw.split('-')[0] : '')
           .toLowerCase();
-        Sentry.metrics.count('posts.created', 1, { tags: { provider } } as any);
+        Sentry.metrics.count('posts.created', 1, { attributes: { provider } } as any);
       }
     } catch (e) {}
 
@@ -219,8 +219,8 @@ export class PostsController {
     return (async () => {
       const res = await this._postsService.changeDate(org.id, id, date, action);
       if (action === 'schedule') {
-        try {
-          Sentry.metrics.count('posts.scheduled', 1, { tags: { scheduleType: action } } as any);
+          try {
+          Sentry.metrics.count('posts.scheduled', 1, { attributes: { scheduleType: action } } as any);
         } catch (e) {}
       }
 

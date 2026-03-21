@@ -74,7 +74,7 @@ export class RefreshIntegrationService {
   ): Promise<AuthTokenDetails | false> {
     try {
       try {
-        Sentry.metrics.count('provider.refresh_attempt', 1, { tags: { provider: socialProvider.identifier } } as any);
+        Sentry.metrics.count('provider.refresh_attempt', 1, { attributes: { provider: socialProvider.identifier } } as any);
       } catch (e) {}
 
       const refresh: false | AuthTokenDetails = await socialProvider
@@ -83,7 +83,7 @@ export class RefreshIntegrationService {
 
       if (!refresh || !refresh.accessToken) {
         try {
-          Sentry.metrics.count('provider.refresh_fail', 1, { tags: { provider: socialProvider.identifier } } as any);
+          Sentry.metrics.count('provider.refresh_fail', 1, { attributes: { provider: socialProvider.identifier } } as any);
         } catch (e) {}
 
         await this._integrationService.refreshNeeded(
@@ -124,7 +124,7 @@ export class RefreshIntegrationService {
       };
     } catch (err) {
       try {
-        Sentry.metrics.count('provider.refresh_fail', 1, { tags: { provider: socialProvider.identifier } } as any);
+        Sentry.metrics.count('provider.refresh_fail', 1, { attributes: { provider: socialProvider.identifier } } as any);
       } catch (e) {}
       return false;
     }
