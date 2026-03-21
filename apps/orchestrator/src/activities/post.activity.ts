@@ -99,7 +99,7 @@ export class PostActivity {
           }
 
           try {
-            Sentry.metrics.gauge('posts.queued_per_org', count, { tags: { organizationId: post.organizationId, taskQueue: post.integration?.providerIdentifier?.split('-')[0] || 'main' } } as any);
+            Sentry.metrics.gauge('posts.queued_per_org', count, { tags: { taskQueue: post.integration?.providerIdentifier?.split('-')[0] || 'main' } } as any);
           } catch (e) {}
         } catch (e) {}
       }

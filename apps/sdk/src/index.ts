@@ -22,10 +22,7 @@ export default class Postiz {
 
   async post(posts: CreatePostDto) {
     try {
-      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
-      try {
-        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'post', api_key_hash: apiHash } } as any);
-      } catch (e) {}
+      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'post' } } as any);
     } catch (e) {}
 
     return (
@@ -42,10 +39,7 @@ export default class Postiz {
 
   async postList(filters: GetPostsDto) {
     try {
-      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
-      try {
-        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'list', api_key_hash: apiHash } } as any);
-      } catch (e) {}
+      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'list' } } as any);
     } catch (e) {}
 
     return (
@@ -61,10 +55,7 @@ export default class Postiz {
 
   async upload(file: Buffer, extension: string) {
     try {
-      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
-      try {
-        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'upload', api_key_hash: apiHash } } as any);
-      } catch (e) {}
+      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'upload' } } as any);
     } catch (e) {}
 
     const formData = new FormData();
@@ -96,10 +87,7 @@ export default class Postiz {
 
   async integrations() {
     try {
-      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
-      try {
-        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'integrations', api_key_hash: apiHash } } as any);
-      } catch (e) {}
+      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'integrations' } } as any);
     } catch (e) {}
 
     return (
@@ -115,10 +103,7 @@ export default class Postiz {
 
   deletePost(id: string) {
     try {
-      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
-      try {
-        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'delete', api_key_hash: apiHash } } as any);
-      } catch (e) {}
+      Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'delete' } } as any);
     } catch (e) {}
 
     return fetch(`${this._path}/public/v1/posts/${id}`, {

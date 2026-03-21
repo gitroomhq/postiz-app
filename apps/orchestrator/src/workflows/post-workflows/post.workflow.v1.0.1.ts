@@ -175,8 +175,8 @@ export async function postWorkflowV101({
         if (i === 0) {
           try {
             const latency = Date.now() - startTime.getTime();
-            Sentry.metrics.count('posts.published.success', 1, { tags: { organizationId: post.organizationId, provider: post.integration?.providerIdentifier } } as any);
-            Sentry.metrics.distribution('posts.publish_latency_ms', latency, { tags: { organizationId: post.organizationId, provider: post.integration?.providerIdentifier } } as any);
+            Sentry.metrics.count('posts.published.success', 1, { tags: { provider: post.integration?.providerIdentifier } } as any);
+            Sentry.metrics.distribution('posts.publish_latency_ms', latency, { tags: { provider: post.integration?.providerIdentifier } } as any);
           } catch (e) {}
         }
 
@@ -219,7 +219,7 @@ export async function postWorkflowV101({
         try {
           const cause = (err as any)?.cause;
           const failure_reason = (cause && (cause as any).type) || (err as any)?.message || 'unknown';
-          Sentry.metrics.count('posts.published.failure', 1, { tags: { organizationId: post.organizationId, provider: post.integration?.providerIdentifier, failure_reason } } as any);
+          Sentry.metrics.count('posts.published.failure', 1, { tags: { provider: post.integration?.providerIdentifier, failure_reason } } as any);
         } catch (e) {}
         try {
           const cause = (err as any)?.cause;
@@ -253,10 +253,10 @@ export async function postWorkflowV101({
     if (postsResults.length === before) {
       // all retries exhausted without success
       try {
-        Sentry.metrics.count('temporal.retry_exhausted', 1, { tags: { workflow: 'postWorkflowV101', organizationId: post.organizationId } } as any);
+        Sentry.metrics.count('temporal.retry_exhausted', 1, { tags: { workflow: 'postWorkflowV101' } } as any);
       } catch (e) {}
       try {
-        Sentry.metrics.count('posts.published.failure', 1, { tags: { organizationId: post.organizationId, provider: post.integration?.providerIdentifier, failure_reason: 'retry_exhausted' } } as any);
+        Sentry.metrics.count('posts.published.failure', 1, { tags: { provider: post.integration?.providerIdentifier, failure_reason: 'retry_exhausted' } } as any);
       } catch (e) {}
 
       return false;

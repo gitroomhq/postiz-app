@@ -97,8 +97,8 @@ export class MediaController {
       const uploadedFile = await this.storage.uploadFile(file);
 
       try {
-        Sentry.metrics.count('uploads.total', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
-        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0);
       } catch (e) {}
 
       return this._mediaService.saveFile(
@@ -109,7 +109,7 @@ export class MediaController {
       );
     } catch (err) {
       try {
-        Sentry.metrics.count('uploads.failure', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.failure', 1);
       } catch (e) {}
       throw err;
     }
@@ -153,8 +153,8 @@ export class MediaController {
       const getFile = await this.storage.uploadFile(file);
 
       try {
-        Sentry.metrics.count('uploads.total', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
-        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0);
       } catch (e) {}
 
       if (preventSave === 'true') {
@@ -170,7 +170,7 @@ export class MediaController {
       );
     } catch (err) {
       try {
-        Sentry.metrics.count('uploads.failure', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.failure', 1);
       } catch (e) {}
       throw err;
     }
@@ -202,14 +202,14 @@ export class MediaController {
       );
 
       try {
-        Sentry.metrics.count('uploads.total', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
-        Sentry.metrics.distribution('upload_size_bytes', (req.headers['content-length'] ? Number(req.headers['content-length']) : 0) || 0, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', (req.headers['content-length'] ? Number(req.headers['content-length']) : 0) || 0);
       } catch (e) {}
 
       res.status(200).json({ ...upload, saved: saveFile });
     } catch (err) {
       try {
-        Sentry.metrics.count('uploads.failure', 1, { tags: { organizationId: org.id, storage_backend: process.env.STORAGE_PROVIDER || 'local' } } as any);
+        Sentry.metrics.count('uploads.failure', 1);
       } catch (e) {}
       throw err;
     }
