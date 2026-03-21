@@ -1,6 +1,8 @@
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import fetch, { FormData } from 'node-fetch';
+import * as Sentry from '@sentry/node';
+import crypto from 'crypto';
 
 function toQueryString(obj: Record<string, any>): string {
   const params = new URLSearchParams();
@@ -19,6 +21,13 @@ export default class Postiz {
   ) {}
 
   async post(posts: CreatePostDto) {
+    try {
+      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
+      try {
+        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'post', api_key_hash: apiHash } } as any);
+      } catch (e) {}
+    } catch (e) {}
+
     return (
       await fetch(`${this._path}/public/v1/posts`, {
         method: 'POST',
@@ -32,6 +41,13 @@ export default class Postiz {
   }
 
   async postList(filters: GetPostsDto) {
+    try {
+      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
+      try {
+        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'list', api_key_hash: apiHash } } as any);
+      } catch (e) {}
+    } catch (e) {}
+
     return (
       await fetch(`${this._path}/public/v1/posts?${toQueryString(filters)}`, {
         method: 'GET',
@@ -44,6 +60,13 @@ export default class Postiz {
   }
 
   async upload(file: Buffer, extension: string) {
+    try {
+      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
+      try {
+        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'upload', api_key_hash: apiHash } } as any);
+      } catch (e) {}
+    } catch (e) {}
+
     const formData = new FormData();
     const type =
       extension === 'png'
@@ -72,6 +95,13 @@ export default class Postiz {
   }
 
   async integrations() {
+    try {
+      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
+      try {
+        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'integrations', api_key_hash: apiHash } } as any);
+      } catch (e) {}
+    } catch (e) {}
+
     return (
       await fetch(`${this._path}/public/v1/integrations`, {
         method: 'GET',
@@ -84,6 +114,13 @@ export default class Postiz {
   }
 
   deletePost(id: string) {
+    try {
+      const apiHash = crypto.createHash('sha256').update(this._apiKey).digest('hex').slice(0, 8);
+      try {
+        Sentry.metrics.count('sdk.requests', 1, { tags: { method: 'delete', api_key_hash: apiHash } } as any);
+      } catch (e) {}
+    } catch (e) {}
+
     return fetch(`${this._path}/public/v1/posts/${id}`, {
       method: 'DELETE',
       headers: {
