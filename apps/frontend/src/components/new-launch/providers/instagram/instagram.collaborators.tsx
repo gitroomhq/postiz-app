@@ -139,6 +139,5 @@ export default withProvider<InstagramDto>({
     }
     return true;
   },
-  maximumCharacters: 2200,
   comments: 'no-media'
 });

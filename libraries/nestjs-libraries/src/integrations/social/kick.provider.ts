@@ -16,6 +16,13 @@ export class KickProvider extends SocialAbstract implements SocialProvider {
   identifier = 'kick';
   name = 'Kick';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'normal' as const;
   scopes = ['chat:write', 'user:read', 'channel:read'];
   dto = KickDto;

@@ -72,18 +72,4 @@ export default withProvider({
   SettingsComponent: LemmySettings,
   CustomPreviewComponent: undefined,
   dto: LemmySettingsDto,
-  checkValidity: async (items) => {
-    const [firstItems] = items ?? [];
-    if (
-      firstItems?.length &&
-      (firstItems?.[0]?.path?.indexOf?.('png') ?? -1) === -1 &&
-      (firstItems?.[0]?.path?.indexOf?.('jpg') ?? -1) === -1 &&
-      (firstItems?.[0]?.path?.indexOf?.('jpef') ?? -1) === -1 &&
-      (firstItems?.[0]?.path?.indexOf?.('gif') ?? -1) === -1
-    ) {
-      return 'You can set only one picture for a cover';
-    }
-    return true;
-  },
-  maximumCharacters: 10000,
 });

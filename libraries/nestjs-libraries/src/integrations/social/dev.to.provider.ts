@@ -16,6 +16,13 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
   identifier = 'devto';
   name = 'Dev.to';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   editor = 'markdown' as const;
   scopes = [] as string[];
   maxLength() {

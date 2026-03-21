@@ -31,6 +31,4 @@ export default withProvider({
   SettingsComponent: WordpressSettings,
   CustomPreviewComponent: undefined, // WordpressPreview,
   dto: WordpressDto,
-  checkValidity: undefined,
-  maximumCharacters: 100000,
 });

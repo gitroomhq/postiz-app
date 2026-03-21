@@ -32,7 +32,11 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
-import { AnalyticsData } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  AnalyticsData,
+  MediaContent,
+  validateMediaAgainstCapabilities,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -247,6 +251,32 @@ export class PostsService {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
+          }
+
+          if (body.type !== 'draft') {
+            const provider = this._integrationManager.getSocialIntegration(
+              integration.providerIdentifier
+            );
+            if (provider.mediaCapabilities) {
+              const allMedia: MediaContent[] = (post.value || []).flatMap(
+                (v) =>
+                  (v.image || []).map((img) => ({
+                    type: (img.path?.match(/\.(mp4|mov|avi|webm|mkv)$/i)
+                      ? 'video'
+                      : 'image') as 'image' | 'video',
+                    path: img.path || '',
+                  }))
+              );
+              const errors = validateMediaAgainstCapabilities(
+                allMedia,
+                provider.mediaCapabilities
+              );
+              if (errors.length > 0) {
+                throw new BadRequestException(
+                  `Media validation failed for ${provider.name}: ${errors.map((e) => e.message).join(', ')}`
+                );
+              }
+            }
           }
 
           return {

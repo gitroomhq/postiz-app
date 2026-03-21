@@ -16,6 +16,13 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
   identifier = 'medium';
   name = 'Medium';
   isBetweenSteps = false;
+  override mediaCapabilities = {
+    maxImages: 0,
+    maxVideos: 0,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
   scopes = [] as string[];
   editor = 'markdown' as const;
   dto = MediumSettingsDto;

@@ -22,6 +22,7 @@ import { InternalChannels } from '@gitroom/frontend/components/launches/internal
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import Image from 'next/image';
+import { validateMediaFromCapabilities } from '@gitroom/frontend/components/new-launch/providers/validate-media-from-capabilities';
 
 class Empty {
   @IsOptional()
@@ -118,21 +119,37 @@ export const withProvider = function <T extends object>(params: {
       }))
     );
 
+    const resolvedMaxChars = useMemo(() => {
+      if (typeof maximumCharacters === 'number') {
+        return maximumCharacters;
+      }
+      if (typeof maximumCharacters === 'function') {
+        return maximumCharacters(
+          JSON.parse(
+            selectedIntegration.integration.additionalSettings || '[]'
+          )
+        );
+      }
+      return selectedIntegration.integration.postingCapabilities?.maxLength ?? 0;
+    }, [maximumCharacters, selectedIntegration.integration.additionalSettings, selectedIntegration.integration.postingCapabilities?.maxLength]);
+
+    const resolvedComments = useMemo(() => {
+      if (typeof params.comments !== 'undefined') {
+        return params.comments;
+      }
+      const pc = selectedIntegration.integration.postingCapabilities;
+      if (pc) {
+        return pc.commentsMediaSupport;
+      }
+      return true;
+    }, [params.comments, selectedIntegration.integration.postingCapabilities]);
+
     useEffect(() => {
       if (!setTotalChars) {
         return;
       }
 
-      setChars(
-        props.id,
-        typeof maximumCharacters === 'number'
-          ? maximumCharacters
-          : maximumCharacters(
-              JSON.parse(
-                selectedIntegration.integration.additionalSettings || '[]'
-              )
-            )
-      );
+      setChars(props.id, resolvedMaxChars);
 
       if (isGlobal) {
         setComments(true);
@@ -142,22 +159,12 @@ export const withProvider = function <T extends object>(params: {
       }
 
       if (current) {
-        setComments(
-          typeof params.comments === 'undefined' ? true : params.comments
-        );
+        setComments(resolvedComments);
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
-        setTotalChars(
-          typeof maximumCharacters === 'number'
-            ? maximumCharacters
-            : maximumCharacters(
-                JSON.parse(
-                  selectedIntegration.integration.additionalSettings || '[]'
-                )
-              )
-        );
+        setTotalChars(resolvedMaxChars);
       }
-    }, [justCurrent, current, isGlobal, setTotalChars]);
+    }, [justCurrent, current, isGlobal, setTotalChars, resolvedMaxChars, resolvedComments]);
 
     const getInternalPlugs = useCallback(async () => {
       return (
@@ -192,6 +199,20 @@ export const withProvider = function <T extends object>(params: {
       reValidateMode: 'onChange',
     });
 
+    const resolvedCheckValidity = useCallback(
+      async (mediaArrays: Array<Array<{ path: string; thumbnail?: string }>>, settings: T, additionalSettings: any) => {
+        if (checkValidity) {
+          return checkValidity(mediaArrays, settings, additionalSettings);
+        }
+        const pc = selectedIntegration.integration.postingCapabilities;
+        if (pc?.media) {
+          return validateMediaFromCapabilities(mediaArrays, pc.media);
+        }
+        return true as string | true;
+      },
+      [checkValidity, selectedIntegration.integration.postingCapabilities]
+    );
+
     useImperativeHandle(
       ref,
       () => ({
@@ -203,25 +224,16 @@ export const withProvider = function <T extends object>(params: {
             integration: selectedIntegration.integration,
             valid: await form.trigger(),
             err: form.formState.errors,
-            errors: checkValidity
-              ? await checkValidity(
-                  value.map((p) => p.media || []),
-                  settings,
-                  JSON.parse(
-                    selectedIntegration.integration.additionalSettings || '[]'
-                  )
-                )
-              : true,
+            errors: await resolvedCheckValidity(
+              value.map((p) => p.media || []),
+              settings,
+              JSON.parse(
+                selectedIntegration.integration.additionalSettings || '[]'
+              )
+            ),
             settings,
             values: value,
-            maximumCharacters:
-              typeof maximumCharacters === 'number'
-                ? maximumCharacters
-                : maximumCharacters(
-                    JSON.parse(
-                      selectedIntegration.integration.additionalSettings || '[]'
-                    )
-                  ),
+            maximumCharacters: resolvedMaxChars,
             fix: () => {
               setCurrent(props.id);
               setHide(true);
@@ -244,7 +256,7 @@ export const withProvider = function <T extends object>(params: {
           return form.trigger();
         },
       }),
-      [value]
+      [value, resolvedMaxChars, resolvedCheckValidity]
     );
 
     return (
@@ -284,29 +296,11 @@ export const withProvider = function <T extends object>(params: {
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={resolvedMaxChars}
                 />
               ) : (
                 <GeneralPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={resolvedMaxChars}
                 />
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&

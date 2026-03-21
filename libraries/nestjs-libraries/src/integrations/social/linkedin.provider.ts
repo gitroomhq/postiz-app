@@ -23,6 +23,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
   oneTimeToken = true;
+  override mediaCapabilities = {
+    maxImages: 10,
+    maxVideos: 1,
+    canMixMediaTypes: false,
+    requiresMedia: false,
+    requiresVideo: false,
+  };
 
   isBetweenSteps = false;
   scopes = [

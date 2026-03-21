@@ -97,5 +97,4 @@ export default withProvider({
     }
     return true;
   },
-  maximumCharacters: 5000,
 });
