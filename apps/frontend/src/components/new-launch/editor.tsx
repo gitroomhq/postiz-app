@@ -11,6 +11,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import clsx from 'clsx';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import EmojiPicker from 'emoji-picker-react';
@@ -182,6 +183,12 @@ export const EditorWrapper: FC<{
     setLoadedState(true);
     setLoaded(true);
   }, [loaded, loadedState]);
+
+  useEffect(() => {
+    try {
+      Sentry.metrics.count('editor.open', 1);
+    } catch (e) {}
+  }, []);
 
   const canEdit = useMemo(() => {
     return current === 'global' || !!internal;
