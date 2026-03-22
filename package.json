@@ -54,7 +54,7 @@
     "@copilotkit/runtime": "1.10.6",
     "@dub/analytics": "^0.0.32",
     "@hookform/resolvers": "^3.3.4",
-    "@langchain/community": "^0.3.40",
+    "@langchain/community": "^1.1.18",
     "@langchain/core": "^0.3.44",
     "@langchain/langgraph": "^0.2.63",
     "@langchain/openai": "^0.5.5",
@@ -181,12 +181,12 @@
     "md5": "^2.3.0",
     "mime": "^3.0.0",
     "mime-types": "^2.1.35",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.1.1",
     "music-metadata": "^7.14.0",
     "nestjs-command": "^3.1.4",
     "nestjs-real-ip": "^3.0.1",
     "nestjs-temporal-core": "^3.2.0",
-    "next": "14.2.35",
+    "next": "15.5.14",
     "next-plausible": "^3.12.0",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.66.0",
@@ -318,7 +318,7 @@
   },
   "pnpm": {
     "overrides": {
-      "next": "14.2.35"
+      "next": "15.5.14"
     },
     "onlyBuiltDependencies": [
       "bcrypt"
