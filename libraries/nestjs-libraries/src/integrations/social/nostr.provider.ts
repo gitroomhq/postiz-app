@@ -182,7 +182,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      Uint8Array.from(password.match(/.{1,2}/g)!.map((byte: any) => parseInt(byte, 16)))
     );
 
     const eventId = await this.publish(id, textEvent);
