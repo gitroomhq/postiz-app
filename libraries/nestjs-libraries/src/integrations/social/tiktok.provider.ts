@@ -146,7 +146,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value:
-          'TikTok limit the maximum of pending posts to 5, please check your TikTok inbox at your TikTok mobile app',
+          'TikTok limit the maximum of pending posts to 5, TikTok limits you for now, please check your TikTok inbox at your TikTok mobile app and try again later',
       };
     }
 
