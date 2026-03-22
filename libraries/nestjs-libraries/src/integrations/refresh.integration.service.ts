@@ -75,7 +75,7 @@ export class RefreshIntegrationService {
       .refreshToken(integration.refreshToken)
       .catch((err) => false);
 
-    if (!refresh || !refresh.accessToken) {
+    if (!refresh) {
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
@@ -92,6 +92,14 @@ export class RefreshIntegrationService {
       );
 
       return false;
+    }
+
+    if (!refresh.accessToken) {
+      return {
+        ...refresh,
+        accessToken: integration.token,
+        refreshToken: integration.refreshToken || '',
+      };
     }
 
     if (
