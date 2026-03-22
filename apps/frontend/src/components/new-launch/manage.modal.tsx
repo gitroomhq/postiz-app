@@ -33,7 +33,6 @@ import { SelectCustomer } from '@gitroom/frontend/components/launches/select.cus
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import * as Sentry from '@sentry/nextjs';
 import {
   SettingsIcon,
   ChevronDownIcon,
@@ -414,10 +413,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       if (!dummy) {
-        try {
-          Sentry.metrics.count('post.submit', 1, { attributes: { action: type } });
-        } catch (e) {}
-
         addEditSets
           ? addEditSets(data)
           : await fetch('/posts', {

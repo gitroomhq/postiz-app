@@ -7,7 +7,6 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import * as Sentry from '@sentry/nestjs';
 import {
   AuthorizationActions,
   Sections,
@@ -42,31 +41,11 @@ export class MediaService {
       org,
       'ai_images',
       async () => {
-        const start = Date.now();
-        try {
-            try {
-            Sentry.metrics.count('media.generate_attempt', 1, { attributes: { media_type: 'image' } } as any);
-          } catch (e) {}
-
-          if (generatePromptFirst) {
-            prompt = await this._openAi.generatePromptForPicture(prompt);
-            console.log('Prompt:', prompt);
-          }
-
-          const res = await this._openAi.generateImage(prompt, !!generatePromptFirst);
-
-            try {
-            Sentry.metrics.count('media.generate_success', 1, { attributes: { media_type: 'image' } } as any);
-            Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { attributes: { media_type: 'image' } } as any);
-          } catch (e) {}
-
-          return res;
-        } catch (err) {
-          try {
-            Sentry.metrics.count('media.generate_failure', 1, { attributes: { media_type: 'image' } } as any);
-          } catch (e) {}
-          throw err;
+        if (generatePromptFirst) {
+          prompt = await this._openAi.generatePromptForPicture(prompt);
+          console.log('Prompt:', prompt);
         }
+        return this._openAi.generateImage(prompt, !!generatePromptFirst);
       }
     );
 
@@ -126,39 +105,21 @@ export class MediaService {
 
     console.log(body.customParams);
     await video.instance.processAndValidate(body.customParams);
+    console.log('no err');
 
-    const start = Date.now();
-    try {
-      try {
-        Sentry.metrics.count('media.generate_attempt', 1, { attributes: { media_type: 'video' } } as any);
-      } catch (e) {}
+    return await this._subscriptionService.useCredit(
+      org,
+      'ai_videos',
+      async () => {
+        const loadedData = await video.instance.process(
+          body.output,
+          body.customParams
+        );
 
-      const result = await this._subscriptionService.useCredit(
-        org,
-        'ai_videos',
-        async () => {
-          const loadedData = await video.instance.process(
-            body.output,
-            body.customParams
-          );
-
-          const file = await this.storage.uploadSimple(loadedData);
-          return this.saveFile(org.id, file.split('/').pop(), file);
-        }
-      );
-
-      try {
-        Sentry.metrics.count('media.generate_success', 1, { attributes: { media_type: 'video' } } as any);
-        Sentry.metrics.distribution('media.generation_ms', Date.now() - start, { attributes: { media_type: 'video' } } as any);
-      } catch (e) {}
-
-      return result;
-    } catch (err) {
-      try {
-        Sentry.metrics.count('media.generate_failure', 1, { attributes: { media_type: 'video' } } as any);
-      } catch (e) {}
-      throw err;
-    }
+        const file = await this.storage.uploadSimple(loadedData);
+        return this.saveFile(org.id, file.split('/').pop(), file);
+      }
+    );
   }
 
   async videoFunction(identifier: string, functionName: string, body: any) {

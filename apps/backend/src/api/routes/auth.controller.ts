@@ -169,20 +169,10 @@ export class AuthController {
       }
 
       response.header('reload', 'true');
-      try {
-        Sentry.metrics.count('auth.login.success', 1, {
-          attributes: { provider: body.provider || 'LOCAL' },
-        } as any);
-      } catch (e) {}
       response.status(200).json({
         login: true,
       });
     } catch (e: any) {
-      try {
-        Sentry.metrics.count('auth.login.failure', 1, {
-          attributes: { provider: body?.provider || 'LOCAL' },
-        } as any);
-      } catch (er) {}
       response.status(400).send(e.message);
     }
   }
@@ -270,9 +260,6 @@ export class AuthController {
     const { jwt, token } = await this._authService.checkExists(provider, code);
 
     if (token) {
-      try {
-        Sentry.metrics.count('oauth.connects', 1, { attributes: { provider } } as any);
-      } catch (e) {}
       return response.json({ token });
     }
 

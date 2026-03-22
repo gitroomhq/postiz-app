@@ -7,7 +7,6 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { TemporalService } from 'nestjs-temporal-core';
-import * as Sentry from '@sentry/nestjs';
 
 @Injectable()
 export class RefreshIntegrationService {
@@ -72,61 +71,45 @@ export class RefreshIntegrationService {
     integration: Integration,
     socialProvider: SocialProvider
   ): Promise<AuthTokenDetails | false> {
-    try {
-      try {
-        Sentry.metrics.count('provider.refresh_attempt', 1, { attributes: { provider: socialProvider.identifier } } as any);
-      } catch (e) {}
+    const refresh: false | AuthTokenDetails = await socialProvider
+      .refreshToken(integration.refreshToken)
+      .catch((err) => false);
 
-      const refresh: false | AuthTokenDetails = await socialProvider
-        .refreshToken(integration.refreshToken)
-        .catch((err) => false);
-
-      if (!refresh || !refresh.accessToken) {
-        try {
-          Sentry.metrics.count('provider.refresh_fail', 1, { attributes: { provider: socialProvider.identifier } } as any);
-        } catch (e) {}
-
-        await this._integrationService.refreshNeeded(
-          integration.organizationId,
-          integration.id
-        );
-
-        await this._integrationService.informAboutRefreshError(
-          integration.organizationId,
-          integration
-        );
-
-        await this._integrationService.disconnectChannel(
-          integration.organizationId,
-          integration
-        );
-
-        return false;
-      }
-
-      // proceed with reconnect handling below
-      if (
-        !socialProvider.reConnect ||
-        integration.rootInternalId === integration.internalId
-      ) {
-        return refresh;
-      }
-
-      const reConnect = await socialProvider.reConnect(
-        integration.rootInternalId,
-        integration.internalId,
-        refresh.accessToken
+    if (!refresh || !refresh.accessToken) {
+      await this._integrationService.refreshNeeded(
+        integration.organizationId,
+        integration.id
       );
 
-      return {
-        ...refresh,
-        ...reConnect,
-      };
-    } catch (err) {
-      try {
-        Sentry.metrics.count('provider.refresh_fail', 1, { attributes: { provider: socialProvider.identifier } } as any);
-      } catch (e) {}
+      await this._integrationService.informAboutRefreshError(
+        integration.organizationId,
+        integration
+      );
+
+      await this._integrationService.disconnectChannel(
+        integration.organizationId,
+        integration
+      );
+
       return false;
     }
+
+    if (
+      !socialProvider.reConnect ||
+      integration.rootInternalId === integration.internalId
+    ) {
+      return refresh;
+    }
+
+    const reConnect = await socialProvider.reConnect(
+      integration.rootInternalId,
+      integration.internalId,
+      refresh.accessToken
+    );
+
+    return {
+      ...refresh,
+      ...reConnect,
+    };
   }
 }

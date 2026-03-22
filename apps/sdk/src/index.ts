@@ -1,8 +1,6 @@
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import fetch, { FormData } from 'node-fetch';
-import * as Sentry from '@sentry/node';
-import crypto from 'crypto';
 
 function toQueryString(obj: Record<string, any>): string {
   const params = new URLSearchParams();
@@ -21,10 +19,6 @@ export default class Postiz {
   ) {}
 
   async post(posts: CreatePostDto) {
-    try {
-      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'post' } } as any);
-    } catch (e) {}
-
     return (
       await fetch(`${this._path}/public/v1/posts`, {
         method: 'POST',
@@ -38,10 +32,6 @@ export default class Postiz {
   }
 
   async postList(filters: GetPostsDto) {
-    try {
-      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'list' } } as any);
-    } catch (e) {}
-
     return (
       await fetch(`${this._path}/public/v1/posts?${toQueryString(filters)}`, {
         method: 'GET',
@@ -54,10 +44,6 @@ export default class Postiz {
   }
 
   async upload(file: Buffer, extension: string) {
-    try {
-      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'upload' } } as any);
-    } catch (e) {}
-
     const formData = new FormData();
     const type =
       extension === 'png'
@@ -86,10 +72,6 @@ export default class Postiz {
   }
 
   async integrations() {
-    try {
-      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'integrations' } } as any);
-    } catch (e) {}
-
     return (
       await fetch(`${this._path}/public/v1/integrations`, {
         method: 'GET',
@@ -102,10 +84,6 @@ export default class Postiz {
   }
 
   deletePost(id: string) {
-    try {
-      Sentry.metrics.count('sdk.requests', 1, { attributes: { method: 'delete' } } as any);
-    } catch (e) {}
-
     return fetch(`${this._path}/public/v1/posts/${id}`, {
       method: 'DELETE',
       headers: {

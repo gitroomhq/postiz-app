@@ -23,7 +23,6 @@ import {
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import * as Sentry from '@sentry/nestjs';
 
 @Injectable()
 @Activity()
@@ -81,31 +80,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {
-    const res = await this._postService.updatePost(id, postId, releaseURL);
-    try {
-      const posts = await this._postService.getPostByForWebhookId(postId);
-      const post = Array.isArray(posts) && posts.length ? (posts[0] as any) : (posts as any);
-      if (post && post.organizationId) {
-        try {
-          const running = this._temporalService.client
-            .getRawClient()
-            ?.workflow.list({ query: `organizationId="${post.organizationId}" AND ExecutionStatus="Running"` });
-
-          let count = 0;
-          if (running) {
-            for await (const _ of running) {
-              count++;
-            }
-          }
-
-          try {
-            Sentry.metrics.gauge('posts.queued', count, { attributes: { taskQueue: post.integration?.providerIdentifier?.split('-')[0] || 'main' } } as any);
-          } catch (e) {}
-        } catch (e) {}
-      }
-    } catch (e) {}
-
-    return res;
+    return this._postService.updatePost(id, postId, releaseURL);
   }
 
   @ActivityMethod()

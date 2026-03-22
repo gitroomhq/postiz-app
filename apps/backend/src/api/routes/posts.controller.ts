@@ -16,7 +16,6 @@ import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto'
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
-import * as Sentry from '@sentry/nestjs';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
@@ -163,18 +162,7 @@ export class PostsController {
   ) {
     console.log(JSON.stringify(rawBody, null, 2));
     const body = await this._postsService.mapTypeToPost(rawBody, org.id);
-    const created = await this._postsService.createPost(org.id, body);
-
-    try {
-      for (const p of body.posts || []) {
-        const providerRaw = (p?.settings && p.settings.__type) || (p?.integration && p.integration.id) || '';
-        const provider = (typeof providerRaw === 'string' ? providerRaw.split('-')[0] : '')
-          .toLowerCase();
-        Sentry.metrics.count('posts.created', 1, { attributes: { provider } } as any);
-      }
-    } catch (e) {}
-
-    return created;
+    return this._postsService.createPost(org.id, body);
   }
 
   @Post('/generator/draft')
@@ -216,11 +204,7 @@ export class PostsController {
     @Body('date') date: string,
     @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
-    return (async () => {
-      const res = await this._postsService.changeDate(org.id, id, date, action);
-
-      return res;
-    })();
+    return this._postsService.changeDate(org.id, id, date, action);
   }
 
   @Post('/separate-posts')

@@ -681,25 +681,6 @@ export class PostsService {
             },
           ]),
         });
-      // update queued-per-org gauge (simple approach: count running workflows for org)
-      try {
-        const running = this._temporalService.client
-          .getRawClient()
-          ?.workflow.list({
-            query: `organizationId="${orgId}" AND ExecutionStatus="Running"`,
-          });
-
-        let count = 0;
-        if (running) {
-          for await (const _ of running) {
-            count++;
-          }
-        }
-
-        try {
-          Sentry.metrics.gauge('posts.queued', count, { attributes: { taskQueue } } as any);
-        } catch (err) {}
-      } catch (err) {}
     } catch (err) {}
   }
 
@@ -738,7 +719,7 @@ export class PostsService {
         ).catch((err) => {});
       }
 
-      // metric moved: controller records `posts.created` with org/provider tags
+      Sentry.metrics.count('post_created', 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
