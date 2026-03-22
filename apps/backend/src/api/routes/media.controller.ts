@@ -25,6 +25,7 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -92,13 +93,26 @@ export class MediaController {
     @UploadedFile() file: Express.Multer.File
   ) {
     const originalName = file?.originalname || '';
-    const uploadedFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(
-      org.id,
-      uploadedFile.originalname,
-      uploadedFile.path,
-      originalName
-    );
+    try {
+      const uploadedFile = await this.storage.uploadFile(file);
+
+      try {
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0);
+      } catch (e) {}
+
+      return this._mediaService.saveFile(
+        org.id,
+        uploadedFile.originalname,
+        uploadedFile.path,
+        originalName
+      );
+    } catch (err) {
+      try {
+        Sentry.metrics.count('uploads.failure', 1);
+      } catch (e) {}
+      throw err;
+    }
   }
 
   @Post('/save-media')
@@ -135,19 +149,31 @@ export class MediaController {
     @Body('preventSave') preventSave: string = 'false'
   ) {
     const originalName = file.originalname;
-    const getFile = await this.storage.uploadFile(file);
+    try {
+      const getFile = await this.storage.uploadFile(file);
 
-    if (preventSave === 'true') {
-      const { path } = getFile;
-      return { path };
+      try {
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', file?.size || 0);
+      } catch (e) {}
+
+      if (preventSave === 'true') {
+        const { path } = getFile;
+        return { path };
+      }
+
+      return this._mediaService.saveFile(
+        org.id,
+        getFile.originalname,
+        getFile.path,
+        originalName
+      );
+    } catch (err) {
+      try {
+        Sentry.metrics.count('uploads.failure', 1);
+      } catch (e) {}
+      throw err;
     }
-
-    return this._mediaService.saveFile(
-      org.id,
-      getFile.originalname,
-      getFile.path,
-      originalName
-    );
   }
 
   @Post('/:endpoint')
@@ -166,15 +192,27 @@ export class MediaController {
     const name = upload.Location.split('/').pop();
     const originalName = req.body?.file?.name;
 
-    const saveFile = await this._mediaService.saveFile(
-      org.id,
-      name,
-      // @ts-ignore
-      upload.Location,
-      originalName || undefined
-    );
+    try {
+      const saveFile = await this._mediaService.saveFile(
+        org.id,
+        name,
+        // @ts-ignore
+        upload.Location,
+        originalName || undefined
+      );
 
-    res.status(200).json({ ...upload, saved: saveFile });
+      try {
+        Sentry.metrics.count('uploads.total', 1);
+        Sentry.metrics.distribution('upload_size_bytes', (req.headers['content-length'] ? Number(req.headers['content-length']) : 0) || 0);
+      } catch (e) {}
+
+      res.status(200).json({ ...upload, saved: saveFile });
+    } catch (err) {
+      try {
+        Sentry.metrics.count('uploads.failure', 1);
+      } catch (e) {}
+      throw err;
+    }
   }
 
   @Get('/')

@@ -1,6 +1,7 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
+import * as Sentry from '@sentry/nestjs';
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
@@ -104,10 +105,24 @@ export abstract class SocialAbstract {
     totalRetries = 0,
     ignoreConcurrency = false
   ): Promise<Response> {
-    const request = await fetch(url, options);
+    const start = Date.now();
+    let request: Response;
+    try {
+      request = await fetch(url, options);
+      const latency = Date.now() - start;
+        try {
+        Sentry.metrics.distribution('provider.api_latency_ms', latency, { attributes: { provider: this.identifier, endpoint: url, status: 'success' } } as any);
+      } catch (e) {}
 
-    if (request.status === 200 || request.status === 201) {
-      return request;
+      if (request.status === 200 || request.status === 201) {
+        return request;
+      }
+    } catch (err) {
+      const latency = Date.now() - start;
+      try {
+        Sentry.metrics.distribution('provider.api_latency_ms', latency, { attributes: { provider: this.identifier, endpoint: url, status: 'failure' } } as any);
+      } catch (e) {}
+      throw err;
     }
 
     if (totalRetries > 2) {
@@ -129,6 +144,9 @@ export abstract class SocialAbstract {
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
+      try {
+        Sentry.metrics.count('provider.rate_limited', 1, { attributes: { provider: this.identifier } } as any);
+      } catch (e) {}
       await timer(5000);
       return this.fetch(
         url,

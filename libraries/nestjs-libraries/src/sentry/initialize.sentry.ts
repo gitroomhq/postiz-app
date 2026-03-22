@@ -31,6 +31,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           recordInputs: true,
           recordOutputs: true,
         }),
+        Sentry.langChainIntegration({
+          recordInputs: true,
+          recordOutputs: true,
+        }),
       ],
       tracesSampleRate: 1.0,
       enableLogs: true,
@@ -42,5 +46,18 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
   } catch (err) {
     console.log(err);
   }
+    try {
+      process.on('unhandledRejection', (reason) => {
+        try {
+          Sentry.metrics.count('app.unhandled_errors', 1, { attributes: { service: appName, route: 'unhandledRejection' } } as any);
+        } catch (e) {}
+      });
+
+      process.on('uncaughtException', (err) => {
+        try {
+          Sentry.metrics.count('app.unhandled_errors', 1, { attributes: { service: appName, route: 'uncaughtException' } } as any);
+        } catch (e) {}
+      });
+    } catch (e) {}
   return true;
 };

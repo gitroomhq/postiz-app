@@ -2,7 +2,8 @@ import { useIntegration } from '@gitroom/frontend/components/launches/helpers/us
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import Image from 'next/image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
@@ -11,6 +12,11 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  useEffect(() => {
+    try {
+      Sentry.metrics.count('preview.render', 1);
+    } catch (e) {}
+  }, []);
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
