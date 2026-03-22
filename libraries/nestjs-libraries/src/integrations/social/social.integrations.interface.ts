@@ -56,6 +56,15 @@ export interface AnalyticsData {
   percentageChange: number;
 }
 
+export interface SocialProviderCapabilities {
+  supportsThreads?: boolean;
+  supportsPolling?: boolean;
+  supportsMedia?: boolean;
+  maxMediaCount?: number;
+  supportsComments?: boolean;
+  supportsAnalytics?: boolean;
+}
+
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -139,6 +148,7 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  capabilities?: SocialProviderCapabilities;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   refreshCron?: boolean;
