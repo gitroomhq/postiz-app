@@ -1,3 +1,4 @@
+import { WorkflowExecutionAlreadyStartedError } from '@temporalio/client';
 import { Injectable } from '@nestjs/common';
 import {
   Activity,
@@ -17,7 +18,10 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
-import { TypedSearchAttributes } from '@temporalio/common';
+import {
+  TypedSearchAttributes,
+  WorkflowIdConflictPolicy,
+} from '@temporalio/common';
 import {
   organizationId,
   postId as postIdSearchParam,
@@ -35,7 +39,7 @@ export class PostActivity {
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
     private _temporalService: TemporalService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
   ) {}
 
   @ActivityMethod()
@@ -86,7 +90,8 @@ export class PostActivity {
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
     if (process.env.STRIPE_SECRET_KEY) {
-      const subscription = await this._subscriptionService.getSubscription(orgId);
+      const subscription =
+        await this._subscriptionService.getSubscription(orgId);
       if (!subscription) {
         return [];
       }
@@ -95,7 +100,7 @@ export class PostActivity {
     const getPosts = await this._postService.getPostsRecursively(
       postId,
       true,
-      orgId
+      orgId,
     );
     if (!getPosts || getPosts.length === 0 || getPosts[0].parentPostId) {
       return [];
@@ -107,7 +112,7 @@ export class PostActivity {
   @ActivityMethod()
   async isCommentable(integration: Integration) {
     const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+      integration.providerIdentifier,
     );
 
     return !!getIntegration.comment;
@@ -118,15 +123,15 @@ export class PostActivity {
     postId: string,
     lastPostId: string | undefined,
     integration: Integration,
-    posts: Post[]
+    posts: Post[],
   ) {
     const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+      integration.providerIdentifier,
     );
 
     const newPosts = await this._postService.updateTags(
       integration.organizationId,
-      posts
+      posts,
     );
 
     return getIntegration.comment(
@@ -143,29 +148,29 @@ export class PostActivity {
             true,
             false,
             !/<\/?[a-z][\s\S]*>/i.test(p.content),
-            getIntegration.mentionFormat
+            getIntegration.mentionFormat,
           ),
           settings: JSON.parse(p.settings || '{}'),
           media: await this._postService.updateMedia(
             p.id,
             JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
+            getIntegration?.convertToJPEG || false,
           ),
-        }))
+        })),
       ),
-      integration
+      integration,
     );
   }
 
   @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
     const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+      integration.providerIdentifier,
     );
 
     const newPosts = await this._postService.updateTags(
       integration.organizationId,
-      posts
+      posts,
     );
 
     const postNow = await getIntegration.post(
@@ -180,17 +185,17 @@ export class PostActivity {
             true,
             false,
             !/<\/?[a-z][\s\S]*>/i.test(p.content),
-            getIntegration.mentionFormat
+            getIntegration.mentionFormat,
           ),
           settings: JSON.parse(p.settings || '{}'),
           media: await this._postService.updateMedia(
             p.id,
             JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
+            getIntegration?.convertToJPEG || false,
           ),
-        }))
+        })),
       ),
-      integration
+      integration,
     );
 
     await this._temporalService.client
@@ -199,7 +204,7 @@ export class PostActivity {
         args: [{ organizationId: integration.organizationId }],
         workflowId: `streak_${integration.organizationId}`,
         taskQueue: 'main',
-        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+        workflowIdConflictPolicy: WorkflowIdConflictPolicy.USE_EXISTING,
         typedSearchAttributes: new TypedSearchAttributes([
           {
             key: organizationId,
@@ -218,7 +223,7 @@ export class PostActivity {
     message: string,
     sendEmail = false,
     digest = false,
-    type: NotificationType = 'success'
+    type: NotificationType = 'success',
   ) {
     return this._notificationService.inAppNotification(
       orgId,
@@ -226,7 +231,7 @@ export class PostActivity {
       message,
       sendEmail,
       digest,
-      type
+      type,
     );
   }
 
@@ -235,7 +240,7 @@ export class PostActivity {
     return this._postService.checkPlugs(
       integration.organizationId,
       integration.providerIdentifier,
-      integration.id
+      integration.id,
     );
   }
 
@@ -250,7 +255,7 @@ export class PostActivity {
       integration,
       integration.organizationId,
       integration.id,
-      settings
+      settings,
     );
   }
 
@@ -262,7 +267,7 @@ export class PostActivity {
           f.integrations.length === 0 ||
           f.integrations.some((i) => i.integration.id === integrationId)
         );
-      }
+      },
     );
 
     const post = await this._postService.getPostByForWebhookId(postId);
@@ -279,7 +284,7 @@ export class PostActivity {
         } catch (e) {
           /**empty**/
         }
-      })
+      }),
     );
   }
   @ActivityMethod()
@@ -308,16 +313,15 @@ export class PostActivity {
 
   @ActivityMethod()
   async refreshToken(
-    integration: Integration
+    integration: Integration,
   ): Promise<false | AuthTokenDetails> {
     const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+      integration.providerIdentifier,
     );
 
     try {
-      const refresh = await this._refreshIntegrationService.refresh(
-        integration
-      );
+      const refresh =
+        await this._refreshIntegrationService.refresh(integration);
       if (!refresh) {
         return false;
       }
