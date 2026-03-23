@@ -399,6 +399,100 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
 
+    const isStory = firstPost?.settings?.post_type === 'story';
+
+    if (isStory) {
+      const media = firstPost?.media?.[0];
+      const isVideo = (media?.path?.indexOf('mp4') ?? -2) > -1;
+
+      if (isVideo) {
+        const { video_id: uploadedVideoId } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${id}/video_stories?access_token=${accessToken}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                upload_phase: 'start',
+              }),
+            },
+            'start video story upload'
+          )
+        ).json();
+
+        const { post_id: storyPostId } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${id}/video_stories?access_token=${accessToken}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                upload_phase: 'finish',
+                video_id: uploadedVideoId,
+                file_url: media?.path,
+              }),
+            },
+            'finish video story upload'
+          )
+        ).json();
+
+        return [
+          {
+            id: firstPost.id,
+            postId: storyPostId,
+            releaseURL: `https://www.facebook.com/stories/${storyPostId}`,
+            status: 'success',
+          },
+        ];
+      } else {
+        const { id: photoId } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url: media?.path,
+                published: false,
+              }),
+            },
+            'upload photo for story'
+          )
+        ).json();
+
+        const { post_id: storyPostId } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${id}/photo_stories?access_token=${accessToken}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                photo_id: photoId,
+              }),
+            },
+            'publish photo story'
+          )
+        ).json();
+
+        return [
+          {
+            id: firstPost.id,
+            postId: storyPostId,
+            releaseURL: `https://www.facebook.com/stories/${storyPostId}`,
+            status: 'success',
+          },
+        ];
+      }
+    }
+
     let finalId = '';
     let finalUrl = '';
     if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
