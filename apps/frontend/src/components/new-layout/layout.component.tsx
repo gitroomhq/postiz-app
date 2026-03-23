@@ -10,11 +10,6 @@ const ModeComponent = dynamic(
   }
 );
 
-const AgentationDev = dynamic(
-  () => import('agentation').then((m) => ({ default: m.Agentation })),
-  { ssr: false }
-);
-
 import clsx from 'clsx';
 import dynamic from 'next/dynamic';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -86,45 +81,50 @@ const NavBar = () => {
   ];
 
   return (
-    <nav className="glass-navbar flex items-center h-[65px] px-[16px] rounded-[20px] bg-newBgColorInner/80 backdrop-blur-xl backdrop-saturate-150 border border-newBorder/30 relative">
-      {/* Left: Logo + Postra */}
-      <div className="flex items-center min-w-[140px]">
-        <Logo />
-      </div>
-
-      {/* Center: Nav items */}
-      <div className="flex-1 flex items-center justify-center gap-[4px] blurMe">
-        {centerItems.map((item) => (
-          <MenuItem
-            path={item.path}
-            label={item.name}
-            icon={item.icon}
-            key={item.name}
-            onClick={item.onClick}
-          />
-        ))}
-      </div>
-
-      {/* Right: Settings + Utility icons */}
-      <div className="flex items-center gap-[12px] text-textItemBlur min-w-[140px] justify-end">
-        {settingsItem && (
-          <MenuItem
-            path={settingsItem.path}
-            label={settingsItem.name}
-            icon={settingsItem.icon}
-          />
-        )}
-        <div className="w-[1px] h-[20px] bg-blockSeparator" />
-        <StreakComponent />
-        <OrganizationSelector />
-        <div className="hover:text-newTextColor">
-          <ModeComponent />
+    <nav className="liquid-glass glass-navbar h-[65px] relative z-[100]">
+      <div className="liquid-glass__blur" />
+      <div className="liquid-glass__tint" />
+      <div className="liquid-glass__shine" />
+      <div className="liquid-glass__content flex items-center h-full px-[16px]">
+        {/* Left: Logo + Postra */}
+        <div className="flex items-center min-w-[220px]">
+          <Logo />
         </div>
-        <div className="w-[1px] h-[20px] bg-blockSeparator" />
-        <LanguageComponent />
-        <ChromeExtensionComponent />
-        <AttachToFeedbackIcon />
-        <NotificationComponent />
+
+        {/* Center: Nav items */}
+        <div className="flex-1 flex items-center justify-center gap-[4px] blurMe">
+          {centerItems.map((item) => (
+            <MenuItem
+              path={item.path}
+              label={item.name}
+              icon={item.icon}
+              key={item.name}
+              onClick={item.onClick}
+            />
+          ))}
+        </div>
+
+        {/* Right: Settings + Utility icons */}
+        <div className="flex items-center gap-[12px] text-textItemBlur min-w-[140px] justify-end">
+          {settingsItem && (
+            <MenuItem
+              path={settingsItem.path}
+              label={settingsItem.name}
+              icon={settingsItem.icon}
+            />
+          )}
+          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+          <StreakComponent />
+          <OrganizationSelector />
+          <div className="hover:text-newTextColor">
+            <ModeComponent />
+          </div>
+          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+          <LanguageComponent />
+          <ChromeExtensionComponent />
+          <AttachToFeedbackIcon />
+          <NotificationComponent />
+        </div>
       </div>
     </nav>
   );
@@ -139,13 +139,35 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user, mutate } = useSWR('/user/self', load, {
+  const isDevBypass = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
+
+  const { data: fetchedUser, mutate } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
     refreshWhenOffline: false,
     refreshWhenHidden: false,
+    onError: () => {},
   });
+
+  const devMockUser = isDevBypass ? {
+    id: 'dev-user',
+    name: 'Dev User',
+    email: 'dev@postra.local',
+    orgId: 'dev-org',
+    tier: 'PRO' as const,
+    role: 'SUPERADMIN' as const,
+    publicApi: 'dev-api-key',
+    totalChannels: 10,
+    isLifetime: false,
+    impersonate: false,
+    allowTrial: false,
+    isTrailing: false,
+    streakSince: null,
+    admin: false,
+  } : null;
+
+  const user = fetchedUser || devMockUser;
 
   if (!user) return null;
 
@@ -180,10 +202,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 <>
                   <Support />
                   <NavBar />
-                  {process.env.NODE_ENV === 'development' && <AgentationDev />}
                   {/* Main content area */}
-                  <div className="flex-1 bg-newBgColorInner rounded-[16px] overflow-hidden flex flex-col blurMe">
-                    <div className="flex flex-1">{children}</div>
+                  <div className="liquid-glass flex-1 flex flex-col blurMe">
+                    <div className="liquid-glass__blur" />
+                    <div className="liquid-glass__tint" />
+                    <div className="liquid-glass__shine" />
+                    <div className="liquid-glass__content flex flex-1">
+                      {children}
+                    </div>
                   </div>
                 </>
               )}

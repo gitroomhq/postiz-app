@@ -26,7 +26,7 @@ export default async function AuthLayout({
       </div>
       <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
         <div className="text-center">
-          Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
+          Over <span className="text-[42px] text-[#c15f3c]">20,000+</span>{' '}
           Entrepreneurs use
           <br />
           Postra To Grow Their Social Presence

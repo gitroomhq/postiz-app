@@ -804,6 +804,66 @@ html[dir='rtl'] [dir='ltr'] {
   transition: transform 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
 }
 
-.glass-navbar {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+/* Liquid Glass effect */
+.liquid-glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  box-shadow:
+    0 6px 6px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.liquid-glass__blur,
+.liquid-glass__tint,
+.liquid-glass__shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.liquid-glass__blur {
+  z-index: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+}
+
+.liquid-glass__tint {
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dark .liquid-glass__tint {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.liquid-glass__shine {
+  z-index: 2;
+  box-shadow:
+    inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.dark .liquid-glass__shine {
+  box-shadow:
+    inset 2px 2px 1px 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.liquid-glass__content {
+  position: relative;
+  z-index: 3;
+}
+
+/* Navbar needs overflow visible for dropdowns (notifications, org selector) */
+nav.liquid-glass {
+  overflow: visible;
+}
+
+nav.liquid-glass .liquid-glass__blur,
+nav.liquid-glass .liquid-glass__tint,
+nav.liquid-glass .liquid-glass__shine {
+  border-radius: inherit;
+  overflow: hidden;
 }

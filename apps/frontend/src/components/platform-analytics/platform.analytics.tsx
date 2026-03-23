@@ -149,7 +149,7 @@ export const PlatformAnalytics = () => {
         <div>
           <img src="/peoplemarketplace.svg" />
         </div>
-        <div className="text-[48px]">
+        <div className="text-[36px]">
           {t('can_t_show_analytics_yet', "Can't show analytics yet")}
           <br />
           {t(

@@ -98,7 +98,7 @@ export const Plugs = () => {
         <div>
           <img src="/peoplemarketplace.svg" />
         </div>
-        <div className="text-[48px]">
+        <div className="text-[36px]">
           {t(
             'there_are_not_plugs_matching_your_channels',
             'There are not plugs matching your channels'

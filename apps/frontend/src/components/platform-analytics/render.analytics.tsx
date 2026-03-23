@@ -111,7 +111,7 @@ const AnalyticsCard: FC<{
         ) : (
           /* Single value display */
           <div className="flex-1 flex flex-col items-center justify-center py-[32px] px-[16px]">
-            <div className="text-[48px] leading-[56px] font-semibold tracking-tight">
+            <div className="text-[36px] leading-[44px] font-semibold tracking-tight">
               {total}
             </div>
           </div>

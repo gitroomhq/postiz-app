@@ -98,6 +98,7 @@ services:
 
       # === Developer Settings
       NX_ADD_PLUGINS: false
+      NEXT_PUBLIC_SHOW_AGENTATION: 'true'
 
       # === Short Link Service Settings (Optional - leave blank if unused)
       # DUB_TOKEN: ""
@@ -193,6 +194,8 @@ services:
     environment:
       POSTGRES_PASSWORD: temporal
       POSTGRES_USER: temporal
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
     networks:
       - temporal-network
     expose:

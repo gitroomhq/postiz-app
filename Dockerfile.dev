@@ -24,6 +24,8 @@ COPY var/docker/nginx.conf /etc/nginx/nginx.conf
 
 RUN pnpm install
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN NODE_OPTIONS="--max-old-space-size=6144" pnpm run build
+ARG NEXT_PUBLIC_SHOW_AGENTATION=true
+ENV NEXT_PUBLIC_SHOW_AGENTATION=$NEXT_PUBLIC_SHOW_AGENTATION
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
 CMD ["sh", "-c", "nginx && pnpm run pm2"]

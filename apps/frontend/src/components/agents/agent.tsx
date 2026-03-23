@@ -251,7 +251,7 @@ const Threads: FC = () => {
               />
             </svg>
             <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
-              {t('start_a_new_chat', 'Start a new chat')}
+              {t('start_a_new_chat', 'New conversation')}
             </div>
           </Link>
         </div>

@@ -18,6 +18,7 @@ import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
 import { HtmlComponent } from '@gitroom/frontend/components/layout/html.component';
+import { AgentationWrapper } from '@gitroom/frontend/components/layout/agentation.wrapper';
 import Script from 'next/script';
 // import dynamicLoad from 'next/dynamic';
 // const SetTimezone = dynamicLoad(
@@ -62,6 +63,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <body
         className={clsx(dmSans.variable, instrumentSerif.variable, dmSans.className, 'dark text-primary !bg-primary')}
       >
+        <svg className="hidden" aria-hidden="true">
+          <defs>
+            <filter id="glass-distortion">
+              <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" seed="1" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+        </svg>
         <VariableContextComponent
           storageProvider={
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
@@ -112,6 +121,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               >
                 <LayoutContext>
                   <UtmSaver />
+                  <AgentationWrapper />
                   {children}
                 </LayoutContext>
               </PHProvider>

@@ -14,6 +14,26 @@ acceptLanguage.languages(languages);
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
   const nextUrl = request.nextUrl;
+
+  // DEV BYPASS: skip auth redirect in development to iterate on UI
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true') {
+    const lng = request.cookies.has(cookieName)
+      ? acceptLanguage.get(request.cookies.get(cookieName).value)
+      : acceptLanguage.get(
+          request.headers.get('Accept-Language') ||
+            request.headers.get('accept-language')
+        );
+    const response = NextResponse.next();
+    if (lng) {
+      response.headers.set(cookieName, lng);
+    }
+    // Redirect / to /launches in dev bypass mode
+    if (nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL('/launches', nextUrl.href));
+    }
+    return response;
+  }
+
   const authCookie =
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
