@@ -582,38 +582,40 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async createCommentPost(
-    id: string,
-    accessToken: string,
-    post: PostDetails,
-    parentPostId: string,
-    type: 'company' | 'personal'
-  ): Promise<string> {
-    const actor =
-      type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
+  id: string,
+  accessToken: string,
+  post: PostDetails,
+  parentPostId: string,
+  type: 'company' | 'personal'
+): Promise<string> {
+  const actor =
+    type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
-    const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
-        parentPostId
-      )}/comments`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
+  const response = await this.fetch(
+    `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
+      parentPostId
+    )}/comments`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': '202601',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        actor,
+        object: parentPostId,
+        message: {
+          text: this.fixText(post.message),
         },
-        body: JSON.stringify({
-          actor,
-          object: parentPostId,
-          message: {
-            text: this.fixText(post.message),
-          },
-        }),
-      }
-    );
+      }),
+    }
+  );
 
-    const { object } = await response.json();
-    return object;
-  }
+  const { object } = await response.json();
+  return object;
+}
 
   private createPostResponse(
     postId: string,

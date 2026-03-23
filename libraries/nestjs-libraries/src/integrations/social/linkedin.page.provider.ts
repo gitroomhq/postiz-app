@@ -18,8 +18,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 )
 export class LinkedinPageProvider
   extends LinkedinProvider
-  implements SocialProvider
-{
+  implements SocialProvider {
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
@@ -123,11 +122,10 @@ export class LinkedinPageProvider
   override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${
-      process.env.LINKEDIN_CLIENT_ID
-    }&redirect_uri=${encodeURIComponent(
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
-    )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${process.env.LINKEDIN_CLIENT_ID
+      }&redirect_uri=${encodeURIComponent(
+        `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
+      )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
       url,
       codeVerifier,
@@ -445,9 +443,7 @@ export class LinkedinPageProvider
     // Also fetch social actions (likes, comments, shares) for the specific post
     let socialActions: SocialActionsResponse | null = null;
     try {
-      const socialActionsUrl = `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
-        postId
-      )}`;
+      const socialActionsUrl = `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(postId)}`;
       socialActions = await (
         await this.fetch(socialActionsUrl, {
           headers: {
@@ -569,7 +565,7 @@ export class LinkedinPageProvider
       likesSummary: { totalLikes },
     } = await (
       await this.fetch(
-        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(id)}`,
         {
           method: 'GET',
           headers: {
@@ -647,7 +643,7 @@ export class LinkedinPageProvider
       likesSummary: { totalLikes },
     } = await (
       await this.fetch(
-        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(id)}`,
+        `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(id)}`,
         {
           method: 'GET',
           headers: {
@@ -663,13 +659,13 @@ export class LinkedinPageProvider
     if (totalLikes >= fields.likesAmount) {
       await timer(2000);
       await this.fetch(
-        `https://api.linkedin.com/v2/socialActions/${decodeURIComponent(
-          id
-        )}/comments`,
+        `https://api.linkedin.com/rest/socialActions/${decodeURIComponent(id)}/comments`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${integration.token}`,
           },
           body: JSON.stringify({
