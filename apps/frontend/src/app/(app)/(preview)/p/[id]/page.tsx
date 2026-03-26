@@ -98,6 +98,23 @@ export default async function Auth(
                 <CopyClient />
               </div>
             )}
+            {post[0].state === 'PUBLISHED' && post[0].releaseURL && (
+              <a
+                href={post[0].releaseURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-[6px] text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                <img
+                  className="w-[16px] h-[16px] rounded-[3px]"
+                  src={`/icons/platforms/${post[0].integration.providerIdentifier}.png`}
+                  alt={post[0].integration.providerIdentifier}
+                />
+                {t('view_on_platform', `View on ${post[0].integration.name}`, {
+                  platform: post[0].integration.name,
+                })}
+              </a>
+            )}
             <div className="flex-1">
               {t('publication_date', 'Publication Date:')}{' '}
               <RenderPreviewDateClient date={post[0].publishDate} />
