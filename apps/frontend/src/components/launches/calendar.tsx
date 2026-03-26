@@ -1114,6 +1114,23 @@ const CalendarItem: FC<{
         ) : (
           <></>
         )}{' '}
+        {state === 'PUBLISHED' && post.releaseURL && (
+          <div
+            className={clsx(
+              'hidden group-hover:block hover:underline cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(post.releaseURL, '_blank');
+            }}
+          >
+            <ViewOnPlatform
+              providerIdentifier={post.integration.providerIdentifier}
+              name={post.integration.name}
+            />
+          </div>
+        )}{' '}
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
@@ -1258,6 +1275,24 @@ export const DeletePost = () => {
         fill="currentColor"
       />
     </svg>
+  );
+};
+
+const ViewOnPlatform: FC<{ providerIdentifier: string; name: string }> = ({
+  providerIdentifier,
+  name,
+}) => {
+  const t = useT();
+  return (
+    <img
+      className="w-[15px] h-[15px] rounded-[3px]"
+      src={`/icons/platforms/${providerIdentifier}.png`}
+      alt={name}
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('view_on_platform', `View on ${name}`, {
+        platform: name,
+      })}
+    />
   );
 };
 
