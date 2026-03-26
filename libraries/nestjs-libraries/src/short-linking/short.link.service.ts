@@ -5,10 +5,15 @@ import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
 import { Kutt } from './providers/kutt';
 import { LinkDrip } from './providers/linkdrip';
+import { ShlinkProvider } from './providers/shlink';
 import { uniq } from 'lodash';
 import striptags from 'striptags';
 
 const getProvider = (): ShortLinking => {
+  if (process.env.SHLINK_URL && process.env.SHLINK_API_KEY) {
+    return new ShlinkProvider();
+  }
+
   if (process.env.DUB_TOKEN) {
     return new Dub();
   }
