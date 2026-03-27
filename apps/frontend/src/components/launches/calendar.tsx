@@ -1122,7 +1122,7 @@ const CalendarItem: FC<{
             )}
             onClick={(e) => {
               e.stopPropagation();
-              window.open(post.releaseURL, '_blank');
+              window.open(post.releaseURL.split(',')[0], '_blank');
             }}
           >
             <ViewOnPlatform

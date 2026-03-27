@@ -100,7 +100,7 @@ export default async function Auth(
             )}
             {post[0].state === 'PUBLISHED' && post[0].releaseURL && (
               <a
-                href={post[0].releaseURL}
+                href={post[0].releaseURL.split(',')[0]}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-[6px] text-sm text-gray-400 hover:text-white transition-colors"
