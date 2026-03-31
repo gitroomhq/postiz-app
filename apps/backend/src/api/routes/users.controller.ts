@@ -9,6 +9,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { sign } from 'jsonwebtoken';
 import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -42,6 +43,23 @@ export class UsersController {
     private _userService: UsersService,
     private _trackService: TrackService
   ) {}
+  @Get('/agent-media-sso')
+  async getAgentMediaSsoUrl(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() organization: Organization
+  ) {
+    if (!process.env.AGENT_MEDIA_SSO_KEY) {
+      throw new HttpException('Agent Media SSO is not configured', 400);
+    }
+
+    const token = sign(
+      { id: organization.id, displayName: organization.name },
+      process.env.AGENT_MEDIA_SSO_KEY
+    );
+
+    return { url: `https://agent-media.ai/sso/${token}` };
+  }
+
   @Get('/self')
   async getSelf(
     @GetUserFromRequest() user: User,

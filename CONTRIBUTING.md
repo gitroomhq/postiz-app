@@ -27,6 +27,11 @@ Contributions can include:
 - **Feature requests:** Suggesting new capabilities or integrations.
 - **Bug reports:** Identifying and reporting issues.
 
+## AI
+
+To ensure the quality and maintainability of the codebase, **we do not accept Pull Requests generated primarily by AI tools** (e.g., ChatGPT, GitHub Copilot, Claude Code, etc.). 
+All contributions must be the original work of the author. We reserve the right to close any PR that appears to be AI-generated without further review.
+
 ## How to contribute
 
 This project follows a Fork/Feature Branch/Pull Request model. If you're not familiar with this, here's how it works:

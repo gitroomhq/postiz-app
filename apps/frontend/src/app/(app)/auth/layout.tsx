@@ -2,7 +2,6 @@ import { getT } from '@gitroom/react/translation/get.translation.service.backend
 
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
-import Image from 'next/image';
 import loadDynamic from 'next/dynamic';
 import { TestimonialComponent } from '@gitroom/frontend/components/auth/testimonial.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';

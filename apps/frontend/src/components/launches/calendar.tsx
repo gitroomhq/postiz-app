@@ -42,7 +42,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { useInterval } from '@mantine/hooks';
@@ -53,6 +53,7 @@ import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
@@ -171,6 +172,27 @@ const usePostActions = (onMutate?: () => void) => {
     [integrations, fetch, modal, mutate]
   );
 
+  const copyDebugJson = useCallback(
+    (post: any) => async () => {
+      try {
+        const data = await (
+          await fetch(`/posts/group/${post.group}/debug-export`)
+        ).json();
+        copy(JSON.stringify(data, null, 2));
+        toaster.show(
+          t('debug_json_copied', 'Debug JSON copied to clipboard'),
+          'success'
+        );
+      } catch {
+        toaster.show(
+          t('debug_json_copy_failed', 'Failed to copy debug data'),
+          'warning'
+        );
+      }
+    },
+    [fetch, toaster, t]
+  );
+
   const deletePost = useCallback(
     (post: any) => async () => {
       if (
@@ -234,7 +256,7 @@ const usePostActions = (onMutate?: () => void) => {
     [modal, t, mutate]
   );
 
-  return { editPost, deletePost, openStatistics, openMissingRelease };
+  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
 };
 
 export const DayView = () => {
@@ -469,10 +491,11 @@ export const MonthView = () => {
 };
 export const ListView = () => {
   const t = useT();
+  const user = useUser();
   const { integrations, loading, listPosts } = useCalendar();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
@@ -525,6 +548,7 @@ export const ListView = () => {
                   missingRelease={openMissingRelease(post.id)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
+                  copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
                   post={post}
                   integrations={integrations}
                   deletePost={deletePost(post)}
@@ -578,7 +602,7 @@ export const CalendarColumn: FC<{
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -844,6 +868,7 @@ export const CalendarColumn: FC<{
                   missingRelease={openMissingRelease(post.id)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
+                  copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
                   post={post}
                   integrations={integrations}
                   deletePost={deletePost(post)}
@@ -908,7 +933,7 @@ export const CalendarColumn: FC<{
                           'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
                         )}
                       >
-                        <Image
+                        <SafeImage
                           src={
                             selectedIntegrations.picture || '/no-picture.jpg'
                           }
@@ -924,7 +949,7 @@ export const CalendarColumn: FC<{
                             width={20}
                           />
                         ) : (
-                          <Image
+                          <SafeImage
                             src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
                             className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={selectedIntegrations.identifier}
@@ -949,6 +974,7 @@ const CalendarItem: FC<{
   isBeforeNow: boolean;
   editPost: () => void;
   duplicatePost: () => void;
+  copyDebugJson?: () => void;
   deletePost: () => void;
   statistics: () => void;
   missingRelease?: () => void;
@@ -968,6 +994,7 @@ const CalendarItem: FC<{
     editPost,
     statistics,
     duplicatePost,
+    copyDebugJson,
     post,
     date,
     isBeforeNow,
@@ -999,11 +1026,24 @@ const CalendarItem: FC<{
     <div
       // @ts-ignore
       ref={dragRef}
-      className={clsx('w-full flex h-full flex-1 flex-col group', 'relative')}
+      className={clsx(
+        'w-full flex h-full flex-1 flex-col group',
+        'relative',
+        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+      )}
       style={{
         opacity,
       }}
     >
+      {state === 'ERROR' && (
+        <div
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          data-tooltip-id="tooltip"
+          data-tooltip-content={post.error || 'An error occurred while publishing this post'}
+        >
+          !
+        </div>
+      )}
       <div
         className={clsx(
           'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
@@ -1020,6 +1060,17 @@ const CalendarItem: FC<{
         >
           {post.tags.map((p) => p.tag.name).join(', ')}
         </div>
+        {copyDebugJson && (
+          <div
+            className={clsx(
+              'hidden group-hover:block hover:underline cursor-pointer',
+              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            )}
+            onClick={copyDebugJson}
+          >
+            <CopyDebug />
+          </div>
+        )}
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
@@ -1111,6 +1162,27 @@ const CalendarItem: FC<{
     </div>
   );
 });
+const CopyDebug = () => {
+  const t = useT();
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('copy_debug_json', 'Copy Debug JSON')}
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+};
 const Duplicate = () => {
   const t = useT();
   return (

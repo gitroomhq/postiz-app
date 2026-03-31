@@ -23,10 +23,11 @@ import {
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import useCookie from 'react-use-cookie';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -128,7 +129,7 @@ export const FirstBillingComponent = () => {
         <div className="flex" onClick={showYouTube}>
           <div className="tablet:mb-[32px] cursor-pointer mt-[32px] flex gap-[10px] items-center underline hover:font-[700]">
             <div>
-              <Image
+              <SafeImage
                 className="text-[12px]"
                 src="/icons/platforms/youtube.svg"
                 width={22.5}
@@ -189,6 +190,7 @@ export const FirstBillingComponent = () => {
             <LanguageComponent />
             <div className="w-[1px] h-[20px] bg-blockSeparator" />
             <AttachToFeedbackIcon />
+            <DeveloperIconComponent />
             {/*<NotificationComponent />*/}
             <div className="hover:text-newTextColor">
               {user?.tier.current === 'FREE' && (

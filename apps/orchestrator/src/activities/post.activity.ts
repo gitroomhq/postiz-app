@@ -85,9 +85,11 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    const subscription = await this._subscriptionService.getSubscription(orgId);
-    if (!subscription) {
-      return [];
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(orgId);
+      if (!subscription) {
+        return [];
+      }
     }
 
     const getPosts = await this._postService.getPostsRecursively(

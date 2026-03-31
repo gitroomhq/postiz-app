@@ -17,7 +17,7 @@ import {
 import clsx from 'clsx';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
 const RenderRedditComponent: FC<{
@@ -119,14 +119,14 @@ const RedditPreview: FC = (props) => {
                 {restOfPosts.map((p, index) => (
                   <div className="flex gap-[8px]" key={index}>
                     <div className="w-[32px] h-[32px] relative">
-                      <Image
+                      <SafeImage
                         width={48}
                         height={48}
                         src={integration?.picture!}
                         alt="x"
                         className="rounded-full w-full h-full relative z-[2]"
                       />
-                      <Image
+                      <SafeImage
                         width={24}
                         height={24}
                         src={`/icons/platforms/${integration?.identifier!}.png`}

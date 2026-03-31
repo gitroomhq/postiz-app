@@ -14,6 +14,7 @@ import { Organization } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { ImportMediaDto } from '@gitroom/nestjs-libraries/dtos/third-party/import-media.dto';
 
 @ApiTags('Third Party')
 @Controller('/third-party')
@@ -119,6 +120,52 @@ export class ThirdPartyController {
       AuthService.fixedDecryption(thirdParty.apiKey),
       data
     );
+  }
+
+  @Post('/:id/import')
+  async importMedia(
+    @GetOrgFromRequest() organization: Organization,
+    @Param('id') id: string,
+    @Body() body: ImportMediaDto
+  ) {
+    const thirdParty = await this._thirdPartyManager.getIntegrationById(
+      organization.id,
+      id
+    );
+
+    if (!thirdParty) {
+      throw new HttpException('Integration not found', 404);
+    }
+
+    const thirdPartyInstance = this._thirdPartyManager.getThirdPartyByName(
+      thirdParty.identifier
+    );
+
+    if (!thirdPartyInstance) {
+      throw new HttpException('Invalid identifier', 400);
+    }
+
+    const downloadUrls = await thirdPartyInstance?.instance?.['importMedia']?.(
+      AuthService.fixedDecryption(thirdParty.apiKey),
+      body.items
+    );
+
+    if (!downloadUrls || !Array.isArray(downloadUrls)) {
+      throw new HttpException('Import not supported', 400);
+    }
+
+    const results = [];
+    for (const item of downloadUrls) {
+      const file = await this.storage.uploadSimple(item.url);
+      const saved = await this._mediaService.saveFile(
+        organization.id,
+        item.name || file.split('/').pop(),
+        file
+      );
+      results.push(saved);
+    }
+
+    return results;
   }
 
   @Post('/:identifier')

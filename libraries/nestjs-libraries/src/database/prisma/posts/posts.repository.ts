@@ -419,6 +419,15 @@ export class PostsRepository {
     return update;
   }
 
+  getErrorsByPostIds(postIds: string[]) {
+    return this._errors.model.errors.findMany({
+      where: {
+        postId: { in: postIds },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async changeDate(
     orgId: string,
     id: string,

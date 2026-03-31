@@ -62,7 +62,9 @@ class CloudflareStorage implements IUploadProvider {
     const contentType =
       loadImage?.headers?.get('content-type') ||
       loadImage?.headers?.get('Content-Type');
-    const extension = getExtension(contentType)!;
+    const extension = getExtension(contentType) ||
+      path.split('?')[0].split('#')[0].split('.').pop() ||
+      'bin';
     const id = makeId(10);
 
     const params = {

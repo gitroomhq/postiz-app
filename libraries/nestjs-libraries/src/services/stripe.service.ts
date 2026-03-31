@@ -169,7 +169,7 @@ export class StripeService {
 
     const users = await this._organizationService.getTeam(organization.id);
     const customer = await stripe.customers.create({
-      email: users.users[0].user.email,
+      email: users.users[0].user.email.indexOf('@') > -1 ? users.users[0].user.email : `${users.users[0].user.email}@postiz.com`,
       name: organization.name,
     });
     await this._subscriptionService.updateCustomerId(
@@ -434,7 +434,7 @@ export class StripeService {
 
     try {
       await stripe.customers.update(customer, {
-        email: user.email,
+        email: user.email.indexOf('@') > -1 ? user.email : `${user.email}@postiz.com`,
         ...(body.dub
           ? {
               metadata: {
