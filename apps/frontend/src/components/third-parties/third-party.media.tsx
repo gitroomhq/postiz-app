@@ -102,7 +102,7 @@ export const ThirdPartyPopup: FC<{
                 setThirdParty(p);
               }}
               key={p.identifier}
-              className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-third hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+              className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
             >
               <div>
                 <img

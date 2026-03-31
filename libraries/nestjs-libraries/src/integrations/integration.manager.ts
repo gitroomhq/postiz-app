@@ -70,7 +70,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new MoltbookProvider(),
   new WhopProvider(),
   new SkoolProvider(),
-  // new MeweProvider(),
+  new MeweProvider(),
   // new MastodonCustomProvider(),
 ];
 

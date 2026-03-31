@@ -9,6 +9,8 @@ interface VariableContextInterface {
   oauthLogoUrl: string;
   oauthDisplayName: string;
   mcpUrl?: string;
+  cloudflareUrl: string;
+  mainUrl: string;
   frontEndUrl: string;
   plontoKey: string;
   storageProvider: 'local' | 'cloudflare';
@@ -36,6 +38,8 @@ const VariableContext = createContext({
   oauthLogoUrl: '',
   oauthDisplayName: '',
   mcpUrl: '',
+  cloudflareUrl: '',
+  mainUrl: '',
   frontEndUrl: '',
   storageProvider: 'local',
   plontoKey: '',

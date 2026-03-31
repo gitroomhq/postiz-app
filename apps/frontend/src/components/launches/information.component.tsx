@@ -4,7 +4,7 @@ import React, { FC, Fragment, useMemo } from 'react';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize } from 'lodash';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
@@ -37,7 +37,7 @@ const Invalid: FC = () => {
       viewBox="0 0 16 16"
       fill="none"
     >
-      <g clip-path="url(#clip0_2482_97670)">
+      <g clipPath="url(#clip0_2482_97670)">
         <path
           d="M8.00049 6.00015V8.66682M8.00049 11.3335H8.00715M7.07737 2.59464L1.59411 12.0657C1.28997 12.591 1.1379 12.8537 1.16038 13.0693C1.17998 13.2573 1.2785 13.4282 1.4314 13.5394C1.60671 13.6668 1.91022 13.6668 2.51723 13.6668H13.4837C14.0908 13.6668 14.3943 13.6668 14.5696 13.5394C14.7225 13.4282 14.821 13.2573 14.8406 13.0693C14.8631 12.8537 14.711 12.591 14.4069 12.0657L8.92361 2.59463C8.62056 2.07119 8.46904 1.80947 8.27135 1.72157C8.09892 1.64489 7.90206 1.64489 7.72962 1.72157C7.53193 1.80947 7.38041 2.07119 7.07737 2.59464Z"
           stroke="white"
@@ -191,7 +191,7 @@ export const InformationComponent: FC<{
               {selectedIntegrations.map((p, index) => (
                 <Fragment key={p.integration.id}>
                   <div>
-                    <Image
+                    <SafeImage
                       src={`/icons/platforms/${p.integration.identifier}.png`}
                       alt={p.integration.name}
                       className="rounded-[4px] w-[16px] h-[16px] min-w-[16px] min-h-[16px]"

@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
@@ -200,7 +200,7 @@ export const Plugs = () => {
                   width={36}
                   height={36}
                 />
-                <Image
+                <SafeImage
                   src={`/icons/platforms/${integration.identifier}.png`}
                   className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
                   alt={integration.identifier}

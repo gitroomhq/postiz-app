@@ -5,14 +5,13 @@ import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import {
   cookieName,
-  fallbackLng,
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
 acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie =
     request.cookies.get('auth') ||
@@ -25,7 +24,16 @@ export async function middleware(request: NextRequest) {
           request.headers.get('accept-language')
       );
 
-  const topResponse = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  if (lng) {
+    requestHeaders.set(headerName, lng);
+  }
+
+  const topResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   if (lng) {
     topResponse.headers.set(cookieName, lng);
@@ -68,6 +76,13 @@ export async function middleware(request: NextRequest) {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
     });
     return response;
+  }
+
+  if (
+    nextUrl.pathname.startsWith('/auth/register') &&
+    process.env.DISABLE_REGISTRATION === 'true'
+  ) {
+    return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }
 
   const org = nextUrl.searchParams.get('org');

@@ -1,10 +1,15 @@
+@use './colors.scss';
+@use './polonto.css';
+@use '@uppy/core/dist/style.css' as uppyCore;
+@use '@uppy/dashboard/dist/style.css' as uppyDashboard;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import './colors.scss';
-@import './polonto.css';
-@import '@uppy/core/dist/style.css';
-@import '@uppy/dashboard/dist/style.css';
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 body {
   background: var(--new-bgColor) !important;

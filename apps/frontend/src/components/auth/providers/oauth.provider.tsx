@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -29,7 +29,7 @@ export const OauthProvider = () => {
       className={`cursor-pointer flex-1 bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
     >
       <div>
-        <Image
+        <SafeImage
           src={oauthLogoUrl || '/icons/generic-oauth.svg'}
           alt="genericOauth"
           width={40}

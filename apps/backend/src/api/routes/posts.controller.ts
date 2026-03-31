@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Put,
@@ -142,6 +143,18 @@ export class PostsController {
     @Query('date') date: string
   ) {
     return this._postsService.getOldPosts(org.id, date);
+  }
+
+  @Get('/group/:group/debug-export')
+  async getPostGroupDebugExport(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('group') group: string
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Forbidden', 403);
+    }
+    return this._postsService.getPostGroupDebugExport(org.id, group);
   }
 
   @Get('/group/:group')

@@ -43,6 +43,16 @@ export class IntegrationsController {
     private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 
+  @Post('/provider/:id/connect')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  async saveProviderPage(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: any
+  ) {
+    return this._integrationService.saveProviderPage(org.id, id, body);
+  }
+
   @Get('/:identifier/internal-plugs')
   getInternalPlugs(@Param('identifier') identifier: string) {
     return this._integrationManager.getInternalPlugs(identifier);

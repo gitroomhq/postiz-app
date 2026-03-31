@@ -69,7 +69,7 @@ export const Menu: FC<{
   const ref = useClickOutside<HTMLDivElement>(() => {
     setShow(false);
   });
-  const showRef = useRef();
+  const showRef = useRef(undefined);
 
   // Adjust menu position if it would overflow viewport
   useLayoutEffect(() => {
