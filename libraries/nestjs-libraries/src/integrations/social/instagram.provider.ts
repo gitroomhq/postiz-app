@@ -518,6 +518,82 @@ export class InstagramProvider
     };
   }
 
+  /**
+   * Upload media via Facebook's Resumable Upload API.
+   * Downloads the file from the given URL and uploads it directly to Meta's servers,
+   * returning a file handle that can be used in place of a public URL.
+   * This bypasses domain reputation filtering that causes "Media fetch failed" errors.
+   */
+  private async uploadViaResumableUpload(
+    mediaUrl: string,
+    accessToken: string
+  ): Promise<string | null> {
+    const appId = process.env.FACEBOOK_APP_ID;
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    if (!appId || !appSecret) {
+      return null;
+    }
+
+    try {
+      const mediaResponse = await fetch(mediaUrl);
+      if (!mediaResponse.ok) {
+        return null;
+      }
+
+      const buffer = Buffer.from(await mediaResponse.arrayBuffer());
+      const contentType =
+        mediaResponse.headers.get('content-type') || 'application/octet-stream';
+      const isVideo = mediaUrl.indexOf('.mp4') > -1;
+      const fileType = isVideo
+        ? 'video/mp4'
+        : contentType.startsWith('image/')
+        ? contentType
+        : 'image/jpeg';
+      const fileName = mediaUrl.split('/').pop() || 'media';
+
+      const appToken = `${appId}|${appSecret}`;
+
+      // Step 1: Create upload session
+      const sessionResponse = await (
+        await fetch(
+          `https://graph.facebook.com/v20.0/${appId}/uploads?file_length=${buffer.length}&file_type=${encodeURIComponent(fileType)}&file_name=${encodeURIComponent(fileName)}&access_token=${appToken}`,
+          { method: 'POST' }
+        )
+      ).json();
+
+      if (!sessionResponse.id) {
+        return null;
+      }
+
+      // Step 2: Upload bytes
+      const uploadResponse = await (
+        await fetch(
+          `https://graph.facebook.com/v20.0/${sessionResponse.id}`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `OAuth ${appToken}`,
+              'Content-Type': 'application/offset+octet-stream',
+              offset: '0',
+              file_offset: '0',
+            },
+            body: buffer,
+          }
+        )
+      ).json();
+
+      if (!uploadResponse.h) {
+        return null;
+      }
+
+      // Return the first handle (the response may contain multiple)
+      const handle = uploadResponse.h.split('\n')[0];
+      return handle;
+    } catch {
+      return null;
+    }
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -529,6 +605,9 @@ export class InstagramProvider
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = !!firstPost.settings.is_trial_reel;
+    const useResumableUpload =
+      process.env.INSTAGRAM_USE_RESUMABLE_UPLOAD === 'true' &&
+      type === 'graph.facebook.com';
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
@@ -537,6 +616,20 @@ export class InstagramProvider
             : ``;
         const isCarousel =
           (firstPost?.media?.length || 0) > 1 && !isStory ? `&is_carousel_item=true` : ``;
+
+        // If resumable upload is enabled and media is not a video,
+        // upload directly to Meta's servers to avoid domain filtering
+        let resolvedMediaPath = m.path;
+        if (useResumableUpload && m.path.indexOf('.mp4') === -1) {
+          const handle = await this.uploadViaResumableUpload(
+            m.path,
+            accessToken
+          );
+          if (handle) {
+            resolvedMediaPath = handle;
+          }
+        }
+
         const mediaType =
           m.path.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
@@ -551,8 +644,8 @@ export class InstagramProvider
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
-            : `image_url=${m.path}`;
+            ? `image_url=${resolvedMediaPath}&media_type=STORIES`
+            : `image_url=${resolvedMediaPath}`;
 
         const trialParams = isTrialReel
           ? `&trial_params=${encodeURIComponent(
