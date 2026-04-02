@@ -97,6 +97,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
 
         return event; // Send the event to Sentry
       },
+
+      beforeSendLog: (log: any) => {
+        log.attributes = { ...(log.attributes || {}), service: 'frontend', component: 'nextjs' };
+        return log;
+      },
+
     });
   } catch (err) {
     // Log initialization errors
