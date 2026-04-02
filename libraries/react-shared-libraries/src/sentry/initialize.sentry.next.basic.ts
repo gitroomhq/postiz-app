@@ -60,10 +60,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       debug: environment === 'development',
       tracesSampleRate: 0.1,
 
-      beforeSend(event, hint) {
+      beforeSend(event: any, hint: any) {
         if (isWalletExtensionRejection(hint?.originalException)) {
           return null; // Ignore the event
         }
+
+        event.tags = { ...(event.tags || {}), service: 'frontend', component: 'nextjs' };
 
         if (event.exception && event.exception.values) {
           for (const exception of event.exception.values) {
@@ -101,6 +103,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
 
         return event; // Send the event to Sentry
       },
+
+      beforeSendLog: (log: any) => {
+        log.attributes = { ...(log.attributes || {}), service: 'frontend', component: 'nextjs' };
+        return log;
+      },
+
     });
   } catch (err) {
     // Log initialization errors
