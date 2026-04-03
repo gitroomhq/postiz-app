@@ -12,7 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@nestjs/terminus": "^11.1.1",
-    "terminology": "^0.0.2"
+    "@nestjs/terminus": "^11.1.1"
   }
 }
