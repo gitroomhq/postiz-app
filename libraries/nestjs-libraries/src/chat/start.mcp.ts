@@ -7,6 +7,17 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
 import { createOAuthMiddleware } from './oauth-middleware';
+const fixAcceptHeader = (req: Request) => {
+  const value = 'application/json, text/event-stream';
+  req.headers.accept = value;
+  const idx = req.rawHeaders.findIndex((h) => h.toLowerCase() === 'accept');
+  if (idx !== -1) {
+    req.rawHeaders[idx + 1] = value;
+  } else {
+    req.rawHeaders.push('Accept', value);
+  }
+};
+
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
@@ -95,6 +106,7 @@ export const startMcp = async (app: INestApplication) => {
       return;
     }
 
+    fixAcceptHeader(req);
     await runWithContext({ requestId: token!, auth }, async () => {
       await server.startHTTP({
         url: url,
@@ -103,6 +115,7 @@ export const startMcp = async (app: INestApplication) => {
           sessionIdGenerator: () => {
             return randomUUID();
           },
+          enableJsonResponse: true,
         },
         req,
         res,
@@ -144,6 +157,7 @@ export const startMcp = async (app: INestApplication) => {
 
     const url = new URL('/mcp', process.env.NEXT_PUBLIC_BACKEND_URL);
 
+    fixAcceptHeader(req);
     // @ts-ignore
     await runWithContext({ requestId: token, auth: req.auth }, async () => {
       await server.startHTTP({
@@ -186,6 +200,7 @@ export const startMcp = async (app: INestApplication) => {
       process.env.NEXT_PUBLIC_BACKEND_URL
     );
 
+    fixAcceptHeader(req);
     await runWithContext(
       // @ts-ignore
       { requestId: req.params.id, auth: req.auth },
