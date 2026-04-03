@@ -1,0 +1,33 @@
+/*
+ * BB Post Landing Page — CSS Animations
+ *
+ * Defines the marquee keyframe used by trust-bar.tsx for the platform logo scroll.
+ * Pure CSS — zero JavaScript runtime cost.
+ *
+ * Import in layout.tsx: import './landing.css';
+ */
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* translateX(-50%) works because the content is duplicated:
+       trust-bar.tsx renders [...PLATFORMS, ...PLATFORMS] to create
+       a seamless loop — the second copy starts exactly where the first ends. */
+    transform: translateX(-50%);
+  }
+}
+
+/*
+ * Respect prefers-reduced-motion — pauses the marquee for users who
+ * have enabled reduced motion in their OS accessibility settings.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes marquee {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+  }
+}
