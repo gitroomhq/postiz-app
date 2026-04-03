@@ -44,7 +44,7 @@ import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farc
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 
-import { HealthModule } from '@gitroom/backend/api/routes/health.module';
+
 
 const authenticatedController = [
   UsersController,
@@ -67,7 +67,7 @@ const authenticatedController = [
   AnnouncementsController,
 ];
 @Module({
-  imports: [UploadModule, HealthModule],
+  imports: [UploadModule],
   controllers: [
     RootController,
     StripeController,
