@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
+import { HealthIndicatorResult, HealthCheckError, HealthIndicatorService } from '@nestjs/terminus';
 import { Connection } from '@temporalio/client';
 
 @Injectable()
-export class TemporalHealthIndicator extends HealthIndicator {
+export class TemporalHealthIndicator {
   private connection: Connection | undefined;
 
+  constructor(private healthIndicatorService: HealthIndicatorService) {}
+
   async pingCheck(key: string): Promise<HealthIndicatorResult> {
+    const indicator = this.healthIndicatorService.check(key);
     try {
       if (!this.connection) {
         const address = process.env.TEMPORAL_ADDRESS || 'localhost:7233';
@@ -22,11 +25,11 @@ export class TemporalHealthIndicator extends HealthIndicator {
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
       ]);
 
-      return this.getStatus(key, true);
+      return indicator.up();
     } catch (e: any) {
       throw new HealthCheckError(
         'Temporal check failed',
-        this.getStatus(key, false, { message: e.message })
+        indicator.down({ message: e.message })
       );
     }
   }
