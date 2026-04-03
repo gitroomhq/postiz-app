@@ -1,15 +1,7 @@
-/**
- * BB Post Landing Page
- *
- * Server component — zero client JS at this level. All interactivity is
- * encapsulated in individual client component children (nav, hero animations,
- * features grid animations). See ui_design_spec.md Section 7 for the full
- * RSC/client split table.
- *
- * Section order (industry-validated, from competitor research BUS-110):
- * Nav → Hero → Trust → Features → How It Works → Testimonials →
- * Comparison → Mid CTA → Pricing → Final CTA → Footer
- */
+// Force dynamic rendering — framer-motion v12 hooks require request-time context.
+// The layout handles all metadata/SEO; this prevents static prerender failures.
+export const dynamic = 'force-dynamic';
+
 import { Nav } from './components/nav';
 import { Hero } from './components/hero';
 import { TrustBar } from './components/trust-bar';

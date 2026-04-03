@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
+    nextUrl.pathname === '/' ||
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
     nextUrl.pathname.startsWith('/icons/')
