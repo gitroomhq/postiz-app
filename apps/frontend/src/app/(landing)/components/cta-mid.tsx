@@ -1,63 +1,50 @@
-/**
- * CtaMid — server component
- * Spec: Section 4 — gradient card CTA with trust signals
- */
-import Link from 'next/link';
+'use client';
 
-const TRUST_SIGNALS = [
-  'No credit card required',
-  'Free plan available',
-  '14-day Pro trial included',
-  'Cancel anytime',
-] as const;
+import Link from 'next/link';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { useRef } from 'react';
 
 export function CtaMid() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+  const reduced = useReducedMotion();
+
   return (
-    <section className="py-20 md:py-28 bg-[#0E0E0E]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl bg-gradient-to-br from-[#1A1919] to-[#0E0E0E] border border-[#8B5CF6]/30 p-10 md:p-16 text-center overflow-hidden">
-          {/* Background glow */}
-          <div
-            className="absolute inset-0 bg-[#8B5CF6]/5 rounded-3xl pointer-events-none"
-            aria-hidden="true"
-          />
-
-          <div className="relative">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Ready to post smarter?
-            </h2>
-            <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-              Join businesses and creators who schedule, automate, and grow with BB Post.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <Link
-                href="/auth"
-                className="w-full sm:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-4 text-base font-semibold rounded-xl transition-all duration-200 hover:shadow-[0_0_30px_rgba(139,92,246,0.4)]"
-              >
-                Start Free Today
-              </Link>
-              <Link
-                href="#pricing"
-                className="w-full sm:w-auto border border-white/20 hover:bg-white/5 text-white px-8 py-4 text-base font-semibold rounded-xl transition-all duration-200 text-center"
-              >
-                Explore Pricing
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
-              {TRUST_SIGNALS.map((signal) => (
-                <span key={signal} className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#8B5CF6] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {signal}
-                </span>
-              ))}
-            </div>
-          </div>
+    <section id="cta-mid" className="bg-[#0E0E0E] py-20 px-4 sm:px-6 lg:px-8" ref={ref}>
+      <motion.div
+        initial={reduced ? false : { opacity: 0, y: 24 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+        className="max-w-3xl mx-auto text-center"
+      >
+        <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+          Ready to post smarter?
+        </h2>
+        <p className="mt-4 text-white/55 leading-relaxed">
+          Join businesses and creators who schedule, automate, and grow with BB Post.
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/auth/register"
+            className="w-full sm:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Start Free Today
+          </Link>
+          <Link
+            href="#pricing"
+            className="w-full sm:w-auto border border-white/20 hover:bg-white/5 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-center"
+          >
+            Explore Pricing
+          </Link>
         </div>
-      </div>
+        <ul className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-white/40">
+          {['No credit card required', 'Free plan available', '14-day Pro trial included', 'Cancel anytime'].map((t) => (
+            <li key={t} className="flex items-center gap-1.5">
+              <span className="text-[#8B5CF6]">✓</span>{t}
+            </li>
+          ))}
+        </ul>
+      </motion.div>
     </section>
   );
 }
