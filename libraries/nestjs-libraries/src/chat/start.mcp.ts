@@ -60,6 +60,13 @@ export const startMcp = async (app: INestApplication) => {
     mcpPath: '/mcp-oauth',
   });
 
+  if (process.env.OPENAI_APP_CHALLANGE) {
+    app.use('/.well-known/openai-apps-challenge', (req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(process.env.OPENAI_APP_CHALLANGE);
+    });
+  }
+
   app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response) => {
     const url = new URL('/.well-known/oauth-protected-resource', process.env.NEXT_PUBLIC_BACKEND_URL);
     await oauthMiddleware(req, res, url);
