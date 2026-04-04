@@ -43,9 +43,19 @@ export async function middleware(request: NextRequest) {
     return topResponse;
   }
 
-  // Landing page — unauthenticated users see it; authenticated users fall through
-  // to the try{} block below which redirects them to /analytics or /launches.
-  if (nextUrl.pathname === '/' && !authCookie) {
+  // Public landing routes — unauthenticated users see them.
+  // Authenticated users at / are handled by the try{} block (redirect to dashboard).
+  // The legal/compliance pages are always public (required by TikTok API policy).
+  const PUBLIC_PATHS = [
+    '/privacy-policy',
+    '/terms-of-service',
+    '/music-usage-confirmation',
+    '/branded-content-policy',
+  ];
+  if (
+    (nextUrl.pathname === '/' && !authCookie) ||
+    PUBLIC_PATHS.some((p) => nextUrl.pathname === p || nextUrl.pathname.startsWith(p + '/'))
+  ) {
     return topResponse;
   }
   // If the URL is logout, delete the cookie and redirect to login
