@@ -62,7 +62,7 @@ export function Hero() {
           className="flex flex-col sm:flex-row items-center gap-4"
         >
           <Link
-            href="/auth/register"
+            href="/auth"
             className="w-full sm:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-4 text-base font-semibold rounded-xl transition-all duration-200 hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98]"
           >
             Start Free — No Credit Card Required

@@ -44,7 +44,7 @@ export function HowItWorks() {
 
         <div className="text-center mt-14">
           <Link
-            href="/auth/register"
+            href="/auth"
             className="inline-flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98]"
           >
             Get Started Free — It Takes 2 Minutes
