@@ -36,11 +36,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
-    nextUrl.pathname === '/' ||
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
     nextUrl.pathname.startsWith('/icons/')
   ) {
+    return topResponse;
+  }
+
+  // Landing page — unauthenticated users see it; authenticated users fall through
+  // to the try{} block below which redirects them to /analytics or /launches.
+  if (nextUrl.pathname === '/' && !authCookie) {
     return topResponse;
   }
   // If the URL is logout, delete the cookie and redirect to login
