@@ -239,7 +239,7 @@ export async function postWorkflowV101({
 
   // send webhooks for the post
   await sendWebhooks(
-    postsResults[0].postId,
+    postsResults[0].id,
     post.organizationId,
     post.integration.id
   );
