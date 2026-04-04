@@ -38,7 +38,7 @@ export function CtaMid() {
           </Link>
         </div>
         <ul className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-white/40">
-          {['No credit card required', 'Free plan available', '14-day Pro trial included', 'Cancel anytime'].map((t) => (
+          {['No credit card required', 'Free plan available', 'Open source', 'Cancel anytime'].map((t) => (
             <li key={t} className="flex items-center gap-1.5">
               <span className="text-[#8B5CF6]">✓</span>{t}
             </li>
