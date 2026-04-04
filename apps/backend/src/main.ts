@@ -22,7 +22,6 @@ import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 async function start() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
-    bodyParser: false,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
       allowedHeaders: [
@@ -53,12 +52,8 @@ async function start() {
     })
   );
 
-  app.use((req: any, res: any, next: any) => {
-    if (req.path.startsWith('/mcp') || req.path.startsWith('/sse/') || req.path.startsWith('/message/')) {
-      return next();
-    }
-    const limit = ['/copilot/', '/posts'].some((p) => req.path.startsWith(p)) ? '50mb' : '100kb';
-    json({ limit })(req, res, next);
+  app.use(['/copilot/*', '/posts'], (req: any, res: any, next: any) => {
+    json({ limit: '50mb' })(req, res, next);
   });
 
   app.use(cookieParser());
