@@ -82,7 +82,7 @@ export function Hero() {
           transition={{ ...EASE, delay: 0.4 }}
           className="text-sm text-white/40"
         >
-          Free plan available · Pro trial included · Cancel anytime
+          Free plan available · 7-day trial · Cancel anytime
         </motion.p>
 
         {/* Stat row */}
