@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -15,6 +16,7 @@ import {
   RichText,
   AppBskyEmbedVideo,
   AppBskyVideoDefs,
+  AppBskyFeedDefs,
   AtpAgent,
   BlobRef,
 } from '@atproto/api';
@@ -405,6 +407,196 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         releaseURL: `https://bsky.app/profile/${id}/post/${uri.split('/').pop()}`,
       },
     ];
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().endOf('day');
+    const since = dayjs().subtract(date, 'day');
+
+    try {
+      const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
+
+      const posts: {
+        likeCount: number;
+        repostCount: number;
+        replyCount: number;
+        quoteCount: number;
+        indexedAt: string;
+      }[] = [];
+
+      let cursor: string | undefined;
+      let pages = 0;
+      const maxPages = 10;
+
+      while (pages < maxPages) {
+        const feed = await agent.getAuthorFeed({
+          actor: id,
+          limit: 100,
+          ...(cursor ? { cursor } : {}),
+        });
+
+        let reachedEnd = false;
+        for (const item of feed.data.feed) {
+          if (item.reason) continue;
+
+          const postDate = dayjs(item.post.indexedAt);
+          if (postDate.isBefore(since)) {
+            reachedEnd = true;
+            break;
+          }
+          if (postDate.isAfter(until)) continue;
+
+          posts.push({
+            likeCount: item.post.likeCount ?? 0,
+            repostCount: item.post.repostCount ?? 0,
+            replyCount: item.post.replyCount ?? 0,
+            quoteCount: item.post.quoteCount ?? 0,
+            indexedAt: item.post.indexedAt,
+          });
+        }
+
+        if (reachedEnd || !feed.data.cursor || feed.data.feed.length === 0) {
+          break;
+        }
+        cursor = feed.data.cursor;
+        pages++;
+      }
+
+      if (posts.length === 0) {
+        return [];
+      }
+
+      const dayMap = new Map<
+        string,
+        { likes: number; reposts: number; replies: number; quotes: number }
+      >();
+
+      for (const post of posts) {
+        const dayKey = dayjs(post.indexedAt).format('YYYY-MM-DD');
+        const existing = dayMap.get(dayKey) || {
+          likes: 0,
+          reposts: 0,
+          replies: 0,
+          quotes: 0,
+        };
+        existing.likes += post.likeCount;
+        existing.reposts += post.repostCount;
+        existing.replies += post.replyCount;
+        existing.quotes += post.quoteCount;
+        dayMap.set(dayKey, existing);
+      }
+
+      const sortedDays = Array.from(dayMap.entries()).sort(([a], [b]) =>
+        a.localeCompare(b)
+      );
+
+      const metrics = [
+        { key: 'likes', label: 'Likes' },
+        { key: 'reposts', label: 'Reposts' },
+        { key: 'replies', label: 'Replies' },
+        { key: 'quotes', label: 'Quotes' },
+      ] as const;
+
+      return metrics.map(({ key, label }) => {
+        const dataPoints = sortedDays.map(([day, values]) => ({
+          total: String(values[key]),
+          date: day,
+        }));
+
+        const total = dataPoints.reduce((sum, d) => sum + Number(d.total), 0);
+        const midpoint = Math.floor(dataPoints.length / 2);
+        const firstHalf = dataPoints
+          .slice(0, midpoint)
+          .reduce((s, d) => s + Number(d.total), 0);
+        const secondHalf = dataPoints
+          .slice(midpoint)
+          .reduce((s, d) => s + Number(d.total), 0);
+        const pctChange =
+          firstHalf > 0
+            ? Math.round(((secondHalf - firstHalf) / firstHalf) * 100)
+            : secondHalf > 0
+            ? 100
+            : 0;
+
+        return {
+          label,
+          percentageChange: pctChange,
+          data: dataPoints.length > 0
+            ? dataPoints
+            : [
+                { total: '0', date: since.format('YYYY-MM-DD') },
+                { total: String(total), date: until.format('YYYY-MM-DD') },
+              ],
+        };
+      });
+    } catch (err) {
+      console.error('Error fetching Bluesky analytics:', err);
+      return [];
+    }
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    try {
+      const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
+
+      const thread = await agent.getPostThread({ uri: postId, depth: 0 });
+
+      if (!AppBskyFeedDefs.isThreadViewPost(thread.data.thread)) {
+        return [];
+      }
+
+      const post = thread.data.thread.post;
+
+      const result: AnalyticsData[] = [];
+
+      if (post.likeCount !== undefined) {
+        result.push({
+          label: 'Likes',
+          percentageChange: 0,
+          data: [{ total: String(post.likeCount), date: today }],
+        });
+      }
+
+      if (post.repostCount !== undefined) {
+        result.push({
+          label: 'Reposts',
+          percentageChange: 0,
+          data: [{ total: String(post.repostCount), date: today }],
+        });
+      }
+
+      if (post.replyCount !== undefined) {
+        result.push({
+          label: 'Replies',
+          percentageChange: 0,
+          data: [{ total: String(post.replyCount), date: today }],
+        });
+      }
+
+      if (post.quoteCount !== undefined) {
+        result.push({
+          label: 'Quotes',
+          percentageChange: 0,
+          data: [{ total: String(post.quoteCount), date: today }],
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Bluesky post analytics:', err);
+      return [];
+    }
   }
 
   @Plug({
