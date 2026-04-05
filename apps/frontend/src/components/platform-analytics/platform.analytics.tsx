@@ -28,6 +28,7 @@ const allowedIntegrations = [
   'pinterest',
   'threads',
   'x',
+  'bluesky',
 ];
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
@@ -87,6 +88,7 @@ export const PlatformAnalytics = () => {
         'gmb',
         'x',
         'tiktok',
+        'bluesky',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
@@ -106,6 +108,7 @@ export const PlatformAnalytics = () => {
         'gmb',
         'x',
         'tiktok',
+        'bluesky',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
@@ -114,7 +117,7 @@ export const PlatformAnalytics = () => {
       });
     }
     if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x', 'gmb'].indexOf(
+      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x', 'gmb', 'bluesky'].indexOf(
         currentIntegration.identifier
       ) !== -1
     ) {
