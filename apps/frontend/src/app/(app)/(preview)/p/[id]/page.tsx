@@ -14,7 +14,7 @@ import { RenderPreviewDateClient } from '@gitroom/frontend/components/preview/re
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
+  title: `${isGeneralServerSide() ? 'PostHub' : 'Gitroom'} Preview`,
   description: '',
 };
 export default async function Auth(
@@ -56,7 +56,7 @@ export default async function Auth(
                 >
                   <div className="max-w-[55px]">
                     <SafeImage
-                      src={'/postiz.svg'}
+                      src={'/posthub-logo.jpg'}
                       width={55}
                       height={55}
                       alt="Logo"

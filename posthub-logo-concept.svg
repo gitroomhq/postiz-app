@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" fill="none">
+  <defs>
+    <linearGradient id="posthub-grad" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect x="2" y="2" width="56" height="56" rx="14" ry="14" fill="url(#posthub-grad)"/>
+  <!-- Paper plane / send icon forming a "P" shape -->
+  <path d="M15 30 L40 15 L30 28 L40 45 Z" fill="white" opacity="0.95"/>
+  <path d="M15 30 L30 28 L25 35 Z" fill="white" opacity="0.7"/>
+</svg>

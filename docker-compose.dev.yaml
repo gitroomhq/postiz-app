@@ -3,35 +3,35 @@
 # This is only for the dev enviroment
 
 services:
-  postiz-postgres:
+  posthub-postgres:
     # ref: https://hub.docker.com/_/postgres
     image: postgres:17-alpine # 17.0
-    container_name: postiz-postgres
+    container_name: posthub-postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: postiz-local-pwd
       POSTGRES_USER: postiz-local
-      POSTGRES_DB: postiz-db-local
+      POSTGRES_DB: posthub-db-local
       TEMPORAL_ADDRESS: "temporal:7233"
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
-      - postiz-network
-  postiz-redis:
+      - posthub-network
+  posthub-redis:
     # ref: https://hub.docker.com/_/redis
     image: redis:7-alpine # 7.4.0
-    container_name: postiz-redis
+    container_name: posthub-redis
     restart: always
     ports:
       - 6379:6379
     networks:
-      - postiz-network
+      - posthub-network
   postiz-pg-admin:
     # ref: https://hub.docker.com/r/dpage/pgadmin4/tags
     image: dpage/pgadmin4:latest
-    container_name: postiz-pg-admin
+    container_name: posthub-pg-admin
     restart: always
     ports:
       - 8081:80
@@ -39,19 +39,19 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     networks:
-      - postiz-network
-  postiz-redisinsight:
+      - posthub-network
+  posthub-redisinsight:
     # ref: https://hub.docker.com/r/redis/redisinsight
     image: redis/redisinsight:latest
-    container_name: postiz-redisinsight
+    container_name: posthub-redisinsight
     links:
-      - postiz-redis
+      - posthub-redis
     ports:
       - '5540:5540'
     volumes:
       - redisinsight:/data
     networks:
-      - postiz-network
+      - posthub-network
     restart: always
 
   temporal-elasticsearch:
@@ -141,7 +141,7 @@ volumes:
     external: false
 
 networks:
-  postiz-network:
+  posthub-network:
     external: false
   temporal-network:
     driver: bridge

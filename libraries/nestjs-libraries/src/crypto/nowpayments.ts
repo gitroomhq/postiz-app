@@ -60,7 +60,7 @@ export class Nowpayments {
           price_currency: 'USD',
           order_id: make,
           pay_currency: 'SOL',
-          order_description: 'Lifetime deal account for Postiz',
+          order_description: 'Lifetime deal account for PostHub',
           ipn_callback_url:
             process.env.NEXT_PUBLIC_BACKEND_URL +
             `/public/crypto/${signRequest}`,

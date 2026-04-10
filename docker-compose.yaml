@@ -1,7 +1,7 @@
 services:
   postiz:
     image: ghcr.io/gitroomhq/postiz-app:latest
-    container_name: postiz
+    container_name: posthub
     restart: always
     environment:
       # === Required Settings
@@ -9,8 +9,8 @@ services:
       FRONTEND_URL: 'http://localhost:4007'
       NEXT_PUBLIC_BACKEND_URL: 'http://localhost:4007/api'
       JWT_SECRET: 'random string that is unique to every install - just type random characters here!'
-      DATABASE_URL: 'postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local'
-      REDIS_URL: 'redis://postiz-redis:6379'
+      DATABASE_URL: 'postgresql://posthub-user:posthub-password@posthub-postgres:5432/posthub-db-local'
+      REDIS_URL: 'redis://posthub-redis:6379'
       BACKEND_INTERNAL_URL: 'http://localhost:3000'
       TEMPORAL_ADDRESS: "temporal:7233"
       IS_GENERAL: 'true'
@@ -109,39 +109,39 @@ services:
       # LINK_DRIP_SHORT_LINK_DOMAIN: "dripl.ink"
 
     volumes:
-      - postiz-config:/config/
-      - postiz-uploads:/uploads/
+      - posthub-config:/config/
+      - posthub-uploads:/uploads/
     ports:
       - "4007:5000"
     networks:
-      - postiz-network
+      - posthub-network
       - temporal-network
     depends_on:
-      postiz-postgres:
+      posthub-postgres:
         condition: service_healthy
-      postiz-redis:
+      posthub-redis:
         condition: service_healthy
 
-  postiz-postgres:
+  posthub-postgres:
     image: postgres:17-alpine
-    container_name: postiz-postgres
+    container_name: posthub-postgres
     restart: always
     environment:
-      POSTGRES_PASSWORD: postiz-password
-      POSTGRES_USER: postiz-user
-      POSTGRES_DB: postiz-db-local
+      POSTGRES_PASSWORD: posthub-password
+      POSTGRES_USER: posthub-user
+      POSTGRES_DB: posthub-db-local
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     networks:
-      - postiz-network
+      - posthub-network
     healthcheck:
-      test: pg_isready -U postiz-user -d postiz-db-local
+      test: pg_isready -U posthub-user -d posthub-db-local
       interval: 10s
       timeout: 3s
       retries: 3
-  postiz-redis:
+  posthub-redis:
     image: redis:7.2
-    container_name: postiz-redis
+    container_name: posthub-redis
     restart: always
     healthcheck:
       test: redis-cli ping
@@ -149,9 +149,9 @@ services:
       timeout: 3s
       retries: 3
     volumes:
-      - postiz-redis-data:/data
+      - posthub-redis-data:/data
     networks:
-      - postiz-network
+      - posthub-network
 
   # For Application Monitoring / Debugging
   spotlight:
@@ -161,7 +161,7 @@ services:
       - 8969:8969/tcp
     image: ghcr.io/getsentry/spotlight:latest
     networks:
-      - postiz-network
+      - posthub-network
 
   # -----------------------
   # Temporal Stack
@@ -251,17 +251,17 @@ volumes:
   postgres-volume:
     external: false
 
-  postiz-redis-data:
+  posthub-redis-data:
     external: false
 
-  postiz-config:
+  posthub-config:
     external: false
 
-  postiz-uploads:
+  posthub-uploads:
     external: false
 
 networks:
-  postiz-network:
+  posthub-network:
     external: false
   temporal-network:
     driver: bridge

@@ -56,4 +56,4 @@ This project follows a Fork/Feature Branch/Pull Request model. If you're not fam
 
 Again, do check the [developer guide](https://docs.postiz.com/developer-guide). Much of what you probably need to know is in there.
 
-If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make Postiz better!
+If you encounter any issues, please visit our [support page](https://docs.postiz.com/support) or check the community forums. Your contributions help make PostHub better!
