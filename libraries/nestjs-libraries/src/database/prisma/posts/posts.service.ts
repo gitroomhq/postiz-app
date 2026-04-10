@@ -416,6 +416,7 @@ export class PostsService {
 
       return getImageList;
     } catch (err: any) {
+      console.error(`[updateMedia] Failed for post ${id}:`, err.message);
       return imagesList;
     }
   }
