@@ -10,7 +10,6 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { RealIP } from 'nestjs-real-ip';
@@ -27,6 +26,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { Readable, pipeline } from 'stream';
 import { promisify } from 'util';
 import { OnlyURL } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
+import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 
 const pump = promisify(pipeline);
 
@@ -34,7 +34,6 @@ const pump = promisify(pipeline);
 @Controller('/public')
 export class PublicController {
   constructor(
-    private _agenciesService: AgenciesService,
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
@@ -51,26 +50,6 @@ export class PublicController {
       return;
     }
     return this._agentGraphInsertService.newPost(body.text);
-  }
-
-  @Get('/agencies-list')
-  async getAgencyByUser() {
-    return this._agenciesService.getAllAgencies();
-  }
-
-  @Get('/agencies-list-slug')
-  async getAgencySlug() {
-    return this._agenciesService.getAllAgenciesSlug();
-  }
-
-  @Get('/agencies-information/:agency')
-  async getAgencyInformation(@Param('agency') agency: string) {
-    return this._agenciesService.getAgencyInformation(agency);
-  }
-
-  @Get('/agencies-list-count')
-  async getAgenciesCount() {
-    return this._agenciesService.getCount();
   }
 
   @Get(`/posts/:id`)
@@ -198,7 +177,45 @@ export class PublicController {
     req.on('aborted', onClose);
     res.on('close', onClose);
 
-    const r = await fetch(url, { signal: ac.signal });
+    // Manually follow redirects so every hop is re-validated against
+    // the SSRF blocklist (see GHSA-34w8-5j2v-h6ww). `fetch` defaults to
+    // `redirect: 'follow'`, which bypasses the DTO-level URL check.
+    const MAX_REDIRECTS = 5;
+    let currentUrl = url;
+    let r: globalThis.Response | undefined;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      if (!(await isSafePublicHttpsUrl(currentUrl))) {
+        return res.status(400).send('Blocked URL');
+      }
+
+      r = await fetch(currentUrl, {
+        signal: ac.signal,
+        redirect: 'manual',
+      });
+
+      if (r.status >= 300 && r.status < 400) {
+        const location = r.headers.get('location');
+        if (!location) {
+          return res.status(502).send('Redirect without Location');
+        }
+        try {
+          currentUrl = new URL(location, currentUrl).toString();
+        } catch {
+          return res.status(400).send('Invalid redirect target');
+        }
+        continue;
+      }
+
+      break;
+    }
+
+    if (!r) {
+      return res.status(502).send('No upstream response');
+    }
+
+    if (r.status >= 300 && r.status < 400) {
+      return res.status(508).send('Too many redirects');
+    }
 
     if (!r.ok && r.status !== 206) {
       res.status(r.status);

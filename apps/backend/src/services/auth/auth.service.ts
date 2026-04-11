@@ -309,6 +309,9 @@ export class AuthService {
   }
 
   private async jwt(user: User) {
+    if (user.password) {
+      delete user.password;
+    }
     return AuthChecker.signJWT(user);
   }
 }

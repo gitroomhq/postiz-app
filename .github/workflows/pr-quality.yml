@@ -43,7 +43,7 @@ jobs:
           # Exemptions
           exempt-author-association: "OWNER,MEMBER,COLLABORATOR"
           exempt-users: "nevo-david,egelhaus"
-          exempt-bots: true
+          exempt-bots: "postiz-agent[bot]"
 
           # Actions
           exempt-label: "exempt"
