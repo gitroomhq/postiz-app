@@ -548,17 +548,17 @@ export class InstagramProvider
           m.path.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1
               ? isStory
-                ? `video_url=${m.path}&media_type=STORIES`
+                ? `video_url=${m.path}&media_type=STORIES${firstPost.settings.story_link_url ? `&link=${encodeURIComponent(firstPost.settings.story_link_url)}` : ""}`
                 : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                     m?.thumbnailTimestamp || 0
                   }`
               : isStory
-              ? `video_url=${m.path}&media_type=STORIES`
+              ? `video_url=${m.path}&media_type=STORIES${firstPost.settings.story_link_url ? `&link=${encodeURIComponent(firstPost.settings.story_link_url)}` : ""}`
               : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
+            ? `image_url=${m.path}&media_type=STORIES${firstPost.settings.story_link_url ? `&link=${encodeURIComponent(firstPost.settings.story_link_url)}` : ""}`
             : `image_url=${m.path}`;
 
         const trialParams = isTrialReel

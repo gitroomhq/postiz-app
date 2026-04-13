@@ -30,4 +30,8 @@ export class InstagramDto {
   @IsArray()
   @IsOptional()
   collaborators: Collaborators[];
+
+  @IsOptional()
+  @IsString()
+  story_link_url?: string;
 }
