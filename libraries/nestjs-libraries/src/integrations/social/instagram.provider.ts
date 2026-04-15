@@ -571,7 +571,7 @@ export class InstagramProvider
           : ``;
 
         const collaborators =
-          firstPost?.settings?.collaborators?.length && !isStory
+          firstPost?.settings?.collaborators?.length && !isStory && !isCarousel
             ? `&collaborators=${JSON.stringify(
                 firstPost?.settings?.collaborators.map((p) => p.label)
               )}`
@@ -663,13 +663,19 @@ export class InstagramProvider
         },
       ];
     } else {
+      const carouselCollaborators =
+        firstPost?.settings?.collaborators?.length
+          ? `&collaborators=${JSON.stringify(
+              firstPost?.settings?.collaborators.map((p) => p.label)
+            )}`
+          : ``;
       const { id: containerId, ...all3 } = await (
         await this.fetch(
           `https://${type}/v20.0/${id}/media?caption=${encodeURIComponent(
             firstPost?.message
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
             medias.join(',')
-          )}&access_token=${accessToken}`,
+          )}${carouselCollaborators}&access_token=${accessToken}`,
           {
             method: 'POST',
           }
