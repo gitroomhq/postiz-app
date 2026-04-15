@@ -123,12 +123,42 @@ export class CopilotController {
     const mastra = await this._mastraService.mastra();
     const memory = await mastra.getAgent('postiz').getMemory();
     try {
-      return await memory.recall({
+      const recalled = await memory.recall({
         resourceId: organization.id,
         threadId,
       });
+
+      // Transform Mastra memory messages into the CopilotKit uiMessages
+      // format that the frontend LoadMessages component expects.
+      // Mastra stores message content as an object { format, parts, content }
+      // but CopilotKit's TextMessage requires content as a plain string.
+      const messages = recalled.messages || [];
+      const uiMessages = messages.map((msg: any) => {
+        let textContent = '';
+        if (typeof msg.content === 'string') {
+          textContent = msg.content;
+        } else if (msg.content && typeof msg.content === 'object') {
+          if (typeof msg.content.content === 'string') {
+            textContent = msg.content.content;
+          } else if (Array.isArray(msg.content.parts)) {
+            textContent = msg.content.parts
+              .filter((p: any) => p.type === 'text')
+              .map((p: any) => p.text)
+              .join('\n');
+          }
+        }
+
+        return {
+          id: msg.id,
+          content: textContent,
+          role: msg.role,
+          createdAt: msg.createdAt,
+        };
+      });
+
+      return { uiMessages };
     } catch (err) {
-      return { messages: [] };
+      return { uiMessages: [] };
     }
   }
 
