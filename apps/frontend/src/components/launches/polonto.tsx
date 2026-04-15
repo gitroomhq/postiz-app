@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import 'polotno/polotno.blueprint.css';
 import { createStore } from 'polotno/model/store';
 import Workspace from 'polotno/canvas/workspace';
 import { PolotnoContainer, SidePanelWrap, WorkspaceWrap } from 'polotno';

@@ -106,25 +106,34 @@ export class OrganizationRepository {
   getImpersonateUser(name: string) {
     return this._userOrg.model.userOrganization.findMany({
       where: {
-        user: {
-          OR: [
-            {
-              name: {
-                contains: name,
-              },
+        OR: [
+          {
+            organizationId: {
+              contains: name,
             },
-            {
-              email: {
-                contains: name,
-              },
+          },
+          {
+            user: {
+              OR: [
+                {
+                  name: {
+                    contains: name,
+                  },
+                },
+                {
+                  email: {
+                    contains: name,
+                  },
+                },
+                {
+                  id: {
+                    contains: name,
+                  },
+                },
+              ],
             },
-            {
-              id: {
-                contains: name,
-              },
-            },
-          ],
-        },
+          },
+        ],
       },
       select: {
         id: true,

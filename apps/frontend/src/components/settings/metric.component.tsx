@@ -34,12 +34,11 @@ const MetricComponent = () => {
   return (
     <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
       <div className="mt-[4px]">Date Metrics</div>
-      <Select name="metric" disableForm={true} label="" onChange={changeMetric}>
+      <Select name="metric" disableForm={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
         {dateMetrics.map((metric) => (
           <option
             key={metric.value}
             value={metric.value}
-            selected={currentMetric === (metric.value === 'US')}
           >
             {metric.label}
           </option>

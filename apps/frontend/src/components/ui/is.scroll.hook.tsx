@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export function useHasScroll(
-  ref: React.RefObject<HTMLElement>,
+  ref: React.RefObject<HTMLElement | null>,
 ) {
   const [hasScroll, setHasScroll] = useState(false);
   useEffect(() => {

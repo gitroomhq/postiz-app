@@ -67,6 +67,7 @@ async function start() {
 
   try {
     await app.listen(port);
+    console.log('Backend started successfully on port ' + port);
 
     checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 

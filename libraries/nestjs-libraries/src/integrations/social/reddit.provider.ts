@@ -184,15 +184,19 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
     const valueArray: PostResponse[] = [];
     for (const firstPostSettings of post.settings.subreddit) {
+      const kind =
+        firstPostSettings.value.type === 'media'
+          ? post.media[0].path.indexOf('mp4') > -1
+            ? 'video'
+            : 'image'
+          : firstPostSettings.value.type;
       const postData = {
         api_type: 'json',
         title: firstPostSettings.value.title || '',
         kind:
-          firstPostSettings.value.type === 'media'
-            ? post.media[0].path.indexOf('mp4') > -1
-              ? 'video'
-              : 'image'
-            : firstPostSettings.value.type,
+          ['link', 'self', 'image', 'video', 'videogif'].indexOf(kind) > -1
+            ? kind
+            : 'self',
         ...(firstPostSettings.value.flair
           ? { flair_id: firstPostSettings.value.flair.id }
           : {}),
@@ -218,10 +222,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
             }
           : {}),
         text: post.message,
-        sr:
-          firstPostSettings.value.subreddit.indexOf('/r/') > -1
-            ? firstPostSettings.value.subreddit
-            : `/r/${firstPostSettings.value.subreddit}`,
+        sr: firstPostSettings.value.subreddit.replace('/r/', '').toLowerCase(),
       };
 
       const all = await (

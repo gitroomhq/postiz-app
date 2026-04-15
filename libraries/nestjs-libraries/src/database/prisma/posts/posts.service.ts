@@ -420,6 +420,53 @@ export class PostsService {
     }
   }
 
+  async getPostGroupDebugExport(orgId: string, group: string) {
+    const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
+    const errors = await this._postRepository.getErrorsByPostIds(
+      loadAll.map((p) => p.id)
+    );
+    const posts = this.arrangePostsByGroup(loadAll, undefined);
+    const rootPost = posts[0] as any;
+
+    return {
+      type: 'draft' as const,
+      shortLink: false,
+      date: rootPost.publishDate.toISOString(),
+      tags:
+        rootPost.tags?.map((t: any) => ({
+          value: t.tag.id,
+          label: t.tag.name,
+        })) || [],
+      posts: [
+        {
+          integration: { id: 'REPLACE_WITH_LOCAL_INTEGRATION_ID' },
+          group: rootPost.group,
+          settings: JSON.parse(rootPost.settings || '{}'),
+          value: posts.map((post) => ({
+            content: post.content,
+            image: JSON.parse(post.image || '[]'),
+            delay: post.delay || 0,
+          })),
+        },
+      ],
+      _debug: {
+        providerIdentifier: rootPost.integration?.providerIdentifier,
+        providerName: rootPost.integration?.name,
+        state: rootPost.state,
+        error: rootPost.error,
+        errors: errors.map((e) => ({
+          message: e.message,
+          platform: e.platform,
+          body: e.body,
+          createdAt: e.createdAt,
+        })),
+        originalGroup: group,
+        originalPublishDate: rootPost.publishDate,
+        exportedAt: new Date().toISOString(),
+      },
+    };
+  }
+
   async getPostsByGroup(orgId: string, group: string) {
     const convertToJPEG = false;
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
@@ -659,7 +706,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV101', {
+        ?.workflow.start('postWorkflowV102', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -735,6 +782,31 @@ export class PostsService {
 
   async changeState(id: string, state: State, err?: any, body?: any) {
     return this._postRepository.changeState(id, state, err, body);
+  }
+
+  async changePostStatus(
+    orgId: string,
+    id: string,
+    status: 'draft' | 'schedule'
+  ) {
+    const getPostById = await this._postRepository.getPostById(id, orgId);
+    if (!getPostById) {
+      throw new BadRequestException('Post not found');
+    }
+
+    const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
+    await this._postRepository.changeState(id, state);
+
+    try {
+      await this.startWorkflow(
+        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+        getPostById.id,
+        orgId,
+        state
+      );
+    } catch (err) {}
+
+    return { id, state };
   }
 
   async changeDate(

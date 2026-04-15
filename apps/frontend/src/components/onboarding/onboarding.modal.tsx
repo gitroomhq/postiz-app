@@ -5,7 +5,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
 import clsx from 'clsx';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -173,14 +173,14 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
                 className="flex items-center gap-[8px] bg-customColor47/30 rounded-[8px] px-[12px] py-[8px]"
               >
                 <div className="relative w-[28px] h-[28px]">
-                  <Image
+                  <SafeImage
                     src={integration.picture}
                     className="rounded-full"
                     alt={integration.identifier}
                     width={28}
                     height={28}
                   />
-                  <Image
+                  <SafeImage
                     src={`/icons/platforms/${integration.identifier}.png`}
                     className="rounded-full absolute -bottom-[3px] -end-[3px] border border-fifth"
                     alt={integration.identifier}

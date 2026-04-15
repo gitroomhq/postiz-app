@@ -159,7 +159,7 @@ export class PinterestProvider
   @Tool({ description: 'List of boards', dataSchema: [] })
   async boards(accessToken: string) {
     const { items } = await (
-      await fetch('https://api.pinterest.com/v5/boards', {
+      await fetch('https://api.pinterest.com/v5/boards?page_size=250', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,

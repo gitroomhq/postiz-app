@@ -150,7 +150,7 @@ export const ThirdPartyComponent = () => {
             <div className="flex-1 flex flex-col gap-[14px]">
               <div
                 className={clsx(
-                  'gap-[16px] flex flex-col relative justify-center group/profile hover:bg-boxHover rounded-e-[8px]'
+                  'gap-[16px] flex flex-col relative justify-center rounded-e-[8px]'
                 )}
               >
                 {!isLoading && !data?.length ? (
@@ -159,14 +159,14 @@ export const ThirdPartyComponent = () => {
                   data?.map((p: any) => (
                     <div
                       key={p.id}
-                      className={clsx('flex gap-[8px] items-center')}
+                      className={clsx('flex gap-[8px] items-center group/profile hover:bg-boxHover')}
                     >
-                      <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                      <div className="h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
                         <SVGLine />
                       </div>
                       <div
                         className={clsx(
-                          'relative rounded-full flex justify-center items-center bg-fifth'
+                          'relative rounded-full flex justify-center items-center'
                         )}
                         data-tooltip-id="tooltip"
                         data-tooltip-content={p.title}

@@ -694,7 +694,7 @@ const Scrollable: FC<{
   scrollClasses: string;
   children: ReactNode;
 }> = ({ className, scrollClasses, children }) => {
-  const ref = useRef();
+  const ref = useRef(undefined);
   const hasScroll = useHasScroll(ref);
   return (
     <div className={clsx(className, hasScroll && scrollClasses)} ref={ref}>

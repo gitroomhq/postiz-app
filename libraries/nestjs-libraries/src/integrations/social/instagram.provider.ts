@@ -52,7 +52,10 @@ export class InstagramProvider
     };
   }
 
-  public override handleErrors(body: string):
+  public override handleErrors(
+    body: string,
+    status: number
+  ):
     | {
         type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
@@ -92,7 +95,7 @@ export class InstagramProvider
     if (body.toLowerCase().indexOf('session has been invalidated') > -1) {
       return {
         type: 'refresh-token' as const,
-        value: 'Please re-authenticate your Instagram account',
+        value: 'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
       };
     }
 
@@ -272,7 +275,8 @@ export class InstagramProvider
     if (body.indexOf('190,') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
+        value:
+          'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
       };
     }
 
@@ -308,7 +312,7 @@ export class InstagramProvider
     if (body.indexOf('param collaborators is not allowed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Collaborators are not allowed for carousel'
+        value: 'Collaborators are not allowed for carousel',
       };
     }
 
@@ -439,8 +443,9 @@ export class InstagramProvider
     // Also fetch pages via Business Manager API to discover pages
     // not selected during the OAuth page selection step
     try {
-      let bizUrl: string | undefined =
-        `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();
@@ -536,7 +541,9 @@ export class InstagramProvider
             ? `&caption=${encodeURIComponent(firstPost.message)}`
             : ``;
         const isCarousel =
-          (firstPost?.media?.length || 0) > 1 && !isStory ? `&is_carousel_item=true` : ``;
+          (firstPost?.media?.length || 0) > 1 && !isStory
+            ? `&is_carousel_item=true`
+            : ``;
         const mediaType =
           m.path.indexOf('.mp4') > -1
             ? firstPost?.media?.length === 1

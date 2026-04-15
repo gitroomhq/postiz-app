@@ -14,8 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
-  UpdateDto,
-  WebhooksDto,
+  OnlyURL, UpdateDto, WebhooksDto
 } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
@@ -55,9 +54,9 @@ export class WebhookController {
   }
 
   @Post('/send')
-  async sendWebhook(@Body() body: any, @Query('url') url: string) {
+  async sendWebhook(@Body() body: any, @Query() query: OnlyURL) {
     try {
-      await fetch(url, {
+      await fetch(query.url, {
         method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },

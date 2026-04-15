@@ -1,6 +1,6 @@
 import { Input } from '@gitroom/react/form/input';
 import { ChangeEventHandler, FC, useCallback, useMemo, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Select } from '@gitroom/react/form/select';
@@ -11,6 +11,7 @@ import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
+import { ImportDebugPostModal } from '@gitroom/frontend/components/launches/import-debug-post.modal';
 
 interface Charge {
   id: string;
@@ -21,6 +22,8 @@ interface Charge {
   refunded: boolean;
   amount_refunded: number;
   description: string | null;
+  receipt_url: string | null;
+  invoice_pdf: string | null;
 }
 
 const useCharges = () => {
@@ -123,6 +126,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                 <th className="p-[8px]">{t('date', 'Date')}</th>
                 <th className="p-[8px]">{t('amount', 'Amount')}</th>
                 <th className="p-[8px]">{t('status', 'Status')}</th>
+                <th className="p-[8px] w-[50px]" />
               </tr>
             </thead>
             <tbody>
@@ -175,6 +179,34 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                       <span className="text-green-400">
                         {t('paid', 'Paid')}
                       </span>
+                    )}
+                  </td>
+                  <td className="p-[8px]">
+                    {(charge.invoice_pdf || charge.receipt_url) && (
+                      <a
+                        href={charge.invoice_pdf || charge.receipt_url!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-[4px] hover:bg-tableBorder transition-colors"
+                        title={charge.invoice_pdf ? t('download_invoice', 'Download Invoice') : t('view_receipt', 'View Receipt')}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      </a>
                     )}
                   </td>
                 </tr>
@@ -272,6 +304,134 @@ export const Subscription = () => {
     </Select>
   );
 };
+const colorOptions = [
+  { value: 'INFO', label: 'Info (Blue)', className: 'bg-blue-600' },
+  { value: 'WARNING', label: 'Warning (Amber)', className: 'bg-amber-600' },
+  { value: 'ERROR', label: 'Error (Red)', className: 'bg-red-600' },
+];
+
+const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
+  const fetch = useFetch();
+  const { mutate } = useSWRConfig();
+  const t = useT();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [color, setColor] = useState('INFO');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = useCallback(async () => {
+    if (!title.trim() || !description.trim()) return;
+    setSaving(true);
+    try {
+      await fetch('/announcements', {
+        method: 'POST',
+        body: JSON.stringify({ title, description, color }),
+      });
+      await mutate('/announcements');
+      close();
+    } finally {
+      setSaving(false);
+    }
+  }, [title, description, color]);
+
+  return (
+    <div className="flex flex-col gap-[16px] min-w-[500px]">
+      <Input
+        label={t('announcement_title', 'Title')}
+        name="title"
+        disableForm={true}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={t('announcement_title_placeholder', 'Announcement title')}
+      />
+      <div className="flex flex-col gap-[6px]">
+        <label className="text-[14px]">
+          {t('announcement_description', 'Description')}
+        </label>
+        <textarea
+          className="bg-input border border-tableBorder rounded-[8px] p-[10px] text-newTextColor min-h-[120px] outline-none resize-y"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t(
+            'announcement_description_placeholder',
+            'Announcement description'
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-[6px]">
+        <label className="text-[14px]">
+          {t('announcement_color', 'Color')}
+        </label>
+        <div className="flex gap-[8px]">
+          {colorOptions.map((opt) => (
+            <div
+              key={opt.value}
+              onClick={() => setColor(opt.value)}
+              className={`flex-1 text-center py-[8px] rounded-[8px] text-white text-[13px] cursor-pointer transition-opacity ${opt.className} ${
+                color === opt.value ? 'opacity-100 ring-2 ring-white' : 'opacity-40'
+              }`}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSubmit}
+          loading={saving}
+          disabled={!title.trim() || !description.trim()}
+          className="rounded-[4px]"
+        >
+          {t('create_announcement', 'Create Announcement')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const AddAnnouncement = () => {
+  const { openModal } = useModals();
+  const t = useT();
+
+  const handleClick = useCallback(() => {
+    openModal({
+      title: t('add_announcement', 'Add Announcement'),
+      children: (close) => <AddAnnouncementModal close={close} />,
+    });
+  }, []);
+
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-green-700 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('add_announcement', 'Add Announcement')}
+    </div>
+  );
+};
+
+const ImportDebugPost = () => {
+  const { openModal } = useModals();
+  const t = useT();
+
+  const handleClick = useCallback(() => {
+    openModal({
+      title: t('import_debug_post', 'Import Debug Post'),
+      children: (close) => <ImportDebugPostModal close={close} />,
+    });
+  }, []);
+
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-yellow-600 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('import_debug_post', 'Import Debug Post')}
+    </div>
+  );
+};
+
 export const Impersonate = () => {
   const fetch = useFetch();
   const [name, setName] = useState('');
@@ -334,7 +494,7 @@ export const Impersonate = () => {
     <div>
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
         <div className="relative flex flex-col w-[600px]">
-          <div className="relative z-[999]">
+          <div className="relative z-[1]">
             {user?.impersonate ? (
               <div className="text-center flex justify-center items-center gap-[20px]">
                 <div>
@@ -352,16 +512,22 @@ export const Impersonate = () => {
                 {billingEnabled && <ManageBilling />}
               </div>
             ) : (
-              <Input
-                autoComplete="off"
-                placeholder="Write the user details"
-                name="impersonate"
-                disableForm={true}
-                label=""
-                removeError={true}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="flex items-center gap-[10px]">
+                <div className="flex-1">
+                  <Input
+                    autoComplete="off"
+                    placeholder="Write the user details"
+                    name="impersonate"
+                    disableForm={true}
+                    label=""
+                    removeError={true}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <ImportDebugPost />
+                <AddAnnouncement />
+              </div>
             )}
           </div>
           {!!data?.length && (

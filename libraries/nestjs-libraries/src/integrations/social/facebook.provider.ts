@@ -31,7 +31,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
   dto = FacebookDto;
 
-  override handleErrors(body: string):
+  override handleErrors(
+    body: string,
+    status: number
+  ):
     | {
         type: 'refresh-token' | 'bad-body';
         value: string;
@@ -129,7 +132,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('1404112') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'For security reasons, your account has limited access to the site for a few days',
+        value:
+          'For security reasons, your account has limited access to the site for a few days',
       };
     }
 
@@ -152,6 +156,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Facebook service temporarily unavailable',
+      };
+    }
+
+    if (status === 401) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'An unknown error occurred, please try again later or contact support',
       };
     }
 
@@ -289,8 +301,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     // Also fetch pages via Business Manager API to discover pages
     // not selected during the OAuth page selection step
     try {
-      let bizUrl: string | undefined =
-        `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();
@@ -357,8 +370,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     // 2. Check Business Manager owned_pages and client_pages
     try {
-      let bizUrl: string | undefined =
-        `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();

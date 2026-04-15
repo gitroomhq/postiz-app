@@ -10,13 +10,13 @@ export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Register`,
   description: '',
 };
-export default async function Auth(params: {searchParams: {provider: string}}) {
+export default async function Auth(params: {searchParams: Promise<{provider: string}>}) {
   const t = await getT();
   if (process.env.DISABLE_REGISTRATION === 'true') {
     const canRegister = (
       await (await internalFetch('/auth/can-register')).json()
     ).register;
-    if (!canRegister && !params?.searchParams?.provider) {
+    if (!canRegister && !(await params?.searchParams)?.provider) {
       return (
         <>
           <LoginWithOidc />

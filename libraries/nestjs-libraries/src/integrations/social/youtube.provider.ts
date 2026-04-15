@@ -150,7 +150,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return {
       accessToken: credentials.access_token!,
       expiresIn: unixTimestamp!,
-      refreshToken: credentials.refresh_token!,
+      refreshToken: credentials.refresh_token ?? refresh_token,
       id: data.id!,
       name: data.name!,
       picture: data?.picture || '',

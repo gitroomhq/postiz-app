@@ -1,5 +1,5 @@
 import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
-import Loading from 'react-loading';
+import Loading from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { useToaster } from '@gitroom/react/toaster/toaster';

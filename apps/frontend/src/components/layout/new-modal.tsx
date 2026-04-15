@@ -17,7 +17,7 @@ import clsx from 'clsx';
 import { EventEmitter } from 'events';
 
 interface OpenModalInterface {
-  title?: string;
+  title?: any;
   closeOnClickOutside?: boolean;
   removeLayout?: boolean;
   fullScreen?: boolean;
