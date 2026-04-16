@@ -47,6 +47,7 @@ const PUBLIC_API_ALLOWED_MIME = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  'application/pdf',
 ]);
 import * as Sentry from '@sentry/nestjs';
 import { socialIntegrationList, IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
