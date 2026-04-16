@@ -160,7 +160,7 @@ export async function prepareUploadParts(req: Request, res: Response) {
       response.presignedUrls[part.number] = url;
     } catch (err) {
       console.log('Error', err);
-      return res.status(500).json(err);
+      return res.status(500).json({ source: { status: 500 } });
     }
   }
 
@@ -182,7 +182,7 @@ export async function listParts(req: Request, res: Response) {
     return res.status(200).json(response['Parts']);
   } catch (err) {
     console.log('Error', err);
-    return res.status(500).json(err);
+    return res.status(500).json({ source: { status: 500 } });
   }
 }
 
@@ -231,14 +231,14 @@ export async function completeMultipartUpload(req: Request, res: Response) {
         .json({ message: 'File contents do not match declared type.' });
     }
 
-    response.Location =
+    const location =
       process.env.CLOUDFLARE_BUCKET_URL +
       '/' +
       response?.Location?.split('/').at(-1);
-    return response;
+    return res.status(200).json({ location });
   } catch (err) {
     console.log('Error', err);
-    return res.status(500).json(err);
+    return res.status(500).json({ source: { status: 500 } });
   }
 }
 
