@@ -222,7 +222,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
             }
           : {}),
         text: post.message,
-        sr: firstPostSettings.value.subreddit.replace('/r/', '').toLowerCase(),
+        sr: firstPostSettings.value.subreddit.replaceAll('/r/', '').toLowerCase(),
       };
 
       const all = await (
