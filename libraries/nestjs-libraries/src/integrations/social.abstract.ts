@@ -79,7 +79,7 @@ export abstract class SocialAbstract {
     try {
       value = await func();
     } catch (err) {
-      const handle = this.handleErrors(safeStringify(err), 200);
+      const handle = this.handleErrors(safeStringify(err), err?.status || err?.response?.status || 0);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
     }
 
