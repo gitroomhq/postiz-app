@@ -435,7 +435,8 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'Tool not found' }, 404);
     }
 
-    while (true) {
+    const MAX_REFRESH_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
       try {
         // @ts-ignore
         const result = await integrationProvider[body.methodName](
