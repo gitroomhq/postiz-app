@@ -831,18 +831,24 @@ export class InstagramProvider
       })) || [])
     );
 
+    // Instagram Graph API exposes `likes,views,comments,shares,saves,replies`
+    // only as `metric_type=total_value` (single aggregate over the window).
+    // The frontend widget sums data[].total to render the big number, so we
+    // emit a zero-valued start point and a single end point carrying the real
+    // total. This keeps the line chart renderable (two points) while the sum
+    // still equals the true total_value.
     analytics.push(
       ...data2.map((d: any) => ({
         label: this.setTitle(d.name),
         percentageChange: 5,
         data: [
           {
-            total: d.total_value.value,
-            date: dayjs().format('YYYY-MM-DD'),
+            total: 0,
+            date: dayjs.unix(since).format('YYYY-MM-DD'),
           },
           {
             total: d.total_value.value,
-            date: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+            date: dayjs().format('YYYY-MM-DD'),
           },
         ],
       }))
