@@ -291,9 +291,17 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   private async publishThread(
     userId: string,
     accessToken: string,
-    creationId: string
+    creationId: string,
+    isVideoReply = false
   ): Promise<{ threadId: string; permalink: string }> {
     await this.checkLoaded(creationId, accessToken);
+
+    // Meta recommends ~30s between video container FINISHED and publish, otherwise
+    // the reply_to_id association may not have propagated and the reply is published
+    // as a standalone top-level post. checkLoaded already waits 2s post-FINISHED.
+    if (isVideoReply) {
+      await timer(38000);
+    }
 
     const { id: threadId } = await (
       await this.fetch(
@@ -417,11 +425,16 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       replyToId
     );
 
+    const isVideoReply =
+      commentPost.media?.length === 1 &&
+      commentPost.media[0].path.indexOf('.mp4') > -1;
+
     // Publish the reply
     const { threadId: replyThreadId, permalink } = await this.publishThread(
       userId,
       accessToken,
-      replyContentId
+      replyContentId,
+      isVideoReply
     );
 
     return [
