@@ -15,6 +15,11 @@ import { z } from 'zod';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
+import {
+  openAIApiKey,
+  openAIBaseURL,
+  openAIConfiguration,
+} from '@gitroom/nestjs-libraries/openai/openai.config';
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
@@ -22,13 +27,15 @@ const tools = !process.env.TAVILY_API_KEY
 const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  apiKey: openAIApiKey(),
+  configuration: openAIConfiguration(),
   model: 'gpt-4.1',
   temperature: 0.7,
 });
 
 const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  apiKey: openAIApiKey(),
+  baseUrl: openAIBaseURL(),
   model: 'dall-e-3',
 });
 

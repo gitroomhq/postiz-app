@@ -1,12 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { Agent } from '@mastra/core/agent';
-import { openai } from '@ai-sdk/openai';
+import { openai as defaultOpenai, createOpenAI } from '@ai-sdk/openai';
 import { Memory } from '@mastra/memory';
 import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
 import { toolList } from '@gitroom/nestjs-libraries/chat/tools/tool.list';
 import dayjs from 'dayjs';
+import {
+  openAIApiKey,
+  openAIBaseURL,
+} from '@gitroom/nestjs-libraries/openai/openai.config';
+
+const openai = openAIBaseURL()
+  ? createOpenAI({
+      apiKey: openAIApiKey(),
+      baseURL: openAIBaseURL(),
+    })
+  : defaultOpenai;
 
 export const AgentState = object({
   proverbs: array(string()).default([]),

@@ -14,6 +14,11 @@ import {
   copilotRuntimeNodeHttpEndpoint,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
+import OpenAI from 'openai';
+import {
+  openAIApiKey,
+  openAIBaseURL,
+} from '@gitroom/nestjs-libraries/openai/openai.config';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -50,6 +55,10 @@ export class CopilotController {
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
+        openai: new OpenAI({
+          apiKey: openAIApiKey(),
+          baseURL: openAIBaseURL(),
+        }),
         model: 'gpt-4.1',
       }),
     });
@@ -96,6 +105,10 @@ export class CopilotController {
       runtime,
       // properties: req.body.variables.properties,
       serviceAdapter: new OpenAIAdapter({
+        openai: new OpenAI({
+          apiKey: openAIApiKey(),
+          baseURL: openAIBaseURL(),
+        }),
         model: 'gpt-4.1',
       }),
     });
