@@ -11,7 +11,6 @@ import dayjs from 'dayjs';
 const openai = OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_API_BASE_URL,
-  model: process.env.OPENAI_MODEL || 'gpt-4.1',
 });
 
 export const AgentState = object({
@@ -92,7 +91,7 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: openai('gpt-5.2'),
+      model: process.env.OPENAI_MODEL || 'gpt-4.1',
       tools,
       memory: new Memory({
         storage: pStore,
