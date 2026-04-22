@@ -116,7 +116,7 @@ export class XquikProvider extends ThirdPartyAbstract {
         if (m.type === 'video' || m.type === 'animated_gif') {
           const variants = m.video_info?.variants || [];
           const best = variants
-            .filter((v) => v.content_type === 'video/mp4' && v.bitrate)
+            .filter((v) => v.content_type === 'video/mp4')
             .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
           const url = best?.url;
           if (!url) continue;
@@ -154,7 +154,7 @@ export class XquikProvider extends ThirdPartyAbstract {
     return items
       .filter((item) => item.url)
       .map((item) => ({
-        url: item.url.split('?')[0],
+        url: item.url.split('#')[0].split('?')[0],
         name: item.name || 'xquik-media',
       }));
   }
