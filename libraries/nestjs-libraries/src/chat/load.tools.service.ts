@@ -91,7 +91,7 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: process.env.OPENAI_MODEL || 'gpt-4.1',
+      model: process.env.OPENAI_MODEL || openai('gpt-5.2'),
       tools,
       memory: new Memory({
         storage: pStore,
