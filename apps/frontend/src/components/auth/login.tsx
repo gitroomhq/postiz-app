@@ -74,7 +74,9 @@ export function Login() {
           </div>
           <div className="flex flex-col">
             {isGeneral && genericOauth ? (
-              <OauthProvider />
+              <div>
+                <OauthProvider />
+              </div>
             ) : !isGeneral ? (
               <GithubProvider />
             ) : (
