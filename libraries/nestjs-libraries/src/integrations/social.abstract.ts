@@ -168,7 +168,7 @@ export abstract class SocialAbstract {
       identifier,
       json,
       options.body!,
-      handleError?.value || ''
+      handleError?.value || json
     );
   }
 
