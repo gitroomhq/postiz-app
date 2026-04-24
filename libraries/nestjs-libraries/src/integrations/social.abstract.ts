@@ -112,7 +112,12 @@ export abstract class SocialAbstract {
     }
 
     if (totalRetries > 2) {
-      throw new BadBody(identifier, '{}', options.body || '{}');
+      throw new BadBody(
+        identifier,
+        '{}',
+        options.body || '{}',
+        `Request failed after ${totalRetries} retries (HTTP ${request.status})`
+      );
     }
 
     let json = '{}';
@@ -168,7 +173,7 @@ export abstract class SocialAbstract {
       identifier,
       json,
       options.body!,
-      handleError?.value || json
+      handleError?.value || (json.length > 500 ? json.slice(0, 500) + '… (truncated)' : json)
     );
   }
 
