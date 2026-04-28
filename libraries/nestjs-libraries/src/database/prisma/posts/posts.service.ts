@@ -43,6 +43,23 @@ type PostWithConditionals = Post & {
   childrenPost: Post[];
 };
 
+
+function buildPublicUploadUrl(baseUrl: string | undefined, filePath: string) {
+  if (filePath.indexOf('http') > -1) {
+    return filePath;
+  }
+
+  const trimmedBaseUrl = (baseUrl || '').replace(/\/$/, '');
+  const uploadStaticDirectory = (
+    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY || ''
+  ).trim().replace(/^\/+|\/+$/g, '');
+  const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+
+  return uploadStaticDirectory
+    ? `${trimmedBaseUrl}/${uploadStaticDirectory}${normalizedPath}`
+    : `${trimmedBaseUrl}${normalizedPath}`;
+}
+
 @Injectable()
 export class PostsService {
   private storage = UploadFactory.createStorage();
@@ -340,13 +357,7 @@ export class PostsService {
           .map((m) => {
             return {
               ...m,
-              url:
-                m.path.indexOf('http') === -1
-                  ? process.env.FRONTEND_URL +
-                    '/' +
-                    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                    m.path
-                  : m.path,
+              url: buildPublicUploadUrl(process.env.FRONTEND_URL, m.path),
               type: 'image',
               path:
                 m.path.indexOf('http') === -1
@@ -388,13 +399,7 @@ export class PostsService {
               return {
                 ...m,
                 name: originalname,
-                url:
-                  path.indexOf('http') === -1
-                    ? process.env.FRONTEND_URL +
-                      '/' +
-                      process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
-                      path
-                    : path,
+                url: buildPublicUploadUrl(process.env.FRONTEND_URL, path),
                 type: 'image',
                 path:
                   path.indexOf('http') === -1

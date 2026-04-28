@@ -13,6 +13,23 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
+
+function buildPublicUploadUrl(baseUrl: string | undefined, filePath: string) {
+  if (filePath.indexOf('http') > -1) {
+    return filePath;
+  }
+
+  const trimmedBaseUrl = (baseUrl || '').replace(/\/$/, '');
+  const uploadStaticDirectory = (
+    process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY || ''
+  ).trim().replace(/^\/+|\/+$/g, '');
+  const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+
+  return uploadStaticDirectory
+    ? `${trimmedBaseUrl}/${uploadStaticDirectory}${normalizedPath}`
+    : `${trimmedBaseUrl}${normalizedPath}`;
+}
+
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
   identifier = 'hashnode';
@@ -179,11 +196,10 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
                 ...(settings.main_image
                   ? {
                       coverImageOptions: {
-                        coverImageURL: `${
-                          settings?.main_image?.path?.indexOf('http') === -1
-                            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                            : ``
-                        }${settings?.main_image?.path}`,
+                        coverImageURL: buildPublicUploadUrl(
+                          process.env.NEXT_PUBLIC_BACKEND_URL,
+                          settings?.main_image?.path
+                        ),
                       },
                     }
                   : {}),
