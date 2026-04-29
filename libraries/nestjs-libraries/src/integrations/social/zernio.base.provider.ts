@@ -25,7 +25,7 @@ export class ZernioBaseProvider
   isBetweenSteps = false;
   scopes: string[] = [];
   editor = 'normal' as const;
-  hiddenFromList = true;
+  override hiddenFromList = true;
 
   constructor(
     protected readonly platform: string,

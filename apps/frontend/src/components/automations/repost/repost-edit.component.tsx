@@ -35,6 +35,19 @@ export const RepostEditComponent: FC<Props> = ({ id }) => {
 
   return (
     <div className="flex flex-col gap-[20px] p-[24px] flex-1">
+      <div className="flex items-center gap-[12px]">
+        <button
+          type="button"
+          onClick={() => router.push('/automacoes')}
+          aria-label={t('back', 'Voltar')}
+          className="text-customColor18 hover:text-textColor text-[18px]"
+        >
+          &larr;
+        </button>
+        <h1 className="text-[20px] font-semibold text-textColor">
+          {t('repost_edit_title', 'Editar regra de Repost')}
+        </h1>
+      </div>
       <RepostRuleForm
         mode="edit"
         initial={rule}

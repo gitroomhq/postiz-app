@@ -326,16 +326,17 @@ const RepostRuleRow: FC<RowProps> = ({
 
       <td className="px-[16px] py-[14px] whitespace-nowrap">
         <div className="flex items-center justify-end gap-[8px]">
-          <button
-            type="button"
-            onClick={onRun}
-            disabled={!rule.enabled}
-            title={t('repost_run_now', 'Rodar agora')}
-            className="inline-flex items-center gap-[6px] rounded-[4px] border border-newTableBorder bg-newBgColorInner px-[10px] py-[6px] text-[12px] text-textColor hover:bg-boxHover disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <span aria-hidden>▶</span>
-            {t('repost_run_now', 'Rodar agora')}
-          </button>
+          {rule.enabled && (
+            <button
+              type="button"
+              onClick={onRun}
+              title={t('repost_run_now', 'Rodar agora')}
+              className="inline-flex items-center gap-[6px] rounded-[4px] border border-newTableBorder bg-newBgColorInner px-[10px] py-[6px] text-[12px] text-textColor hover:bg-boxHover"
+            >
+              <span aria-hidden>▶</span>
+              {t('repost_run_now', 'Rodar agora')}
+            </button>
+          )}
           <button
             type="button"
             onClick={onDelete}

@@ -72,21 +72,13 @@ export const PlatformIconBadge: FC<{
     zernioBadgeSize !== undefined
       ? zernioBadgeSize
       : Math.max(10, Math.round(size * 0.7));
-  // O wrapper relative + shrink-0 e essencial: o ZernioBadge usa
-  // position:absolute, e sem ancestor relative ele escapa pro container
-  // mais proximo (ex: dropdown com `absolute z-30`), aparecendo fora do
-  // icone. Tambem evita que o badge seja achatado em layouts flex.
   return (
-    <span
-      className="relative inline-flex shrink-0 leading-none"
-      style={{ width: size, height: size }}
-    >
+    <>
       {platform === 'youtube' ? (
         <img
           src="/icons/platforms/youtube.svg"
           className={className}
           width={size}
-          height={size}
           alt="youtube"
         />
       ) : (
@@ -101,6 +93,6 @@ export const PlatformIconBadge: FC<{
       {isZernio && (
         <ZernioBadge size={badgeSize} borderRadius={zernioBadgeRadius} />
       )}
-    </span>
+    </>
   );
 };

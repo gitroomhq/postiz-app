@@ -508,4 +508,5 @@ ou
 
   pkill -f "nest start --watch" 2>/dev/null; pkill -f "pnpm run --filter ./apps" 2>/dev/null; sleep 1; pnpm run --filter ./apps/orchestrator --filter ./apps/backend --filter ./apps/frontend --parallel dev
 
-  pkill -f "nest start --watch" 2>/dev/null; lsof -ti:4200,3000 | xargs kill -9 2>/dev/null; sleep 1; pnpm run --filter ./apps/orchestrator --filter ./apps/backend --filter ./apps/frontend --parallel dev
+  rm -rf apps/frontend/.next pkill -f "nest start --watch" 2>/dev/null; lsof -ti:4200,3000 | xargs kill -9 2>/dev/null; sleep 1; pnpm run --filter ./apps/orchestrator --filter ./apps/backend --filter ./apps/frontend --parallel dev
+

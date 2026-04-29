@@ -261,7 +261,27 @@ export class RepostService {
         'Enable the rule before running a manual cycle'
       );
     }
-    await this.processCron(true, orgId, id);
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        ?.workflow.signalWithStart(WORKFLOW_NAME, {
+          workflowId: workflowIdOf(id),
+          taskQueue: 'main',
+          signal: 'pokeRepost',
+          signalArgs: [],
+          args: [{ ruleId: id }],
+          workflowIdConflictPolicy: 'USE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            { key: organizationIdKey, value: orgId },
+          ]),
+        });
+    } catch (err) {
+      console.error(
+        `[repost] runNow signal failed rule=${id}:`,
+        (err as Error).message || err
+      );
+      return { success: false };
+    }
     return { success: true };
   }
 

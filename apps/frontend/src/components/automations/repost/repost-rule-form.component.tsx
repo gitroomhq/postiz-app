@@ -566,12 +566,14 @@ const SourcePicker: FC<SourcePickerProps> = ({
       {selectedGroup ? (
         <div className="flex flex-col gap-[10px] rounded-[10px] border border-fifth bg-newBgColorInner px-[14px] py-[12px]">
           <div className="flex items-center gap-[12px]">
-            <PlatformIconBadge
-              identifier={selectedGroup.providerIdentifier}
-              size={36}
-              zernioBadgeSize={15}
-              zernioBadgeRadius={15}
-            />
+            <span className="relative inline-block leading-none">
+              <PlatformIconBadge
+                identifier={selectedGroup.providerIdentifier}
+                size={36}
+                zernioBadgeSize={15}
+                zernioBadgeRadius={15}
+              />
+            </span>
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-[14px] font-semibold text-textColor truncate">
                 {platformDisplayName(selectedGroup.providerIdentifier)}
@@ -633,12 +635,14 @@ const SourcePicker: FC<SourcePickerProps> = ({
                   : ''
               }`}
             >
-              <PlatformIconBadge
-                identifier={g.providerIdentifier}
-                size={28}
-                zernioBadgeSize={15}
-                zernioBadgeRadius={15}
-              />
+              <span className="relative inline-block leading-none">
+                <PlatformIconBadge
+                  identifier={g.providerIdentifier}
+                  size={28}
+                  zernioBadgeSize={15}
+                  zernioBadgeRadius={15}
+                />
+              </span>
               <div className="flex flex-col min-w-0">
                 <span className="text-[13px] text-textColor truncate">
                   {platformDisplayName(g.providerIdentifier)}
@@ -727,12 +731,14 @@ const DestinationsPicker: FC<DestinationsPickerProps> = ({
                 className="flex flex-col gap-[8px] rounded-[10px] border border-fifth bg-newBgColorInner px-[14px] py-[10px]"
               >
                 <div className="flex items-center gap-[10px]">
-                  <PlatformIconBadge
-                    identifier={g.providerIdentifier}
-                    size={28}
-                    zernioBadgeSize={15}
-                    zernioBadgeRadius={15}
-                  />
+                  <span className="relative inline-block leading-none">
+                    <PlatformIconBadge
+                      identifier={g.providerIdentifier}
+                      size={28}
+                      zernioBadgeSize={15}
+                      zernioBadgeRadius={15}
+                    />
+                  </span>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-[13px] text-textColor truncate">
                       {platformDisplayName(g.providerIdentifier)}
@@ -789,12 +795,14 @@ const DestinationsPicker: FC<DestinationsPickerProps> = ({
                 onClick={() => handlePick(g)}
                 className="w-full flex items-center gap-[10px] px-[14px] py-[10px] text-left hover:bg-boxHover"
               >
-                <PlatformIconBadge
-                  identifier={g.providerIdentifier}
-                  size={28}
-                  zernioBadgeSize={15}
-                  zernioBadgeRadius={15}
-                />
+                <span className="relative inline-block leading-none">
+                  <PlatformIconBadge
+                    identifier={g.providerIdentifier}
+                    size={28}
+                    zernioBadgeSize={15}
+                    zernioBadgeRadius={15}
+                  />
+                </span>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[13px] text-textColor truncate">
                     {platformDisplayName(g.providerIdentifier)}

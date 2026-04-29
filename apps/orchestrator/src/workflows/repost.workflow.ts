@@ -1,5 +1,6 @@
-import { proxyActivities, sleep } from '@temporalio/workflow';
+import { condition, proxyActivities, setHandler } from '@temporalio/workflow';
 import { RepostActivity } from '@gitroom/orchestrator/activities/repost.activity';
+import { pokeRepostSignal } from '@gitroom/orchestrator/signals/repost.signal';
 
 const { runRepostCycle } = proxyActivities<RepostActivity>({
   startToCloseTimeout: '10 minute',
@@ -12,12 +13,18 @@ const { runRepostCycle } = proxyActivities<RepostActivity>({
 });
 
 export async function repostWorkflow({ ruleId }: { ruleId: string }) {
+  let poked = false;
+  setHandler(pokeRepostSignal, () => {
+    poked = true;
+  });
+
   while (true) {
     const result = await runRepostCycle(ruleId);
     if (result.ruleDisabled) {
       return;
     }
     const intervalMs = Math.max(result.intervalMinutes || 15, 5) * 60_000;
-    await sleep(intervalMs);
+    poked = false;
+    await condition(() => poked, intervalMs);
   }
 }
