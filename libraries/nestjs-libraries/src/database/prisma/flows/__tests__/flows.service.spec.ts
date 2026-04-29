@@ -813,7 +813,7 @@ describe('FlowsService', () => {
       global.fetch = realFetch;
     });
 
-    it('returns ok when IG subscription is present, active, and has required fields', async () => {
+    it('queries graph.facebook.com when only clientId/clientSecret are configured (Facebook app)', async () => {
       mockCredentialService.getRaw.mockResolvedValue({
         clientId: 'fb-app-1',
         clientSecret: 'fb-secret-1',
@@ -826,10 +826,10 @@ describe('FlowsService', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const url = (fetchMock.mock.calls[0] as any[])[0] as string;
       expect(url).toContain('graph.facebook.com/v25.0/fb-app-1/subscriptions');
-      expect(url).toContain('access_token=fb-app-1%7Cfb-secret-1');
+      expect(url).toContain('access_token=fb-app-1|fb-secret-1');
     });
 
-    it('prefers workspace instagramAppId/instagramAppSecret over clientId/clientSecret', async () => {
+    it('queries graph.instagram.com when instagramAppId is set (Instagram-only app)', async () => {
       mockCredentialService.getRaw.mockResolvedValue({
         clientId: 'fb-app-1',
         clientSecret: 'fb-secret-1',
@@ -838,27 +838,71 @@ describe('FlowsService', () => {
       });
       fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
 
-      await service.checkIntegrationWebhook('org-1', 'int-1');
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
 
+      expect(result.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       const url = (fetchMock.mock.calls[0] as any[])[0] as string;
-      expect(url).toContain('/v25.0/ig-app-2/subscriptions');
-      expect(url).toContain('access_token=ig-app-2%7Cig-secret-2');
+      expect(url).toContain('graph.instagram.com/v25.0/ig-app-2/subscriptions');
+      expect(url).toContain('access_token=ig-app-2|ig-secret-2');
     });
 
-    it('falls back to workspace clientId/clientSecret when instagramApp creds are absent', async () => {
+    it('falls back to graph.facebook.com when graph.instagram.com errors (e.g. wrong field filled)', async () => {
       mockCredentialService.getRaw.mockResolvedValue({
-        clientId: 'fb-app-3',
-        clientSecret: 'fb-secret-3',
+        instagramAppId: 'wrong-host-app',
+        instagramAppSecret: 'wrong-host-secret',
       });
+      // First attempt (graph.instagram.com) errors with the Meta system error.
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({
+          error: {
+            message:
+              'Error validating application. Cannot get application info due to a system error.',
+          },
+        }),
+      });
+      // Fallback (graph.facebook.com) returns the valid IG subscription.
       fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
 
-      await service.checkIntegrationWebhook('org-1', 'int-1');
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
 
-      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
-      expect(url).toContain('/v25.0/fb-app-3/subscriptions');
+      expect(result.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect((fetchMock.mock.calls[0] as any[])[0]).toContain(
+        'graph.instagram.com'
+      );
+      expect((fetchMock.mock.calls[1] as any[])[0]).toContain(
+        'graph.facebook.com'
+      );
     });
 
-    it('falls back to INSTAGRAM_APP_ID env when workspace credentials are missing', async () => {
+    it('falls back to the other host when primary returns subs without an instagram one', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-only-page',
+        clientSecret: 'fb-secret',
+      });
+      // graph.facebook.com has only a page subscription (no instagram).
+      fetchMock.mockResolvedValueOnce(
+        respond([
+          {
+            object: 'page',
+            callback_url: 'https://x',
+            active: true,
+            fields: [{ name: 'feed' }],
+          },
+        ])
+      );
+      // graph.instagram.com has the IG subscription.
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('queries graph.instagram.com when only INSTAGRAM_APP_ID env is set', async () => {
       mockCredentialService.getRaw.mockResolvedValue(null);
       process.env.INSTAGRAM_APP_ID = 'env-ig-app';
       process.env.INSTAGRAM_APP_SECRET = 'env-ig-secret';
@@ -867,11 +911,11 @@ describe('FlowsService', () => {
       await service.checkIntegrationWebhook('org-1', 'int-1');
 
       const url = (fetchMock.mock.calls[0] as any[])[0] as string;
-      expect(url).toContain('/v25.0/env-ig-app/subscriptions');
-      expect(url).toContain('access_token=env-ig-app%7Cenv-ig-secret');
+      expect(url).toContain('graph.instagram.com/v25.0/env-ig-app/subscriptions');
+      expect(url).toContain('access_token=env-ig-app|env-ig-secret');
     });
 
-    it('falls back to FACEBOOK_APP_ID env when nothing else is set', async () => {
+    it('queries graph.facebook.com when only FACEBOOK_APP_ID env is set', async () => {
       mockCredentialService.getRaw.mockResolvedValue(null);
       process.env.FACEBOOK_APP_ID = 'env-fb-app';
       process.env.FACEBOOK_APP_SECRET = 'env-fb-secret';
@@ -880,7 +924,7 @@ describe('FlowsService', () => {
       await service.checkIntegrationWebhook('org-1', 'int-1');
 
       const url = (fetchMock.mock.calls[0] as any[])[0] as string;
-      expect(url).toContain('/v25.0/env-fb-app/subscriptions');
+      expect(url).toContain('graph.facebook.com/v25.0/env-fb-app/subscriptions');
     });
 
     it('passes integration.profileId to CredentialService.getRaw for per-profile credentials', async () => {
@@ -916,11 +960,12 @@ describe('FlowsService', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('lists subscriptions actually present when instagram object is missing', async () => {
+    it('lists subscriptions actually present on both hosts when instagram object is missing', async () => {
       mockCredentialService.getRaw.mockResolvedValue({
         clientId: 'fb-app-x',
         clientSecret: 'fb-secret-x',
       });
+      // Primary (graph.facebook.com) has only page subscription.
       fetchMock.mockResolvedValueOnce(
         respond([
           {
@@ -931,6 +976,8 @@ describe('FlowsService', () => {
           },
         ])
       );
+      // Fallback (graph.instagram.com) has nothing.
+      fetchMock.mockResolvedValueOnce(respond([]));
 
       const result = await service.checkIntegrationWebhook('org-1', 'int-1');
 
@@ -938,6 +985,8 @@ describe('FlowsService', () => {
       expect(result.error).toContain('fb-app-x');
       expect(result.error).toContain('page');
       expect(result.error).toContain('instagram');
+      expect(result.error).toContain('graph.facebook.com');
+      expect(result.error).toContain('graph.instagram.com');
     });
 
     it('reports inactive subscription with appId context', async () => {
@@ -986,20 +1035,73 @@ describe('FlowsService', () => {
       expect(result.error).toContain('fb-app-z');
     });
 
-    it('reports fetch failure with appId context', async () => {
+    it('fails open when both hosts return Meta API errors (cannot verify, do not block)', async () => {
+      // Reproduces the Instagram-only app scenario where Meta refuses to
+      // validate the app access token on both graph.instagram.com ("Access
+      // token does not contain a valid app ID") and graph.facebook.com
+      // ("Cannot get application info"). Blocking flow creation here would
+      // be a false negative — the webhook may be working fine, the API
+      // /{app_id}/subscriptions endpoint just isn't queryable for this app.
       mockCredentialService.getRaw.mockResolvedValue({
-        clientId: 'fb-app-err',
-        clientSecret: 'fb-secret-err',
+        instagramAppId: '2882877478718411',
+        instagramAppSecret: 'ig-only-secret',
       });
       fetchMock.mockResolvedValueOnce(
-        respondError({ message: 'Invalid OAuth access token' })
+        respondError({
+          message: 'Access token does not contain a valid app ID',
+        })
+      );
+      fetchMock.mockResolvedValueOnce(
+        respondError({
+          message:
+            'Error validating application. Cannot get application info due to a system error.',
+        })
       );
 
       const result = await service.checkIntegrationWebhook('org-1', 'int-1');
 
+      expect(result.ok).toBe(true);
+    });
+
+    it('blocks when subscriptions are readable on at least one host but no instagram object exists anywhere', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-readable',
+        clientSecret: 'fb-secret-readable',
+      });
+      // graph.facebook.com readable: page subscription, no IG.
+      fetchMock.mockResolvedValueOnce(
+        respond([
+          {
+            object: 'page',
+            callback_url: 'https://x',
+            active: true,
+            fields: [{ name: 'feed' }],
+          },
+        ])
+      );
+      // graph.instagram.com readable but empty.
+      fetchMock.mockResolvedValueOnce(respond([]));
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
       expect(result.ok).toBe(false);
-      expect(result.error).toContain('Invalid OAuth access token');
-      expect(result.error).toContain('fb-app-err');
+      expect(result.error).toContain('fb-app-readable');
+      expect(result.error).toContain('instagram');
+    });
+
+    it('fails open when one host errors and the other returns no IG subscription (inconclusive)', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-mixed',
+        clientSecret: 'fb-secret-mixed',
+      });
+      fetchMock.mockResolvedValueOnce(
+        respondError({ message: 'Some Meta error' })
+      );
+      fetchMock.mockResolvedValueOnce(respond([]));
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(true);
     });
 
     it('returns error when integration is not Instagram', async () => {
@@ -1023,6 +1125,42 @@ describe('FlowsService', () => {
 
       expect(result.ok).toBe(false);
       expect(result.error).toContain('nao encontrada');
+    });
+
+    it('does not url-encode the pipe in the app access token (Meta rejects %7C)', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'pipe-app',
+        clientSecret: 'pipe-secret',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('access_token=pipe-app|pipe-secret');
+      expect(url).not.toContain('%7C');
+    });
+
+    it('handles Instagram-only app (Instagram API with Instagram Login) on graph.instagram.com', async () => {
+      // Reproduces the exact scenario reported by the user: app registered as
+      // "API do Instagram com login do Instagram" — querying graph.facebook.com
+      // returns "Error validating application. Cannot get application info due
+      // to a system error" because that domain doesn't recognize Instagram-only
+      // app IDs. The check must hit graph.instagram.com directly.
+      mockCredentialService.getRaw.mockResolvedValue({
+        instagramAppId: '2882877478718411',
+        instagramAppSecret: 'ig-only-secret',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain(
+        'graph.instagram.com/v25.0/2882877478718411/subscriptions'
+      );
     });
   });
 });

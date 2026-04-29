@@ -85,28 +85,26 @@ export class FlowsService {
       return { ok: false, error: 'Provider Instagram indisponivel' };
     }
 
-    // Resolve {appId, appSecret} respecting per-workspace credentials. Mirrors
-    // the precedence used in CredentialService.configureInstagramWebhook and
-    // the IG providers (so the check queries the same Meta app the OAuth flow
-    // talks to). Order: workspace IG-specific -> workspace generic FB ->
-    // INSTAGRAM_APP_* env -> FACEBOOK_APP_* env.
+    // Resolve {appId, appSecret, host} respecting per-workspace credentials.
+    // The Meta product determines the Graph API host:
+    //   - Apps registered as "Instagram API with Instagram Login" (Instagram-only
+    //     apps) live on graph.instagram.com — querying graph.facebook.com with
+    //     their app id returns "Error validating application".
+    //   - Apps registered as "Instagram API with Facebook Login" (FB app + IG
+    //     product) live on graph.facebook.com.
+    // We pick the host based on which credential field is populated, mirroring
+    // the same precedence used by InstagramStandaloneProvider (uses
+    // INSTAGRAM_APP_ID + graph.instagram.com) vs InstagramProvider (uses
+    // FACEBOOK_APP_ID + graph.facebook.com). When the chosen host has no IG
+    // subscription we transparently retry on the other host before failing,
+    // covering edge cases where the user filled the wrong credential field.
     const creds = await this._credentialService.getRaw(
       integration.organizationId,
       'facebook',
       integration.profileId ?? undefined
     );
-    const appId =
-      creds?.instagramAppId ||
-      creds?.clientId ||
-      process.env.INSTAGRAM_APP_ID ||
-      process.env.FACEBOOK_APP_ID;
-    const appSecret =
-      creds?.instagramAppSecret ||
-      creds?.clientSecret ||
-      process.env.INSTAGRAM_APP_SECRET ||
-      process.env.FACEBOOK_APP_SECRET;
-
-    if (!appId || !appSecret) {
+    const candidate = this.pickAppCandidate(creds);
+    if (!candidate) {
       return {
         ok: false,
         error:
@@ -116,64 +114,202 @@ export class FlowsService {
       };
     }
 
-    try {
-      const subs = await this.fetchAppSubscriptions(appId, appSecret);
-      const igSub = subs.find((s) => s.object === 'instagram');
-      if (!igSub) {
-        const presentSummary = subs.length
+    const { appId, appSecret, primaryHost } = candidate;
+    const fallbackHost =
+      primaryHost === 'graph.instagram.com'
+        ? 'graph.facebook.com'
+        : 'graph.instagram.com';
+
+    const primaryAttempt = await this.tryFetchSubscriptions(
+      primaryHost,
+      appId,
+      appSecret
+    );
+    const igOnPrimary = primaryAttempt.subs?.find(
+      (s) => s.object === 'instagram'
+    );
+    if (igOnPrimary) {
+      return this.evaluateIgSubscription(appId, primaryHost, igOnPrimary);
+    }
+
+    // Either primary errored or returned subs without an IG one — try the
+    // other host before reporting failure.
+    const fallbackAttempt = await this.tryFetchSubscriptions(
+      fallbackHost,
+      appId,
+      appSecret
+    );
+    const igOnFallback = fallbackAttempt.subs?.find(
+      (s) => s.object === 'instagram'
+    );
+    if (igOnFallback) {
+      return this.evaluateIgSubscription(appId, fallbackHost, igOnFallback);
+    }
+
+    // No IG subscription found. Decide between blocking (clear evidence of
+    // misconfiguration) vs allowing with a warning (Meta API didn't give us
+    // anything definitive). The /{app_id}/subscriptions endpoint is
+    // unreliable for Instagram-only apps in dev mode and for apps whose
+    // app access token format Meta refuses to validate (returns errors like
+    // "Cannot get application info" or "Access token does not contain a
+    // valid app ID"). Blocking a user whose webhook actually works just
+    // because we can't read the subscription list is the bigger evil — they
+    // already configured the webhook in the Meta UI and inbound deliveries
+    // do not depend on this check passing.
+    const bothHostsErrored = !!primaryAttempt.error && !!fallbackAttempt.error;
+    const noIgButReadable =
+      !primaryAttempt.error &&
+      !fallbackAttempt.error &&
+      (primaryAttempt.subs?.length ?? 0) +
+        (fallbackAttempt.subs?.length ?? 0) >
+        0;
+
+    if (bothHostsErrored) {
+      // Meta couldn't validate the credentials on either host. Log loudly
+      // for debugging but do not block the user.
+      this._logger.warn(
+        `[checkIntegrationWebhook] Could not verify webhook for app ${appId}. ` +
+          `${primaryHost}: ${primaryAttempt.error}. ` +
+          `${fallbackHost}: ${fallbackAttempt.error}. ` +
+          'Allowing flow creation since the /{app_id}/subscriptions endpoint ' +
+          'may be unreliable for this app type — the user must verify the ' +
+          'webhook is correctly configured in the Meta Developer Portal.'
+      );
+      return { ok: true };
+    }
+
+    if (noIgButReadable) {
+      // We could read subscriptions but no instagram one exists. Positive
+      // evidence of misconfiguration — block with diagnostic detail.
+      const presentByHost = (subs?: typeof primaryAttempt.subs) =>
+        subs && subs.length
           ? subs
               .map((s) => {
-                const fields = (s.fields || []).map((f) => f.name).join(',') || '-';
+                const fields =
+                  (s.fields || []).map((f) => f.name).join(',') || '-';
                 return `${s.object} (active=${s.active}, fields=${fields})`;
               })
               .join('; ')
           : 'nenhuma';
-        return {
-          ok: false,
-          error:
-            `App Meta ${appId}: nenhuma subscription com object='instagram' encontrada. ` +
-            `Subscriptions presentes: ${presentSummary}. ` +
-            'Configure em Meta Developer Portal > seu app > Casos de uso > instagram_manage_comments > ' +
-            'Configurar webhooks, colando a Callback URL e o Verify Token mostrados na tela de Automacoes. ' +
-            'Se o webhook foi cadastrado em outro app, aponte as credenciais em Configuracoes > Credenciais ' +
-            'para o app onde a subscription esta registrada.',
-        };
-      }
-      if (!igSub.active) {
-        return {
-          ok: false,
-          error:
-            `App Meta ${appId}: subscription instagram esta inativa ` +
-            `(callback_url=${igSub.callback_url || '-'}). ` +
-            'Ative-a em Casos de uso > instagram_manage_comments.',
-        };
-      }
-      const fieldNames = (igSub.fields || []).map((f) => f.name);
-      const missing: string[] = [];
-      if (!fieldNames.includes('comments')) missing.push('comments');
-      if (!fieldNames.includes('messages')) missing.push('messages');
-      if (missing.length > 0) {
-        return {
-          ok: false,
-          error:
-            `App Meta ${appId}: webhook instagram configurado, mas faltam os campos: ${missing.join(', ')}. ` +
-            'Abra Casos de uso > instagram_manage_comments > Configurar webhooks e ative comments e messages ' +
-            '(necessarios para responder comentarios e enviar DMs).',
-        };
-      }
-      return { ok: true };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message.trim() : '';
       return {
         ok: false,
-        error: msg
-          ? `App Meta ${appId}: nao foi possivel verificar o webhook. Detalhe: ${msg}`
-          : `App Meta ${appId}: nao foi possivel verificar o webhook.`,
+        error:
+          `App Meta ${appId}: nenhuma subscription com object='instagram' encontrada. ` +
+          `${primaryHost} -> ${presentByHost(primaryAttempt.subs)}. ` +
+          `${fallbackHost} -> ${presentByHost(fallbackAttempt.subs)}. ` +
+          'Configure em Meta Developer Portal > seu app > Casos de uso > instagram_manage_comments > ' +
+          'Configurar webhooks, colando a Callback URL e o Verify Token mostrados na tela de Automacoes. ' +
+          'Se o webhook foi cadastrado em outro app, aponte as credenciais em Configuracoes > Credenciais ' +
+          'para o app onde a subscription esta registrada.',
       };
+    }
+
+    // Mixed case (one host errored, the other returned no subs) — log and
+    // allow, treating it like the bothHostsErrored path since we have no
+    // positive evidence either way.
+    this._logger.warn(
+      `[checkIntegrationWebhook] Inconclusive verification for app ${appId}. ` +
+        `${primaryHost}: ${primaryAttempt.error || 'no IG sub'}. ` +
+        `${fallbackHost}: ${fallbackAttempt.error || 'no IG sub'}.`
+    );
+    return { ok: true };
+  }
+
+  private pickAppCandidate(creds: Record<string, string> | null): {
+    appId: string;
+    appSecret: string;
+    primaryHost: 'graph.instagram.com' | 'graph.facebook.com';
+  } | null {
+    if (creds?.instagramAppId && creds?.instagramAppSecret) {
+      return {
+        appId: creds.instagramAppId,
+        appSecret: creds.instagramAppSecret,
+        primaryHost: 'graph.instagram.com',
+      };
+    }
+    if (creds?.clientId && creds?.clientSecret) {
+      return {
+        appId: creds.clientId,
+        appSecret: creds.clientSecret,
+        primaryHost: 'graph.facebook.com',
+      };
+    }
+    if (process.env.INSTAGRAM_APP_ID && process.env.INSTAGRAM_APP_SECRET) {
+      return {
+        appId: process.env.INSTAGRAM_APP_ID,
+        appSecret: process.env.INSTAGRAM_APP_SECRET,
+        primaryHost: 'graph.instagram.com',
+      };
+    }
+    if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+      return {
+        appId: process.env.FACEBOOK_APP_ID,
+        appSecret: process.env.FACEBOOK_APP_SECRET,
+        primaryHost: 'graph.facebook.com',
+      };
+    }
+    return null;
+  }
+
+  private evaluateIgSubscription(
+    appId: string,
+    host: string,
+    igSub: {
+      object: string;
+      callback_url: string;
+      active: boolean;
+      fields: Array<{ name: string; version?: string }>;
+    }
+  ): { ok: boolean; error?: string } {
+    if (!igSub.active) {
+      return {
+        ok: false,
+        error:
+          `App Meta ${appId} (${host}): subscription instagram esta inativa ` +
+          `(callback_url=${igSub.callback_url || '-'}). ` +
+          'Ative-a em Casos de uso > instagram_manage_comments.',
+      };
+    }
+    const fieldNames = (igSub.fields || []).map((f) => f.name);
+    const missing: string[] = [];
+    if (!fieldNames.includes('comments')) missing.push('comments');
+    if (!fieldNames.includes('messages')) missing.push('messages');
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        error:
+          `App Meta ${appId} (${host}): webhook instagram configurado, mas faltam os campos: ${missing.join(', ')}. ` +
+          'Abra Casos de uso > instagram_manage_comments > Configurar webhooks e ative comments e messages ' +
+          '(necessarios para responder comentarios e enviar DMs).',
+      };
+    }
+    return { ok: true };
+  }
+
+  private async tryFetchSubscriptions(
+    host: string,
+    appId: string,
+    appSecret: string
+  ): Promise<{
+    subs: Array<{
+      object: string;
+      callback_url: string;
+      active: boolean;
+      fields: Array<{ name: string; version?: string }>;
+    }> | null;
+    error: string | null;
+  }> {
+    try {
+      const subs = await this.fetchAppSubscriptions(host, appId, appSecret);
+      return { subs, error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.trim() : String(err);
+      return { subs: null, error: msg || 'erro desconhecido' };
     }
   }
 
   private async fetchAppSubscriptions(
+    host: string,
     appId: string,
     appSecret: string
   ): Promise<
@@ -184,9 +320,14 @@ export class FlowsService {
       fields: Array<{ name: string; version?: string }>;
     }>
   > {
+    // Meta documents the app access token format as literal "appId|appSecret".
+    // Url-encoding the pipe to %7C makes the Graph endpoint reject it with
+    // "Error validating application. Cannot get application info due to a
+    // system error", so the pipe must be sent raw — same convention used in
+    // CredentialService.configureInstagramWebhook.
     const token = `${appId}|${appSecret}`;
     const res = await fetch(
-      `https://graph.facebook.com/v25.0/${appId}/subscriptions?access_token=${encodeURIComponent(token)}`
+      `https://${host}/v25.0/${appId}/subscriptions?access_token=${token}`
     );
     const body = await res.json();
     if (body.error) {
