@@ -21,6 +21,7 @@ import { TypedSearchAttributes } from '@temporalio/common';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import type { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { CredentialService } from '@gitroom/nestjs-libraries/database/prisma/credentials/credential.service';
 import * as crypto from 'crypto';
 
 // Janela de 24h da Meta para trocar mensagens apos interacao do usuario.
@@ -35,7 +36,8 @@ export class FlowsService {
     private _flowsRepository: FlowsRepository,
     private _temporalService: TemporalService,
     private _integrationService: IntegrationService,
-    private _integrationManager: IntegrationManager
+    private _integrationManager: IntegrationManager,
+    private _credentialService: CredentialService
   ) {}
 
   getFlows(orgId: string, profileId?: string) {
@@ -83,33 +85,67 @@ export class FlowsService {
       return { ok: false, error: 'Provider Instagram indisponivel' };
     }
 
-    // In Meta's Instagram Use Cases model, the webhook is configured at the
-    // APP level (not per-user). We check app-level subscriptions using the
-    // app access token (app_id|app_secret) which exposes /{app_id}/subscriptions.
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    // Resolve {appId, appSecret} respecting per-workspace credentials. Mirrors
+    // the precedence used in CredentialService.configureInstagramWebhook and
+    // the IG providers (so the check queries the same Meta app the OAuth flow
+    // talks to). Order: workspace IG-specific -> workspace generic FB ->
+    // INSTAGRAM_APP_* env -> FACEBOOK_APP_* env.
+    const creds = await this._credentialService.getRaw(
+      integration.organizationId,
+      'facebook',
+      integration.profileId ?? undefined
+    );
+    const appId =
+      creds?.instagramAppId ||
+      creds?.clientId ||
+      process.env.INSTAGRAM_APP_ID ||
+      process.env.FACEBOOK_APP_ID;
+    const appSecret =
+      creds?.instagramAppSecret ||
+      creds?.clientSecret ||
+      process.env.INSTAGRAM_APP_SECRET ||
+      process.env.FACEBOOK_APP_SECRET;
+
     if (!appId || !appSecret) {
-      // Cannot verify — skip check (assume user knows what they're doing).
-      return { ok: true };
+      return {
+        ok: false,
+        error:
+          'Credenciais do app Meta nao configuradas. Abra Configuracoes > Credenciais > Facebook ' +
+          'e preencha clientId/clientSecret (ou instagramAppId/instagramAppSecret). ' +
+          'Sem isso a checagem de webhook nao consegue identificar qual app consultar.',
+      };
     }
 
     try {
       const subs = await this.fetchAppSubscriptions(appId, appSecret);
       const igSub = subs.find((s) => s.object === 'instagram');
       if (!igSub) {
+        const presentSummary = subs.length
+          ? subs
+              .map((s) => {
+                const fields = (s.fields || []).map((f) => f.name).join(',') || '-';
+                return `${s.object} (active=${s.active}, fields=${fields})`;
+              })
+              .join('; ')
+          : 'nenhuma';
         return {
           ok: false,
           error:
-            'Webhook Instagram nao configurado no app Meta. ' +
-            'Abra Meta Developer Portal > seu app > Casos de uso > instagram_manage_comments > Configurar webhooks, ' +
-            'cole a Callback URL e o Verify Token mostrados na tela de Automacoes.',
+            `App Meta ${appId}: nenhuma subscription com object='instagram' encontrada. ` +
+            `Subscriptions presentes: ${presentSummary}. ` +
+            'Configure em Meta Developer Portal > seu app > Casos de uso > instagram_manage_comments > ' +
+            'Configurar webhooks, colando a Callback URL e o Verify Token mostrados na tela de Automacoes. ' +
+            'Se o webhook foi cadastrado em outro app, aponte as credenciais em Configuracoes > Credenciais ' +
+            'para o app onde a subscription esta registrada.',
         };
       }
       if (!igSub.active) {
         return {
           ok: false,
           error:
-            'Webhook Instagram esta inativo na Meta. Ative-o em Casos de uso > instagram_manage_comments.',
+            `App Meta ${appId}: subscription instagram esta inativa ` +
+            `(callback_url=${igSub.callback_url || '-'}). ` +
+            'Ative-a em Casos de uso > instagram_manage_comments.',
         };
       }
       const fieldNames = (igSub.fields || []).map((f) => f.name);
@@ -120,7 +156,7 @@ export class FlowsService {
         return {
           ok: false,
           error:
-            `Webhook Instagram configurado, mas faltam os campos: ${missing.join(', ')}. ` +
+            `App Meta ${appId}: webhook instagram configurado, mas faltam os campos: ${missing.join(', ')}. ` +
             'Abra Casos de uso > instagram_manage_comments > Configurar webhooks e ative comments e messages ' +
             '(necessarios para responder comentarios e enviar DMs).',
         };
@@ -131,8 +167,8 @@ export class FlowsService {
       return {
         ok: false,
         error: msg
-          ? `Nao foi possivel verificar o webhook. Detalhe: ${msg}`
-          : 'Nao foi possivel verificar o webhook.',
+          ? `App Meta ${appId}: nao foi possivel verificar o webhook. Detalhe: ${msg}`
+          : `App Meta ${appId}: nao foi possivel verificar o webhook.`,
       };
     }
   }
@@ -150,7 +186,7 @@ export class FlowsService {
   > {
     const token = `${appId}|${appSecret}`;
     const res = await fetch(
-      `https://graph.facebook.com/v20.0/${appId}/subscriptions?access_token=${token}`
+      `https://graph.facebook.com/v25.0/${appId}/subscriptions?access_token=${encodeURIComponent(token)}`
     );
     const body = await res.json();
     if (body.error) {

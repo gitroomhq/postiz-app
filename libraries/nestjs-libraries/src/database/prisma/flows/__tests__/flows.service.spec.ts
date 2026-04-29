@@ -37,7 +37,7 @@ const mockRepository = {
   incrementPostbackAttempt: jest.fn(),
   markMetaMidIfUnconsumed: jest.fn(),
   expirePendingPostbacks: jest.fn(),
-} as unknown as jest.Mocked<FlowsRepository>;
+} as any;
 
 const mockWorkflowStart = jest.fn().mockResolvedValue({ workflowId: 'wf-1' });
 const mockRawClient = {
@@ -59,6 +59,8 @@ const mockIntegrationService = {
     token: 'page-token',
     internalId: '123456',
     providerIdentifier: 'instagram',
+    organizationId: 'org-1',
+    profileId: null,
   }),
   getIntegrationsByInternalId: jest.fn(),
 } as any;
@@ -69,16 +71,20 @@ const mockIntegrationManager = {
   }),
 } as any;
 
-const makeFlow = (overrides?: Record<string, any>) => ({
+const mockCredentialService = {
+  getRaw: jest.fn().mockResolvedValue(null),
+} as any;
+
+const makeFlow = (overrides?: Record<string, any>): any => ({
   id: 'flow-1',
   organizationId: 'org-1',
   integrationId: 'int-1',
   name: 'Test Flow',
   status: FlowStatus.DRAFT,
-  triggerPostIds: null,
-  deletedAt: null,
-  nodes: [],
-  edges: [],
+  triggerPostIds: null as any,
+  deletedAt: null as any,
+  nodes: [] as any[],
+  edges: [] as any[],
   ...overrides,
 });
 
@@ -96,15 +102,19 @@ describe('FlowsService', () => {
       token: 'page-token',
       internalId: '123456',
       providerIdentifier: 'instagram',
+      organizationId: 'org-1',
+      profileId: null,
     });
     mockIntegrationManager.getSocialIntegration.mockReturnValue({
       ensureWebhookSubscription: mockEnsureWebhookSubscription,
     });
+    mockCredentialService.getRaw.mockResolvedValue(null);
     service = new FlowsService(
       mockRepository,
       mockTemporalService,
       mockIntegrationService,
-      mockIntegrationManager
+      mockIntegrationManager,
+      mockCredentialService
     );
   });
 
@@ -119,12 +129,34 @@ describe('FlowsService', () => {
   });
 
   describe('createFlow', () => {
-    it('should delegate to repository', async () => {
+    it('should delegate to repository when webhook check passes', async () => {
       const body = { name: 'New Flow', integrationId: 'int-1' };
       mockRepository.createFlow.mockResolvedValue({ id: 'flow-1' });
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app',
+        clientSecret: 'fb-secret',
+      });
+      const realFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              object: 'instagram',
+              callback_url: 'https://x',
+              active: true,
+              fields: [{ name: 'comments' }, { name: 'messages' }],
+            },
+          ],
+        }),
+      }) as any;
 
-      await service.createFlow('org-1', body, 'profile-1');
-      expect(mockRepository.createFlow).toHaveBeenCalledWith('org-1', body, 'profile-1');
+      try {
+        await service.createFlow('org-1', body, 'profile-1');
+        expect(mockRepository.createFlow).toHaveBeenCalledWith('org-1', body, 'profile-1');
+      } finally {
+        global.fetch = realFetch;
+      }
     });
   });
 
@@ -731,6 +763,266 @@ describe('FlowsService', () => {
           igAccountId: 'acct-1',
         })
       ).resolves.toBeUndefined();
+    });
+  });
+
+  // --- Webhook integration check ---
+
+  describe('checkIntegrationWebhook', () => {
+    const ORIGINAL_ENV = process.env;
+    const fetchMock = jest.fn();
+    const realFetch = global.fetch;
+
+    const igSubscriptionOk = {
+      object: 'instagram',
+      callback_url: 'https://example.com/cb',
+      active: true,
+      fields: [{ name: 'comments' }, { name: 'messages' }],
+    };
+
+    const respond = (data: any) => ({
+      ok: true,
+      json: async () => ({ data }),
+    });
+
+    const respondError = (error: { message: string }) => ({
+      ok: false,
+      json: async () => ({ error }),
+    });
+
+    beforeEach(() => {
+      process.env = { ...ORIGINAL_ENV };
+      delete process.env.FACEBOOK_APP_ID;
+      delete process.env.FACEBOOK_APP_SECRET;
+      delete process.env.INSTAGRAM_APP_ID;
+      delete process.env.INSTAGRAM_APP_SECRET;
+      fetchMock.mockReset();
+      global.fetch = fetchMock as any;
+      mockIntegrationService.getIntegrationById.mockResolvedValue({
+        id: 'int-1',
+        token: 'page-token',
+        internalId: '123456',
+        providerIdentifier: 'instagram',
+        organizationId: 'org-1',
+        profileId: null,
+      });
+    });
+
+    afterEach(() => {
+      process.env = ORIGINAL_ENV;
+      global.fetch = realFetch;
+    });
+
+    it('returns ok when IG subscription is present, active, and has required fields', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-1',
+        clientSecret: 'fb-secret-1',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('graph.facebook.com/v25.0/fb-app-1/subscriptions');
+      expect(url).toContain('access_token=fb-app-1%7Cfb-secret-1');
+    });
+
+    it('prefers workspace instagramAppId/instagramAppSecret over clientId/clientSecret', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-1',
+        clientSecret: 'fb-secret-1',
+        instagramAppId: 'ig-app-2',
+        instagramAppSecret: 'ig-secret-2',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('/v25.0/ig-app-2/subscriptions');
+      expect(url).toContain('access_token=ig-app-2%7Cig-secret-2');
+    });
+
+    it('falls back to workspace clientId/clientSecret when instagramApp creds are absent', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-3',
+        clientSecret: 'fb-secret-3',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('/v25.0/fb-app-3/subscriptions');
+    });
+
+    it('falls back to INSTAGRAM_APP_ID env when workspace credentials are missing', async () => {
+      mockCredentialService.getRaw.mockResolvedValue(null);
+      process.env.INSTAGRAM_APP_ID = 'env-ig-app';
+      process.env.INSTAGRAM_APP_SECRET = 'env-ig-secret';
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('/v25.0/env-ig-app/subscriptions');
+      expect(url).toContain('access_token=env-ig-app%7Cenv-ig-secret');
+    });
+
+    it('falls back to FACEBOOK_APP_ID env when nothing else is set', async () => {
+      mockCredentialService.getRaw.mockResolvedValue(null);
+      process.env.FACEBOOK_APP_ID = 'env-fb-app';
+      process.env.FACEBOOK_APP_SECRET = 'env-fb-secret';
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      const url = (fetchMock.mock.calls[0] as any[])[0] as string;
+      expect(url).toContain('/v25.0/env-fb-app/subscriptions');
+    });
+
+    it('passes integration.profileId to CredentialService.getRaw for per-profile credentials', async () => {
+      mockIntegrationService.getIntegrationById.mockResolvedValueOnce({
+        id: 'int-1',
+        providerIdentifier: 'instagram',
+        organizationId: 'org-1',
+        profileId: 'profile-42',
+      });
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app',
+        clientSecret: 'fb-secret',
+      });
+      fetchMock.mockResolvedValueOnce(respond([igSubscriptionOk]));
+
+      await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(mockCredentialService.getRaw).toHaveBeenCalledWith(
+        'org-1',
+        'facebook',
+        'profile-42'
+      );
+    });
+
+    it('returns clear error when no Meta credentials exist anywhere (replaces silent ok:true)', async () => {
+      mockCredentialService.getRaw.mockResolvedValue(null);
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('Credenciais');
+      expect(result.error).toContain('Configura');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('lists subscriptions actually present when instagram object is missing', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-x',
+        clientSecret: 'fb-secret-x',
+      });
+      fetchMock.mockResolvedValueOnce(
+        respond([
+          {
+            object: 'page',
+            callback_url: 'https://x',
+            active: true,
+            fields: [{ name: 'feed' }, { name: 'messages' }],
+          },
+        ])
+      );
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('fb-app-x');
+      expect(result.error).toContain('page');
+      expect(result.error).toContain('instagram');
+    });
+
+    it('reports inactive subscription with appId context', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-y',
+        clientSecret: 'fb-secret-y',
+      });
+      fetchMock.mockResolvedValueOnce(
+        respond([
+          {
+            object: 'instagram',
+            callback_url: 'https://example.com/cb',
+            active: false,
+            fields: [{ name: 'comments' }, { name: 'messages' }],
+          },
+        ])
+      );
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('inativ');
+      expect(result.error).toContain('fb-app-y');
+    });
+
+    it('reports missing fields (comments/messages) with appId context', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-z',
+        clientSecret: 'fb-secret-z',
+      });
+      fetchMock.mockResolvedValueOnce(
+        respond([
+          {
+            object: 'instagram',
+            callback_url: 'https://x',
+            active: true,
+            fields: [{ name: 'comments' }],
+          },
+        ])
+      );
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('messages');
+      expect(result.error).toContain('fb-app-z');
+    });
+
+    it('reports fetch failure with appId context', async () => {
+      mockCredentialService.getRaw.mockResolvedValue({
+        clientId: 'fb-app-err',
+        clientSecret: 'fb-secret-err',
+      });
+      fetchMock.mockResolvedValueOnce(
+        respondError({ message: 'Invalid OAuth access token' })
+      );
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('Invalid OAuth access token');
+      expect(result.error).toContain('fb-app-err');
+    });
+
+    it('returns error when integration is not Instagram', async () => {
+      mockIntegrationService.getIntegrationById.mockResolvedValueOnce({
+        id: 'int-1',
+        providerIdentifier: 'facebook',
+        organizationId: 'org-1',
+        profileId: null,
+      });
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('Instagram');
+    });
+
+    it('returns error when integration does not exist', async () => {
+      mockIntegrationService.getIntegrationById.mockResolvedValueOnce(null);
+
+      const result = await service.checkIntegrationWebhook('org-1', 'int-1');
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('nao encontrada');
     });
   });
 });
