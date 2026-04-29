@@ -7,6 +7,8 @@ Fork do [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-29
+
 ### Documentação
 - Nova referência de arquitetura para automações Instagram em `docs/architecture/instagram-automations.md`, voltada a agentes de IA e ao time de engenharia: mapa dos arquivos-chave (backend/orchestrator/libraries/frontend), as três camadas de credenciais Meta (App, Integration, Messaging Tokens), roteamento de host/token via `FlowActivity.resolveIgRoute`, fluxo completo do follow gate de 2 etapas (opening DM + postback + PendingPostback), convenções e armadilhas. `CLAUDE.md` ganhou um bloco resumido com as regras de ouro apontando para o doc detalhado.
 
