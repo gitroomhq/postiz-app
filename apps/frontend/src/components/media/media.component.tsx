@@ -51,6 +51,7 @@ import {
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useDebounce } from 'use-debounce';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -205,13 +206,25 @@ export const MediaBox: FC<{
   closeModal: () => void;
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebounce(search, 300);
   const fetch = useFetch();
   const modals = useModals();
   const toaster = useToaster();
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
   const loadMedia = useCallback(async () => {
-    return (await fetch(`/media?page=${page + 1}`)).json();
-  }, [page]);
-  const { data, mutate, isLoading } = useSWR(`get-media-${page}`, loadMedia);
+    const params = new URLSearchParams({ page: String(page + 1) });
+    if (debouncedSearch.trim()) {
+      params.set('search', debouncedSearch.trim());
+    }
+    return (await fetch(`/media?${params.toString()}`)).json();
+  }, [page, debouncedSearch]);
+  const { data, mutate, isLoading } = useSWR(
+    `get-media-${page}-${debouncedSearch}`,
+    loadMedia
+  );
   const [selected, setSelected] = useState([]);
   const t = useT();
   const uploaderRef = useRef<any>(null);
@@ -404,23 +417,22 @@ export const MediaBox: FC<{
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
-            'flex',
-            !isLoading && !data?.results?.length && 'hidden'
+            'flex items-center gap-[12px]',
+            !isLoading &&
+              !data?.results?.length &&
+              !debouncedSearch &&
+              'hidden'
           )}
         >
-          {!isLoading && !!data?.results?.length && (
-            <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
-              {t(
-                'select_or_upload_pictures_max_1gb',
-                'Select or upload pictures (maximum 1 GB per upload).'
-              )}
-              {'\n'}
-              {t(
-                'you_can_drag_drop_pictures',
-                'You can also drag & drop pictures.'
-              )}
-            </div>
-          )}
+          <div className="flex-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('search_media_by_name', 'Search by file name')}
+              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
+            />
+          </div>
           <input
             type="file"
             ref={uploaderRef}
@@ -428,12 +440,10 @@ export const MediaBox: FC<{
             className="hidden"
             multiple={true}
           />
-          {!isLoading && !!data?.results?.length && (
-            <div className="flex gap-[8px]">
-              {btn}
-              <ThirdPartyMediaLibrary onImported={() => mutate()} />
-            </div>
-          )}
+          <div className="flex gap-[8px]">
+            {btn}
+            <ThirdPartyMediaLibrary onImported={() => mutate()} />
+          </div>
         </div>
         <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
@@ -471,10 +481,15 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  {t(
-                    'you_dont_have_any_media_yet',
-                    "You don't have any media yet"
-                  )}
+                  {debouncedSearch
+                    ? t(
+                        'no_media_match_search',
+                        'No media matches your search'
+                      )
+                    : t(
+                        'you_dont_have_any_media_yet',
+                        "You don't have any media yet"
+                      )}
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
                   {t(

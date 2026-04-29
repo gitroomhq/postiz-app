@@ -10,7 +10,9 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
@@ -21,6 +23,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
 import {
   AuthorizationActions,
   Sections,
@@ -30,9 +33,21 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notifications/get.notifications.dto';
-import axios from 'axios';
 import { Readable } from 'stream';
-import { lookup, extension } from 'mime-types';
+import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { fromBuffer } = require('file-type');
+
+const PUBLIC_API_ALLOWED_MIME = new Set<string>([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/bmp',
+  'image/tiff',
+  'video/mp4',
+]);
 import * as Sentry from '@sentry/nestjs';
 import { socialIntegrationList, IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
@@ -57,6 +72,7 @@ export class PublicIntegrationsController {
 
   @Post('/upload')
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File
@@ -80,15 +96,20 @@ export class PublicIntegrationsController {
     @Body() body: UploadDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    const response = await axios.get(body.url, {
-      responseType: 'arraybuffer',
+    const response = await fetch(body.url, {
+      // @ts-ignore — undici option, not in lib.dom fetch types
+      dispatcher: ssrfSafeDispatcher,
     });
-
-    const buffer = Buffer.from(response.data);
-    const responseMime = response.headers?.['content-type']?.split(';')[0]?.trim();
-    const urlMime = lookup(body?.url?.split?.('?')?.[0]);
-    const mimetype = (urlMime || responseMime || 'image/jpeg') as string;
-    const ext = extension(mimetype) || 'jpg';
+    if (!response.ok) {
+      throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const detected = await fromBuffer(buffer);
+    if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
+      throw new HttpException({ msg: 'Unsupported file type.' }, 400);
+    }
+    const mimetype = detected.mime;
+    const ext = detected.ext;
 
     const getFile = await this.storage.uploadFile({
       buffer,
@@ -339,6 +360,16 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/posts/:id/status')
+  async changePostStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: ChangePostStatusDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.changePostStatus(org.id, id, body.status);
   }
 
   @Put('/posts/:id/release-id')

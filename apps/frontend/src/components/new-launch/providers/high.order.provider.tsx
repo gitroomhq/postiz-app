@@ -28,11 +28,8 @@ class Empty {
   empty: string;
 }
 
-export enum PostComment {
-  ALL,
-  POST,
-  COMMENT,
-}
+export { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 
 interface CharacterCondition {
   format: 'no-pictures' | 'with-pictures';
@@ -72,7 +69,7 @@ export const withProvider = function <T extends object>(params: {
     maximumCharacters,
   } = params;
 
-  return forwardRef((props: { id: string }, ref) => {
+  const Wrapped = forwardRef((props: { id: string }, ref) => {
     const t = useT();
     const fetch = useFetch();
     const {
@@ -356,4 +353,36 @@ export const withProvider = function <T extends object>(params: {
       </IntegrationContext.Provider>
     );
   });
+
+  // Expose the settings configuration as static metadata so the preview /
+  // mobile settings page can render <SettingsComponent /> in isolation
+  // without pulling the launch store + DOM portals.
+  (Wrapped as any).__settings = {
+    SettingsComponent,
+    CustomPreviewComponent,
+    dto,
+    postComment,
+    maximumCharacters,
+    checkValidity,
+  };
+
+  return Wrapped;
+};
+
+/** Pulls the settings metadata off a withProvider-wrapped component. */
+export const getProviderSettingsMeta = (component: unknown) => {
+  return (component as any)?.__settings as
+    | {
+        SettingsComponent: FC<{ values?: any }> | null;
+        CustomPreviewComponent?: FC<{ maximumCharacters?: number }>;
+        dto?: any;
+        postComment: PostComment;
+        maximumCharacters?: number | ((settings: any) => number);
+        checkValidity?: (
+          value: Array<Array<{ path: string; thumbnail?: string }>>,
+          settings: any,
+          additionalSettings: any
+        ) => Promise<string | true>;
+      }
+    | undefined;
 };

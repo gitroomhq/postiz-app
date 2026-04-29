@@ -1,20 +1,16 @@
-import { ToolAction } from '@mastra/core/dist/tools/types';
 import { getAuth } from '@gitroom/nestjs-libraries/chat/async.storage';
 
-export const checkAuth: ToolAction['execute'] = async (
-  { runtimeContext },
-  options
+export const checkAuth = (
+  inputData: any,
+  context: any
 ) => {
   const auth = getAuth();
-  // @ts-ignore
-  if (options?.extra?.authInfo || auth) {
-    runtimeContext.set(
-      // @ts-ignore
+  const authInfo = context?.mcp?.extra?.authInfo || auth;
+  if (authInfo && context?.requestContext) {
+    (context.requestContext as any).set(
       'organization',
-      // @ts-ignore
-      JSON.stringify(options?.extra?.authInfo || auth)
+      JSON.stringify(authInfo)
     );
-    // @ts-ignore
-    runtimeContext.set('ui', 'false');
+    (context.requestContext as any).set('ui', 'false');
   }
 };

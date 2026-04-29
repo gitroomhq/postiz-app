@@ -199,6 +199,19 @@ export class AuthController {
     };
   }
 
+  @Get('/oauth-mobile-callback')
+  mobileCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    const scheme = process.env.MOBILE_APP_SCHEME || 'postiz://auth/callback';
+    const params = new URLSearchParams();
+    if (code) params.set('code', code);
+    if (state) params.set('state', state);
+    return response.redirect(302, `${scheme}?${params.toString()}`);
+  }
+
   @Get('/oauth/:provider')
   async oauthLink(@Param('provider') provider: string, @Query() query: any) {
     return this._authService.oauthLink(provider, query);
@@ -210,7 +223,10 @@ export class AuthController {
     @Body('datafast_visitor_id') datafast_visitor_id: string,
     @Res({ passthrough: false }) response: Response
   ) {
-    const activate = await this._authService.activate(code, datafast_visitor_id);
+    const activate = await this._authService.activate(
+      code,
+      datafast_visitor_id
+    );
     if (!activate) {
       return response.status(200).json({ can: false });
     }
@@ -254,10 +270,15 @@ export class AuthController {
   @Post('/oauth/:provider/exists')
   async oauthExists(
     @Body('code') code: string,
+    @Body('redirect_uri') redirect_uri: string,
     @Param('provider') provider: string,
     @Res({ passthrough: false }) response: Response
   ) {
-    const { jwt, token } = await this._authService.checkExists(provider, code);
+    const { jwt, token } = await this._authService.checkExists(
+      provider,
+      code,
+      redirect_uri
+    );
 
     if (token) {
       return response.json({ token });

@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
-export const IntegrationContext = createContext<{
+export type IntegrationContextType = {
   date: dayjs.Dayjs;
   integration: Integrations | undefined;
   allIntegrations: Integrations[];
@@ -16,7 +16,8 @@ export const IntegrationContext = createContext<{
       id: string;
     }>;
   }>;
-}>({
+};
+export const IntegrationContext = createContext<IntegrationContextType>({
   integration: undefined,
   value: [],
   date: newDayjs(),

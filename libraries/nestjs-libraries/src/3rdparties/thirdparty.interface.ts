@@ -7,7 +7,6 @@ export abstract class ThirdPartyAbstract<T = any> {
   abstract sendData(apiKey: string, data: T): Promise<string>;
   [key: string]: ((apiKey: string, data?: any) => Promise<any>) | undefined;
 }
-
 export interface ThirdPartyParams {
   identifier: string;
   title: string;

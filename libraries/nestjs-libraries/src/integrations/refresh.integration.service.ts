@@ -16,12 +16,12 @@ export class RefreshIntegrationService {
     private _integrationService: IntegrationService,
     private _temporalService: TemporalService
   ) {}
-  async refresh(integration: Integration): Promise<false | AuthTokenDetails> {
+  async refresh(integration: Integration, cause = ''): Promise<false | AuthTokenDetails> {
     const socialProvider = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
 
-    const refresh = await this.refreshProcess(integration, socialProvider);
+    const refresh = await this.refreshProcess(integration, socialProvider, cause);
 
     if (!refresh) {
       return false as const;
@@ -44,11 +44,12 @@ export class RefreshIntegrationService {
     return refresh;
   }
 
-  public async setBetweenSteps(integration: Integration) {
+  public async setBetweenSteps(integration: Integration, cause = '') {
     await this._integrationService.setBetweenRefreshSteps(integration.id);
     await this._integrationService.informAboutRefreshError(
       integration.organizationId,
-      integration
+      integration,
+      cause
     );
   }
 
@@ -69,7 +70,8 @@ export class RefreshIntegrationService {
 
   private async refreshProcess(
     integration: Integration,
-    socialProvider: SocialProvider
+    socialProvider: SocialProvider,
+    cause = ''
   ): Promise<AuthTokenDetails | false> {
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
@@ -83,7 +85,8 @@ export class RefreshIntegrationService {
 
       await this._integrationService.informAboutRefreshError(
         integration.organizationId,
-        integration
+        integration,
+        cause
       );
 
       await this._integrationService.disconnectChannel(

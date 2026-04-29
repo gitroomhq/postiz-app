@@ -14,7 +14,7 @@ export class FarcasterProvider extends AuthProviderAbstract {
     return '';
   }
 
-  async getToken(code: string) {
+  async getToken(code: string, _redirectUri?: string) {
     const data = JSON.parse(Buffer.from(code, 'base64').toString());
     const status = await client.lookupSigner({ signerUuid: data.signer_uuid });
     if (status.status === 'approved') {

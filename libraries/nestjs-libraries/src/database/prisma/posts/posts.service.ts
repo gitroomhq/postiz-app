@@ -706,7 +706,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV101', {
+        ?.workflow.start('postWorkflowV102', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -782,6 +782,31 @@ export class PostsService {
 
   async changeState(id: string, state: State, err?: any, body?: any) {
     return this._postRepository.changeState(id, state, err, body);
+  }
+
+  async changePostStatus(
+    orgId: string,
+    id: string,
+    status: 'draft' | 'schedule'
+  ) {
+    const getPostById = await this._postRepository.getPostById(id, orgId);
+    if (!getPostById) {
+      throw new BadRequestException('Post not found');
+    }
+
+    const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
+    await this._postRepository.changeState(id, state);
+
+    try {
+      await this.startWorkflow(
+        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+        getPostById.id,
+        orgId,
+        state
+      );
+    } catch (err) {}
+
+    return { id, state };
   }
 
   async changeDate(

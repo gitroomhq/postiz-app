@@ -40,7 +40,7 @@ export class WalletProvider extends AuthProviderAbstract {
     return challenge;
   }
 
-  async getToken(code: string) {
+  async getToken(code: string, _redirectUri?: string) {
     const { publicKey, challenge, signature } = JSON.parse(
       Buffer.from(code, 'base64').toString()
     );

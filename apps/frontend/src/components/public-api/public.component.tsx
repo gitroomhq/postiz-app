@@ -213,9 +213,16 @@ const McpSection = ({
     user.publicApi
   );
 
+  const remoteUrl = `${mcpBase}/mcp/${user.publicApi}`;
+  const cliUrl = `${mcpBase}/mcp`;
+
   const maskedConfig = revealed
     ? config
     : config.replace(new RegExp(user.publicApi.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '*'.repeat(user.publicApi.length));
+
+  const maskedRemoteUrl = revealed
+    ? remoteUrl
+    : remoteUrl.replace(user.publicApi, '*'.repeat(user.publicApi.length));
 
   return (
     <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
@@ -261,40 +268,47 @@ const McpSection = ({
                 onClick={() => setMethod(m)}
               >
                 {m === 'header'
-                  ? t('authorization_header', 'Authorization Header')
-                  : t('api_key_in_url', 'API Key in URL')}
+                  ? t('cli_claude_code_codex', 'CLI (Claude Code / Codex)')
+                  : t('remote_servers', 'Remote servers (ChatGPT, Claude)')}
               </button>
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-[6px]">
-          <div className="text-[13px] font-[600] text-customColor18">
-            {t('mcp_client', 'Client')}
+        {method === 'header' && (
+          <div className="flex flex-col gap-[6px]">
+            <div className="text-[13px] font-[600] text-customColor18">
+              {t('mcp_client', 'Client')}
+            </div>
+            <div className="flex flex-wrap gap-[6px]">
+              {mcpClients.map((client) => (
+                <button
+                  key={client}
+                  type="button"
+                  className={clsx(
+                    'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                    activeClient === client
+                      ? 'bg-[#612BD3] text-white'
+                      : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                  )}
+                  onClick={() => setActiveClient(client)}
+                >
+                  {client}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-[6px]">
-            {mcpClients.map((client) => (
-              <button
-                key={client}
-                type="button"
-                className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
-                  activeClient === client
-                    ? 'bg-[#612BD3] text-white'
-                    : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
-                )}
-                onClick={() => setActiveClient(client)}
-              >
-                {client}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
         <div className="flex flex-col gap-[8px]">
           <div className="text-[12px] text-customColor18 font-[500]">
-            {hint}
+            {method === 'header'
+              ? hint
+              : t(
+                  'remote_server_url_hint',
+                  'Paste this URL into your remote MCP client (ChatGPT, Claude, etc.).'
+                )}
           </div>
           <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
-            {maskedConfig}
+            {method === 'header' ? maskedConfig : maskedRemoteUrl}
           </pre>
           <div className="flex gap-[8px]">
             <button
@@ -327,7 +341,16 @@ const McpSection = ({
               </svg>
               {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
-            <CopyButton text={config} label={t('copy', 'Copy')} />
+            <CopyButton
+              text={method === 'header' ? config : remoteUrl}
+              label={t('copy', 'Copy')}
+            />
+            {method === 'header' && (
+              <CopyButton
+                text={cliUrl}
+                label={t('copy_url', 'Copy URL')}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -335,13 +358,28 @@ const McpSection = ({
   );
 };
 
-const cliSteps = [
+const localCliSteps = [
   {
     label: 'Install the CLI',
     code: 'npm install -g postiz',
   },
   {
-    label: 'Set your API key, copy it to your secret files',
+    label: 'Run: postiz auth:login',
+    code: 'postiz auth:login',
+  },
+  {
+    label: 'Install the Postiz skill for your AI agent',
+    code: 'npx skills add gitroomhq/postiz-agent',
+  },
+] as const;
+
+const ciCliSteps = [
+  {
+    label: 'Install the CLI',
+    code: 'npm install -g postiz',
+  },
+  {
+    label: 'Set your API key as an environment variable',
     code: 'export POSTIZ_API_KEY="{API_KEY}"',
   },
   {
@@ -350,31 +388,29 @@ const cliSteps = [
   },
 ] as const;
 
-const CliSection = ({
-  apiKey,
-  backendUrl,
-}: {
-  apiKey: string;
-  backendUrl: string;
-}) => {
+const CliSection = ({ apiKey }: { apiKey: string }) => {
   const t = useT();
-  const toaster = useToaster();
+  const [mode, setMode] = useState<'local' | 'ci'>('local');
   const [revealed, setRevealed] = useState(false);
 
-  const steps = cliSteps.map((step) => ({
-    ...step,
-    code: step.code.replace('{API_KEY}', apiKey),
-  }));
+  const steps =
+    mode === 'local'
+      ? localCliSteps.map((step) => ({ ...step }))
+      : ciCliSteps.map((step) => ({
+          ...step,
+          code: step.code.replace('{API_KEY}', apiKey),
+        }));
 
-  const maskedSteps = steps.map((step) => ({
-    ...step,
-    code: revealed
-      ? step.code
-      : step.code.replace(
-          new RegExp(apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
-          '*'.repeat(apiKey.length)
-        ),
-  }));
+  const displaySteps =
+    mode === 'ci' && !revealed
+      ? steps.map((step) => ({
+          ...step,
+          code: step.code.replace(
+            new RegExp(apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+            '*'.repeat(apiKey.length)
+          ),
+        }))
+      : steps;
 
   return (
     <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
@@ -402,7 +438,26 @@ const CliSection = ({
         </div>
       </div>
       <div className="p-[20px] flex flex-col gap-[16px]">
-        {maskedSteps.map((step, i) => (
+        <div className="flex gap-[6px]">
+          {(['local', 'ci'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={clsx(
+                'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                mode === m
+                  ? 'bg-[#612BD3] text-white'
+                  : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+              )}
+              onClick={() => setMode(m)}
+            >
+              {m === 'local'
+                ? t('locally', 'Locally')
+                : t('ci_remote_servers', 'CI / Remote servers')}
+            </button>
+          ))}
+        </div>
+        {displaySteps.map((step, i) => (
           <div key={i} className="flex flex-col gap-[6px]">
             <div className="text-[13px] font-[600] text-customColor18">
               {i + 1}. {step.label}
@@ -413,36 +468,38 @@ const CliSection = ({
           </div>
         ))}
         <div className="flex gap-[8px]">
-          <button
-            type="button"
-            onClick={() => setRevealed(!revealed)}
-            className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {mode === 'ci' && (
+            <button
+              type="button"
+              onClick={() => setRevealed(!revealed)}
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
             >
-              {revealed ? (
-                <>
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                  <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </>
-              ) : (
-                <>
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </>
-              )}
-            </svg>
-            {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-          </button>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {revealed ? (
+                  <>
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </>
+                )}
+              </svg>
+              {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
+            </button>
+          )}
           <CopyButton
             text={steps.map((s) => s.code).join(' && ')}
             label={t('copy_all', 'Copy All')}
@@ -643,7 +700,7 @@ const PublicApiContent = () => {
         </div>
       </div>
 
-      <CliSection apiKey={user.publicApi} backendUrl={backendUrl} />
+      <CliSection apiKey={user.publicApi} />
 
       <McpSection user={user} mcpBase={mcpBase} />
     </div>
