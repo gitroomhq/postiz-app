@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CredentialRepository } from './credential.repository';
 import { EncryptionService } from '@gitroom/nestjs-libraries/crypto/encryption.service';
 
@@ -6,6 +6,8 @@ const SENTINEL = '__REDACTED__';
 
 @Injectable()
 export class CredentialService {
+  private readonly _logger = new Logger(CredentialService.name);
+
   constructor(
     private _credentialRepository: CredentialRepository,
     private _encryptionService: EncryptionService
@@ -20,16 +22,31 @@ export class CredentialService {
     );
   }
 
+  // Overlay incoming sobre current preservando todas as chaves existentes que
+  // o body parcial nao mencionou. Necessario porque a credencial encriptada
+  // pode misturar campos de UIs distintas (App ID/Secret + messaging tokens
+  // do Instagram, no caso do provider 'facebook') e cada UI envia apenas o
+  // subset que conhece. Antes desta correcao, qualquer save em uma UI
+  // descartava silenciosamente os campos da outra.
   private unredact(
     incoming: Record<string, string>,
     current: Record<string, string>
   ): Record<string, string> {
-    return Object.fromEntries(
-      Object.entries(incoming).map(([key, value]) => [
-        key,
-        value === SENTINEL ? (current[key] ?? '') : value,
-      ])
-    );
+    const droppedKeys = Object.keys(current).filter((k) => !(k in incoming));
+    if (droppedKeys.length > 0) {
+      this._logger.warn(
+        `[credentials.unredact] body parcial omitiu ${droppedKeys.length} ` +
+          `campo(s) que foram preservados automaticamente: ${droppedKeys.join(
+            ', '
+          )}. Verifique se o formulario que enviou esse body deveria incluir ` +
+          `esses campos.`
+      );
+    }
+    const merged: Record<string, string> = { ...current };
+    for (const [key, value] of Object.entries(incoming)) {
+      merged[key] = value === SENTINEL ? (current[key] ?? '') : value;
+    }
+    return merged;
   }
 
   async save(

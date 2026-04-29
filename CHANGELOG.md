@@ -7,6 +7,9 @@ Fork do [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0).
 
 ## [Unreleased]
 
+### Corrigido
+- Tokens de messaging do Instagram (System User Token e tokens por conta cadastrados em Settings > Credenciais > Instagram) deixavam de existir silenciosamente sempre que o admin abria "Editar" em qualquer seção do card Meta (Facebook, Instagram ou Threads) e salvava — a `CredentialService.unredact` só preservava as chaves explicitamente listadas no body do PATCH, e como o formulário de App ID/Secret não conhece os campos de messaging eles eram descartados na re-encriptação. Sintomas relatados: follow-gate quebrando com `Messaging não configurado para <workspace>`, automações estilo ManyChat parando e o card "Token Usuário do Sistema" voltando vazio sem ninguém ter clicado em remover. A correção passa a fazer overlay do body sobre o registro existente (campos não enviados são preservados, SENTINEL continua mantendo, string vazia continua limpando), com warning log listando os campos preservados automaticamente para detectar futuras regressões em formulários novos. Usuários afetados precisam re-cadastrar manualmente o System User Token e/ou os tokens por conta — os valores anteriores não são recuperáveis.
+
 ## [0.5.0] - 2026-04-29
 
 ### Documentação
