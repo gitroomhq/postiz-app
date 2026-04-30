@@ -95,7 +95,86 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
       };
     }
+    if (
+      body.includes('Tweet text is too long') ||
+      body.includes('Tweet needs to be a bit shorter') ||
+      body.includes('exceeds the maximum number of characters')
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          'O texto do tweet excedeu o limite de caracteres do X. Reduza o conteudo (limite de 280 chars no contador weighted, com — e … contando como 2) e tente novamente.',
+      };
+    }
+    if (
+      body.includes('paid_partnership') &&
+      (body.includes('not allowed') ||
+        body.includes('not authorized') ||
+        body.includes('Forbidden'))
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          'X: sua conta nao tem permissao para marcar paid_partnership (parceria paga). Desmarque essa opcao no post e tente novamente.',
+      };
+    }
     return undefined;
+  }
+
+  /**
+   * Monta o payload final aceito pelo client.v2.tweet, omitindo campos
+   * opcionais quando nao usados — alguns campos como `made_with_ai` e
+   * `paid_partnership` podem ser rejeitados pela API quando enviados em
+   * contas sem o feature habilitado, entao so incluimos quando true.
+   */
+  buildTweetPayload(input: {
+    text: string;
+    media_ids: string[];
+    settings: {
+      who_can_reply_post?:
+        | 'everyone'
+        | 'following'
+        | 'mentionedUsers'
+        | 'subscribers'
+        | 'verified';
+      community?: string;
+      made_with_ai?: boolean;
+      paid_partnership?: boolean;
+    };
+    replyToId?: string;
+  }) {
+    const { text, media_ids, settings, replyToId } = input;
+    const payload: any = { text };
+
+    if (
+      settings.who_can_reply_post &&
+      settings.who_can_reply_post !== 'everyone'
+    ) {
+      payload.reply_settings = settings.who_can_reply_post;
+    }
+
+    if (settings.community) {
+      payload.share_with_followers = true;
+      payload.community_id = settings.community.split('/').pop() || '';
+    }
+
+    if (media_ids.length) {
+      payload.media = { media_ids };
+    }
+
+    if (settings.made_with_ai) {
+      payload.made_with_ai = true;
+    }
+
+    if (settings.paid_partnership) {
+      payload.paid_partnership = true;
+    }
+
+    if (replyToId) {
+      payload.reply = { in_reply_to_tweet_id: replyToId };
+    }
+
+    return payload;
   }
 
   @Plug({
@@ -467,29 +546,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
 
+    const tweetPayload = this.buildTweetPayload({
+      text: firstPost.message,
+      media_ids,
+      settings: firstPost?.settings || {},
+    });
+
     // @ts-ignore
     const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          ...(!firstPost?.settings?.who_can_reply_post ||
-          firstPost?.settings?.who_can_reply_post === 'everyone'
-            ? {}
-            : {
-                reply_settings: firstPost?.settings?.who_can_reply_post,
-              }),
-          ...(firstPost?.settings?.community
-            ? {
-                share_with_followers: true,
-                community_id:
-                  firstPost?.settings?.community?.split('/').pop() || '',
-              }
-            : {}),
-          text: firstPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-          made_with_ai: !!firstPost?.settings?.made_with_ai,
-          paid_partnership: !!firstPost?.settings?.paid_partnership,
-        })
+      // @ts-ignore
+      async () => client.v2.tweet(tweetPayload)
     );
 
     return [
@@ -533,17 +599,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const replyToId = lastCommentId || postId;
 
+    const tweetPayload = this.buildTweetPayload({
+      text: commentPost.message,
+      media_ids,
+      settings: commentPost?.settings || {},
+      replyToId,
+    });
+
     // @ts-ignore
     const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          text: commentPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-          reply: { in_reply_to_tweet_id: replyToId },
-          made_with_ai: !!commentPost?.settings?.made_with_ai,
-          paid_partnership: !!commentPost?.settings?.paid_partnership,
-        })
+      // @ts-ignore
+      async () => client.v2.tweet(tweetPayload)
     );
 
     return [

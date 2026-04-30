@@ -7,6 +7,9 @@ Fork do [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0).
 
 ## [Unreleased]
 
+### Corrigido
+- Repost automático no X (Twitter) deixava de publicar quando a legenda da postagem original estourava o limite "weighted" do X — caracteres como `—` (em-dash) e `…` (ellipsis) contam como 2 chars no contador real, então uma legenda com 280 chars ASCII + 1 em-dash já estoura. O fluxo agora trunca a legenda em 250 chars (margem de segurança) antes de mandar para o X. Também foram acrescentados padrões em `XProvider.handleErrors` para reconhecer respostas reais da API ("Tweet text is too long", "exceeds the maximum number of characters", `paid_partnership` não autorizado), evitando que esses casos caiam no genérico "Unknown Error". Por fim, os campos opcionais `made_with_ai` e `paid_partnership` deixaram de ser enviados quando estão `false` — antes eram enviados sempre, e algumas contas sem o feature habilitado podiam recusar a requisição. Comportamento coberto por nova spec `x.provider.spec.ts` (17 casos).
+
 ## [0.5.2] - 2026-04-29
 
 ### Corrigido
