@@ -1,3 +1,23 @@
+<!-- Modified by SocialFlow on 2026-04-30 — added attribution header. Upstream Postiz README content preserved below per AGPL-3.0. -->
+
+# 🇧🇪 SocialFlow — Belgian-managed Postiz fork
+
+This repository is a public AGPL-3.0 fork of [Postiz](https://github.com/gitroomhq/postiz-app) maintained by [SocialFlow](https://socialflow.fordax.be), a managed social-media scheduling service for Belgian SMEs and agencies.
+
+**Why this fork exists:** AGPL-3.0 obliges any operator of a network-modified version to publish their modifications. SocialFlow modifies Postiz (license footer, /health endpoint, /source redirect, BUILD_COMMIT_SHA bake) and operates the result as a managed service hosted in Frankfurt. This public fork is how we satisfy that obligation. Every modification is committed here within 30 days of going live in production.
+
+- **Live service:** [`app.socialflow.fordax.be`](https://app.socialflow.fordax.be) — login + main app shell carry the AGPL footer with a link back here
+- **Source-code transparency:** [`socialflow.fordax.be/source`](https://app.socialflow.fordax.be/source) → 302 redirect to the exact commit running in production
+- **Pinned upstream tag:** `v2.21.7` — bumped monthly via [`upstream-merge.yml`](.github/workflows/upstream-merge.yml) Action
+- **Modification markers:** every touched upstream file carries a `// Modified by SocialFlow on YYYY-MM-DD` comment
+- **Drift gate:** every deploy is blocked by [`agpl-drift-check.yml`](.github/workflows/agpl-drift-check.yml) Action — fork must contain the production commit and be ≤30 days behind production
+
+For licensing terms: see [`LICENSE`](./LICENSE) (AGPL-3.0, unchanged from upstream). For Belgian customer questions: `hello@socialflow.fordax.be`.
+
+---
+
+## Upstream Postiz README
+
 <p align="center">
   <a href="https://postiz.com/" target="_blank">
   <picture>
