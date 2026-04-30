@@ -56,6 +56,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = true;
+  keepReconnectAuthTokens = true;
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -177,6 +178,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       url: client.generateAuthUrl({
         access_type: 'offline',
         prompt: 'consent',
+        // Sem isso o Google pode pular a tela de consent quando a conta ja
+        // autorizou o app, e nao emitir refresh_token novo.
+        include_granted_scopes: false,
         state,
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
@@ -184,6 +188,26 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       codeVerifier: makeId(11),
       state,
     };
+  }
+
+  async revokeToken(accessToken: string): Promise<void> {
+    // POST https://oauth2.googleapis.com/revoke?token={token}
+    // Aceita access_token ou refresh_token. Se o token ja estiver expirado,
+    // a chamada pode falhar — ignoramos silenciosamente porque o
+    // include_granted_scopes=false + prompt=consent ja forcam novo refresh.
+    try {
+      await axios.post(
+        `https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(accessToken)}`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+    } catch {
+      // ignore
+    }
   }
 
   async authenticate(

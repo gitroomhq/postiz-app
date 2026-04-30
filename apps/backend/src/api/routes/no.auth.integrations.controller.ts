@@ -141,6 +141,17 @@ export class NoAuthIntegrationsController {
               refresh,
               auth.accessToken
             );
+            // Providers com access token de curta duracao (ex: YouTube) precisam
+            // preservar o refresh_token real devolvido pelo OAuth. O caminho
+            // default sobrescreve com body.refresh, descartando o refresh_token
+            // e quebrando a renovacao automatica horas depois.
+            if (integrationProvider.keepReconnectAuthTokens) {
+              return res({
+                ...newAuth,
+                refreshToken: auth.refreshToken,
+                expiresIn: auth.expiresIn,
+              });
+            }
             return res({ ...newAuth, refreshToken: body.refresh });
           } catch (err: any) {
             return res({

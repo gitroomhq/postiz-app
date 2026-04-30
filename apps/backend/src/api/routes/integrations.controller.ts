@@ -302,6 +302,19 @@ export class IntegrationsController {
         }
       }
 
+      // Antes de redirecionar para o consent, revoga programaticamente o
+      // token antigo se o provider suportar. Isso forca a tela de consent a
+      // aparecer de novo (mesmo quando a conta ja autorizou o app), evitando
+      // que o Google emita um auth code sem refresh_token associado.
+      if (refresh && integrationProvider.revokeToken) {
+        const matches =
+          await this._integrationService.getIntegrationsByInternalId(refresh);
+        const existing = matches.find((i) => i.organizationId === org.id);
+        if (existing?.token) {
+          await integrationProvider.revokeToken(existing.token);
+        }
+      }
+
       const { codeVerifier, state, url } =
         await integrationProvider.generateAuthUrl(getExternalUrl);
 

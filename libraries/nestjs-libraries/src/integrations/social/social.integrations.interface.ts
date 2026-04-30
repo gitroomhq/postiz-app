@@ -166,6 +166,15 @@ export interface SocialProvider
   toolTip?: string;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
+  // Quando true, o controller de OAuth usa refreshToken/expiresIn vindos do
+  // authenticate() em vez de body.refresh/default no fluxo de reConnect.
+  // Necessario para providers cujo access token expira em horas (YouTube/GMB),
+  // onde perder o refresh_token real do OAuth quebra a renovacao automatica.
+  keepReconnectAuthTokens?: boolean;
+  // Revoga programaticamente o token antigo antes da reconexao. Forca o
+  // provider a exibir tela de consent e emitir refresh_token novo, mesmo
+  // quando a conta ja autorizou o app antes (Google pula consent silencioso).
+  revokeToken?(accessToken: string): Promise<void>;
   scopes: string[];
   externalUrl?: (
     url: string
