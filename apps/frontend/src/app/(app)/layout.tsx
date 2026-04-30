@@ -1,4 +1,7 @@
+// Modified by SocialFlow on 2026-04-30 — added <LicenseFooter /> for AGPL-3.0 attribution (D-05).
+
 import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
+import { LicenseFooter } from '@gitroom/frontend/components/license-footer';
 
 export const dynamic = 'force-dynamic';
 import '../global.scss';
@@ -111,6 +114,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </Plausible>
           </SentryComponent>
         </VariableContextComponent>
+        <LicenseFooter language={language} />
       </body>
     </html>
   );

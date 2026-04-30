@@ -1,3 +1,7 @@
+// Modified by SocialFlow on 2026-04-30 — added <LicenseFooter /> for AGPL-3.0 attribution (D-05).
+
+import { LicenseFooter } from '@gitroom/frontend/components/license-footer';
+
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -67,6 +71,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             {children}
           </LayoutContext>
         </VariableContextComponent>
+        <LicenseFooter />
       </body>
     </html>
   );

@@ -1,4 +1,6 @@
 // @ts-check
+// Modified by SocialFlow on 2026-04-30 — added /source redirect for AGPL-3.0 compliance (D-06).
+// /source 302-redirects to the public fork release matching BUILD_COMMIT_SHA.
 import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
@@ -41,6 +43,14 @@ const nextConfig = {
         destination:
           process.env.STORAGE_PROVIDER === 'local' ? '/uploads/:path*' : '/404',
         permanent: true,
+      },
+      // SocialFlow AGPL-3.0 source-redirect (D-06)
+      {
+        source: '/source',
+        destination: `https://github.com/socialflow-app/socialflow-postiz/releases/tag/${
+          process.env.BUILD_COMMIT_SHA || 'main'
+        }`,
+        permanent: false,
       },
     ];
   },

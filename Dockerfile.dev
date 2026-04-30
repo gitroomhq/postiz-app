@@ -1,6 +1,11 @@
+# Modified by SocialFlow on 2026-04-30 — added BUILD_COMMIT_SHA build arg for AGPL-04 (D-20).
+# Pass at build time:  docker build --build-arg BUILD_COMMIT_SHA=$(git rev-parse HEAD) ...
+# Read at runtime by the /health endpoint and the /source redirect.
 FROM node:22.20-bookworm-slim
 ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
+ARG BUILD_COMMIT_SHA
+ENV BUILD_COMMIT_SHA=$BUILD_COMMIT_SHA
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     make \

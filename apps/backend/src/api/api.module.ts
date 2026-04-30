@@ -1,5 +1,7 @@
+// Modified by SocialFlow on 2026-04-30 — registered HealthController for INFRA-09 (uptime monitor) + AGPL /source flow.
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthController } from '@gitroom/backend/api/routes/auth.controller';
+import { HealthController } from '@gitroom/backend/api/routes/health.controller';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { UsersController } from '@gitroom/backend/api/routes/users.controller';
 import { AuthMiddleware } from '@gitroom/backend/services/auth/auth.middleware';
@@ -77,6 +79,7 @@ const authenticatedController = [
     EnterpriseController,
     NoAuthIntegrationsController,
     OAuthController,
+    HealthController,
     ...authenticatedController,
   ],
   providers: [
