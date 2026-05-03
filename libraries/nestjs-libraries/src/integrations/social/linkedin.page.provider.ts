@@ -138,6 +138,7 @@ export class LinkedinPageProvider
   async companies(accessToken: string) {
     const roles = ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'];
     const allElements: any[] = [];
+    const errors: Error[] = [];
 
     for (const role of roles) {
       try {
@@ -155,8 +156,13 @@ export class LinkedinPageProvider
         ).json();
         allElements.push(...(elements || []));
       } catch (e) {
-        // Continue with other roles if one fails
+        errors.push(e instanceof Error ? e : new Error(String(e)));
       }
+    }
+
+    // If all role queries failed, re-throw so the caller can surface the error
+    if (errors.length === roles.length) {
+      throw errors[errors.length - 1];
     }
 
     // Deduplicate by organizational target
