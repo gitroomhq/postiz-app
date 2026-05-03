@@ -1,4 +1,4 @@
-// Modified by SocialFlow on 2026-04-30
+// Modified by SocialStream on 2026-04-30
 //
 // AGPL-3.0 attribution footer required by CONTEXT.md decision D-05.
 // Renders without JavaScript (server component — no 'use client' directive).
@@ -47,12 +47,12 @@ export function LicenseFooter({ language = 'en' }: { language?: string }) {
         </a>{' '}
         {t.middle}{' '}
         <a
-          href="https://github.com/socialflow-app/socialflow-postiz"
+          href="https://github.com/SocialStream-SaaS/socialstream-postiz"
           target="_blank"
           rel="noopener noreferrer"
           className="underline"
         >
-          github.com/socialflow-app/socialflow-postiz
+          github.com/SocialStream-SaaS/socialstream-postiz
         </a>
       </p>
     </footer>

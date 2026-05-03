@@ -1,4 +1,4 @@
-// Modified by SocialFlow on 2026-04-30 — added <LicenseFooter /> for AGPL-3.0 attribution (D-05).
+// Modified by SocialStream on 2026-04-30 — added <LicenseFooter /> for AGPL-3.0 attribution (D-05).
 
 import { LicenseFooter } from '@gitroom/frontend/components/license-footer';
 

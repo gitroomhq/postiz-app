@@ -1,4 +1,4 @@
-# Modified by SocialFlow on 2026-04-30 — added BUILD_COMMIT_SHA build arg for AGPL-04 (D-20).
+# Modified by SocialStream on 2026-04-30 — added BUILD_COMMIT_SHA build arg for AGPL-04 (D-20).
 # Pass at build time:  docker build --build-arg BUILD_COMMIT_SHA=$(git rev-parse HEAD) ...
 # Read at runtime by the /health endpoint and the /source redirect.
 FROM node:22.20-bookworm-slim

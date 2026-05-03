@@ -1,4 +1,4 @@
-// Modified by SocialFlow on 2026-04-30 — registered HealthController for INFRA-09 (uptime monitor) + AGPL /source flow.
+// Modified by SocialStream on 2026-04-30 — registered HealthController for INFRA-09 (uptime monitor) + AGPL /source flow.
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthController } from '@gitroom/backend/api/routes/auth.controller';
 import { HealthController } from '@gitroom/backend/api/routes/health.controller';
