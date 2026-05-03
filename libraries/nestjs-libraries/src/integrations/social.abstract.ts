@@ -116,7 +116,7 @@ export abstract class SocialAbstract {
         identifier,
         '{}',
         options.body || '{}',
-        `Request failed after ${totalRetries} retries (HTTP ${request.status})`
+        `Request failed after ${totalRetries} retries (HTTP ${request.status}, url: ${url})`
       );
     }
 
