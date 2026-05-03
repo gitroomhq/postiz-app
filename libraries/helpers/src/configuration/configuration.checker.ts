@@ -65,13 +65,19 @@ export class ConfigurationChecker {
   checkRedis() {
     if (!this.cfg.REDIS_URL) {
       this.issues.push('REDIS_URL not set');
+      return;
     }
 
     try {
       const redisUrl = new URL(this.cfg.REDIS_URL);
 
-      if (redisUrl.protocol !== 'redis:' && redisUrl.protocol !== 'rediss:') {
-        this.issues.push('REDIS_URL must start with redis:// or rediss://');
+      if (
+        (redisUrl.protocol !== 'redis:' && redisUrl.protocol !== 'rediss:') ||
+        !redisUrl.host
+      ) {
+        this.issues.push(
+          'REDIS_URL must be a valid URL starting with redis:// or rediss:// and include a host'
+        );
       }
     } catch (error) {
       this.issues.push('REDIS_URL is not a valid URL');
