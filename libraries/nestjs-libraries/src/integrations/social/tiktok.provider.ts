@@ -246,7 +246,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
 
     const { access_token, refresh_token, ...all } = await (
-      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -260,7 +260,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         user: { avatar_url, display_name, open_id, username },
       },
     } = await (
-      await fetch(
+      await this.fetch(
         'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
@@ -323,7 +323,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
 
     const { access_token, refresh_token, scope } = await (
-      await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      await this.fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -339,7 +339,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         user: { avatar_url, display_name, open_id, username },
       },
     } = await (
-      await fetch(
+      await this.fetch(
         'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
         {
           method: 'GET',
@@ -365,7 +365,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const {
       data: { max_video_post_duration_sec },
     } = await (
-      await fetch(
+      await this.fetch(
         'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
         {
           method: 'POST',
