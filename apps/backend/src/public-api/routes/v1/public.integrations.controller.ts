@@ -22,6 +22,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
 import {
@@ -505,4 +506,13 @@ export class PublicIntegrationsController {
       }
     }
   }
+
+  @Post('/media/information')
+  saveMediaInformation(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: SaveMediaInformationDto
+  ) {
+    return this._mediaService.saveMediaInformation(org.id, body);
+  }
+
 }
