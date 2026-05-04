@@ -36,7 +36,7 @@ export const InstagramCollaboratorsTags: FC<{
         },
       });
     },
-    [tagValue]
+    [tagValue, onChange, name]
   );
   const onAddition = useCallback(
     (newTag: any) => {
@@ -52,7 +52,7 @@ export const InstagramCollaboratorsTags: FC<{
         },
       });
     },
-    [tagValue]
+    [tagValue, maxTags, onChange, name]
   );
   useEffect(() => {
     const settings = getValues()[props.name];
