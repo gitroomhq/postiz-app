@@ -45,6 +45,7 @@
   "dependencies": {
     "@ag-ui/mastra": "^1.0.1",
     "@ai-sdk/openai": "^2.0.52",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
     "@atproto/api": "^0.15.15",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
@@ -145,6 +146,7 @@
     "@uppy/xhr-upload": "^4.3.3",
     "@zernio/node": "^0.2.80",
     "accept-language": "^3.0.20",
+    "ai": "^5.0.60",
     "array-move": "^4.0.0",
     "async-mutex": "^0.5.0",
     "axios": "^1.14.0",
