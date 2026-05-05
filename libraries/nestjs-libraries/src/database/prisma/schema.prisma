@@ -47,6 +47,7 @@ model Organization {
   webhooks                Webhooks[]
   profiles                Profile[]
   providerCredentials     ProviderCredential[]
+  aiCredentials           AiProviderCredential[]
   oauthApp                OAuthApp[]
   oauthAuthorizations     OAuthAuthorization[]
   flows                   Flow[]
@@ -939,6 +940,44 @@ model ProviderCredential {
   @@index([profileId])
 }
 
+enum AiScope {
+  WORKSPACE
+  PROFILE
+}
+
+enum AiKind {
+  TEXT
+  IMAGE
+  VIDEO
+  WEB_SEARCH
+}
+
+model AiProviderCredential {
+  id             String   @id @default(cuid())
+  organizationId String
+  profileId      String?
+  scope          AiScope
+  kind           AiKind
+  provider       String
+  model          String?
+  fallbackModel  String?
+  options        Json?
+  encryptedData  String   @db.Text
+  shareDefault   Boolean  @default(true)
+  keyVersion     Int      @default(1)
+  lastUsedAt     DateTime?
+  lastTestStatus String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile        Profile?     @relation(fields: [profileId], references: [id])
+
+  @@unique([organizationId, profileId, scope, kind])
+  @@index([organizationId, kind])
+  @@index([profileId])
+}
+
 model OAuthApp {
   id             String               @id @default(uuid())
   organizationId String
@@ -1073,6 +1112,7 @@ model Profile {
   tags           Tags[]
   signatures     Signatures[]
   credentials    ProviderCredential[]
+  aiCredentials  AiProviderCredential[]
   webhooks       Webhooks[]
   autoPosts      AutoPost[]
   sets           Sets[]

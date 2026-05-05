@@ -34,6 +34,9 @@ import { MonitorController } from '@gitroom/backend/api/routes/monitor.controlle
 import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
 import { CredentialsController } from '@gitroom/backend/api/routes/credentials.controller';
+import { AiCredentialsController } from '@gitroom/backend/api/routes/ai-credentials.controller';
+import { AiCatalogController } from '@gitroom/backend/api/routes/ai-catalog.controller';
+import { AiModule } from '@gitroom/nestjs-libraries/ai/ai.module';
 import { ProfilesController } from '@gitroom/backend/api/routes/profiles.controller';
 import { ZernioIntegrationsController } from '@gitroom/backend/api/routes/zernio.integrations.controller';
 import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
@@ -66,6 +69,8 @@ const authenticatedController = [
   SetsController,
   ThirdPartyController,
   CredentialsController,
+  AiCredentialsController,
+  AiCatalogController,
   ProfilesController,
   ZernioIntegrationsController,
   OAuthAppController,
@@ -76,7 +81,7 @@ const authenticatedController = [
   RepostController,
 ];
 @Module({
-  imports: [UploadModule],
+  imports: [UploadModule, AiModule],
   controllers: [
     RootController,
     StripeController,
