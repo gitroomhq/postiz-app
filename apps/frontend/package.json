@@ -8,7 +8,7 @@
     "build": "next build",
     "build:sentry": "dotenv -e ../../.env -- next build",
     "start": "dotenv -e ../../.env -- next start -p 4200",
-    "pm2": "pm2 start pnpm --name frontend -- start"
+    "pm2": "pm2 start pnpm --name frontend --max-memory-restart 1G --min-uptime 30000 --max-restarts 10 --restart-delay 5000 -- start"
   },
   "keywords": [],
   "author": "",
