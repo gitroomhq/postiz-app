@@ -10,6 +10,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@gitroom/nestjs-libraries/(.*)$': '<rootDir>/src/$1',
     '^@gitroom/helpers/(.*)$': '<rootDir>/../../libraries/helpers/src/$1',
+    '^@gitroom/backend/(.*)$': '<rootDir>/../../apps/backend/src/$1',
   },
 };
 

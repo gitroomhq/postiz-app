@@ -24,6 +24,7 @@ import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AiTextService } from '@gitroom/nestjs-libraries/ai/ai-text.service';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
 import { TemporalService } from 'nestjs-temporal-core';
@@ -54,7 +55,8 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _aiTextService: AiTextService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -789,8 +791,13 @@ export class PostsService {
     return postList;
   }
 
-  async separatePosts(content: string, len: number) {
-    return this._openaiService.separatePosts(content, len);
+  async separatePosts(
+    orgId: string,
+    content: string,
+    len: number,
+    profileId?: string
+  ) {
+    return this._aiTextService.separatePosts(orgId, content, len, profileId);
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {

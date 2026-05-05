@@ -58,14 +58,11 @@ export class MediaController {
   @Post('/generate-image')
   async generateImage(
     @GetOrgFromRequest() org: Organization,
+    @GetProfileFromRequest() profile: Profile | null,
     @Req() req: Request,
     @Body('prompt') prompt: string,
     isPicturePrompt = false
   ) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new HttpException('AI image generation is not configured on this server', 503);
-    }
-
     const total = await this._subscriptionService.checkCredits(org);
     if (total.credits <= 0) {
       return false;
@@ -74,7 +71,12 @@ export class MediaController {
     return {
       output:
         (isPicturePrompt ? '' : 'data:image/png;base64,') +
-        (await this._mediaService.generateImage(prompt, org, isPicturePrompt)),
+        (await this._mediaService.generateImage(
+          prompt,
+          org,
+          isPicturePrompt,
+          profile?.id
+        )),
     };
   }
 
@@ -85,7 +87,7 @@ export class MediaController {
     @Req() req: Request,
     @Body('prompt') prompt: string
   ) {
-    const image = await this.generateImage(org, req, prompt, true);
+    const image = await this.generateImage(org, profile, req, prompt, true);
     if (!image) {
       return false;
     }

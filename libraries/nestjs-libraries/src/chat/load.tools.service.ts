@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Agent } from '@mastra/core/agent';
-import { openai } from '@ai-sdk/openai';
 import { Memory } from '@mastra/memory';
 import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
 import { toolList } from '@gitroom/nestjs-libraries/chat/tools/tool.list';
 import { renderPersonaPrompt } from '@gitroom/nestjs-libraries/chat/helpers/persona.prompt';
+import { AgentModelResolver } from '@gitroom/nestjs-libraries/chat/agent.model.resolver';
 import dayjs from 'dayjs';
 
 export const AgentState = object({
@@ -20,7 +20,10 @@ const renderArray = (list: string[], show: boolean) => {
 
 @Injectable()
 export class LoadToolsService {
-  constructor(private _moduleRef: ModuleRef) {}
+  constructor(
+    private _moduleRef: ModuleRef,
+    private _agentModelResolver: AgentModelResolver
+  ) {}
 
   async loadTools() {
     return (
@@ -43,6 +46,7 @@ export class LoadToolsService {
 
   async agent() {
     const tools = await this.loadTools();
+    const modelResolver = this._agentModelResolver;
     return new Agent({
       id: 'postiz',
       name: 'postiz',
@@ -100,7 +104,8 @@ export class LoadToolsService {
       ${personaBlock}
 `;
       },
-      model: openai('gpt-5.2'),
+      model: async ({ runtimeContext }: any) =>
+        modelResolver.resolve(runtimeContext),
       tools,
       memory: new Memory({
         storage: pStore,

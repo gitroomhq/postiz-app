@@ -284,8 +284,14 @@ export class PostsController {
   @Post('/separate-posts')
   async separatePosts(
     @GetOrgFromRequest() org: Organization,
+    @GetProfileFromRequest() profile: Profile | null,
     @Body() body: { content: string; len: number }
   ) {
-    return this._postsService.separatePosts(body.content, body.len);
+    return this._postsService.separatePosts(
+      org.id,
+      body.content,
+      body.len,
+      profile?.id
+    );
   }
 }

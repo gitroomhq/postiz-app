@@ -34,6 +34,8 @@ export class GenerateImageTool implements AgentToolInterface {
         const org = JSON.parse(runtimeContext.get('organization') as string);
         // @ts-ignore
         const personaRaw = runtimeContext.get('persona') as string;
+        // @ts-ignore
+        const profileId = runtimeContext.get('profileId') as string | undefined;
         let styledPrompt = context.prompt;
         if (personaRaw) {
           try {
@@ -47,14 +49,22 @@ export class GenerateImageTool implements AgentToolInterface {
         }
         const image = await this._mediaService.generateImage(
           styledPrompt,
-          org
+          org,
+          false,
+          profileId
         );
 
         const file = await this.storage.uploadSimple(
           'data:image/png;base64,' + image
         );
 
-        return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+        return this._mediaService.saveFile(
+          org.id,
+          file.split('/').pop(),
+          file,
+          undefined,
+          profileId
+        );
       },
     });
   }

@@ -12,6 +12,8 @@ import {
   Sections,
   SubscriptionException,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { AiImageService } from '@gitroom/nestjs-libraries/ai/ai-image.service';
+import { AiTextService } from '@gitroom/nestjs-libraries/ai/ai-text.service';
 
 @Injectable()
 export class MediaService {
@@ -21,7 +23,9 @@ export class MediaService {
     private _mediaRepository: MediaRepository,
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
-    private _videoManager: VideoManager
+    private _videoManager: VideoManager,
+    private _aiImageService: AiImageService,
+    private _aiTextService: AiTextService
   ) {}
 
   async deleteMedia(org: string, id: string, profileId?: string) {
@@ -35,17 +39,27 @@ export class MediaService {
   async generateImage(
     prompt: string,
     org: Organization,
-    generatePromptFirst?: boolean
+    generatePromptFirst?: boolean,
+    profileId?: string
   ) {
     const generating = await this._subscriptionService.useCredit(
       org,
       'ai_images',
       async () => {
+        let finalPrompt = prompt;
         if (generatePromptFirst) {
-          prompt = await this._openAi.generatePromptForPicture(prompt);
-          console.log('Prompt:', prompt);
+          finalPrompt = await this._aiTextService.generatePromptForPicture(
+            org.id,
+            prompt,
+            profileId
+          );
         }
-        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+        const result = await this._aiImageService.generate(
+          org.id,
+          finalPrompt,
+          profileId
+        );
+        return result.base64;
       }
     );
 
