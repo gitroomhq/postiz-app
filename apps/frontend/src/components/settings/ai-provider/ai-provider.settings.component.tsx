@@ -5,19 +5,48 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AiKindCard } from '@gitroom/frontend/components/settings/ai-provider/ai-kind-card.component';
 
 const TextIcon = () => (
-  <img
-    src="/icons/ai/openrouter.svg"
-    alt="text"
-    className="w-[18px] h-[18px]"
-  />
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M5 6h14M5 12h14M5 18h10"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
 );
 
 const ImageIcon = () => (
-  <img
-    src="/icons/ai/openai.svg"
-    alt="image"
-    className="w-[18px] h-[18px]"
-  />
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+    <path
+      d="M21 15l-5-5L5 21"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
 );
 
 const VideoIcon = () => (

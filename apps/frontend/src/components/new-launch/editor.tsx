@@ -774,6 +774,12 @@ export const Editor: FC<{
                       totalAllowedChars={props.totalChars}
                     />
                   }
+                  editor={editorRef?.current?.editor}
+                  platform={
+                    identifier && identifier !== 'global'
+                      ? identifier
+                      : undefined
+                  }
                   toolBar={
                     <div className="flex gap-[5px]">
                       <SignatureBox editor={editorRef?.current?.editor} />

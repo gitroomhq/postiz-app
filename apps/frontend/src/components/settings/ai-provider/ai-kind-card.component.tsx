@@ -50,6 +50,18 @@ const labelForProvider = (id: string) =>
   PROVIDER_LABELS[id] ??
   id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
 
+const PROVIDER_ICON_PATHS: Record<string, string> = {
+  openrouter: '/icons/ai/openrouter.svg',
+  openai: '/icons/ai/openai.svg',
+};
+
+function providerIcon(providerId: string): React.ReactNode {
+  const path = PROVIDER_ICON_PATHS[providerId];
+  if (!path) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={path} alt={providerId} className="w-[16px] h-[16px]" />;
+}
+
 interface FormState {
   provider: string;
   apiKey: string;
@@ -75,13 +87,18 @@ export const AiKindCard: React.FC<KindCardProps> = (props) => {
 
   // Workspace default — sempre carregado para mostrar status herdado nos
   // perfis secundarios.
-  const { data: workspaceCred } = useAiCredential(props.kind, null);
+  const { data: workspaceCred, mutate: mutateWorkspace } = useAiCredential(
+    props.kind,
+    null
+  );
 
   // Quando perfil secundario, tambem carregamos a row PROFILE (override).
+  // Caso contrario, passamos undefined como kind para o hook nao executar
+  // fetch (SWR ignora chamadas com key null).
   const isSecondary = profile && !profile.isDefault;
-  const { data: profileCred } = useAiCredential(
-    props.kind,
-    isSecondary ? profile.id : null
+  const { data: profileCred, mutate: mutateProfile } = useAiCredential(
+    isSecondary ? props.kind : (undefined as any),
+    isSecondary && profile ? profile.id : null
   );
 
   const inheritedFromWorkspace = isSecondary && !profileCred && !!workspaceCred;
@@ -117,6 +134,8 @@ export const AiKindCard: React.FC<KindCardProps> = (props) => {
               workspaceCred={workspaceCred ?? null}
               profileCred={profileCred ?? null}
               inheritedFromWorkspace={inheritedFromWorkspace ?? false}
+              mutateWorkspace={mutateWorkspace}
+              mutateProfile={mutateProfile}
               t={t}
             />
           )}
@@ -241,6 +260,8 @@ const CardBody: React.FC<
     workspaceCred: AiCredentialSummary | null;
     profileCred: AiCredentialSummary | null;
     inheritedFromWorkspace: boolean;
+    mutateWorkspace: () => Promise<unknown>;
+    mutateProfile: () => Promise<unknown>;
     t: any;
   }
 > = ({
@@ -251,11 +272,14 @@ const CardBody: React.FC<
   workspaceCred,
   profileCred,
   inheritedFromWorkspace,
+  mutateWorkspace,
+  mutateProfile,
   t,
 }) => {
   const isSecondary = !!currentProfile && !currentProfile.isDefault;
   const targetProfileId =
     isSecondary && currentProfile ? currentProfile.id : undefined;
+  const refetch = isSecondary ? mutateProfile : mutateWorkspace;
 
   // Em perfil secundario sem override e sem clicar no "Configurar chave
   // propria", mostramos apenas o status herdado e CTA. Se ja existe
@@ -295,6 +319,7 @@ const CardBody: React.FC<
       onCancelOverride={
         isSecondary && !profileCred ? () => setOverrideOpen(false) : undefined
       }
+      refetch={refetch}
       t={t}
     />
   );
@@ -346,6 +371,7 @@ interface CredentialFormProps {
   profileId?: string;
   isProfileOverride: boolean;
   onCancelOverride?: () => void;
+  refetch: () => Promise<unknown>;
   t: any;
 }
 
@@ -357,6 +383,7 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
   profileId,
   isProfileOverride,
   onCancelOverride,
+  refetch,
   t,
 }) => {
   const fetch = useFetch();
@@ -367,11 +394,6 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null);
   const [form, setForm] = useState<FormState>(emptyState);
-
-  // Reusa SWR cache — invalidamos via key correta no save/delete
-  const cacheKeyForRefresh = profileId
-    ? `ai-credential-${kind}-profile-${profileId}`
-    : `ai-credential-${kind}-workspace`;
 
   const configured = !!credential;
   const isLocked = configured && !editing;
@@ -437,11 +459,12 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
     }));
   }, []);
 
-  // Mutate global SWR cache pra esse kind (workspace + profile)
+  // Reusa o `mutate` retornado pelo hook do parent (vinculado a key SWR
+  // correta). Garantimos que o estado local e resetado ANTES da revalidacao
+  // para que o React renderize o input habilitado imediatamente.
   const invalidate = useCallback(async () => {
-    const { mutate } = await import('swr');
-    await mutate(cacheKeyForRefresh);
-  }, [cacheKeyForRefresh]);
+    await refetch();
+  }, [refetch]);
 
   const buildUrl = useCallback(
     (suffix = '') => {
@@ -566,9 +589,15 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
 
     const res = await fetch(buildUrl(), { method: 'DELETE' });
     if (res.ok) {
-      await invalidate();
+      // Reseta estado LOCAL primeiro (sincrono) para que o input destrave
+      // imediatamente; depois revalida o SWR para apagar o credential
+      // em cache. A ordem importa: useEffect deps incluem editing, e se
+      // setEditing fica para depois do mutate o React pode renderizar
+      // o estado intermediario com credential=null mas editing=true.
       setEditing(false);
       setTestResult(null);
+      setForm({ ...emptyState, provider: providers[0]?.value ?? '' });
+      await invalidate();
       toaster.show(
         isOverride
           ? t('ai_provider_override_removed', 'Override removido')
@@ -582,7 +611,7 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
         'warning'
       );
     }
-  }, [fetch, buildUrl, invalidate, toaster, t, decision, isProfileOverride, onCancelOverride]);
+  }, [fetch, buildUrl, invalidate, toaster, t, decision, isProfileOverride, onCancelOverride, providers]);
 
   return (
     <>
@@ -596,20 +625,18 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
       )}
 
       <FieldRow label={t('ai_provider_provider', 'Provedor')}>
-        <SelectInput
+        <SearchableModelSelect
           value={form.provider}
+          options={providers.map((p) => ({
+            value: p.value,
+            label: p.label,
+            icon: providerIcon(p.value),
+          }))}
+          placeholder={t('ai_provider_select', 'Selecione um provedor')}
           disabled={isLocked}
+          searchable={false}
           onChange={(v) => updateField('provider', v)}
-        >
-          <option value="">
-            {t('ai_provider_select', 'Selecione um provedor')}
-          </option>
-          {providers.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label}
-            </option>
-          ))}
-        </SelectInput>
+        />
       </FieldRow>
 
       <FieldRow label={t('ai_provider_apikey', 'API Key')}>

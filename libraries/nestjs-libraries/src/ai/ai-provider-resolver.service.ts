@@ -51,10 +51,10 @@ export class AiProviderResolverService {
         this.markUsedInBackground(workspaceCred.id);
         return workspaceCred;
       }
-      throw new HttpException(NOT_SHARED_MESSAGE, 402);
+      throw new HttpException(NOT_SHARED_MESSAGE, 412);
     }
 
-    throw new HttpException(NOT_CONFIGURED_MESSAGE, 402);
+    throw new HttpException(NOT_CONFIGURED_MESSAGE, 412);
   }
 
   private markUsedInBackground(credentialId: string) {

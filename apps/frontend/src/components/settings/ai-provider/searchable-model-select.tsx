@@ -13,6 +13,7 @@ interface ModelOption {
   value: string;
   label: string;
   hint?: string;
+  icon?: React.ReactNode;
 }
 
 interface Props {
@@ -22,6 +23,8 @@ interface Props {
   emptyOptionLabel?: string;
   disabled?: boolean;
   onChange: (value: string) => void;
+  /** Quando false, esconde o input de busca (util para dropdowns curtos). */
+  searchable?: boolean;
 }
 
 /**
@@ -37,17 +40,17 @@ export const SearchableModelSelect: React.FC<Props> = ({
   emptyOptionLabel,
   disabled,
   onChange,
+  searchable = true,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedLabel = useMemo(() => {
-    if (!value) return emptyOptionLabel ?? placeholder;
-    const found = options.find((o) => o.value === value);
-    return found?.label ?? value;
-  }, [value, options, emptyOptionLabel, placeholder]);
+  const selected = useMemo(() => {
+    if (!value) return null;
+    return options.find((o) => o.value === value) ?? null;
+  }, [value, options]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return options;
@@ -100,17 +103,22 @@ export const SearchableModelSelect: React.FC<Props> = ({
         disabled={disabled}
         onClick={() => !disabled && setOpen((p) => !p)}
         className={clsx(
-          'w-full bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] pl-[16px] pr-[40px] outline-none text-[14px] text-textColor flex items-center text-left',
+          'relative w-full bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] pl-[16px] pr-[40px] outline-none text-[14px] text-textColor flex items-center gap-[8px] text-left',
           disabled && 'opacity-60 cursor-not-allowed'
         )}
       >
+        {selected?.icon && (
+          <span className="flex items-center justify-center shrink-0">
+            {selected.icon}
+          </span>
+        )}
         <span
           className={clsx(
             'flex-1 truncate',
             !value && 'text-customColor18'
           )}
         >
-          {selectedLabel}
+          {selected?.label ?? emptyOptionLabel ?? placeholder}
         </span>
         <svg
           className={clsx(
@@ -134,16 +142,18 @@ export const SearchableModelSelect: React.FC<Props> = ({
 
       {open && (
         <div className="absolute z-[100] mt-[4px] w-full bg-newBgColorInner border border-newTableBorder rounded-[8px] shadow-lg overflow-hidden">
-          <div className="p-[8px] border-b border-fifth">
-            <input
-              ref={inputRef}
-              type="text"
-              className="w-full h-[36px] px-[12px] bg-sixth border border-fifth rounded-[6px] outline-none text-[14px]"
-              placeholder="Buscar modelo..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
+          {searchable && (
+            <div className="p-[8px] border-b border-fifth">
+              <input
+                ref={inputRef}
+                type="text"
+                className="w-full h-[36px] px-[12px] bg-sixth border border-fifth rounded-[6px] outline-none text-[14px]"
+                placeholder="Buscar..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )}
           <div className="max-h-[280px] overflow-y-auto">
             {emptyOptionLabel && (
               <button
@@ -159,7 +169,7 @@ export const SearchableModelSelect: React.FC<Props> = ({
             )}
             {filtered.length === 0 && (
               <div className="px-[16px] py-[12px] text-[13px] text-customColor18 text-center">
-                Nenhum modelo encontrado
+                Nenhum item encontrado
               </div>
             )}
             {filtered.map((opt) => (
@@ -168,16 +178,23 @@ export const SearchableModelSelect: React.FC<Props> = ({
                 type="button"
                 onClick={() => handleSelect(opt.value)}
                 className={clsx(
-                  'w-full text-left px-[16px] py-[8px] text-[14px] hover:bg-boxHover transition-colors flex flex-col gap-[2px]',
+                  'w-full text-left px-[16px] py-[8px] text-[14px] hover:bg-boxHover transition-colors flex items-center gap-[8px]',
                   value === opt.value && 'bg-boxHover'
                 )}
               >
-                <span>{opt.label}</span>
-                {opt.hint && (
-                  <span className="text-[11px] text-customColor18">
-                    {opt.hint}
+                {opt.icon && (
+                  <span className="flex items-center justify-center shrink-0">
+                    {opt.icon}
                   </span>
                 )}
+                <span className="flex-1 flex flex-col gap-[2px]">
+                  <span>{opt.label}</span>
+                  {opt.hint && (
+                    <span className="text-[11px] text-customColor18">
+                      {opt.hint}
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
           </div>

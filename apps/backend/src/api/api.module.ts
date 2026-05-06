@@ -36,6 +36,7 @@ import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.con
 import { CredentialsController } from '@gitroom/backend/api/routes/credentials.controller';
 import { AiCredentialsController } from '@gitroom/backend/api/routes/ai-credentials.controller';
 import { AiCatalogController } from '@gitroom/backend/api/routes/ai-catalog.controller';
+import { AiTextController } from '@gitroom/backend/api/routes/ai-text.controller';
 import { AiModule } from '@gitroom/nestjs-libraries/ai/ai.module';
 import { ProfilesController } from '@gitroom/backend/api/routes/profiles.controller';
 import { ZernioIntegrationsController } from '@gitroom/backend/api/routes/zernio.integrations.controller';
@@ -71,6 +72,7 @@ const authenticatedController = [
   CredentialsController,
   AiCredentialsController,
   AiCatalogController,
+  AiTextController,
   ProfilesController,
   ZernioIntegrationsController,
   OAuthAppController,

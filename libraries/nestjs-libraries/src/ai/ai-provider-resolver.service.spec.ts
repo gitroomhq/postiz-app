@@ -95,7 +95,7 @@ describe('AiProviderResolverService', () => {
       expect(credentialService.markUsed).not.toHaveBeenCalled();
     });
 
-    it('deve lancar HttpException 402 quando nada configurado', async () => {
+    it('deve lancar HttpException 412 quando nada configurado', async () => {
       credentialService.getRaw.mockResolvedValue(null);
 
       try {
@@ -103,7 +103,9 @@ describe('AiProviderResolverService', () => {
         fail('Deveria ter lancado');
       } catch (e) {
         expect(e).toBeInstanceOf(HttpException);
-        expect((e as HttpException).getStatus()).toBe(402);
+        // 412 Precondition Failed: usado em vez de 402 porque o frontend
+        // intercepta 402 globalmente para abrir o modal de billing
+        expect((e as HttpException).getStatus()).toBe(412);
       }
     });
 
