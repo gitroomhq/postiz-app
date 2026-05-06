@@ -52,22 +52,31 @@ export const useAiCredentialsList = () => {
 };
 
 /**
- * Busca a credencial workspace-default de um kind especifico.
- * Retorna null quando nao configurado.
+ * Busca a credencial de um kind no scope correspondente:
+ * - sem profileId → workspace default
+ * - com profileId de perfil secundario → row PROFILE
+ * - com profileId de perfil default → workspace (backend resolve)
+ *
+ * Retorna null quando nao configurado para aquele scope.
  */
-export const useAiCredential = (kind: AiKind) => {
+export const useAiCredential = (kind: AiKind, profileId?: string | null) => {
   const fetch = useFetch();
 
   const load = useCallback(async () => {
-    const res = await fetch(`/ai/credentials/${kind}`);
+    const url = profileId
+      ? `/ai/credentials/${kind}?profileId=${encodeURIComponent(profileId)}`
+      : `/ai/credentials/${kind}`;
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     return data ?? null;
-  }, [kind]);
+  }, [kind, profileId]);
 
-  return useSWR<AiCredentialSummary | null>(
-    kind ? `ai-credential-${kind}` : null,
-    load,
-    swrOptions
-  );
+  const cacheKey = kind
+    ? profileId
+      ? `ai-credential-${kind}-profile-${profileId}`
+      : `ai-credential-${kind}-workspace`
+    : null;
+
+  return useSWR<AiCredentialSummary | null>(cacheKey, load, swrOptions);
 };
