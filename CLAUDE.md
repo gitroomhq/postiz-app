@@ -385,6 +385,52 @@ Cada perfil pode ter:
 
 Feature flag: `ENABLE_KNOWLEDGE_BASE` (default `true`).
 
+## Sistema de Provedores de IA (AI Provider)
+
+Subsistema central — antes de mexer em qualquer feature de IA, ler:
+
+- **Referência de agente:** `docs/architecture/ai-provider-system.md`
+  (mapa completo: schema, services, cadeia de resolução, endpoints REST,
+  UI Settings, geração de imagem, como adicionar provider novo, troubleshooting).
+
+### Regras de ouro
+
+1. **Configuração é per-workspace via UI**, não via env var. O admin
+   acessa Settings > AI Provider e configura cada `kind` (TEXT, IMAGE,
+   VIDEO, WEB_SEARCH) com provider (OpenRouter ou OpenAI direto), API
+   key, modelo, fallback e opções. Chave armazenada com AES-256-GCM
+   (mesma `ENCRYPTION_KEY` do OAuth).
+
+2. **Cadeia de resolução** sempre passa pelo `AiProviderResolverService`:
+   `PROFILE → WORKSPACE com shareDefault → HTTP 412`. Nunca acesse
+   credenciais de IA pulando o resolver.
+
+3. **Para adicionar consumer novo**, usar a `AiClientFactory`:
+   - Texto: `factory.text(orgId, profileId)` → `LanguageModel` AI SDK v5
+   - Imagem: `AiImageService.generate(orgId, prompt, profileId)` →
+     base64 (fetch direto, não via AI SDK por causa de incompatibilidades)
+   - Mastra Agent: `factory.textForMastra(orgId, profileId)` retorna
+     função async lazy — modelo é resolvido a cada chamada, sem
+     reiniciar o Agent.
+
+4. **Erro 412 Precondition Failed** é o status semântico para
+   "credencial não configurada". **Não use 402** — é interceptado pelo
+   layout.context global do Postiz para abrir modal de billing.
+
+5. **Per-profile override**: perfil default (`isDefault=true`) edita
+   workspace. Perfil secundário pode criar override em scope=PROFILE
+   sem afetar o default. Detectado via `useCurrentProfile()` hook.
+
+### Comandos úteis
+
+```bash
+# Testar specs do sistema de IA (56 specs)
+pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage
+
+# Limpar cache do catálogo de modelos OpenRouter
+curl -X POST -H "Cookie: ..." http://localhost:3000/ai/catalog/refresh
+```
+
 ## Serviços Obrigatórios em Produção
 
 O produto requer 5 serviços rodando:
