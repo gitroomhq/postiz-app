@@ -35,6 +35,7 @@ import { CredentialsSettingsSection } from '@gitroom/frontend/components/setting
 import { ProfilesSettingsComponent } from '@gitroom/frontend/components/settings/profiles.component';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 import { AiCreditsSettingsSection } from '@gitroom/frontend/components/settings/ai-credits.settings.component';
+import { AiProviderSettingsSection } from '@gitroom/frontend/components/settings/ai-provider/ai-provider.settings.component';
 import { ProfilePersonaSettingsSection } from '@gitroom/frontend/components/settings/profile-persona.settings.component';
 import { KnowledgeBaseSettingsSection } from '@gitroom/frontend/components/settings/knowledge-base.settings.component';
 export const SettingsPopup: FC<{
@@ -104,6 +105,9 @@ export const SettingsPopup: FC<{
     }
     if (user?.role !== 'USER') {
       arr.push({ tab: 'ai_credits', label: t('ai_credits_title', 'AI Credits') });
+    }
+    if (user?.role !== 'USER') {
+      arr.push({ tab: 'ai_provider', label: t('ai_provider_title', 'AI Provider') });
     }
     if (user?.tier?.webhooks) {
       arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
@@ -221,6 +225,12 @@ export const SettingsPopup: FC<{
               {tab === 'ai_credits' && user?.role !== 'USER' && (
                 <div>
                   <AiCreditsSettingsSection />
+                </div>
+              )}
+
+              {tab === 'ai_provider' && user?.role !== 'USER' && (
+                <div>
+                  <AiProviderSettingsSection />
                 </div>
               )}
 

@@ -1,6 +1,7 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { AiKind, AiScope } from '@prisma/client';
 import { EncryptionService } from '@gitroom/nestjs-libraries/crypto/encryption.service';
+import { ZodError } from 'zod';
 import { AiCredentialRepository } from './ai-credential.repository';
 import { AiProviderTestService } from './ai-provider-test.service';
 import {
@@ -8,6 +9,23 @@ import {
   SaveAiCredentialPayload,
   SaveAiCredentialPayloadSchema,
 } from './ai-credential.schemas';
+
+function zodErrorTo400(error: unknown): HttpException {
+  if (error instanceof ZodError) {
+    const first = error.issues[0];
+    if (first) {
+      const path = first.path.length > 0 ? first.path.join('.') : 'payload';
+      return new HttpException(
+        {
+          message: `Campo \`${path}\`: ${first.message}`,
+          path: first.path,
+        },
+        400
+      );
+    }
+  }
+  return new HttpException('Payload invalido.', 400);
+}
 
 const SENTINEL = '__REDACTED__';
 
@@ -56,7 +74,11 @@ export class AiCredentialService {
     payload: SaveAiCredentialPayload,
     profileId?: string
   ) {
-    SaveAiCredentialPayloadSchema.parse(payload);
+    try {
+      SaveAiCredentialPayloadSchema.parse(payload);
+    } catch (error) {
+      throw zodErrorTo400(error);
+    }
 
     if (scope === 'PROFILE' && !profileId) {
       throw new HttpException(
@@ -66,9 +88,17 @@ export class AiCredentialService {
     }
 
     const optionsSchema = optionsSchemaFor(kind);
-    const validatedOptions = payload.options
-      ? optionsSchema.parse(payload.options)
-      : undefined;
+    let validatedOptions: Record<string, unknown> | undefined;
+    if (payload.options) {
+      try {
+        validatedOptions = optionsSchema.parse(payload.options) as Record<
+          string,
+          unknown
+        >;
+      } catch (error) {
+        throw zodErrorTo400(error);
+      }
+    }
 
     let apiKey = payload.apiKey;
     if (apiKey === SENTINEL) {
