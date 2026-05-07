@@ -14,7 +14,9 @@ jest.mock('ai', () => ({
 const buildClient = (overrides: Partial<TextClientResult> = {}): TextClientResult => ({
   provider: 'openrouter',
   model: { id: 'gpt-5.5' } as any,
+  modelId: 'openai/gpt-5.5',
   fallbackModel: null,
+  fallbackModelId: null,
   options: { temperature: 0.7 },
   credentialId: 'cred-1',
   ...overrides,
@@ -97,6 +99,54 @@ describe('AiTextService', () => {
       const callArg = generateTextMock.mock.calls[0][0];
       expect(callArg.system).toContain('X (Twitter)');
       expect(callArg.system).toContain('descontraido');
+    });
+
+    it('deve aplicar default de tamanho/hashtags/emojis quando NAO ha persona', async () => {
+      factory.text.mockResolvedValue(buildClient());
+      generateTextMock.mockResolvedValue({ text: 'ok' });
+
+      await service.caption('org-1', 'generate', 'conteudo');
+
+      const callArg = generateTextMock.mock.calls[0][0];
+      expect(callArg.system).toContain('Estilo padrao');
+      expect(callArg.system).toContain('sem hashtags');
+    });
+
+    it('deve dar prioridade explicita a persona e omitir default de estilo quando ha persona', async () => {
+      factory.text.mockResolvedValue(buildClient());
+      generateTextMock.mockResolvedValue({ text: 'ok' });
+
+      await service.caption(
+        'org-1',
+        'generate',
+        'conteudo',
+        {
+          personaBlock:
+            '=== PROFILE PERSONA ===\nWriting instructions: Crie 5 hashtags ao final.\n=== END PROFILE PERSONA ===',
+        }
+      );
+
+      const callArg = generateTextMock.mock.calls[0][0];
+      // Persona injetada
+      expect(callArg.system).toContain('Crie 5 hashtags');
+      // Marker de prioridade presente
+      expect(callArg.system).toContain('PRIORIDADE absoluta');
+      // Default de estilo NAO foi adicionado (senao briga com a persona)
+      expect(callArg.system).not.toContain('Estilo padrao');
+      // Restricao "sem hashtags" do default NAO deve aparecer
+      expect(callArg.system).not.toMatch(/Estilo padrao.*sem hashtags/i);
+    });
+
+    it('deve incluir regras de formatacao com \\n e \\n\\n para o editor', async () => {
+      factory.text.mockResolvedValue(buildClient());
+      generateTextMock.mockResolvedValue({ text: 'ok' });
+
+      await service.caption('org-1', 'generate', 'conteudo');
+
+      const callArg = generateTextMock.mock.calls[0][0];
+      expect(callArg.system).toContain('LINHA EM BRANCO');
+      expect(callArg.system).toContain('DOIS');
+      expect(callArg.system).toContain('UM');
     });
   });
 

@@ -21,9 +21,36 @@ const DEFAULT_IMAGE_MODELS: Record<string, string> = {
 export interface TextClientResult {
   provider: string;
   model: any;
+  /** ID textual do modelo principal (ex: 'openai/gpt-5.5'). Usado por
+   *  consumers para detectar features especificas (reasoning, etc). */
+  modelId: string;
   fallbackModel: any | null;
+  fallbackModelId: string | null;
   options: TextOptions;
   credentialId: string;
+}
+
+/** Modelos que sao "reasoning" e nao aceitam temperature/top_p.
+ *  Inclui famílias o1/o3/o4 (legacy) e gpt-5+ (atual default da OpenAI,
+ *  que tambem trata temperature como nao-suportado). Cobertos sufixos
+ *  de variantes (pro/codex/mini/etc). */
+const REASONING_MODEL_PREFIXES = [
+  'o1',
+  'o3',
+  'o4',
+  'openai/o1',
+  'openai/o3',
+  'openai/o4',
+  'gpt-5',
+  'openai/gpt-5',
+];
+
+export function isReasoningModel(modelId: string): boolean {
+  if (!modelId) return false;
+  const lower = modelId.toLowerCase();
+  return REASONING_MODEL_PREFIXES.some(
+    (prefix) => lower === prefix || lower.startsWith(`${prefix}-`)
+  );
 }
 
 export interface ImageClientResult {
@@ -46,15 +73,20 @@ export class AiClientFactory {
       'TEXT',
       profileId
     );
+    const modelId =
+      credential.model ?? DEFAULT_TEXT_MODELS[credential.provider] ?? '';
+    const fallbackId = credential.fallbackModel ?? null;
     return {
       provider: credential.provider,
       model: this.buildTextModel(credential),
-      fallbackModel: credential.fallbackModel
+      modelId,
+      fallbackModel: fallbackId
         ? this.buildTextModel({
             ...credential,
-            model: credential.fallbackModel,
+            model: fallbackId,
           })
         : null,
+      fallbackModelId: fallbackId,
       options: (credential.options as TextOptions) ?? {},
       credentialId: credential.id,
     };

@@ -33,9 +33,8 @@ export class GenerateVideoOptionsTool implements AgentToolInterface {
           })
         ),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
         const videos = this._videoManagerService.getAllVideos();
         console.log(
           JSON.stringify(

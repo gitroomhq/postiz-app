@@ -7,6 +7,7 @@ import { AiImageService } from './ai-image.service';
 import { AiProviderResolverService } from './ai-provider-resolver.service';
 import { AiProviderTestService } from './ai-provider-test.service';
 import { AiTextService } from './ai-text.service';
+import { AiWebSearchService } from './ai-web-search.service';
 
 // DatabaseModule e Global e ja exporta PrismaRepository + EncryptionService.
 @Module({
@@ -19,6 +20,7 @@ import { AiTextService } from './ai-text.service';
     AiProviderResolverService,
     AiProviderTestService,
     AiTextService,
+    AiWebSearchService,
   ],
   exports: [
     AiCatalogService,
@@ -29,6 +31,7 @@ import { AiTextService } from './ai-text.service';
     AiProviderResolverService,
     AiProviderTestService,
     AiTextService,
+    AiWebSearchService,
   ],
 })
 export class AiModule {}

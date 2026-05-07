@@ -676,7 +676,7 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
         )}
       </FieldRow>
 
-      {form.provider && (
+      {form.provider && kind !== 'WEB_SEARCH' && (
         <>
           <FieldRow label={t('ai_provider_model', 'Modelo principal')}>
             <SearchableModelSelect
@@ -971,6 +971,73 @@ const DynamicOptions: React.FC<{
     }
   }
 
+  if (kind === 'WEB_SEARCH' && provider === 'tavily') {
+    return (
+      <>
+        <FieldRow
+          label={t('ai_provider_web_depth', 'Profundidade da busca')}
+        >
+          <div className="flex gap-[8px]">
+            {(['basic', 'advanced'] as const).map((depth) => (
+              <label
+                key={depth}
+                className={clsx(
+                  'flex items-center gap-[6px] px-[12px] py-[8px] rounded-[6px] border cursor-pointer transition-colors capitalize',
+                  (options.depth ?? 'advanced') === depth
+                    ? 'border-btnPrimary bg-newColColor'
+                    : 'border-newTableBorder hover:bg-newColColor',
+                  disabled && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="web-search-depth"
+                  value={depth}
+                  checked={(options.depth ?? 'advanced') === depth}
+                  disabled={disabled}
+                  onChange={() => onChange('depth', depth)}
+                  className="accent-btnPrimary"
+                />
+                <span className="text-[14px]">{depth}</span>
+              </label>
+            ))}
+          </div>
+          <div className="text-[12px] text-customColor18 mt-[4px]">
+            {t(
+              'ai_provider_web_depth_hint',
+              'advanced custa 2 créditos por busca (default); basic custa 1.'
+            )}
+          </div>
+        </FieldRow>
+        <FieldRow label={t('ai_provider_web_max_results', 'Máximo de resultados')}>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            step={1}
+            className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] px-[16px] outline-none text-[14px] w-[120px]"
+            value={options.maxResults ?? ''}
+            disabled={disabled}
+            placeholder="5"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                onChange('maxResults', undefined);
+                return;
+              }
+              const num = Number(raw);
+              if (Number.isNaN(num)) return;
+              onChange(
+                'maxResults',
+                Math.max(1, Math.min(20, Math.floor(num)))
+              );
+            }}
+          />
+        </FieldRow>
+      </>
+    );
+  }
+
   return null;
 };
 
@@ -991,6 +1058,12 @@ function sanitizeOptions(
     if (kind === 'IMAGE') {
       if (key === 'imageSize' && provider !== 'openrouter') continue;
       if (key === 'quality' && provider !== 'openai') continue;
+    }
+    if (kind === 'WEB_SEARCH' && key === 'maxResults') {
+      const num = Number(value);
+      if (Number.isNaN(num)) continue;
+      out[key] = Math.max(1, Math.min(20, Math.floor(num)));
+      continue;
     }
     out[key] = value;
   }

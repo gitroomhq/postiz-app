@@ -1,27 +1,37 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { AiClientFactory } from '@gitroom/nestjs-libraries/ai/ai-client.factory';
 
-interface MinimalRuntimeContext {
+interface MinimalRequestContext {
   get(key: string): unknown;
 }
 
 /**
  * Resolve o modelo de linguagem para o Agent Mastra a partir do
- * `runtimeContext` (que ja carrega `organization` e `profileId` por
+ * `requestContext` (que ja carrega `organization` e `profileId` por
  * convencao). Centraliza a logica para ficar testavel sem instanciar
  * o Agent inteiro.
+ *
+ * Mastra v1.21+ passa `requestContext` (era `runtimeContext` antes).
+ * Aceitamos ambos via parametro flexivel para resilencia em upgrades.
  */
 @Injectable()
 export class AgentModelResolver {
   constructor(private _factory: AiClientFactory) {}
 
-  async resolve(runtimeContext: MinimalRuntimeContext) {
-    const orgRaw = runtimeContext.get('organization');
-    const profileIdRaw = runtimeContext.get('profileId');
+  async resolve(requestContext: MinimalRequestContext | undefined) {
+    if (!requestContext || typeof requestContext.get !== 'function') {
+      throw new HttpException(
+        'requestContext ausente — agent invocado sem o contexto de organizacao.',
+        500
+      );
+    }
+
+    const orgRaw = requestContext.get('organization');
+    const profileIdRaw = requestContext.get('profileId');
 
     if (!orgRaw) {
       throw new HttpException(
-        'organization ausente em runtimeContext.',
+        'organization ausente em requestContext.',
         500
       );
     }
@@ -30,7 +40,7 @@ export class AgentModelResolver {
       typeof orgRaw === 'string' ? safeParseOrg(orgRaw) : (orgRaw as { id: string });
     if (!org?.id) {
       throw new HttpException(
-        'organization.id nao encontrada em runtimeContext.',
+        'organization.id nao encontrada em requestContext.',
         500
       );
     }

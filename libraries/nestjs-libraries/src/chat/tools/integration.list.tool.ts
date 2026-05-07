@@ -8,6 +8,7 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import z from 'zod';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { getAuth } from '@gitroom/nestjs-libraries/chat/async.storage';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 
 @Injectable()
 export class IntegrationListTool implements AgentToolInterface {
@@ -28,17 +29,14 @@ export class IntegrationListTool implements AgentToolInterface {
           })
         ),
       }),
-      execute: async (args, options) => {
-        console.log(getAuth());
-        console.log(options);
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
         const organizationId = JSON.parse(
-          // @ts-ignore
-          runtimeContext.get('organization') as string
+          requestContext.get('organization') as string
         ).id;
-        // @ts-ignore
-        const profileId = runtimeContext.get('profileId') as string || undefined;
+        const profileId =
+          (requestContext.get('profileId') as string) || undefined;
 
         return {
           output: (

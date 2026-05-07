@@ -72,11 +72,10 @@ export class IntegrationValidationTool implements AgentToolInterface {
             ),
         }),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
         const integration = socialIntegrationList.find(
-          (p) => p.identifier === context.platform
+          (p) => p.identifier === input.platform
         )!;
 
         if (!integration) {
@@ -85,7 +84,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
           };
         }
 
-        const maxLength = integration.maxLength(context.isPremium);
+        const maxLength = integration.maxLength(input.isPremium);
         const schemas = !integration.dto
           ? false
           : getValidationSchemas()[integration.dto.name];

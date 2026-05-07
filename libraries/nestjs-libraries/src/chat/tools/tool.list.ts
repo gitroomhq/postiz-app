@@ -7,6 +7,8 @@ import { GenerateVideoTool } from '@gitroom/nestjs-libraries/chat/tools/generate
 import { GenerateImageTool } from '@gitroom/nestjs-libraries/chat/tools/generate.image.tool';
 import { IntegrationListTool } from '@gitroom/nestjs-libraries/chat/tools/integration.list.tool';
 import { KnowledgeQueryTool } from '@gitroom/nestjs-libraries/chat/tools/knowledge.query.tool';
+import { WebSearchTool } from '@gitroom/nestjs-libraries/chat/tools/web-search.tool';
+import { ExtractUrlsTool } from '@gitroom/nestjs-libraries/chat/tools/extract-urls.tool';
 
 export const toolList = [
   IntegrationListTool,
@@ -18,4 +20,6 @@ export const toolList = [
   GenerateVideoTool,
   GenerateImageTool,
   KnowledgeQueryTool,
+  WebSearchTool,
+  ExtractUrlsTool,
 ];

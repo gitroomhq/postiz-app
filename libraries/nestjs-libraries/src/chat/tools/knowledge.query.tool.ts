@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import z from 'zod';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { KnowledgeService } from '@gitroom/nestjs-libraries/database/prisma/knowledge/knowledge.service';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 
 @Injectable()
 export class KnowledgeQueryTool implements AgentToolInterface {
@@ -28,18 +29,17 @@ export class KnowledgeQueryTool implements AgentToolInterface {
           })
         ),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
-        // @ts-ignore
-        const profileId = (runtimeContext.get('profileId') as string) || '';
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
+        const profileId = (requestContext.get('profileId') as string) || '';
         if (!profileId) {
           return { results: [] };
         }
         const results = await this._knowledgeService.query(
           profileId,
-          context.query,
-          context.topK || 4
+          input.query,
+          input.topK || 4
         );
         return { results };
       },

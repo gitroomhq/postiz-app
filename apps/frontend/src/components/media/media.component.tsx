@@ -26,6 +26,7 @@ import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import { AiCaption } from '@gitroom/frontend/components/launches/ai.caption';
+import { AiSearch } from '@gitroom/frontend/components/launches/ai.search';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -846,6 +847,13 @@ export const MultiMediaComponent: FC<{
 
               {!!user?.tier?.ai && (
                 <>
+                  {editor && (
+                    <AiSearch
+                      value={text}
+                      editor={editor}
+                      platform={platform}
+                    />
+                  )}
                   {editor && (
                     <AiCaption
                       value={text}

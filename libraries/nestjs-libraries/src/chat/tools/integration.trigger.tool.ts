@@ -11,6 +11,7 @@ import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abst
 import { timer } from '@gitroom/helpers/utils/timer';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 
 @Injectable()
 export class IntegrationTriggerTool implements AgentToolInterface {
@@ -43,19 +44,17 @@ export class IntegrationTriggerTool implements AgentToolInterface {
       outputSchema: z.object({
         output: z.array(z.record(z.string(), z.any())),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
-        console.log('triggerTool', context);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
         const organizationId = JSON.parse(
-          // @ts-ignore
-          runtimeContext.get('organization') as string
+          requestContext.get('organization') as string
         ).id;
 
         const getIntegration =
           await this._integrationService.getIntegrationById(
             organizationId,
-            context.integrationId
+            input.integrationId
           );
 
         if (!getIntegration) {
@@ -78,10 +77,10 @@ export class IntegrationTriggerTool implements AgentToolInterface {
         if (
           // @ts-ignore
           !tools[integrationProvider.identifier].some(
-            (p) => p.methodName === context.methodName
+            (p) => p.methodName === input.methodName
           ) ||
           // @ts-ignore
-          !integrationProvider[context.methodName]
+          !integrationProvider[input.methodName]
         ) {
           return { output: 'tool not found' };
         }
@@ -89,10 +88,10 @@ export class IntegrationTriggerTool implements AgentToolInterface {
         while (true) {
           try {
             // @ts-ignore
-            const load = await integrationProvider[context.methodName](
+            const load = await integrationProvider[input.methodName](
               getIntegration.token,
-              context.dataSchema.reduce(
-                (all, current) => ({
+              input.dataSchema.reduce(
+                (all: any, current: any) => ({
                   ...all,
                   [current.key]: current.value,
                 }),

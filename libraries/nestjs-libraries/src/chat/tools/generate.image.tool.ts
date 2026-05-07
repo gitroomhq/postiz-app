@@ -5,6 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 
 @Injectable()
 export class GenerateImageTool implements AgentToolInterface {
@@ -16,32 +17,41 @@ export class GenerateImageTool implements AgentToolInterface {
   run() {
     return createTool({
       id: 'generateImageTool',
-      description: `Generate image to use in a post,
-                    in case the user specified a platform that requires attachment and attachment was not provided,
-                    ask if they want to generate a picture of a video.
-      `,
+      description: `Generate an image to attach to a post.
+- Use when the user asks for an image, or when the chosen platform requires an attachment and none was provided.
+- ALWAYS pass 'aspectRatio' explicitly. Pick the best fit for the target platform:
+  - "1:1" (square) — Instagram feed, generic posts
+  - "9:16" (vertical) — Instagram Stories, Reels, TikTok, Pinterest verticals
+  - "16:9" (horizontal) — YouTube thumbnails, LinkedIn banners, Twitter/X cards
+- If the user explicitly requests a ratio (e.g. "vertical", "stories format", "9:16"), respect it.
+- If the user does not specify and the platform is ambiguous, ask before generating.
+`,
       inputSchema: z.object({
-        prompt: z.string(),
+        prompt: z
+          .string()
+          .describe('Detailed visual description for the image to generate.'),
+        aspectRatio: z
+          .enum(['1:1', '9:16', '16:9'])
+          .describe(
+            "Target aspect ratio. '1:1' square, '9:16' vertical (Stories/Reels/TikTok), '16:9' horizontal (YouTube/LinkedIn banners)."
+          ),
       }),
       outputSchema: z.object({
         id: z.string(),
         path: z.string(),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
-        // @ts-ignore
-        const org = JSON.parse(runtimeContext.get('organization') as string);
-        // @ts-ignore
-        const personaRaw = runtimeContext.get('persona') as string;
-        // @ts-ignore
-        const profileId = runtimeContext.get('profileId') as string | undefined;
-        let styledPrompt = context.prompt;
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
+        const org = JSON.parse(requestContext.get('organization') as string);
+        const personaRaw = requestContext.get('persona') as string;
+        const profileId = requestContext.get('profileId') as string | undefined;
+        let styledPrompt = input.prompt;
         if (personaRaw) {
           try {
             const persona = JSON.parse(personaRaw);
             if (persona?.imageStyle) {
-              styledPrompt = `Style: ${persona.imageStyle}. ${context.prompt}`;
+              styledPrompt = `Style: ${persona.imageStyle}. ${input.prompt}`;
             }
           } catch {
             // ignore persona parse errors
@@ -51,7 +61,8 @@ export class GenerateImageTool implements AgentToolInterface {
           styledPrompt,
           org,
           false,
-          profileId
+          profileId,
+          input.aspectRatio
         );
 
         const file = await this.storage.uploadSimple(

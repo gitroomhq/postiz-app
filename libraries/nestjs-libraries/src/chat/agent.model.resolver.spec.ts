@@ -21,7 +21,9 @@ describe('AgentModelResolver', () => {
     factory.text.mockResolvedValue({
       provider: 'openrouter',
       model: { id: 'gpt-5.5' } as any,
+      modelId: 'openai/gpt-5.5',
       fallbackModel: null,
+      fallbackModelId: null,
       options: {},
       credentialId: 'cred-1',
     });
@@ -41,7 +43,9 @@ describe('AgentModelResolver', () => {
     factory.text.mockResolvedValue({
       provider: 'openrouter',
       model: { id: 'm' } as any,
+      modelId: 'm',
       fallbackModel: null,
+      fallbackModelId: null,
       options: {},
       credentialId: 'cred-1',
     });
@@ -60,7 +64,9 @@ describe('AgentModelResolver', () => {
     factory.text.mockResolvedValue({
       provider: 'openrouter',
       model: { id: 'm' } as any,
+      modelId: 'm',
       fallbackModel: null,
+      fallbackModelId: null,
       options: {},
       credentialId: 'cred-1',
     });
@@ -88,5 +94,11 @@ describe('AgentModelResolver', () => {
     });
 
     await expect(resolver.resolve(context)).rejects.toThrow(HttpException);
+  });
+
+  it('deve lancar 500 quando requestContext e undefined (ex: chamada interna do mastra sem contexto)', async () => {
+    await expect(resolver.resolve(undefined as any)).rejects.toThrow(
+      HttpException
+    );
   });
 });

@@ -145,6 +145,7 @@
     "@uppy/transloadit": "^4.2.2",
     "@uppy/xhr-upload": "^4.3.3",
     "@zernio/node": "^0.2.80",
+    "@tavily/core": "^0.7.3",
     "accept-language": "^3.0.20",
     "ai": "^5.0.60",
     "array-move": "^4.0.0",

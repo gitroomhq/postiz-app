@@ -11,6 +11,7 @@ import { validate } from 'class-validator';
 import { Integration } from '@prisma/client';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
 
 function countCharacters(text: string, type: string): number {
@@ -114,19 +115,18 @@ If the tools return errors, you would need to rerun it with the right parameters
           )
           .or(z.object({ errors: z.string() })),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
         const organizationId = JSON.parse(
-          // @ts-ignore
-          runtimeContext.get('organization') as string
+          requestContext.get('organization') as string
         ).id;
-        // @ts-ignore
-        const profileId = runtimeContext.get('profileId') as string || undefined;
+        const profileId =
+          (requestContext.get('profileId') as string) || undefined;
         const finalOutput = [];
 
         const integrations = {} as Record<string, Integration>;
-        for (const platform of context.socialPost) {
+        for (const platform of input.socialPost) {
           integrations[platform.integrationId] =
             await this._integrationService.getIntegrationById(
               organizationId,
@@ -187,7 +187,7 @@ If the tools return errors, you would need to rerun it with the right parameters
           }
         }
 
-        for (const post of context.socialPost) {
+        for (const post of input.socialPost) {
           const integration = integrations[post.integrationId];
 
           if (!integration) {

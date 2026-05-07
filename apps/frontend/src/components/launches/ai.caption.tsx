@@ -6,6 +6,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import Loading from '@gitroom/frontend/components/layout/loading';
+import { textToTiptapHtml } from '@gitroom/frontend/components/launches/helpers/text-to-html';
 
 const MIN_CHARS = 30;
 
@@ -95,7 +96,7 @@ export const AiCaption: FC<{
       const data = await res.json();
       const newText: string = data?.text ?? '';
       if (!newText) return;
-      editor?.commands?.setContent(newText);
+      editor?.commands?.setContent(textToTiptapHtml(newText));
       editor?.commands?.focus('end');
     } finally {
       setLoading(false);

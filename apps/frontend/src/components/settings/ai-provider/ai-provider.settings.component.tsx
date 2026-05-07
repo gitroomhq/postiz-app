@@ -144,11 +144,10 @@ export const AiProviderSettingsSection: React.FC = () => {
           title={t('ai_provider_web_search_title', 'Web Search')}
           description={t(
             'ai_provider_web_search_desc',
-            'Busca web do agente (Tavily, Firecrawl). Usado quando o usuário pede um post a partir de URL.'
+            'Busca web do agente (Tavily). Usado quando o usuário pede um post a partir de uma URL ou de uma pesquisa.'
           )}
           icon={<SearchIcon />}
           providers={[{ value: 'tavily', label: 'Tavily' }]}
-          comingSoon
         />
       </div>
 

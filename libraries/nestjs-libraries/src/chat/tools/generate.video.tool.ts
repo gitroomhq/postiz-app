@@ -13,6 +13,7 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { readRequestContext } from '@gitroom/nestjs-libraries/chat/tools/tool.context.helper';
 
 @Injectable()
 export class GenerateVideoTool implements AgentToolInterface {
@@ -48,16 +49,15 @@ export class GenerateVideoTool implements AgentToolInterface {
       outputSchema: z.object({
         url: z.string(),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
-        // @ts-ignore
-        const org = JSON.parse(runtimeContext.get('organization') as string);
+      execute: async (input: any, options: any) => {
+        checkAuth(input, options);
+        const requestContext = readRequestContext(options);
+        const org = JSON.parse(requestContext.get('organization') as string);
         const value = await this._mediaService.generateVideo(org, {
-          type: context.identifier,
-          output: context.output,
-          customParams: context.customParams.reduce(
-            (all, current) => ({
+          type: input.identifier,
+          output: input.output,
+          customParams: input.customParams.reduce(
+            (all: any, current: any) => ({
               ...all,
               [current.key]: current.value,
             }),
