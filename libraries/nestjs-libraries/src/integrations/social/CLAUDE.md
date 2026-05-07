@@ -2,8 +2,8 @@
 
 ## Posição na Hierarquia
 
-- **Pai:** [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)
-- **Avô:** [`/CLAUDE.md`](../../../../CLAUDE.md)
+- **Pai:** [`libraries/nestjs-libraries/CLAUDE.md`](../../../CLAUDE.md)
+- **Avô:** [`/CLAUDE.md`](../../../../../CLAUDE.md)
 - **Irmãos relevantes:**
   - [`src/chat/CLAUDE.md`](../../chat/CLAUDE.md) — webhook IG e validação HMAC; tools MCP que disparam integrations
   - [`src/ai/CLAUDE.md`](../../ai/CLAUDE.md) — encryption (`ENCRYPTION_KEY`) que também protege estes tokens
