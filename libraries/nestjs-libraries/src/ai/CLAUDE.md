@@ -1,206 +1,206 @@
-# AI Provider System — Instruções para Claude Code
+# AI Provider System — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)
-- **Avô:** [`/CLAUDE.md`](../../../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`src/chat/CLAUDE.md`](../chat/CLAUDE.md) — Mastra agents que consomem o factory deste sistema
-  - [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — providers que usam o mesmo padrão de credencial encriptada
-- **Documento canônico:** [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md) — schema, services, cadeia de resolução, endpoints, UI Settings, troubleshooting completo
+- **Parent:** [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)
+- **Grandparent:** [`/CLAUDE.md`](../../../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`src/chat/CLAUDE.md`](../chat/CLAUDE.md) — Mastra agents that consume this system's factory
+  - [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — providers using the same encrypted-credential pattern
+- **Canonical document:** [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md) — full schema, services, resolution chain, endpoints, Settings UI, troubleshooting
 
-## O que vive aqui
+## What lives here
 
-Sistema central de provedores de IA do Robô MultiPost. Configuração é **per-workspace via UI** (`Settings > AI Provider`), não via env var. Cada `kind` (TEXT, IMAGE, VIDEO, WEB_SEARCH) é configurável com provider (OpenRouter ou OpenAI direto), API key, modelo, fallback e opções. Inclui também:
+The Robô MultiPost central AI provider system. Configuration is **per-workspace via UI** (`Settings > AI Provider`), not via env var. Each `kind` (TEXT, IMAGE, VIDEO, WEB_SEARCH) is configurable with provider (OpenRouter or OpenAI direct), API key, model, fallback, and options. Also includes:
 
-- **Sistema de Créditos de IA** — controla quantas imagens/vídeos cada perfil gera por mês
-- **Persona por perfil** — tom de voz, público-alvo, CTAs, restrições, estilo de imagem
-- **Knowledge Base (RAG)** — upload de PDF/TXT/MD com chunking + embeddings, consultado via tool `knowledgeBaseQuery`
+- **AI Credits System** — controls how many images/videos each profile can generate per month.
+- **Per-profile persona** — voice tone, target audience, preferred CTAs, restrictions, image style.
+- **Knowledge Base (RAG)** — PDF/TXT/MD upload with chunking + embeddings, queried via the `knowledgeBaseQuery` tool.
 
-## Regras de Ouro
+## Golden Rules
 
-### 1. Configuração é per-workspace via UI
+### 1. Configuration is per-workspace via the UI
 
-Admin acessa `Settings > AI Provider` e configura cada kind. **Não há fallback para env var de provider** (exceto credenciais de teste). API key armazenada com **AES-256-GCM** (mesma `ENCRYPTION_KEY` do OAuth — ver [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)).
+Admin goes to `Settings > AI Provider` and configures each kind. **There is no env-var fallback for provider configuration** (except test credentials). API keys are stored using **AES-256-GCM** (the same `ENCRYPTION_KEY` used for OAuth — see [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)).
 
-### 2. Toda resolução passa pelo `AiProviderResolverService`
+### 2. Every resolution goes through `AiProviderResolverService`
 
 ```
-PROFILE → WORKSPACE com shareDefault → HTTP 412
+PROFILE → WORKSPACE with shareDefault → HTTP 412
 ```
 
-**Nunca** acesse `AiCredential` direto — sempre via `AiProviderResolverService`. Se a credencial não existe nem na cadeia, o resolver lança erro que vira **HTTP 412 Precondition Failed**.
+**Never** access `AiCredential` directly — always go through `AiProviderResolverService`. If the credential exists in neither layer, the resolver throws an error that becomes **HTTP 412 Precondition Failed**.
 
-### 3. Erro 412, não 402
+### 3. 412, not 402
 
-`HTTP 402` é interceptado pelo `layout.context` global do Postiz para abrir modal de billing. Para "credencial de IA não configurada", o status semântico é **412 Precondition Failed**. Frontend abre modal apropriado em cima de 412, não 402.
+`HTTP 402` is intercepted by Postiz's global `layout.context` to open the billing modal. For "AI credential not configured", the semantically correct status is **412 Precondition Failed**. The frontend opens the appropriate modal on top of 412, not 402.
 
-### 4. Use `AiClientFactory` para consumers novos
+### 4. Use `AiClientFactory` for new consumers
 
 ```typescript
 import { AiClientFactory } from '@gitroom/nestjs-libraries/ai/ai-client.factory';
 
-// Texto: retorna LanguageModel do AI SDK v5
+// Text: returns a LanguageModel from AI SDK v5
 const model = await factory.text(orgId, profileId);
 
-// Imagem: retorna base64 (fetch direto, não AI SDK por incompatibilidade)
+// Image: returns base64 (direct fetch, not via AI SDK due to incompatibility)
 const base64 = await aiImageService.generate(orgId, prompt, profileId);
 
-// Mastra Agent: retorna funcao async lazy
-//   o modelo e resolvido em CADA chamada do agent, sem reiniciar a instancia
+// Mastra Agent: returns a lazy async function
+//   the model is resolved on EACH agent call, without restarting the instance
 const modelFn = await factory.textForMastra(orgId, profileId);
 ```
 
 ### 5. Per-profile override
 
-- Perfil **default** (`isDefault=true`) edita workspace. Mudanças afetam todos.
-- Perfil **secundário** pode criar override em `scope=PROFILE` sem afetar o default.
-- Detectado no frontend via `useCurrentProfile()` hook.
+- The **default** profile (`isDefault=true`) edits the workspace. Changes affect everyone.
+- A **secondary** profile can create an override at `scope=PROFILE` without affecting the default.
+- Detected on the frontend via the `useCurrentProfile()` hook.
 
-## Sistema de Créditos de IA
+## AI Credits System
 
-Controla quantas imagens/vídeos cada perfil gera por mês.
+Controls how many images/videos each profile can generate per month.
 
-### Modos de operação (`AI_CREDITS_MODE`)
+### Operating modes (`AI_CREDITS_MODE`)
 
-| Modo | Comportamento |
+| Mode | Behavior |
 |------|---|
-| `unlimited` (default) | Todos os perfis geram sem limite. Uso registrado para analytics. |
-| `managed` | Créditos gerenciados por perfil. Perfil default (admin) sempre ilimitado. |
+| `unlimited` (default) | All profiles generate without limit. Usage logged for analytics. |
+| `managed` | Credits managed per profile. The default profile (admin) is always unlimited. |
 
-### Cadeia de precedência (modo managed)
+### Precedence chain (managed mode)
 
 ```
-1. AI_CREDITS_MODE=unlimited           → SEMPRE ilimitado (ignora tudo)
-2. Perfil default (isDefault=true)     → sempre ilimitado
-3. Profile.aiImageCredits/aiVideoCredits (se preenchido) → usa esse valor
-4. AI_CREDITS_DEFAULT_IMAGES / _VIDEOS  → default para novos perfis
-5. Fallback                             → ilimitado (-1)
+1. AI_CREDITS_MODE=unlimited           → ALWAYS unlimited (ignores everything)
+2. Default profile (isDefault=true)    → always unlimited
+3. Profile.aiImageCredits/aiVideoCredits (if set)  → use that value
+4. AI_CREDITS_DEFAULT_IMAGES / _VIDEOS → default for new profiles
+5. Fallback                            → unlimited (-1)
 ```
 
-### Valores especiais
+### Special values
 
-| Valor | Significado |
+| Value | Meaning |
 |---|---|
-| `null` | Usar padrão da env var ou fallback ilimitado |
-| `-1` | Ilimitado para este perfil |
-| `0` | Bloqueado (sem créditos) |
-| `N > 0` | N créditos por mês |
+| `null` | Use the env-var default or unlimited fallback |
+| `-1` | Unlimited for this profile |
+| `0` | Blocked (no credits) |
+| `N > 0` | N credits per month |
 
 ### Env vars
 
 ```env
-AI_CREDITS_MODE="unlimited"           # "unlimited" ou "managed"
-# AI_CREDITS_DEFAULT_IMAGES=50        # default novos perfis (managed)
+AI_CREDITS_MODE="unlimited"           # "unlimited" or "managed"
+# AI_CREDITS_DEFAULT_IMAGES=50        # default for new profiles (managed)
 # AI_CREDITS_DEFAULT_VIDEOS=10
 ```
 
-### Endpoints REST (no backend)
+### REST endpoints (in the backend)
 
 ```
 GET  /copilot/credits?type=ai_images|ai_videos  → { credits: number }
-GET  /settings/profiles/:id/ai-credits          → config + uso (ADMIN)
-PUT  /settings/profiles/:id/ai-credits          → atualiza config (ADMIN, nao edita default)
-GET  /settings/ai-credits/summary               → lista perfis com creditos e uso (ADMIN)
+GET  /settings/profiles/:id/ai-credits          → config + usage (ADMIN)
+PUT  /settings/profiles/:id/ai-credits          → updates config (ADMIN, does not edit default)
+GET  /settings/ai-credits/summary               → list of profiles with credits and usage (ADMIN)
 ```
 
-### Arquivos do sistema de créditos
+### Credits-system files
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `database/prisma/subscriptions/subscription.service.ts` | Service principal de créditos |
-| `database/prisma/subscriptions/subscription.repository.ts` | Repository de Credits/Profile |
-| `database/prisma/schema.prisma` | Campos `aiImageCredits`/`aiVideoCredits` em Profile, `profileId` em Credits |
+| `database/prisma/subscriptions/subscription.service.ts` | Main credits service |
+| `database/prisma/subscriptions/subscription.repository.ts` | Credits/Profile repository |
+| `database/prisma/schema.prisma` | `aiImageCredits`/`aiVideoCredits` fields on Profile, `profileId` on Credits |
 | `apps/frontend/src/components/settings/ai-credits.settings.component.tsx` | Settings panel |
-| `apps/frontend/src/components/launches/ai.image.tsx` / `ai.video.tsx` | Badges de créditos |
+| `apps/frontend/src/components/launches/ai.image.tsx` / `ai.video.tsx` | Credit badges |
 | `database/prisma/subscriptions/__tests__/subscription.service.spec.ts` | Specs |
 
-## Persona e Knowledge Base
+## Persona and Knowledge Base
 
-### Persona (texto)
+### Persona (text)
 
-Cada perfil pode ter **persona**: tom de voz, público-alvo, CTAs preferidos, restrições, estilo de imagem. Injetada automaticamente no:
+Each profile can have a **persona**: voice tone, target audience, preferred CTAs, restrictions, image style. Automatically injected into:
 
-- Agente Mastra (ver [`src/chat/CLAUDE.md`](../chat/CLAUDE.md))
-- Generator LangGraph
-- Prompts DALL-E
+- The Mastra agent (see [`src/chat/CLAUDE.md`](../chat/CLAUDE.md))
+- The LangGraph generator
+- DALL-E prompts
 
-Helper: `persona.helper.ts` neste diretório.
-Doc canônico: [`docs/architecture/profile-ai-persona.md`](../../../../docs/architecture/profile-ai-persona.md).
+Helper: `persona.helper.ts` in this directory.
+Canonical doc: [`docs/architecture/profile-ai-persona.md`](../../../../docs/architecture/profile-ai-persona.md).
 
-### Knowledge Base (RAG vetorial)
+### Knowledge Base (RAG vectors)
 
-Upload de PDF/TXT/MD por perfil. Pipeline: chunking → embeddings → busca vetorial. Consultado pela tool `knowledgeBaseQuery` antes do agente gerar fatos específicos.
+Per-profile PDF/TXT/MD upload. Pipeline: chunking → embeddings → vector search. Queried by the `knowledgeBaseQuery` tool before the agent generates specific facts.
 
-- **Requer `pgvector/pgvector:pg17`** no Postgres.
+- **Requires `pgvector/pgvector:pg17`** on Postgres.
 - Feature flag: `ENABLE_KNOWLEDGE_BASE` (default `true`).
-- Doc canônico: [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md).
+- Canonical doc: [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md).
 
-## Mapa de Arquivos-Chave
+## Key File Map
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `ai.module.ts` | NestJS module — exporta factory, services, resolver |
-| `ai-client.factory.ts` | Factory canônica para consumers (text / textForMastra / image / web-search) |
-| `ai-provider-resolver.service.ts` | Cadeia de resolução PROFILE → WORKSPACE → 412 |
-| `ai-credential.service.ts` | CRUD de credenciais com encryption AES-256-GCM |
-| `ai-credential.repository.ts` | Repository de `AiCredential` |
-| `ai-credential.schemas.ts` | Zod schemas (config por kind/provider) |
-| `ai-catalog.service.ts` | Cache do catálogo OpenRouter (modelos disponíveis) |
-| `ai-catalog.static.ts` | Lista estática de modelos curados (image/video) |
-| `ai-text.service.ts` | Service de geração de texto |
-| `ai-image.service.ts` | Service de geração de imagem (base64, fetch direto) |
-| `ai-web-search.service.ts` | Service de busca web (Tavily/etc.) |
-| `ai-provider-test.service.ts` | Endpoint de teste de credencial |
-| `persona.helper.ts` | Injeção de persona em system prompts |
+| `ai.module.ts` | NestJS module — exports the factory, services, resolver |
+| `ai-client.factory.ts` | Canonical factory for consumers (text / textForMastra / image / web-search) |
+| `ai-provider-resolver.service.ts` | Resolution chain PROFILE → WORKSPACE → 412 |
+| `ai-credential.service.ts` | Credential CRUD with AES-256-GCM encryption |
+| `ai-credential.repository.ts` | `AiCredential` repository |
+| `ai-credential.schemas.ts` | Zod schemas (config per kind/provider) |
+| `ai-catalog.service.ts` | OpenRouter catalog cache (available models) |
+| `ai-catalog.static.ts` | Static curated model list (image/video) |
+| `ai-text.service.ts` | Text generation service |
+| `ai-image.service.ts` | Image generation service (base64, direct fetch) |
+| `ai-web-search.service.ts` | Web search service (Tavily, etc.) |
+| `ai-provider-test.service.ts` | Endpoint to test a credential |
+| `persona.helper.ts` | Persona injection into system prompts |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar consumer novo de IA
+### Add a new AI consumer
 
-1. **Não use cliente HTTP direto** para chamar OpenAI/OpenRouter. Use `AiClientFactory`.
-2. **Texto** (LangGraph, Mastra, code path direto): `factory.text(orgId, profileId)`.
-3. **Mastra Agent**: `factory.textForMastra(orgId, profileId)` — retorna função async lazy. **Crítico**: não cache o modelo dentro do agente; resolva em cada chamada.
-4. **Imagem**: `aiImageService.generate(orgId, prompt, profileId)`.
+1. **Do not use a direct HTTP client** to call OpenAI/OpenRouter. Use `AiClientFactory`.
+2. **Text** (LangGraph, Mastra, direct code path): `factory.text(orgId, profileId)`.
+3. **Mastra Agent**: `factory.textForMastra(orgId, profileId)` — returns a lazy async function. **Critical**: do not cache the model inside the agent; resolve on each call.
+4. **Image**: `aiImageService.generate(orgId, prompt, profileId)`.
 5. **Web Search**: `aiWebSearchService.search(...)`.
-6. Spec primeiro (RED): mock o resolver/factory com `createMock`.
+6. Spec first (RED): mock the resolver/factory with `createMock`.
 
-### Adicionar provider novo (ex.: novo provedor de imagem)
+### Add a new provider (e.g., a new image provider)
 
-1. Definir schema Zod em `ai-credential.schemas.ts`.
-2. Atualizar `ai-catalog.static.ts` com modelos suportados.
-3. Estender `AiClientFactory` com construtor para o provider.
-4. UI em `apps/frontend/src/components/settings/ai-provider/` com card + form.
-5. Adicionar specs cobrindo resolução PROFILE → WORKSPACE.
-6. Doc em [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md).
+1. Define a Zod schema in `ai-credential.schemas.ts`.
+2. Update `ai-catalog.static.ts` with supported models.
+3. Extend `AiClientFactory` with a constructor for the provider.
+4. UI in `apps/frontend/src/components/settings/ai-provider/` with card + form.
+5. Add specs covering PROFILE → WORKSPACE resolution.
+6. Document in [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md).
 
-### Mudar política de créditos
+### Change credits policy
 
-Tudo passa por `subscription.service.ts`. Se mudar a cadeia de precedência, atualize os specs em `subscription.service.spec.ts` E os testes de UI no frontend.
+Everything goes through `subscription.service.ts`. If you change the precedence chain, update both the specs in `subscription.service.spec.ts` AND the UI tests on the frontend.
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** Modal de billing abre quando IA não está configurada → **Causa:** controller retornou 402. **Correção:** trocar para 412 Precondition Failed.
-2. **Sintoma:** Mastra Agent reusa modelo antigo após admin mudar provider → **Causa:** modelo cacheado dentro do Agent. **Correção:** use `factory.textForMastra(...)` (lazy resolver) — não armazene `LanguageModel` em campo.
-3. **Sintoma:** AES decryption retornando lixo → **Causa:** `ENCRYPTION_KEY` mudou entre deploys. **Correção:** preserve a key. Rotacionar exige migration de re-encrypt em massa.
-4. **Sintoma:** geração de imagem com OpenAI funciona via curl mas falha no app → **Causa:** AI SDK incompatível para imagem. **Correção:** `AiImageService.generate` usa **fetch direto**, não AI SDK. Não migre.
-5. **Sintoma:** créditos não decrementam para novo perfil → **Causa:** `Profile.profileId` não preenchido em `Credits` ao criar. **Correção:** ver `subscription.service.spec.ts` para o caminho correto de criação.
-6. **Sintoma:** "fallback ilimitado" inesperado em modo managed → **Causa:** `AI_CREDITS_MODE` não setado, ou `aiImageCredits=null` cai em fallback. **Correção:** revise a cadeia de precedência (ordem importa).
+1. **Symptom:** Billing modal opens when AI is not configured → **Cause:** controller returned 402. **Fix:** switch to 412 Precondition Failed.
+2. **Symptom:** Mastra Agent reuses old model after admin changes provider → **Cause:** model cached inside the Agent. **Fix:** use `factory.textForMastra(...)` (lazy resolver) — do not store `LanguageModel` in a field.
+3. **Symptom:** AES decryption returns garbage → **Cause:** `ENCRYPTION_KEY` changed between deploys. **Fix:** preserve the key. Rotating it requires a bulk re-encrypt migration.
+4. **Symptom:** OpenAI image generation works via curl but fails in the app → **Cause:** AI SDK image incompatibility. **Fix:** `AiImageService.generate` uses **direct fetch**, not AI SDK. Do not migrate.
+5. **Symptom:** credits do not decrement for a new profile → **Cause:** `Credits.profileId` not populated when created. **Fix:** see `subscription.service.spec.ts` for the correct creation path.
+6. **Symptom:** unexpected "unlimited fallback" in managed mode → **Cause:** `AI_CREDITS_MODE` not set, or `aiImageCredits=null` falls into the fallback. **Fix:** review the precedence chain (order matters).
 
-## Comandos Úteis
+## Useful Commands
 
 ```bash
-# Specs do AI Provider System (56 specs)
+# AI Provider System specs (56 specs)
 pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage
 
-# Limpar cache do catalogo OpenRouter
+# Clear OpenRouter catalog cache
 curl -X POST -H "Cookie: <session>" http://localhost:3000/ai/catalog/refresh
 ```
 
-## Referências
+## References
 
-- [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md) — schema, services, cadeia de resolução, UI, troubleshooting (LEITURA OBRIGATÓRIA antes de mexer)
+- [`docs/architecture/ai-provider-system.md`](../../../../docs/architecture/ai-provider-system.md) — schema, services, resolution chain, UI, troubleshooting (REQUIRED READING before changing anything)
 - [`docs/architecture/profile-ai-persona.md`](../../../../docs/architecture/profile-ai-persona.md)
 - [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md)
 - [`docs/architecture/credential-validation.md`](../../../../docs/architecture/credential-validation.md)
-- [`src/chat/CLAUDE.md`](../chat/CLAUDE.md) — agentes Mastra que consomem este sistema
+- [`src/chat/CLAUDE.md`](../chat/CLAUDE.md) — Mastra agents that consume this system

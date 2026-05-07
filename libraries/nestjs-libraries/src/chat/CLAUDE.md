@@ -1,143 +1,143 @@
-# Chat (Mastra Agents + MCP Tools + Webhook IG) — Instruções para Claude Code
+# Chat (Mastra Agents + MCP Tools + IG Webhook) — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)
-- **Avô:** [`/CLAUDE.md`](../../../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`src/ai/CLAUDE.md`](../ai/CLAUDE.md) — AI Provider System que este chat consome via `factory.textForMastra(...)`
-  - [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — providers que as MCP tools acionam
-  - [`apps/orchestrator/CLAUDE.md`](../../../../apps/orchestrator/CLAUDE.md) — workflows que webhook IG dispara (follow-gate)
+- **Parent:** [`libraries/nestjs-libraries/CLAUDE.md`](../../CLAUDE.md)
+- **Grandparent:** [`/CLAUDE.md`](../../../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`src/ai/CLAUDE.md`](../ai/CLAUDE.md) — AI Provider System this chat consumes via `factory.textForMastra(...)`
+  - [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — providers triggered by the MCP tools
+  - [`apps/orchestrator/CLAUDE.md`](../../../../apps/orchestrator/CLAUDE.md) — workflows triggered by the IG webhook (follow-gate)
 
-## O que vive aqui
+## What lives here
 
-Camada de agentes conversacionais (Mastra) + ferramentas MCP que o agente pode invocar + infraestrutura para o webhook do Instagram (que cria `PendingPostback` para o motor de Flows).
+The conversational agent layer (Mastra) + MCP tools the agent can invoke + infrastructure for the Instagram webhook (which creates a `PendingPostback` for the Flow engine).
 
-| Subdiretório / arquivo | Conteúdo |
+| Subdirectory / file | Content |
 |---|---|
-| `mastra.service.ts` / `mastra.store.ts` | Bootstrap e store do Mastra agent |
-| `agent.model.resolver.ts` | Resolve o `LanguageModel` lazy via factory de IA |
-| `tools/` | 12+ MCP tools que o agente pode invocar |
-| `vector/` | Helpers de vetorização para RAG (Knowledge Base) |
-| `helpers/` | Helpers compartilhados |
-| `start.mcp.ts` | Entry point para inicializar MCP server |
-| `auth.context.ts` / `async.storage.ts` | Context propagation (org/profile) entre agent e tools |
-| `oauth-middleware.ts` / `oauth-types.ts` | OAuth helper para endpoints autenticados de MCP |
+| `mastra.service.ts` / `mastra.store.ts` | Mastra agent bootstrap and store |
+| `agent.model.resolver.ts` | Resolves the lazy `LanguageModel` via the AI factory |
+| `tools/` | 12+ MCP tools the agent can invoke |
+| `vector/` | Vectorization helpers for RAG (Knowledge Base) |
+| `helpers/` | Shared helpers |
+| `start.mcp.ts` | Entry point to initialize the MCP server |
+| `auth.context.ts` / `async.storage.ts` | Context propagation (org/profile) between agent and tools |
+| `oauth-middleware.ts` / `oauth-types.ts` | OAuth helper for authenticated MCP endpoints |
 
-## Padrões e Regras Específicas
+## Specific Patterns and Rules
 
-### `LanguageModel` é lazy — não cache
+### `LanguageModel` is lazy — do not cache
 
-O Agent Mastra **não pode** segurar um `LanguageModel` em campo. O modelo é resolvido em cada chamada via `factory.textForMastra(orgId, profileId)` (ver [`src/ai/CLAUDE.md`](../ai/CLAUDE.md) regra 4).
+The Mastra Agent **must not** hold a `LanguageModel` in a field. The model is resolved on each call via `factory.textForMastra(orgId, profileId)` (see [`src/ai/CLAUDE.md`](../ai/CLAUDE.md), rule 4).
 
-Se o admin trocar o provider em `Settings > AI Provider`, a próxima chamada do agent já reflete — não precisa reiniciar.
+If the admin changes the provider in `Settings > AI Provider`, the next agent call already reflects the change — no restart needed.
 
-### Toda tool segue `AgentToolInterface`
+### Every tool follows `AgentToolInterface`
 
-Tools MCP estão em `tools/`. Cada tool implementa o contrato de `agent.tool.interface.ts`: schema Zod de input, execute async, descrição (`@RulesDescription` decorator quando aplicável).
+MCP tools live in `tools/`. Each tool implements the contract from `agent.tool.interface.ts`: a Zod input schema, an async `execute`, and a description (`@RulesDescription` decorator when applicable).
 
-### Context propagation é obrigatório
+### Context propagation is mandatory
 
-Identidade do usuário (org, profile) flui pelo `AsyncLocalStorage` em `async.storage.ts` + `auth.context.ts`. Tools que fazem ações de domínio (criar post, buscar integration) leem desse context — **nunca** receba `orgId` direto pelo schema da tool, isso é falsificável pelo prompt.
+User identity (org, profile) flows through `AsyncLocalStorage` in `async.storage.ts` + `auth.context.ts`. Tools that perform domain actions (create a post, look up an integration) read from this context — **never** receive `orgId` directly via the tool schema, because that is forgeable by the prompt.
 
-### Persona é injetada no system prompt
+### Persona is injected into the system prompt
 
-Ver `persona.helper.ts` em [`src/ai/`](../ai/CLAUDE.md). A persona do perfil ativo entra no system prompt do agente automaticamente — tools individuais não precisam carregar persona.
+See `persona.helper.ts` in [`src/ai/`](../ai/CLAUDE.md). The active profile's persona is automatically injected into the agent's system prompt — individual tools do not need to load persona.
 
-## Webhook do Instagram (HMAC)
+## Instagram Webhook (HMAC)
 
-Endpoint: `POST /public/ig-webhook` em `apps/backend/src/api/routes/ig-webhook.controller.ts`. Não vive aqui em `chat/`, mas a lógica de processamento (FlowsService) está em `database/prisma/flows/`.
+Endpoint: `POST /public/ig-webhook` in `apps/backend/src/api/routes/ig-webhook.controller.ts`. It does not live here in `chat/`, but the processing logic (`FlowsService`) lives in `database/prisma/flows/`.
 
-### Validação HMAC obrigatória
+### HMAC validation is mandatory
 
-Validar com **`FACEBOOK_APP_SECRET` E `INSTAGRAM_APP_SECRET`** (ambos!) — quando o app Meta tem ambos os produtos (Facebook + Instagram) no mesmo app, a Meta pode assinar com qualquer um dos secrets dependendo da origem do evento.
+Validate with **`FACEBOOK_APP_SECRET` AND `INSTAGRAM_APP_SECRET`** (both!) — when the Meta app has both products (Facebook + Instagram) on the same app, Meta may sign with either secret depending on the event source.
 
-Não confie só num secret; tente os dois antes de retornar `403 Forbidden`.
+Do not trust just one secret; try both before returning `403 Forbidden`.
 
-### Fluxo follow-gate (2 etapas)
+### Two-step follow-gate flow
 
-**Etapa 1 — Detecção do comentário:**
+**Step 1 — Comment detection:**
 
-1. Webhook entrega `comment` no objeto `instagram`.
-2. `FlowsService` decide qual flow triggar baseado em palavras-chave/regras.
-3. Se for `comment_on_post` com follow-gate ativo: dispara `flow.execution.workflow.ts` (ver [`apps/orchestrator/CLAUDE.md`](../../../../apps/orchestrator/CLAUDE.md)).
-4. Workflow chama activity que faz `sendPrivateReply` **uma única vez** com botão postback ("Quero o link").
-5. Activity grava `PendingPostback` no DB com `commentId`, `flowId`, `userId`, `payload`.
+1. Webhook delivers a `comment` on the `instagram` object.
+2. `FlowsService` decides which flow to trigger based on keywords/rules.
+3. If it's `comment_on_post` with the follow-gate enabled: trigger `flow.execution.workflow.ts` (see [`apps/orchestrator/CLAUDE.md`](../../../../apps/orchestrator/CLAUDE.md)).
+4. The workflow calls an activity that does `sendPrivateReply` **once** with a postback button ("Quero o link").
+5. The activity writes a `PendingPostback` to the DB with `commentId`, `flowId`, `userId`, `payload`.
 
-**Etapa 2 — Postback (clique no botão):**
+**Step 2 — Postback (button click):**
 
-1. Webhook entrega evento `messaging_postbacks`.
-2. Backend faz lookup do `PendingPostback` pelo `payload`.
-3. Dispara `follow-gate-resolve.workflow.ts` que valida se o usuário segue, busca o pending, e entrega o conteúdo final via DM regular (`sendMessage`) — **não** via `sendPrivateReply` (já foi consumido na etapa 1).
+1. Webhook delivers a `messaging_postbacks` event.
+2. Backend looks up the `PendingPostback` by `payload`.
+3. Triggers `follow-gate-resolve.workflow.ts`, which validates the follow, fetches the pending payload, and delivers the final content via a regular DM (`sendMessage`) — **not** via `sendPrivateReply` (already consumed in step 1).
 
-### Por que duas etapas?
+### Why two steps?
 
-Meta limita: **1 `sendPrivateReply` por comentário**. Após o postback, a janela de mensageria de 24h está aberta — usar DM regular dentro dessa janela é permitido sem `sendPrivateReply`.
+Meta limits **one `sendPrivateReply` per comment**. After the postback, the 24h messaging window is open — using a regular DM within that window is allowed without `sendPrivateReply`.
 
-## Mapa de Arquivos-Chave (tools/)
+## Key Files in `tools/`
 
-| Tool | Função |
+| Tool | Function |
 |---|---|
-| `extract-urls.tool.ts` | Extrai URLs de texto + título via fetch |
-| `generate.image.tool.ts` | Gera imagem via `AiImageService` |
-| `generate.video.tool.ts` / `generate.video.options.tool.ts` | Geração de vídeo (catálogo + execução) |
-| `video.function.tool.ts` | Helpers de vídeo |
-| `integration.list.tool.ts` | Lista integrations do usuário |
-| `integration.schedule.post.ts` | Agenda post via `PostsService` |
-| `integration.trigger.tool.ts` | Trigger manual de integration |
-| `integration.validation.tool.ts` | Valida config de integration |
-| `knowledge.query.tool.ts` | Consulta Knowledge Base do perfil (RAG) |
-| `web-search.tool.ts` | Busca web via `AiWebSearchService` |
-| `tool.list.ts` | Registro central das tools disponíveis |
-| `tool.context.helper.ts` | Helper para extrair org/profile do AsyncLocalStorage |
+| `extract-urls.tool.ts` | Extract URLs from text + title via fetch |
+| `generate.image.tool.ts` | Generate an image via `AiImageService` |
+| `generate.video.tool.ts` / `generate.video.options.tool.ts` | Video generation (catalog + execution) |
+| `video.function.tool.ts` | Video helpers |
+| `integration.list.tool.ts` | List the user's integrations |
+| `integration.schedule.post.ts` | Schedule a post via `PostsService` |
+| `integration.trigger.tool.ts` | Manual integration trigger |
+| `integration.validation.tool.ts` | Validate an integration config |
+| `knowledge.query.tool.ts` | Query the profile's Knowledge Base (RAG) |
+| `web-search.tool.ts` | Web search via `AiWebSearchService` |
+| `tool.list.ts` | Central registry of available tools |
+| `tool.context.helper.ts` | Helper to extract org/profile from `AsyncLocalStorage` |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar tool MCP nova
+### Add a new MCP tool
 
-1. **Spec primeiro** se a tool tem lógica não-trivial.
-2. Criar `tools/<nome>.tool.ts` exportando objeto que cumpre `AgentToolInterface`: `id`, `description`, `inputSchema` (Zod), `execute(input, context)`.
-3. **Não receba `orgId`/`profileId` no schema** — leia do `AsyncLocalStorage` via `tool.context.helper.ts`.
-4. Registrar em `tool.list.ts`.
-5. Se a tool acessa AI: use `factory` de [`src/ai/`](../ai/CLAUDE.md) — não chame OpenAI/OpenRouter direto.
-6. Se a tool aciona integration: use `IntegrationManager` (em `database/prisma/integrations/`).
+1. **Spec first** if the tool has non-trivial logic.
+2. Create `tools/<name>.tool.ts` exporting an object that satisfies `AgentToolInterface`: `id`, `description`, `inputSchema` (Zod), `execute(input, context)`.
+3. **Do not accept `orgId`/`profileId` in the schema** — read them from `AsyncLocalStorage` via `tool.context.helper.ts`.
+4. Register in `tool.list.ts`.
+5. If the tool consumes AI: use the factory from [`src/ai/`](../ai/CLAUDE.md) — do not call OpenAI/OpenRouter directly.
+6. If the tool triggers an integration: use `IntegrationManager` (in `database/prisma/integrations/`).
 
-### Adicionar tipo de Flow novo (ex.: `comment_on_post` para `dm_to_followers`)
+### Add a new Flow type (e.g., `comment_on_post` for `dm_to_followers`)
 
-1. Atualizar enum em `database/prisma/schema.prisma` + migration.
-2. Lógica de roteamento em `flows.service.ts` (em `database/prisma/flows/`).
-3. Activity correspondente em `apps/orchestrator/src/activities/flow.activity.ts`.
-4. **Atualizar wizard E Flow Builder node-config-panel** — paridade obrigatória (regra do monorepo).
-5. Spec cobrindo o caminho completo (webhook → service → activity).
+1. Update the enum in `database/prisma/schema.prisma` + migration.
+2. Routing logic in `flows.service.ts` (in `database/prisma/flows/`).
+3. Corresponding activity in `apps/orchestrator/src/activities/flow.activity.ts`.
+4. **Update both the wizard AND the Flow Builder node-config-panel** — parity is mandatory (monorepo rule).
+5. Spec covering the full path (webhook → service → activity).
 
-### Debugar webhook IG
+### Debug the IG webhook
 
-1. `temporal workflow describe <workflowId>` para ver estado.
-2. Logar `commentId` na criação do `PendingPostback` e correlacionar com o evento de postback.
-3. Se HMAC falha: confirme que **AMBOS** os secrets estão setados (`FACEBOOK_APP_SECRET`, `INSTAGRAM_APP_SECRET`).
-4. Tail dos logs do webhook controller — eventos chegam em formato `entry[]` com `messaging[]` ou `changes[]`.
+1. `temporal workflow describe <workflowId>` to see the state.
+2. Log `commentId` when creating `PendingPostback` and correlate with the postback event.
+3. If HMAC fails: confirm that **BOTH** secrets are set (`FACEBOOK_APP_SECRET`, `INSTAGRAM_APP_SECRET`).
+4. Tail the webhook controller logs — events arrive in `entry[]` format with `messaging[]` or `changes[]`.
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** `403 Forbidden` no webhook IG mesmo com config correta → **Causa:** validação HMAC só com um secret. **Correção:** validar com `FACEBOOK_APP_SECRET` E `INSTAGRAM_APP_SECRET`.
-2. **Sintoma:** Mastra agent reusa modelo antigo após troca de provider → **Causa:** modelo cacheado no agent. **Correção:** use `factory.textForMastra(...)` (lazy) sempre.
-3. **Sintoma:** `sendPrivateReply` retornando "subcode 2018278" → **Causa:** segunda chamada para o mesmo comentário. **Correção:** usar `sendMessage` (DM regular) na etapa 2 dentro da 24h window.
-4. **Sintoma:** tool MCP recebendo `orgId` falsificado pelo prompt → **Causa:** `orgId` no schema de input. **Correção:** remover do schema; ler do `AsyncLocalStorage`.
-5. **Sintoma:** RAG não retorna resultados → **Causa:** pgvector não habilitado, ou embeddings não geradas. **Correção:** verificar imagem `pgvector/pgvector:pg17` e re-rodar pipeline de chunking; ver [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md).
-6. **Sintoma:** Flow novo no wizard não aparece no Flow Builder visual → **Causa:** atualizou só uma das UIs. **Correção:** atualizar **wizard + node-config-panel** (paridade — ambos consomem o mesmo `triggerConfig`).
+1. **Symptom:** `403 Forbidden` on the IG webhook even with correct config → **Cause:** HMAC validation against only one secret. **Fix:** validate against `FACEBOOK_APP_SECRET` AND `INSTAGRAM_APP_SECRET`.
+2. **Symptom:** Mastra agent reuses old model after a provider change → **Cause:** model cached on the agent. **Fix:** use `factory.textForMastra(...)` (lazy) every time.
+3. **Symptom:** `sendPrivateReply` returns "subcode 2018278" → **Cause:** second call against the same comment. **Fix:** use `sendMessage` (regular DM) in step 2 within the 24h window.
+4. **Symptom:** MCP tool receiving an `orgId` forged by the prompt → **Cause:** `orgId` in the input schema. **Fix:** remove from the schema; read from `AsyncLocalStorage`.
+5. **Symptom:** RAG returns no results → **Cause:** pgvector not enabled, or embeddings not generated. **Fix:** verify the `pgvector/pgvector:pg17` image and re-run the chunking pipeline; see [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md).
+6. **Symptom:** new Flow in the wizard does not appear in the visual Flow Builder → **Cause:** only one UI was updated. **Fix:** update **both wizard + node-config-panel** (parity — they share the same `triggerConfig`).
 
-## Comandos
+## Commands
 
 ```bash
-# Specs do chat
+# Chat specs
 pnpm jest libraries/nestjs-libraries/src/chat/ --no-coverage
 ```
 
-## Referências
+## References
 
-- [`docs/architecture/instagram-automations.md`](../../../../docs/architecture/instagram-automations.md) — referência canônica de Flows, credenciais, follow-gate, armadilhas
-- [`docs/automacoes-instagram.md`](../../../../docs/automacoes-instagram.md) — guia do usuário
-- [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md) — pipeline RAG
+- [`docs/architecture/instagram-automations.md`](../../../../docs/architecture/instagram-automations.md) — canonical reference for Flows, credentials, follow-gate, pitfalls
+- [`docs/automacoes-instagram.md`](../../../../docs/automacoes-instagram.md) — user guide
+- [`docs/architecture/knowledge-base-rag.md`](../../../../docs/architecture/knowledge-base-rag.md) — RAG pipeline
 - [`src/ai/CLAUDE.md`](../ai/CLAUDE.md) — `factory.textForMastra`, persona helper
-- [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — providers IG e camadas de credencial Meta
+- [`src/integrations/social/CLAUDE.md`](../integrations/social/CLAUDE.md) — IG providers and Meta credential layers
 - [`apps/orchestrator/CLAUDE.md`](../../../../apps/orchestrator/CLAUDE.md) — `flow.execution.workflow.ts`, `follow-gate-resolve.workflow.ts`

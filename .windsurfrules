@@ -1,18 +1,20 @@
 # Robô MultiPost — Windsurf Rules
 
-Single source of truth: **`CLAUDE.md`** na raiz, com filhos por subárea
-(`apps/backend`, `apps/frontend`, `apps/orchestrator`,
-`libraries/nestjs-libraries` e seus filhos `ai/`, `chat/`,
+Single source of truth: **`CLAUDE.md`** at the repo root, with per-area
+children (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
+`libraries/nestjs-libraries` and its children `ai/`, `chat/`,
 `integrations/social/`, `libraries/react-shared-libraries`).
 
-Antes de qualquer trabalho neste repo, ler:
+Before doing any work in this repo, read:
 
-1. `CLAUDE.md` da raiz — princípios não-negociáveis e mapa do monorepo.
-2. `CLAUDE.md` mais próximo do diretório onde está editando (cascata).
-3. `docs/` para arquitetura detalhada referenciada pelos CLAUDE.md.
+1. The root `CLAUDE.md` — non-negotiable principles and monorepo map.
+2. The closest `CLAUDE.md` to the directory you are editing (cascade).
+3. `docs/` for detailed architecture referenced by the CLAUDE.md files.
 
-PRs sem aderência aos princípios em `CLAUDE.md` (TDD obrigatório,
-Controller→Service→Repository, PNPM only, `useT()` obrigatório, etc.)
-não são mergeados.
+PRs that do not adhere to the principles in `CLAUDE.md` (mandatory TDD,
+Controller→Service→Repository, PNPM only, mandatory `useT()`, etc.) are
+not merged.
 
-`AGENTS.md` na raiz aponta para `CLAUDE.md` como single source of truth.
+`AGENTS.md` at the root points to `CLAUDE.md` as single source of truth.
+
+All `CLAUDE.md` files are in English. CHANGELOG and product docs are in pt-BR.

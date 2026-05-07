@@ -1,122 +1,122 @@
-# Orchestrator (NestJS + Temporal.io) — Instruções para Claude Code
+# Orchestrator (NestJS + Temporal.io) — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`/CLAUDE.md`](../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`apps/backend/CLAUDE.md`](../backend/CLAUDE.md) — controllers que disparam workflows daqui
-  - [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — services que activities consomem
-  - [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md) — providers chamados pelas activities
-  - [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) — webhook IG que cria PendingPostback resolvido aqui
+- **Parent:** [`/CLAUDE.md`](../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`apps/backend/CLAUDE.md`](../backend/CLAUDE.md) — controllers that trigger workflows here
+  - [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — services that activities consume
+  - [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md) — providers called by activities
+  - [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) — IG webhook that creates a `PendingPostback` resolved here
 
-## O que vive aqui
+## What lives here
 
-Worker Temporal.io que executa **workflows** (orquestração durável) e **activities** (chamadas reais a serviços externos). Cobre: agendamento de posts, autopost, repost, refresh de token OAuth, envio de email, missing-post, streaks, e o motor de **flows do Instagram** (follow-gate, comentários, DMs).
+A Temporal.io worker that runs **workflows** (durable orchestration) and **activities** (real calls to external services). Covers: post scheduling, autopost, repost, OAuth token refresh, email sending, missing-post detection, streaks, and the **Instagram Flow engine** (follow-gate, comments, DMs).
 
-Não confundir com o `apps/backend`: o backend cria workflows (via `WorkflowClient`); o orchestrator é o **worker** que os executa.
+Do not confuse with `apps/backend`: the backend creates workflows (via `WorkflowClient`); the orchestrator is the **worker** that executes them.
 
-## Padrões e Regras Específicas
+## Specific Patterns and Rules
 
-### Workflows × Activities (regra de ouro Temporal)
+### Workflows × Activities (Temporal golden rule)
 
-- **Workflows** são determinísticos. Nunca chame APIs HTTP, leia/grave em DB ou use `Date.now()` direto dentro de workflow — isso quebra a re-execução determinística.
-- **Activities** são onde o I/O acontece. Toda chamada a `IntegrationManager`, Prisma, Meta API, etc. é wrapada em activity.
-- Workflows orquestram chamando activities via `proxyActivities<typeof import('../activities/...')>({ ... })`.
+- **Workflows are deterministic.** Never call HTTP APIs, read/write the DB, or use `Date.now()` directly inside a workflow — that breaks deterministic re-execution.
+- **Activities are where I/O happens.** Every call to `IntegrationManager`, Prisma, the Meta API, etc. is wrapped in an activity.
+- Workflows orchestrate by calling activities via `proxyActivities<typeof import('../activities/...')>({ ... })`.
 
-### Signals para fluxos pendentes
+### Signals for pending flows
 
-Sinais (`@SignalMethod`) só são despachados em workflow vivo. Padrão usado:
+Signals (`@SignalMethod`) are only delivered to a live workflow. The pattern in use:
 
-- `flow.execution.workflow.ts` cria um **PendingPostback** no DB e fica esperando.
-- `follow-gate-resolve.workflow.ts` recebe o sinal de webhook (botão postback clicado) e resume o flow original.
-- Sem sinal, o workflow expira por timeout configurado.
+- `flow.execution.workflow.ts` creates a **`PendingPostback`** in the DB and waits.
+- `follow-gate-resolve.workflow.ts` receives the webhook signal (postback button clicked) and resumes the original flow.
+- Without the signal, the workflow times out per the configured timeout.
 
-### Roteamento de host/token Instagram (`resolveIgRoute`)
+### Instagram host/token routing (`resolveIgRoute`)
 
-**Decisão única** de qual host (`graph.facebook.com` vs `graph.instagram.com`) e qual token (Page Access Token, IG User Token cadastrado, IG User Token "standalone") usar para cada activity de comentário.
+**Single decision** of which host (`graph.facebook.com` vs `graph.instagram.com`) and which token (Page Access Token, registered IG User Token, "standalone" IG User Token) to use for each comment activity.
 
-Função canônica: `resolveIgRoute` em `libraries/nestjs-libraries/src/integrations/social/instagram-route.resolver.ts`.
-Wrapper local: `FlowActivity.resolveIgRoute(integration)` em `src/activities/flow.activity.ts` (linhas 29–36) que injeta `_instagramMessagingService`.
+Canonical function: `resolveIgRoute` in `libraries/nestjs-libraries/src/integrations/social/instagram-route.resolver.ts`.
+Local wrapper: `FlowActivity.resolveIgRoute(integration)` in `src/activities/flow.activity.ts` (lines 29–36) which injects `_instagramMessagingService`.
 
-**Prioridade de resolução**:
+**Resolution priority**:
 
-1. `providerIdentifier === 'instagram-standalone'` → IG User Token do `Integration.token`, host `graph.instagram.com`
-2. IG User Token cadastrado em `Credentials.instagramTokens` → host `graph.instagram.com`
-3. Fallback: Page Access Token do `Integration.token`, host `graph.facebook.com`
+1. `providerIdentifier === 'instagram-standalone'` → IG User Token from `Integration.token`, host `graph.instagram.com`
+2. IG User Token registered in `Credentials.instagramTokens` → host `graph.instagram.com`
+3. Fallback: Page Access Token from `Integration.token`, host `graph.facebook.com`
 
-**Nunca** hardcode host/token — sempre via `resolveIgRoute`.
+**Never** hardcode host/token — always go through `resolveIgRoute`.
 
-### Follow-gate em 2 etapas (`comment_on_post`)
+### Two-step follow-gate (`comment_on_post`)
 
-1. Comentário detectado pelo webhook IG (em `apps/backend/src/api/routes/ig-webhook.controller.ts`).
-2. Backend dispara `flow.execution.workflow.ts` → activity envia `sendPrivateReply` UMA VEZ com botão postback ("Quero o link"). Salva `PendingPostback` no DB.
-3. Usuário clica no botão → webhook IG entrega o postback → backend dispara `follow-gate-resolve.workflow.ts`.
-4. `follow-gate-resolve.workflow.ts` valida que segue, faz lookup do `PendingPostback`, e dispara a entrega final (DM com payload, ou nova mensagem).
+1. Comment detected by the IG webhook (in `apps/backend/src/api/routes/ig-webhook.controller.ts`).
+2. Backend triggers `flow.execution.workflow.ts` → activity sends `sendPrivateReply` ONCE with a postback button ("Quero o link"). Saves `PendingPostback` to the DB.
+3. User clicks the button → IG webhook delivers the postback → backend triggers `follow-gate-resolve.workflow.ts`.
+4. `follow-gate-resolve.workflow.ts` validates the follow, looks up the `PendingPostback`, and dispatches the final delivery (DM with payload, or new message).
 
-**Regra crítica**: `sendPrivateReply` só pode ser chamado **UMA VEZ por comentário** (Meta limita). A segunda mensagem precisa ser via DM regular (`sendMessage`) apoiada na 24h messaging window aberta pelo postback.
+**Critical rule**: `sendPrivateReply` can only be called **ONCE per comment** (Meta limit). The second message must use a regular DM (`sendMessage`) within the 24h messaging window opened by the postback.
 
-## Mapa de Arquivos-Chave
+## Key File Map
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `src/main.ts` | Bootstrap NestJS + registra Worker Temporal |
-| `src/app.module.ts` | Module raiz com providers das activities |
-| `src/health.controller.ts` | Healthcheck HTTP |
-| `src/workflows/index.ts` | Re-exporta todos os workflows registrados |
-| `src/workflows/autopost.workflow.ts` | Geração + agendamento automático de posts |
-| `src/workflows/post-workflows/` | Pipeline real de publicação por canal |
-| `src/workflows/flow.execution.workflow.ts` | Motor de Flows (Instagram automations) — etapa 1 do follow-gate |
-| `src/workflows/follow-gate-resolve.workflow.ts` | Etapa 2 do follow-gate (resolve postback) |
-| `src/workflows/refresh.token.workflow.ts` | Refresh periódico de tokens OAuth |
-| `src/workflows/repost.workflow.ts` | Repost agendado |
-| `src/workflows/missing.post.workflow.ts` | Detector + retry de posts que falharam |
-| `src/workflows/digest.email.workflow.ts` / `send.email.workflow.ts` / `streak.workflow.ts` | Email digests, envio direto, streaks |
-| `src/activities/flow.activity.ts` | Activities de Flow (comentário, DM, follow check) — wrapper de `resolveIgRoute` |
-| `src/activities/post.activity.ts` | Activity de publicação real (chama `IntegrationManager`) |
-| `src/activities/integrations.activity.ts` | Activities de integration (refresh token, etc.) |
-| `src/signals/` | Definições de signals dos workflows |
+| `src/main.ts` | NestJS bootstrap + Temporal Worker registration |
+| `src/app.module.ts` | Root module with activity providers |
+| `src/health.controller.ts` | HTTP healthcheck |
+| `src/workflows/index.ts` | Re-exports all registered workflows |
+| `src/workflows/autopost.workflow.ts` | Auto-generation + scheduling of posts |
+| `src/workflows/post-workflows/` | Real publishing pipeline per channel |
+| `src/workflows/flow.execution.workflow.ts` | Flow engine (Instagram automations) — step 1 of follow-gate |
+| `src/workflows/follow-gate-resolve.workflow.ts` | Step 2 of follow-gate (resolves postback) |
+| `src/workflows/refresh.token.workflow.ts` | Periodic OAuth token refresh |
+| `src/workflows/repost.workflow.ts` | Scheduled repost |
+| `src/workflows/missing.post.workflow.ts` | Failed-post detector + retry |
+| `src/workflows/digest.email.workflow.ts` / `send.email.workflow.ts` / `streak.workflow.ts` | Email digests, direct sends, streaks |
+| `src/activities/flow.activity.ts` | Flow activities (comment, DM, follow check) — `resolveIgRoute` wrapper |
+| `src/activities/post.activity.ts` | Real publishing activity (calls `IntegrationManager`) |
+| `src/activities/integrations.activity.ts` | Integration activities (refresh token, etc.) |
+| `src/signals/` | Workflow signal definitions |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar workflow novo
+### Add a new workflow
 
-1. **Spec primeiro** (TDD): se a lógica é complexa (não trivial orquestração), escreva spec da activity correspondente em libs (ver [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) para padrão de specs).
-2. Criar `src/workflows/<nome>.workflow.ts` exportando uma função async que recebe params e retorna resultado.
-3. Activities consumidas por esse workflow vão em `src/activities/<nome>.activity.ts` ou em activity existente. **A lógica real fica em service de lib**; a activity só wrapeia para Temporal.
-4. Registrar em `src/workflows/index.ts`.
-5. **Disparo do workflow**: do backend, via `WorkflowClient` (ver controllers existentes em `apps/backend/src/api/routes/` para exemplos).
-6. **CHANGELOG.md** em `[Unreleased]`.
+1. **Spec first** (TDD): if the logic is complex (non-trivial orchestration), write the spec for the corresponding activity in libraries (see [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) for the spec pattern).
+2. Create `src/workflows/<name>.workflow.ts` exporting an async function that takes params and returns a result.
+3. Activities consumed by the workflow go in `src/activities/<name>.activity.ts` or in an existing activity. **The real logic lives in a library service**; the activity only wraps it for Temporal.
+4. Register in `src/workflows/index.ts`.
+5. **Triggering the workflow**: from the backend, via `WorkflowClient` (see existing controllers in `apps/backend/src/api/routes/` for examples).
+6. **CHANGELOG.md** under `[Unreleased]`.
 
-### Adicionar activity nova
+### Add a new activity
 
-1. Service real em `libraries/nestjs-libraries/src/...` com spec.
-2. Activity em `src/activities/...activity.ts` injetando o service e exportando método. Activity sozinha **não** faz lógica — só chama o service.
-3. Registrar provider no `app.module.ts` se for class-based.
+1. Real service in `libraries/nestjs-libraries/src/...` with a spec.
+2. Activity in `src/activities/...activity.ts` injecting the service and exporting a method. The activity alone **does not** contain logic — it just calls the service.
+3. Register the provider in `app.module.ts` if class-based.
 
-### Adicionar etapa nova ao motor de Flows do IG
+### Add a new step to the IG Flow engine
 
-Toda etapa de Flow deve passar por `resolveIgRoute` se for fazer chamadas Meta. Ver `flow.activity.ts:65` e `:129` como referência. Para um novo tipo de step (além de `comment_on_post`, `dm`, etc.), atualize **a wizard E o Flow Builder node-config-panel** — ambos consomem o mesmo `triggerConfig` JSON.
+Every Flow step that touches Meta endpoints must go through `resolveIgRoute`. See `flow.activity.ts:65` and `:129` as references. For a new step type (beyond `comment_on_post`, `dm`, etc.), update **both the wizard AND the Flow Builder node-config-panel** — they share the same `triggerConfig` JSON.
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** workflow "trava" sem completar mesmo após sinal externo → **Causa:** sinal sendo despachado para workflowId errado ou workflow já expirou. **Correção:** loggar `workflowId` ao criar `PendingPostback` e ao receber webhook; checar `temporal workflow describe <id>`.
-2. **Sintoma:** activity de comentário Instagram retornando 400/403 inesperado → **Causa:** host/token incorreto (ex.: tentando usar Page Access Token contra `graph.instagram.com`). **Correção:** confirmar que está usando `resolveIgRoute(integration)` e não hardcode.
-3. **Sintoma:** `sendPrivateReply` segundo retorno com erro "subcode 2018278" → **Causa:** Meta permite apenas UMA reply privada por comentário. **Correção:** segunda mensagem deve ser DM regular dentro da janela de 24h aberta pelo postback.
-4. **Sintoma:** workflow não-determinístico após replay (`Workflow execution had errors`) → **Causa:** chamada direta de API/DB/Date.now() dentro do workflow. **Correção:** mover para activity.
-5. **Sintoma:** novo campo do Flow não aparece no Flow Builder visual → **Causa:** atualizou só a wizard. **Correção:** atualize também o `node-config-panel` do Flow Builder — ambos consomem o mesmo `triggerConfig` (regra de paridade).
-6. **Sintoma:** webhook IG entrega postback mas o follow-gate-resolve não dispara → **Causa:** HMAC inválido ou `PendingPostback` não foi criado/foi expirado. **Correção:** ver [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) para validação de webhook (FACEBOOK_APP_SECRET + INSTAGRAM_APP_SECRET).
+1. **Symptom:** workflow "stuck" without completing even after an external signal → **Cause:** signal dispatched to the wrong workflowId, or workflow already expired. **Fix:** log `workflowId` when creating `PendingPostback` and when receiving the webhook; check `temporal workflow describe <id>`.
+2. **Symptom:** Instagram comment activity returning unexpected 400/403 → **Cause:** wrong host/token (e.g., trying to use a Page Access Token against `graph.instagram.com`). **Fix:** confirm you are using `resolveIgRoute(integration)`, not a hardcoded value.
+3. **Symptom:** second `sendPrivateReply` returns "subcode 2018278" → **Cause:** Meta only allows ONE private reply per comment. **Fix:** the second message must be a regular DM within the 24h window opened by the postback.
+4. **Symptom:** non-deterministic workflow on replay (`Workflow execution had errors`) → **Cause:** direct API/DB/`Date.now()` call inside the workflow. **Fix:** move the call to an activity.
+5. **Symptom:** new Flow field does not appear in the visual Flow Builder → **Cause:** only the wizard was updated. **Fix:** also update the `node-config-panel` of the Flow Builder — both consume the same `triggerConfig` (parity rule).
+6. **Symptom:** IG webhook delivers the postback but `follow-gate-resolve` does not fire → **Cause:** invalid HMAC or `PendingPostback` was not created/has expired. **Fix:** see [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) for webhook validation (FACEBOOK_APP_SECRET + INSTAGRAM_APP_SECRET).
 
-## Comandos
+## Commands
 
 ```bash
 pnpm build:orchestrator
-pnpm dev                  # Sobe orchestrator junto
-# Temporal UI local em http://localhost:8233 (docker-compose.dev.yaml)
+pnpm dev                  # Boots orchestrator alongside other apps
+# Local Temporal UI at http://localhost:8233 (docker-compose.dev.yaml)
 ```
 
-## Referências
+## References
 
-- [`docs/architecture/instagram-automations.md`](../../docs/architecture/instagram-automations.md) — mapa completo do subsistema de Flows IG
-- [`docs/automacoes-instagram.md`](../../docs/automacoes-instagram.md) — guia do usuário das automações
-- [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) — webhook IG, validação HMAC, PendingPostback
-- [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md) — `resolveIgRoute`, providers IG, 3 camadas de credencial Meta
+- [`docs/architecture/instagram-automations.md`](../../docs/architecture/instagram-automations.md) — full map of the IG Flow subsystem
+- [`docs/automacoes-instagram.md`](../../docs/automacoes-instagram.md) — user guide for automations
+- [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) — IG webhook, HMAC validation, PendingPostback
+- [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md) — `resolveIgRoute`, IG providers, three Meta credential layers

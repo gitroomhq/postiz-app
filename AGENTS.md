@@ -1,13 +1,17 @@
 # AGENTS.md
 
-> **Single source of truth para qualquer agente de IA neste repositório:** [`CLAUDE.md`](CLAUDE.md).
+> **Single source of truth for any AI agent working in this repo:** [`CLAUDE.md`](CLAUDE.md).
 
-`CLAUDE.md` na raiz aponta para os `CLAUDE.md` filhos por subárea
+The root `CLAUDE.md` points to per-area child `CLAUDE.md` files
 (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
-`libraries/nestjs-libraries` e seus filhos `ai/`, `chat/`,
-`integrations/social/`, e `libraries/react-shared-libraries`). Os agentes
-devem ler o `CLAUDE.md` mais próximo do diretório onde estão trabalhando,
-em cascata até a raiz.
+`libraries/nestjs-libraries` and its children `ai/`, `chat/`,
+`integrations/social/`, and `libraries/react-shared-libraries`). Agents
+should read the closest `CLAUDE.md` to the directory they are working in,
+cascading up to the root.
 
-Documentação de produto e arquitetura está em [`docs/`](docs/) (referenciada
-pelos `CLAUDE.md`, mas não é a mesma coisa).
+All `CLAUDE.md` files in this repo are written in English (the agent
+reads them better that way). Product-facing artifacts (CHANGELOG,
+docs/, translations) stay in pt-BR per project convention.
+
+Product and architecture documentation lives in [`docs/`](docs/),
+referenced by the `CLAUDE.md` files but not the same thing.

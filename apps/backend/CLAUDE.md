@@ -1,71 +1,71 @@
-# Backend (NestJS) — Instruções para Claude Code
+# Backend (NestJS) — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`/CLAUDE.md`](../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md) — UI que consome esta API
-  - [`apps/orchestrator/CLAUDE.md`](../orchestrator/CLAUDE.md) — workflows Temporal disparados pelos controllers
-  - [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — onde mora a lógica de negócio que estes controllers chamam
+- **Parent:** [`/CLAUDE.md`](../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md) — UI that consumes this API
+  - [`apps/orchestrator/CLAUDE.md`](../orchestrator/CLAUDE.md) — Temporal workflows triggered by these controllers
+  - [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — where the business logic these controllers call lives
 
-## O que vive aqui
+## What lives here
 
-API REST NestJS. **Controllers finos** que validam HTTP, extraem params/usuário e delegam para services em `libraries/nestjs-libraries/src/`. Apenas o módulo HTTP (`api.module.ts` + `app.module.ts`), `main.ts`, e a coleção de controllers em `src/api/routes/` e `src/public-api/`. Lógica de negócio **nunca** vive aqui — sempre em libs.
+NestJS REST API. **Thin controllers** that validate HTTP, extract params/user, and delegate to services in `libraries/nestjs-libraries/src/`. Only the HTTP module (`api.module.ts` + `app.module.ts`), `main.ts`, and the controller collection in `src/api/routes/` and `src/public-api/`. Business logic **never** lives here — always in libraries.
 
-## Padrão Arquitetural Obrigatório
+## Mandatory Architectural Pattern
 
 ```
 Controller >> Service >> Repository
 ```
 
-Quando há orquestração entre múltiplos services:
+When orchestrating multiple services:
 
 ```
 Controller >> Manager >> Service >> Repository
 ```
 
-### Regras
+### Rules
 
-- **Nunca pular camada.** Controller chama Service (ou Manager), nunca Repository diretamente. Service chama Repository, nunca Prisma direto.
-- Controllers **só importam de libs** (`@gitroom/nestjs-libraries/*`, `@gitroom/helpers/*`). Não escreva services novos em `apps/backend/src/services/` — use `libraries/nestjs-libraries/src/`.
-- DTOs ficam em `libraries/nestjs-libraries/src/dtos/` (não em `apps/backend`).
-- Use `@CurrentUser()` e `@CurrentOrg()` decorators (de `libraries/nestjs-libraries/src/services/auth/permissions/`) para extrair o usuário/org autenticado.
-- Erros HTTP são `HttpException` com status semântico — **não** use 402 para "credencial não configurada" (interceptado pelo modal de billing global do Postiz). Use **412 Precondition Failed**. Detalhes em [`libraries/nestjs-libraries/src/ai/CLAUDE.md`](../../libraries/nestjs-libraries/src/ai/CLAUDE.md).
+- **Never skip a layer.** Controllers call Services (or Managers), never Repositories directly. Services call Repositories, never Prisma directly.
+- Controllers **only import from libraries** (`@gitroom/nestjs-libraries/*`, `@gitroom/helpers/*`). Do not write new services in `apps/backend/src/services/` — use `libraries/nestjs-libraries/src/`.
+- DTOs live in `libraries/nestjs-libraries/src/dtos/` (not in `apps/backend`).
+- Use the `@CurrentUser()` and `@CurrentOrg()` decorators (from `libraries/nestjs-libraries/src/services/auth/permissions/`) to extract the authenticated user/org.
+- HTTP errors are `HttpException` with semantic status — **do not** use 402 for "credential not configured" (intercepted by Postiz's global billing modal layout context). Use **412 Precondition Failed**. Details in [`libraries/nestjs-libraries/src/ai/CLAUDE.md`](../../libraries/nestjs-libraries/src/ai/CLAUDE.md).
 
-## Mapa de Arquivos-Chave
+## Key File Map
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `src/main.ts` | Bootstrap NestJS, `initializeSentry()`, listen na porta |
-| `src/app.module.ts` | Root module — registra `SentryModule`, `FILTER` global, módulos de api/public-api |
-| `src/api/api.module.ts` | Módulo HTTP da API privada (controllers que requerem auth) |
-| `src/api/routes/` | 30+ controllers REST (auth, posts, integrations, ai-*, copilot, flows, ig-webhook, etc.) |
-| `src/public-api/` | API pública versionada (`/v1/`) — autenticada por API key |
-| `src/services/` | Pequena camada de utilitários do app HTTP (não confundir com services de domínio em libs) |
+| `src/main.ts` | NestJS bootstrap, `initializeSentry()`, port listen |
+| `src/app.module.ts` | Root module — registers `SentryModule`, global `FILTER`, api/public-api modules |
+| `src/api/api.module.ts` | HTTP module for the private API (controllers requiring auth) |
+| `src/api/routes/` | 30+ REST controllers (auth, posts, integrations, ai-*, copilot, flows, ig-webhook, etc.) |
+| `src/public-api/` | Versioned public API (`/v1/`) — authenticated by API key |
+| `src/services/` | Small utility layer for the HTTP app (do not confuse with domain services in libraries) |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar uma rota REST nova
+### Add a new REST route
 
-1. **Definir contrato** (API-First): endpoint, payload (DTO em `libraries/nestjs-libraries/src/dtos/`), response.
-2. **Spec primeiro** (TDD): `foo.service.spec.ts` em `libraries/nestjs-libraries/src/.../foo.service.ts` com o comportamento esperado. Use `createMock`/`createTestModule` (ver [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md)).
-3. **Implementar Service e Repository** em `libraries/nestjs-libraries/`.
-4. **Criar Controller** em `src/api/routes/foo.controller.ts`. Importar service da lib. Aplicar guards/decorators (`@UseGuards(AuthService)`, `@CurrentUser()`).
-5. **Registrar** o controller em `src/api/api.module.ts` (array `controllers:`).
-6. **Tradução do frontend** (se houver UI): chave em `pt/translation.json` e `en/translation.json` (ver [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md)).
-7. **CHANGELOG.md** em `[Unreleased]`.
+1. **Define the contract** (API-First): endpoint, payload (DTO in `libraries/nestjs-libraries/src/dtos/`), response.
+2. **Spec first** (TDD): `foo.service.spec.ts` in `libraries/nestjs-libraries/src/.../foo.service.ts` with the expected behavior. Use `createMock`/`createTestModule` (see [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md)).
+3. **Implement Service and Repository** in `libraries/nestjs-libraries/`.
+4. **Create the Controller** at `src/api/routes/foo.controller.ts`. Import the service from the library. Apply guards/decorators (`@UseGuards(AuthService)`, `@CurrentUser()`).
+5. **Register** the controller in `src/api/api.module.ts` (`controllers:` array).
+6. **Frontend translation** (if there is UI): keys in `pt/translation.json` and `en/translation.json` (see [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md)).
+7. **CHANGELOG.md** under `[Unreleased]`.
 
-### Adicionar guard ou interceptor
+### Add a guard or interceptor
 
-Nunca crie no `apps/backend` — escreva em `libraries/nestjs-libraries/src/services/auth/` (guards) ou `libraries/nestjs-libraries/src/services/` (interceptors) e importe.
+Never create one in `apps/backend` — write it in `libraries/nestjs-libraries/src/services/auth/` (guards) or `libraries/nestjs-libraries/src/services/` (interceptors) and import.
 
-### Webhooks externos (ex.: Instagram, Stripe)
+### External webhooks (e.g., Instagram, Stripe)
 
-Webhooks vivem em `src/api/routes/*.webhook.controller.ts`. **Validar HMAC sempre** antes de processar. Para IG, ver [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) (validação com `FACEBOOK_APP_SECRET` E `INSTAGRAM_APP_SECRET`).
+Webhooks live in `src/api/routes/*.webhook.controller.ts`. **Always validate HMAC** before processing. For IG, see [`libraries/nestjs-libraries/src/chat/CLAUDE.md`](../../libraries/nestjs-libraries/src/chat/CLAUDE.md) (validation with `FACEBOOK_APP_SECRET` AND `INSTAGRAM_APP_SECRET`).
 
 ## Sentry (backend)
 
-Backend usa `@sentry/nestjs` (não `@sentry/nextjs`):
+Backend uses `@sentry/nestjs` (not `@sentry/nextjs`):
 
 ```typescript
 import * as Sentry from '@sentry/nestjs';
@@ -74,32 +74,32 @@ import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.se
 import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 ```
 
-- Inicialização: `initializeSentry()` em `main.ts` (helper interno encapsula `Sentry.init`).
-- Filter global de exceções: `FILTER` de `sentry.exception` registrado em `app.module.ts` como `APP_FILTER`.
-- Para captura manual em controller/service, use `Sentry.captureException(error)` ou `Sentry.captureMessage(...)`.
-- Setup do Sentry de **frontend** (`@sentry/nextjs`, console logging integration, `logger.fmt`) está em [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md).
+- Initialization: `initializeSentry()` in `main.ts` (internal helper wrapping `Sentry.init`).
+- Global exception filter: `FILTER` from `sentry.exception` registered in `app.module.ts` as `APP_FILTER`.
+- For manual capture in a controller/service, use `Sentry.captureException(error)` or `Sentry.captureMessage(...)`.
+- **Frontend** Sentry setup (`@sentry/nextjs`, console logging integration, `logger.fmt`) is in [`apps/frontend/CLAUDE.md`](../frontend/CLAUDE.md).
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** `Cannot inject ... PrismaService` em service novo → **Causa:** service tentando acessar Prisma direto. **Correção:** crie um `*.repository.ts` que estende `PrismaRepository<T>` e injete o repository no service.
-2. **Sintoma:** modal de billing abrindo quando deveria ser erro de configuração → **Causa:** controller retornando `HTTP 402`. **Correção:** use `HTTP 412 Precondition Failed`.
-3. **Sintoma:** `RequestContext` ou `@CurrentUser()` retornando `undefined` → **Causa:** rota não está atrás do `AuthService` guard. **Correção:** aplique `@UseGuards(AuthService)` no controller ou na rota.
-4. **Sintoma:** importou de `@gitroom/backend/...` em uma lib → **Causa:** dependência circular. **Correção:** libs **nunca** importam do backend; apenas o backend importa de libs.
-5. **Sintoma:** novo endpoint não aparece no Swagger → **Causa:** controller não registrado em `api.module.ts`. **Correção:** adicione no array `controllers:`.
-6. **Sintoma:** TS error `'createTestModule' does not exist` em spec novo → **Causa:** path de import errado. **Correção:** `import { createTestModule } from '@gitroom/nestjs-libraries/test'`.
+1. **Symptom:** `Cannot inject ... PrismaService` in a new service → **Cause:** service trying to access Prisma directly. **Fix:** create a `*.repository.ts` extending `PrismaRepository<T>` and inject the repository into the service.
+2. **Symptom:** billing modal opens when it should be a configuration error → **Cause:** controller returning `HTTP 402`. **Fix:** use `HTTP 412 Precondition Failed`.
+3. **Symptom:** `RequestContext` or `@CurrentUser()` returning `undefined` → **Cause:** route is not behind the `AuthService` guard. **Fix:** apply `@UseGuards(AuthService)` to the controller or route.
+4. **Symptom:** imported from `@gitroom/backend/...` inside a library → **Cause:** circular dependency. **Fix:** libraries **never** import from the backend; only the backend imports from libraries.
+5. **Symptom:** new endpoint does not appear in Swagger → **Cause:** controller not registered in `api.module.ts`. **Fix:** add it to the `controllers:` array.
+6. **Symptom:** TS error `'createTestModule' does not exist` in a new spec → **Cause:** wrong import path. **Fix:** `import { createTestModule } from '@gitroom/nestjs-libraries/test'`.
 
-## Comandos
+## Commands
 
 ```bash
-pnpm dev-backend          # Sobe backend + frontend
-pnpm build:backend        # Build do backend isolado
-pnpm test:backend         # Specs apenas do backend
-pnpm test:libs            # Specs das libs (onde a maior parte dos testes do backend mora)
+pnpm dev-backend          # Run backend + frontend
+pnpm build:backend        # Build backend in isolation
+pnpm test:backend         # Specs in the backend only
+pnpm test:libs            # Spec in the libraries (where most backend tests live)
 ```
 
-## Referências
+## References
 
-- [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — onde mora a maior parte da lógica testada por estas rotas
-- [`docs/architecture/ai-provider-system.md`](../../docs/architecture/ai-provider-system.md) — endpoints de AI (REST + erro 412)
-- [`docs/architecture/instagram-automations.md`](../../docs/architecture/instagram-automations.md) — webhook IG e fluxo follow-gate
-- [`docs/planning/agents.md`](../../docs/planning/agents.md) — contexto de produto
+- [`libraries/nestjs-libraries/CLAUDE.md`](../../libraries/nestjs-libraries/CLAUDE.md) — where most of the logic tested by these routes lives
+- [`docs/architecture/ai-provider-system.md`](../../docs/architecture/ai-provider-system.md) — AI endpoints (REST + 412 error)
+- [`docs/architecture/instagram-automations.md`](../../docs/architecture/instagram-automations.md) — IG webhook and follow-gate flow
+- [`docs/planning/agents.md`](../../docs/planning/agents.md) — product context

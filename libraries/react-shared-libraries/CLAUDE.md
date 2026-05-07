@@ -1,134 +1,134 @@
-# React Shared Libraries — Instruções para Claude Code
+# React Shared Libraries — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`/CLAUDE.md`](../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md) — principal consumidor desta lib
-  - [`libraries/nestjs-libraries/CLAUDE.md`](../nestjs-libraries/CLAUDE.md) — counterpart no backend
+- **Parent:** [`/CLAUDE.md`](../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md) — main consumer of this library
+  - [`libraries/nestjs-libraries/CLAUDE.md`](../nestjs-libraries/CLAUDE.md) — backend counterpart
 
-## O que vive aqui
+## What lives here
 
-Componentes React + helpers compartilhados entre o frontend principal (`apps/frontend`), a extensão de browser (`apps/extension`) e a API pública.
+Shared React components + helpers, used by the main frontend (`apps/frontend`), the browser extension (`apps/extension`), and the public API.
 
-| Subdiretório | Conteúdo |
+| Subdirectory | Content |
 |---|---|
-| `form/` | Primitivos UI: `button`, `input`, `select`, `custom.select`, `checkbox`, `textarea`, `slider`, `color.picker`, `canonical`, `total` |
-| `helpers/` | Hooks e utilitários: `useIsVisible`, `useMediaDirectory`, `usePreventWindowUnload`, `useStateCallback`, `useTrack`, `mantineWrapper`, `safeImage`, `imageWithFallback`, `videoFrame`, `videoOrImage`, `uppyUpload`, `utcDateRender`, `variableContext`, `posthog`, etc. |
-| `sentry/` | Wrappers de Sentry (frontend) compartilhados |
-| `toaster/` | Sistema de notificação toast |
-| `translation/` | i18n: `i18n.config`, `i18next`, hooks `useT()` (client e server), `translated-label`, `locales/` (17 idiomas) |
+| `form/` | UI primitives: `button`, `input`, `select`, `custom.select`, `checkbox`, `textarea`, `slider`, `color.picker`, `canonical`, `total` |
+| `helpers/` | Hooks and utilities: `useIsVisible`, `useMediaDirectory`, `usePreventWindowUnload`, `useStateCallback`, `useTrack`, `mantineWrapper`, `safeImage`, `imageWithFallback`, `videoFrame`, `videoOrImage`, `uppyUpload`, `utcDateRender`, `variableContext`, `posthog`, etc. |
+| `sentry/` | Shared frontend Sentry wrappers |
+| `toaster/` | Toast notification system |
+| `translation/` | i18n: `i18n.config`, `i18next`, `useT()` hooks (client and server), `translated-label`, `locales/` (17 languages) |
 
-## Padrões e Regras Específicas
+## Specific Patterns and Rules
 
-### Translation — fonte única de verdade
+### Translation — single source of truth
 
-Todos os arquivos de tradução do produto vivem em `src/translation/locales/<lang>/translation.json`. Idiomas atuais: `pt`, `en`, `es`, `fr`, `de`, `it`, `ru`, `tr`, `ja`, `ko`, `zh`, `vi`, `bn`, `ar`, `he`, `ka_ge`, etc. (17).
+All product translation files live in `src/translation/locales/<lang>/translation.json`. Current languages: `pt`, `en`, `es`, `fr`, `de`, `it`, `ru`, `tr`, `ja`, `ko`, `zh`, `vi`, `bn`, `ar`, `he`, `ka_ge`, etc. (17).
 
-Hooks expostos:
+Exposed hooks:
 
-- `useT()` de `get.transation.service.client` — para componentes client (`'use client'`)
-- Função server de `get.translation.service.backend` — para SSR / Server Components
+- `useT()` from `get.transation.service.client` — for client components (`'use client'`)
+- A server function from `get.translation.service.backend` — for SSR / Server Components
 
-**Regras de chaves** (aplicáveis a quem cria nova chave):
+**Key rules** (apply when creating a new key):
 
-- `snake_case` descritiva (ex.: `select_late_profile`, `failed_to_add_channel`).
-- Adicionar **simultaneamente em `pt/translation.json` E `en/translation.json`**. Outros idiomas usam fallback inglês automático (não bloqueante).
-- **Valores em pt-BR usam acentos completos** (a regra "sem acentos" do projeto vale só para CHAVES e código, não para conteúdo de tradução).
-- Reuse antes de criar — verificar se já existe antes.
+- `snake_case`, descriptive (e.g., `select_late_profile`, `failed_to_add_channel`).
+- Add to **both `pt/translation.json` AND `en/translation.json`** simultaneously. Other languages fall back to English automatically (non-blocking).
+- **pt-BR values use full accents** (the project's "no accents" rule applies only to KEYS and code, not translation content).
+- Reuse before creating — check if it already exists first.
 
 ### Form primitives
 
-Antes de criar componente novo no `apps/frontend/src/components/`, **veja se há primitivo aqui**. Os primitivos têm Tailwind + tokens `--new-*` integrados e cobrem a maioria dos casos:
+Before creating a new component in `apps/frontend/src/components/`, **check whether a primitive already exists here**. The primitives have Tailwind + `--new-*` tokens integrated and cover most cases:
 
-| Primitivo | Para quê |
+| Primitive | For |
 |---|---|
-| `button.tsx` | Botão base com variantes |
-| `input.tsx` | Input texto/número com label |
-| `select.tsx` / `custom.select.tsx` | Select padrão e custom (com search/grupos) |
+| `button.tsx` | Base button with variants |
+| `input.tsx` | Text/number input with label |
+| `select.tsx` / `custom.select.tsx` | Standard and custom select (with search/groups) |
 | `checkbox.tsx` | Checkbox |
 | `textarea.tsx` | Textarea |
-| `slider.tsx` | Slider numérico |
+| `slider.tsx` | Numeric slider |
 | `color.picker.tsx` | Color picker |
-| `canonical.tsx` | Helper para slug/URL canônico |
-| `total.tsx` | Display de totais formatados |
+| `canonical.tsx` | Helper for slug/canonical URLs |
+| `total.tsx` | Formatted totals display |
 
-Se não existe primitivo adequado, **escreva nativo** — não instale do npm (regra do monorepo).
+If no suitable primitive exists, **write one natively** — do not install from npm (monorepo rule).
 
-### Helpers reutilizáveis (não reinventar)
+### Reusable helpers (do not reinvent)
 
-| Helper | Uso |
+| Helper | Use |
 |---|---|
 | `useIsVisible` | Lazy loading via IntersectionObserver |
-| `useMediaDirectory` | Listagem da biblioteca de mídia |
-| `usePreventWindowUnload` | Prompt antes de sair (form sujo) |
-| `useStateCallback` | `useState` com callback após set |
-| `useTrack` | Tracking PostHog |
-| `safeImage` / `imageWithFallback` | `<img>` com fallback de erro |
-| `videoFrame` / `videoOrImage` | Render condicional vídeo/imagem |
-| `uppyUpload` | Upload via Uppy (com providers configurados) |
-| `utcDateRender` | Formatação UTC consistente |
-| `variableContext` | Context de variáveis globais (URL backend, flags) |
-| `mantineWrapper` | Wrapper para componentes Mantine usados pontualmente |
-| `posthog` | Inicialização de PostHog |
-| `delete.dialog` | Modal de confirmação de delete |
+| `useMediaDirectory` | Media library listing |
+| `usePreventWindowUnload` | Prompt before leaving (dirty form) |
+| `useStateCallback` | `useState` with a post-set callback |
+| `useTrack` | PostHog tracking |
+| `safeImage` / `imageWithFallback` | `<img>` with error fallback |
+| `videoFrame` / `videoOrImage` | Conditional video/image rendering |
+| `uppyUpload` | Upload via Uppy (with configured providers) |
+| `utcDateRender` | Consistent UTC formatting |
+| `variableContext` | Global variables context (backend URL, flags) |
+| `mantineWrapper` | Wrapper for occasional Mantine components |
+| `posthog` | PostHog initialization |
+| `delete.dialog` | Delete confirmation modal |
 
-### Sentry e Toaster
+### Sentry and Toaster
 
-- `sentry/` — wrappers que padronizam captura no frontend (consumido por `apps/frontend/src/components/new-layout/sentry.feedback.component.tsx`).
-- `toaster/` — único sistema de notificação. Não introduzir lib alternativa de toast.
+- `sentry/` — wrappers that standardize frontend capture (consumed by `apps/frontend/src/components/new-layout/sentry.feedback.component.tsx`).
+- `toaster/` — single notification system. Do not introduce alternative toast libraries.
 
-## Mapa de Arquivos-Chave
+## Key File Map
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `src/form/button.tsx` | Botão base — extender via props/className em vez de criar variantes novas em outro lugar |
-| `src/translation/get.transation.service.client.ts` | `useT()` para client components |
-| `src/translation/get.translation.service.backend.ts` | Tradução em SSR/Server Components |
-| `src/translation/i18n.config.ts` | Lista de locales suportadas |
-| `src/translation/locales/pt/translation.json` | **Chaves em pt-BR (com acentos no valor)** |
-| `src/translation/locales/en/translation.json` | **Chaves em inglês — fallback global** |
-| `src/helpers/variable.context.tsx` | Context com `BACKEND_URL`, flags, etc. |
-| `src/helpers/uppy.upload.ts` | Configuração canônica do Uppy |
+| `src/form/button.tsx` | Base button — extend via props/className instead of creating variants elsewhere |
+| `src/translation/get.transation.service.client.ts` | `useT()` for client components |
+| `src/translation/get.translation.service.backend.ts` | Translation in SSR/Server Components |
+| `src/translation/i18n.config.ts` | List of supported locales |
+| `src/translation/locales/pt/translation.json` | **pt-BR keys (with accents in values)** |
+| `src/translation/locales/en/translation.json` | **English keys — global fallback** |
+| `src/helpers/variable.context.tsx` | Context with `BACKEND_URL`, flags, etc. |
+| `src/helpers/uppy.upload.ts` | Canonical Uppy configuration |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar string visível ao usuário
+### Add a user-visible string
 
-1. Definir chave `snake_case` descritiva.
-2. Adicionar em `pt/translation.json` (com acentos no valor) **E** `en/translation.json` (em inglês).
-3. Consumir via `useT()` no componente client (`'use client'`).
-4. Para SSR, usar a função server de `get.translation.service.backend`.
+1. Define a descriptive `snake_case` key.
+2. Add it to `pt/translation.json` (with accents in the value) AND `en/translation.json` (in English).
+3. Consume via `useT()` in the client component (`'use client'`).
+4. For SSR, use the server function from `get.translation.service.backend`.
 
-### Adicionar primitivo de form novo
+### Add a new form primitive
 
-1. Confirmar que **não há** alternativa em `form/` ou no frontend.
-2. Spec / story (se houver Storybook configurado) — caso contrário, escrever em `form/` direto.
-3. Tokens `--new-*` do colors.scss (ver [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md)).
-4. Suporte a dark mode automático (tokens já cobrem).
-5. Exportar em `index.ts` se houver agregador.
+1. Confirm there is **no** alternative in `form/` or in the frontend.
+2. Spec / story (if Storybook is configured) — otherwise write directly in `form/`.
+3. Use `--new-*` tokens from colors.scss (see [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md)).
+4. Dark-mode support is automatic (tokens already cover it).
+5. Export in `index.ts` if there is an aggregator.
 
-### Adicionar idioma novo
+### Add a new language
 
-1. Criar `src/translation/locales/<lang>/translation.json` (cópia de `en` e traduzir progressivamente).
-2. Registrar em `i18n.config.ts`.
-3. Chaves não traduzidas usam fallback inglês — não-bloqueante.
+1. Create `src/translation/locales/<lang>/translation.json` (copy `en` and translate progressively).
+2. Register in `i18n.config.ts`.
+3. Untranslated keys fall back to English — non-blocking.
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** componente novo no frontend reimplementa botão/input do zero → **Causa:** dev não viu o primitivo daqui. **Correção:** importar de `@gitroom/react/form/<primitivo>`.
-2. **Sintoma:** texto novo aparece em inglês mesmo no `/pt` → **Causa:** chave só em `en/translation.json`. **Correção:** adicionar em `pt/translation.json`.
-3. **Sintoma:** `useT() is undefined` → **Causa:** falta `'use client'` no topo do componente, ou import errado (`get.translation.service.backend` em client). **Correção:** importar `get.transation.service.client` e marcar componente como client.
-4. **Sintoma:** caracteres acentuados aparecem como `?` ou caixas → **Causa:** arquivo de tradução salvo em encoding errado. **Correção:** `pt/translation.json` deve ser UTF-8; valores **com acentos completos** (ex.: "Configurações", não "Configuracoes").
-5. **Sintoma:** novo componente UI instalado via `pnpm add @<biblioteca>` → **Causa:** quebrou regra "no npm UI". **Correção:** desinstalar e escrever nativo ou usar primitivo de `form/`.
+1. **Symptom:** new component in the frontend reimplementing button/input from scratch → **Cause:** dev did not see the primitive here. **Fix:** import from `@gitroom/react/form/<primitive>`.
+2. **Symptom:** new text appears in English even on `/pt` → **Cause:** key only in `en/translation.json`. **Fix:** add it to `pt/translation.json`.
+3. **Symptom:** `useT() is undefined` → **Cause:** missing `'use client'` at the top of the component, or wrong import (`get.translation.service.backend` in client). **Fix:** import `get.transation.service.client` and mark the component as client.
+4. **Symptom:** accented characters appear as `?` or boxes → **Cause:** translation file saved in the wrong encoding. **Fix:** `pt/translation.json` must be UTF-8; values **with full accents** (e.g., "Configurações", not "Configuracoes").
+5. **Symptom:** new UI component installed via `pnpm add @<library>` → **Cause:** broke the "no npm UI" rule. **Fix:** uninstall and write natively or use a primitive from `form/`.
 
-## Comandos
+## Commands
 
 ```bash
-pnpm test:libs            # Specs de libs (incluindo esta)
+pnpm test:libs            # Library specs (including this one)
 ```
 
-## Referências
+## References
 
-- [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md) — `useT()`, Tailwind tokens, regra de hooks isolados
-- [`libraries/nestjs-libraries/CLAUDE.md`](../nestjs-libraries/CLAUDE.md) — counterpart de domínio
+- [`apps/frontend/CLAUDE.md`](../../apps/frontend/CLAUDE.md) — `useT()`, Tailwind tokens, isolated-hooks rule
+- [`libraries/nestjs-libraries/CLAUDE.md`](../nestjs-libraries/CLAUDE.md) — domain counterpart

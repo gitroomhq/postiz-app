@@ -1,54 +1,54 @@
-# NestJS Libraries — Instruções para Claude Code
+# NestJS Libraries — Claude Code Instructions
 
-## Posição na Hierarquia
+## Position in Hierarchy
 
-- **Pai:** [`/CLAUDE.md`](../../CLAUDE.md)
-- **Irmãos relevantes:**
-  - [`apps/backend/CLAUDE.md`](../../apps/backend/CLAUDE.md) — controllers que importam destes services
-  - [`apps/orchestrator/CLAUDE.md`](../../apps/orchestrator/CLAUDE.md) — activities que importam destes services
-  - [`libraries/react-shared-libraries/CLAUDE.md`](../react-shared-libraries/CLAUDE.md) — counterpart do frontend
-- **Filhos (subáreas com CLAUDE.md próprio):**
-  - [`src/integrations/social/CLAUDE.md`](src/integrations/social/CLAUDE.md) — providers de redes sociais
-  - [`src/ai/CLAUDE.md`](src/ai/CLAUDE.md) — AI Provider System, créditos, persona, KB
-  - [`src/chat/CLAUDE.md`](src/chat/CLAUDE.md) — Mastra agents, MCP tools, webhook IG
+- **Parent:** [`/CLAUDE.md`](../../CLAUDE.md)
+- **Relevant siblings:**
+  - [`apps/backend/CLAUDE.md`](../../apps/backend/CLAUDE.md) — controllers that import these services
+  - [`apps/orchestrator/CLAUDE.md`](../../apps/orchestrator/CLAUDE.md) — activities that import these services
+  - [`libraries/react-shared-libraries/CLAUDE.md`](../react-shared-libraries/CLAUDE.md) — frontend counterpart
+- **Children (subareas with their own CLAUDE.md):**
+  - [`src/integrations/social/CLAUDE.md`](src/integrations/social/CLAUDE.md) — social media providers
+  - [`src/ai/CLAUDE.md`](src/ai/CLAUDE.md) — AI Provider System, credits, persona, KB
+  - [`src/chat/CLAUDE.md`](src/chat/CLAUDE.md) — Mastra agents, MCP tools, IG webhook
 
-## O que vive aqui
+## What lives here
 
-**Lógica de negócio compartilhada** entre `apps/backend` e `apps/orchestrator`. Subdomínios principais:
+**Shared business logic** between `apps/backend` and `apps/orchestrator`. Main subdomains:
 
-| Subdomínio | Conteúdo |
+| Subdomain | Content |
 |---|---|
-| `database/prisma/` | Schema Prisma + repositories por tabela (`agencies`, `posts`, `credentials`, `profiles`, `users`, `sets`, `flows`, `subscriptions`, etc.) |
-| `integrations/social/` | 40+ providers de redes sociais — ver [filho](src/integrations/social/CLAUDE.md) |
-| `ai/` | Sistema de Provedores de IA, créditos, persona, KB — ver [filho](src/ai/CLAUDE.md) |
-| `chat/` | Mastra agents, MCP tools, webhook IG, knowledge base RAG — ver [filho](src/chat/CLAUDE.md) |
-| `dtos/` | Contratos compartilhados (`class-validator` + `class-transformer`) |
+| `database/prisma/` | Prisma schema + repositories per table (`agencies`, `posts`, `credentials`, `profiles`, `users`, `sets`, `flows`, `subscriptions`, etc.) |
+| `integrations/social/` | 40+ social media providers — see [child](src/integrations/social/CLAUDE.md) |
+| `ai/` | AI Provider System, credits, persona, KB — see [child](src/ai/CLAUDE.md) |
+| `chat/` | Mastra agents, MCP tools, IG webhook, knowledge base RAG — see [child](src/chat/CLAUDE.md) |
+| `dtos/` | Shared contracts (`class-validator` + `class-transformer`) |
 | `services/` | Auth, permissions, file upload, email, notifications, etc. |
-| `agent/` | Agent Mastra base + tools genéricas |
-| `temporal/` | Cliente Temporal compartilhado |
+| `agent/` | Mastra base agent + generic tools |
+| `temporal/` | Shared Temporal client |
 | `redis/` | Pub/sub, cache |
-| `crypto/` | AES-256-GCM helpers (mesma `ENCRYPTION_KEY` para OAuth e AI keys) |
-| `sentry/` | `initializeSentry`, `FILTER` global, exception capture |
-| `test/` | Helpers de teste (`createMock`, `createPrismaRepositoryMock`, `createTestModule`) |
+| `crypto/` | AES-256-GCM helpers (same `ENCRYPTION_KEY` for OAuth and AI keys) |
+| `sentry/` | `initializeSentry`, global `FILTER`, exception capture |
+| `test/` | Test helpers (`createMock`, `createPrismaRepositoryMock`, `createTestModule`) |
 
-## TDD Obrigatório
+## TDD is Mandatory
 
-Toda feature/bug/refactor segue o ciclo:
+Every feature/bug/refactor follows the cycle:
 
-1. **RED** — Escrever `.spec.ts` primeiro (deve falhar).
-2. **GREEN** — Implementar mínimo para passar.
-3. **REFACTOR** — Limpar mantendo testes verdes.
+1. **RED** — Write the `.spec.ts` first (it must fail).
+2. **GREEN** — Implement the minimum code to make it pass.
+3. **REFACTOR** — Clean up while keeping tests green.
 
-### Regras
+### Rules
 
-- **Nunca** commitar código de produção sem `.spec.ts` correspondente.
-- Specs são **co-localizados**: `foo.service.ts` → `foo.service.spec.ts` no mesmo diretório.
-- Sufixo é **`.spec.ts`** (não `.test.ts`).
-- Rode `pnpm test` (ou `pnpm test:libs`) antes de cada commit.
+- **Never** commit production code without a corresponding `.spec.ts`.
+- Specs are **co-located**: `foo.service.ts` → `foo.service.spec.ts` in the same directory.
+- The suffix is **`.spec.ts`** (not `.test.ts`).
+- Run `pnpm test` (or `pnpm test:libs`) before each commit.
 
-### Helpers de teste (sempre usar)
+### Test helpers (always use these)
 
-Todos exportados de `@gitroom/nestjs-libraries/test`:
+All exported from `@gitroom/nestjs-libraries/test`:
 
 ```typescript
 import {
@@ -58,116 +58,116 @@ import {
 } from '@gitroom/nestjs-libraries/test';
 ```
 
-| Helper | Quando usar |
+| Helper | When to use |
 |---|---|
-| `createMock<T>()` | Mock de qualquer classe via `jest-mock-extended` (não precisa de interface explícita) |
-| `createPrismaRepositoryMock('tableName')` | Mock de `PrismaRepository<T>` com `model.[table]` mockado |
-| `createTestModule({ service, mocks })` | Factory para `TestingModule` NestJS com mocks automáticos quando há muitas dependências |
+| `createMock<T>()` | Mock any class via `jest-mock-extended` (no need for an explicit interface) |
+| `createPrismaRepositoryMock('tableName')` | Mock a `PrismaRepository<T>` with `model.[table]` mocked |
+| `createTestModule({ service, mocks })` | Factory for a NestJS `TestingModule` with auto-mocks when there are many dependencies |
 
-### Abordagem por camada
+### Approach by layer
 
-| Camada | O que testar | Como mockar |
+| Layer | What to test | How to mock |
 |---|---|---|
-| **Service** | Lógica de negócio, branching, delegação | `createMock<Repository>()` ou `createTestModule()` |
-| **Repository** | Construção de queries Prisma, transformação de dados | `createPrismaRepositoryMock('table')` |
-| **Controller** | Camada HTTP, extração de params, guards | `@nestjs/testing` com service mockado |
-| **Social Provider** | Formatação de posts, auth URLs, tratamento de erros | Instanciação direta + `jest.spyOn` para HTTP |
+| **Service** | Business logic, branching, delegation | `createMock<Repository>()` or `createTestModule()` |
+| **Repository** | Prisma query construction, data transformation | `createPrismaRepositoryMock('table')` |
+| **Controller** | HTTP layer, param extraction, guards | `@nestjs/testing` with mocked service |
+| **Social Provider** | Post formatting, auth URLs, error handling | Direct instantiation + `jest.spyOn` for HTTP |
 
-### Estrutura do teste
+### Test structure
 
 ```typescript
-describe('NomeClasse', () => {
-  describe('nomeMetodo', () => {
-    it('deve <comportamento esperado> quando <condicao>', async () => {
-      // ARRANGE — preparar mocks e dados
-      // ACT — executar o metodo
-      // ASSERT — verificar resultado
+describe('ClassName', () => {
+  describe('methodName', () => {
+    it('should <expected behavior> when <condition>', async () => {
+      // ARRANGE — prepare mocks and data
+      // ACT — execute the method
+      // ASSERT — verify the result
     });
   });
 });
 ```
 
-### Prioridade de cobertura
+### Coverage priority
 
-1. Services com lógica de negócio (maior valor)
-2. Social providers (isolados, sem DI)
-3. Repositories com transformação de dados
-4. Controllers (camada fina, menor prioridade)
+1. Services with business logic (highest value)
+2. Social providers (isolated, no DI)
+3. Repositories with data transformation
+4. Controllers (thin layer, lowest priority)
 
-### Exemplos de referência
+### Reference examples
 
-- Service simples: `database/prisma/sets/sets.service.spec.ts`
+- Simple service: `database/prisma/sets/sets.service.spec.ts`
 - Repository: `database/prisma/sets/sets.repository.spec.ts`
-- AI provider system: rode `pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage` (56 specs)
+- AI provider system: run `pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage` (56 specs)
 
-## Padrões Específicos desta Lib
+## Library-Specific Patterns
 
 ### Repository pattern (Prisma)
 
-Toda tabela tem um repository em `database/prisma/<tabela>/<tabela>.repository.ts` que estende `PrismaRepository<T>`. Services injetam o repository, **nunca** usam `PrismaService` direto. Excessão única: composições muito específicas que precisam de transação multi-tabela (use `prisma.$transaction(...)` no service).
+Every table has a repository at `database/prisma/<table>/<table>.repository.ts` extending `PrismaRepository<T>`. Services inject the repository and **never** use `PrismaService` directly. The single exception: very specific compositions that need a multi-table transaction (use `prisma.$transaction(...)` in the service).
 
 ### DTOs
 
-DTOs compartilhados ficam em `dtos/<area>/<nome>.dto.ts`. Use `class-validator` para validação e `class-transformer` para serialização. **Mantenha sincronizado com o schema Prisma** quando representam entidades do DB.
+Shared DTOs live in `dtos/<area>/<name>.dto.ts`. Use `class-validator` for validation and `class-transformer` for serialization. **Keep them in sync with the Prisma schema** when they represent DB entities.
 
 ### Crypto
 
-Para criptografar valores sensíveis (OAuth tokens, AI keys, messaging tokens): use os helpers de `crypto/`. Variável de ambiente: `ENCRYPTION_KEY` (mesma usada em OAuth e em [AI](src/ai/CLAUDE.md)). AES-256-GCM é o esquema canônico.
+For encrypting sensitive values (OAuth tokens, AI keys, messaging tokens): use the `crypto/` helpers. Environment variable: `ENCRYPTION_KEY` (the same one used for OAuth and [AI](src/ai/CLAUDE.md)). AES-256-GCM is the canonical scheme.
 
-## Mapa de Arquivos-Chave
+## Key File Map
 
-| Arquivo | Finalidade |
+| File | Purpose |
 |---|---|
-| `src/database/prisma/schema.prisma` | Schema canônico (45+ models) |
-| `src/database/prisma/prisma.service.ts` | `PrismaService` raíz; injetar **só** em repositories |
-| `src/database/prisma/<tabela>/<tabela>.repository.ts` | Repositories por tabela (padrão `PrismaRepository<T>`) |
+| `src/database/prisma/schema.prisma` | Canonical schema (45+ models) |
+| `src/database/prisma/prisma.service.ts` | Root `PrismaService`; inject **only** in repositories |
+| `src/database/prisma/<table>/<table>.repository.ts` | Per-table repositories (`PrismaRepository<T>` pattern) |
 | `src/test/mock.factory.ts` | `createMock`, `createPrismaRepositoryMock` |
 | `src/test/create-testing-module.ts` | `createTestModule({ service, mocks })` |
-| `src/sentry/initialize.sentry.ts` | Bootstrap Sentry (chamado por `apps/backend/src/main.ts`) |
-| `src/sentry/sentry.exception.ts` | `FILTER` global de exceções |
+| `src/sentry/initialize.sentry.ts` | Sentry bootstrap (called by `apps/backend/src/main.ts`) |
+| `src/sentry/sentry.exception.ts` | Global exception `FILTER` |
 | `src/crypto/` | AES-256-GCM helpers |
 
-## Workflows Comuns
+## Common Workflows
 
-### Adicionar service novo
+### Add a new service
 
-1. **Spec primeiro** (RED): `<area>/<nome>.service.spec.ts` com cenários esperados, usando `createMock` ou `createTestModule`.
-2. **Implementar** `<area>/<nome>.service.ts` mínimo para o spec passar (GREEN).
-3. **Repository** se precisa de DB: `<area>/<nome>.repository.spec.ts` + `<area>/<nome>.repository.ts` estendendo `PrismaRepository<T>`.
-4. **Refactor** com testes verdes.
-5. Registrar provider no `<area>.module.ts` correspondente.
-6. Importar do controller (em `apps/backend`) ou activity (em `apps/orchestrator`) — nunca chame Prisma direto de fora do repository.
+1. **Spec first** (RED): `<area>/<name>.service.spec.ts` with expected scenarios, using `createMock` or `createTestModule`.
+2. **Implement** `<area>/<name>.service.ts` minimally to pass the spec (GREEN).
+3. **Repository** if DB access is needed: `<area>/<name>.repository.spec.ts` + `<area>/<name>.repository.ts` extending `PrismaRepository<T>`.
+4. **Refactor** with tests green.
+5. Register the provider in the corresponding `<area>.module.ts`.
+6. Import from a controller (in `apps/backend`) or activity (in `apps/orchestrator`) — never call Prisma directly outside the repository.
 
-### Adicionar tabela nova
+### Add a new table
 
-1. Editar `schema.prisma`, rodar `pnpm prisma-generate` + `pnpm prisma-db-push`.
-2. Criar repository com spec (RED → GREEN → REFACTOR).
-3. Criar service com spec.
-4. Criar DTO em `dtos/` se for entidade de contrato HTTP.
-5. **CHANGELOG.md** em `[Unreleased]` (descrever impacto, não detalhe técnico).
+1. Edit `schema.prisma`, run `pnpm prisma-generate` + `pnpm prisma-db-push`.
+2. Create the repository with a spec (RED → GREEN → REFACTOR).
+3. Create the service with a spec.
+4. Create the DTO under `dtos/` if it represents an HTTP contract.
+5. **CHANGELOG.md** under `[Unreleased]` (describe the user impact, not the technical detail).
 
-## Armadilhas Conhecidas
+## Known Pitfalls
 
-1. **Sintoma:** spec falhando por "Cannot find module '@gitroom/nestjs-libraries/test'" → **Causa:** path/alias mal configurado. **Correção:** verifique `tsconfig.json` na raiz e o `paths` do nestjs-libraries `tsconfig.lib.json`.
-2. **Sintoma:** mock de Prisma "leakando" entre testes → **Causa:** `createPrismaRepositoryMock` reutilizado entre `it`. **Correção:** crie o mock no `beforeEach`.
-3. **Sintoma:** service injetando `PrismaService` em vez de repository → **Causa:** atalho. **Correção:** crie repository, mesmo que mínimo. Mantém DI testável e mantém o padrão do monorepo.
-4. **Sintoma:** AES decryption retornando lixo após mudar deploy → **Causa:** `ENCRYPTION_KEY` mudou entre ambientes. **Correção:** preserve a key (é a mesma para OAuth e AI keys); rotacionar exige migration de re-encrypt.
-5. **Sintoma:** spec passa local mas falha no CI → **Causa:** ordem de testes (estado compartilhado, mock global). **Correção:** isole estado em `beforeEach`/`afterEach`; nunca use `--bail` para mascarar.
+1. **Symptom:** spec failing with `Cannot find module '@gitroom/nestjs-libraries/test'` → **Cause:** path/alias misconfigured. **Fix:** check `tsconfig.json` at the root and the `paths` in nestjs-libraries `tsconfig.lib.json`.
+2. **Symptom:** Prisma mock "leaks" between tests → **Cause:** `createPrismaRepositoryMock` reused across `it` blocks. **Fix:** create the mock in `beforeEach`.
+3. **Symptom:** service injecting `PrismaService` instead of a repository → **Cause:** shortcut. **Fix:** create a repository, even if minimal. Keeps DI testable and the monorepo pattern consistent.
+4. **Symptom:** AES decryption returning garbage after a deploy change → **Cause:** `ENCRYPTION_KEY` changed between environments. **Fix:** preserve the key (it's the same one for OAuth and AI keys); rotating it requires a re-encrypt migration.
+5. **Symptom:** spec passes locally but fails in CI → **Cause:** test ordering (shared state, global mock). **Fix:** isolate state in `beforeEach`/`afterEach`; never use `--bail` to mask the issue.
 
-## Comandos
+## Commands
 
 ```bash
-pnpm test                 # Todos os testes (com coverage)
-pnpm test:watch           # Watch mode durante desenvolvimento
-pnpm test:libs            # Apenas testes das libraries
-pnpm test:backend         # Apenas testes do backend (mas a lógica testada vive aqui)
-pnpm prisma-generate      # Após mudar schema.prisma
-pnpm prisma-db-push       # Aplicar schema ao banco
+pnpm test                 # All tests (with coverage)
+pnpm test:watch           # Watch mode during development
+pnpm test:libs            # Specs in the libraries only
+pnpm test:backend         # Specs in the backend (but the logic being tested lives here)
+pnpm prisma-generate      # After changing schema.prisma
+pnpm prisma-db-push       # Apply the schema to the database
 ```
 
-## Referências
+## References
 
-- [`src/ai/CLAUDE.md`](src/ai/CLAUDE.md) — AI Provider System detalhado
-- [`src/chat/CLAUDE.md`](src/chat/CLAUDE.md) — Mastra, MCP tools, webhook IG
-- [`src/integrations/social/CLAUDE.md`](src/integrations/social/CLAUDE.md) — providers e padrões OAuth
-- [`docs/architecture/`](../../docs/architecture/) — diagramas e ADRs
+- [`src/ai/CLAUDE.md`](src/ai/CLAUDE.md) — AI Provider System in detail
+- [`src/chat/CLAUDE.md`](src/chat/CLAUDE.md) — Mastra, MCP tools, IG webhook
+- [`src/integrations/social/CLAUDE.md`](src/integrations/social/CLAUDE.md) — providers and OAuth patterns
+- [`docs/architecture/`](../../docs/architecture/) — diagrams and ADRs

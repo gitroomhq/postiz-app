@@ -1,29 +1,31 @@
 # Copilot Coding Agent Instructions for Robô MultiPost
 
-Single source of truth: **[`CLAUDE.md`](../CLAUDE.md)** na raiz, com filhos
-por subárea (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
-`libraries/nestjs-libraries` e filhos `ai/`, `chat/`, `integrations/social/`,
+Single source of truth: **[`CLAUDE.md`](../CLAUDE.md)** at the repo root, with
+per-area children (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
+`libraries/nestjs-libraries` and children `ai/`, `chat/`, `integrations/social/`,
 `libraries/react-shared-libraries`).
 
-Antes de sugerir qualquer código:
+Before suggesting any code:
 
-1. Ler `CLAUDE.md` da raiz — princípios não-negociáveis e mapa do monorepo.
-2. Ler `CLAUDE.md` mais próximo do diretório onde está sugerindo (cascata).
-3. Conferir [`docs/`](../docs/) para arquitetura detalhada (AI Provider System,
-   Instagram automations, persona de IA, knowledge base, etc.) — os CLAUDE.md
-   referenciam por link.
+1. Read the root `CLAUDE.md` — non-negotiable principles and monorepo map.
+2. Read the closest `CLAUDE.md` to the directory you are editing (cascade).
+3. Check [`docs/`](../docs/) for detailed architecture (AI Provider System,
+   Instagram automations, AI persona, knowledge base, etc.) — the CLAUDE.md
+   files cross-reference these by link.
 
-Regras chave (não-exaustivas; ver `CLAUDE.md` para o conjunto completo):
+Key rules (non-exhaustive; see `CLAUDE.md` for the full set):
 
-- **PNPM only** — nunca sugerir `npm` ou `yarn`.
-- **Controller → Service → Repository** sem shortcut entre camadas.
-- **TDD obrigatório**: spec primeiro (`.spec.ts`), depois implementação.
-- **Sem `eslint-disable-next-line`**, sem componente UI do npm, sem string
-  hardcoded em JSX (sempre `useT()`).
-- **`AGENTS.md`** na raiz aponta para `CLAUDE.md` como single source of truth.
+- **PNPM only** — never suggest `npm` or `yarn`.
+- **Controller → Service → Repository** with no shortcut between layers.
+- **TDD is mandatory**: spec first (`.spec.ts`), then implementation.
+- No `eslint-disable-next-line`, no UI components from npm, no hardcoded
+  strings in JSX (always `useT()`).
+- **`AGENTS.md`** at the root points to `CLAUDE.md` as single source of truth.
 
-Conteúdo de Sentry (frontend) está em
-[`apps/frontend/CLAUDE.md`](../apps/frontend/CLAUDE.md). Conteúdo de Sentry
-(backend) está em [`apps/backend/CLAUDE.md`](../apps/backend/CLAUDE.md).
-Detalhes do provedor Zernio (ex-Late, mesma empresa rebrandeada) estão em
+Sentry frontend setup lives in
+[`apps/frontend/CLAUDE.md`](../apps/frontend/CLAUDE.md). Sentry backend
+setup lives in [`apps/backend/CLAUDE.md`](../apps/backend/CLAUDE.md).
+Zernio (formerly Late, same company rebranded) details live in
 [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md).
+
+All `CLAUDE.md` files are written in English. CHANGELOG and product docs in pt-BR.
