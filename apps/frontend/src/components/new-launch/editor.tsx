@@ -930,7 +930,6 @@ export const OnlyEditor = forwardRef<
       Underline,
       Bold,
       Italic,
-      Link,
       Code,
       Strike,
       Blockquote,
@@ -938,17 +937,13 @@ export const OnlyEditor = forwardRef<
       InterceptUnderlineShortcut,
       BulletList,
       ListItem,
-      // stops link propagation when more texts are typed after link insertion
-      Link.extend({
-        inclusive: false,
-      }),
       Placeholder.configure({
         placeholder: t('write_something', 'Write something …'),
         emptyEditorClass: 'is-editor-empty',
       }),
       ...(editorType === 'html' || editorType === 'markdown'
         ? [
-            Link.configure({
+            Link.extend({ inclusive: false }).configure({
               openOnClick: false,
               autolink: true,
               defaultProtocol: 'https',

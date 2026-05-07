@@ -578,7 +578,7 @@ export const convertToAscii = (value: string): string => {
       });
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<blockquote>(.+?)<\/blockquote>/gi, (match, p1) => {
+    .replace(/<blockquote>([\s\S]+?)<\/blockquote>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         return blockquote?.[char] || char;
       });
