@@ -61,7 +61,8 @@ export class MediaController {
     @GetProfileFromRequest() profile: Profile | null,
     @Req() req: Request,
     @Body('prompt') prompt: string,
-    isPicturePrompt = false
+    isPicturePrompt = false,
+    aspectRatio?: '1:1' | '9:16' | '16:9'
   ) {
     const total = await this._subscriptionService.checkCredits(org);
     if (total.credits <= 0) {
@@ -75,7 +76,8 @@ export class MediaController {
           prompt,
           org,
           isPicturePrompt,
-          profile?.id
+          profile?.id,
+          aspectRatio
         )),
     };
   }
@@ -85,14 +87,37 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @GetProfileFromRequest() profile: Profile | null,
     @Req() req: Request,
-    @Body('prompt') prompt: string
+    @Body('prompt') prompt: string,
+    @Body('aspectRatio') aspectRatioRaw?: string
   ) {
-    const image = await this.generateImage(org, profile, req, prompt, true);
+    const VALID = ['1:1', '9:16', '16:9'] as const;
+    type AspectRatio = (typeof VALID)[number];
+    const aspectRatio: AspectRatio | undefined =
+      aspectRatioRaw && (VALID as readonly string[]).includes(aspectRatioRaw)
+        ? (aspectRatioRaw as AspectRatio)
+        : undefined;
+
+    const image = await this.generateImage(
+      org,
+      profile,
+      req,
+      prompt,
+      true,
+      aspectRatio
+    );
     if (!image) {
       return false;
     }
 
-    const file = await this.storage.uploadSimple(image.output);
+    // `generateImage` com `isPicturePrompt=true` retorna `output` como
+    // base64 puro (sem prefix `data:`). `uploadSimple` espera URL ou
+    // data URL, entao montamos o prefix aqui antes de delegar — caso
+    // contrario o helper cai em fetch(base64Puro) e undici joga erro
+    // "Failed to parse URL".
+    const payload = image.output.startsWith('data:')
+      ? image.output
+      : `data:image/png;base64,${image.output}`;
+    const file = await this.storage.uploadSimple(payload);
 
     return this._mediaService.saveFile(org.id, file.split('/').pop(), file, undefined, profile?.id);
   }

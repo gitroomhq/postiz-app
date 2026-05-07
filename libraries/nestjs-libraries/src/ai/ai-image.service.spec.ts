@@ -38,10 +38,10 @@ describe('AiImageService', () => {
   });
 
   describe('generate (OpenRouter)', () => {
-    it('deve enviar modalities + image_config e devolver base64 puro', async () => {
+    it('deve enviar modalities + image_config com aspect_ratio default 1:1', async () => {
       resolver.resolve.mockResolvedValue(
         credentialFor({
-          options: { aspectRatioDefault: '16:9', imageSize: '2K' },
+          options: { imageSize: '2K' },
         }) as any
       );
 
@@ -81,11 +81,31 @@ describe('AiImageService', () => {
       const callBody = JSON.parse(((fetchSpy.mock.calls[0] as any)[1] as any).body);
       expect(callBody.modalities).toEqual(['image', 'text']);
       expect(callBody.image_config).toEqual({
-        aspect_ratio: '16:9',
+        aspect_ratio: '1:1',
         image_size: '2K',
       });
       expect(result.base64).toBe('AAA111ZZZ');
       expect(result.provider).toBe('openrouter');
+    });
+
+    it('deve enviar aspect_ratio 9:16 quando opts.aspectRatio = 9:16', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { images: [{ image_url: { url: 'data:image/png;base64,X' } }] } }],
+          }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      await service.generate('org-1', 'reel vertical', undefined, {
+        aspectRatio: '9:16',
+      });
+
+      const callBody = JSON.parse(((fetchSpy.mock.calls[0] as any)[1] as any).body);
+      expect(callBody.image_config.aspect_ratio).toBe('9:16');
     });
 
     it('deve lancar 502 quando OpenRouter retorna erro HTTP', async () => {
@@ -115,15 +135,12 @@ describe('AiImageService', () => {
   });
 
   describe('generate (OpenAI direto)', () => {
-    it('deve usar /v1/images/generations e devolver b64_json', async () => {
+    it('deve mapear aspect ratio para size correspondente em gpt-image-2', async () => {
       resolver.resolve.mockResolvedValue(
         credentialFor({
           provider: 'openai',
-          model: 'gpt-image-1',
-          options: {
-            quality: 'high',
-            aspectRatioDefault: '16:9',
-          },
+          model: 'gpt-image-2',
+          options: { quality: 'high' },
         }) as any
       );
 
@@ -137,22 +154,45 @@ describe('AiImageService', () => {
       );
       globalThis.fetch = fetchSpy as any;
 
-      const result = await service.generate('org-1', 'gato');
+      const result = await service.generate('org-1', 'gato', undefined, {
+        aspectRatio: '16:9',
+      });
 
-      expect(fetchSpy).toHaveBeenCalledWith(
-        'https://api.openai.com/v1/images/generations',
-        expect.any(Object)
-      );
       const callBody = JSON.parse(((fetchSpy.mock.calls[0] as any)[1] as any).body);
-      expect(callBody.model).toBe('gpt-image-1');
+      expect(callBody.model).toBe('gpt-image-2');
       expect(callBody.quality).toBe('high');
       expect(callBody.size).toBe('1536x1024'); // 16:9
-      expect(callBody.response_format).toBe('b64_json');
+      // gpt-image-* nao aceita response_format
+      expect(callBody.response_format).toBeUndefined();
       expect(result.base64).toBe('OPENAI_BASE64_DATA');
       expect(result.provider).toBe('openai');
     });
 
-    it('deve usar default model e tamanho quadrado quando nada configurado', async () => {
+    it('deve usar size 1024x1536 (vertical) quando aspectRatio = 9:16', async () => {
+      resolver.resolve.mockResolvedValue(
+        credentialFor({
+          provider: 'openai',
+          model: 'gpt-image-1-mini',
+        }) as any
+      );
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({ data: [{ b64_json: 'V' }] }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      await service.generate('org-1', 'x', undefined, {
+        aspectRatio: '9:16',
+      });
+
+      const callBody = JSON.parse(((fetchSpy.mock.calls[0] as any)[1] as any).body);
+      expect(callBody.model).toBe('gpt-image-1-mini');
+      expect(callBody.size).toBe('1024x1536');
+    });
+
+    it('deve usar default model gpt-image-2 e size 1024x1024 quando nada configurado', async () => {
       resolver.resolve.mockResolvedValue(
         credentialFor({
           provider: 'openai',
@@ -171,9 +211,9 @@ describe('AiImageService', () => {
       const result = await service.generate('org-1', 'x');
 
       const callBody = JSON.parse(((fetchSpy.mock.calls[0] as any)[1] as any).body);
-      expect(callBody.model).toBe('gpt-image-1');
+      expect(callBody.model).toBe('gpt-image-2');
       expect(callBody.size).toBe('1024x1024');
-      expect(result.model).toBe('gpt-image-1');
+      expect(result.model).toBe('gpt-image-2');
     });
   });
 

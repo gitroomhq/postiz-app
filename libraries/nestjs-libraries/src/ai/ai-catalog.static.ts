@@ -59,18 +59,18 @@ const OPENAI_IMAGE: CatalogModel[] = [
     kind: 'IMAGE',
     outputModalities: ['image'],
     imageConfig: {
-      aspectRatios: ['1:1', '3:2', '2:3', '16:9', '9:16'],
+      aspectRatios: ['1:1', '9:16', '16:9'],
       sizes: ['low', 'medium', 'high'],
     },
   },
   {
-    id: 'gpt-image-1',
-    displayName: 'GPT Image 1',
+    id: 'gpt-image-1-mini',
+    displayName: 'GPT Image 1 mini',
     provider: 'openai',
     kind: 'IMAGE',
     outputModalities: ['image'],
     imageConfig: {
-      aspectRatios: ['1:1', '3:2', '2:3'],
+      aspectRatios: ['1:1', '9:16', '16:9'],
       sizes: ['low', 'medium', 'high'],
     },
   },

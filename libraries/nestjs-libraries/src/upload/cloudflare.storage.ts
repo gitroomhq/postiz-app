@@ -2,10 +2,9 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
-// @ts-ignore
-import { getExtension } from 'mime';
 import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
+import { loadFromUrlOrDataUrl } from './storage.helpers';
 
 class CloudflareStorage implements IUploadProvider {
   private _client: S3Client;
@@ -58,19 +57,15 @@ class CloudflareStorage implements IUploadProvider {
   }
 
   async uploadSimple(path: string) {
-    const loadImage = await fetch(path);
-    const contentType =
-      loadImage?.headers?.get('content-type') ||
-      loadImage?.headers?.get('Content-Type');
-    const extension = getExtension(contentType) ||
-      path.split('?')[0].split('#')[0].split('.').pop() ||
-      'bin';
+    const { buffer, contentType, extension } = await loadFromUrlOrDataUrl(
+      path
+    );
     const id = makeId(10);
 
     const params = {
       Bucket: this._bucketName,
       Key: `${id}.${extension}`,
-      Body: Buffer.from(await loadImage.arrayBuffer()),
+      Body: buffer,
       ContentType: contentType,
       ChecksumMode: 'DISABLED',
     };

@@ -4,6 +4,7 @@ import {
   AiCredentialService,
   ResolvedAiCredential,
 } from './ai-credential.service';
+import { ProfileService } from '@gitroom/nestjs-libraries/database/prisma/profiles/profile.service';
 
 const NOT_CONFIGURED_MESSAGE =
   'Configure suas chaves em Settings > AI';
@@ -13,26 +14,47 @@ const NOT_SHARED_MESSAGE =
 
 @Injectable()
 export class AiProviderResolverService {
-  constructor(private _credentialService: AiCredentialService) {}
+  constructor(
+    private _credentialService: AiCredentialService,
+    private _profileService: ProfileService
+  ) {}
 
   /**
    * Resolve a credencial efetiva para uma chamada de IA.
    * Ordem de precedencia:
-   *   1. Credencial PROFILE do profileId fornecido
-   *   2. Credencial WORKSPACE com shareDefault=true (ou sem profileId)
-   *   3. HttpException(402)
+   *   1. Credencial PROFILE (apenas para perfis secundarios — o perfil
+   *      default e dono da config workspace e cai direto no scope=WORKSPACE)
+   *   2. Credencial WORKSPACE com shareDefault=true (ou se admin esta no
+   *      perfil default, que e dono da config)
+   *   3. HttpException(412 Precondition Failed)
    */
   async resolve(
     organizationId: string,
     kind: AiKind,
     profileId?: string
   ): Promise<ResolvedAiCredential> {
+    // Se o profileId passado e o do perfil default da agencia, tratamos
+    // como scope=WORKSPACE — o admin do default e o dono da config e
+    // deve poder usar mesmo com shareDefault=false (que e a flag para
+    // PERFIS SECUNDARIOS herdarem). Sem isso, qualquer chamada partindo
+    // do default que tenha shareDefault=false retornaria 412.
+    let effectiveProfileId = profileId;
     if (profileId) {
+      const profile = await this._profileService.getProfileById(
+        organizationId,
+        profileId
+      );
+      if (profile?.isDefault) {
+        effectiveProfileId = undefined;
+      }
+    }
+
+    if (effectiveProfileId) {
       const profileCred = await this._credentialService.getRaw(
         organizationId,
         'PROFILE',
         kind,
-        profileId
+        effectiveProfileId
       );
       if (profileCred) {
         this.markUsedInBackground(profileCred.id);
@@ -46,7 +68,8 @@ export class AiProviderResolverService {
       kind
     );
     if (workspaceCred) {
-      const allowedForProfile = !profileId || workspaceCred.shareDefault;
+      const allowedForProfile =
+        !effectiveProfileId || workspaceCred.shareDefault;
       if (allowedForProfile) {
         this.markUsedInBackground(workspaceCred.id);
         return workspaceCred;

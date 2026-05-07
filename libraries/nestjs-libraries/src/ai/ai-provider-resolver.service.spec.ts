@@ -1,5 +1,6 @@
 import { AiProviderResolverService } from './ai-provider-resolver.service';
 import { AiCredentialService } from './ai-credential.service';
+import { ProfileService } from '@gitroom/nestjs-libraries/database/prisma/profiles/profile.service';
 import { createMock } from '@gitroom/nestjs-libraries/test';
 import { MockProxy } from 'jest-mock-extended';
 import { HttpException } from '@nestjs/common';
@@ -21,16 +22,25 @@ const mockResolved = (overrides: Record<string, any> = {}): Record<string, any> 
 describe('AiProviderResolverService', () => {
   let service: AiProviderResolverService;
   let credentialService: MockProxy<AiCredentialService> & AiCredentialService;
+  let profileService: MockProxy<ProfileService> & ProfileService;
 
   beforeEach(() => {
     credentialService = createMock<AiCredentialService>();
+    profileService = createMock<ProfileService>();
     // markUsed roda em background — precisa retornar Promise pra .catch funcionar
     credentialService.markUsed.mockResolvedValue(undefined);
-    service = new AiProviderResolverService(credentialService);
+    // Default: profileService.getProfileById retorna null (perfil nao
+    // achado). Cada teste sobrescreve quando precisa de isDefault=true/false.
+    profileService.getProfileById.mockResolvedValue(null as any);
+    service = new AiProviderResolverService(credentialService, profileService);
   });
 
   describe('cadeia de resolucao', () => {
     it('deve retornar credencial do perfil quando existe', async () => {
+      profileService.getProfileById.mockResolvedValue({
+        id: 'profile-1',
+        isDefault: false,
+      } as any);
       const profileCred = mockResolved({
         id: 'cred-profile',
         scope: 'PROFILE',
@@ -52,7 +62,40 @@ describe('AiProviderResolverService', () => {
       expect(credentialService.markUsed).toHaveBeenCalledWith('cred-profile');
     });
 
-    it('deve cair pro workspace quando perfil nao tem credencial', async () => {
+    it('deve usar workspace direto quando profileId e do perfil default (mesmo sem shareDefault)', async () => {
+      // Caso real: admin no perfil default da agencia clicou AI Image.
+      // O backend recebe profileId=default-id mas a config foi salva como
+      // scope=WORKSPACE com shareDefault=false (admin nao quer
+      // compartilhar com clientes). O resolver deve detectar via
+      // ProfileService que e o default e tratar como WORKSPACE direto,
+      // sem aplicar a regra de shareDefault.
+      profileService.getProfileById.mockResolvedValue({
+        id: 'default-id',
+        isDefault: true,
+      } as any);
+      const wsCred = mockResolved({
+        id: 'cred-ws',
+        shareDefault: false, // <-- nao compartilha
+      });
+      credentialService.getRaw.mockResolvedValueOnce(wsCred as any);
+
+      const result = await service.resolve('org-1', 'TEXT', 'default-id');
+
+      expect(result).toBe(wsCred);
+      // Nao deve ter consultado scope=PROFILE (porque e default)
+      expect(credentialService.getRaw).toHaveBeenCalledTimes(1);
+      expect(credentialService.getRaw).toHaveBeenCalledWith(
+        'org-1',
+        'WORKSPACE',
+        'TEXT'
+      );
+    });
+
+    it('deve cair pro workspace quando perfil secundario nao tem credencial', async () => {
+      profileService.getProfileById.mockResolvedValue({
+        id: 'profile-1',
+        isDefault: false,
+      } as any);
       const wsCred = mockResolved({
         id: 'cred-ws',
         shareDefault: true,
@@ -83,7 +126,11 @@ describe('AiProviderResolverService', () => {
       );
     });
 
-    it('deve negar workspace para perfil quando shareDefault=false', async () => {
+    it('deve negar workspace para perfil secundario quando shareDefault=false', async () => {
+      profileService.getProfileById.mockResolvedValue({
+        id: 'profile-1',
+        isDefault: false,
+      } as any);
       const wsCred = mockResolved({ shareDefault: false });
       credentialService.getRaw
         .mockResolvedValueOnce(null) // PROFILE

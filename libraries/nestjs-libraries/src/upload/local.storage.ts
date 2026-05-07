@@ -1,19 +1,12 @@
 import { IUploadProvider } from './upload.interface';
 import { mkdirSync, unlink, writeFileSync } from 'fs';
-// @ts-ignore
-import mime from 'mime';
 import { extname } from 'path';
+import { loadFromUrlOrDataUrl } from './storage.helpers';
 export class LocalStorage implements IUploadProvider {
   constructor(private uploadDirectory: string) {}
 
   async uploadSimple(path: string) {
-    const loadImage = await fetch(path);
-    const contentType =
-      loadImage?.headers?.get('content-type') ||
-      loadImage?.headers?.get('Content-Type');
-    const findExtension = mime.getExtension(contentType) ||
-      path.split('?')[0].split('#')[0].split('.').pop() ||
-      'bin';
+    const { buffer, extension } = await loadFromUrlOrDataUrl(path);
 
     const now = new Date();
     const year = now.getFullYear();
@@ -29,10 +22,9 @@ export class LocalStorage implements IUploadProvider {
       .map(() => Math.round(Math.random() * 16).toString(16))
       .join('');
 
-    const filePath = `${dir}/${randomName}.${findExtension}`;
-    const publicPath = `${innerPath}/${randomName}.${findExtension}`;
-    // Logic to save the file to the filesystem goes here
-    writeFileSync(filePath, Buffer.from(await loadImage.arrayBuffer()));
+    const filePath = `${dir}/${randomName}.${extension}`;
+    const publicPath = `${innerPath}/${randomName}.${extension}`;
+    writeFileSync(filePath, buffer);
 
     return process.env.FRONTEND_URL + '/uploads' + publicPath;
   }

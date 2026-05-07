@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -12,11 +12,15 @@ import {
   Sections,
   SubscriptionException,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
-import { AiImageService } from '@gitroom/nestjs-libraries/ai/ai-image.service';
+import {
+  AiAspectRatio,
+  AiImageService,
+} from '@gitroom/nestjs-libraries/ai/ai-image.service';
 import { AiTextService } from '@gitroom/nestjs-libraries/ai/ai-text.service';
 
 @Injectable()
 export class MediaService {
+  private readonly _logger = new Logger(MediaService.name);
   private storage = UploadFactory.createStorage();
 
   constructor(
@@ -40,24 +44,42 @@ export class MediaService {
     prompt: string,
     org: Organization,
     generatePromptFirst?: boolean,
-    profileId?: string
+    profileId?: string,
+    aspectRatio?: AiAspectRatio
   ) {
     const generating = await this._subscriptionService.useCredit(
       org,
       'ai_images',
       async () => {
         let finalPrompt = prompt;
+        // Enrichment do prompt e best-effort: se a credencial de TEXT
+        // nao estiver configurada (412), seguimos com o prompt original.
+        // Sem isso, configurar so IMAGE em Settings > AI Provider quebrava
+        // a geracao com erro 412 mesmo a chave de imagem estando OK.
         if (generatePromptFirst) {
-          finalPrompt = await this._aiTextService.generatePromptForPicture(
-            org.id,
-            prompt,
-            profileId
-          );
+          try {
+            finalPrompt = await this._aiTextService.generatePromptForPicture(
+              org.id,
+              prompt,
+              profileId
+            );
+          } catch (e) {
+            const status =
+              e instanceof HttpException ? e.getStatus() : undefined;
+            if (status === 412) {
+              this._logger.warn(
+                'TEXT credential nao configurada, seguindo com prompt original sem enrichment'
+              );
+            } else {
+              throw e;
+            }
+          }
         }
         const result = await this._aiImageService.generate(
           org.id,
           finalPrompt,
-          profileId
+          profileId,
+          aspectRatio ? { aspectRatio } : undefined
         );
         return result.base64;
       }

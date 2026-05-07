@@ -15,7 +15,7 @@ const DEFAULT_TEXT_MODELS: Record<string, string> = {
 
 const DEFAULT_IMAGE_MODELS: Record<string, string> = {
   openrouter: 'google/gemini-3.1-flash-image-preview',
-  openai: 'gpt-image-1',
+  openai: 'gpt-image-2',
 };
 
 export interface TextClientResult {

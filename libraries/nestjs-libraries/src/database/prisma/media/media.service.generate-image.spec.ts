@@ -63,7 +63,12 @@ describe('MediaService.generateImage', () => {
       'ai_images',
       expect.any(Function)
     );
-    expect(aiImage.generate).toHaveBeenCalledWith('org-1', 'um gato', undefined);
+    expect(aiImage.generate).toHaveBeenCalledWith(
+      'org-1',
+      'um gato',
+      undefined,
+      undefined
+    );
     expect(aiText.generatePromptForPicture).not.toHaveBeenCalled();
     expect(result).toBe('BASE64_DATA');
   });
@@ -103,8 +108,76 @@ describe('MediaService.generateImage', () => {
     expect(aiImage.generate).toHaveBeenCalledWith(
       'org-1',
       'prompt enriquecido com camera, iluminacao etc',
+      undefined,
       undefined
     );
+  });
+
+  it('deve seguir com prompt original quando enrichment lanca 412 (TEXT nao configurado)', async () => {
+    const aiImage = createMock<AiImageService>();
+    const aiText = createMock<AiTextService>();
+    const subscription = createMock<SubscriptionService>();
+    // Importar o tipo HttpException via require pra evitar problemas de
+    // alias no spec
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { HttpException } = require('@nestjs/common');
+
+    subscription.useCredit.mockImplementation(async (_org, _type, func) => func());
+    aiText.generatePromptForPicture.mockRejectedValue(
+      new HttpException('Configure suas chaves', 412)
+    );
+    aiImage.generate.mockResolvedValue({
+      base64: 'fallback-ok',
+      provider: 'openai',
+      model: 'gpt-image-1',
+      credentialId: 'c',
+    });
+
+    const service = new MediaService(
+      null as any,
+      null as any,
+      subscription,
+      null as any,
+      aiImage,
+      aiText
+    );
+
+    const result = await service.generateImage('gato', buildOrg(), true);
+
+    // Tentou enriquecer mas o IMAGE foi chamado com o prompt original
+    expect(aiText.generatePromptForPicture).toHaveBeenCalled();
+    expect(aiImage.generate).toHaveBeenCalledWith(
+      'org-1',
+      'gato',
+      undefined,
+      undefined
+    );
+    expect(result).toBe('fallback-ok');
+  });
+
+  it('deve propagar erro nao-412 do enrichment', async () => {
+    const aiImage = createMock<AiImageService>();
+    const aiText = createMock<AiTextService>();
+    const subscription = createMock<SubscriptionService>();
+
+    subscription.useCredit.mockImplementation(async (_org, _type, func) => func());
+    aiText.generatePromptForPicture.mockRejectedValue(
+      new Error('crash inesperado')
+    );
+
+    const service = new MediaService(
+      null as any,
+      null as any,
+      subscription,
+      null as any,
+      aiImage,
+      aiText
+    );
+
+    await expect(
+      service.generateImage('gato', buildOrg(), true)
+    ).rejects.toThrow('crash inesperado');
+    expect(aiImage.generate).not.toHaveBeenCalled();
   });
 
   it('deve repassar profileId nas chamadas internas quando fornecido', async () => {
@@ -134,7 +207,37 @@ describe('MediaService.generateImage', () => {
     expect(aiImage.generate).toHaveBeenCalledWith(
       'org-1',
       'prompt',
-      'profile-9'
+      'profile-9',
+      undefined
     );
+  });
+
+  it('deve repassar aspectRatio nas chamadas internas quando fornecido', async () => {
+    const aiImage = createMock<AiImageService>();
+    const aiText = createMock<AiTextService>();
+    const subscription = createMock<SubscriptionService>();
+
+    subscription.useCredit.mockImplementation(async (_org, _type, func) => func());
+    aiImage.generate.mockResolvedValue({
+      base64: 'X',
+      provider: 'openrouter',
+      model: 'm',
+      credentialId: 'c',
+    });
+
+    const service = new MediaService(
+      null as any,
+      null as any,
+      subscription,
+      null as any,
+      aiImage,
+      aiText
+    );
+
+    await service.generateImage('prompt', buildOrg(), false, undefined, '9:16');
+
+    expect(aiImage.generate).toHaveBeenCalledWith('org-1', 'prompt', undefined, {
+      aspectRatio: '9:16',
+    });
   });
 });

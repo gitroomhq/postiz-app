@@ -21,24 +21,6 @@ export const ImageOptionsSchema = z
   .object({
     quality: z.enum(['low', 'medium', 'high', 'auto']).optional(),
     imageSize: z.enum(['0.5K', '1K', '2K', '4K']).optional(),
-    aspectRatioDefault: z
-      .enum([
-        '1:1',
-        '2:3',
-        '3:2',
-        '3:4',
-        '4:3',
-        '4:5',
-        '5:4',
-        '9:16',
-        '16:9',
-        '21:9',
-        '1:4',
-        '4:1',
-        '1:8',
-        '8:1',
-      ])
-      .optional(),
     numImages: z.number().int().min(1).max(4).optional(),
   })
   .strict();

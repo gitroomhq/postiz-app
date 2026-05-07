@@ -5,16 +5,27 @@ import { ImageOptions } from './ai-credential.schemas';
 const OPENAI_IMAGE_GEN_URL = 'https://api.openai.com/v1/images/generations';
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const ASPECT_TO_OPENAI_SIZE: Record<string, string> = {
+const DEFAULT_OPENAI_MODEL = 'gpt-image-2';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3.1-flash-image-preview';
+
+export type AiAspectRatio = '1:1' | '9:16' | '16:9';
+const DEFAULT_ASPECT_RATIO: AiAspectRatio = '1:1';
+
+/**
+ * Mapeia aspect ratio universal (`1:1`, `9:16`, `16:9`) para o `size`
+ * literal que a API OpenAI espera. Os 3 tamanhos abaixo cobrem
+ * `gpt-image-2` e `gpt-image-1-mini` (familia atual). Modelos legacy
+ * (DALL-E 2/3, gpt-image-1) nao sao mais expostos no catalogo.
+ */
+const ASPECT_TO_OPENAI_SIZE: Record<AiAspectRatio, string> = {
   '1:1': '1024x1024',
-  '3:2': '1536x1024',
-  '2:3': '1024x1536',
-  '16:9': '1536x1024',
   '9:16': '1024x1536',
+  '16:9': '1536x1024',
 };
 
-const DEFAULT_OPENAI_MODEL = 'gpt-image-1';
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3.1-flash-image-preview';
+export interface GenerateImageOptions {
+  aspectRatio?: AiAspectRatio;
+}
 
 export interface GeneratedImage {
   base64: string;
@@ -32,11 +43,16 @@ export class AiImageService {
   /**
    * Gera imagem para o prompt informado e retorna base64 puro
    * (sem prefixo data:image/...).
+   *
+   * @param opts.aspectRatio  '1:1' (default), '9:16' (vertical), '16:9' (horizontal)
+   *                          Os 3 valores universais sao suportados por
+   *                          todos os modelos do catalogo.
    */
   async generate(
     organizationId: string,
     prompt: string,
-    profileId?: string
+    profileId?: string,
+    opts: GenerateImageOptions = {}
   ): Promise<GeneratedImage> {
     const credential = await this._resolver.resolve(
       organizationId,
@@ -44,6 +60,7 @@ export class AiImageService {
       profileId
     );
     const options = (credential.options ?? {}) as ImageOptions;
+    const aspectRatio: AiAspectRatio = opts.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
     let base64: string;
     let modelUsed: string;
@@ -54,7 +71,8 @@ export class AiImageService {
         credential.apiKey,
         modelUsed,
         prompt,
-        options
+        options,
+        aspectRatio
       );
     } else if (credential.provider === 'openrouter') {
       modelUsed = credential.model ?? DEFAULT_OPENROUTER_MODEL;
@@ -62,7 +80,8 @@ export class AiImageService {
         credential.apiKey,
         modelUsed,
         prompt,
-        options
+        options,
+        aspectRatio
       );
     } else {
       throw new HttpException(
@@ -83,18 +102,16 @@ export class AiImageService {
     apiKey: string,
     model: string,
     prompt: string,
-    options: ImageOptions
+    options: ImageOptions,
+    aspectRatio: AiAspectRatio
   ): Promise<string> {
-    const size = options.aspectRatioDefault
-      ? ASPECT_TO_OPENAI_SIZE[options.aspectRatioDefault] ?? '1024x1024'
-      : '1024x1024';
+    const size = ASPECT_TO_OPENAI_SIZE[aspectRatio];
 
     const body: Record<string, unknown> = {
       model,
       prompt,
       n: options.numImages ?? 1,
       size,
-      response_format: 'b64_json',
     };
     if (options.quality && options.quality !== 'auto') {
       body.quality = options.quality;
@@ -132,12 +149,12 @@ export class AiImageService {
     apiKey: string,
     model: string,
     prompt: string,
-    options: ImageOptions
+    options: ImageOptions,
+    aspectRatio: AiAspectRatio
   ): Promise<string> {
-    const imageConfig: Record<string, string> = {};
-    if (options.aspectRatioDefault) {
-      imageConfig.aspect_ratio = options.aspectRatioDefault;
-    }
+    const imageConfig: Record<string, string> = {
+      aspect_ratio: aspectRatio,
+    };
     if (options.imageSize) {
       imageConfig.image_size = options.imageSize;
     }
@@ -146,10 +163,8 @@ export class AiImageService {
       model,
       messages: [{ role: 'user', content: prompt }],
       modalities: ['image', 'text'],
+      image_config: imageConfig,
     };
-    if (Object.keys(imageConfig).length > 0) {
-      body.image_config = imageConfig;
-    }
 
     const res = await fetch(OPENROUTER_CHAT_URL, {
       method: 'POST',
