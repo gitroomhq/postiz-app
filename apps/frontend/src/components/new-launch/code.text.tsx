@@ -4,7 +4,6 @@ export const CodeText: FC<{
   editor: any;
 }> = ({ editor }) => {
   const mark = () => {
-    editor?.commands?.unsetUnderline();
     editor?.commands?.toggleCode();
     editor?.commands?.focus();
   };

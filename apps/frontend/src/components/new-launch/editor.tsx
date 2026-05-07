@@ -21,7 +21,6 @@ import { ItalicText } from '@gitroom/frontend/components/new-launch/italic.text'
 import { CodeText } from '@gitroom/frontend/components/new-launch/code.text';
 import { StrikeText } from '@gitroom/frontend/components/new-launch/strike.text';
 import { BlockquoteText } from '@gitroom/frontend/components/new-launch/blockquote.text';
-import { LinkText } from '@gitroom/frontend/components/new-launch/link.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import {
@@ -802,10 +801,13 @@ export const Editor: FC<{
                       {editorType === 'html' && identifier === 'telegram' && (
                         <>
                           <ItalicText editor={editorRef?.current?.editor} />
-                          <LinkText editor={editorRef?.current?.editor} />
                           <StrikeText editor={editorRef?.current?.editor} />
                           <BlockquoteText editor={editorRef?.current?.editor} />
                           <CodeText editor={editorRef?.current?.editor} />
+                          <AComponent
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
                         </>
                       )}
                       {(editorType === 'markdown' || editorType === 'html') &&
