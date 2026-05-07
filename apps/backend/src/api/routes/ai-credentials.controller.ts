@@ -19,6 +19,9 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { AiCredentialService } from '@gitroom/nestjs-libraries/ai/ai-credential.service';
+import { AiProviderResolverService } from '@gitroom/nestjs-libraries/ai/ai-provider-resolver.service';
+import { GetProfileFromRequest } from '@gitroom/nestjs-libraries/user/profile.from.request';
+import { Profile } from '@prisma/client';
 import { ProfileService } from '@gitroom/nestjs-libraries/database/prisma/profiles/profile.service';
 import {
   SaveAiCredentialPayload,
@@ -45,7 +48,8 @@ interface ScopeContext {
 export class AiCredentialsController {
   constructor(
     private _credentialService: AiCredentialService,
-    private _profileService: ProfileService
+    private _profileService: ProfileService,
+    private _resolver: AiProviderResolverService
   ) {}
 
   /**
@@ -139,6 +143,44 @@ export class AiCredentialsController {
       kind,
       ctx.profileId
     );
+  }
+
+  /**
+   * Retorna a credencial EFETIVA (resolver completo: PROFILE → WORKSPACE)
+   * sanitizada — sem expor a apiKey. Usado por componentes que precisam
+   * saber qual modelo/options esta ativo para o perfil atual (ex: modal
+   * AI Video que mostra "Modelo: Seedance 2.0").
+   *
+   * Nao requer permissao de ADMIN — qualquer usuario do org pode ver
+   * o modelo configurado, ja que so e leitura de metadados.
+   */
+  @Get('/:kind/effective')
+  async getEffective(
+    @GetOrgFromRequest() org: Organization,
+    @GetProfileFromRequest() profile: Profile | null,
+    @Param('kind') kindRaw: string
+  ) {
+    const kind = parseKindParam(kindRaw);
+    try {
+      const resolved = await this._resolver.resolve(
+        org.id,
+        kind,
+        profile?.id
+      );
+      return {
+        provider: resolved.provider,
+        model: resolved.model,
+        fallbackModel: resolved.fallbackModel,
+        options: resolved.options,
+      };
+    } catch (e) {
+      // 412 = nao configurado → retorna null para o frontend renderizar
+      // o estado "configure suas chaves" sem mostrar erro intrusivo.
+      if (e instanceof HttpException && e.getStatus() === 412) {
+        return null;
+      }
+      throw e;
+    }
   }
 
   @Post('/:kind/test')

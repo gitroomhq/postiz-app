@@ -7,6 +7,7 @@ import { AiImageService } from './ai-image.service';
 import { AiProviderResolverService } from './ai-provider-resolver.service';
 import { AiProviderTestService } from './ai-provider-test.service';
 import { AiTextService } from './ai-text.service';
+import { AiVideoService } from './ai-video.service';
 import { AiWebSearchService } from './ai-web-search.service';
 
 // DatabaseModule e Global e ja exporta PrismaRepository + EncryptionService.
@@ -20,6 +21,7 @@ import { AiWebSearchService } from './ai-web-search.service';
     AiProviderResolverService,
     AiProviderTestService,
     AiTextService,
+    AiVideoService,
     AiWebSearchService,
   ],
   exports: [
@@ -31,6 +33,7 @@ import { AiWebSearchService } from './ai-web-search.service';
     AiProviderResolverService,
     AiProviderTestService,
     AiTextService,
+    AiVideoService,
     AiWebSearchService,
   ],
 })

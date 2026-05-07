@@ -132,11 +132,10 @@ export const AiProviderSettingsSection: React.FC = () => {
           title={t('ai_provider_video_title', 'Vídeo')}
           description={t(
             'ai_provider_video_desc',
-            'Geração de vídeo (Veo3 via KieAI hoje, OpenRouter no futuro).'
+            'Geração de vídeo via KieAI (Seedance 2.0, Veo 3.1). Suporta texto-para-vídeo (T2V) e imagem-para-vídeo (I2V).'
           )}
           icon={<VideoIcon />}
           providers={[{ value: 'kieai', label: 'KieAI' }]}
-          comingSoon
         />
 
         <AiKindCard

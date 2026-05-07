@@ -17,6 +17,10 @@ import {
   AiImageService,
 } from '@gitroom/nestjs-libraries/ai/ai-image.service';
 import { AiTextService } from '@gitroom/nestjs-libraries/ai/ai-text.service';
+import {
+  AiVideoService,
+  GenerateVideoInput,
+} from '@gitroom/nestjs-libraries/ai/ai-video.service';
 
 @Injectable()
 export class MediaService {
@@ -29,7 +33,8 @@ export class MediaService {
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager,
     private _aiImageService: AiImageService,
-    private _aiTextService: AiTextService
+    private _aiTextService: AiTextService,
+    private _aiVideoService: AiVideoService
   ) {}
 
   async deleteMedia(org: string, id: string, profileId?: string) {
@@ -155,6 +160,51 @@ export class MediaService {
         const file = await this.storage.uploadSimple(loadedData);
         return this.saveFile(org.id, file.split('/').pop(), file);
       }
+    );
+  }
+
+  /**
+   * Geracao de video via Kie.ai (Seedance/Veo) — fluxo novo do AI Provider
+   * System. Diferente de `generateVideo()` que usa o VideoManager legado
+   * (HeyGen, ImagesSlides etc), este metodo:
+   *  - Resolve credencial via AiVideoService (provider=kieai, modelo
+   *    escolhido em Settings).
+   *  - Usa polling de 30s (max 10min) — bloqueia a request, mas e a melhor
+   *    opcao MVP sem expor webhook publico.
+   *  - Faz uploadSimple do URL hospedado pelo kie.ai para storage propria
+   *    (R2/local) imediatamente para evitar expirar.
+   *  - Decrementa credito ai_videos via useCredit.
+   *
+   * Reusado pelo controller `/ai/video/generate` e pelo MCP tool
+   * `generateVideoTool` do agente.
+   */
+  async generateAiVideo(
+    org: Organization,
+    input: GenerateVideoInput,
+    profileId?: string
+  ) {
+    return this._subscriptionService.useCredit(
+      org,
+      'ai_videos',
+      async () => {
+        const generated = await this._aiVideoService.generate(
+          org.id,
+          input,
+          profileId
+        );
+
+        const file = await this.storage.uploadSimple(generated.url);
+        if (!file) {
+          throw new HttpException(
+            'Falha ao baixar video do kie.ai para storage proprio.',
+            502
+          );
+        }
+
+        const fileName = file.split('/').pop() ?? 'video.mp4';
+        return this.saveFile(org.id, fileName, file, undefined, profileId);
+      },
+      profileId
     );
   }
 

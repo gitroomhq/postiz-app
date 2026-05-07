@@ -1,5 +1,7 @@
+'use client';
+
 import { Button } from '@gitroom/react/form/button';
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import Loading from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -7,231 +9,518 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { VideoWrapper } from '@gitroom/frontend/components/videos/video.render.component';
-import { FormProvider, useForm } from 'react-hook-form';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { VideoContextWrapper } from '@gitroom/frontend/components/videos/video.context.wrapper';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 
-export const Modal: FC<{
+type Mode = 'T2V' | 'I2V';
+type AspectRatio = '1:1' | '9:16' | '16:9';
+
+interface VideoModalProps {
   close: () => void;
-  value: string;
-  type: any;
-  setLoading: (loading: boolean) => void;
+  setLoading: (v: boolean) => void;
   onChange: (params: { id: string; path: string }) => void;
-}> = (props) => {
-  const { type, value, onChange, close, setLoading } = props;
+}
+
+interface ConfiguredVideo {
+  configured: boolean;
+  model?: string;
+  modelLabel?: string;
+  enrichDefault?: boolean;
+}
+
+/**
+ * Lê a credencial efetiva de VIDEO para mostrar o modelo configurado e
+ * o default de enrich. Reaproveita o endpoint /ai/credentials/:kind/effective
+ * já existente no backend.
+ */
+const useVideoCredential = () => {
   const fetch = useFetch();
-  const setLocked = useLaunchStore((state) => state.setLocked);
-  const form = useForm();
-  const [position, setPosition] = useState('vertical');
-  const toaster = useToaster();
+  const loader = useCallback(async (): Promise<ConfiguredVideo> => {
+    try {
+      const res = await fetch('/ai/credentials/VIDEO/effective');
+      if (!res.ok) return { configured: false };
+      const data = await res.json();
+      if (!data?.provider) return { configured: false };
+      return {
+        configured: true,
+        model: data.model ?? undefined,
+        modelLabel:
+          data.model === 'bytedance/seedance-2'
+            ? 'Seedance 2.0'
+            : data.model === 'bytedance/seedance-2-fast'
+            ? 'Seedance 2 Fast'
+            : data.model === 'veo3'
+            ? 'Veo 3.1'
+            : data.model,
+        enrichDefault: data.options?.enrichPromptByDefault !== false,
+      };
+    } catch {
+      return { configured: false };
+    }
+  }, [fetch]);
+  return useSWR('ai-video-effective-credential', loader, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30_000,
+  });
+};
+
+const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const setLocked = useLaunchStore((p) => p.setLocked);
 
-  const loadCredits = useCallback(async () => {
-    return (
-      await fetch(`/copilot/credits?type=ai_videos`, {
-        method: 'GET',
-      })
-    ).json();
-  }, []);
+  const { data: cred } = useVideoCredential();
 
-  const { data, mutate } = useSWR('copilot-credits', loadCredits);
+  const [mode, setMode] = useState<Mode>('T2V');
+  const [prompt, setPrompt] = useState('');
+  const [referenceImageUrl, setReferenceImageUrl] = useState('');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
+  const [enrichPrompt, setEnrichPrompt] = useState<boolean>(true);
+  const [loading, setLocalLoading] = useState(false);
+
+  // Sincroniza enrich default da credencial (so primeira vez)
+  React.useEffect(() => {
+    if (cred?.configured && cred.enrichDefault !== undefined) {
+      setEnrichPrompt(cred.enrichDefault);
+    }
+  }, [cred?.configured]);
+
+  const isI2VValid = useMemo(() => {
+    if (mode !== 'I2V') return true;
+    try {
+      const u = new URL(referenceImageUrl.trim());
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, [mode, referenceImageUrl]);
+
+  const canGenerate =
+    !loading && prompt.trim().length >= 3 && isI2VValid;
+
+  const handleResponse = useCallback(
+    async (res: Response): Promise<boolean> => {
+      if (res.ok) return true;
+      const detail = await res.json().catch(() => ({}));
+      if (res.status === 412 || res.status === 402) {
+        toaster.show(
+          detail?.message ||
+            t(
+              'ai_video_not_configured',
+              'Configure suas chaves em Settings > AI Provider > Vídeo'
+            ),
+          'warning'
+        );
+        return false;
+      }
+      if (res.status === 429) {
+        toaster.show(
+          t('ai_video_rate_limit', 'Aguarde um instante antes de gerar outro vídeo.'),
+          'warning'
+        );
+        return false;
+      }
+      if (res.status === 504) {
+        toaster.show(
+          t(
+            'ai_video_timeout',
+            'Geração demorou demais (>10min). Tente novamente.'
+          ),
+          'warning'
+        );
+        return false;
+      }
+      if (res.status === 502) {
+        toaster.show(
+          detail?.message ||
+            t('ai_video_upstream_error', 'kie.ai falhou ao gerar o vídeo'),
+          'warning'
+        );
+        return false;
+      }
+      toaster.show(
+        detail?.message ||
+          t('ai_video_generic_error', 'Erro ao gerar vídeo'),
+        'warning'
+      );
+      return false;
+    },
+    [toaster, t]
+  );
 
   const generate = useCallback(async () => {
-    await fetch(`/media/generate-video/${type.identifier}/allowed`);
+    if (!canGenerate) return;
+    setLocalLoading(true);
     setLoading(true);
-    close();
     setLocked(true);
-
-    const customParams = form.getValues();
-    if (!(await form.trigger())) {
-      toaster.show(t('please_fill_required_fields', 'Please fill all required fields'), 'warning');
-      return;
-    }
     try {
-      const image = await fetch(`/media/generate-video`, {
-        method: 'POST',
-        body: JSON.stringify({
-          type: type.identifier,
-          output: position,
-          customParams,
-        }),
-      });
-
-      if (image.status == 200 || image.status == 201) {
-        onChange(await image.json());
+      const body: Record<string, unknown> = {
+        prompt: prompt.trim(),
+        mode,
+        aspectRatio,
+        enrichPrompt,
+      };
+      if (mode === 'I2V') {
+        body.referenceImageUrl = referenceImageUrl.trim();
       }
-    } catch (e) {}
-
-    setLocked(false);
-    setLoading(false);
-  }, [type, value, position]);
+      const res = await fetch('/ai/video/generate', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const ok = await handleResponse(res);
+      if (!ok) return;
+      const data = await res.json();
+      if (!data?.id || !data?.path) {
+        toaster.show(
+          t('ai_video_invalid_response', 'Resposta inválida do servidor'),
+          'warning'
+        );
+        return;
+      }
+      onChange({ id: data.id, path: data.path });
+      toaster.show(t('ai_video_done', 'Vídeo gerado'), 'success');
+      close();
+    } catch (err) {
+      toaster.show(
+        t('ai_video_generic_error', 'Erro ao gerar vídeo'),
+        'warning'
+      );
+    } finally {
+      setLocalLoading(false);
+      setLoading(false);
+      setLocked(false);
+    }
+  }, [
+    canGenerate,
+    mode,
+    prompt,
+    aspectRatio,
+    enrichPrompt,
+    referenceImageUrl,
+    fetch,
+    handleResponse,
+    onChange,
+    close,
+    setLocked,
+    setLoading,
+    toaster,
+    t,
+  ]);
 
   return (
-    <VideoContextWrapper.Provider value={{ value: value }}>
-      <form
-        onSubmit={form.handleSubmit(generate)}
-        className="flex flex-col gap-[10px]"
-      >
-        <FormProvider {...form}>
-          <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/50">
-            <div>
-              <div className="flex gap-[10px] flex-col w-[500px] h-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
-                <div className="flex">
-                  <div className="flex-1">
-                    <TopTitle title={t('video_type', 'Video Type')}>
-                      <div className="mr-[25px]">
-                        {data?.credits !== undefined && data.credits < 999999 && data.credits > 0
-                          ? `${data.credits} ${t('credits_left', 'credits left')}`
-                          : ''}
-                      </div>
-                    </TopTitle>
-                  </div>
-                  <button
-                    onClick={props.close}
-                    className="outline-none absolute end-[10px] top-[10px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-                    type="button"
-                  >
-                    <svg
-                      viewBox="0 0 15 15"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                    >
-                      <path
-                        d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                        fill="currentColor"
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                  </button>
-                </div>
-                <div className="relative h-[400px]">
-                  <div className="absolute left-0 top-0 w-full h-full overflow-hidden overflow-y-auto">
-                    <div className="mt-[10px] flex w-full justify-center items-center gap-[10px]">
-                      <div className="flex-1 flex">
-                        <Button
-                          className="!flex-1"
-                          onClick={() => setPosition('vertical')}
-                          secondary={position === 'horizontal'}
-                        >
-                          {t('vertical_stories_reels', 'Vertical (Stories, Reels)')}
-                        </Button>
-                      </div>
-                      <div className="flex-1 flex mt-[10px]">
-                        <Button
-                          className="!flex-1"
-                          onClick={() => setPosition('horizontal')}
-                          secondary={position === 'vertical'}
-                        >
-                          {t('horizontal_normal_post', 'Horizontal (Normal Post)')}
-                        </Button>
-                      </div>
-                    </div>
-                    <VideoWrapper identifier={type.identifier} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-[4px]">
-                  <Button
-                    type="submit"
-                    className="flex-1"
-                    disabled={data?.credits !== undefined && data.credits <= 0 && data.credits < 999999}
-                  >
-                    {t('generate', 'Generate')}
-                  </Button>
-                  {data?.credits !== undefined && data.credits <= 0 && data.credits < 999999 && (
-                    <div className="text-[11px] text-customColor19 text-center">
-                      {t('ai_credits_exhausted', "You've reached the generation limit this month. Contact your administrator.")}
-                    </div>
-                  )}
-                </div>
+    <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/50">
+      <div>
+        <div className="flex gap-[14px] flex-col w-[600px] max-h-[85vh] overflow-y-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+          <div className="flex sticky top-0 bg-sixth z-[1] pt-[20px] -mt-[20px]">
+            <div className="flex-1">
+              <TopTitle title={t('ai_video_modal_title', 'Gerar vídeo com IA')} />
+            </div>
+            <button
+              onClick={close}
+              className="outline-none absolute end-[10px] top-[10px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close"
+              type="button"
+            >
+              <svg viewBox="0 0 15 15" fill="none" width="16" height="16">
+                <path
+                  d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Modelo configurado */}
+          {cred?.configured ? (
+            <div className="flex items-center justify-between bg-newColColor border border-fifth rounded-[6px] px-[12px] py-[8px]">
+              <div className="text-[12px] text-customColor18">
+                {t('ai_video_model_label', 'Modelo configurado')}
+              </div>
+              <div className="text-[13px] font-semibold">
+                {cred.modelLabel ?? cred.model ?? '—'}
               </div>
             </div>
+          ) : (
+            <div className="bg-newColColor border border-customColor19 rounded-[6px] px-[12px] py-[8px] text-[13px] text-customColor19">
+              {t(
+                'ai_video_no_credential',
+                'Nenhum modelo de vídeo configurado. Vá em Settings > AI Provider > Vídeo para configurar.'
+              )}
+            </div>
+          )}
+
+          {/* Tabs T2V / I2V */}
+          <div className="grid grid-cols-2 gap-[8px] p-[4px] bg-newColColor rounded-[8px]">
+            <ModeTab
+              active={mode === 'T2V'}
+              onClick={() => setMode('T2V')}
+              disabled={loading}
+              label={t('ai_video_tab_t2v', 'Texto → Vídeo')}
+              hint={t(
+                'ai_video_tab_t2v_hint',
+                'Gera vídeo a partir de prompt'
+              )}
+              icon={<TextIcon />}
+            />
+            <ModeTab
+              active={mode === 'I2V'}
+              onClick={() => setMode('I2V')}
+              disabled={loading}
+              label={t('ai_video_tab_i2v', 'Imagem → Vídeo')}
+              hint={t(
+                'ai_video_tab_i2v_hint',
+                'Anima uma imagem de referência'
+              )}
+              icon={<ImageIcon />}
+            />
           </div>
-        </FormProvider>
-      </form>
-    </VideoContextWrapper.Provider>
+
+          {/* Prompt */}
+          <FieldRow
+            label={t('ai_video_prompt_label', 'Descrição do vídeo')}
+          >
+            <textarea
+              className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[10px] outline-none text-[14px] min-h-[100px] resize-none"
+              placeholder={t(
+                'ai_video_prompt_placeholder',
+                'ex: drone shot of a beach at sunset, palm trees swaying, golden hour'
+              )}
+              value={prompt}
+              disabled={loading}
+              maxLength={2000}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+          </FieldRow>
+
+          {/* I2V: reference image URL */}
+          {mode === 'I2V' && (
+            <FieldRow
+              label={t('ai_video_reference_label', 'URL da imagem de referência')}
+            >
+              <input
+                type="url"
+                className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[10px] outline-none text-[14px]"
+                placeholder="https://..."
+                value={referenceImageUrl}
+                disabled={loading}
+                onChange={(e) => setReferenceImageUrl(e.target.value)}
+              />
+              {referenceImageUrl && !isI2VValid && (
+                <div className="text-[12px] text-customColor19 mt-[4px]">
+                  {t(
+                    'ai_video_reference_invalid',
+                    'URL inválida (use http:// ou https://).'
+                  )}
+                </div>
+              )}
+            </FieldRow>
+          )}
+
+          {/* Aspect ratio */}
+          <FieldRow label={t('ai_video_aspect_label', 'Proporção')}>
+            <div className="flex gap-[8px]">
+              {(['1:1', '9:16', '16:9'] as const).map((ar) => (
+                <label
+                  key={ar}
+                  className={clsx(
+                    'flex items-center gap-[6px] px-[14px] py-[8px] rounded-[6px] border cursor-pointer transition-colors',
+                    aspectRatio === ar
+                      ? 'border-btnPrimary bg-newColColor'
+                      : 'border-newTableBorder hover:bg-newColColor',
+                    loading && 'opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="ai-video-aspect"
+                    value={ar}
+                    checked={aspectRatio === ar}
+                    disabled={loading}
+                    onChange={() => setAspectRatio(ar)}
+                    className="accent-btnPrimary"
+                  />
+                  <span className="text-[14px]">{ar}</span>
+                </label>
+              ))}
+            </div>
+            <div className="text-[11px] text-customColor18 mt-[4px]">
+              {t(
+                'ai_video_aspect_hint',
+                '1:1 feed Instagram · 9:16 Stories/Reels/TikTok · 16:9 YouTube/LinkedIn'
+              )}
+            </div>
+          </FieldRow>
+
+          {/* Enrich prompt toggle */}
+          <label className="flex items-start gap-[8px] cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-[16px] h-[16px] mt-[2px] accent-btnPrimary"
+              checked={enrichPrompt}
+              disabled={loading}
+              onChange={(e) => setEnrichPrompt(e.target.checked)}
+            />
+            <div className="flex flex-col">
+              <span className="text-[14px]">
+                {t(
+                  'ai_video_enrich_toggle',
+                  'Enriquecer prompt automaticamente'
+                )}
+              </span>
+              <span className="text-[11px] text-customColor18">
+                {t(
+                  'ai_video_enrich_hint',
+                  'Adiciona detalhes de cinematografia (câmera, iluminação, ritmo) usando o LLM configurado em Texto.'
+                )}
+              </span>
+            </div>
+          </label>
+
+          <Button
+            type="button"
+            onClick={generate}
+            loading={loading}
+            disabled={!canGenerate || !cred?.configured}
+          >
+            {t('ai_video_btn_generate', 'Gerar vídeo')}
+          </Button>
+
+          <div className="text-[11px] text-customColor18 text-center">
+            {t(
+              'ai_video_loading_hint',
+              'A geração pode levar até 10 minutos.'
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
+
+const ModeTab: FC<{
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+}> = ({ active, disabled, onClick, label, hint, icon }) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onClick}
+    className={clsx(
+      'flex items-center gap-[10px] px-[12px] py-[10px] rounded-[6px] text-start transition-all',
+      active
+        ? 'bg-sixth shadow-sm text-textColor'
+        : 'text-customColor18 hover:text-textColor',
+      disabled && 'opacity-50 cursor-not-allowed'
+    )}
+  >
+    <span
+      className={clsx(
+        'flex w-[28px] h-[28px] items-center justify-center rounded-[6px] flex-shrink-0',
+        active ? 'bg-newColColor' : 'bg-newColColor/40'
+      )}
+    >
+      {icon}
+    </span>
+    <span className="flex flex-col leading-tight overflow-hidden">
+      <span className="text-[13px] font-semibold truncate">{label}</span>
+      <span className="text-[11px] text-customColor18 truncate">{hint}</span>
+    </span>
+  </button>
+);
+
+const TextIcon: FC = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M3 4H13M3 8H10M3 12H8"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const ImageIcon: FC = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect
+      x="2"
+      y="3"
+      width="12"
+      height="10"
+      rx="1.5"
+      stroke="currentColor"
+      strokeWidth="1.4"
+    />
+    <circle cx="6" cy="7" r="1.2" fill="currentColor" />
+    <path
+      d="M3 12L6.5 8.5L9 11L11 9L13 11"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const FieldRow: FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div className="flex flex-col gap-[6px]">
+    {label && <div className="text-[13px] text-customColor18">{label}</div>}
+    {children}
+  </div>
+);
 
 export const AiVideo: FC<{
   value: string;
   onChange: (params: { id: string; path: string }) => void;
-}> = (props) => {
+}> = ({ value, onChange }) => {
   const t = useT();
-  const { value, onChange } = props;
-  const [loading, setLoading] = useState(false);
-  const [type, setType] = useState<any | null>(null);
-  const [modal, setModal] = useState(false);
   const fetch = useFetch();
+  const [modal, setModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { isTrailing } = useUser();
 
   const loadVideoCredits = useCallback(async () => {
-    return (await fetch('/copilot/credits?type=ai_videos', { method: 'GET' })).json();
-  }, []);
+    return (
+      await fetch('/copilot/credits?type=ai_videos', { method: 'GET' })
+    ).json();
+  }, [fetch]);
   const { data: creditData } = useSWR('video-credits-outer', loadVideoCredits);
 
   const isUnlimited = !creditData || creditData.credits >= 999999;
   const hasCredits = isUnlimited || creditData.credits > 0;
 
-  const loadVideoList = useCallback(async () => {
-    return (await (await fetch('/media/video-options')).json()).filter(
-      (f: any) => f.placement === 'text-to-image'
-    );
-  }, []);
-
-  const { isLoading, data } = useSWR('load-videos-ai', loadVideoList, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    refreshWhenHidden: false,
-    revalidateIfStale: false,
-    refreshWhenOffline: false,
-    keepPreviousData: true,
-  });
-
-  const generateVideo = useCallback(
-    (type: { identifier: string }) => async () => {
-      setType(type);
-      setModal(true);
-    },
-    [value, onChange]
-  );
-
-  if (isLoading || data?.length === 0) {
-    return null;
-  }
-
   return (
     <>
       {modal && (
-        <Modal
-          onChange={onChange}
+        <VideoModal
+          close={() => setModal(false)}
           setLoading={setLoading}
-          close={() => {
-            setModal(false);
-            setType(null);
-          }}
-          type={type}
-          value={props.value}
+          onChange={onChange}
         />
       )}
       <div className="relative group">
         <div
-          {...(value.length < 30 || !hasCredits
+          {...(!hasCredits
             ? {
                 'data-tooltip-id': 'tooltip',
-                'data-tooltip-content': !hasCredits
-                  ? t('ai_credits_limit_reached', 'Limit reached')
-                  : t('ai_video_min_chars', 'Please add at least 30 characters to generate AI video'),
+                'data-tooltip-content': t(
+                  'ai_credits_limit_reached',
+                  'Limit reached'
+                ),
               }
             : {})}
           className={clsx(
             'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]',
-            (value.length < 30 || !hasCredits) && 'opacity-50 pointer-events-none'
+            !hasCredits && 'opacity-50 pointer-events-none'
           )}
+          onClick={() => hasCredits && setModal(true)}
         >
           {loading && (
             <div className="absolute start-[50%] -translate-x-[50%]">
@@ -268,27 +557,17 @@ export const AiVideo: FC<{
                 </defs>
               </svg>
             </div>
-            <div className="text-[10px] font-[600] iconBreak:hidden block">{t('ai', 'AI')} Video</div>
+            <div className="text-[10px] font-[600] iconBreak:hidden block">
+              {t('ai', 'AI')} Video
+            </div>
           </div>
         </div>
-        {value.length >= 30 && !loading && hasCredits && (
-          <div className="text-[12px] -mt-[10px] w-[200px] absolute bottom-[100%] z-[500] start-0 hidden group-hover:block">
-            <ul className="cursor-pointer rounded-[4px] border border-dashed border-newBgLineColor bg-newColColor mt-[3px] p-[5px]">
-              {data.map((p: any) => (
-                <li
-                  onClick={generateVideo(p)}
-                  key={p.identifier}
-                  className="hover:bg-sixth"
-                >
-                  {String(t(`video_provider_${p.identifier}`, p.title))}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         {!isUnlimited && creditData && creditData.credits > 0 && (
           <div className="text-[10px] text-customColor18 mt-[2px] text-center">
-            {t('ai_credits_remaining', '{{count}} credits remaining this month').replace('{{count}}', String(creditData.credits))}
+            {t(
+              'ai_credits_remaining',
+              '{{count}} credits remaining this month'
+            ).replace('{{count}}', String(creditData.credits))}
           </div>
         )}
         {!hasCredits && (

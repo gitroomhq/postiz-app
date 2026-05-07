@@ -88,8 +88,22 @@ const TAVILY_WEB_SEARCH: CatalogModel[] = [
 
 const KIEAI_VIDEO: CatalogModel[] = [
   {
-    id: 'veo-3.1',
-    displayName: 'Veo 3.1 (KieAI)',
+    id: 'bytedance/seedance-2',
+    displayName: 'Seedance 2.0 (qualidade)',
+    provider: 'kieai',
+    kind: 'VIDEO',
+    outputModalities: ['video'],
+  },
+  {
+    id: 'bytedance/seedance-2-fast',
+    displayName: 'Seedance 2 Fast (economico)',
+    provider: 'kieai',
+    kind: 'VIDEO',
+    outputModalities: ['video'],
+  },
+  {
+    id: 'veo3',
+    displayName: 'Veo 3.1 (Google via KieAI)',
     provider: 'kieai',
     kind: 'VIDEO',
     outputModalities: ['video'],

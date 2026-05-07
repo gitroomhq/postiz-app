@@ -694,18 +694,26 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
               onChange={(v) => updateField('model', v)}
             />
           </FieldRow>
-          <FieldRow
-            label={t('ai_provider_fallback_model', 'Fallback (opcional)')}
-          >
-            <SearchableModelSelect
-              value={form.fallbackModel}
-              options={fallbackOptions}
-              placeholder={t('ai_provider_no_fallback', 'Sem fallback')}
-              emptyOptionLabel={t('ai_provider_no_fallback', 'Sem fallback')}
-              disabled={isLocked}
-              onChange={(v) => updateField('fallbackModel', v)}
-            />
-          </FieldRow>
+          {/* Fallback so faz sentido para TEXT (mesmo provider, varios modelos
+              compativeis com o SDK). Para IMAGE/VIDEO o fallback automatico
+              cruzaria APIs de payload diferente — esconde-se o seletor. */}
+          {kind === 'TEXT' && (
+            <FieldRow
+              label={t('ai_provider_fallback_model', 'Fallback (opcional)')}
+            >
+              <SearchableModelSelect
+                value={form.fallbackModel}
+                options={fallbackOptions}
+                placeholder={t('ai_provider_no_fallback', 'Sem fallback')}
+                emptyOptionLabel={t(
+                  'ai_provider_no_fallback',
+                  'Sem fallback'
+                )}
+                disabled={isLocked}
+                onChange={(v) => updateField('fallbackModel', v)}
+              />
+            </FieldRow>
+          )}
         </>
       )}
 
@@ -713,6 +721,7 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
         <DynamicOptions
           kind={kind}
           provider={form.provider}
+          model={form.model}
           options={form.options}
           disabled={isLocked}
           onChange={updateOption}
@@ -856,11 +865,12 @@ const SelectInput: React.FC<{
 const DynamicOptions: React.FC<{
   kind: AiKind;
   provider: string;
+  model: string;
   options: Record<string, any>;
   disabled: boolean;
   onChange: (key: string, value: any) => void;
   t: any;
-}> = ({ kind, provider, options, disabled, onChange, t }) => {
+}> = ({ kind, provider, model, options, disabled, onChange, t }) => {
   if (kind === 'TEXT') {
     return (
       <>
@@ -971,6 +981,161 @@ const DynamicOptions: React.FC<{
     }
   }
 
+  if (kind === 'VIDEO' && provider === 'kieai') {
+    const isSeedance = model.startsWith('bytedance/seedance');
+    const isVeo = model.startsWith('veo3') || model === 'veo3';
+    const ASPECT_RATIOS = isVeo
+      ? (['16:9', '9:16', 'Auto'] as const)
+      : (['1:1', '16:9', '9:16'] as const);
+
+    return (
+      <>
+        <FieldRow
+          label={t(
+            'ai_provider_video_aspect_default',
+            'Aspect ratio padrão'
+          )}
+        >
+          <div className="flex gap-[8px] flex-wrap">
+            {ASPECT_RATIOS.map((ar) => (
+              <label
+                key={ar}
+                className={clsx(
+                  'flex items-center gap-[6px] px-[12px] py-[8px] rounded-[6px] border cursor-pointer transition-colors',
+                  options.aspectRatioDefault === ar
+                    ? 'border-btnPrimary bg-newColColor'
+                    : 'border-newTableBorder hover:bg-newColColor',
+                  disabled && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="video-aspect-default"
+                  value={ar}
+                  checked={options.aspectRatioDefault === ar}
+                  disabled={disabled}
+                  onChange={() => onChange('aspectRatioDefault', ar)}
+                  className="accent-btnPrimary"
+                />
+                <span className="text-[14px]">{ar}</span>
+              </label>
+            ))}
+          </div>
+          <div className="text-[12px] text-customColor18 mt-[4px]">
+            {t(
+              'ai_provider_video_aspect_hint',
+              'Pode ser sobrescrito por chamada (composer/agente).'
+            )}
+          </div>
+        </FieldRow>
+
+        {isSeedance && (
+          <>
+            <FieldRow
+              label={t('ai_provider_video_resolution', 'Resolução')}
+            >
+              <div className="flex gap-[8px]">
+                {(['480p', '720p', '1080p'] as const).map((res) => (
+                  <label
+                    key={res}
+                    className={clsx(
+                      'flex items-center gap-[6px] px-[12px] py-[8px] rounded-[6px] border cursor-pointer transition-colors',
+                      (options.resolution ?? '720p') === res
+                        ? 'border-btnPrimary bg-newColColor'
+                        : 'border-newTableBorder hover:bg-newColColor',
+                      disabled && 'opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="video-resolution"
+                      value={res}
+                      checked={(options.resolution ?? '720p') === res}
+                      disabled={disabled}
+                      onChange={() => onChange('resolution', res)}
+                      className="accent-btnPrimary"
+                    />
+                    <span className="text-[14px]">{res}</span>
+                  </label>
+                ))}
+              </div>
+            </FieldRow>
+            <FieldRow
+              label={t('ai_provider_video_duration', 'Duração (segundos)')}
+            >
+              <input
+                type="number"
+                min={4}
+                max={15}
+                step={1}
+                className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] px-[16px] outline-none text-[14px] w-[120px]"
+                value={options.durationSeconds ?? ''}
+                disabled={disabled}
+                placeholder="5"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') {
+                    onChange('durationSeconds', undefined);
+                    return;
+                  }
+                  const num = Number(raw);
+                  if (Number.isNaN(num)) return;
+                  onChange(
+                    'durationSeconds',
+                    Math.max(4, Math.min(15, Math.floor(num)))
+                  );
+                }}
+              />
+              <div className="text-[12px] text-customColor18 mt-[4px]">
+                {t(
+                  'ai_provider_video_duration_hint',
+                  'Entre 4 e 15s. Padrão Seedance é 5s.'
+                )}
+              </div>
+            </FieldRow>
+            <FieldRow label="">
+              <label className="flex items-center gap-[8px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-[16px] h-[16px] accent-btnPrimary"
+                  checked={!!options.audio}
+                  disabled={disabled}
+                  onChange={(e) => onChange('audio', e.target.checked)}
+                />
+                <span className="text-[14px]">
+                  {t(
+                    'ai_provider_video_audio',
+                    'Gerar áudio junto com o vídeo'
+                  )}
+                </span>
+              </label>
+            </FieldRow>
+          </>
+        )}
+
+        <FieldRow label="">
+          <label className="flex items-center gap-[8px] cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-[16px] h-[16px] accent-btnPrimary"
+              checked={options.enrichPromptByDefault !== false}
+              disabled={disabled}
+              onChange={(e) =>
+                onChange('enrichPromptByDefault', e.target.checked)
+              }
+            />
+            <span className="text-[14px]">
+              {t(
+                'ai_provider_video_enrich_default',
+                'Enriquecer prompt automaticamente (cinematografia, câmera, iluminação)'
+              )}
+            </span>
+          </label>
+        </FieldRow>
+      </>
+    );
+  }
+
   if (kind === 'WEB_SEARCH' && provider === 'tavily') {
     return (
       <>
@@ -1063,6 +1228,12 @@ function sanitizeOptions(
       const num = Number(value);
       if (Number.isNaN(num)) continue;
       out[key] = Math.max(1, Math.min(20, Math.floor(num)));
+      continue;
+    }
+    if (kind === 'VIDEO' && key === 'durationSeconds') {
+      const num = Number(value);
+      if (Number.isNaN(num)) continue;
+      out[key] = Math.max(4, Math.min(15, Math.floor(num)));
       continue;
     }
     out[key] = value;

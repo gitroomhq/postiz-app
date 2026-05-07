@@ -27,6 +27,7 @@ const SeparatedPostsSchema = z.object({
 const SinglePostSchema = z.object({ post: z.string() });
 
 const PicturePromptSchema = z.object({ prompt: z.string() });
+const VideoPromptSchema = z.object({ prompt: z.string() });
 
 const SlidesSchema = z.object({
   slides: z.array(
@@ -123,6 +124,35 @@ export class AiTextService {
           'Voce recebe uma descricao e estilo e gera um prompt detalhado para gerar imagens. Faca uma explicacao longa e descritiva, incluindo detalhes de estilo (camera, iluminacao, atmosfera, etc) quando aplicavel.',
         prompt: `prompt: ${prompt}`,
         temperature: client.options.temperature,
+      })
+    );
+    return result.object.prompt;
+  }
+
+  /**
+   * Enriquece um prompt curto do usuario para um prompt detalhado de
+   * video, com elementos de cinematografia (movimento de camera,
+   * iluminacao, ritmo, atmosfera). Paralelo ao `generatePromptForPicture`.
+   *
+   * Best-effort: o caller (AiVideoService) captura HttpException 412
+   * quando TEXT nao esta configurado e segue com o prompt original.
+   */
+  async generatePromptForVideo(
+    organizationId: string,
+    prompt: string,
+    profileId?: string
+  ): Promise<string> {
+    const client = await this._factory.text(organizationId, profileId);
+    const result = await this.callWithFallback(client, (model) =>
+      generateObject({
+        model,
+        schema: VideoPromptSchema,
+        system:
+          'Voce recebe uma descricao curta para video e gera um prompt detalhado para modelo text-to-video. Inclua: movimento de camera (pan, zoom, dolly, tracking), iluminacao (golden hour, soft, dramatic), cinematografia (close-up, wide shot, aerial), ritmo (slow, dynamic) e atmosfera. Mantenha entre 50-200 palavras. Retorne APENAS o prompt enriquecido, sem cabecalho.',
+        prompt: `User prompt: ${prompt}`,
+        ...(isReasoningModel(client.modelId)
+          ? {}
+          : { temperature: client.options.temperature ?? 0.8 }),
       })
     );
     return result.object.prompt;
