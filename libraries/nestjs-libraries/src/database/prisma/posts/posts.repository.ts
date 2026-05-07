@@ -496,7 +496,12 @@ export class PostsRepository {
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
-
+    console.log('state', state);
+    console.log('orgId', orgId);
+    console.log('date', date);
+    console.log('body', body);
+    console.log('tags', tags);
+    console.log('inter', inter);
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
         publishDate: dayjs(date).toDate(),
@@ -541,7 +546,7 @@ export class PostsRepository {
           },
         },
       });
-
+      console.log('updated data', updateData('create'));
       posts.push(
         await this._post.model.post.upsert({
           where: {
