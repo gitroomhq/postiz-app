@@ -1205,7 +1205,7 @@
   "ai_provider_apikey_hint_set": "Key saved. Click Edit to replace.",
   "ai_provider_apikey_required": "API key required",
   "ai_provider_pick_provider": "Select a provider",
-  "ai_provider_model": "Primary model",
+  "ai_provider_model": "Model",
   "ai_provider_model_default": "Provider default",
   "ai_provider_fallback_model": "Fallback (optional)",
   "ai_provider_no_fallback": "No fallback",

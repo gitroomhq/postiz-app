@@ -56,16 +56,17 @@ describe('AiCatalogService', () => {
       expect(result.models[0].id).toBe('tavily-default');
     });
 
-    it('deve cachear o resultado em Redis', async () => {
+    it('NAO deve cachear catalogos estaticos (lista in-memory ja e barata)', async () => {
       await service.getCatalog('openai', 'TEXT');
       const cached = redisStore.get('ai:catalog:openai:TEXT');
-      expect(cached).toBeDefined();
-      const parsed = JSON.parse(cached as string);
-      expect(parsed.models.length).toBeGreaterThan(0);
+      // Static catalog bypassa Redis para que mudancas em ai-catalog.static.ts
+      // refletem na UI imediatamente, sem TTL de 1h pendurado.
+      expect(cached).toBeUndefined();
     });
 
-    it('deve usar o cache em chamadas subsequentes', async () => {
-      // Forca cache prepopulado com lista vazia
+    it('deve sempre devolver lista atual em chamadas subsequentes (sem cache stale)', async () => {
+      // Mesmo se houver cache antigo do Redis (ex: deploy anterior), o
+      // servico ignora e devolve a lista atual de getStaticCatalog.
       redisStore.set(
         'ai:catalog:openai:TEXT',
         JSON.stringify({
@@ -77,9 +78,8 @@ describe('AiCatalogService', () => {
       );
 
       const result = await service.getCatalog('openai', 'TEXT');
-      // Como o cache tem zero modelos, garantimos que o servico nao recriou
-      // a lista estatica em cima.
-      expect(result.models).toHaveLength(0);
+      // Lista atual de OPENAI_TEXT em ai-catalog.static.ts tem >0 modelos.
+      expect(result.models.length).toBeGreaterThan(0);
     });
   });
 

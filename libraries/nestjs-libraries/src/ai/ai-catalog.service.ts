@@ -25,15 +25,25 @@ export class AiCatalogService {
     provider: string,
     kind: AiKind
   ): Promise<CatalogResponse> {
+    // Catalogos estaticos (kieai, tavily, openai) sao consts em memoria —
+    // bypass do cache Redis. So OpenRouter passa pelo cache porque envolve
+    // fetch externo de ~400 modelos. Sem este bypass, alterar a lista
+    // estatica em codigo nao reflete na UI ate o TTL de 1h expirar.
+    if (provider !== 'openrouter') {
+      const models = getStaticCatalog(provider, kind) ?? [];
+      return {
+        provider,
+        kind,
+        fetchedAt: new Date().toISOString(),
+        models,
+      };
+    }
+
     const cacheKey = this.cacheKey(provider, kind);
     const cached = await this.readCache(cacheKey);
     if (cached) return cached;
 
-    const models =
-      provider === 'openrouter'
-        ? await this.fetchOpenRouter(kind)
-        : getStaticCatalog(provider, kind) ?? [];
-
+    const models = await this.fetchOpenRouter(kind);
     const response: CatalogResponse = {
       provider,
       kind,

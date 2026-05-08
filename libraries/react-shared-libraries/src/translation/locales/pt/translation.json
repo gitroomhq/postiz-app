@@ -1203,7 +1203,7 @@
   "ai_provider_apikey_hint_set": "Chave salva. Clique em Editar para substituir.",
   "ai_provider_apikey_required": "API key obrigatória",
   "ai_provider_pick_provider": "Selecione um provedor",
-  "ai_provider_model": "Modelo principal",
+  "ai_provider_model": "Modelo",
   "ai_provider_model_default": "Default do provedor",
   "ai_provider_fallback_model": "Fallback (opcional)",
   "ai_provider_no_fallback": "Sem fallback",
