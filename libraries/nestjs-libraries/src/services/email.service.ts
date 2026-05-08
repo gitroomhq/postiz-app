@@ -70,54 +70,58 @@ export class EmailService {
       return;
     }
 
+    // Brand-aligned email template — colors from socialstream-ops/docs/brand/colors.md.
     const modifiedHtml = `
     <div style="
-        background: linear-gradient(to bottom right, #e6f2ff, #f0e6ff);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background: #F7F8FB;
         padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     ">
         <div style="
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(4px);
+            background-color: #FFFFFF;
+            border: 1px solid #E5E8EE;
             border-radius: 0.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 1px 3px rgba(26, 26, 46, 0.06);
             max-width: 48rem;
             width: 100%;
+            margin: 0 auto;
             padding: 2rem;
         ">
+            <div style="margin-bottom: 1.5rem;">
+                <span style="
+                    display: inline-block;
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: #1A6FE8;
+                    letter-spacing: -0.01em;
+                ">SocialStream</span>
+            </div>
             <h1 style="
-                font-size: 1.875rem;
-                font-weight: bold;
+                font-size: 1.5rem;
+                font-weight: 600;
                 margin-bottom: 1.5rem;
                 text-align: left;
-                color: #1f2937;
+                color: #1A1A2E;
+                letter-spacing: -0.01em;
             ">${subject}</h1>
-            
+
             <div style="
                 margin-bottom: 2rem;
-                color: #374151;
+                color: #1A1A2E;
+                line-height: 1.55;
             ">
                 ${html}
             </div>
-            
+
             <div style="
-                display: flex;
-                align-items: center;
-                border-top: 1px solid #e5e7eb;
+                border-top: 1px solid #E5E8EE;
                 padding-top: 1.5rem;
+                color: #5A6075;
+                font-size: 12px;
             ">
+                <div style="font-size: 14px; font-weight: 600; color: #1A1A2E; margin-bottom: 4px;">${process.env.EMAIL_FROM_NAME}</div>
                 <div>
-                    <h2 style="
-                        font-size: 1.25rem;
-                        font-weight: 600;
-                        color: #1f2937;
-                        margin: 0;
-                    ">${process.env.EMAIL_FROM_NAME}</h2>
-                    <div style="font-size: 12px">
-                      You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/settings">account settings.</a>
-                     </div>
+                  You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/settings" style="color: #1A6FE8;">account settings</a>.
                 </div>
             </div>
         </div>
