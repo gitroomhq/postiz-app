@@ -87,9 +87,70 @@ pnpm build:backend
 pnpm build:frontend
 pnpm build:orchestrator
 
-# Database
-pnpm prisma-generate
-pnpm prisma-db-push
+# Banco de dados
+pnpm prisma-generate      # Gerar Prisma client
+pnpm prisma-db-push       # Aplicar migrações
+
+# Docker
+pnpm docker-build         # Build das imagens Docker
+
+# Linting (sempre da raiz)
+pnpm lint
+```
+
+## Contexto Portável (.context/)
+
+O diretório `.context/` é gerenciado pelo [dotcontext](https://github.com/dotcontext/cli) (MCP configurado em `.mcp.json` na raiz) e é a source-of-truth para portabilidade entre IDEs (Claude Code, Antigravity, Cursor, Codex). Mudanças manuais em `.claude/`, `.cursor/rules`, `.windsurfrules` ou `.github/copilot-instructions.md` **não** se propagam sem sync explícito via dotcontext.
+
+Gateways disponíveis quando o MCP está carregado: `explore`, `context`, `plan`, `agent`, `skill`, `sync`. Como invocar:
+
+- `use the security-auditor agent to audit the new webhook handler`
+- `use the commit-message skill to draft a commit for staged changes`
+- `plan "<descrição>" using dotcontext` (workflow PREVC completo)
+
+Estado atual: 14 agents preenchidos em `.context/agents/`, 10 docs preenchidos em `.context/docs/`, e 10 skills `unfilled` em `.context/skills/` aguardando preenchimento via MCP. Para ativar o MCP localmente e preencher os skills, siga `docs/planning/dotcontext-bootstrap.md`. Para uso diário, veja `docs/planning/dotcontext-daily-usage.md`.
+
+## Contexto de Produto
+
+- **Idioma padrão:** pt-BR (arquivo de tradução `pt` já existe em `react-shared-libraries/src/translation/locales/`)
+- **Branding:** "Robô MultiPost" (fork do Postiz, créditos mantidos por exigência da AGPL)
+- **Integração Zernio:** TikTok e Pinterest via [Zernio API](https://docs.zernio.com/llms-full.txt) como provedor alternativo (ex-Late/getlate.dev — mesma empresa, nova marca)
+- **Billing:** desabilitado por padrão para self-hosted (`DISABLE_BILLING=true`)
+- **Marketplace:** desabilitado por padrão (`DISABLE_MARKETPLACE=true`)
+- **Storage:** local por padrão, Cloudflare R2 como opção avançada
+- **IA:** infraestrutura Mastra + MCP já existe — trabalho é configurar providers por workspace
+
+## Sistema de Creditos de IA
+
+O sistema de creditos controla quantas imagens e videos cada perfil pode gerar por mes.
+
+### Modos de operacao (`AI_CREDITS_MODE`)
+
+| Modo | Comportamento |
+|------|--------------|
+| `unlimited` (default) | Todos os perfis geram sem limite. Uso registrado para analytics |
+| `managed` | Creditos gerenciados por perfil. Perfil default (admin) sempre ilimitado |
+
+### Cadeia de precedencia (modo managed)
+
+```
+1. AI_CREDITS_MODE=unlimited → SEMPRE ilimitado, ignora tudo
+2. Perfil default (isDefault=true) → sempre ilimitado
+3. Config do perfil (aiImageCredits/aiVideoCredits) → se preenchido, usa
+4. Config default (AI_CREDITS_DEFAULT_IMAGES/AI_CREDITS_DEFAULT_VIDEOS) → se preenchido, usa
+5. Fallback → ilimitado (-1)
+```
+
+### Valores especiais nos campos de creditos
+
+| Valor | Significado |
+|-------|-------------|
+| `null` | Usar padrao da env var ou fallback ilimitado |
+| `-1` | Ilimitado para este perfil |
+| `0` | Bloqueado (sem creditos de IA) |
+| `N > 0` | N creditos por mes |
+
+### Env vars relacionadas
 
 # Quality
 pnpm lint                 # Always from repo root
