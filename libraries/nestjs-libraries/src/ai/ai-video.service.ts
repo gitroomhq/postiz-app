@@ -56,6 +56,51 @@ function sanitize(value: string): string {
   return value.replace(/Bearer\s+[A-Za-z0-9_.\-]+/gi, 'Bearer ***');
 }
 
+/**
+ * Traduz codigos de erro conhecidos do kie.ai para mensagens em portugues
+ * com hint de acao. Quando o codigo nao bate em nenhum dos casos, devolve
+ * a mensagem original do kie.ai como esta — quase sempre ja e clara.
+ *
+ * Codigos baseados em observacao em producao:
+ *  - 402: "Credits insufficient: Your current balance isnt enough..."
+ *  - 401: chave invalida ou expirada
+ *  - 422: payload invalido (modelo errado, aspect ratio nao suportado)
+ *  - 429: rate limit
+ *  - 500/502/503: instabilidade do kie.ai
+ */
+function translateKieaiError(
+  code: number | undefined,
+  msg: string | undefined
+): string {
+  const original = msg ?? 'erro desconhecido';
+  const lower = (msg ?? '').toLowerCase();
+
+  if (code === 402 || lower.includes('credits insufficient')) {
+    return (
+      'Sua conta kie.ai esta sem creditos suficientes para gerar este video. ' +
+      'Adicione saldo em https://kie.ai/account/billing e tente de novo. ' +
+      `(kie.ai: "${original}")`
+    );
+  }
+  if (code === 401 || lower.includes('unauthorized') || lower.includes('invalid api key')) {
+    return (
+      'Chave kie.ai invalida ou expirada. Atualize em Settings > AI Provider > Video. ' +
+      `(kie.ai: "${original}")`
+    );
+  }
+  if (code === 422 || lower.includes('invalid') || lower.includes('unsupported')) {
+    return `kie.ai recusou o pedido por payload invalido: "${original}".`;
+  }
+  if (code === 429 || lower.includes('rate limit') || lower.includes('too many')) {
+    return (
+      'kie.ai esta limitando suas requisicoes. Aguarde alguns minutos e tente novamente. ' +
+      `(kie.ai: "${original}")`
+    );
+  }
+  // Default: passa a mensagem original do kie.ai (quase sempre e descritiva).
+  return `kie.ai recusou: "${original}" (codigo ${code ?? '?'}).`;
+}
+
 @Injectable()
 export class AiVideoService {
   private readonly _logger = new Logger(AiVideoService.name);
@@ -290,10 +335,7 @@ export class AiVideoService {
       this._logger.warn(
         `kie.ai create retornou code=${json.code}: ${sanitize(json.msg ?? '')}`
       );
-      throw new HttpException(
-        `kie.ai create rejeitou: ${json.msg ?? 'unknown'}`,
-        502
-      );
+      throw new HttpException(translateKieaiError(json.code, json.msg), 502);
     }
 
     const taskId = json.data?.taskId;

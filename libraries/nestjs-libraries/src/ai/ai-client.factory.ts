@@ -48,8 +48,14 @@ const REASONING_MODEL_PREFIXES = [
 export function isReasoningModel(modelId: string): boolean {
   if (!modelId) return false;
   const lower = modelId.toLowerCase();
+  // Aceita o prefixo exato, ou seguido por separador `-` (ex: gpt-5-codex)
+  // ou `.` (ex: gpt-5.5, gpt-5.4 — versionamento da OpenAI). Sem o `.`,
+  // gpt-5.5 caia fora do filtro e o AI SDK emitia warning de temperature.
   return REASONING_MODEL_PREFIXES.some(
-    (prefix) => lower === prefix || lower.startsWith(`${prefix}-`)
+    (prefix) =>
+      lower === prefix ||
+      lower.startsWith(`${prefix}-`) ||
+      lower.startsWith(`${prefix}.`)
   );
 }
 

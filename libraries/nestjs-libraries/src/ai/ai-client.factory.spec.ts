@@ -1,4 +1,4 @@
-import { AiClientFactory } from './ai-client.factory';
+import { AiClientFactory, isReasoningModel } from './ai-client.factory';
 import { AiProviderResolverService } from './ai-provider-resolver.service';
 import { createMock } from '@gitroom/nestjs-libraries/test';
 import { MockProxy } from 'jest-mock-extended';
@@ -166,5 +166,37 @@ describe('AiClientFactory', () => {
       expect(resolver.resolve).toHaveBeenCalledTimes(1);
       expect(model).toBeDefined();
     });
+  });
+
+  describe('isReasoningModel', () => {
+    const cases: Array<{ id: string; expected: boolean; reason: string }> = [
+      // Familia o1/o3/o4 com hifen
+      { id: 'o1', expected: true, reason: 'exato' },
+      { id: 'o1-mini', expected: true, reason: 'hifen' },
+      { id: 'o3-pro', expected: true, reason: 'hifen' },
+      { id: 'openai/o4-mini', expected: true, reason: 'prefixo openrouter + hifen' },
+      // Familia gpt-5 — variantes com `.` (versao) E com `-` (codinome)
+      { id: 'gpt-5', expected: true, reason: 'exato' },
+      { id: 'gpt-5.4', expected: true, reason: 'ponto (versao OpenAI)' },
+      { id: 'gpt-5.5', expected: true, reason: 'ponto (versao OpenAI)' },
+      { id: 'gpt-5-codex', expected: true, reason: 'hifen (variante)' },
+      { id: 'gpt-5-mini', expected: true, reason: 'hifen' },
+      { id: 'openai/gpt-5.5', expected: true, reason: 'prefixo + ponto' },
+      { id: 'openai/gpt-5-codex', expected: true, reason: 'prefixo + hifen' },
+      // Modelos NAO-reasoning
+      { id: 'gpt-4.1', expected: false, reason: 'gpt-4 nao e reasoning' },
+      { id: 'gpt-4o', expected: false, reason: 'gpt-4 nao e reasoning' },
+      { id: 'claude-3-5-sonnet', expected: false, reason: 'fora da familia' },
+      { id: '', expected: false, reason: 'string vazia' },
+      // Edge: prefixo correto mas sufixo invalido (ex: 'o15')
+      { id: 'o15', expected: false, reason: 'sem separador apos o1' },
+      { id: 'gpt-5x', expected: false, reason: 'sem separador apos gpt-5' },
+    ];
+
+    for (const { id, expected, reason } of cases) {
+      it(`isReasoningModel('${id}') = ${expected} (${reason})`, () => {
+        expect(isReasoningModel(id)).toBe(expected);
+      });
+    }
   });
 });

@@ -102,10 +102,18 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   const handleResponse = useCallback(
     async (res: Response): Promise<boolean> => {
       if (res.ok) return true;
-      const detail = await res.json().catch(() => ({}));
+      const detail = await res.json().catch(() => ({} as any));
+      // NestJS ValidationPipe envia message como array; concatenamos pra
+      // que o toast nao mostre "[object Object]" ou similar.
+      const backendMessage: string | undefined = Array.isArray(detail?.message)
+        ? detail.message.join(' · ')
+        : typeof detail?.message === 'string'
+        ? detail.message
+        : undefined;
+
       if (res.status === 412 || res.status === 402) {
         toaster.show(
-          detail?.message ||
+          backendMessage ||
             t(
               'ai_video_not_configured',
               'Configure suas chaves em Settings > AI Provider > Vídeo'
@@ -116,32 +124,34 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
       }
       if (res.status === 429) {
         toaster.show(
-          t('ai_video_rate_limit', 'Aguarde um instante antes de gerar outro vídeo.'),
+          backendMessage ||
+            t(
+              'ai_video_rate_limit',
+              'Aguarde um instante antes de gerar outro vídeo.'
+            ),
           'warning'
         );
         return false;
       }
       if (res.status === 504) {
         toaster.show(
-          t(
-            'ai_video_timeout',
-            'Geração demorou demais (>10min). Tente novamente.'
-          ),
+          backendMessage ||
+            t(
+              'ai_video_timeout',
+              'Geração demorou demais (>10min). Tente novamente.'
+            ),
           'warning'
         );
         return false;
       }
-      if (res.status === 502) {
-        toaster.show(
-          detail?.message ||
-            t('ai_video_upstream_error', 'kie.ai falhou ao gerar o vídeo'),
-          'warning'
-        );
-        return false;
-      }
+      // Para 502 (kie.ai) e outros — sempre prefere a mensagem do backend
+      // (o AiVideoService traduz codigos comuns do kie.ai pra portugues).
       toaster.show(
-        detail?.message ||
-          t('ai_video_generic_error', 'Erro ao gerar vídeo'),
+        backendMessage ||
+          t(
+            'ai_video_upstream_error',
+            'kie.ai falhou ao gerar o vídeo. Tente novamente em alguns minutos.'
+          ),
         'warning'
       );
       return false;

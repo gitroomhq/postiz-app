@@ -548,4 +548,85 @@ describe('AiVideoService', () => {
       expect(allLogs).toContain('Bearer ***');
     });
   });
+
+  describe('mensagens de erro do kie.ai', () => {
+    it('deve traduzir code=402 (Credits insufficient) com hint para top-up', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({
+            code: 402,
+            msg: 'Credits insufficient: Your current balance isnt enough.',
+          }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      try {
+        await service.generate('org-1', {
+          prompt: 'x',
+          mode: 'T2V',
+          enrichPrompt: false,
+        });
+        fail('deveria ter lancado');
+      } catch (e: any) {
+        expect(e.status).toBe(502);
+        const msg = e.response?.message ?? e.message;
+        expect(msg).toContain('Sua conta kie.ai esta sem creditos');
+        expect(msg).toContain('https://kie.ai/account/billing');
+        // Mensagem original preservada entre parenteses
+        expect(msg).toContain('Credits insufficient');
+      }
+    });
+
+    it('deve traduzir code=401 (Unauthorized) com hint pra atualizar Settings', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({ code: 401, msg: 'Unauthorized: invalid key' }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      try {
+        await service.generate('org-1', {
+          prompt: 'x',
+          mode: 'T2V',
+          enrichPrompt: false,
+        });
+        fail('deveria ter lancado');
+      } catch (e: any) {
+        const msg = e.response?.message ?? e.message;
+        expect(msg).toContain('Chave kie.ai invalida ou expirada');
+        expect(msg).toContain('Settings > AI Provider > Video');
+      }
+    });
+
+    it('deve passar mensagem original quando code e desconhecido', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({ code: 999, msg: 'Some new error type' }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      try {
+        await service.generate('org-1', {
+          prompt: 'x',
+          mode: 'T2V',
+          enrichPrompt: false,
+        });
+        fail('deveria ter lancado');
+      } catch (e: any) {
+        const msg = e.response?.message ?? e.message;
+        expect(msg).toContain('kie.ai recusou');
+        expect(msg).toContain('Some new error type');
+        expect(msg).toContain('999');
+      }
+    });
+  });
 });
