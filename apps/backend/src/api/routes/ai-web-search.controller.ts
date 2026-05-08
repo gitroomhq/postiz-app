@@ -141,8 +141,8 @@ export class AiWebSearchController {
         this.isTextCredentialError(e)
       ) {
         throw new HttpException(
-          'Configure tambem a chave de Texto em Settings > AI Provider > Geracao de texto. ' +
-            'Ela e necessaria para escrever a legenda final a partir dos resultados da busca.',
+          'Configure também a chave de Texto em Settings > AI Provider > Geração de texto. ' +
+            'Ela é necessária para escrever a legenda final a partir dos resultados da busca.',
           412
         );
       }
@@ -155,6 +155,11 @@ export class AiWebSearchController {
    * credencial. Aqui na chamada, o WEB_SEARCH ja foi resolvido com
    * sucesso (caso contrario teria falhado antes do caption). Se cai
    * 412 a esta altura do pipeline, a credencial faltante e a de TEXT.
+   *
+   * O regex precisa cobrir as duas mensagens possiveis do resolver
+   * (NOT_CONFIGURED_MESSAGE e NOT_SHARED_MESSAGE) — ambas em pt-BR
+   * com acentos. Manter sem acento na regex (case-insensitive) para
+   * tolerar pequenas variacoes de caps.
    */
   private isTextCredentialError(e: HttpException): boolean {
     const response = e.getResponse();
@@ -162,7 +167,7 @@ export class AiWebSearchController {
       typeof response === 'string'
         ? response
         : (response as { message?: string })?.message ?? '';
-    return /Configure suas chaves|nao tem credencial propria/i.test(message);
+    return /Configure suas chaves|n[aã]o tem chave pr[oó]pria/i.test(message);
   }
 
   // ---------------- pipelines ----------------

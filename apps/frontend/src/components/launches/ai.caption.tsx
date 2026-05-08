@@ -64,10 +64,20 @@ export const AiCaption: FC<{
         }),
       });
       if (!res.ok) {
-        const detail = await res.json().catch(() => ({}));
+        const detail = await res.json().catch(() => ({} as any));
+        // NestJS ValidationPipe pode enviar `message` como array; concatenamos
+        // pra que o toast nao mostre "[object Object]" ou similar.
+        const backendMessage: string | undefined = Array.isArray(
+          detail?.message
+        )
+          ? detail.message.join(' · ')
+          : typeof detail?.message === 'string'
+          ? detail.message
+          : undefined;
+
         if (res.status === 412 || res.status === 402) {
           toaster.show(
-            detail?.message ||
+            backendMessage ||
               t(
                 'ai_caption_not_configured',
                 'Configure suas chaves em Settings > AI Provider'
@@ -87,7 +97,7 @@ export const AiCaption: FC<{
           return;
         }
         toaster.show(
-          detail?.message ||
+          backendMessage ||
             t('ai_caption_generic_error', 'Erro ao chamar o assistente'),
           'warning'
         );

@@ -7,10 +7,10 @@ import {
 import { ProfileService } from '@gitroom/nestjs-libraries/database/prisma/profiles/profile.service';
 
 const NOT_CONFIGURED_MESSAGE =
-  'Configure suas chaves em Settings > AI';
+  'Configure suas chaves em Settings > AI Provider.';
 
 const NOT_SHARED_MESSAGE =
-  'Este perfil nao tem credencial propria e o workspace nao compartilha o default. Configure suas chaves em Settings > AI ou ative "Compartilhar com perfis".';
+  'Este perfil não tem chave própria e o perfil padrão não está compartilhando. Configure uma chave para este perfil em Settings > AI Provider, ou ative "Compartilhar com perfis" na configuração do perfil padrão.';
 
 @Injectable()
 export class AiProviderResolverService {
