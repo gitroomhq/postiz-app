@@ -1,3 +1,5 @@
+import { AnalyticsNormalizationService } from '../../../analytics/services/analytics-normalization.service';
+
 import {
   forwardRef,
   HttpException,
@@ -38,7 +40,8 @@ export class IntegrationService {
     private _notificationService: NotificationService,
     @Inject(forwardRef(() => RefreshIntegrationService))
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _analyticsNormalizationService: AnalyticsNormalizationService
   ) {}
 
   async changeActiveCron(orgId: string) {
@@ -385,6 +388,12 @@ export class IntegrationService {
           getIntegration.token,
           +date
         );
+        const normalizedAnalytics =
+          this._analyticsNormalizationService.normalize(
+            integration.providerIdentifier,
+            loadAnalytics
+          );
+        // TODO: integrate normalized analytics response layer
         await ioRedis.set(
           `integration:${org.id}:${integration}:${date}`,
           JSON.stringify(loadAnalytics),
