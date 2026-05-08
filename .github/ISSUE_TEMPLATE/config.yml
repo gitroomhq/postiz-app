@@ -1,14 +1,14 @@
-# Disable the default option to open a blank issue
-blank_issues_enabled: true 
+blank_issues_enabled: false
 
-# Define your custom links
 contact_links:
-  # The first link definition
-  - name: 🙏 Installation Issue
-    url: https://discord.postiz.com
-    about: If you have an installation / configuration issue.
+  - name: 🐛 Bug in the underlying Postiz product
+    url: https://github.com/gitroomhq/postiz-app/issues/new/choose
+    about: This is SocialStream's AGPL fork. Bugs in the upstream Postiz product belong on the upstream tracker.
 
-  # You can add more links if needed
-  - name: Security Issue
-    url: https://github.com/gitroomhq/postiz-app/security/advisories/new
-    about: Please submit security Issues our GitHub Security Advisories.
+  - name: 💬 Issue with the SocialStream managed service
+    url: mailto:hello@socialstream.be
+    about: Customer of app.socialstream.be? Email us — we don't track customer issues on GitHub.
+
+  - name: 🔒 Security vulnerability
+    url: mailto:security@socialstream.be
+    about: See SECURITY.md for the full policy. Upstream-only issues should go to gitroomhq/postiz-app instead.

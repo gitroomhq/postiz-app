@@ -1,61 +1,81 @@
-This project is Postiz, a tool to schedule social media and chat posts to 28+ channels.
-You can add posts to the calendar, they will be added into a workflow and posted at the right time.
-You can find things like:
-- Schedule posts
-- Calendar view
-- Analytics
-- Team management
-- Media library
+# Claude context — SocialStream's AGPL-3.0 fork of Postiz
 
-This project is a monorepo with a root only package.json of dependencies.
-Made with PNPM.
-We have 3 important folders
+This repository is a public fork of [Postiz](https://github.com/gitroomhq/postiz-app)
+maintained by [SocialStream](https://socialstream.be), a Belgian-managed social
+media scheduling service. The fork exists to satisfy AGPL-3.0 § 5 (operators of
+network-modified versions must publish their modifications).
 
-- apps/backend - this is where the API code is (NESTJS)
-- apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
-- /libraries contains a lot of services shared between backend and orchestrator and frontend components.
+If you're a Claude instance working in this repo, read this file before editing.
 
-We are using only pnpm, don't use any other dependency manager.
-Never install frontend components from npmjs, focus on writing native components.
+## What this fork is for
 
-The project uses tailwind 3, before writing any component look at:
-- /apps/frontend/src/app/colors.scss
-- /apps/frontend/src/app/global.scss
-- /apps/frontend/tailwind.config.js
+- We run Postiz as a managed service at [`app.socialstream.be`](https://app.socialstream.be).
+- AGPL-3.0 obliges us to publish every modification within 30 days of going live.
+- This repo is the public mirror of what's running in production.
+- Operations docs, runbooks, planning, and infra-as-code live in the **separate**
+  private repo [`socialstream-ops`](https://github.com/SocialStream-SaaS/socialstream-ops),
+  not here.
 
-All the --color-custom* are deprecated, don't use them.
+## Modification rules
 
-And check other components in the system before to get the right design.
+1. **Every touched upstream file** must carry a `// Modified by SocialStream on YYYY-MM-DD`
+   comment marker.
+2. **Net-new SocialStream-only files** are tagged with the same marker at the top.
+3. The pinned upstream tag (`v2.21.7` as of 2026-05-08) is bumped monthly via
+   [`.github/workflows/upstream-merge.yml`](.github/workflows/upstream-merge.yml).
+4. Every deploy is gated by [`.github/workflows/agpl-drift-check.yml`](.github/workflows/agpl-drift-check.yml):
+   the production commit must be present on this fork and the fork must be ≤30 days
+   behind production.
+5. The `LICENSE` file is upstream's AGPL-3.0 — never modify.
+6. The license-footer component (`apps/frontend/src/components/license-footer.tsx`)
+   is the AGPL § 5 attribution surface — preserve the upstream "Postiz" link there.
 
-When working on the backend we need to pass the 3 layers:
-Controller >> Service >> Repository (no shortcuts)
-In some cases we will have
-Controller >> Mananger >> Service >> Repository.
+## Stack quick-reference
 
-Most of the server logic should be inside of libs/server.
-The backend repository is mostly used to write controller, and import files from libs.server.
+- Monorepo with `pnpm` workspaces, NX-managed.
+- `apps/backend` — NestJS API
+- `apps/orchestrator` — Temporal workflows + activities
+- `apps/frontend` — Next.js (App Router)
+- `libraries/` — shared NestJS + React modules. Prisma schema lives in
+  `libraries/nestjs-libraries/src/database/prisma/schema.prisma`.
+- Node 20.17.x, pnpm 8+, Postgres + Redis required, Resend for email.
+- Tailwind 3 — before writing components, look at
+  `apps/frontend/src/app/colors.scss`, `global.scss`, and `tailwind.config.js`.
+  All `--color-custom*` tokens are deprecated; don't use them.
 
-For the frontend follow this:
-- Many of the UI components lives in /apps/frontend/src/components/ui
-- Routing is in /apps/frontend/src/app
-- Components are in /apps/frontend/src/components
-- always use SWR to fetch stuff, and use "useFetch" hook from /libraries/helpers/src/utils/custom.fetch.tsx
+## Backend conventions (kept from upstream)
 
-When using SWR, each one have to be in a seperate hook and must comply with react-hooks/rules-of-hooks, never put eslint-disable-next-line on it.
+- Controller → Service → Repository (no shortcuts). Sometimes a Manager layer
+  sits between controller and service for orchestration.
+- Most server logic lives in `libraries/`; controllers in `apps/backend/` are
+  thin and just import from libs.
 
-It means that this is valid:
-const useCommunity = () => {
-   return useSWR....
-}
+## Frontend conventions (kept from upstream)
 
-This is not valid:
-const useCommunity = () => {
-  return {
-    communities: () => useSWR<CommunitiesListResponse>("communities", getCommunities),
-    providers: () => useSWR<ProvidersListResponse>("providers", getProviders),
-  };
-}
+- UI primitives in `apps/frontend/src/components/ui`.
+- Routing in `apps/frontend/src/app`.
+- Components in `apps/frontend/src/components`.
+- Always use SWR for fetching, with the `useFetch` hook from
+  `libraries/helpers/src/utils/custom.fetch.tsx`.
+- Each SWR hook must comply with `react-hooks/rules-of-hooks` — never use
+  `eslint-disable-next-line` to bypass it. Each fetch belongs in its own hook.
 
-- Linting of the project can run only from the root.
-- Use only pnpm.
+## Branding
+
+The upstream code historically called the product "Postiz" or "Gitroom". The
+SocialStream brand retrofit (PR #4, merged 2026-05-08) replaced customer-visible
+"Postiz" mentions across page titles, logos, public assets, and email templates
+with "SocialStream", and replaced the favicon/logo SVG/PNG assets in
+`apps/frontend/public/`. Future modifications must keep customer surfaces
+SocialStream-branded.
+
+The single deliberate exception is `apps/frontend/src/components/license-footer.tsx`,
+which carries the AGPL § 5 attribution back to upstream Postiz — that link must stay.
+
+## Contributions
+
+This is an operator-fork, not an open-source product. We do **not** accept
+external pull requests here. Contributions to the underlying product belong
+upstream: [`gitroomhq/postiz-app`](https://github.com/gitroomhq/postiz-app).
+
+For SocialStream-specific operational issues, contact `hello@socialstream.be`.

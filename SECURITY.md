@@ -1,69 +1,59 @@
-# Security Policy
+# Security policy
 
-## Introduction
+This repository is SocialStream's public AGPL-3.0 fork of [Postiz](https://github.com/gitroomhq/postiz-app).
+There are two categories of security issue and they go to different places.
 
-The Postiz app is committed to ensuring the security and integrity of our users' data. This security policy outlines our procedures for handling security vulnerabilities and our disclosure policy.
+## 1. Vulnerabilities in the underlying Postiz code
 
-## Scope
+If the issue is in the upstream Postiz codebase (anything that would also
+affect users running the official `gitroomhq/postiz-app` builds), please
+report it upstream:
 
-We, at Postiz (gitroomhq), cover the following scopes for vulnerability disclosures:
+- [GitHub Security Advisories on `gitroomhq/postiz-app`](https://github.com/gitroomhq/postiz-app/security/advisories/new)
 
-- The core repository for `postiz-app` (github.com/gitroomhq/postiz-app)
-- All `gitroomhq` repositories that are official components, tooling, or integrations of Postiz
-- Official Postiz container images published under `gitroomhq` on GHCR
-- Official Postiz CLI tools and NPM packages (NPM org: @postiz)
-- Postiz-Cloud related infrastructure & services. (API, Frontend, Configurations etc.)
-- Plugins for Postiz maintained within the `gitroomhq` organization
+We track upstream security fixes via the monthly
+[`upstream-merge.yml`](.github/workflows/upstream-merge.yml) workflow, and
+roll critical patches faster on demand. There's no need to file the same
+report against this fork.
 
-Vulnerabilities in third-party dependencies or user-hosted infrastructure are outside of this scope.
+## 2. Vulnerabilities specific to SocialStream's deployment
 
-## Supported Versions
+If the issue is specific to **how SocialStream runs Postiz** — for example
+the managed service at `app.socialstream.be`, the AGPL-modified files
+(license footer, `/health` endpoint, `/source` redirect, `BUILD_COMMIT_SHA`
+bake), SocialStream-operated infrastructure, or the SocialStream-only
+content on this repo — email:
 
-This project currently only supports the latest release. We recommend that users always use the latest version of the Postiz app to ensure they have the latest security patches.
-*CVE IDs will only be assigned to vulnerabilities affecting currently supported versions.*
+- **`security@socialstream.be`**
 
-## Reporting Security Vulnerabilities
+### What to include
 
-If you discover a security vulnerability in the Postiz app, please report it through the [GitHub Security Advisory system](https://github.com/gitroomhq/postiz-app/security/advisories/new).
+- A clear description of the issue and its impact.
+- Reproduction steps or a proof-of-concept, if available.
+- The commit SHA visible at `app.socialstream.be/source` when you observed the issue.
+- Whether you'd like public credit when we publish the advisory.
 
-When reporting a security vulnerability, please provide as much detail as possible, including:
+### Our response
 
-- A clear description of the vulnerability
-- Proof of concept (PoC), where possible
-- Steps to reproduce the vulnerability
-- Any relevant code or configuration files
+- We acknowledge receipt within 2 business days (Belgian time).
+- We aim to publish a fix within 14 days for high-severity issues, sooner
+  for critical ones.
+- We coordinate with upstream Postiz when the underlying issue affects
+  both projects.
 
-If the report has immediate urgency, please contact one (or more) of the maintainers via email:
+## AI-generated reports
 
-- @egelhaus ([E-Mail](mailto:egelhaus@ennogelhaus.de))
+Reports that appear to be LLM-generated without meaningful human analysis —
+typically lacking a working proof-of-concept, reproducible steps, or
+accurate impact assessment — will be closed without detailed response.
 
-### AI Reports
+Reports that include AI-assisted analysis are welcome provided they have
+been validated by the reporter and include a proof-of-concept, reproduction
+steps, and impact assessment.
 
-Reports that appear to be LLM-generated without meaningful human analysis — typically lacking a working proof of concept, reproducible steps, or accurate impact assessment — will be closed without detailed response.
+## Out of scope
 
-Reports that include AI-assisted analysis are welcome provided they have been validated by the reporter and include a proof of concept, reproduction steps, and impact assessment.
-
-## Disclosure Guidelines
-
-We follow a private disclosure policy. If you discover a security vulnerability, please report it to us privately via GitHub Security Advisories, and if immediate urgency, via email as listed above. We will respond promptly to reports of vulnerabilities and work to resolve them as quickly as possible.
-
-We will not publicly disclose security vulnerabilities until a patch or fix is available to prevent malicious actors from exploiting the vulnerability before a fix is released.
-
-## Security Vulnerability Response Process
-
-We take security vulnerabilities seriously and will respond promptly to reports of vulnerabilities. Our response process includes:
-
-- Investigating the report and verifying the vulnerability.
-- Developing a patch or fix for the vulnerability.
-- Releasing the patch or fix as soon as possible.
-- Notifying users of the vulnerability and the patch or fix.
-
-## Response Timelines
-
-We aim to follow these timelines:
-
-- **Initial Acknowledgment:** Within 72 hours of initial report.
-- **Completed Triage / Verification:** Within 7 days of initial acknowledgment.
-- **Critical Issue Remediation:** Within 90 days of completed triage.
-- **Non-Critical Issue Remediation:** Within 180 days of completed triage.
-- **CVE Publication:** Within 24 hours of remediation release.
+- Generic dependency vulnerability reports without a working exploit path.
+- Issues in user-hosted / self-hosted Postiz deployments not operated by
+  SocialStream — those go upstream.
+- Social-engineering tests against SocialStream staff or customers.

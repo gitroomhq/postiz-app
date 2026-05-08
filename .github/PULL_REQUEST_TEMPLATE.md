@@ -1,20 +1,29 @@
-# What kind of change does this PR introduce?
+<!--
+This repository is SocialStream's AGPL-3.0 fork of Postiz. We don't accept
+external pull requests — see CONTRIBUTING.md.
 
-eg: Bug fix, feature, docs update, ...
+If you're SocialStream's maintainer pushing a modification, fill in the
+sections below.
+-->
 
-# Why was this change needed?
+## Summary
 
-Please link to related issues when possible, and explain WHY you changed things, not WHAT you changed.
+What changed and why. Link to the GSD plan or upstream commit if relevant.
 
-# Other information:
+## Modification scope
 
-eg: Did you discuss this change with anybody before working on it (not required, but can be a good idea for bigger changes). Any plans for the future, etc?
+- [ ] Every touched upstream file has a `// Modified by SocialStream on YYYY-MM-DD` marker
+- [ ] No customer-facing surface introduces or restores a "Postiz" mention (with the carve-out for `license-footer.tsx`'s AGPL § 5 attribution)
+- [ ] `LICENSE` was not modified
+- [ ] If this PR bumps the pinned upstream tag, `apps/frontend/src/app/(app)/source/route.ts` and `agpl-drift-check.yml` still resolve correctly
 
-# Checklist:
+## Verification
 
-Put a "X" in the boxes below to indicate you have followed the checklist;
+- [ ] `pnpm install && pnpm run build` clean
+- [ ] Local Docker compose runs (`docker-compose.dev.yaml`) — login renders, `/source` redirects, `/health` returns 200
+- [ ] Visual brand check (header logo, page title, transactional email styling)
 
-- [ ] I have read the [CONTRIBUTING](https://github.com/gitroomhq/postiz-app/blob/main/CONTRIBUTING.md) guide.
-- [ ] I confirm I have not used AI to submit this PR or generate code for it.
-- [ ] I checked that there were not similar issues or PRs already open for this.
-- [ ] This PR fixes just ONE issue (do not include multiple issues or types of change in the same PR) For example, don't try and fix a UI issue and include new dependencies in the same PR.
+## Linked artifacts
+
+- GSD plan / phase: …
+- Upstream issue or PR (if mirroring fix): …
