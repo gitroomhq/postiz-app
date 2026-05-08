@@ -693,9 +693,9 @@
   "watch_tutorial_description": "צפה בסרטון הקצר הזה ולמד כיצד להפיק את המרב מ-Postiz",
   "back": "חזרה",
   "get_started": "התחלה",
-  "end_never": "ללא סיום",
-  "end_after_date": "סיום לאחר תאריך",
-  "end_after_posts": "סיום לאחר מספר פוסטים",
+  "end_never": "סוף לעולם לא",
+  "end_after_date": "סוף אחרי תאריך",
+  "end_after_posts": "סוף אחרי פוסטים",
   "no_of_posts": "מספר פוסטים",
-  "never": "אף פעם"
+  "never": "לעולם לא"
 }

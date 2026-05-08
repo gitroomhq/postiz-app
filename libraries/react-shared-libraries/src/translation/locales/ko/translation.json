@@ -694,8 +694,8 @@
   "back": "뒤로가기",
   "get_started": "시작하기",
   "end_never": "종료 안 함",
-  "end_after_date": "날짜 후 종료",
-  "end_after_posts": "게시물 수 후 종료",
+  "end_after_date": "지정 날짜 후 종료",
+  "end_after_posts": "게시물 수 도달 시 종료",
   "no_of_posts": "게시물 수",
-  "never": "없음"
+  "never": "안 함"
 }

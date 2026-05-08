@@ -694,8 +694,8 @@
   "back": "Retour",
   "get_started": "Commencer",
   "end_never": "Ne jamais terminer",
-  "end_after_date": "Terminer après la date",
-  "end_after_posts": "Terminer après le nombre de publications",
-  "no_of_posts": "Nbre de publications",
+  "end_after_date": "Terminer après une date",
+  "end_after_posts": "Terminer après un nombre de publications",
+  "no_of_posts": "Nombre de publications",
   "never": "Jamais"
 }
