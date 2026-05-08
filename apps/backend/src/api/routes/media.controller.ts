@@ -27,6 +27,8 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { GenerateImageBodyDto } from '@gitroom/nestjs-libraries/dtos/ai/image.dto';
+import { ImageMode } from '@gitroom/nestjs-libraries/ai/ai-image.service';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -62,7 +64,8 @@ export class MediaController {
     @Req() req: Request,
     @Body('prompt') prompt: string,
     isPicturePrompt = false,
-    aspectRatio?: '1:1' | '9:16' | '16:9'
+    aspectRatio?: '1:1' | '9:16' | '16:9',
+    extra?: { mode?: ImageMode; referenceImageUrl?: string }
   ) {
     const total = await this._subscriptionService.checkCredits(org);
     if (total.credits <= 0) {
@@ -77,7 +80,8 @@ export class MediaController {
           org,
           isPicturePrompt,
           profile?.id,
-          aspectRatio
+          aspectRatio,
+          extra
         )),
     };
   }
@@ -87,23 +91,23 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @GetProfileFromRequest() profile: Profile | null,
     @Req() req: Request,
-    @Body('prompt') prompt: string,
-    @Body('aspectRatio') aspectRatioRaw?: string
+    @Body() body: GenerateImageBodyDto
   ) {
-    const VALID = ['1:1', '9:16', '16:9'] as const;
-    type AspectRatio = (typeof VALID)[number];
-    const aspectRatio: AspectRatio | undefined =
-      aspectRatioRaw && (VALID as readonly string[]).includes(aspectRatioRaw)
-        ? (aspectRatioRaw as AspectRatio)
-        : undefined;
+    // manualPrompt=true => skip enrichment (prompt vai cru pro modelo).
+    // manualPrompt=false (default) => enriquece com generatePromptForPicture.
+    const isPicturePrompt = !body.manualPrompt;
 
     const image = await this.generateImage(
       org,
       profile,
       req,
-      prompt,
-      true,
-      aspectRatio
+      body.prompt,
+      isPicturePrompt,
+      body.aspectRatio,
+      {
+        mode: body.mode,
+        referenceImageUrl: body.referenceImageUrl,
+      }
     );
     if (!image) {
       return false;
@@ -119,7 +123,13 @@ export class MediaController {
       : `data:image/png;base64,${image.output}`;
     const file = await this.storage.uploadSimple(payload);
 
-    return this._mediaService.saveFile(org.id, file.split('/').pop(), file, undefined, profile?.id);
+    return this._mediaService.saveFile(
+      org.id,
+      file.split('/').pop(),
+      file,
+      undefined,
+      profile?.id
+    );
   }
 
   @Post('/upload-server')

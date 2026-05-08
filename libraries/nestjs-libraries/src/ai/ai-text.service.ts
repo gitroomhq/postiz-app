@@ -121,9 +121,11 @@ export class AiTextService {
         model,
         schema: PicturePromptSchema,
         system:
-          'Voce recebe uma descricao e estilo e gera um prompt detalhado para gerar imagens. Faca uma explicacao longa e descritiva, incluindo detalhes de estilo (camera, iluminacao, atmosfera, etc) quando aplicavel.',
+          'You receive a description and style and generate a detailed prompt for an image-generation model. Write a long, descriptive explanation including style details (camera, lighting, atmosphere, mood, composition) when applicable. Always respond in ENGLISH, regardless of the input language — image-generation models perform significantly better with English prompts.',
         prompt: `prompt: ${prompt}`,
-        temperature: client.options.temperature,
+        ...(isReasoningModel(client.modelId)
+          ? {}
+          : { temperature: client.options.temperature }),
       })
     );
     return result.object.prompt;
@@ -148,7 +150,7 @@ export class AiTextService {
         model,
         schema: VideoPromptSchema,
         system:
-          'Voce recebe uma descricao curta para video e gera um prompt detalhado para modelo text-to-video. Inclua: movimento de camera (pan, zoom, dolly, tracking), iluminacao (golden hour, soft, dramatic), cinematografia (close-up, wide shot, aerial), ritmo (slow, dynamic) e atmosfera. Mantenha entre 50-200 palavras. Retorne APENAS o prompt enriquecido, sem cabecalho.',
+          'You receive a short description for a video and generate a detailed prompt for a text-to-video model. Include: camera movement (pan, zoom, dolly, tracking), lighting (golden hour, soft, dramatic), cinematography (close-up, wide shot, aerial), pacing (slow, dynamic) and atmosphere. Keep it between 50-200 words. Always respond in ENGLISH, regardless of the input language — video-generation models perform significantly better with English prompts. Return ONLY the enriched prompt, no preface.',
         prompt: `User prompt: ${prompt}`,
         ...(isReasoningModel(client.modelId)
           ? {}

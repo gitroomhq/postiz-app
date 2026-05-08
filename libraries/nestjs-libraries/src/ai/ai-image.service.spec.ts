@@ -228,4 +228,147 @@ describe('AiImageService', () => {
       );
     });
   });
+
+  describe('I2I (Image-to-Image)', () => {
+    it('deve lancar 400 quando mode=I2I sem referenceImageUrl', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+
+      await expect(
+        service.generate('org-1', 'transform', undefined, { mode: 'I2I' })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('OpenRouter I2I deve enviar messages com text + image_url', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      const fetchSpy = jest.fn(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  images: [
+                    { image_url: { url: 'data:image/png;base64,RESULT' } },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      const result = await service.generate(
+        'org-1',
+        'cyberpunk style',
+        undefined,
+        {
+          mode: 'I2I',
+          referenceImageUrl: 'https://example.com/cat.jpg',
+          aspectRatio: '1:1',
+        }
+      );
+
+      const [url, init] = fetchSpy.mock.calls[0] as any;
+      expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
+      const body = JSON.parse(init.body);
+      // messages[0].content e array com text + image_url
+      expect(body.messages[0].role).toBe('user');
+      expect(Array.isArray(body.messages[0].content)).toBe(true);
+      expect(body.messages[0].content).toEqual([
+        { type: 'text', text: 'cyberpunk style' },
+        {
+          type: 'image_url',
+          image_url: { url: 'https://example.com/cat.jpg' },
+        },
+      ]);
+      expect(body.modalities).toEqual(['image', 'text']);
+      expect(body.image_config.aspect_ratio).toBe('1:1');
+      expect(result.base64).toBe('RESULT');
+    });
+
+    it('OpenAI I2I deve postar FormData para /v1/images/edits', async () => {
+      resolver.resolve.mockResolvedValue(
+        credentialFor({
+          provider: 'openai',
+          model: 'gpt-image-2',
+        }) as any
+      );
+
+      // 1a chamada: download da imagem de referencia
+      // 2a chamada: POST /v1/images/edits
+      let callIdx = 0;
+      const fetchSpy = jest.fn(async () => {
+        callIdx++;
+        if (callIdx === 1) {
+          // Download da reference: retorna PNG bytes
+          return new Response(new Uint8Array([137, 80, 78, 71]), {
+            status: 200,
+            headers: { 'Content-Type': 'image/png' },
+          });
+        }
+        // POST edits
+        return new Response(
+          JSON.stringify({ data: [{ b64_json: 'EDITED' }] }),
+          { status: 200 }
+        );
+      });
+      globalThis.fetch = fetchSpy as any;
+
+      const result = await service.generate(
+        'org-1',
+        'restyle as cyberpunk',
+        undefined,
+        {
+          mode: 'I2I',
+          referenceImageUrl: 'https://example.com/ref.png',
+          aspectRatio: '9:16',
+        }
+      );
+
+      // 1a chamada: GET ref image
+      const [downloadUrl] = fetchSpy.mock.calls[0] as any;
+      expect(downloadUrl).toBe('https://example.com/ref.png');
+
+      // 2a chamada: POST /v1/images/edits com FormData
+      const [editUrl, editInit] = fetchSpy.mock.calls[1] as any;
+      expect(editUrl).toBe('https://api.openai.com/v1/images/edits');
+      expect(editInit.method).toBe('POST');
+      expect(editInit.headers).toEqual(
+        expect.objectContaining({
+          Authorization: 'Bearer sk-or-real',
+        })
+      );
+      // Body e FormData (nao JSON) — multipart implicito
+      expect(editInit.body).toBeInstanceOf(FormData);
+      const fd = editInit.body as FormData;
+      expect(fd.get('model')).toBe('gpt-image-2');
+      expect(fd.get('prompt')).toBe('restyle as cyberpunk');
+      expect(fd.get('size')).toBe('1024x1536');
+      expect(fd.get('n')).toBe('1');
+      expect(fd.get('image')).toBeDefined();
+
+      expect(result.base64).toBe('EDITED');
+      expect(result.provider).toBe('openai');
+    });
+
+    it('OpenAI I2I deve lancar 502 quando download da reference falha', async () => {
+      resolver.resolve.mockResolvedValue(
+        credentialFor({
+          provider: 'openai',
+          model: 'gpt-image-2',
+        }) as any
+      );
+      globalThis.fetch = jest.fn(async () =>
+        new Response('not found', { status: 404 })
+      ) as any;
+
+      await expect(
+        service.generate('org-1', 'x', undefined, {
+          mode: 'I2I',
+          referenceImageUrl: 'https://example.com/missing.png',
+        })
+      ).rejects.toMatchObject({ status: 502 });
+    });
+  });
 });

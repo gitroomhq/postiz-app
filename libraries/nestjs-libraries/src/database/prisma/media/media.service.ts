@@ -15,6 +15,7 @@ import {
 import {
   AiAspectRatio,
   AiImageService,
+  ImageMode,
 } from '@gitroom/nestjs-libraries/ai/ai-image.service';
 import { AiTextService } from '@gitroom/nestjs-libraries/ai/ai-text.service';
 import {
@@ -50,7 +51,8 @@ export class MediaService {
     org: Organization,
     generatePromptFirst?: boolean,
     profileId?: string,
-    aspectRatio?: AiAspectRatio
+    aspectRatio?: AiAspectRatio,
+    extra?: { mode?: ImageMode; referenceImageUrl?: string }
   ) {
     const generating = await this._subscriptionService.useCredit(
       org,
@@ -84,7 +86,13 @@ export class MediaService {
           org.id,
           finalPrompt,
           profileId,
-          aspectRatio ? { aspectRatio } : undefined
+          {
+            ...(aspectRatio ? { aspectRatio } : {}),
+            ...(extra?.mode ? { mode: extra.mode } : {}),
+            ...(extra?.referenceImageUrl
+              ? { referenceImageUrl: extra.referenceImageUrl }
+              : {}),
+          }
         );
         return result.base64;
       }

@@ -1,0 +1,18 @@
+{
+  "id": "b2a85820-2aa0-4366-9b2d-cb89a6f9be67",
+  "name": "mcp-activity",
+  "status": "active",
+  "repoPath": "/Users/maiconramos/Documents/workspace/robo-multipost",
+  "createdAt": "2026-05-08T11:00:19.329Z",
+  "updatedAt": "2026-05-08T12:02:17.294Z",
+  "startedAt": "2026-05-08T11:00:19.329Z",
+  "traceCount": 7,
+  "artifactCount": 0,
+  "checkpointCount": 0,
+  "checkpoints": [],
+  "metadata": {
+    "transport": "mcp",
+    "purpose": "tool-audit"
+  },
+  "lastTraceAt": "2026-05-08T12:02:17.294Z"
+}

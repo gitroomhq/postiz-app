@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -9,8 +9,15 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
+import { ModeTab } from '@gitroom/frontend/components/launches/helpers/mode.tab.component';
+import { ReferenceImageDropzone } from '@gitroom/frontend/components/launches/helpers/reference.image.dropzone.component';
 
+type Mode = 'T2I' | 'I2I';
+type AspectRatio = '1:1' | '9:16' | '16:9';
+
+const STYLE_NONE = 'Sem estilo';
 const STYLES = [
+  STYLE_NONE,
   'Realistic',
   'Cartoon',
   'Anime',
@@ -27,31 +34,21 @@ const STYLES = [
   'Fantasy Realism',
 ];
 
-type AspectRatio = '1:1' | '9:16' | '16:9';
-
 const ASPECT_OPTIONS: Array<{
   value: AspectRatio;
   labelKey: string;
   fallback: string;
-  hint: string;
 }> = [
-  {
-    value: '1:1',
-    labelKey: 'ai_image_aspect_square',
-    fallback: 'Quadrado',
-    hint: '1:1',
-  },
+  { value: '1:1', labelKey: 'ai_image_aspect_square', fallback: 'Quadrado' },
   {
     value: '9:16',
     labelKey: 'ai_image_aspect_vertical',
     fallback: 'Vertical (Stories, Reels)',
-    hint: '9:16',
   },
   {
     value: '16:9',
     labelKey: 'ai_image_aspect_horizontal',
     fallback: 'Horizontal (Post normal)',
-    hint: '16:9',
   },
 ];
 
@@ -66,36 +63,79 @@ const ImageModal: FC<ModalProps> = ({ value, close, onChange }) => {
   const fetch = useFetch();
   const toaster = useToaster();
   const setLocked = useLaunchStore((p) => p.setLocked);
+
+  const [mode, setMode] = useState<Mode>('T2I');
+  const [manualPromptText, setManualPromptText] = useState('');
+  const [referenceImageUrl, setReferenceImageUrl] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
-  const [style, setStyle] = useState<string | null>(null);
+  const [style, setStyle] = useState<string>(STYLE_NONE);
   const [loading, setLoading] = useState(false);
 
-  const generate = useCallback(async () => {
-    if (!style || loading) return;
-    setLoading(true);
-    setLocked(true);
-    try {
-      const res = await fetch('/media/generate-image-with-prompt', {
-        method: 'POST',
-        body: JSON.stringify({
-          prompt: `
+  // Quando manual prompt esta preenchido, usa-o cru. Senao, monta o
+  // prompt no formato antigo (post text + style tag) para ir pelo
+  // pipeline de enriquecimento.
+  const finalPrompt = useMemo(() => {
+    const manual = manualPromptText.trim();
+    const stylePrefix =
+      style && style !== STYLE_NONE ? `Style: ${style}.\n` : '';
+
+    if (manual) {
+      return `${stylePrefix}${manual}`;
+    }
+    return `
 <!-- description -->
 ${value}
 <!-- /description -->
 
 <!-- style -->
-${style}
+${style === STYLE_NONE ? '' : style}
 <!-- /style -->
+`;
+  }, [manualPromptText, style, value]);
 
-`,
-          aspectRatio,
-        }),
+  const canGenerate = useMemo(() => {
+    if (loading) return false;
+    if (mode === 'I2I' && !referenceImageUrl) return false;
+    // Quando T2I sem manual e sem post text, nao da pra gerar (evita
+    // chamada vazia que vai cair no enrich e gerar lixo).
+    if (mode === 'T2I' && !manualPromptText.trim() && !value.trim()) {
+      return false;
+    }
+    return true;
+  }, [loading, mode, referenceImageUrl, manualPromptText, value]);
+
+  const generate = useCallback(async () => {
+    if (!canGenerate) return;
+    setLoading(true);
+    setLocked(true);
+    try {
+      const body: Record<string, unknown> = {
+        prompt: finalPrompt,
+        aspectRatio,
+        mode,
+        manualPrompt: !!manualPromptText.trim(),
+      };
+      if (mode === 'I2I') {
+        body.referenceImageUrl = referenceImageUrl.trim();
+      }
+
+      const res = await fetch('/media/generate-image-with-prompt', {
+        method: 'POST',
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const detail = await res.json().catch(() => ({}));
+        const detail = await res.json().catch(() => ({} as any));
+        const backendMessage: string | undefined = Array.isArray(
+          detail?.message
+        )
+          ? detail.message.join(' · ')
+          : typeof detail?.message === 'string'
+          ? detail.message
+          : undefined;
+
         if (res.status === 412 || res.status === 402) {
           toaster.show(
-            detail?.message ||
+            backendMessage ||
               t(
                 'ai_image_not_configured',
                 'Configure suas chaves em Settings > AI Provider'
@@ -115,7 +155,7 @@ ${style}
           return;
         }
         toaster.show(
-          detail?.message ||
+          backendMessage ||
             t('ai_image_generic_error', 'Erro ao gerar imagem'),
           'warning'
         );
@@ -140,21 +180,30 @@ ${style}
       setLoading(false);
       setLocked(false);
     }
-  }, [aspectRatio, style, value, loading, fetch, toaster, t, onChange, close, setLocked]);
+  }, [
+    canGenerate,
+    finalPrompt,
+    aspectRatio,
+    mode,
+    manualPromptText,
+    referenceImageUrl,
+    fetch,
+    toaster,
+    t,
+    onChange,
+    close,
+    setLocked,
+  ]);
 
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/50">
       <div>
-        <div className="flex gap-[10px] flex-col w-[560px] max-h-[80vh] overflow-y-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
-          <div className="flex sticky top-0 bg-sixth z-[1] pt-[20px] -mt-[20px]">
-            <div className="flex-1">
-              <TopTitle
-                title={t('ai_image_modal_title', 'Gerar imagem com IA')}
-              />
-            </div>
+        <div className="flex gap-[14px] flex-col w-[700px] max-w-[90vw] max-h-[85vh] overflow-y-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+          <div className="flex items-center justify-between sticky top-0 bg-sixth z-[1] pt-[20px] pb-[4px]">
+            <TopTitle title={t('ai_image_modal_title', 'Gerar imagem com IA')} />
             <button
               onClick={close}
-              className="outline-none absolute end-[10px] top-[10px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close"
+              className="outline-none mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close p-[6px] rounded-[6px]"
               type="button"
             >
               <svg
@@ -174,10 +223,58 @@ ${style}
             </button>
           </div>
 
-          <div className="flex flex-col gap-[6px]">
-            <div className="text-[13px] text-customColor18">
-              {t('ai_image_aspect_label', 'Formato')}
-            </div>
+          {/* Tabs T2I / I2I */}
+          <div className="grid grid-cols-2 gap-[8px] p-[4px] bg-newColColor rounded-[8px]">
+            <ModeTab
+              active={mode === 'T2I'}
+              onClick={() => setMode('T2I')}
+              disabled={loading}
+              label={t('ai_image_tab_t2i', 'Texto → Imagem')}
+              hint={t('ai_image_tab_t2i_hint', 'Gera a partir de prompt')}
+              icon={<TextIcon />}
+            />
+            <ModeTab
+              active={mode === 'I2I'}
+              onClick={() => setMode('I2I')}
+              disabled={loading}
+              label={t('ai_image_tab_i2i', 'Imagem → Imagem')}
+              hint={t('ai_image_tab_i2i_hint', 'Transforma uma referência')}
+              icon={<ImageIcon />}
+            />
+          </div>
+
+          {/* Prompt manual (opcional) */}
+          <FieldRow
+            label={t('ai_image_manual_prompt_label', 'Prompt manual (opcional)')}
+          >
+            <textarea
+              className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[10px] outline-none text-[14px] min-h-[80px] resize-none"
+              placeholder={t(
+                'ai_image_manual_prompt_placeholder',
+                'Deixe vazio para gerar a partir do texto do post. Preencha para enviar diretamente ao modelo (sem enriquecimento automático).'
+              )}
+              value={manualPromptText}
+              disabled={loading}
+              maxLength={2000}
+              onChange={(e) => setManualPromptText(e.target.value)}
+            />
+          </FieldRow>
+
+          {/* Imagem de referencia (so I2I) */}
+          {mode === 'I2I' && (
+            <FieldRow
+              label={t('ai_image_reference_label', 'Imagem de referência')}
+            >
+              <ReferenceImageDropzone
+                value={referenceImageUrl}
+                onChange={setReferenceImageUrl}
+                disabled={loading}
+              />
+            </FieldRow>
+          )}
+
+          {/* Formato */}
+          <FieldRow label={t('ai_image_aspect_label', 'Formato')}>
             <div className="grid grid-cols-3 gap-[8px]">
               {ASPECT_OPTIONS.map((opt) => (
                 <button
@@ -193,84 +290,149 @@ ${style}
                     loading && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  <AspectIcon ratio={opt.value} active={aspectRatio === opt.value} />
+                  <AspectIcon
+                    ratio={opt.value}
+                    active={aspectRatio === opt.value}
+                  />
                   <span className="text-[13px]">
                     {t(opt.labelKey, opt.fallback)}
                   </span>
-                  <span className="text-[10px] text-customColor18">{opt.hint}</span>
+                  <span className="text-[10px] text-customColor18">
+                    {opt.value}
+                  </span>
                 </button>
               ))}
             </div>
-          </div>
+          </FieldRow>
 
-          <div className="flex flex-col gap-[6px] mt-[8px]">
-            <div className="text-[13px] text-customColor18">
-              {t('ai_image_style_label', 'Estilo')}
+          {/* Estilo */}
+          <FieldRow label={t('ai_image_style_label', 'Estilo')}>
+            <div className="grid grid-cols-4 gap-[6px]">
+              {STYLES.map((s) => {
+                const isNone = s === STYLE_NONE;
+                const label = isNone
+                  ? t('ai_image_style_none', 'Sem estilo')
+                  : s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setStyle(s)}
+                    className={clsx(
+                      'rounded-[6px] border px-[10px] py-[8px] text-[12px] transition-colors text-center',
+                      style === s
+                        ? 'border-btnPrimary bg-newColColor'
+                        : 'border-newTableBorder hover:bg-newColColor',
+                      loading && 'opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-            <div className="grid grid-cols-3 gap-[6px]">
-              {STYLES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => setStyle(s)}
-                  className={clsx(
-                    'rounded-[6px] border px-[10px] py-[8px] text-[12px] transition-colors text-center',
-                    style === s
-                      ? 'border-btnPrimary bg-newColColor'
-                      : 'border-newTableBorder hover:bg-newColColor',
-                    loading && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          </FieldRow>
 
-          <div className="flex flex-col gap-[4px] mt-[8px]">
-            <Button
-              type="button"
-              onClick={generate}
-              loading={loading}
-              disabled={!style || loading}
-            >
-              {t('ai_image_generate', 'Gerar imagem')}
-            </Button>
-            {!style && (
-              <div className="text-[11px] text-customColor18 text-center">
-                {t(
-                  'ai_image_pick_style',
-                  'Selecione um estilo para gerar'
-                )}
-              </div>
-            )}
-          </div>
+          <Button
+            type="button"
+            onClick={generate}
+            loading={loading}
+            disabled={!canGenerate}
+          >
+            {t('ai_image_generate', 'Gerar imagem')}
+          </Button>
         </div>
       </div>
     </div>
   );
 };
 
-const AspectIcon: FC<{ ratio: AspectRatio; active: boolean }> = ({ ratio, active }) => {
+const FieldRow: FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div className="flex flex-col gap-[6px]">
+    {label && <div className="text-[13px] text-customColor18">{label}</div>}
+    {children}
+  </div>
+);
+
+const TextIcon: FC = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M3 4H13M3 8H10M3 12H8"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const ImageIcon: FC = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect
+      x="2"
+      y="3"
+      width="12"
+      height="10"
+      rx="1.5"
+      stroke="currentColor"
+      strokeWidth="1.4"
+    />
+    <circle cx="6" cy="7" r="1.2" fill="currentColor" />
+    <path
+      d="M3 12L6.5 8.5L9 11L11 9L13 11"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const AspectIcon: FC<{ ratio: AspectRatio; active: boolean }> = ({
+  ratio,
+  active,
+}) => {
   const stroke = active ? 'currentColor' : '#888';
   if (ratio === '1:1') {
     return (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="5" y="5" width="14" height="14" stroke={stroke} strokeWidth="1.5" />
+        <rect
+          x="5"
+          y="5"
+          width="14"
+          height="14"
+          stroke={stroke}
+          strokeWidth="1.5"
+        />
       </svg>
     );
   }
   if (ratio === '9:16') {
     return (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="8" y="3" width="8" height="18" stroke={stroke} strokeWidth="1.5" />
+        <rect
+          x="8"
+          y="3"
+          width="8"
+          height="18"
+          stroke={stroke}
+          strokeWidth="1.5"
+        />
       </svg>
     );
   }
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="8" width="18" height="8" stroke={stroke} strokeWidth="1.5" />
+      <rect
+        x="3"
+        y="8"
+        width="18"
+        height="8"
+        stroke={stroke}
+        strokeWidth="1.5"
+      />
     </svg>
   );
 };
@@ -288,20 +450,17 @@ export const AiImage: FC<{
     return (
       await fetch('/copilot/credits?type=ai_images', { method: 'GET' })
     ).json();
-  }, []);
+  }, [fetch]);
   const { data: creditData } = useSWR('image-credits', loadImageCredits);
 
   const isUnlimited = !creditData || creditData.credits >= 999999;
   const hasCredits = isUnlimited || creditData.credits > 0;
 
-  const isDisabled = value.length < 30 || !hasCredits;
+  // Removido `value.length < 30` (alinhado com AiSearch e AiVideo): o
+  // usuario pode usar prompt manual ou I2I sem texto no editor.
+  const isDisabled = !hasCredits;
   const tooltipContent = !hasCredits
     ? t('ai_credits_limit_reached', 'Limit reached')
-    : value.length < 30
-    ? t(
-        'ai_image_min_chars',
-        'Please add at least 30 characters to generate AI image'
-      )
     : undefined;
 
   return (

@@ -9,7 +9,8 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { ModeTab } from '@gitroom/frontend/components/launches/helpers/mode.tab.component';
+import { ReferenceImageDropzone } from '@gitroom/frontend/components/launches/helpers/reference.image.dropzone.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 
 type Mode = 'T2V' | 'I2V';
@@ -82,85 +83,6 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
   const [enrichPrompt, setEnrichPrompt] = useState<boolean>(true);
   const [loading, setLocalLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Upload local de imagem para I2V — POST /media/upload-server retorna
-  // { id, path } onde path e a URL publica (R2 ou local). Setamos como
-  // referenceImageUrl para que kie.ai consiga acessar.
-  const handleFileUpload = useCallback(
-    async (file: File) => {
-      if (!file.type.startsWith('image/')) {
-        toaster.show(
-          t(
-            'ai_video_only_images',
-            'Apenas imagens são aceitas como referência.'
-          ),
-          'warning'
-        );
-        return;
-      }
-      if (file.size > 30 * 1024 * 1024) {
-        toaster.show(
-          t(
-            'ai_video_image_too_large',
-            'Imagem muito grande (máximo 30MB).'
-          ),
-          'warning'
-        );
-        return;
-      }
-      setUploading(true);
-      try {
-        const form = new FormData();
-        form.append('file', file);
-        const res = await fetch('/media/upload-server', {
-          method: 'POST',
-          body: form,
-        });
-        if (!res.ok) {
-          toaster.show(
-            t('ai_video_upload_failed', 'Falha ao enviar imagem.'),
-            'warning'
-          );
-          return;
-        }
-        const data = await res.json();
-        if (data?.path) {
-          setReferenceImageUrl(data.path);
-        } else {
-          toaster.show(
-            t('ai_video_upload_no_path', 'Resposta inválida do servidor.'),
-            'warning'
-          );
-        }
-      } catch {
-        toaster.show(
-          t('ai_video_upload_failed', 'Falha ao enviar imagem.'),
-          'warning'
-        );
-      } finally {
-        setUploading(false);
-      }
-    },
-    [fetch, toaster, t]
-  );
-
-  const onDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (loading || uploading) return;
-      const file = e.dataTransfer.files?.[0];
-      if (file) handleFileUpload(file);
-    },
-    [loading, uploading, handleFileUpload]
-  );
-
-  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
 
   // Sincroniza enrich default da credencial (so primeira vez)
   React.useEffect(() => {
@@ -179,15 +101,12 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
     }
   }, [mode, referenceImageUrl]);
 
-  const canGenerate =
-    !loading && !uploading && prompt.trim().length >= 3 && isI2VValid;
+  const canGenerate = !loading && prompt.trim().length >= 3 && isI2VValid;
 
   const handleResponse = useCallback(
     async (res: Response): Promise<boolean> => {
       if (res.ok) return true;
       const detail = await res.json().catch(() => ({} as any));
-      // NestJS ValidationPipe envia message como array; concatenamos pra
-      // que o toast nao mostre "[object Object]" ou similar.
       const backendMessage: string | undefined = Array.isArray(detail?.message)
         ? detail.message.join(' · ')
         : typeof detail?.message === 'string'
@@ -227,8 +146,6 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
         );
         return false;
       }
-      // Para 502 (kie.ai) e outros — sempre prefere a mensagem do backend
-      // (o AiVideoService traduz codigos comuns do kie.ai pra portugues).
       toaster.show(
         backendMessage ||
           t(
@@ -304,14 +221,12 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/50">
       <div>
-        <div className="flex gap-[14px] flex-col w-[600px] max-h-[85vh] overflow-y-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
-          <div className="flex sticky top-0 bg-sixth z-[1] pt-[20px] -mt-[20px]">
-            <div className="flex-1">
-              <TopTitle title={t('ai_video_modal_title', 'Gerar vídeo com IA')} />
-            </div>
+        <div className="flex gap-[14px] flex-col w-[700px] max-w-[90vw] max-h-[85vh] overflow-y-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+          <div className="flex items-center justify-between sticky top-0 bg-sixth z-[1] pt-[20px] pb-[4px]">
+            <TopTitle title={t('ai_video_modal_title', 'Gerar vídeo com IA')} />
             <button
               onClick={close}
-              className="outline-none absolute end-[10px] top-[10px] mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close"
+              className="outline-none mantine-UnstyledButton-root mantine-ActionIcon-root bg-primary hover:bg-tableBorder cursor-pointer mantine-Modal-close p-[6px] rounded-[6px]"
               type="button"
             >
               <svg viewBox="0 0 15 15" fill="none" width="16" height="16">
@@ -351,10 +266,7 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
               onClick={() => setMode('T2V')}
               disabled={loading}
               label={t('ai_video_tab_t2v', 'Texto → Vídeo')}
-              hint={t(
-                'ai_video_tab_t2v_hint',
-                'Gera vídeo a partir de prompt'
-              )}
+              hint={t('ai_video_tab_t2v_hint', 'Gera vídeo a partir de prompt')}
               icon={<TextIcon />}
             />
             <ModeTab
@@ -371,9 +283,7 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
           </div>
 
           {/* Prompt */}
-          <FieldRow
-            label={t('ai_video_prompt_label', 'Descrição do vídeo')}
-          >
+          <FieldRow label={t('ai_video_prompt_label', 'Prompt do vídeo')}>
             <textarea
               className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[10px] outline-none text-[14px] min-h-[100px] resize-none"
               placeholder={t(
@@ -387,113 +297,16 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
             />
           </FieldRow>
 
-          {/* I2V: imagem de referência (upload OU URL) */}
+          {/* I2V: imagem de referência (helper compartilhado) */}
           {mode === 'I2V' && (
             <FieldRow
-              label={t(
-                'ai_video_reference_label',
-                'Imagem de referência'
-              )}
+              label={t('ai_video_reference_label', 'Imagem de referência')}
             >
-              {referenceImageUrl ? (
-                <div className="flex items-center gap-[12px] bg-newColColor border border-newTableBorder rounded-[8px] p-[10px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={referenceImageUrl}
-                    alt="reference"
-                    className="w-[80px] h-[80px] object-cover rounded-[6px] flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-customColor18 truncate">
-                      {referenceImageUrl}
-                    </div>
-                    {!isI2VValid && (
-                      <div className="text-[11px] text-customColor19 mt-[2px]">
-                        {t(
-                          'ai_video_reference_invalid',
-                          'URL inválida (use http:// ou https://).'
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="text-[12px] text-customColor19 hover:underline"
-                    disabled={loading}
-                    onClick={() => setReferenceImageUrl('')}
-                  >
-                    {t('ai_video_reference_remove', 'Remover')}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div
-                    onDrop={onDrop}
-                    onDragOver={onDragOver}
-                    onClick={() =>
-                      !loading && !uploading && fileInputRef.current?.click()
-                    }
-                    className={clsx(
-                      'border-2 border-dashed border-newTableBorder rounded-[8px] p-[20px] text-center cursor-pointer transition-colors hover:bg-newColColor/40',
-                      (loading || uploading) &&
-                        'opacity-50 cursor-not-allowed'
-                    )}
-                  >
-                    {uploading ? (
-                      <div className="flex flex-col items-center gap-[6px]">
-                        <Loading
-                          height={20}
-                          width={20}
-                          type="spin"
-                          color="currentColor"
-                        />
-                        <span className="text-[12px] text-customColor18">
-                          {t(
-                            'ai_video_uploading',
-                            'Enviando imagem...'
-                          )}
-                        </span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="text-[13px] text-textColor mb-[2px]">
-                          {t(
-                            'ai_video_dropzone',
-                            'Arraste uma imagem ou clique para selecionar'
-                          )}
-                        </div>
-                        <div className="text-[11px] text-customColor18">
-                          {t(
-                            'ai_video_dropzone_hint',
-                            'PNG, JPG ou WebP até 30MB'
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                  <div className="text-[12px] text-customColor18 mt-[8px]">
-                    {t('ai_video_or_paste_url', 'Ou cole uma URL pública:')}
-                  </div>
-                  <input
-                    type="url"
-                    className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[8px] outline-none text-[13px] mt-[4px]"
-                    placeholder="https://..."
-                    disabled={loading || uploading}
-                    onChange={(e) => setReferenceImageUrl(e.target.value)}
-                  />
-                </>
-              )}
+              <ReferenceImageDropzone
+                value={referenceImageUrl}
+                onChange={setReferenceImageUrl}
+                disabled={loading}
+              />
             </FieldRow>
           )}
 
@@ -524,37 +337,20 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
                 </label>
               ))}
             </div>
-            <div className="text-[11px] text-customColor18 mt-[4px]">
-              {t(
-                'ai_video_aspect_hint',
-                '1:1 feed Instagram · 9:16 Stories/Reels/TikTok · 16:9 YouTube/LinkedIn'
-              )}
-            </div>
           </FieldRow>
 
           {/* Enrich prompt toggle */}
-          <label className="flex items-start gap-[8px] cursor-pointer">
+          <label className="flex items-center gap-[8px] cursor-pointer">
             <input
               type="checkbox"
-              className="w-[16px] h-[16px] mt-[2px] accent-btnPrimary"
+              className="w-[16px] h-[16px] accent-btnPrimary"
               checked={enrichPrompt}
               disabled={loading}
               onChange={(e) => setEnrichPrompt(e.target.checked)}
             />
-            <div className="flex flex-col">
-              <span className="text-[14px]">
-                {t(
-                  'ai_video_enrich_toggle',
-                  'Enriquecer prompt automaticamente'
-                )}
-              </span>
-              <span className="text-[11px] text-customColor18">
-                {t(
-                  'ai_video_enrich_hint',
-                  'Adiciona detalhes de cinematografia (câmera, iluminação, ritmo) usando o LLM configurado em Texto.'
-                )}
-              </span>
-            </div>
+            <span className="text-[14px]">
+              {t('ai_video_enrich_toggle', 'Enriquecer prompt automaticamente')}
+            </span>
           </label>
 
           <Button
@@ -565,52 +361,20 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
           >
             {t('ai_video_btn_generate', 'Gerar vídeo')}
           </Button>
-
-          <div className="text-[11px] text-customColor18 text-center">
-            {t(
-              'ai_video_loading_hint',
-              'A geração pode levar até 10 minutos.'
-            )}
-          </div>
         </div>
       </div>
     </div>
   );
 };
 
-const ModeTab: FC<{
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  label: string;
-  hint: string;
-  icon: React.ReactNode;
-}> = ({ active, disabled, onClick, label, hint, icon }) => (
-  <button
-    type="button"
-    disabled={disabled}
-    onClick={onClick}
-    className={clsx(
-      'flex items-center gap-[10px] px-[12px] py-[10px] rounded-[6px] text-start transition-all',
-      active
-        ? 'bg-sixth shadow-sm text-textColor'
-        : 'text-customColor18 hover:text-textColor',
-      disabled && 'opacity-50 cursor-not-allowed'
-    )}
-  >
-    <span
-      className={clsx(
-        'flex w-[28px] h-[28px] items-center justify-center rounded-[6px] flex-shrink-0',
-        active ? 'bg-newColColor' : 'bg-newColColor/40'
-      )}
-    >
-      {icon}
-    </span>
-    <span className="flex flex-col leading-tight overflow-hidden">
-      <span className="text-[13px] font-semibold truncate">{label}</span>
-      <span className="text-[11px] text-customColor18 truncate">{hint}</span>
-    </span>
-  </button>
+const FieldRow: FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div className="flex flex-col gap-[6px]">
+    {label && <div className="text-[13px] text-customColor18">{label}</div>}
+    {children}
+  </div>
 );
 
 const TextIcon: FC = () => (
@@ -645,16 +409,6 @@ const ImageIcon: FC = () => (
   </svg>
 );
 
-const FieldRow: FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <div className="flex flex-col gap-[6px]">
-    {label && <div className="text-[13px] text-customColor18">{label}</div>}
-    {children}
-  </div>
-);
-
 export const AiVideo: FC<{
   value: string;
   onChange: (params: { id: string; path: string }) => void;
@@ -663,7 +417,6 @@ export const AiVideo: FC<{
   const fetch = useFetch();
   const [modal, setModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { isTrailing } = useUser();
 
   const loadVideoCredits = useCallback(async () => {
     return (
