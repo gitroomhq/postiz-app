@@ -1199,6 +1199,8 @@
   "ai_image_manual_prompt_placeholder": "Leave empty to generate from the post text. Fill in to send directly to the model (no auto-enrichment).",
   "ai_image_reference_label": "Reference image",
   "ai_image_style_none": "No style",
+  "ai_image_enrich_toggle": "Enrich prompt automatically",
+  "ai_image_enrich_hint": "Adds cinematography details (camera, lighting, atmosphere) using the configured Text LLM.",
   "ai_video_aspect_label": "Aspect ratio",
   "ai_video_aspect_hint": "1:1 Instagram feed · 9:16 Stories/Reels/TikTok · 16:9 YouTube/LinkedIn",
   "ai_video_enrich_toggle": "Enrich prompt automatically",

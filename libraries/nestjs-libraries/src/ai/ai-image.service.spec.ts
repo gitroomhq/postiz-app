@@ -287,11 +287,14 @@ describe('AiImageService', () => {
       expect(result.base64).toBe('RESULT');
     });
 
-    it('OpenAI I2I deve postar FormData para /v1/images/edits', async () => {
+    it('OpenAI I2I deve postar FormData para /v1/images/edits SEM quality', async () => {
       resolver.resolve.mockResolvedValue(
         credentialFor({
           provider: 'openai',
           model: 'gpt-image-2',
+          // Quality configurado em Settings — DEVE ser ignorado em I2I
+          // porque /v1/images/edits nao aceita o parametro.
+          options: { quality: 'high' },
         }) as any
       );
 
@@ -347,6 +350,8 @@ describe('AiImageService', () => {
       expect(fd.get('size')).toBe('1024x1536');
       expect(fd.get('n')).toBe('1');
       expect(fd.get('image')).toBeDefined();
+      // CRITICAL: quality NAO deve estar no FormData (OpenAI rejeita)
+      expect(fd.get('quality')).toBeNull();
 
       expect(result.base64).toBe('EDITED');
       expect(result.provider).toBe('openai');
@@ -369,6 +374,68 @@ describe('AiImageService', () => {
           referenceImageUrl: 'https://example.com/missing.png',
         })
       ).rejects.toMatchObject({ status: 502 });
+    });
+  });
+
+  describe('mensagens de erro (OpenAI / OpenRouter)', () => {
+    it('deve propagar mensagem do OpenAI quando 400 (T2I)', async () => {
+      resolver.resolve.mockResolvedValue(
+        credentialFor({
+          provider: 'openai',
+          model: 'gpt-image-2',
+        }) as any
+      );
+      globalThis.fetch = jest.fn(async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: "Unknown parameter: 'quality'.",
+              type: 'invalid_request_error',
+              param: 'quality',
+              code: 'unknown_parameter',
+            },
+          }),
+          { status: 400 }
+        )
+      ) as any;
+
+      try {
+        await service.generate('org-1', 'gato', undefined, {
+          aspectRatio: '1:1',
+        });
+        fail('deveria ter lancado');
+      } catch (e: any) {
+        expect(e.status).toBe(502);
+        const msg = e.response?.message ?? e.message;
+        expect(msg).toContain('OpenAI recusou');
+        expect(msg).toContain('HTTP 400');
+        expect(msg).toContain("Unknown parameter: 'quality'");
+      }
+    });
+
+    it('deve propagar mensagem do OpenRouter quando 400 (T2I)', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
+      globalThis.fetch = jest.fn(async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: 'Invalid model parameter.',
+              code: 400,
+            },
+          }),
+          { status: 400 }
+        )
+      ) as any;
+
+      try {
+        await service.generate('org-1', 'gato');
+        fail('deveria ter lancado');
+      } catch (e: any) {
+        expect(e.status).toBe(502);
+        const msg = e.response?.message ?? e.message;
+        expect(msg).toContain('OpenRouter recusou');
+        expect(msg).toContain('Invalid model parameter');
+      }
     });
   });
 });

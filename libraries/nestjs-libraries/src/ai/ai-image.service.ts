@@ -42,6 +42,44 @@ export interface GeneratedImage {
   credentialId: string;
 }
 
+/**
+ * Extrai a mensagem original da resposta de erro do OpenAI/OpenRouter
+ * e devolve um texto pt-BR informativo. Sempre preserva a mensagem
+ * original entre aspas para que o usuario consiga buscar/reportar.
+ *
+ * Formatos aceitos:
+ *  - JSON OpenAI: `{ "error": { "message": "...", "code": "...", "param": "..." } }`
+ *  - JSON OpenRouter: `{ "error": { "message": "...", "code": "..." } }`
+ *  - Texto livre (fallback)
+ */
+function extractOpenAiError(rawBody: string, status: number): string {
+  try {
+    const parsed = JSON.parse(rawBody);
+    const msg = parsed?.error?.message;
+    if (typeof msg === 'string' && msg.length > 0) {
+      return `OpenAI recusou (HTTP ${status}): "${msg}".`;
+    }
+  } catch {
+    // body nao e JSON
+  }
+  const snippet = rawBody.slice(0, 200);
+  return `OpenAI recusou (HTTP ${status}): "${snippet}".`;
+}
+
+function extractOpenRouterError(rawBody: string, status: number): string {
+  try {
+    const parsed = JSON.parse(rawBody);
+    const msg = parsed?.error?.message;
+    if (typeof msg === 'string' && msg.length > 0) {
+      return `OpenRouter recusou (HTTP ${status}): "${msg}".`;
+    }
+  } catch {
+    // body nao e JSON
+  }
+  const snippet = rawBody.slice(0, 200);
+  return `OpenRouter recusou (HTTP ${status}): "${snippet}".`;
+}
+
 @Injectable()
 export class AiImageService {
   private readonly _logger = new Logger(AiImageService.name);
@@ -159,10 +197,7 @@ export class AiImageService {
       this._logger.warn(
         `OpenAI images.generate retornou ${res.status}: ${errBody.slice(0, 200)}`
       );
-      throw new HttpException(
-        `OpenAI image gen falhou (${res.status}).`,
-        502
-      );
+      throw new HttpException(extractOpenAiError(errBody, res.status), 502);
     }
 
     const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
@@ -204,16 +239,16 @@ export class AiImageService {
       refRes.headers.get('content-type') ?? 'application/octet-stream';
     const filename = referenceImageUrl.split('/').pop() ?? 'reference.png';
 
-    // 2. Monta o FormData
+    // 2. Monta o FormData. NOTA: /v1/images/edits NAO aceita o parametro
+    //    `quality` (so /generations aceita) — enviar retorna 400
+    //    "Unknown parameter: 'quality'". Por isso `quality` e omitido aqui
+    //    mesmo quando configurado em Settings; aplica-se apenas em T2I.
     const size = ASPECT_TO_OPENAI_SIZE[aspectRatio];
     const form = new FormData();
     form.set('model', model);
     form.set('prompt', prompt);
     form.set('n', String(options.numImages ?? 1));
     form.set('size', size);
-    if (options.quality && options.quality !== 'auto') {
-      form.set('quality', options.quality);
-    }
     form.set(
       'image',
       new Blob([new Uint8Array(buffer)], { type: contentType }),
@@ -234,10 +269,7 @@ export class AiImageService {
       this._logger.warn(
         `OpenAI images.edits retornou ${res.status}: ${errBody.slice(0, 200)}`
       );
-      throw new HttpException(
-        `OpenAI image edit falhou (${res.status}).`,
-        502
-      );
+      throw new HttpException(extractOpenAiError(errBody, res.status), 502);
     }
 
     const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
@@ -299,10 +331,7 @@ export class AiImageService {
       this._logger.warn(
         `OpenRouter chat retornou ${res.status}: ${errBody.slice(0, 200)}`
       );
-      throw new HttpException(
-        `OpenRouter image gen falhou (${res.status}).`,
-        502
-      );
+      throw new HttpException(extractOpenRouterError(errBody, res.status), 502);
     }
 
     const json = (await res.json()) as {

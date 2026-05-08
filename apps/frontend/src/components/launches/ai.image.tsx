@@ -69,40 +69,33 @@ const ImageModal: FC<ModalProps> = ({ value, close, onChange }) => {
   const [referenceImageUrl, setReferenceImageUrl] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
   const [style, setStyle] = useState<string>(STYLE_NONE);
+  // Toggle independente: controla se o LLM enriquece ou nao. Default ON
+  // (o modal de video tem mesmo padrao). Pode combinar com prompt manual:
+  // - Manual preenchido + enrich ON: enriquece o manual prompt.
+  // - Manual preenchido + enrich OFF: prompt manual vai cru pro modelo.
+  // - Manual vazio + enrich ON (default): enriquece o texto do post.
+  // - Manual vazio + enrich OFF: texto do post vai cru (raramente util).
+  const [enrichPrompt, setEnrichPrompt] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
 
-  // Quando manual prompt esta preenchido, usa-o cru. Senao, monta o
-  // prompt no formato antigo (post text + style tag) para ir pelo
-  // pipeline de enriquecimento.
+  // Fonte do prompt: manual (se preenchido) ou texto do post (legenda).
+  // Style entra como prefixo em ambos os casos quando diferente de "Sem estilo".
   const finalPrompt = useMemo(() => {
     const manual = manualPromptText.trim();
-    const stylePrefix =
-      style && style !== STYLE_NONE ? `Style: ${style}.\n` : '';
-
-    if (manual) {
-      return `${stylePrefix}${manual}`;
+    const source = manual || value.trim();
+    if (!source) return '';
+    if (style && style !== STYLE_NONE) {
+      return `Style: ${style}. ${source}`;
     }
-    return `
-<!-- description -->
-${value}
-<!-- /description -->
-
-<!-- style -->
-${style === STYLE_NONE ? '' : style}
-<!-- /style -->
-`;
+    return source;
   }, [manualPromptText, style, value]);
 
   const canGenerate = useMemo(() => {
     if (loading) return false;
     if (mode === 'I2I' && !referenceImageUrl) return false;
-    // Quando T2I sem manual e sem post text, nao da pra gerar (evita
-    // chamada vazia que vai cair no enrich e gerar lixo).
-    if (mode === 'T2I' && !manualPromptText.trim() && !value.trim()) {
-      return false;
-    }
+    if (!finalPrompt) return false;
     return true;
-  }, [loading, mode, referenceImageUrl, manualPromptText, value]);
+  }, [loading, mode, referenceImageUrl, finalPrompt]);
 
   const generate = useCallback(async () => {
     if (!canGenerate) return;
@@ -113,7 +106,7 @@ ${style === STYLE_NONE ? '' : style}
         prompt: finalPrompt,
         aspectRatio,
         mode,
-        manualPrompt: !!manualPromptText.trim(),
+        skipEnrich: !enrichPrompt,
       };
       if (mode === 'I2I') {
         body.referenceImageUrl = referenceImageUrl.trim();
@@ -185,7 +178,7 @@ ${style === STYLE_NONE ? '' : style}
     finalPrompt,
     aspectRatio,
     mode,
-    manualPromptText,
+    enrichPrompt,
     referenceImageUrl,
     fetch,
     toaster,
@@ -333,6 +326,31 @@ ${style === STYLE_NONE ? '' : style}
               })}
             </div>
           </FieldRow>
+
+          {/* Enrich prompt toggle */}
+          <label className="flex items-start gap-[8px] cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-[16px] h-[16px] mt-[2px] accent-btnPrimary"
+              checked={enrichPrompt}
+              disabled={loading}
+              onChange={(e) => setEnrichPrompt(e.target.checked)}
+            />
+            <div className="flex flex-col">
+              <span className="text-[14px]">
+                {t(
+                  'ai_image_enrich_toggle',
+                  'Enriquecer prompt automaticamente'
+                )}
+              </span>
+              <span className="text-[11px] text-customColor18">
+                {t(
+                  'ai_image_enrich_hint',
+                  'Adiciona detalhes de cinematografia (câmera, iluminação, atmosfera) usando o LLM configurado em Texto.'
+                )}
+              </span>
+            </div>
+          </label>
 
           <Button
             type="button"

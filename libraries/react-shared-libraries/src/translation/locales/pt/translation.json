@@ -1197,6 +1197,8 @@
   "ai_image_manual_prompt_placeholder": "Deixe vazio para gerar a partir do texto do post. Preencha para enviar diretamente ao modelo (sem enriquecimento automático).",
   "ai_image_reference_label": "Imagem de referência",
   "ai_image_style_none": "Sem estilo",
+  "ai_image_enrich_toggle": "Enriquecer prompt automaticamente",
+  "ai_image_enrich_hint": "Adiciona detalhes de cinematografia (câmera, iluminação, atmosfera) usando o LLM configurado em Texto.",
   "ai_video_aspect_label": "Proporção",
   "ai_video_aspect_hint": "1:1 feed Instagram · 9:16 Stories/Reels/TikTok · 16:9 YouTube/LinkedIn",
   "ai_video_enrich_toggle": "Enriquecer prompt automaticamente",

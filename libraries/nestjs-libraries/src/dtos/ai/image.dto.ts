@@ -16,9 +16,13 @@ const ASPECT_RATIOS = ['1:1', '9:16', '16:9'] as const;
  * DTO do endpoint POST /media/generate-image-with-prompt.
  *
  * - `mode='I2I'` exige `referenceImageUrl` (validado via @ValidateIf + @IsUrl).
- * - `manualPrompt: true` => o controller passa `skipEnrich: true` para
- *   `MediaService.generateImage`, fazendo o prompt ir cru pro modelo.
+ * - `skipEnrich: true` => o prompt vai cru pro modelo (sem passar pelo
+ *   `generatePromptForPicture` que enriquece). Default false (enriquece).
  * - `aspectRatio` opcional sobrescreve o default da credencial.
+ *
+ * Nota: o campo legacy `manualPrompt` foi renomeado para `skipEnrich`
+ * porque ele controla "pular enriquecimento", nao "tem prompt manual".
+ * O usuario pode ter prompt manual + enrich ON (passa pelo enrich).
  */
 export class GenerateImageBodyDto {
   @IsString()
@@ -40,5 +44,5 @@ export class GenerateImageBodyDto {
 
   @IsOptional()
   @IsBoolean()
-  manualPrompt?: boolean;
+  skipEnrich?: boolean;
 }

@@ -93,9 +93,9 @@ export class MediaController {
     @Req() req: Request,
     @Body() body: GenerateImageBodyDto
   ) {
-    // manualPrompt=true => skip enrichment (prompt vai cru pro modelo).
-    // manualPrompt=false (default) => enriquece com generatePromptForPicture.
-    const isPicturePrompt = !body.manualPrompt;
+    // skipEnrich=true => o prompt vai cru pro modelo (sem
+    // generatePromptForPicture). Default false: enriquece.
+    const isPicturePrompt = !body.skipEnrich;
 
     const image = await this.generateImage(
       org,
