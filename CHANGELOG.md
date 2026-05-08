@@ -7,6 +7,13 @@ Fork do [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0).
 
 ## [Unreleased]
 
+### Adicionado
+- Configuracao MCP do dotcontext via `.mcp.json` na raiz para ativar gateways `explore`, `context`, `plan`, `agent`, `skill` e `sync` automaticamente em qualquer clone do repo aberto no Claude Code, deixando `.context/` como source-of-truth para portabilidade entre IDEs (Claude Code, Antigravity, Cursor, Codex).
+- `AGENTS.md` na raiz como entrypoint neutro para qualquer agente de IA, com a hierarquia de instrucoes do projeto e ponteiros para `.context/`, `CLAUDE.md` e os runbooks de ativacao. Resolve referencia pendente em `.cursor/rules` e `.windsurfrules`.
+- Runbook permanente de ativacao do dotcontext em `docs/planning/dotcontext-bootstrap.md` com diagnostico real do `.context/` (14 agents preenchidos, 10 docs preenchidos, 10 skills `unfilled` aguardando MCP), pre-requisitos, fases 0-9, anti-padroes e troubleshooting.
+- Guia de uso diario do dotcontext em `docs/planning/dotcontext-daily-usage.md` cobrindo workflow PREVC, invocacao ad-hoc de agents/skills, sync e reverse-sync entre IDEs e deteccao de drift.
+- Secao "Contexto Portavel (.context/)" no `CLAUDE.md` raiz documentando os gateways do dotcontext e apontando para os runbooks.
+
 ### Documentação
 - Nova referência de arquitetura para o sistema de provedores de IA em `docs/architecture/ai-provider-system.md` (595 linhas, 14 seções): visão geral do fluxo, schema Prisma com explicação do `scope` enum (e por que não usar `profileId IS NULL`), camadas de services com diagrama ASCII, cadeia de resolução perfil→workspace→412, endpoints REST, UI Settings (incluindo per-profile override), botão "IA Texto" do composer, fluxo completo de geração de imagem, guia passo-a-passo de "como adicionar provider novo" (ex: Anthropic), tabela de erros HTTP (com explicação de por que 412 e não 402), variáveis de ambiente, cobertura de testes (56 specs), pendências futuras e tabela de pontos de entrada para mudanças comuns. CLAUDE.md ganhou seção "Sistema de Provedores de IA" com 5 regras de ouro apontando para o doc detalhado, no mesmo padrão da seção de "Automações Instagram".
 

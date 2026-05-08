@@ -265,6 +265,18 @@ pnpm docker-build         # Build das imagens Docker
 pnpm lint
 ```
 
+## Contexto Portável (.context/)
+
+O diretório `.context/` é gerenciado pelo [dotcontext](https://github.com/dotcontext/cli) (MCP configurado em `.mcp.json` na raiz) e é a source-of-truth para portabilidade entre IDEs (Claude Code, Antigravity, Cursor, Codex). Mudanças manuais em `.claude/`, `.cursor/rules`, `.windsurfrules` ou `.github/copilot-instructions.md` **não** se propagam sem sync explícito via dotcontext.
+
+Gateways disponíveis quando o MCP está carregado: `explore`, `context`, `plan`, `agent`, `skill`, `sync`. Como invocar:
+
+- `use the security-auditor agent to audit the new webhook handler`
+- `use the commit-message skill to draft a commit for staged changes`
+- `plan "<descrição>" using dotcontext` (workflow PREVC completo)
+
+Estado atual: 14 agents preenchidos em `.context/agents/`, 10 docs preenchidos em `.context/docs/`, e 10 skills `unfilled` em `.context/skills/` aguardando preenchimento via MCP. Para ativar o MCP localmente e preencher os skills, siga `docs/planning/dotcontext-bootstrap.md`. Para uso diário, veja `docs/planning/dotcontext-daily-usage.md`.
+
 ## Contexto de Produto
 
 - **Idioma padrão:** pt-BR (arquivo de tradução `pt` já existe em `react-shared-libraries/src/translation/locales/`)
