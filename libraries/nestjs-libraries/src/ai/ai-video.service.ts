@@ -76,11 +76,7 @@ function translateKieaiError(
   const lower = (msg ?? '').toLowerCase();
 
   if (code === 402 || lower.includes('credits insufficient')) {
-    return (
-      'Sua conta kie.ai esta sem creditos suficientes para gerar este video. ' +
-      'Adicione saldo em https://kie.ai/account/billing e tente de novo. ' +
-      `(kie.ai: "${original}")`
-    );
+    return 'Sua conta kie.ai esta sem creditos suficientes para gerar este video.';
   }
   if (code === 401 || lower.includes('unauthorized') || lower.includes('invalid api key')) {
     return (

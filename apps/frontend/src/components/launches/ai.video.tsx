@@ -50,7 +50,11 @@ const useVideoCredential = () => {
             : data.model === 'bytedance/seedance-2-fast'
             ? 'Seedance 2 Fast'
             : data.model === 'veo3'
-            ? 'Veo 3.1'
+            ? 'Google Veo 3.1'
+            : data.model === 'veo3_fast'
+            ? 'Google Veo 3.1 Fast'
+            : data.model === 'veo3_lite'
+            ? 'Google Veo 3.1 Lite'
             : data.model,
         enrichDefault: data.options?.enrichPromptByDefault !== false,
       };
@@ -78,6 +82,85 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
   const [enrichPrompt, setEnrichPrompt] = useState<boolean>(true);
   const [loading, setLocalLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Upload local de imagem para I2V — POST /media/upload-server retorna
+  // { id, path } onde path e a URL publica (R2 ou local). Setamos como
+  // referenceImageUrl para que kie.ai consiga acessar.
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        toaster.show(
+          t(
+            'ai_video_only_images',
+            'Apenas imagens são aceitas como referência.'
+          ),
+          'warning'
+        );
+        return;
+      }
+      if (file.size > 30 * 1024 * 1024) {
+        toaster.show(
+          t(
+            'ai_video_image_too_large',
+            'Imagem muito grande (máximo 30MB).'
+          ),
+          'warning'
+        );
+        return;
+      }
+      setUploading(true);
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch('/media/upload-server', {
+          method: 'POST',
+          body: form,
+        });
+        if (!res.ok) {
+          toaster.show(
+            t('ai_video_upload_failed', 'Falha ao enviar imagem.'),
+            'warning'
+          );
+          return;
+        }
+        const data = await res.json();
+        if (data?.path) {
+          setReferenceImageUrl(data.path);
+        } else {
+          toaster.show(
+            t('ai_video_upload_no_path', 'Resposta inválida do servidor.'),
+            'warning'
+          );
+        }
+      } catch {
+        toaster.show(
+          t('ai_video_upload_failed', 'Falha ao enviar imagem.'),
+          'warning'
+        );
+      } finally {
+        setUploading(false);
+      }
+    },
+    [fetch, toaster, t]
+  );
+
+  const onDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (loading || uploading) return;
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleFileUpload(file);
+    },
+    [loading, uploading, handleFileUpload]
+  );
+
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
 
   // Sincroniza enrich default da credencial (so primeira vez)
   React.useEffect(() => {
@@ -97,7 +180,7 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
   }, [mode, referenceImageUrl]);
 
   const canGenerate =
-    !loading && prompt.trim().length >= 3 && isI2VValid;
+    !loading && !uploading && prompt.trim().length >= 3 && isI2VValid;
 
   const handleResponse = useCallback(
     async (res: Response): Promise<boolean> => {
@@ -304,26 +387,112 @@ const VideoModal: FC<VideoModalProps> = ({ close, setLoading, onChange }) => {
             />
           </FieldRow>
 
-          {/* I2V: reference image URL */}
+          {/* I2V: imagem de referência (upload OU URL) */}
           {mode === 'I2V' && (
             <FieldRow
-              label={t('ai_video_reference_label', 'URL da imagem de referência')}
+              label={t(
+                'ai_video_reference_label',
+                'Imagem de referência'
+              )}
             >
-              <input
-                type="url"
-                className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[10px] outline-none text-[14px]"
-                placeholder="https://..."
-                value={referenceImageUrl}
-                disabled={loading}
-                onChange={(e) => setReferenceImageUrl(e.target.value)}
-              />
-              {referenceImageUrl && !isI2VValid && (
-                <div className="text-[12px] text-customColor19 mt-[4px]">
-                  {t(
-                    'ai_video_reference_invalid',
-                    'URL inválida (use http:// ou https://).'
-                  )}
+              {referenceImageUrl ? (
+                <div className="flex items-center gap-[12px] bg-newColColor border border-newTableBorder rounded-[8px] p-[10px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={referenceImageUrl}
+                    alt="reference"
+                    className="w-[80px] h-[80px] object-cover rounded-[6px] flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-customColor18 truncate">
+                      {referenceImageUrl}
+                    </div>
+                    {!isI2VValid && (
+                      <div className="text-[11px] text-customColor19 mt-[2px]">
+                        {t(
+                          'ai_video_reference_invalid',
+                          'URL inválida (use http:// ou https://).'
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="text-[12px] text-customColor19 hover:underline"
+                    disabled={loading}
+                    onClick={() => setReferenceImageUrl('')}
+                  >
+                    {t('ai_video_reference_remove', 'Remover')}
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <div
+                    onDrop={onDrop}
+                    onDragOver={onDragOver}
+                    onClick={() =>
+                      !loading && !uploading && fileInputRef.current?.click()
+                    }
+                    className={clsx(
+                      'border-2 border-dashed border-newTableBorder rounded-[8px] p-[20px] text-center cursor-pointer transition-colors hover:bg-newColColor/40',
+                      (loading || uploading) &&
+                        'opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {uploading ? (
+                      <div className="flex flex-col items-center gap-[6px]">
+                        <Loading
+                          height={20}
+                          width={20}
+                          type="spin"
+                          color="currentColor"
+                        />
+                        <span className="text-[12px] text-customColor18">
+                          {t(
+                            'ai_video_uploading',
+                            'Enviando imagem...'
+                          )}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-[13px] text-textColor mb-[2px]">
+                          {t(
+                            'ai_video_dropzone',
+                            'Arraste uma imagem ou clique para selecionar'
+                          )}
+                        </div>
+                        <div className="text-[11px] text-customColor18">
+                          {t(
+                            'ai_video_dropzone_hint',
+                            'PNG, JPG ou WebP até 30MB'
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <div className="text-[12px] text-customColor18 mt-[8px]">
+                    {t('ai_video_or_paste_url', 'Ou cole uma URL pública:')}
+                  </div>
+                  <input
+                    type="url"
+                    className="bg-newBgColorInner border border-newTableBorder rounded-[8px] px-[14px] py-[8px] outline-none text-[13px] mt-[4px]"
+                    placeholder="https://..."
+                    disabled={loading || uploading}
+                    onChange={(e) => setReferenceImageUrl(e.target.value)}
+                  />
+                </>
               )}
             </FieldRow>
           )}

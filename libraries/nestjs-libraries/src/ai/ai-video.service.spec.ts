@@ -550,7 +550,7 @@ describe('AiVideoService', () => {
   });
 
   describe('mensagens de erro do kie.ai', () => {
-    it('deve traduzir code=402 (Credits insufficient) com hint para top-up', async () => {
+    it('deve traduzir code=402 (Credits insufficient) para mensagem curta em pt', async () => {
       resolver.resolve.mockResolvedValue(credentialFor() as any);
       const fetchSpy = jest.fn(async () =>
         new Response(
@@ -574,9 +574,6 @@ describe('AiVideoService', () => {
         expect(e.status).toBe(502);
         const msg = e.response?.message ?? e.message;
         expect(msg).toContain('Sua conta kie.ai esta sem creditos');
-        expect(msg).toContain('https://kie.ai/account/billing');
-        // Mensagem original preservada entre parenteses
-        expect(msg).toContain('Credits insufficient');
       }
     });
 
