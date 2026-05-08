@@ -132,7 +132,7 @@ export const AiProviderSettingsSection: React.FC = () => {
           title={t('ai_provider_video_title', 'Vídeo')}
           description={t(
             'ai_provider_video_desc',
-            'Geração de vídeo via KieAI (Seedance 2.0, Veo 3.1). Suporta texto-para-vídeo (T2V) e imagem-para-vídeo (I2V).'
+            'Geração de vídeo via KieAI (Seedance 2.0, Veo 3.1).'
           )}
           icon={<VideoIcon />}
           providers={[{ value: 'kieai', label: 'KieAI' }]}
@@ -143,18 +143,11 @@ export const AiProviderSettingsSection: React.FC = () => {
           title={t('ai_provider_web_search_title', 'Web Search')}
           description={t(
             'ai_provider_web_search_desc',
-            'Busca web do agente (Tavily). Usado quando o usuário pede um post a partir de uma URL ou de uma pesquisa.'
+            'Busca de contexto na web por tópico ou URL.'
           )}
           icon={<SearchIcon />}
           providers={[{ value: 'tavily', label: 'Tavily' }]}
         />
-      </div>
-
-      <div className="text-[12px] text-customColor18 mt-[8px] border-t border-fifth pt-[12px]">
-        {t(
-          'ai_provider_footer_hint',
-          'As chaves são armazenadas criptografadas (AES-256-GCM) e nunca expostas no frontend. Status do último teste fica visível na barra superior de cada card.'
-        )}
       </div>
     </div>
   );

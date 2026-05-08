@@ -20,6 +20,7 @@ import {
   CurrentProfile,
   useCurrentProfile,
 } from '@gitroom/frontend/hooks/use-current-profile.hook';
+import { useProfilesList } from '@gitroom/frontend/components/settings/profile-persona.hooks';
 import { SearchableModelSelect } from './searchable-model-select';
 
 const SENTINEL = '__REDACTED__';
@@ -82,11 +83,22 @@ const emptyState: FormState = {
 
 export const AiKindCard: React.FC<KindCardProps> = (props) => {
   const { profile, isLoading: profileLoading } = useCurrentProfile();
+  const { data: profilesList } = useProfilesList();
   const [expanded, setExpanded] = useState(false);
   const t = useT();
 
-  // Workspace default — sempre carregado para mostrar status herdado nos
-  // perfis secundarios.
+  // No nosso modelo, "WORKSPACE" e na verdade a configuracao do perfil
+  // default. Por isso buscamos o nome dele para mostrar nos textos de
+  // heranca (ex: "Herdado do perfil Default" em vez do generico
+  // "Herdado da agencia").
+  const defaultProfileName = useMemo(() => {
+    const def = profilesList?.find((p) => p.isDefault);
+    return def?.name ?? t('ai_provider_default_profile', 'Perfil padrão');
+  }, [profilesList, t]);
+
+  // Credencial WORKSPACE (na verdade do perfil default) — sempre carregada
+  // para que perfis secundarios mostrem status herdado QUANDO shareDefault
+  // estiver true.
   const { data: workspaceCred, mutate: mutateWorkspace } = useAiCredential(
     props.kind,
     null
@@ -101,7 +113,15 @@ export const AiKindCard: React.FC<KindCardProps> = (props) => {
     isSecondary && profile ? profile.id : null
   );
 
-  const inheritedFromWorkspace = isSecondary && !profileCred && !!workspaceCred;
+  // Heranca SO acontece quando workspaceCred existe E shareDefault=true.
+  // Sem o segundo check, perfis secundarios mostravam "Herdado" mesmo
+  // quando o admin do default desmarcou "Compartilhar com perfis" — o que
+  // era incoerente com o resolver do backend que retorna 412 nesse caso.
+  const inheritedFromWorkspace =
+    isSecondary &&
+    !profileCred &&
+    !!workspaceCred &&
+    workspaceCred.shareDefault === true;
 
   return (
     <div className="bg-sixth border border-fifth rounded-[4px]">
@@ -115,6 +135,8 @@ export const AiKindCard: React.FC<KindCardProps> = (props) => {
             isSecondary={!!isSecondary}
             workspaceCred={workspaceCred ?? null}
             profileCred={profileCred ?? null}
+            inheritedFromWorkspace={inheritedFromWorkspace}
+            defaultProfileName={defaultProfileName}
             t={t}
           />
         }
@@ -133,7 +155,8 @@ export const AiKindCard: React.FC<KindCardProps> = (props) => {
               currentProfile={profile}
               workspaceCred={workspaceCred ?? null}
               profileCred={profileCred ?? null}
-              inheritedFromWorkspace={inheritedFromWorkspace ?? false}
+              inheritedFromWorkspace={inheritedFromWorkspace}
+              defaultProfileName={defaultProfileName}
               mutateWorkspace={mutateWorkspace}
               mutateProfile={mutateProfile}
               t={t}
@@ -194,8 +217,18 @@ const CardStatus: React.FC<{
   isSecondary: boolean;
   workspaceCred: AiCredentialSummary | null;
   profileCred: AiCredentialSummary | null;
+  inheritedFromWorkspace: boolean;
+  defaultProfileName: string;
   t: any;
-}> = ({ comingSoon, isSecondary, workspaceCred, profileCred, t }) => {
+}> = ({
+  comingSoon,
+  isSecondary,
+  workspaceCred,
+  profileCred,
+  inheritedFromWorkspace,
+  defaultProfileName,
+  t,
+}) => {
   if (comingSoon) {
     return (
       <span className="text-[12px] text-customColor18">
@@ -220,12 +253,24 @@ const CardStatus: React.FC<{
     );
   }
 
-  // Perfil secundario sem override — mostra heranca do workspace
-  if (isSecondary && workspaceCred) {
+  // Perfil secundario com heranca efetiva (workspaceCred com shareDefault=true)
+  if (isSecondary && inheritedFromWorkspace && workspaceCred) {
     return (
       <span className="text-[12px] text-customColor18">
-        {t('ai_provider_inherited', 'Herdado da agência')} ·{' '}
-        {labelForProvider(workspaceCred.provider)}
+        {t('ai_provider_inherited_from', 'Herdado do perfil {{name}}').replace(
+          '{{name}}',
+          defaultProfileName
+        )}{' '}
+        · {labelForProvider(workspaceCred.provider)}
+      </span>
+    );
+  }
+
+  // Perfil secundario sem heranca (sem workspaceCred ou shareDefault=false)
+  if (isSecondary) {
+    return (
+      <span className="text-[12px] text-customColor18">
+        {t('ai_provider_not_configured', 'Não configurado')}
       </span>
     );
   }
@@ -260,6 +305,7 @@ const CardBody: React.FC<
     workspaceCred: AiCredentialSummary | null;
     profileCred: AiCredentialSummary | null;
     inheritedFromWorkspace: boolean;
+    defaultProfileName: string;
     mutateWorkspace: () => Promise<unknown>;
     mutateProfile: () => Promise<unknown>;
     t: any;
@@ -272,6 +318,7 @@ const CardBody: React.FC<
   workspaceCred,
   profileCred,
   inheritedFromWorkspace,
+  defaultProfileName,
   mutateWorkspace,
   mutateProfile,
   t,
@@ -302,6 +349,8 @@ const CardBody: React.FC<
     return (
       <InheritedView
         workspaceCred={workspaceCred}
+        inheritedFromWorkspace={inheritedFromWorkspace}
+        defaultProfileName={defaultProfileName}
         onOverride={() => setOverrideOpen(true)}
         t={t}
       />
@@ -327,41 +376,73 @@ const CardBody: React.FC<
 
 const InheritedView: React.FC<{
   workspaceCred: AiCredentialSummary | null;
+  inheritedFromWorkspace: boolean;
+  defaultProfileName: string;
   onOverride: () => void;
   t: any;
-}> = ({ workspaceCred, onOverride, t }) => (
-  <div className="flex flex-col gap-[16px]">
-    {workspaceCred ? (
-      <div className="bg-newColColor border border-fifth rounded-[4px] px-[16px] py-[14px] flex flex-col gap-[6px]">
-        <div className="text-[13px] text-customColor18">
-          {t('ai_provider_inherited_from_workspace', 'Herdando da agência')}
+}> = ({
+  workspaceCred,
+  inheritedFromWorkspace,
+  defaultProfileName,
+  onOverride,
+  t,
+}) => {
+  // 3 estados possiveis para um perfil secundario sem override:
+  //  (a) heranca efetiva — workspaceCred existe E shareDefault=true
+  //  (b) workspaceCred existe MAS shareDefault=false → nao ha heranca
+  //  (c) workspaceCred nao existe → nada configurado em lugar nenhum
+  const hasInheritance = inheritedFromWorkspace && !!workspaceCred;
+  const sharingDisabled =
+    !!workspaceCred && workspaceCred.shareDefault === false;
+
+  return (
+    <div className="flex flex-col gap-[16px]">
+      {hasInheritance && workspaceCred ? (
+        <div className="bg-newColColor border border-fifth rounded-[4px] px-[16px] py-[14px] flex flex-col gap-[6px]">
+          <div className="text-[13px] text-customColor18">
+            {t(
+              'ai_provider_inherited_from',
+              'Herdado do perfil {{name}}'
+            ).replace('{{name}}', defaultProfileName)}
+          </div>
+          <div className="text-[14px] font-semibold">
+            {labelForProvider(workspaceCred.provider)} ·{' '}
+            {workspaceCred.model ||
+              t('ai_provider_default', 'Default do modelo')}
+          </div>
+          <div className="text-[12px] text-customColor18">
+            {t(
+              'ai_provider_inherited_desc',
+              'Este perfil herda a configuração do perfil {{name}}. Você pode configurar uma chave exclusiva sem afetar os demais.'
+            ).replace('{{name}}', defaultProfileName)}
+          </div>
         </div>
-        <div className="text-[14px] font-semibold">
-          {labelForProvider(workspaceCred.provider)} ·{' '}
-          {workspaceCred.model || t('ai_provider_default', 'Default do modelo')}
-        </div>
-        <div className="text-[12px] text-customColor18">
+      ) : sharingDisabled ? (
+        <div className="bg-newColColor border border-fifth rounded-[4px] px-[16px] py-[14px] text-[13px] text-customColor18">
           {t(
-            'ai_provider_inherited_desc',
-            'Este perfil usa a configuração padrão do workspace. Você pode configurar uma chave exclusiva deste perfil sem afetar os demais.'
-          )}
+            'ai_provider_not_shared',
+            'O perfil {{name}} tem chave configurada mas não está compartilhando. Configure uma chave exclusiva para este perfil.'
+          ).replace('{{name}}', defaultProfileName)}
         </div>
+      ) : (
+        <div className="bg-newColColor border border-fifth rounded-[4px] px-[16px] py-[14px] text-[13px] text-customColor18">
+          {t(
+            'ai_provider_no_default',
+            'Nenhuma chave configurada no perfil {{name}}. Configure uma chave exclusiva para este perfil.'
+          ).replace('{{name}}', defaultProfileName)}
+        </div>
+      )}
+      <div>
+        <Button onClick={onOverride}>
+          {t(
+            'ai_provider_configure_profile',
+            'Configurar chave própria deste perfil'
+          )}
+        </Button>
       </div>
-    ) : (
-      <div className="bg-newColColor border border-fifth rounded-[4px] px-[16px] py-[14px] text-[13px] text-customColor18">
-        {t(
-          'ai_provider_no_workspace_default',
-          'Nenhum default configurado pela agência. Configure uma chave própria para este perfil.'
-        )}
-      </div>
-    )}
-    <div>
-      <Button onClick={onOverride}>
-        {t('ai_provider_configure_profile', 'Configurar chave própria deste perfil')}
-      </Button>
     </div>
-  </div>
-);
+  );
+};
 
 interface CredentialFormProps {
   kind: AiKind;
