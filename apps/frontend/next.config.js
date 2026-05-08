@@ -47,7 +47,7 @@ const nextConfig = {
       // SocialStream AGPL-3.0 source-redirect (D-06)
       {
         source: '/source',
-        destination: `https://github.com/SocialStream-SaaS/socialstream-postiz/releases/tag/${
+        destination: `https://github.com/SocialStream-SaaS/socialstream-app/releases/tag/${
           process.env.BUILD_COMMIT_SHA || 'main'
         }`,
         permanent: false,

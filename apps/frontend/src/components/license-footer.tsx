@@ -47,12 +47,12 @@ export function LicenseFooter({ language = 'en' }: { language?: string }) {
         </a>{' '}
         {t.middle}{' '}
         <a
-          href="https://github.com/SocialStream-SaaS/socialstream-postiz"
+          href="https://github.com/SocialStream-SaaS/socialstream-app"
           target="_blank"
           rel="noopener noreferrer"
           className="underline"
         >
-          github.com/SocialStream-SaaS/socialstream-postiz
+          github.com/SocialStream-SaaS/socialstream-app
         </a>
       </p>
     </footer>
