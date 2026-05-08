@@ -9,7 +9,7 @@ import {
   setHandler,
 } from '@temporalio/workflow';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, EndRecurrenceType } from '@prisma/client';
 import { capitalize, sortBy } from 'lodash';
 import { PostResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -269,13 +269,43 @@ export async function postWorkflowV102({
   );
 
   // Check if the post is repeatable
-  const repeatPost = !post.intervalInDays
+  let isRepeatable = false;
+  if (post.intervalInDays) {
+    if (post.endRecurrenceType === EndRecurrenceType.POSTS) {
+      const recurrenceEndDate = new Date(
+        new Date(post.publishDate).getTime() +
+          post.intervalInDays *
+            (Number(post.endRecurrenceAfter) - 1) *
+            24 *
+            60 *
+            60 *
+            1000
+      );
+
+      if (new Date() <= recurrenceEndDate) {
+        isRepeatable = true;
+      }
+    } else if (post.endRecurrenceType === EndRecurrenceType.DATE) {
+      // const recurrenceEndDate = new Date(post.endRecurrenceAfter);
+      const recurrenceEndDate = new Date(
+        new Date(post.publishDate).getTime() + 30 * 1000
+      );
+
+      if (new Date() <= recurrenceEndDate) {
+        isRepeatable = true;
+      }
+    } else if (post.endRecurrenceType === EndRecurrenceType.NEVER) {
+      isRepeatable = true;
+    }
+  }
+  const repeatPost = !isRepeatable
     ? []
     : [
         {
           type: 'repeat-post',
           delay:
-            post.intervalInDays * 24 * 60 * 60 * 1000 -
+            // post.intervalInDays * 24 * 60 * 60 * 1000 -
+            post.intervalInDays * 10 * 1000 -
             (new Date().getTime() - startTime.getTime()),
         },
       ];
@@ -295,95 +325,95 @@ export async function postWorkflowV102({
     await sleep(Math.max(0, Number(todo.delay ?? 0)));
 
     // process internal plug
-    if (todo.type === 'internal-plug') {
-      for (const _ of iterate) {
-        try {
-          await processInternalPlug({ ...todo, post: postsResults[0].postId });
-        } catch (err) {
-          if (
-            err instanceof ActivityFailure &&
-            err.cause instanceof ApplicationFailure &&
-            err.cause.type === 'refresh_token'
-          ) {
-            const refresh = await refreshTokenWithCause(
-              await getIntegrationById(organizationId, todo.integration),
-              err?.cause?.message || ''
-            );
-            if (!refresh || !refresh.accessToken) {
-              break;
-            }
-
-            continue;
-          }
-
-          if (
-            err instanceof ActivityFailure &&
-            err.cause instanceof ApplicationFailure &&
-            err.cause.type === 'bad_body'
-          ) {
-            break;
-          }
-
-          continue;
-        }
-        break;
-      }
-    }
+    // if (todo.type === 'internal-plug') {
+    //   for (const _ of iterate) {
+    //     try {
+    //       await processInternalPlug({ ...todo, post: postsResults[0].postId });
+    //     } catch (err) {
+    //       if (
+    //         err instanceof ActivityFailure &&
+    //         err.cause instanceof ApplicationFailure &&
+    //         err.cause.type === 'refresh_token'
+    //       ) {
+    //         const refresh = await refreshTokenWithCause(
+    //           await getIntegrationById(organizationId, todo.integration),
+    //           err?.cause?.message || ''
+    //         );
+    //         if (!refresh || !refresh.accessToken) {
+    //           break;
+    //         }
+    //
+    //         continue;
+    //       }
+    //
+    //       if (
+    //         err instanceof ActivityFailure &&
+    //         err.cause instanceof ApplicationFailure &&
+    //         err.cause.type === 'bad_body'
+    //       ) {
+    //         break;
+    //       }
+    //
+    //       continue;
+    //     }
+    //     break;
+    //   }
+    // }
 
     // process global plug
-    if (todo.type === 'global') {
-      for (const _ of iterate) {
-        try {
-          const process = await processPlug({
-            ...todo,
-            postId: postsResults[0].postId,
-          });
-          if (process) {
-            const toDelete = list
-              .reduce((all, current, index) => {
-                if (current.plugId === todo.plugId) {
-                  all.push(index);
-                }
-
-                return all;
-              }, [])
-              .reverse();
-
-            for (const index of toDelete) {
-              list.splice(index, 1);
-            }
-          }
-        } catch (err) {
-          if (
-            err instanceof ActivityFailure &&
-            err.cause instanceof ApplicationFailure &&
-            err.cause.type === 'refresh_token'
-          ) {
-            const refresh = await refreshTokenWithCause(
-              post.integration,
-              err?.cause?.message || ''
-            );
-            if (!refresh || !refresh.accessToken) {
-              break;
-            }
-
-            continue;
-          }
-
-          if (
-            err instanceof ActivityFailure &&
-            err.cause instanceof ApplicationFailure &&
-            err.cause.type === 'bad_body'
-          ) {
-            break;
-          }
-
-          continue;
-        }
-
-        break;
-      }
-    }
+    // if (todo.type === 'global') {
+    //   for (const _ of iterate) {
+    //     try {
+    //       const process = await processPlug({
+    //         ...todo,
+    //         postId: postsResults[0].postId,
+    //       });
+    //       if (process) {
+    //         const toDelete = list
+    //           .reduce((all, current, index) => {
+    //             if (current.plugId === todo.plugId) {
+    //               all.push(index);
+    //             }
+    //
+    //             return all;
+    //           }, [])
+    //           .reverse();
+    //
+    //         for (const index of toDelete) {
+    //           list.splice(index, 1);
+    //         }
+    //       }
+    //     } catch (err) {
+    //       if (
+    //         err instanceof ActivityFailure &&
+    //         err.cause instanceof ApplicationFailure &&
+    //         err.cause.type === 'refresh_token'
+    //       ) {
+    //         const refresh = await refreshTokenWithCause(
+    //           post.integration,
+    //           err?.cause?.message || ''
+    //         );
+    //         if (!refresh || !refresh.accessToken) {
+    //           break;
+    //         }
+    //
+    //         continue;
+    //       }
+    //
+    //       if (
+    //         err instanceof ActivityFailure &&
+    //         err.cause instanceof ApplicationFailure &&
+    //         err.cause.type === 'bad_body'
+    //       ) {
+    //         break;
+    //       }
+    //
+    //       continue;
+    //     }
+    //
+    //     break;
+    //   }
+    // }
 
     // process repeat post in a new workflow, this is important so the other plugs can keep running
     if (todo.type === 'repeat-post') {

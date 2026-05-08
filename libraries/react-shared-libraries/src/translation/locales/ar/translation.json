@@ -692,5 +692,10 @@
   "watch_tutorial_title": "تعلم كيفية استخدام Postiz",
   "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من Postiz بأفضل شكل",
   "back": "رجوع",
-  "get_started": "ابدأ"
+  "get_started": "ابدأ",
+  "end_never": "النهاية أبدا",
+  "end_after_date": "تنتهي بعد تاريخ",
+  "end_after_posts": "ينتهي بعد عدد من المشاركات",
+  "no_of_posts": "عدد المشاركات",
+  "never": "أبدًا"
 }

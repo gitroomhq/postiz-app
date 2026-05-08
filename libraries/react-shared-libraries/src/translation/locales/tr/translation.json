@@ -692,5 +692,10 @@
   "watch_tutorial_title": "Postiz'i Nasıl Kullanacağınızı Öğrenin",
   "watch_tutorial_description": "Postiz'den en iyi şekilde yararlanmayı öğrenmek için bu kısa videoyu izleyin",
   "back": "Geri",
-  "get_started": "Başlayın"
+  "get_started": "Başlayın",
+  "end_never": "Hiç bitme",
+  "end_after_date": "Tarihten sonra bitir",
+  "end_after_posts": "Gönderi sayısından sonra bitir",
+  "no_of_posts": "Gönderi sayısı",
+  "never": "Hiçbir zaman"
 }

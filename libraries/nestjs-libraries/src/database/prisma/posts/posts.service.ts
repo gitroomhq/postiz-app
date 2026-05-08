@@ -750,7 +750,7 @@ export class PostsService {
         body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
         post,
         body.tags,
-        body.inter
+        body.recurrence
       );
 
       if (!posts?.length) {

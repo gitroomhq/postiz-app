@@ -1,7 +1,10 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
+import {
+  Post as PostBody,
+  RecurrenceDto,
+} from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { APPROVED_SUBMIT_FOR_ORDER, EndRecurrenceType, Post, State } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import dayjs from 'dayjs';
@@ -132,7 +135,7 @@ export class PostsRepository {
             OR: [
               {
                 organizationId: orgId,
-              }
+              },
             ],
           },
           {
@@ -172,6 +175,8 @@ export class PostsRepository {
         releaseId: true,
         state: true,
         intervalInDays: true,
+        endRecurrenceType: true,
+        endRecurrenceAfter: true,
         group: true,
         tags: {
           select: {
@@ -195,17 +200,38 @@ export class PostsRepository {
       }
 
       const addMorePosts = [];
-      let startingDate = dayjs.utc(post.publishDate);
-      while (dayjs.utc(endDate).isSameOrAfter(startingDate)) {
-        if (dayjs(startingDate).isSameOrAfter(dayjs.utc(post.publishDate))) {
+      const originalPublishDate = dayjs.utc(post.publishDate);
+      let dateIter = dayjs.utc(post.publishDate);
+      while (dayjs.utc(endDate).isSameOrAfter(dateIter)) {
+        if (post.endRecurrenceType === EndRecurrenceType.POSTS && post.endRecurrenceAfter) {
+          const recurrenceEndDate = originalPublishDate.add(
+            post.intervalInDays * (Number(post.endRecurrenceAfter) - 1),
+            'days'
+          );
+
+          if (dateIter.isAfter(recurrenceEndDate)) {
+            break;
+          }
+        } else if (
+          post.endRecurrenceType === EndRecurrenceType.DATE &&
+          post.endRecurrenceAfter
+        ) {
+          const recurrenceEndDate = dayjs.utc(post.endRecurrenceAfter);
+
+          if (dateIter.isAfter(recurrenceEndDate)) {
+            break;
+          }
+        }
+
+        if (dateIter.isSameOrAfter(dayjs.utc(startDate))) {
           addMorePosts.push({
             ...post,
-            publishDate: startingDate.toDate(),
+            publishDate: dateIter.toDate(),
             actualDate: post.publishDate,
           });
         }
 
-        startingDate = startingDate.add(post.intervalInDays, 'days');
+        dateIter = dateIter.add(post.intervalInDays, 'days');
       }
 
       return [...all, ...addMorePosts];
@@ -483,7 +509,7 @@ export class PostsRepository {
     date: string,
     body: PostBody,
     tags: { value: string; label: string }[],
-    inter?: number
+    recurrence?: RecurrenceDto
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -515,7 +541,13 @@ export class PostsRepository {
         content: value.content,
         delay: value.delay || 0,
         group: uuid,
-        intervalInDays: inter ? +inter : null,
+        ...(recurrence
+          ? {
+              intervalInDays: +recurrence.repeat,
+              endRecurrenceType: recurrence.endRecurrenceType,
+              endRecurrenceAfter: String(recurrence.endRecurrenceAfter),
+            }
+          : {}),
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(state === 'update'
           ? {}

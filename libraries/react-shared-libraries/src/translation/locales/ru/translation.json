@@ -692,5 +692,10 @@
   "watch_tutorial_title": "Узнайте, как пользоваться Postiz",
   "watch_tutorial_description": "Посмотрите это короткое видео, чтобы узнать, как получить максимум от Postiz",
   "back": "Назад",
-  "get_started": "Начать"
+  "get_started": "Начать",
+  "end_never": "Не заканчивать",
+  "end_after_date": "Завершить после даты",
+  "end_after_posts": "Завершить после количества постов",
+  "no_of_posts": "Кол-во постов",
+  "never": "Никогда"
 }
