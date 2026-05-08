@@ -94,7 +94,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       current: state.current,
       repeater: state.repeater,
       setRepeater: state.setRepeater,
-      endRecurrenceType: state.endRecurrenceType, // NOTE: fix: State is not persisting when modal is closed and then reopened
+      endRecurrenceType: state.endRecurrenceType,
       setEndRecurrenceType: state.setEndRecurrenceType,
       endRecurrenceAfter: state.endRecurrenceAfter,
       setEndRecurrenceAfter: state.setEndRecurrenceAfter,

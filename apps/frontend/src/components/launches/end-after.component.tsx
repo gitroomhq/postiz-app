@@ -118,7 +118,6 @@ export const EndAfterComponent: FC<{
       {type === EndRecurrenceType.POSTS && (
         <>
           <div className="h-[80%] w-px bg-newTextColor/10"></div>
-          {/* NOTE: Fix: Can't remove 0 from input. Annoying */}
           <input
             type="number"
             min="2"
