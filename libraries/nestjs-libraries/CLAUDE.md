@@ -118,9 +118,11 @@ For encrypting sensitive values (OAuth tokens, AI keys, messaging tokens): use t
 
 | File | Purpose |
 |---|---|
-| `src/database/prisma/schema.prisma` | Canonical schema (45+ models) |
+| `src/database/prisma/schema.prisma` | Canonical schema (55+ domain models + 8 Mastra-internal). High-level map in [`docs/architecture/database-schema.md`](../../docs/architecture/database-schema.md) |
 | `src/database/prisma/prisma.service.ts` | Root `PrismaService`; inject **only** in repositories |
 | `src/database/prisma/<table>/<table>.repository.ts` | Per-table repositories (`PrismaRepository<T>` pattern) |
+| `src/database/prisma/startup-migration.service.ts` | **Code-level data migrations** that run on every app startup (idempotent backfills, not schema changes — see pitfall below) |
+| `src/database/prisma/migrations/` | **Schema-level Prisma migrations** (DDL applied via `pnpm prisma-db-push`) |
 | `src/test/mock.factory.ts` | `createMock`, `createPrismaRepositoryMock` |
 | `src/test/create-testing-module.ts` | `createTestModule({ service, mocks })` |
 | `src/sentry/initialize.sentry.ts` | Sentry bootstrap (called by `apps/backend/src/main.ts`) |
@@ -140,11 +142,12 @@ For encrypting sensitive values (OAuth tokens, AI keys, messaging tokens): use t
 
 ### Add a new table
 
-1. Edit `schema.prisma`, run `pnpm prisma-generate` + `pnpm prisma-db-push`.
+1. Edit `schema.prisma`, run `pnpm prisma-generate` + `pnpm prisma-db-push`. Quick map of where each existing table fits the domain: [`docs/architecture/database-schema.md`](../../docs/architecture/database-schema.md).
 2. Create the repository with a spec (RED → GREEN → REFACTOR).
 3. Create the service with a spec.
 4. Create the DTO under `dtos/` if it represents an HTTP contract.
 5. **CHANGELOG.md** under `[Unreleased]` (describe the user impact, not the technical detail).
+6. If the migration needs to **backfill existing data with application logic** (not a pure DDL change), add an idempotent method to `startup-migration.service.ts` — do NOT create a one-off Prisma migration with raw SQL when the transformation needs joins, format conversion, or conditional logic. See pitfall on `StartupMigrationService` below.
 
 ## Known Pitfalls
 
@@ -153,6 +156,7 @@ For encrypting sensitive values (OAuth tokens, AI keys, messaging tokens): use t
 3. **Symptom:** service injecting `PrismaService` instead of a repository → **Cause:** shortcut. **Fix:** create a repository, even if minimal. Keeps DI testable and the monorepo pattern consistent.
 4. **Symptom:** AES decryption returning garbage after a deploy change → **Cause:** `ENCRYPTION_KEY` changed between environments. **Fix:** preserve the key (it's the same one for OAuth and AI keys); rotating it requires a re-encrypt migration.
 5. **Symptom:** spec passes locally but fails in CI → **Cause:** test ordering (shared state, global mock). **Fix:** isolate state in `beforeEach`/`afterEach`; never use `--bail` to mask the issue.
+6. **Symptom:** App starts cleanly after deploy but data looks wrong (rows with stale `lateApiKey`, `providerIdentifier='late-X'` instead of `zernio-X`, missing `RepostRuleDestination` rows, etc.) → **Cause:** `StartupMigrationService` (`OnModuleInit`) runs every startup with three idempotent migrations (`migrateProfileScope`, `migrateLateToZernio`, `backfillRepostDestinations`), but it **swallows errors** — failures are only logged, the app keeps running. **Fix:** tail the backend logs on deploy for `Late->Zernio migration failed:` / `Profile scope migration failed:` / `Backfill RepostRuleDestination falhou:`. Each method begins with a `count()` guard that skips when no rows need work, so re-running is safe — just fix the underlying issue and restart the backend. New data migrations belong here when they need application-level logic (joins, format mapping, conditional updates) — pure DDL still goes through Prisma migrations.
 
 ## Commands
 
@@ -170,4 +174,5 @@ pnpm prisma-db-push       # Apply the schema to the database
 - [`src/ai/CLAUDE.md`](src/ai/CLAUDE.md) — AI Provider System in detail
 - [`src/chat/CLAUDE.md`](src/chat/CLAUDE.md) — Mastra, MCP tools, IG webhook
 - [`src/integrations/social/CLAUDE.md`](src/integrations/social/CLAUDE.md) — providers and OAuth patterns
+- [`docs/architecture/database-schema.md`](../../docs/architecture/database-schema.md) — high-level map of all 55+ Prisma models grouped by domain, with repository paths and child-CLAUDE.md cross-references
 - [`docs/architecture/`](../../docs/architecture/) — diagrams and ADRs
