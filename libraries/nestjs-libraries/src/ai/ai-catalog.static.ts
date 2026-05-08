@@ -103,7 +103,21 @@ const KIEAI_VIDEO: CatalogModel[] = [
   },
   {
     id: 'veo3',
-    displayName: 'Veo 3.1 (Google via KieAI)',
+    displayName: 'Google Veo 3.1',
+    provider: 'kieai',
+    kind: 'VIDEO',
+    outputModalities: ['video'],
+  },
+  {
+    id: 'veo3_fast',
+    displayName: 'Google Veo 3.1 Fast',
+    provider: 'kieai',
+    kind: 'VIDEO',
+    outputModalities: ['video'],
+  },
+  {
+    id: 'veo3_lite',
+    displayName: 'Google Veo 3.1 Lite',
     provider: 'kieai',
     kind: 'VIDEO',
     outputModalities: ['video'],

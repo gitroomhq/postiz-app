@@ -14,9 +14,12 @@ const VEO_INFO_URL = `${KIE_BASE_URL}/api/v1/veo/record-info`;
 const POLL_INTERVAL_MS = 30_000;
 const MAX_POLL_ITERATIONS = 20; // 20 * 30s = 10min
 
-const DEFAULT_ASPECT_RATIO = '16:9';
+const DEFAULT_ASPECT_RATIO = '9:16';
 const DEFAULT_RESOLUTION = '720p';
 const DEFAULT_DURATION = 5;
+/** Modelo padrao quando a credencial nao tem `model` setado.
+ *  Veo 3.1 Lite e o mais barato e suficiente para a maioria dos casos. */
+const DEFAULT_MODEL = 'veo3_lite';
 
 const SEEDANCE_MODELS = new Set([
   'bytedance/seedance-2',
@@ -106,14 +109,24 @@ export class AiVideoService {
       profileId
     );
 
-    const model = credential.model ?? '';
+    // Quando o admin nao escolheu modelo explicitamente, defaulta para
+    // Veo 3.1 Lite (mais economico). Service usa este `model` em todas as
+    // calls subsequentes (createTask + polling).
+    const model =
+      credential.model && credential.model.length > 0
+        ? credential.model
+        : DEFAULT_MODEL;
+    const credentialWithModel: ResolvedAiCredential = {
+      ...credential,
+      model,
+    };
 
     if (SEEDANCE_MODELS.has(model)) {
-      return this.generateSeedance(credential, input, finalPrompt);
+      return this.generateSeedance(credentialWithModel, input, finalPrompt);
     }
 
     if (VEO_MODELS.has(model)) {
-      return this.generateVeo(credential, input, finalPrompt);
+      return this.generateVeo(credentialWithModel, input, finalPrompt);
     }
 
     throw new HttpException(
@@ -160,7 +173,7 @@ export class AiVideoService {
     finalPrompt: string
   ): Promise<GeneratedVideo> {
     const opts = (credential.options ?? {}) as VideoOptions;
-    const aspectRatio = input.aspectRatio ?? opts.aspectRatioDefault ?? DEFAULT_ASPECT_RATIO;
+    const aspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
     const body = {
       model: credential.model,
@@ -203,8 +216,7 @@ export class AiVideoService {
     input: GenerateVideoInput,
     finalPrompt: string
   ): Promise<GeneratedVideo> {
-    const opts = (credential.options ?? {}) as VideoOptions;
-    const aspectRatio = input.aspectRatio ?? opts.aspectRatioDefault ?? DEFAULT_ASPECT_RATIO;
+    const aspectRatio = input.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
     const body: Record<string, unknown> = {
       prompt: finalPrompt,

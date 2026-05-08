@@ -431,7 +431,15 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
         options: (credential.options as Record<string, any>) ?? {},
       });
     } else if (!configured && defaultProvider) {
-      setForm({ ...emptyState, provider: defaultProvider });
+      // Default de modelo para combos (kind, provider) onde o backend NAO tem
+      // fallback automatico — caso de VIDEO + kieai. Sem isso o admin teria
+      // que escolher manualmente entre 5 modelos sem orientacao.
+      const initialModel = pickInitialModel(kind, defaultProvider);
+      setForm({
+        ...emptyState,
+        provider: defaultProvider,
+        model: initialModel,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -679,20 +687,38 @@ const CredentialForm: React.FC<CredentialFormProps> = ({
       {form.provider && kind !== 'WEB_SEARCH' && (
         <>
           <FieldRow label={t('ai_provider_model', 'Modelo principal')}>
-            <SearchableModelSelect
-              value={form.model}
-              options={modelOptions}
-              placeholder={t(
-                'ai_provider_model_default',
-                'Default do provedor'
-              )}
-              emptyOptionLabel={t(
-                'ai_provider_model_default',
-                'Default do provedor'
-              )}
-              disabled={isLocked}
-              onChange={(v) => updateField('model', v)}
-            />
+            {kind === 'VIDEO' && form.provider === 'kieai' ? (
+              // Para VIDEO+kieai o backend NAO tem fallback aceitavel: a
+              // chamada precisa de um model exato (Seedance vs Veo tem
+              // payloads diferentes). Escondemos a opcao vazia "Default
+              // do provedor" pra forcar selecao explicita; o form ja vem
+              // pre-selecionado com 'veo3_lite' (ver pickInitialModel).
+              <SearchableModelSelect
+                value={form.model}
+                options={modelOptions}
+                placeholder={t(
+                  'ai_provider_video_pick_model',
+                  'Selecione um modelo'
+                )}
+                disabled={isLocked}
+                onChange={(v) => updateField('model', v)}
+              />
+            ) : (
+              <SearchableModelSelect
+                value={form.model}
+                options={modelOptions}
+                placeholder={t(
+                  'ai_provider_model_default',
+                  'Default do provedor'
+                )}
+                emptyOptionLabel={t(
+                  'ai_provider_model_default',
+                  'Default do provedor'
+                )}
+                disabled={isLocked}
+                onChange={(v) => updateField('model', v)}
+              />
+            )}
           </FieldRow>
           {/* Fallback so faz sentido para TEXT (mesmo provider, varios modelos
               compativeis com o SDK). Para IMAGE/VIDEO o fallback automatico
@@ -983,26 +1009,28 @@ const DynamicOptions: React.FC<{
 
   if (kind === 'VIDEO' && provider === 'kieai') {
     const isSeedance = model.startsWith('bytedance/seedance');
-    const isVeo = model.startsWith('veo3') || model === 'veo3';
-    const ASPECT_RATIOS = isVeo
-      ? (['16:9', '9:16', 'Auto'] as const)
-      : (['1:1', '16:9', '9:16'] as const);
+
+    // Aspect ratio default e enrichPromptByDefault foram removidos do
+    // Settings: o composer/agente sempre passam aspect ratio explicito por
+    // call (default 9:16 no service quando ausente), e o enrich e default
+    // ON sobrescrito pelo composer.
+    if (!isSeedance) {
+      // Veo nao tem opcoes no Settings (so model + apiKey).
+      return null;
+    }
 
     return (
       <>
         <FieldRow
-          label={t(
-            'ai_provider_video_aspect_default',
-            'Aspect ratio padrão'
-          )}
+          label={t('ai_provider_video_resolution', 'Resolução')}
         >
-          <div className="flex gap-[8px] flex-wrap">
-            {ASPECT_RATIOS.map((ar) => (
+          <div className="flex gap-[8px]">
+            {(['480p', '720p', '1080p'] as const).map((res) => (
               <label
-                key={ar}
+                key={res}
                 className={clsx(
                   'flex items-center gap-[6px] px-[12px] py-[8px] rounded-[6px] border cursor-pointer transition-colors',
-                  options.aspectRatioDefault === ar
+                  (options.resolution ?? '720p') === res
                     ? 'border-btnPrimary bg-newColColor'
                     : 'border-newTableBorder hover:bg-newColColor',
                   disabled && 'opacity-50 cursor-not-allowed'
@@ -1010,124 +1038,64 @@ const DynamicOptions: React.FC<{
               >
                 <input
                   type="radio"
-                  name="video-aspect-default"
-                  value={ar}
-                  checked={options.aspectRatioDefault === ar}
+                  name="video-resolution"
+                  value={res}
+                  checked={(options.resolution ?? '720p') === res}
                   disabled={disabled}
-                  onChange={() => onChange('aspectRatioDefault', ar)}
+                  onChange={() => onChange('resolution', res)}
                   className="accent-btnPrimary"
                 />
-                <span className="text-[14px]">{ar}</span>
+                <span className="text-[14px]">{res}</span>
               </label>
             ))}
           </div>
+        </FieldRow>
+        <FieldRow
+          label={t('ai_provider_video_duration', 'Duração (segundos)')}
+        >
+          <input
+            type="number"
+            min={4}
+            max={15}
+            step={1}
+            className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] px-[16px] outline-none text-[14px] w-[120px]"
+            value={options.durationSeconds ?? ''}
+            disabled={disabled}
+            placeholder="5"
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') {
+                onChange('durationSeconds', undefined);
+                return;
+              }
+              const num = Number(raw);
+              if (Number.isNaN(num)) return;
+              onChange(
+                'durationSeconds',
+                Math.max(4, Math.min(15, Math.floor(num)))
+              );
+            }}
+          />
           <div className="text-[12px] text-customColor18 mt-[4px]">
             {t(
-              'ai_provider_video_aspect_hint',
-              'Pode ser sobrescrito por chamada (composer/agente).'
+              'ai_provider_video_duration_hint',
+              'Entre 4 e 15s. Padrão Seedance é 5s.'
             )}
           </div>
         </FieldRow>
-
-        {isSeedance && (
-          <>
-            <FieldRow
-              label={t('ai_provider_video_resolution', 'Resolução')}
-            >
-              <div className="flex gap-[8px]">
-                {(['480p', '720p', '1080p'] as const).map((res) => (
-                  <label
-                    key={res}
-                    className={clsx(
-                      'flex items-center gap-[6px] px-[12px] py-[8px] rounded-[6px] border cursor-pointer transition-colors',
-                      (options.resolution ?? '720p') === res
-                        ? 'border-btnPrimary bg-newColColor'
-                        : 'border-newTableBorder hover:bg-newColColor',
-                      disabled && 'opacity-50 cursor-not-allowed'
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="video-resolution"
-                      value={res}
-                      checked={(options.resolution ?? '720p') === res}
-                      disabled={disabled}
-                      onChange={() => onChange('resolution', res)}
-                      className="accent-btnPrimary"
-                    />
-                    <span className="text-[14px]">{res}</span>
-                  </label>
-                ))}
-              </div>
-            </FieldRow>
-            <FieldRow
-              label={t('ai_provider_video_duration', 'Duração (segundos)')}
-            >
-              <input
-                type="number"
-                min={4}
-                max={15}
-                step={1}
-                className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] px-[16px] outline-none text-[14px] w-[120px]"
-                value={options.durationSeconds ?? ''}
-                disabled={disabled}
-                placeholder="5"
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === '') {
-                    onChange('durationSeconds', undefined);
-                    return;
-                  }
-                  const num = Number(raw);
-                  if (Number.isNaN(num)) return;
-                  onChange(
-                    'durationSeconds',
-                    Math.max(4, Math.min(15, Math.floor(num)))
-                  );
-                }}
-              />
-              <div className="text-[12px] text-customColor18 mt-[4px]">
-                {t(
-                  'ai_provider_video_duration_hint',
-                  'Entre 4 e 15s. Padrão Seedance é 5s.'
-                )}
-              </div>
-            </FieldRow>
-            <FieldRow label="">
-              <label className="flex items-center gap-[8px] cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-[16px] h-[16px] accent-btnPrimary"
-                  checked={!!options.audio}
-                  disabled={disabled}
-                  onChange={(e) => onChange('audio', e.target.checked)}
-                />
-                <span className="text-[14px]">
-                  {t(
-                    'ai_provider_video_audio',
-                    'Gerar áudio junto com o vídeo'
-                  )}
-                </span>
-              </label>
-            </FieldRow>
-          </>
-        )}
-
         <FieldRow label="">
           <label className="flex items-center gap-[8px] cursor-pointer">
             <input
               type="checkbox"
               className="w-[16px] h-[16px] accent-btnPrimary"
-              checked={options.enrichPromptByDefault !== false}
+              checked={!!options.audio}
               disabled={disabled}
-              onChange={(e) =>
-                onChange('enrichPromptByDefault', e.target.checked)
-              }
+              onChange={(e) => onChange('audio', e.target.checked)}
             />
             <span className="text-[14px]">
               {t(
-                'ai_provider_video_enrich_default',
-                'Enriquecer prompt automaticamente (cinematografia, câmera, iluminação)'
+                'ai_provider_video_audio',
+                'Gerar áudio junto com o vídeo'
               )}
             </span>
           </label>
@@ -1239,4 +1207,19 @@ function sanitizeOptions(
     out[key] = value;
   }
   return out;
+}
+
+/**
+ * Modelo inicial pre-selecionado quando o admin abre um card sem credencial
+ * salva. Aplicado apenas para combos (kind, provider) cujo backend NAO tem
+ * fallback de modelo automatico — hoje so VIDEO + kieai (5 modelos sem
+ * default no service). Para os demais combos, o backend escolhe um default
+ * aceitavel se o `credential.model` ficar vazio.
+ */
+function pickInitialModel(kind: AiKind, provider: string): string {
+  if (kind === 'VIDEO' && provider === 'kieai') {
+    // Veo 3.1 Lite — mais economico, suficiente para a maioria dos casos.
+    return 'veo3_lite';
+  }
+  return '';
 }

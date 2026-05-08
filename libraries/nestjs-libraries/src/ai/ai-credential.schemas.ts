@@ -29,16 +29,12 @@ export type ImageOptions = z.infer<typeof ImageOptionsSchema>;
 
 export const VideoOptionsSchema = z
   .object({
-    /** Aspect ratio default. 'Auto' so funciona em Veo 3.1 (centra-corta na imagem). */
-    aspectRatioDefault: z.enum(['1:1', '16:9', '9:16', 'Auto']).optional(),
     /** Resolucao do video. Aplicavel apenas a Seedance (Veo escolhe automatico). */
     resolution: z.enum(['480p', '720p', '1080p']).optional(),
     /** Duracao em segundos (4-15). Aplicavel apenas a Seedance. Veo gera ~8s fixo. */
     durationSeconds: z.number().int().min(4).max(15).optional(),
     /** Gerar audio junto com o video. Aplicavel apenas a Seedance 2 (full). */
     audio: z.boolean().optional(),
-    /** Quando true, o prompt do usuario passa pelo TEXT enrich antes de ir pro modelo. */
-    enrichPromptByDefault: z.boolean().optional(),
   })
   .strict();
 

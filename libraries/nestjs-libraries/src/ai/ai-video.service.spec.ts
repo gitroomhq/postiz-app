@@ -52,7 +52,6 @@ describe('AiVideoService', () => {
           options: {
             resolution: '720p',
             durationSeconds: 5,
-            aspectRatioDefault: '16:9',
             audio: false,
           },
         }) as any
@@ -98,7 +97,8 @@ describe('AiVideoService', () => {
       expect(body.input.prompt).toBe('a beach at sunset');
       expect(body.input.first_frame_url).toBeUndefined();
       expect(body.input.resolution).toBe('720p');
-      expect(body.input.aspect_ratio).toBe('16:9');
+      // Default = 9:16 (sem input.aspectRatio).
+      expect(body.input.aspect_ratio).toBe('9:16');
       expect(body.input.duration).toBe(5);
       expect(body.input.generate_audio).toBe(false);
     });
@@ -139,12 +139,8 @@ describe('AiVideoService', () => {
       );
     });
 
-    it('deve sobrescrever aspectRatioDefault da credencial com input.aspectRatio', async () => {
-      resolver.resolve.mockResolvedValue(
-        credentialFor({
-          options: { aspectRatioDefault: '16:9' },
-        }) as any
-      );
+    it('deve aceitar input.aspectRatio sobrescrevendo o default 9:16', async () => {
+      resolver.resolve.mockResolvedValue(credentialFor() as any);
       const fetchSpy = jest.fn();
       fetchSpy.mockResolvedValueOnce(
         new Response(
@@ -169,12 +165,53 @@ describe('AiVideoService', () => {
       await service.generate('org-1', {
         prompt: 'x',
         mode: 'T2V',
-        aspectRatio: '9:16',
+        aspectRatio: '16:9',
         enrichPrompt: false,
       });
 
       const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
-      expect(body.input.aspect_ratio).toBe('9:16');
+      expect(body.input.aspect_ratio).toBe('16:9');
+    });
+
+    it('deve usar veo3_lite como default quando credencial nao tem model', async () => {
+      resolver.resolve.mockResolvedValue(
+        credentialFor({ model: '' }) as any
+      );
+      const fetchSpy = jest.fn();
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: 200, data: { taskId: 'task-default' } }),
+          { status: 200 }
+        )
+      );
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 200,
+            data: {
+              successFlag: 1,
+              resultUrls: JSON.stringify(['https://kie.ai/d.mp4']),
+            },
+          }),
+          { status: 200 }
+        )
+      );
+      globalThis.fetch = fetchSpy as any;
+
+      const result = await service.generate('org-1', {
+        prompt: 'x',
+        mode: 'T2V',
+        enrichPrompt: false,
+      });
+
+      // Caiu no Veo (veo3_lite), nao no Seedance — model vazio defaulta
+      // pra Veo 3.1 Lite.
+      expect(fetchSpy.mock.calls[0][0]).toBe(
+        'https://api.kie.ai/api/v1/veo/generate'
+      );
+      const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+      expect(body.model).toBe('veo3_lite');
+      expect(result.model).toBe('veo3_lite');
     });
   });
 
