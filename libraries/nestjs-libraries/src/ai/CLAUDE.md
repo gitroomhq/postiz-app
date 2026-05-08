@@ -35,7 +35,7 @@ PROFILE → WORKSPACE with shareDefault → HTTP 412
 
 `HTTP 402` is intercepted by Postiz's global `layout.context` to open the billing modal. For "AI credential not configured", the semantically correct status is **412 Precondition Failed**. The frontend opens the appropriate modal on top of 412, not 402.
 
-### 4. Use `AiClientFactory` for new consumers
+### 4. Use `AiClientFactory` and dedicated services for new consumers
 
 ```typescript
 import { AiClientFactory } from '@gitroom/nestjs-libraries/ai/ai-client.factory';
@@ -43,8 +43,21 @@ import { AiClientFactory } from '@gitroom/nestjs-libraries/ai/ai-client.factory'
 // Text: returns a LanguageModel from AI SDK v5
 const model = await factory.text(orgId, profileId);
 
-// Image: returns base64 (direct fetch, not via AI SDK due to incompatibility)
-const base64 = await aiImageService.generate(orgId, prompt, profileId);
+// Image (T2I + I2I): returns base64 (direct fetch, not via AI SDK due to incompatibility)
+const base64 = await aiImageService.generate(orgId, prompt, profileId, {
+  aspectRatio: '1:1' | '9:16' | '16:9',
+  mode: 'T2I' | 'I2I',         // optional, default T2I
+  referenceImageUrl: string,   // required when mode='I2I'
+});
+
+// Video (T2V + I2V via Kie.ai): polls 30s × 20 (10min max), returns kie.ai-hosted URL
+const video = await aiVideoService.generate(orgId, {
+  prompt: '...',
+  mode: 'T2V' | 'I2V',
+  aspectRatio: '1:1' | '9:16' | '16:9',
+  referenceImageUrl?: string,
+  enrichPrompt?: boolean,      // default true
+}, profileId);
 
 // Mastra Agent: returns a lazy async function
 //   the model is resolved on EACH agent call, without restarting the instance
@@ -148,9 +161,10 @@ Per-profile PDF/TXT/MD upload. Pipeline: chunking → embeddings → vector sear
 | `ai-credential.schemas.ts` | Zod schemas (config per kind/provider) |
 | `ai-catalog.service.ts` | OpenRouter catalog cache (available models) |
 | `ai-catalog.static.ts` | Static curated model list (image/video) |
-| `ai-text.service.ts` | Text generation service |
-| `ai-image.service.ts` | Image generation service (base64, direct fetch) |
-| `ai-web-search.service.ts` | Web search service (Tavily, etc.) |
+| `ai-text.service.ts` | Text generation service. Also hosts `generatePromptForPicture` and `generatePromptForVideo` (enrichment helpers — ALWAYS output English regardless of input language) |
+| `ai-image.service.ts` | Image generation. Dispatch by `mode`: `T2I` (OpenAI `/generations` or OpenRouter chat), `I2I` (OpenAI `/images/edits` multipart, or OpenRouter chat with `image_url`) |
+| `ai-video.service.ts` | Video generation via Kie.ai. Dispatch by model family: Seedance (`/api/v1/jobs/createTask`) or Veo 3.x (`/api/v1/veo/generate`). Polls 30s × 20 iterations. Translates kie.ai error codes to friendly Portuguese messages |
+| `ai-web-search.service.ts` | Web search service (Tavily) |
 | `ai-provider-test.service.ts` | Endpoint to test a credential |
 | `persona.helper.ts` | Persona injection into system prompts |
 
@@ -186,14 +200,21 @@ Everything goes through `subscription.service.ts`. If you change the precedence 
 4. **Symptom:** OpenAI image generation works via curl but fails in the app → **Cause:** AI SDK image incompatibility. **Fix:** `AiImageService.generate` uses **direct fetch**, not AI SDK. Do not migrate.
 5. **Symptom:** credits do not decrement for a new profile → **Cause:** `Credits.profileId` not populated when created. **Fix:** see `subscription.service.spec.ts` for the correct creation path.
 6. **Symptom:** unexpected "unlimited fallback" in managed mode → **Cause:** `AI_CREDITS_MODE` not set, or `aiImageCredits=null` falls into the fallback. **Fix:** review the precedence chain (order matters).
+7. **Symptom:** I2I via OpenAI returns `400 "Unknown parameter: 'quality'"` → **Cause:** `/v1/images/generations` accepts `quality` but `/v1/images/edits` (used for I2I) does NOT. **Fix:** `generateOpenAiEdit` MUST omit `quality` from FormData even when present in `credential.options`. T2I keeps applying it via `/generations`.
+8. **Symptom:** Image/video generated has Portuguese text or weird translation artifacts → **Cause:** the LLM enriching the prompt returned in the user's input language. **Fix:** `generatePromptForPicture`/`generatePromptForVideo` system prompts contain explicit "Always respond in ENGLISH, regardless of input language — image/video models perform significantly better with English". Don't translate them; keep output English.
+9. **Symptom:** `Cache-Control` style staleness — admin changed model in Settings but the modal still shows old options → **Cause:** Redis catalog cache. **Fix:** `getCatalog` already bypasses cache for static providers (kieai/tavily/openai). For OpenRouter, hit `POST /ai/catalog/refresh` or wait 1h TTL.
+10. **Symptom:** Kie.ai video generation fails with `code=402 "Credits insufficient"` (their billing) but our backend returns generic 502 → **Cause:** `AiVideoService.translateKieaiError` exists but isn't applied. **Fix:** ensure controller propagates `error.message` from HttpException — the frontend already prefers `detail.message` over generic toast.
 
 ## Useful Commands
 
 ```bash
-# AI Provider System specs (56 specs)
+# AI Provider System specs (126 specs covering text, image T2I/I2I, video T2V/I2V, web search, resolver, factory, catalog, credentials)
 pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage
 
-# Clear OpenRouter catalog cache
+# AI + Chat (124 + chat specs ~140 total) — the agent's tool layer also lives next door
+pnpm jest libraries/nestjs-libraries/src/ai libraries/nestjs-libraries/src/chat --no-coverage
+
+# Clear OpenRouter catalog cache (only OpenRouter is cached; kieai/tavily/openai bypass cache for instant pickup of code changes)
 curl -X POST -H "Cookie: <session>" http://localhost:3000/ai/catalog/refresh
 ```
 

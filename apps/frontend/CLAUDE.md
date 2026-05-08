@@ -74,7 +74,10 @@ The `--color-custom*` variables are **deprecated**. Use `--new-*` tokens and Tai
 | `src/app/colors.scss` | `--new-*` color tokens |
 | `src/app/global.scss` | Global styles |
 | `src/app/global-error.tsx` | Next.js error boundary + Sentry capture |
-| `src/components/launches/` | Largest surface — composer, calendar, AI providers, modals (~60 components) |
+| `src/components/launches/` | Largest surface — composer, calendar, AI modals (~60 components) |
+| `src/components/launches/helpers/mode.tab.component.tsx` | Shared `ModeTab` for T2X/I2X tabs in AI modals (image, video) |
+| `src/components/launches/helpers/reference.image.dropzone.component.tsx` | Shared dropzone for I2I/I2V reference image (drag-drop + URL fallback, POSTs to `/media/upload-server`). Reuse instead of inlining file-upload logic in new modals |
+| `src/components/launches/ai.image.tsx` / `ai.video.tsx` / `ai.search.tsx` | AI generation modals — all 700px width, sticky header without `-mt`/`pt` quirks, X inside same flex row as `TopTitle` |
 | `src/components/settings/` | Settings panels (AI Provider, Credentials, Profiles, etc.) |
 | `src/components/new-layout/` | Current sidebar + topbar |
 | `src/components/new-layout/sentry.feedback.component.tsx` | Sentry feedback widget |
