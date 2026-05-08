@@ -1,37 +1,20 @@
 # Robô MultiPost — Windsurf Rules
 
-## Project
-Fork of Postiz (AGPL-3.0). Social media scheduler for the Automação Sem Limites community.
-Read AGENTS.md for full context before working on any feature.
+Single source of truth: **`CLAUDE.md`** at the repo root, with per-area
+children (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
+`libraries/nestjs-libraries` and its children `ai/`, `chat/`,
+`integrations/social/`, `libraries/react-shared-libraries`).
 
-## Package Manager
-PNPM only. Never use npm or yarn.
+Before doing any work in this repo, read:
 
-## Backend (apps/backend — NestJS)
-- Layer pattern: Controller → Service → Repository (never skip)
-- Business logic lives in libraries/nestjs-libraries/src/
-- Controllers only import from libs
+1. The root `CLAUDE.md` — non-negotiable principles and monorepo map.
+2. The closest `CLAUDE.md` to the directory you are editing (cascade).
+3. `docs/` for detailed architecture referenced by the CLAUDE.md files.
 
-## Frontend (apps/frontend — Next.js 14)
-- SWR for all data fetching via useFetch from libraries/helpers/src/utils/custom.fetch.tsx
-- Each useSWR must be in its own dedicated hook (react-hooks/rules-of-hooks)
-- No eslint-disable-next-line
-- No npm component libraries — write native components
-- Check apps/frontend/src/app/colors.scss and global.scss before styling
-- --color-custom* variables are deprecated, do not use
+PRs that do not adhere to the principles in `CLAUDE.md` (mandatory TDD,
+Controller→Service→Repository, PNPM only, mandatory `useT()`, etc.) are
+not merged.
 
-## Git Strategy
-- postiz branch: upstream mirror only, never commit customizations
-- main: all development and customizations
-- release: stable production version, Docker image built from here
-- Never force push, never reset --hard without explicit user approval
+`AGENTS.md` at the root points to `CLAUDE.md` as single source of truth.
 
-## Principles
-- Document-First: write docs before opening PR
-- API-First: define API contract before implementing
-
-## Key Files
-- AGENTS.md — full project context
-- PRD.md — product requirements
-- CLAUDE.md — detailed dev instructions
-- libraries/nestjs-libraries/src/database/prisma/schema.prisma — DB schema
+All `CLAUDE.md` files are in English. CHANGELOG and product docs are in pt-BR.

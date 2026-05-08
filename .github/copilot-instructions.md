@@ -1,149 +1,31 @@
-
 # Copilot Coding Agent Instructions for Robô MultiPost
 
-This project is **Robô MultiPost**, a fork of [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0).
-A self-hosted social media scheduler for the Automação Sem Limites community.
-Read `docs/planning/agents.md` for full project context before suggesting any code.
+Single source of truth: **[`CLAUDE.md`](../CLAUDE.md)** at the repo root, with
+per-area children (`apps/backend`, `apps/frontend`, `apps/orchestrator`,
+`libraries/nestjs-libraries` and children `ai/`, `chat/`, `integrations/social/`,
+`libraries/react-shared-libraries`).
 
-## Project Architecture
-- Monorepo managed with PNPM workspaces (not NX), apps in `apps/` and shared code in `libraries/`.
-- Main services: `frontend` (Next.js 14), `backend` (NestJS), `orchestrator` (Temporal.io), `commands`, `extension`, `sdk`, `cli`.
-- Data layer uses Prisma ORM (`libraries/nestjs-libraries/src/database/prisma/schema.prisma`) with PostgreSQL 17.
-- Redis 7 for cache and queues.
-- Temporal.io for all background job orchestration (scheduling, retries, publishing workflows).
-- Email notifications via Resend.
-- AI via Mastra framework + MCP (already implemented — Phase 3 exposes configuration).
-- Social media integrations: 33 providers.
+Before suggesting any code:
 
-## Critical Rules
+1. Read the root `CLAUDE.md` — non-negotiable principles and monorepo map.
+2. Read the closest `CLAUDE.md` to the directory you are editing (cascade).
+3. Check [`docs/`](../docs/) for detailed architecture (AI Provider System,
+   Instagram automations, AI persona, knowledge base, etc.) — the CLAUDE.md
+   files cross-reference these by link.
 
-### Package Manager
-- **PNPM only.** Never suggest npm or yarn.
+Key rules (non-exhaustive; see `CLAUDE.md` for the full set):
 
-### Backend Layer Pattern (NestJS — apps/backend)
-- Always follow: `Controller → Service → Repository`
-- With manager when needed: `Controller → Manager → Service → Repository`
-- **Never skip layers.** Business logic lives in `libraries/nestjs-libraries/src/`
-- Controllers import from libs only.
+- **PNPM only** — never suggest `npm` or `yarn`.
+- **Controller → Service → Repository** with no shortcut between layers.
+- **TDD is mandatory**: spec first (`.spec.ts`), then implementation.
+- No `eslint-disable-next-line`, no UI components from npm, no hardcoded
+  strings in JSX (always `useT()`).
+- **`AGENTS.md`** at the root points to `CLAUDE.md` as single source of truth.
 
-### Frontend (Next.js 14 — apps/frontend)
-- Use `useFetch` hook from `libraries/helpers/src/utils/custom.fetch.tsx` for all API calls.
-- Every SWR hook must be isolated in its own function — `react-hooks/rules-of-hooks`.
-- **Never suggest installing React component libraries from npm** — write native components.
-- Check `apps/frontend/src/app/colors.scss` and `global.scss` before styling.
-- Never use `--color-custom*` CSS variables (deprecated).
+Sentry frontend setup lives in
+[`apps/frontend/CLAUDE.md`](../apps/frontend/CLAUDE.md). Sentry backend
+setup lives in [`apps/backend/CLAUDE.md`](../apps/backend/CLAUDE.md).
+Zernio (formerly Late, same company rebranded) details live in
+[`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](../libraries/nestjs-libraries/src/integrations/social/CLAUDE.md).
 
-### Git Branches
-- `postiz` = upstream mirror only (Postiz official) — never commit customizations here
-- `main` = all custom development
-- `release` = production-ready, Docker is built from here + tag
-- Never suggest `git push --force` or `git reset --hard`
-
-### Code Quality
-- No `eslint-disable` comments
-- Document-First: suggest doc updates alongside code
-- API-First: suggest endpoint contracts before implementation
-- Keep `.env.example` updated with new env vars
-
-## Developer Workflows
-- Node.js: 20.17.0 (pinned via Volta)
-- Install: `pnpm install`
-- Dev: `pnpm dev` (all apps) or `pnpm dev-backend`
-- Build: `pnpm build`
-- Lint (from root only): `pnpm lint`
-- Prisma: `pnpm prisma-generate`, `pnpm prisma-db-push`
-- Docker dev: `docker compose -f ./docker-compose.dev.yaml up -d`
-
-## Key Files & Directories
-- `docs/planning/agents.md` — Full agent context (read this first)
-- `docs/planning/prd.md` — Product requirements
-- `apps/` — Main services and applications
-- `libraries/` — Shared code and modules
-- `docker-compose.yaml` — Production Docker setup (5 services)
-- `docker-compose.dev.yaml` — Local development Docker setup
-- `.env` — Environment configuration
-- `pnpm-workspace.yaml` — Workspace package management
-- `libraries/nestjs-libraries/src/database/prisma/schema.prisma` — DB schema (45 models)
-- `libraries/react-shared-libraries/src/translation/locales/` — i18n (17 languages)
-
-## Late Integration
-- Late provides OAuth-based social media connections for 13 platforms as an alternative to native integrations.
-- Controller: `apps/backend/src/api/routes/late.integrations.controller.ts`
-- Base provider: `libraries/nestjs-libraries/src/integrations/social/late.base.provider.ts`
-- Frontend modals: `apps/frontend/src/components/launches/late/` (late-account-modal.tsx + late-invite-modal.tsx)
-- Late API key resolves per-profile first, then org-level with `shareLateWithProfiles` flag.
-- **Platform invite flow** uses undocumented `POST https://getlate.dev/api/v1/platform-invites` (not in SDK) — response is `{ invite: { inviteUrl, ... } }`.
-- Two flows: direct "Add Channel > Late" (select existing account) and "Send Invite Link > Late" (generate platform-specific OAuth link for clients).
-- After a client connects via invite, the admin adds the new account via "Add Channel > Late".
-
-## Documentation
-- Upstream docs: https://docs.postiz.com/
-- Late API: https://docs.getlate.dev/llms-full.txt
-
----
-
-# Logs
-
-- Where logs are used, ensure Sentry is imported using `import * as Sentry from "@sentry/nextjs"`
-- Enable logging in Sentry using `Sentry.init({ enableLogs: true })`
-- Reference the logger using `const { logger } = Sentry`
-- Sentry offers a `consoleLoggingIntegration` that can be used to log specific console error types automatically without instrumenting the individual logger calls
-
-## Configuration
-
-The Sentry initialization needs to be updated to enable the logs feature.
-
-### Baseline
-
-```javascript
-import * as Sentry from "@sentry/nextjs";
-
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-
-  enableLogs: true,
-});
-```
-
-### Logger Integration
-
-```javascript
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  integrations: [
-    // send console.log, console.error, and console.warn calls as logs to Sentry
-    Sentry.consoleLoggingIntegration({ levels: ["log", "error", "warn"] }),
-  ],
-});
-```
-
-## Logger Examples
-
-`logger.fmt` is a template literal function that should be used to bring variables into the structured logs.
-
-```javascript
-import * as Sentry from "@sentry/nextjs";
-
-const { logger } = Sentry;
-
-logger.trace("Starting database connection", { database: "users" });
-logger.debug(logger.fmt`Cache miss for user: ${userId}`);
-logger.info("Updated profile", { profileId: 345 });
-logger.warn("Rate limit reached for endpoint", {
-  endpoint: "/api/results/",
-  isEnterprise: false,
-});
-logger.error("Failed to process payment", {
-  orderId: "order_123",
-  amount: 99.99,
-});
-logger.fatal("Database connection pool exhausted", {
-  database: "users",
-  activeConnections: 100,
-});
-```
-
----
-
-For questions or unclear conventions, check the main README or ask for clarification in your PR description.
-
+All `CLAUDE.md` files are written in English. CHANGELOG and product docs in pt-BR.

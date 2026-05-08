@@ -1,255 +1,88 @@
-# Robô MultiPost — Instruções para Claude Code
+# Robô MultiPost — Claude Code Instructions
 
-Este projeto é o **Robô MultiPost**, um fork do [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0), adaptado para a comunidade Automação Sem Limites. É um scheduler de redes sociais self-hosted com suporte a 33+ canais, agendamento via calendário, analytics, biblioteca de mídia e integração com IA.
+## Identity
 
-## Stack Principal
+**Robô MultiPost** is a fork of [Postiz](https://github.com/gitroomhq/postiz-app) (AGPL-3.0), customized for the Automação Sem Limites community. Self-hosted social media scheduler with 33+ channels, calendar-based scheduling, analytics, media library, and a per-workspace AI layer.
 
-- **Backend:** NestJS (TypeScript) — `apps/backend`
-- **Frontend:** Next.js 14 + React 18 + Tailwind CSS 3 — `apps/frontend`
-- **Orchestrator:** NestJS + Temporal.io (jobs em background) — `apps/orchestrator`
-- **ORM:** Prisma + PostgreSQL
-- **Package manager:** PNPM (monorepo) — **nunca use npm ou yarn**
-- **IA:** Mastra framework + MCP (Model Context Protocol)
+## Stack
 
-## Estrutura do Monorepo
-
-```
-apps/
-  backend/       ← API REST (NestJS)
-  frontend/      ← UI (Next.js 14 + React 18)
-  orchestrator/  ← Temporal workflows e activities (NestJS)
-  extension/     ← Browser extension
-  cli/           ← CLI tool (publicado como `postiz` no npm)
-  sdk/           ← SDK Node.js (publicado como `@postiz/node`)
-  commands/      ← Microserviço de comandos background
-
-libraries/
-  nestjs-libraries/      ← Código compartilhado backend/orchestrator
-    integrations/social/ ← 33 providers de redes sociais
-    database/prisma/     ← Schema Prisma + migrações
-    chat/                ← Agentes e MCP tools
-  react-shared-libraries/ ← Código compartilhado frontend
-    translation/locales/ ← 17 idiomas (pt, en, es, fr, de, it, ru, tr, ja, ko, zh, vi, bn, ar, he, ka_ge)
-  helpers/               ← Utilitários gerais
-```
-
-## Arquitetura Backend (obrigatório seguir)
-
-A camada de backend segue rigorosamente:
-
-```
-Controller >> Service >> Repository
-```
-
-Em alguns casos com manager:
-
-```
-Controller >> Manager >> Service >> Repository
-```
-
-- **Nunca** fazer shortcut entre camadas
-- A lógica de negócio vive em `libraries/nestjs-libraries/src/`
-- O backend (`apps/backend`) é usado principalmente para controllers e imports de libs
-
-## Frontend
-
-- Componentes UI reutilizáveis: `/apps/frontend/src/components/ui`
-- Roteamento: `/apps/frontend/src/app`
-- Componentes de feature: `/apps/frontend/src/components`
-- **Sempre usar SWR** para buscar dados, com o hook `useFetch` de `/libraries/helpers/src/utils/custom.fetch.tsx`
-
-### Regra obrigatória de SWR
-
-Cada hook SWR deve estar em um hook separado, cumprindo `react-hooks/rules-of-hooks`. **Nunca** usar `eslint-disable-next-line`.
-
-**Válido:**
-```typescript
-const useCommunity = () => {
-  return useSWR....
-}
-```
-
-**Inválido:**
-```typescript
-const useCommunity = () => {
-  return {
-    communities: () => useSWR<CommunitiesListResponse>("communities", getCommunities),
-    providers: () => useSWR<ProvidersListResponse>("providers", getProviders),
-  };
-}
-```
-
-### Traducoes (obrigatorio)
-
-Todo texto visivel ao usuario no frontend **deve** usar o hook `useT()` de `@gitroom/react/translation/get.transation.service.client`:
-
-```typescript
-const t = useT();
-// t('chave_unica', 'Texto fallback em ingles')
-```
-
-- **Nunca** usar strings hardcoded em JSX — sempre passar pelo `t()`
-- Ao criar novas chaves, adicionar a traducao em **pt** (`libraries/react-shared-libraries/src/translation/locales/pt/translation.json`) e **en** (`locales/en/translation.json`)
-- Manter as chaves em snake_case e descritivas (ex: `select_late_profile`, `failed_to_add_channel`)
-- Os demais idiomas usam o fallback em ingles automaticamente
-
-### Tailwind e estilos
-
-Antes de escrever qualquer componente, verificar:
-- `/apps/frontend/src/app/colors.scss`
-- `/apps/frontend/src/app/global.scss`
-- `/apps/frontend/tailwind.config.js`
-
-As variáveis `--color-custom*` estão **depreciadas** — não usar. Verificar outros componentes do sistema para manter consistência de design.
-
-**Nunca instalar componentes frontend do npmjs** — escrever componentes nativos.
-
-## Linting
-
-O linting só pode rodar a partir da raiz do projeto:
-
-```bash
-pnpm lint
-```
-
-## Princípios de Desenvolvimento
-
-### TDD Obrigatorio (Test-Driven Development)
-
-Toda nova feature, bug fix ou refactor **deve** seguir o ciclo TDD:
-
-1. **RED** — Escrever o teste `.spec.ts` primeiro com o comportamento esperado (o teste deve falhar)
-2. **GREEN** — Implementar o minimo de codigo para o teste passar
-3. **REFACTOR** — Melhorar o codigo mantendo os testes verdes
-
-#### Regras
-
-- **Nunca** commitar codigo de producao sem o `.spec.ts` correspondente
-- Testes devem ser co-localizados: `foo.service.ts` → `foo.service.spec.ts` (mesmo diretorio)
-- Usar sempre `.spec.ts` (nao `.test.ts`)
-- Rodar `pnpm test` antes de cada commit para garantir que nada quebrou
-
-#### Utilitarios de teste (usar sempre)
-
-Os helpers estao em `libraries/nestjs-libraries/src/test/`:
-
-```typescript
-import { createMock, createPrismaRepositoryMock, createTestModule } from '@gitroom/nestjs-libraries/test';
-```
-
-- `createMock<T>()` — mock de qualquer classe via jest-mock-extended (sem necessidade de interfaces)
-- `createPrismaRepositoryMock('tableName')` — mock de `PrismaRepository<T>` com `model.[table]` mockado
-- `createTestModule({ service, mocks })` — factory para NestJS TestingModule com mocks automaticos
-
-#### Abordagem por camada
-
-| Camada | O que testar | Como mockar |
+| Layer | Technology | Details in |
 |---|---|---|
-| **Service** | Logica de negocio, branching, delegacao | `createMock<Repository>()` ou `createTestModule()` para muitas deps |
-| **Repository** | Construcao de queries, transformacao de dados | `createPrismaRepositoryMock('table')` |
-| **Controller** | Camada HTTP, extracao de params | `@nestjs/testing` com service mockado |
-| **Social Provider** | Formatacao de posts, auth URLs, tratamento de erros | Instanciacao direta, `jest.spyOn` para HTTP |
+| Backend | NestJS + TypeScript | [`apps/backend/CLAUDE.md`](apps/backend/CLAUDE.md) |
+| Frontend | Next.js 14 + React 18 + Tailwind 3 | [`apps/frontend/CLAUDE.md`](apps/frontend/CLAUDE.md) |
+| Orchestrator | NestJS + Temporal.io | [`apps/orchestrator/CLAUDE.md`](apps/orchestrator/CLAUDE.md) |
+| Shared domain | NestJS libraries | [`libraries/nestjs-libraries/CLAUDE.md`](libraries/nestjs-libraries/CLAUDE.md) |
+| Shared UI | React libraries | [`libraries/react-shared-libraries/CLAUDE.md`](libraries/react-shared-libraries/CLAUDE.md) |
+| ORM | Prisma + PostgreSQL 17 | — |
+| Package manager | **PNPM** (monorepo) — never npm/yarn | — |
+| AI | Mastra + MCP | [`libraries/nestjs-libraries/src/ai/CLAUDE.md`](libraries/nestjs-libraries/src/ai/CLAUDE.md) |
 
-#### Estrutura do teste
+## Monorepo Map
 
-```typescript
-describe('NomeClasse', () => {
-  describe('nomeMetodo', () => {
-    it('deve <comportamento esperado> quando <condicao>', async () => {
-      // ARRANGE — preparar mocks e dados
-      // ACT — executar o metodo
-      // ASSERT — verificar resultado
-    });
-  });
-});
-```
-
-#### Prioridade de cobertura
-
-1. Services com logica de negocio (maior valor)
-2. Social providers (isolados, sem DI)
-3. Repositories com transformacao de dados
-4. Controllers (menor prioridade — camada fina)
-
-#### Comandos
-
-```bash
-pnpm test              # Todos os testes com coverage
-pnpm test:watch        # Watch mode durante desenvolvimento
-pnpm test:backend      # Apenas testes do backend
-pnpm test:libs         # Apenas testes das libraries
-```
-
-#### Exemplos de referencia
-
-- Service simples: `libraries/nestjs-libraries/src/database/prisma/sets/sets.service.spec.ts`
-- Repository: `libraries/nestjs-libraries/src/database/prisma/sets/sets.repository.spec.ts`
-
-### Document-First
-Toda nova feature deve ter documentação escrita **antes ou em conjunto** com a implementação:
-- Atualizar `docs/` antes de abrir PR
-- PR sem documentação não deve ser mergeado
-
-### API-First
-Toda nova feature com interface de backend deve ter **contrato de API definido primeiro**:
-- Definir endpoints, payloads e respostas antes de implementar
-- A UI sempre consome a API, nunca o contrário
-- Mudanças de contrato devem ser versionadas
-
-### Changelog Incremental
-Ao concluir uma tarefa que resulta em commit (feature, fix, refactor, etc.), **sempre atualize** a secao `## [Unreleased]` do `CHANGELOG.md` com uma entrada descritiva:
-- Adicione na subcategoria correta: `### Adicionado`, `### Corrigido`, `### Alterado`, `### Removido`, `### Performance`, `### Documentacao`
-- Crie a subcategoria se ela nao existir ainda dentro de `[Unreleased]`
-- Escreva em portugues, sem acentos (compatibilidade de arquivos)
-- Descreva o impacto para o usuario, nao o detalhe tecnico (ex: "Suporte a agendamento de Reels no Instagram" em vez de "Adicionar InstagramReelsProvider")
-- Uma linha por mudanca; agrupar mudancas relacionadas do mesmo commit
-- NAO incluir hash de commit (sera adicionado pelo `/changelog` na consolidacao)
-- Se a mudanca for trivial (typo, ajuste interno sem impacto), nao adicionar entrada
-
-## Estratégia Git (GitLab Flow)
-
-### Branches
-
-| Branch | Papel |
-|---|---|
-| `postiz` | Espelho limpo do upstream oficial — **nunca commitar customizações aqui** |
-| `main` | Desenvolvimento e customizações do Robô MultiPost |
-| `release` | Versão estável para produção — imagem Docker é gerada daqui |
-
-### Remotes
-
-| Remote | URL |
-|---|---|
-| `origin` | `https://github.com/maiconramos/robo-multipost` |
-| `upstream` | `https://github.com/gitroomhq/postiz-app` |
-
-### Regras
-
-- Todo código customizado vai para `main`
-- `release` só recebe merge de `main` quando testado e aprovado
-- Releases estáveis são gerados a partir de `release`; pre-releases (RC/beta) são tags em `main`
-- Toda promoção `main` → `release` deve gerar uma tag semântica (ex: `v1.2.0`)
-- Features grandes: criar branch `custom/nome-da-feature` a partir de `main`
-- Features pequenas: podem ir direto em `main`
-
-### Versionamento SemVer
-
-| Tipo | Incrementa | Exemplo |
+| Path | Purpose | Child CLAUDE.md |
 |---|---|---|
-| Update do upstream Postiz | `MINOR` | `v1.1.0` → `v1.2.0` |
-| Nova feature customizada | `MINOR` | `v1.2.0` → `v1.3.0` |
-| Correção de bug | `PATCH` | `v1.2.0` → `v1.2.1` |
-| Breaking change | `MAJOR` | `v1.2.0` → `v2.0.0` |
+| `apps/backend/` | REST API | [link](apps/backend/CLAUDE.md) |
+| `apps/frontend/` | Next.js UI | [link](apps/frontend/CLAUDE.md) |
+| `apps/orchestrator/` | Temporal workflows | [link](apps/orchestrator/CLAUDE.md) |
+| `apps/extension/` | Browser extension | — (stub) |
+| `apps/cli/` | `postiz` CLI | — (stub) |
+| `apps/sdk/` | `@postiz/node` SDK | — (stub) |
+| `apps/commands/` | Background commands microservice | — (stub) |
+| `libraries/nestjs-libraries/` | Shared backend/orchestrator domain | [link](libraries/nestjs-libraries/CLAUDE.md) |
+| `└── src/integrations/social/` | 40+ social media providers | [link](libraries/nestjs-libraries/src/integrations/social/CLAUDE.md) |
+| `└── src/ai/` | AI Provider System, credits, persona, KB | [link](libraries/nestjs-libraries/src/ai/CLAUDE.md) |
+| `└── src/chat/` | Mastra agents, MCP tools, IG webhook | [link](libraries/nestjs-libraries/src/chat/CLAUDE.md) |
+| `└── src/database/prisma/` | Schema + repositories | inside parent |
+| `libraries/react-shared-libraries/` | Shared UI components | [link](libraries/react-shared-libraries/CLAUDE.md) |
+| `libraries/helpers/` | General utilities | inside root |
+| `docs/` | Architecture and operations (read, don't rewrite) | — |
+| `.context/` | Portable dotcontext via MCP — DO NOT touch | — |
 
-## Comandos Úteis
+## Non-Negotiable Principles
+
+1. **Controller → Service → Repository** with no shortcut between layers. Business logic lives in `libraries/nestjs-libraries/src/`. Details in [`apps/backend/CLAUDE.md`](apps/backend/CLAUDE.md).
+2. **TDD is mandatory** (RED → GREEN → REFACTOR). Specs are co-located, suffix `.spec.ts`. Helpers and patterns in [`libraries/nestjs-libraries/CLAUDE.md`](libraries/nestjs-libraries/CLAUDE.md).
+3. **PNPM only** — `npm`/`yarn` are blocked.
+4. **i18n is mandatory in the frontend** — no hardcoded strings in JSX, always `useT()`. Details in [`apps/frontend/CLAUDE.md`](apps/frontend/CLAUDE.md).
+5. **Document-First** — update `docs/` before or alongside the PR; PRs without documentation are not merged.
+6. **API-First** — define the contract (endpoint + payload + response) before implementing. UI consumes the API, never the other way around.
+7. **Incremental Changelog** — every non-trivial commit updates `## [Unreleased]` in `CHANGELOG.md` (entries in pt-BR with full accents, Keep a Changelog format).
+8. **GitLab Flow** — branches `postiz` (upstream mirror, never commit here) | `main` (development) | `release` (production). Promoting `main → release` requires a SemVer tag.
+
+## Golden Rules
+
+- **Never** use `eslint-disable-next-line` — refactor to comply with the rule.
+- **Never** install UI components from npm — write them natively (see [`apps/frontend/CLAUDE.md`](apps/frontend/CLAUDE.md)).
+- **Never** access AI credentials skipping `AiProviderResolverService` (see [`libraries/nestjs-libraries/src/ai/CLAUDE.md`](libraries/nestjs-libraries/src/ai/CLAUDE.md)).
+- **Never** hardcode `graph.facebook.com` in Instagram comment activities — use `FlowActivity.resolveIgRoute` (see [`apps/orchestrator/CLAUDE.md`](apps/orchestrator/CLAUDE.md)).
+- **Never** hardcode `process.env` in OAuth providers — propagate `ClientInformation` (see [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](libraries/nestjs-libraries/src/integrations/social/CLAUDE.md)).
+- **Never** touch `.context/` — managed by dotcontext via MCP, has its own lifecycle.
+- Linting runs **only from the repo root** with `pnpm lint`.
+- Project skills live in `.claude/skills/`; per-session auto-memory in `~/.claude/projects/.../memory/`.
+
+## Product Context
+
+- **Default language:** pt-BR (`react-shared-libraries/src/translation/locales/pt`). User-facing text uses full pt-BR accents.
+- **Branding:** "Robô MultiPost" — Postiz credits preserved as required by AGPL.
+- **Zernio (formerly Late / getlate.dev):** TikTok and Pinterest via [Zernio API](https://docs.zernio.com/llms-full.txt) as alternative provider. Details in [`libraries/nestjs-libraries/src/integrations/social/CLAUDE.md`](libraries/nestjs-libraries/src/integrations/social/CLAUDE.md).
+- **Billing:** disabled by default (`DISABLE_BILLING=true`).
+- **Marketplace:** disabled by default (`DISABLE_MARKETPLACE=true`).
+- **Storage:** local by default; Cloudflare R2 optional.
+- **AI:** Mastra + MCP infra exists; configuration is per-workspace via Settings UI.
+
+## Required Production Services
+
+App (backend + frontend) | PostgreSQL 17 | Redis 7 | **Temporal** (critical for scheduling) | Nginx (reverse proxy).
+
+## Essential Commands
 
 ```bash
-# Desenvolvimento
-pnpm dev                  # Todos os apps em paralelo
+# Development
+pnpm dev                  # All apps
 pnpm dev-backend          # Backend + frontend
 
 # Build
-pnpm build                # Build completo
+pnpm build                # Full build
 pnpm build:backend
 pnpm build:frontend
 pnpm build:orchestrator
@@ -319,135 +152,25 @@ O sistema de creditos controla quantas imagens e videos cada perfil pode gerar p
 
 ### Env vars relacionadas
 
-```env
-AI_CREDITS_MODE="unlimited"        # "unlimited" ou "managed"
-# AI_CREDITS_DEFAULT_IMAGES=50     # default para novos perfis (modo managed)
-# AI_CREDITS_DEFAULT_VIDEOS=10     # default para novos perfis (modo managed)
+# Quality
+pnpm lint                 # Always from repo root
+pnpm test                 # Full coverage
+
+# Docker
+pnpm docker-build
 ```
 
-### Endpoints REST
+Area-specific commands (AI tests, catalog refresh, release scripts) live in the respective child `CLAUDE.md` files.
 
-```
-GET  /copilot/credits?type=ai_images|ai_videos  → { credits: number }
-GET  /settings/profiles/:id/ai-credits          → config + uso do perfil (ADMIN)
-PUT  /settings/profiles/:id/ai-credits          → atualiza config (ADMIN, nao edita default)
-GET  /settings/ai-credits/summary               → lista perfis com creditos e uso (ADMIN)
-```
+## Note on Language
 
-### Arquivos principais
+This `CLAUDE.md` and all child `CLAUDE.md` files are written in **English** (better for AI agents). User-facing artifacts — `CHANGELOG.md`, `docs/`, translation files in `pt/translation.json`, UI strings via `useT()` — remain in pt-BR per project convention.
 
-- **Service:** `libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.service.ts`
-- **Repository:** `libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.repository.ts`
-- **Schema:** `schema.prisma` → campos `aiImageCredits`/`aiVideoCredits` em Profile, `profileId` em Credits
-- **Frontend settings:** `apps/frontend/src/components/settings/ai-credits.settings.component.tsx`
-- **Frontend badges:** `apps/frontend/src/components/launches/ai.image.tsx`, `ai.video.tsx`
-- **Testes:** `__tests__/subscription.service.spec.ts`, `subscription.repository.spec.ts`
+## References
 
-## Automacoes Instagram (follow gate, DMs, webhooks)
-
-Subsistema crítico — antes de mexer, ler:
-
-- **Referência de agente:** `docs/architecture/instagram-automations.md`
-  (mapa de arquivos, camadas de credenciais, roteamento de tokens,
-  follow-gate 2 etapas, armadilhas).
-- **Guia de usuário:** `docs/automacoes-instagram.md`.
-
-### Regras de ouro
-
-1. **Três camadas de credenciais Meta** (nunca misturar):
-   - Credenciais do App (workspace) — `Credentials.clientId/clientSecret`,
-     `instagramAppId/instagramAppSecret`, `threadsAppId/threadsAppSecret`.
-     Usadas em OAuth e validação HMAC.
-   - Token da Integration — `Integration.token` é Page Access Token
-     (providerIdentifier=`instagram`) OU IG User Token
-     (providerIdentifier=`instagram-standalone`).
-   - Messaging Tokens (cadastrados em Settings > Credenciais > Instagram)
-     — Meta System User Token + IG User Tokens por conta, em
-     `Credentials.metaSystemUserToken` / `Credentials.instagramTokens`.
-
-2. **Decisão única de host/token** para activities de comentário:
-   `FlowActivity.resolveIgRoute(integration)` em
-   `apps/orchestrator/src/activities/flow.activity.ts`.
-   Prioridade: standalone → IG User Token cadastrado → Page Access Token.
-
-3. **Propagação de `ClientInformation`** é obrigatória em providers OAuth
-   — veja `memory/feedback_per_profile_credentials.md`.
-
-4. **Follow-gate em `comment_on_post`** usa fluxo de 2 etapas com
-   `PendingPostback` + botão postback. `sendPrivateReply` só pode ser
-   usado UMA vez por comentário. Workflow:
-   `flow.execution.workflow.ts` cria o pending,
-   `follow-gate-resolve.workflow.ts` resolve quando o clique chega.
-
-5. **HMAC do webhook IG** deve ser validado com `FACEBOOK_APP_SECRET` E
-   `INSTAGRAM_APP_SECRET` (quando ambos os produtos estão no mesmo app
-   Meta). Ver `ig-webhook.controller.ts`.
-
-## Persona de IA e Knowledge Base por Perfil
-
-Cada perfil pode ter:
-
-- **Persona** (texto): tom de voz, publico-alvo, CTAs preferidos, restricoes,
-  estilo de imagem. Injetada automaticamente no agente Mastra, no Generator
-  LangGraph e nos prompts DALL-E. Ver `docs/architecture/profile-ai-persona.md`.
-- **Knowledge Base** (RAG vetorial): upload de PDF/TXT/MD, chunking + embeddings,
-  consultado pela tool `knowledgeBaseQuery` antes do agente gerar fatos
-  especificos. Requer `pgvector/pgvector:pg17`. Ver
-  `docs/architecture/knowledge-base-rag.md`.
-
-Feature flag: `ENABLE_KNOWLEDGE_BASE` (default `true`).
-
-## Sistema de Provedores de IA (AI Provider)
-
-Subsistema central — antes de mexer em qualquer feature de IA, ler:
-
-- **Referência de agente:** `docs/architecture/ai-provider-system.md`
-  (mapa completo: schema, services, cadeia de resolução, endpoints REST,
-  UI Settings, geração de imagem, como adicionar provider novo, troubleshooting).
-
-### Regras de ouro
-
-1. **Configuração é per-workspace via UI**, não via env var. O admin
-   acessa Settings > AI Provider e configura cada `kind` (TEXT, IMAGE,
-   VIDEO, WEB_SEARCH) com provider (OpenRouter ou OpenAI direto), API
-   key, modelo, fallback e opções. Chave armazenada com AES-256-GCM
-   (mesma `ENCRYPTION_KEY` do OAuth).
-
-2. **Cadeia de resolução** sempre passa pelo `AiProviderResolverService`:
-   `PROFILE → WORKSPACE com shareDefault → HTTP 412`. Nunca acesse
-   credenciais de IA pulando o resolver.
-
-3. **Para adicionar consumer novo**, usar a `AiClientFactory`:
-   - Texto: `factory.text(orgId, profileId)` → `LanguageModel` AI SDK v5
-   - Imagem: `AiImageService.generate(orgId, prompt, profileId)` →
-     base64 (fetch direto, não via AI SDK por causa de incompatibilidades)
-   - Mastra Agent: `factory.textForMastra(orgId, profileId)` retorna
-     função async lazy — modelo é resolvido a cada chamada, sem
-     reiniciar o Agent.
-
-4. **Erro 412 Precondition Failed** é o status semântico para
-   "credencial não configurada". **Não use 402** — é interceptado pelo
-   layout.context global do Postiz para abrir modal de billing.
-
-5. **Per-profile override**: perfil default (`isDefault=true`) edita
-   workspace. Perfil secundário pode criar override em scope=PROFILE
-   sem afetar o default. Detectado via `useCurrentProfile()` hook.
-
-### Comandos úteis
-
-```bash
-# Testar specs do sistema de IA (56 specs)
-pnpm jest libraries/nestjs-libraries/src/ai/ --no-coverage
-
-# Limpar cache do catálogo de modelos OpenRouter
-curl -X POST -H "Cookie: ..." http://localhost:3000/ai/catalog/refresh
-```
-
-## Serviços Obrigatórios em Produção
-
-O produto requer 5 serviços rodando:
-1. App (backend + frontend)
-2. PostgreSQL 17
-3. Redis 7
-4. **Temporal** (orquestrador de workflows — crítico para agendamento)
-5. Nginx (reverse proxy)
+- [`AGENTS.md`](AGENTS.md) — points to this file (single source of truth).
+- [`docs/architecture/`](docs/architecture/) — detailed architecture (AI Provider, Instagram automations, AI persona, knowledge base).
+- [`docs/planning/`](docs/planning/) — feature planning and PRDs.
+- [`docs/operations/`](docs/operations/) — Docker release, deploy.
+- [`CHANGELOG.md`](CHANGELOG.md) — change history.
+- `.context/` — portable dotcontext (MCP, do not touch).
