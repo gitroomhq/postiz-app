@@ -16,8 +16,14 @@ body {
   color: var(--new-btn-text);
 }
 
-body * {
-  outline: none !important;
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .box {
