@@ -175,7 +175,7 @@ export const Providers = [
     component: MeweProvider,
   },
   {
-    identifier: 'blog-crea-stack',
+    identifier: 'blogcreastack',
     component: BlogCreaStackProvider,
   },
 ];

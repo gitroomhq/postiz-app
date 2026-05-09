@@ -14,7 +14,7 @@ export class BlogCreaStackProvider
   extends SocialAbstract
   implements SocialProvider
 {
-  identifier = 'blog-crea-stack';
+  identifier = 'blogcreastack';
   name = 'Blog (CREA Stack)';
   isBetweenSteps = false;
   editor = 'html' as const;
