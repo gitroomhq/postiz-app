@@ -1,0 +1,65 @@
+---
+name: "Build Fork (Blog CREA Stack)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/blog-crea-stack-provider
+
+env:
+  BASE_VERSION: v2.21.7
+  VARIANT: blogstack
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Compute tags
+        id: tags
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE="ghcr.io/${OWNER_LC}/postiz-app"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "tag_sha=${{ env.BASE_VERSION }}-${{ env.VARIANT }}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "tag_latest=${{ env.BASE_VERSION }}-${{ env.VARIANT }}-latest" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Image (amd64)
+        env:
+          NEXT_PUBLIC_VERSION: ${{ env.BASE_VERSION }}-${{ env.VARIANT }}
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -f Dockerfile.dev \
+            -t ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_sha }} \
+            -t ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_latest }} \
+            --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
+            --pull \
+            --provenance=false --sbom=false \
+            --push .
+
+      - name: Summary
+        run: |
+          echo "## Built and pushed" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_sha }}\` (immutable)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_latest }}\` (rolling)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Update Coolify image tag to use the new version." >> $GITHUB_STEP_SUMMARY
