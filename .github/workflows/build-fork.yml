@@ -51,6 +51,7 @@ jobs:
             -f Dockerfile.dev \
             -t ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_sha }} \
             -t ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.tag_latest }} \
+            -t ${{ steps.tags.outputs.image }}:latest \
             --build-arg NEXT_PUBLIC_VERSION=${{ env.NEXT_PUBLIC_VERSION }} \
             --pull \
             --provenance=false --sbom=false \
