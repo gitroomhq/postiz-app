@@ -39,6 +39,7 @@ import MoltbookProvider from '@gitroom/frontend/components/new-launch/providers/
 import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/skool/skool.provider';
 import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
+import BlogCreaStackProvider from '@gitroom/frontend/components/new-launch/providers/blog-crea-stack/blog-crea-stack.provider';
 
 export const Providers = [
   {
@@ -172,6 +173,10 @@ export const Providers = [
   {
     identifier: 'mewe',
     component: MeweProvider,
+  },
+  {
+    identifier: 'blog-crea-stack',
+    component: BlogCreaStackProvider,
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {
