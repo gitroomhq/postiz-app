@@ -154,6 +154,15 @@ export class BlogCreaStackProvider
           ...(settings?.featuredImage
             ? { featuredImage: settings.featuredImage }
             : {}),
+          ...(settings?.categorySlug
+            ? { categorySlug: settings.categorySlug }
+            : {}),
+          ...(settings?.tags && settings.tags.length > 0
+            ? { tags: settings.tags }
+            : {}),
+          ...(settings?.translationGroupId
+            ? { translationGroupId: settings.translationGroupId }
+            : {}),
         }),
       }
     );

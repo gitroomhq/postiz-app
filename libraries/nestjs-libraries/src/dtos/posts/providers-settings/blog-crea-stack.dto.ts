@@ -1,4 +1,10 @@
-import { IsDefined, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsDefined,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class BlogCreaStackDto {
   @IsString()
@@ -21,4 +27,16 @@ export class BlogCreaStackDto {
   @IsString()
   @IsOptional()
   featuredImage?: string;
+
+  @IsString()
+  @IsOptional()
+  categorySlug?: string;
+
+  @IsArray()
+  @IsOptional()
+  tags?: string[];
+
+  @IsString()
+  @IsOptional()
+  translationGroupId?: string;
 }

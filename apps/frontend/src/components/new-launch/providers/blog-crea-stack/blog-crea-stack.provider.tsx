@@ -26,6 +26,21 @@ const BlogCreaStackSettings: FC = () => {
         placeholder="es"
         {...form.register('locale')}
       />
+      <Input
+        label="Category slug"
+        placeholder="optional — must exist in blog DB"
+        {...form.register('categorySlug')}
+      />
+      <Input
+        label="Tags (comma-separated)"
+        placeholder="optional — auto-created if missing"
+        {...form.register('tags')}
+      />
+      <Input
+        label="Translation group ID"
+        placeholder="optional — share between es/en versions"
+        {...form.register('translationGroupId')}
+      />
       <MediaComponent
         label="Featured image"
         description="Cover image for the post"
