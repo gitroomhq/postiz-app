@@ -1,6 +1,7 @@
 # Próximo Trabalho — Agente `doc-maintainer`
 
-> **Status:** apenas escopo. Não implementar antes de aprovação explícita.
+> **Status:** Implementado em [`.claude/agents/doc-maintainer.md`](../../.claude/agents/doc-maintainer.md).
+> O conteúdo abaixo é preservado como referência histórica do design (motivação, especificação, Conscious Deferrals e gatilhos de promoção). O subagent ativo deve ser consultado e atualizado em `.claude/agents/doc-maintainer.md` — esta página continua sendo a fonte canônica do **escopo** e dos **gatilhos das Conscious Deferrals** que o subagent referencia em runtime.
 
 ## Motivação
 

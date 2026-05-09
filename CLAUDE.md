@@ -60,6 +60,10 @@
 - Linting runs **only from the repo root** with `pnpm lint`.
 - Project skills live in `.claude/skills/`; per-session auto-memory in `~/.claude/projects/.../memory/`.
 
+## Subagents (.claude/agents/)
+
+- **`doc-maintainer`** — auto-invoked at the end of every feature or non-trivial bugfix. Reads the diff, locates affected `CLAUDE.md` files, and **proposes** targeted updates (drift, new pitfalls, file-map gaps, `📁 NEW SUBAREA CANDIDATE` flags). Tools restricted to `Read, Glob, Grep, Edit`; edits scoped to `CLAUDE.md`/`AGENTS.md` only. Never applies changes without human approval. Scope registered in [`docs/planning/claude-md-maintainer-agent.md`](docs/planning/claude-md-maintainer-agent.md).
+
 ## Product Context
 
 - **Default language:** pt-BR (`react-shared-libraries/src/translation/locales/pt`). User-facing text uses full pt-BR accents.
