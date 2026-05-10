@@ -5,6 +5,9 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Button } from '@gitroom/react/form/button';
+import { downloadAnalyticsCsv } from '@gitroom/frontend/components/platform-analytics/analytics.csv';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 interface AnalyticsDataItem {
   label: string;
@@ -12,6 +15,8 @@ interface AnalyticsDataItem {
   average?: boolean;
   percentageChange?: number;
 }
+
+type IntegrationWithIdentifier = Integration & { identifier?: string };
 
 const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
   value,
@@ -174,6 +179,10 @@ export const RenderAnalytics: FC<{
   const { integration, date } = props;
   const [loading, setLoading] = useState(true);
   const fetch = useFetch();
+  const toaster = useToaster();
+  const integrationPlatform =
+    (integration as IntegrationWithIdentifier).identifier ||
+    integration.providerIdentifier;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -182,44 +191,47 @@ export const RenderAnalytics: FC<{
     ).json();
     setLoading(false);
     return load;
-  }, [integration, date]);
+  }, [date, fetch, integration.id]);
 
-  const { data } = useSWR(`/analytics-${integration?.id}-${date}`, load, {
-    refreshInterval: 0,
-    refreshWhenHidden: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    refreshWhenOffline: false,
-    revalidateOnMount: true,
-  });
-
-  const refreshChannel = useCallback(
-    (
-        integrationData: Integration & {
-          identifier: string;
-        }
-      ) =>
-      async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
-            {
-              method: 'GET',
-            }
-          )
-        ).json();
-        window.location.href = url;
-      },
-    []
+  const { data } = useSWR<AnalyticsDataItem[]>(
+    `/analytics-${integration?.id}-${date}`,
+    load,
+    {
+      refreshInterval: 0,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      refreshWhenOffline: false,
+      revalidateOnMount: true,
+    }
   );
+
+  const refreshChannel = useCallback(async () => {
+    const { url } = await (
+      await fetch(
+        `/integrations/social/${integrationPlatform}?refresh=${integration.internalId}`,
+        {
+          method: 'GET',
+        }
+      )
+    ).json();
+    window.location.href = url;
+  }, [fetch, integration.internalId, integrationPlatform]);
 
   const t = useT();
 
   const totals = useMemo(() => {
-    return data?.map((p: AnalyticsDataItem) => {
+    if (!data) {
+      return [];
+    }
+
+    return data.map((p: AnalyticsDataItem) => {
       const value =
-        (p?.data.reduce((acc: number, curr: { total: number }) => acc + curr.total, 0) || 0) /
+        (p?.data.reduce(
+          (acc: number, curr: { total: number }) => acc + curr.total,
+          0
+        ) || 0) /
         (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
@@ -227,6 +239,25 @@ export const RenderAnalytics: FC<{
       return new Intl.NumberFormat().format(Math.round(value));
     });
   }, [data]);
+
+  const downloadCsv = useCallback(() => {
+    try {
+      downloadAnalyticsCsv({
+        analytics: data || [],
+        channelName: integration.name,
+        platform: integrationPlatform,
+        dateRange: date,
+      });
+    } catch {
+      toaster.show(
+        t(
+          'could_not_download_analytics_report',
+          'Could not download analytics report'
+        ),
+        'warning'
+      );
+    }
+  }, [data, date, integration.name, integrationPlatform, toaster, t]);
 
   if (loading) {
     return (
@@ -237,18 +268,46 @@ export const RenderAnalytics: FC<{
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-      {data?.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration as any)} />
+    <div className="flex flex-col gap-[16px]">
+      {!!data?.length && (
+        <div className="flex justify-end">
+          <Button
+            onClick={downloadCsv}
+            className="!h-[36px] !px-[16px] rounded-[8px]"
+            innerClassName="gap-[8px]"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M8 2.5V10M8 10L4.75 6.75M8 10L11.25 6.75M3 12.5H13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t('download_csv', 'Download CSV')}
+          </Button>
+        </div>
       )}
-      {data?.map((item: AnalyticsDataItem, index: number) => (
-        <AnalyticsCard
-          key={`analytics-${index}`}
-          item={item}
-          total={totals[index]}
-          index={index}
-        />
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+        {data?.length === 0 && (
+          <EmptyState onRefresh={refreshChannel} />
+        )}
+        {data?.map((item: AnalyticsDataItem, index: number) => (
+          <AnalyticsCard
+            key={`analytics-${index}`}
+            item={item}
+            total={totals[index]}
+            index={index}
+          />
+        ))}
+      </div>
     </div>
   );
 };
