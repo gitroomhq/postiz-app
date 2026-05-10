@@ -62,6 +62,7 @@
 
 ## Subagents (.claude/agents/)
 
+- **`plan-reviewer`** — auto-invoked PROACTIVELY after a plan is approved and before any code is written. Read-only (`Read, Glob, Grep`). Validates the plan against the actual repo — architecture compliance (Controller→Service→Repository, social provider abstract, `resolveIgRoute`, `AiProviderResolverService`), code-reality check (do the referenced files/functions exist?), cross-cutting impact (Prisma + `StartupMigrationService`, public-api contracts, shared DTOs, env vars), dependency map, TDD impact (which new files need `.spec.ts`), i18n impact (which `useT()` keys need `pt`/`en` entries), and documentation heads-ups for the `doc-maintainer`. Categorizes findings as 🛑 BLOCKER / ⚠️ CONCERN / 💡 HEADS-UP. Never edits, never decides whether to proceed, never rewrites the plan — humans decide.
 - **`doc-maintainer`** — auto-invoked at the end of every feature or non-trivial bugfix. Reads the diff, locates affected `CLAUDE.md` files, and **proposes** targeted updates (drift, new pitfalls, file-map gaps, `📁 NEW SUBAREA CANDIDATE` flags). Tools restricted to `Read, Glob, Grep, Edit`; edits scoped to `CLAUDE.md`/`AGENTS.md` only. Never applies changes without human approval. Scope registered in [`docs/planning/claude-md-maintainer-agent.md`](docs/planning/claude-md-maintainer-agent.md).
 
 ## Product Context
