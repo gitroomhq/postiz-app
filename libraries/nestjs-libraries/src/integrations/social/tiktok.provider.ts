@@ -184,7 +184,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('url_ownership_unverified') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'URL ownership not verified, please verify domain ownership',
+        value: 'You have to upload the picture/video to Postiz when sending a URL',
       };
     }
 
