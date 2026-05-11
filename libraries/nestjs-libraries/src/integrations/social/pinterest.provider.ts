@@ -10,7 +10,10 @@ import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provi
 import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -236,6 +239,15 @@ export class PinterestProvider
           )
         ).json();
 
+        if (mediafile.status === 'failed') {
+          throw new BadBody(
+            'pinterest',
+            JSON.stringify({}),
+            {} as any,
+            'The file is corrupted and cannot be uploaded'
+          );
+        }
+
         await timer(30000);
         statusCode = mediafile.status;
       }
@@ -414,7 +426,9 @@ export class PinterestProvider
           result.push({
             label: 'Outbound Clicks',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today }],
+            data: [
+              { total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today },
+            ],
           });
         }
 
