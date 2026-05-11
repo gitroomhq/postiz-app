@@ -1,3 +1,5 @@
+<!-- Remember to first apply via [the contribution form](https://contribute.postiz.com/p/postiz) before submitting a PR. -->
+
 # What kind of change does this PR introduce?
 
 eg: Bug fix, feature, docs update, ...
@@ -16,5 +18,5 @@ Put a "X" in the boxes below to indicate you have followed the checklist;
 
 - [ ] I have read the [CONTRIBUTING](https://github.com/gitroomhq/postiz-app/blob/main/CONTRIBUTING.md) guide.
 - [ ] I confirm I have not used AI to submit this PR or generate code for it.
-- [ ] I checked that there were not similar issues or PRs already open for this.
-- [ ] This PR fixes just ONE issue (do not include multiple issues or types of change in the same PR) For example, don't try and fix a UI issue and include new dependencies in the same PR.
+- [ ] I checked that there were no similar issues or PRs already open for this.
+- [ ] This PR fixes just ONE issue

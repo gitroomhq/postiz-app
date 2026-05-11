@@ -433,6 +433,7 @@ const ImportDebugPost = () => {
   const handleClick = useCallback(() => {
     openModal({
       title: t('import_debug_post', 'Import Debug Post'),
+      maxSize: 800,
       children: (close) => <ImportDebugPostModal close={close} />,
     });
   }, []);

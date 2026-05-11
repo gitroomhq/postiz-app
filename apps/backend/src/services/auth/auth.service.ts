@@ -43,6 +43,9 @@ export class AuthService {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
         throw new Error('Email with plus sign is not allowed');
       }
+      if (body instanceof CreateOrgUserDto) {
+        body.email = body.email.toLowerCase();
+      }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
