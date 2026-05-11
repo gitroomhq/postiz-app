@@ -478,14 +478,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
     const isVideo = mediaUrl.indexOf('mp4') > -1;
+    const isGif = lookup(mediaUrl) === 'image/gif';
 
-    if (isVideo) {
+    if (isVideo || isGif) {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
-    return await sharp(await readOrFetch(mediaUrl), {
-      animated: lookup(mediaUrl) === 'image/gif',
-    })
+    return await sharp(await readOrFetch(mediaUrl), { animated: false })
       .toFormat('jpeg')
       .resize({ width: 1000 })
       .toBuffer();

@@ -856,7 +856,7 @@ export class StripeService {
       limit: 100,
     });
 
-    return charges.data
+    const chargeList = charges.data
       .filter((f) => f.status === 'succeeded')
       .map((charge) => ({
         id: charge.id,
@@ -867,7 +867,33 @@ export class StripeService {
         refunded: charge.refunded,
         amount_refunded: charge.amount_refunded,
         description: charge.description,
+        receipt_url: charge.receipt_url || null,
+        invoice: (charge as any).invoice || null,
       }));
+
+    const invoiceIds = chargeList
+      .map((c) => c.invoice)
+      .filter((id): id is string => !!id && typeof id === 'string');
+
+    const invoicePdfMap: Record<string, string> = {};
+    for (const invoiceId of invoiceIds) {
+      try {
+        const inv = await stripe.invoices.retrieve(invoiceId);
+        if (inv.invoice_pdf) {
+          invoicePdfMap[invoiceId] = inv.invoice_pdf;
+        }
+      } catch {
+        // ignore if invoice can't be fetched
+      }
+    }
+
+    return chargeList.map((charge) => ({
+      ...charge,
+      invoice_pdf:
+        charge.invoice && invoicePdfMap[charge.invoice as string]
+          ? invoicePdfMap[charge.invoice as string]
+          : null,
+    }));
   }
 
   async refundCharges(organizationId: string, chargeIds: string[]) {

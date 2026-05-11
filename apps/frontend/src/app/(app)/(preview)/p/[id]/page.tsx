@@ -1,4 +1,5 @@
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
@@ -146,7 +147,7 @@ export default async function Auth(
                       <div
                         className="text-sm whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{
-                          __html: p.content,
+                          __html: sanitizePostContent(p.content),
                         }}
                       />
                       <div className="flex w-full gap-[10px]">

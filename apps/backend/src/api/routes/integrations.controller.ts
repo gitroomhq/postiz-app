@@ -195,6 +195,7 @@ export class IntegrationsController {
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
     @Query('externalUrl') externalUrl: string,
+    @Query('redirectUrl') redirectUrl: string,
     @Query('onboarding') onboarding: string,
     @GetOrgFromRequest() org: Organization
   ) {
@@ -230,6 +231,10 @@ export class IntegrationsController {
 
       if (onboarding === 'true') {
         await ioRedis.set(`onboarding:${state}`, 'true', 'EX', 3600);
+      }
+
+      if (redirectUrl) {
+        await ioRedis.set(`redirect:${state}`, redirectUrl, 'EX', 3600);
       }
 
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
@@ -448,9 +453,7 @@ export class IntegrationsController {
   }
 
   @Post('/moltbook/register')
-  async moltbookRegister(
-    @Body() body: { name: string; description: string }
-  ) {
+  async moltbookRegister(@Body() body: { name: string; description: string }) {
     try {
       const provider = new MoltbookProvider();
       const result = await provider.registerAgent(body.name, body.description);

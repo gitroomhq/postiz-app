@@ -24,6 +24,33 @@ import {
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
+// Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
+function slimPost(post: any) {
+  if (!post) return post;
+  const {
+    error,
+    childrenPost,
+    tags,
+    description,
+    title,
+    submittedForOrderId,
+    submittedForOrganizationId,
+    submittedForOrder,
+    submittedForOrganization,
+    lastMessageId,
+    parentPostId,
+    approvedSubmitForOrder,
+    deletedAt,
+    createdAt,
+    updatedAt,
+    payoutProblems,
+    comments,
+    errors,
+    ...rest
+  } = post;
+  return rest;
+}
+
 @Injectable()
 @Activity()
 export class PostActivity {
@@ -49,7 +76,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV101', {
+        .workflow.signalWithStart('postWorkflowV104', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -80,7 +107,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {
-    return this._postService.updatePost(id, postId, releaseURL);
+    await this._postService.updatePost(id, postId, releaseURL);
   }
 
   @ActivityMethod()
@@ -101,7 +128,7 @@ export class PostActivity {
       return [];
     }
 
-    return getPosts;
+    return getPosts.map(slimPost);
   }
 
   @ActivityMethod()
@@ -220,7 +247,7 @@ export class PostActivity {
     digest = false,
     type: NotificationType = 'success'
   ) {
-    return this._notificationService.inAppNotification(
+    await this._notificationService.inAppNotification(
       orgId,
       subject,
       message,
@@ -241,7 +268,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async changeState(id: string, state: State, err?: any, body?: any) {
-    return this._postService.changeState(id, state, err, body);
+    await this._postService.changeState(id, state, err, body);
   }
 
   @ActivityMethod()
@@ -266,7 +293,7 @@ export class PostActivity {
     );
 
     const post = await this._postService.getPostByForWebhookId(postId);
-    return Promise.all(
+    await Promise.all(
       webhooks.map(async (webhook) => {
         try {
           await fetch(webhook.url, {
@@ -303,7 +330,7 @@ export class PostActivity {
     delay: number;
     information: any;
   }) {
-    return this._integrationService.processInternalPlug(data);
+    await this._integrationService.processInternalPlug(data);
   }
 
   @ActivityMethod()
@@ -329,6 +356,38 @@ export class PostActivity {
       return refresh;
     } catch (err) {
       await this._refreshIntegrationService.setBetweenSteps(integration);
+      return false;
+    }
+  }
+
+  @ActivityMethod()
+  async refreshTokenWithCause(
+    integration: Integration,
+    cause: string
+  ): Promise<false | AuthTokenDetails> {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    try {
+      const refresh = await this._refreshIntegrationService.refresh(
+        integration,
+        cause
+      );
+      if (!refresh) {
+        return false;
+      }
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
+
+      return refresh;
+    } catch (err) {
+      await this._refreshIntegrationService.setBetweenSteps(
+        integration,
+        cause
+      );
       return false;
     }
   }

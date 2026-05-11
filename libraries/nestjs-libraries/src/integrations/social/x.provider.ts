@@ -1,4 +1,5 @@
 import { TweetV2, TwitterApi } from 'twitter-api-v2';
+import { createHmac, randomBytes } from 'crypto';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -45,6 +46,24 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: string;
       }
     | undefined {
+    if (body.includes('You are not permitted to perform this action')) {
+      return {
+        type: 'bad-body',
+        value: 'There is a problem posting, please edit your post and check character count and media attachments',
+      }
+    }
+    if (body.includes('maximum of one cashtag')) {
+      return {
+        type: 'bad-body',
+        value: 'There can be maximum of one cashtag ($SYMBOL) per post',
+      };
+    }
+    if (body.includes('maximum of 4 items')) {
+      return {
+        type: 'bad-body',
+        value: 'There must be a maximum of 4 items per post',
+      };
+    }
     if (body.includes('Unsupported Authentication')) {
       return {
         type: 'refresh-token',
@@ -308,6 +327,54 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
   }
 
+  private signOAuth1(
+    method: string,
+    url: string,
+    accessToken: string,
+    accessSecret: string
+  ): string {
+    const pct = (s: string) =>
+      encodeURIComponent(s)
+        .replace(/!/g, '%21')
+        .replace(/\*/g, '%2A')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29');
+
+    const params: Record<string, string> = {
+      oauth_consumer_key: process.env.X_API_KEY!,
+      oauth_nonce: randomBytes(16).toString('hex'),
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+      oauth_token: accessToken,
+      oauth_version: '1.0',
+    };
+
+    const paramString = Object.keys(params)
+      .sort()
+      .map((k) => `${pct(k)}=${pct(params[k])}`)
+      .join('&');
+
+    const baseString = [
+      method.toUpperCase(),
+      pct(url.split('?')[0]),
+      pct(paramString),
+    ].join('&');
+
+    const signingKey = `${pct(process.env.X_API_SECRET!)}&${pct(accessSecret)}`;
+    params.oauth_signature = createHmac('sha1', signingKey)
+      .update(baseString)
+      .digest('base64');
+
+    return (
+      'OAuth ' +
+      Object.keys(params)
+        .sort()
+        .map((k) => `${pct(k)}="${pct(params[k])}"`)
+        .join(', ')
+    );
+  }
+
   private async uploadMedia(
     client: TwitterApi,
     postDetails: PostDetails<any>[]
@@ -370,6 +437,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       paid_partnership?: boolean;
     }>[]
   ): Promise<PostResponse[]> {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
     const {
       data: { username },
@@ -386,30 +454,43 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
 
-    // @ts-ignore
-    const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          ...(!firstPost?.settings?.who_can_reply_post ||
-          firstPost?.settings?.who_can_reply_post === 'everyone'
-            ? {}
-            : {
-                reply_settings: firstPost?.settings?.who_can_reply_post,
-              }),
-          ...(firstPost?.settings?.community
-            ? {
-                share_with_followers: true,
-                community_id:
-                  firstPost?.settings?.community?.split('/').pop() || '',
-              }
-            : {}),
-          text: firstPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-          made_with_ai: !!firstPost?.settings?.made_with_ai,
-          paid_partnership: !!firstPost?.settings?.paid_partnership,
-        })
-    );
+    const tweetUrl = 'https://api.x.com/2/tweets';
+    const tweetBody = {
+      ...(!firstPost?.settings?.who_can_reply_post ||
+      firstPost?.settings?.who_can_reply_post === 'everyone'
+        ? {}
+        : {
+            reply_settings: firstPost?.settings?.who_can_reply_post,
+          }),
+      ...(firstPost?.settings?.community
+        ? {
+            share_with_followers: true,
+            community_id:
+              firstPost?.settings?.community?.split('/').pop() || '',
+          }
+        : {}),
+      text: firstPost.message,
+      ...(media_ids.length ? { media: { media_ids } } : {}),
+      made_with_ai: !!firstPost?.settings?.made_with_ai,
+      paid_partnership: !!firstPost?.settings?.paid_partnership,
+    };
+
+    const tweetResponse = await this.fetch(tweetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          tweetUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tweetBody),
+    });
+    const { data } = (await tweetResponse.json()) as {
+      data: { id: string };
+    };
 
     return [
       {
@@ -434,6 +515,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
     const {
       data: { username },
@@ -452,18 +534,31 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const replyToId = lastCommentId || postId;
 
-    // @ts-ignore
-    const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          text: commentPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-          reply: { in_reply_to_tweet_id: replyToId },
-          made_with_ai: !!commentPost?.settings?.made_with_ai,
-          paid_partnership: !!commentPost?.settings?.paid_partnership,
-        })
-    );
+    const tweetUrl = 'https://api.x.com/2/tweets';
+    const tweetBody = {
+      text: commentPost.message,
+      ...(media_ids.length ? { media: { media_ids } } : {}),
+      reply: { in_reply_to_tweet_id: replyToId },
+      made_with_ai: !!commentPost?.settings?.made_with_ai,
+      paid_partnership: !!commentPost?.settings?.paid_partnership,
+    };
+
+    const tweetResponse = await this.fetch(tweetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          tweetUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tweetBody),
+    });
+    const { data } = (await tweetResponse.json()) as {
+      data: { id: string };
+    };
 
     return [
       {

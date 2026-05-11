@@ -27,6 +27,9 @@ async function start() {
       allowedHeaders: [
         'Content-Type',
         'Authorization',
+        'auth',
+        'showorg',
+        'impersonate',
         'x-copilotkit-runtime-client-gql-version',
       ],
       exposedHeaders: [

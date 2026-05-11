@@ -6,6 +6,10 @@ Contributions are welcome - code, docs, whatever it might be! If this is your fi
 
 The main documentation site has a [developer guide](https://docs.postiz.com/developer-guide) . That guide provides you a good understanding of the project structure, and how to setup your development environment. Read this document after you have read that guide. This document is intended to provide you a good understanding of how to submit your first contribution.
 
+## Apply via the contribution form
+
+To submit your contribution, please fill out the [contribution form](https://contribute.postiz.com/p/postiz). This helps us evaluate whether your contribution is a good fit for the project. We will review your submission and get back to you as soon as possible.
+
 ## Write code with others
 
 This is an open source project, with an open and welcoming community that is always keen to welcome new contributors. We recommend the two best ways to interact with the community are:

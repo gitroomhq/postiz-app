@@ -43,6 +43,9 @@ export class AuthService {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
         throw new Error('Email with plus sign is not allowed');
       }
+      if (body instanceof CreateOrgUserDto) {
+        body.email = body.email.toLowerCase();
+      }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
@@ -290,9 +293,9 @@ export class AuthService {
     return providerInstance.generateLink(query);
   }
 
-  async checkExists(provider: string, code: string) {
+  async checkExists(provider: string, code: string, redirectUri?: string) {
     const providerInstance = this._providerManager.getProvider(provider);
-    const token = await providerInstance.getToken(code);
+    const token = await providerInstance.getToken(code, redirectUri);
     const user = await providerInstance.getUser(token);
     if (!user) {
       throw new Error('Invalid user');
@@ -309,6 +312,9 @@ export class AuthService {
   }
 
   private async jwt(user: User) {
+    if (user.password) {
+      delete user.password;
+    }
     return AuthChecker.signJWT(user);
   }
 }
