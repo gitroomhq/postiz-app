@@ -83,7 +83,12 @@ export async function postWorkflowV104({
 
   // in case doesn't exists for some reason, fail it
   if (!post) {
-    return ;
+    await changeState(
+      postId,
+      'ERROR',
+      'No Post'
+    );
+    return;
   }
 
   if (!postNow && post.state !== 'QUEUE') {
