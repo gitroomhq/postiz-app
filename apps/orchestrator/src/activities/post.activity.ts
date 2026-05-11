@@ -76,7 +76,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV103', {
+        .workflow.signalWithStart('postWorkflowV104', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
