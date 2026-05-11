@@ -37,8 +37,8 @@ export class PostsRepository {
           disabled: false,
         },
         publishDate: {
-          gte: dayjs.utc().subtract(2, 'hour').toDate(),
-          lt: dayjs.utc().add(2, 'hour').toDate(),
+          gte: dayjs.utc().subtract(2, 'day').toDate(),
+          lt: dayjs.utc().toDate(),
         },
         state: 'QUEUE',
         deletedAt: null,
