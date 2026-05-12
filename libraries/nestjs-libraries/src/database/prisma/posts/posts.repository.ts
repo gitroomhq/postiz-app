@@ -35,6 +35,7 @@ export class PostsRepository {
           refreshNeeded: false,
           inBetweenSteps: false,
           disabled: false,
+          deletedAt: null,
         },
         publishDate: {
           gte: dayjs.utc().subtract(2, 'day').toDate(),
