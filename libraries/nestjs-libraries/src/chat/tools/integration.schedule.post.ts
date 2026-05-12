@@ -223,7 +223,7 @@ If the tools return errors, you would need to rerun it with the right parameters
                 })),
               },
             ],
-          });
+          }, 'MCP');
           finalOutput.push(...output);
         }
 

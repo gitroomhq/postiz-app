@@ -33,6 +33,7 @@ import { SelectCustomer } from '@gitroom/frontend/components/launches/select.cus
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
   SettingsIcon,
   ChevronDownIcon,
@@ -447,8 +448,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
         <div className="flex-1 flex">
           <div className="flex flex-col flex-1 border-e border-newBorder">
-            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
+              <CreationMethodBadge
+                creationMethod={existingData?.posts?.[0]?.creationMethod}
+                size="sm"
+              />
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
