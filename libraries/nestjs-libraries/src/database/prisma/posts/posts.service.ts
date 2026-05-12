@@ -18,7 +18,10 @@ import utc from 'dayjs/plugin/utc';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
-import { minifyPostsList, minifyPosts } from '@gitroom/helpers/utils/posts.list.minify';
+import {
+  minifyPostsList,
+  minifyPosts,
+} from '@gitroom/helpers/utils/posts.list.minify';
 import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -124,6 +127,10 @@ export class PostsService {
     }
 
     return [];
+  }
+
+  async getPostById(postId: string, orgId: string) {
+    return this._postRepository.getPostById(postId, orgId);
   }
 
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
@@ -707,7 +714,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV104', {
+        ?.workflow.start('postWorkflowV105', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -841,7 +848,9 @@ export class PostsService {
     if (action === 'schedule') {
       try {
         await this.startWorkflow(
-          getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+          getPostById.integration.providerIdentifier
+            .split('-')[0]
+            .toLowerCase(),
           getPostById.id,
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
