@@ -37,6 +37,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { stripLinks } from '@gitroom/helpers/utils/strip.links';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -734,14 +735,24 @@ export class PostsService {
   async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
+      const provider = this._integrationManager.getSocialIntegration(
+        (post.settings as any)?.__type
+      );
+      const removeLinks = !!provider?.stripLinks?.();
+
       const messages = (post.value || []).map((p) => p.content);
-      const updateContent = !body.shortLink
-        ? messages
-        : await this._shortLinkService.convertTextToShortLinks(orgId, messages);
+      // No point shortlinking links on platforms that strip them out anyway
+      const updateContent =
+        !body.shortLink || removeLinks
+          ? messages
+          : await this._shortLinkService.convertTextToShortLinks(
+              orgId,
+              messages
+            );
 
       post.value = (post.value || []).map((p, i) => ({
         ...p,
-        content: updateContent[i],
+        content: removeLinks ? stripLinks(updateContent[i]) : updateContent[i],
       }));
 
       const { posts } = await this._postRepository.createOrUpdatePost(
