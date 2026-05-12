@@ -186,6 +186,14 @@ export class PostActivity {
 
   @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
+    const subscription = await this._subscriptionService.getSubscription(
+      integration.organizationId
+    );
+
+    if (!subscription) {
+      throw new Error('No active subscription found for this organization.');
+    }
+
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
