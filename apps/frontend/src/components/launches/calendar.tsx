@@ -1006,8 +1006,11 @@ const CalendarItem: FC<{
     missingRelease,
   } = props;
   const { disableXAnalytics } = useVariables();
+  const user = useUser();
   const showCreationMethodBadge =
-    post.creationMethod && post.creationMethod !== 'UNKNOWN';
+    user?.impersonate &&
+    post.creationMethod &&
+    post.creationMethod !== 'UNKNOWN';
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -1048,7 +1051,7 @@ const CalendarItem: FC<{
         </div>
       )}
       {showCreationMethodBadge && (
-        <div className="absolute -bottom-[4px] -right-[4px] z-20">
+        <div className="absolute -bottom-[4px] -right-[4px] z-10">
           <CreationMethodBadge
             creationMethod={post.creationMethod}
             ringColor="var(--new-bgColor)"
