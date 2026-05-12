@@ -37,6 +37,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -359,7 +360,7 @@ export class PostsService {
               return m;
             }
 
-            if (m.path.indexOf('.png') > -1) {
+            if (hasExtension(m.path, 'png')) {
               imageUpdateNeeded = true;
               const response = await axios.get(m.url, {
                 responseType: 'arraybuffer',

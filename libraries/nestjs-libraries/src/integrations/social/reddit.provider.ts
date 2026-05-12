@@ -14,6 +14,7 @@ import axios from 'axios';
 import WebSocket from 'ws';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Integration } from '@prisma/client';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -186,7 +187,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     for (const firstPostSettings of post.settings.subreddit) {
       const kind =
         firstPostSettings.value.type === 'media'
-          ? post.media[0].path.indexOf('mp4') > -1
+          ? hasExtension(post.media[0].path, 'mp4')
             ? 'video'
             : 'image'
           : firstPostSettings.value.type;
@@ -211,7 +212,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
                 accessToken,
                 post.media[0].path
               ),
-              ...(post.media[0].path.indexOf('mp4') > -1
+              ...(hasExtension(post.media[0].path, 'mp4')
                 ? {
                     video_poster_url: await this.uploadFileToReddit(
                       accessToken,

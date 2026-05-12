@@ -13,6 +13,7 @@ import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -189,7 +190,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     replyToId?: string
   ): Promise<string> {
     const mediaType =
-      media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+      hasExtension(media.path, 'mp4') ? 'video_url' : 'image_url';
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.path } : {}),
