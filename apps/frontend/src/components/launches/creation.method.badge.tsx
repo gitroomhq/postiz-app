@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import clsx from 'clsx';
 
-type CreationMethod = 'UNKNOWN' | 'WEB' | 'API' | 'MCP' | 'AUTOPOST';
+type CreationMethod = 'UNKNOWN' | 'WEB' | 'API' | 'MCP' | 'AUTOPOST' | 'CLI';
 
 interface Props {
   creationMethod?: CreationMethod | string | null;
@@ -37,6 +37,7 @@ export const CreationMethodBadge: FC<Props> = ({
         creationMethod === 'API' && 'bg-[#2563eb]',
         creationMethod === 'MCP' && 'bg-[#9333ea]',
         creationMethod === 'AUTOPOST' && 'bg-[#d97706]',
+        creationMethod === 'CLI' && 'bg-[#0f766e]',
         className
       )}
       style={ringColor ? { boxShadow: `0 0 0 2px ${ringColor}` } : undefined}

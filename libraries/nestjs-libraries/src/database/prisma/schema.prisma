@@ -946,6 +946,7 @@ enum CreationMethod {
   MCP
   API
   AUTOPOST
+  CLI
 }
 
 enum ShortLinkPreference {
