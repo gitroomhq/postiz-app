@@ -27,8 +27,12 @@ export class TemporalRegister implements OnModuleInit {
       await connection.operatorService.addSearchAttributes({
         namespace: process.env.TEMPORAL_NAMESPACE || 'default',
         searchAttributes: missingAttributes.reduce((all, current) => {
+          // KEYWORD (2) rather than TEXT (1): these are UUID strings used for
+          // exact-match filtering, not full-text search. KEYWORD is semantically
+          // correct and avoids the 3-attribute-per-type limit on SQL-backed
+          // Temporal deployments (e.g. self-hosted without Elasticsearch).
           // @ts-ignore
-          all[current] = 1;
+          all[current] = 2;
           return all;
         }, {}),
       });
