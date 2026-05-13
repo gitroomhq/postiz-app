@@ -5,10 +5,10 @@ import {
 
 export const organizationId = defineSearchAttributeKey(
   'organizationId',
-  SearchAttributeType.TEXT
+  SearchAttributeType.KEYWORD
 );
 
 export const postId = defineSearchAttributeKey(
   'postId',
-  SearchAttributeType.TEXT
+  SearchAttributeType.KEYWORD
 );
