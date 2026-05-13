@@ -75,6 +75,27 @@ export const useMenuItem = () => {
       path: '/agents',
     },
     {
+      name: t('inbox', 'Inbox'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M21 8L17.4392 12.6907C16.454 13.9328 15.9614 14.5538 15.3538 14.9383C14.8165 15.2788 14.2071 15.4874 13.5754 15.5477C12.8618 15.6159 12.1108 15.3922 10.6089 14.9449L3 12.5M21 8H3M21 8V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V8M3 8L6.97067 5H17.0293L21 8"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/inbox',
+    },
+    {
       name: t('analytics', 'Analytics'),
       icon: (
         <svg

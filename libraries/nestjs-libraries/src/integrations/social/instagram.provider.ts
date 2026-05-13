@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  InboxItem,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -754,6 +755,63 @@ export class InstagramProvider
         status: 'success',
       },
     ];
+  }
+
+  async fetchInbox(
+    id: string,
+    accessToken: string,
+    integration: Integration,
+    since?: Date,
+    type = 'graph.facebook.com'
+  ): Promise<InboxItem[]> {
+    // Get all media posted by this account
+    const sinceTimestamp = since ? Math.floor(since.getTime() / 1000) : undefined;
+    const mediaFields = 'id,timestamp,permalink';
+    const mediaUrl = `https://${type}/v20.0/${id}/media?fields=${mediaFields}&access_token=${accessToken}&limit=10`;
+
+    const mediaResponse = await (await this.fetch(mediaUrl)).json();
+    const mediaItems: { id: string; timestamp: string; permalink: string }[] =
+      mediaResponse.data || [];
+
+    const items: InboxItem[] = [];
+
+    for (const media of mediaItems) {
+      if (
+        sinceTimestamp &&
+        new Date(media.timestamp).getTime() / 1000 < sinceTimestamp - 86400 * 7
+      ) {
+        continue;
+      }
+
+      const commentsUrl = `https://${type}/v20.0/${media.id}/comments?fields=id,text,timestamp,from,username&access_token=${accessToken}&limit=50`;
+      const commentsResponse = await (await this.fetch(commentsUrl)).json();
+      const comments: {
+        id: string;
+        text: string;
+        timestamp: string;
+        from?: { id: string; name: string; pic?: string };
+        username?: string;
+      }[] = commentsResponse.data || [];
+
+      for (const c of comments) {
+        if (sinceTimestamp && new Date(c.timestamp).getTime() / 1000 < sinceTimestamp) {
+          continue;
+        }
+        items.push({
+          externalId: c.id,
+          postId: media.id,
+          type: 'comment',
+          senderName: c.from?.name || c.username || 'Unknown',
+          senderAvatar: undefined,
+          senderExternalId: c.from?.id || c.username || 'unknown',
+          content: c.text,
+          parentExternalId: media.id,
+          createdAt: new Date(c.timestamp),
+        });
+      }
+    }
+
+    return items;
   }
 
   private setTitle(name: string) {

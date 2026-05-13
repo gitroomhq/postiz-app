@@ -81,13 +81,25 @@ export type AuthTokenDetails = {
   }[];
 };
 
+export type InboxItem = {
+  externalId: string;
+  postId?: string;
+  type: 'comment' | 'mention';
+  senderName: string;
+  senderAvatar?: string;
+  senderExternalId: string;
+  content: string;
+  parentExternalId?: string;
+  createdAt: Date;
+};
+
 export interface ISocialMediaIntegration {
   post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
     integration: Integration
-  ): Promise<PostResponse[]>; // Schedules a new post
+  ): Promise<PostResponse[]>;
 
   comment?(
     id: string,
@@ -96,7 +108,14 @@ export interface ISocialMediaIntegration {
     accessToken: string,
     postDetails: PostDetails[],
     integration: Integration
-  ): Promise<PostResponse[]>; // Schedules a new post
+  ): Promise<PostResponse[]>;
+
+  fetchInbox?(
+    id: string,
+    accessToken: string,
+    integration: Integration,
+    since?: Date
+  ): Promise<InboxItem[]>;
 }
 
 export type PostResponse = {

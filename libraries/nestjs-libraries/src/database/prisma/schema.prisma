@@ -43,6 +43,7 @@ model Organization {
   webhooks            Webhooks[]
   oauthApp            OAuthApp[]
   oauthAuthorizations OAuthAuthorization[]
+  inboxItems          InboxItem[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -341,6 +342,7 @@ model Integration {
   orderItems            OrderItems[]
   plugs                 Plugs[]
   posts                 Post[]
+  inboxItems            InboxItem[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
@@ -418,6 +420,7 @@ model Post {
   comments                   Comments[]
   errors                     Errors[]
   payoutProblems             PayoutProblems[]
+  inboxItems                 InboxItem[]
   integration                Integration               @relation(fields: [integrationId], references: [id])
   lastMessage                Messages?                 @relation(fields: [lastMessageId], references: [id])
   organization               Organization              @relation("organization", fields: [organizationId], references: [id])
@@ -956,4 +959,34 @@ model Announcement {
   description String
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
+}
+
+model InboxItem {
+  id               String      @id @default(uuid())
+  organizationId   String
+  integrationId    String
+  postId           String?
+  externalId       String
+  platform         String
+  type             String
+  senderName       String
+  senderAvatar     String?
+  senderExternalId String
+  content          String
+  parentExternalId String?
+  readAt           DateTime?
+  repliedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  integration      Integration @relation(fields: [integrationId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  post             Post?        @relation(fields: [postId], references: [id])
+
+  @@unique([integrationId, externalId])
+  @@index([organizationId])
+  @@index([integrationId])
+  @@index([platform])
+  @@index([type])
+  @@index([readAt])
+  @@index([createdAt])
 }

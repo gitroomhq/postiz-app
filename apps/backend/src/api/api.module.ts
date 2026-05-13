@@ -6,6 +6,7 @@ import { AuthMiddleware } from '@gitroom/backend/services/auth/auth.middleware';
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { AnalyticsController } from '@gitroom/backend/api/routes/analytics.controller';
+import { InboxController } from '@gitroom/backend/api/routes/inbox.controller';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { IntegrationsController } from '@gitroom/backend/api/routes/integrations.controller';
@@ -48,6 +49,7 @@ import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.pr
 const authenticatedController = [
   UsersController,
   AnalyticsController,
+  InboxController,
   IntegrationsController,
   SettingsController,
   PostsController,

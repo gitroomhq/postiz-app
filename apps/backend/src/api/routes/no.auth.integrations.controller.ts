@@ -23,6 +23,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { InboxService } from '@gitroom/nestjs-libraries/database/prisma/inbox/inbox.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -31,7 +32,8 @@ export class NoAuthIntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _inboxService: InboxService
   ) {}
 
   @Get('/')
@@ -244,6 +246,10 @@ export class NoAuthIntegrationsController {
       .catch((err) => {
         console.log(err);
       });
+
+    this._inboxService.startInboxWorkflow(org.id).catch((err) => {
+      console.log(err);
+    });
 
     // Fetch pages if this is a two-step provider and not a refresh
     let pages: any[] = [];
