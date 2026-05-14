@@ -7,7 +7,14 @@ import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { Integration, Post, Media, From, State } from '@prisma/client';
+import {
+  Integration,
+  Post,
+  Media,
+  From,
+  CreationMethod,
+  State,
+} from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { shuffle } from 'lodash';
@@ -740,7 +747,11 @@ export class PostsService {
     } catch (err) {}
   }
 
-  async createPost(orgId: string, body: CreatePostDto): Promise<any[]> {
+  async createPost(
+    orgId: string,
+    body: CreatePostDto,
+    creationMethod: CreationMethod
+  ): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
       const provider = this._integrationManager.getSocialIntegration(
@@ -769,6 +780,7 @@ export class PostsService {
         body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
         post,
         body.tags,
+        creationMethod,
         body.inter
       );
 
@@ -902,43 +914,47 @@ export class PostsService {
         const group = makeId(10);
         const randomDate = findTime();
 
-        await this.createPost(orgId, {
-          type: 'draft',
-          date: randomDate,
-          order: '',
-          shortLink: false,
-          tags: [],
-          posts: [
-            {
-              group,
-              integration: {
-                id: integration.id,
-              },
-              settings: {
-                __type: integration.providerIdentifier as any,
-                title: '',
-                tags: [],
-                subreddit: [],
-              },
-              value: [
-                ...toPost.list.map((l) => ({
-                  id: '',
-                  content: l.post,
-                  delay: 0,
-                  image: [],
-                })),
-                {
-                  id: '',
-                  delay: 0,
-                  content: `Check out the full story here:\n${
-                    body.postId || body.url
-                  }`,
-                  image: [],
+        await this.createPost(
+          orgId,
+          {
+            type: 'draft',
+            date: randomDate,
+            order: '',
+            shortLink: false,
+            tags: [],
+            posts: [
+              {
+                group,
+                integration: {
+                  id: integration.id,
                 },
-              ],
-            },
-          ],
-        });
+                settings: {
+                  __type: integration.providerIdentifier as any,
+                  title: '',
+                  tags: [],
+                  subreddit: [],
+                },
+                value: [
+                  ...toPost.list.map((l) => ({
+                    id: '',
+                    content: l.post,
+                    delay: 0,
+                    image: [],
+                  })),
+                  {
+                    id: '',
+                    delay: 0,
+                    content: `Check out the full story here:\n${
+                      body.postId || body.url
+                    }`,
+                    image: [],
+                  },
+                ],
+              },
+            ],
+          },
+          'WEB'
+        );
       }
     }
   }

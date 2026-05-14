@@ -175,7 +175,7 @@ export class PostsController {
   ) {
     console.log(JSON.stringify(rawBody, null, 2));
     const body = await this._postsService.mapTypeToPost(rawBody, org.id);
-    return this._postsService.createPost(org.id, body);
+    return this._postsService.createPost(org.id, body, 'WEB');
   }
 
   @Post('/generator/draft')
