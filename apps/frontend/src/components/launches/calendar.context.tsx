@@ -86,6 +86,7 @@ export interface Integrations {
   disabled?: boolean;
   inBetweenSteps: boolean;
   editor: 'none' | 'normal' | 'markdown' | 'html';
+  stripLinks?: boolean;
   display: string;
   identifier: string;
   type: string;

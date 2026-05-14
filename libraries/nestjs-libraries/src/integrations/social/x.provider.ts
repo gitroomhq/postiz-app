@@ -18,6 +18,7 @@ import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -30,6 +31,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
@@ -228,8 +230,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     ) {
       await timer(2000);
 
+      const plugText = stripHtmlValidation('normal', fields.post, true);
       await client.v2.tweet({
-        text: stripHtmlValidation('normal', fields.post, true),
+        text: this.stripLinks() ? removeLinks(plugText) : plugText,
         reply: { in_reply_to_tweet_id: id },
       });
       return true;
@@ -470,7 +473,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               firstPost?.settings?.community?.split('/').pop() || '',
           }
         : {}),
-      text: firstPost.message,
+      text: this.stripLinks()
+        ? removeLinks(firstPost.message)
+        : firstPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       made_with_ai: !!firstPost?.settings?.made_with_ai,
       paid_partnership: !!firstPost?.settings?.paid_partnership,
@@ -537,7 +542,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const tweetUrl = 'https://api.x.com/2/tweets';
     const tweetBody = {
-      text: commentPost.message,
+      text: this.stripLinks()
+        ? removeLinks(commentPost.message)
+        : commentPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       reply: { in_reply_to_tweet_id: replyToId },
       made_with_ai: !!commentPost?.settings?.made_with_ai,

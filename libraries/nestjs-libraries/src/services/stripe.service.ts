@@ -71,10 +71,7 @@ export class StripeService {
         currency: 'usd',
         payment_method: latestMethod.id,
         customer: event.data.object.customer as string,
-        automatic_payment_methods: {
-          allow_redirects: 'never',
-          enabled: true,
-        },
+        off_session: true,
         capture_method: 'manual', // Authorize without capturing
         confirm: true, // Confirm the PaymentIntent
       });

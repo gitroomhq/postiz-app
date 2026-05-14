@@ -341,9 +341,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           await fetch('/posts/should-shortlink', {
             method: 'POST',
             body: JSON.stringify({
-              messages: checkAllValid.flatMap((p: any) =>
-                p.values.flatMap((a: any) => a.content)
-              ),
+              messages: checkAllValid
+                // platforms that remove links won't keep shortlinks either
+                .filter((p: any) => !p?.integration?.stripLinks)
+                .flatMap((p: any) =>
+                  p.values.flatMap((a: any) => a.content)
+                ),
             }),
           })
         ).json();

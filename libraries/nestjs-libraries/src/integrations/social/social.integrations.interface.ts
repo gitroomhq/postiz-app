@@ -141,6 +141,7 @@ export interface SocialProvider
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
+  stripLinks?: () => boolean;
   refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
