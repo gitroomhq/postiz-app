@@ -800,9 +800,18 @@ export const Editor: FC<{
                           <StrikeText editor={editorRef?.current?.editor} />
                           <BlockquoteText editor={editorRef?.current?.editor} />
                           <CodeText editor={editorRef?.current?.editor} />
-                          <AComponent editor={editorRef?.current?.editor} />
                         </>
                       )}
+                      {/* link insertion may not work on all providers e.g insta, x, facebook */}
+                      {(editorType === 'html' || editorType === 'markdown') &&
+                        identifier === 'telegram' && (
+                          <>
+                            <AComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                          </>
+                        )}
                       {(editorType === 'markdown' || editorType === 'html') &&
                         identifier !== 'telegram' && (
                           <>
