@@ -188,11 +188,11 @@ export class PublicIntegrationsController {
       );
     }
 
-    const allowedCreationMethods = ['WEB', 'CLI'] as const;
+    const allowedCreationMethods = ['CLI', 'API'] as const;
     const creationMethod = allowedCreationMethods.includes(
       rawBody.creationMethod
     )
-      ? (rawBody.creationMethod as 'WEB' | 'CLI')
+      ? (rawBody.creationMethod as 'CLI' | 'API')
       : 'API';
 
     console.log(JSON.stringify(body, null, 2));
