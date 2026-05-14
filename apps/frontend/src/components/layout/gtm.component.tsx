@@ -3,25 +3,32 @@
 import Script from 'next/script';
 import { FC, useEffect } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const TrialTracker: FC = () => {
   const user = useUser();
+  const { googleAdsId, googleAdsTrialTracking } = useVariables();
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    if (typeof window === 'undefined' || !user?.id || !window.dataLayer) return;
+    if (
+      typeof window === 'undefined' ||
+      !user?.id ||
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      !window.gtag ||
+      !googleAdsId ||
+      !googleAdsTrialTracking
+    )
+      return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('onboarding') !== 'true') return;
-    const check = params.get('check') || 'unknown';
     const key = `gtm_start_trial_${user?.id}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    window.dataLayer = window.dataLayer || [];
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    window.dataLayer.push({ event: 'start_trial', check });
+    gtag('event', 'conversion', {
+      send_to: `${googleAdsId}/${googleAdsTrialTracking}`,
+    });
   }, [user]);
   return null;
 };
