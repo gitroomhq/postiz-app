@@ -7,18 +7,20 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 export const TrialTracker: FC = () => {
   const user = useUser();
   useEffect(() => {
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     if (typeof window === 'undefined' || !user?.id || !window.dataLayer) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('onboarding') !== 'true') return;
     const check = params.get('check') || 'unknown';
     const key = `gtm_start_trial_${user?.id}`;
     if (sessionStorage.getItem(key)) return;
-    console.log(window.dataLayer);
     sessionStorage.setItem(key, '1');
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     window.dataLayer = window.dataLayer || [];
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     window.dataLayer.push({ event: 'start_trial', check });
   }, [user]);
   return null;
