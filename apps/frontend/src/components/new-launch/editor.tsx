@@ -796,18 +796,11 @@ export const Editor: FC<{
                             editor={editorRef?.current?.editor}
                             currentValue={props.value!}
                           />
-                        </>
-                      )}
-                      {editorType === 'html' && identifier === 'telegram' && (
-                        <>
                           <ItalicText editor={editorRef?.current?.editor} />
                           <StrikeText editor={editorRef?.current?.editor} />
                           <BlockquoteText editor={editorRef?.current?.editor} />
                           <CodeText editor={editorRef?.current?.editor} />
-                          <AComponent
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
+                          <AComponent editor={editorRef?.current?.editor} />
                         </>
                       )}
                       {(editorType === 'markdown' || editorType === 'html') &&
