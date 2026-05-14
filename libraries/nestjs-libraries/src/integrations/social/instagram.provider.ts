@@ -12,6 +12,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
@@ -544,22 +545,21 @@ export class InstagramProvider
           (firstPost?.media?.length || 0) > 1 && !isStory
             ? `&is_carousel_item=true`
             : ``;
-        const mediaType =
-          m.path.indexOf('.mp4') > -1
-            ? firstPost?.media?.length === 1
-              ? isStory
-                ? `video_url=${m.path}&media_type=STORIES`
-                : `video_url=${m.path}&media_type=REELS&thumb_offset=${
-                    m?.thumbnailTimestamp || 0
-                  }`
-              : isStory
+        const mediaType = hasExtension(m.path, 'mp4')
+          ? firstPost?.media?.length === 1
+            ? isStory
               ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+              : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
-            : `image_url=${m.path}`;
+            ? `video_url=${m.path}&media_type=STORIES`
+            : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+                m?.thumbnailTimestamp || 0
+              }`
+          : isStory
+          ? `image_url=${m.path}&media_type=STORIES`
+          : `image_url=${m.path}`;
 
         const trialParams = isTrialReel
           ? `&trial_params=${encodeURIComponent(

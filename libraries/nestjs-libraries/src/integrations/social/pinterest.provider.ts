@@ -17,6 +17,7 @@ import {
 import dayjs from 'dayjs';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
   'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one'
@@ -185,10 +186,10 @@ export class PinterestProvider
   ): Promise<PostResponse[]> {
     let mediaId = '';
     const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) > -1
+      (p) => hasExtension(p.path, 'mp4')
     );
     const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) === -1
+      (p) => !hasExtension(p.path, 'mp4')
     );
 
     if (findMp4) {

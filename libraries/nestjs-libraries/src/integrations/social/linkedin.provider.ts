@@ -8,6 +8,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
@@ -234,8 +235,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type = 'personal' as 'company' | 'personal'
   ) {
     // Determine the appropriate endpoint based on file type
-    const isVideo = fileName.indexOf('mp4') > -1;
-    const isPdf = fileName.toLowerCase().indexOf('pdf') > -1;
+    const isVideo = hasExtension(fileName, 'mp4');
+    const isPdf = hasExtension(fileName, 'pdf');
 
     let endpoint: string;
     if (isVideo) {
@@ -477,7 +478,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = mediaUrl.indexOf('mp4') > -1;
+    const isVideo = hasExtension(mediaUrl, 'mp4');
     const isGif = lookup(mediaUrl) === 'image/gif';
 
     if (isVideo || isGif) {

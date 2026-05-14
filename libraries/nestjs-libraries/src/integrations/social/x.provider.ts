@@ -21,6 +21,7 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
   'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
@@ -390,7 +391,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               id: await this.runInConcurrent(
                 async () =>
                   client.v2.uploadMedia(
-                    m.path.indexOf('mp4') > -1
+                    hasExtension(m.path, 'mp4')
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
                           animated: lookup(m.path) === 'image/gif',

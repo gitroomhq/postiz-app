@@ -11,6 +11,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -415,7 +416,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
+    if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
       const {
         id: videoId,
         permalink_url,
