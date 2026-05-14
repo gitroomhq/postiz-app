@@ -1,7 +1,28 @@
 'use client';
 
 import Script from 'next/script';
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+
+export const TrialTracker: FC = () => {
+  const user = useUser();
+  useEffect(() => {
+    // @ts-ignore
+    if (typeof window === 'undefined' || !user?.id || !window.dataLayer) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('onboarding') !== 'true') return;
+    const check = params.get('check') || 'unknown';
+    const key = `gtm_start_trial_${user?.id}`;
+    if (sessionStorage.getItem(key)) return;
+    console.log(window.dataLayer);
+    sessionStorage.setItem(key, '1');
+    // @ts-ignore
+    window.dataLayer = window.dataLayer || [];
+    // @ts-ignore
+    window.dataLayer.push({ event: 'start_trial', check });
+  }, [user]);
+  return null;
+};
 
 export const GoogleTagManagerComponent: FC<{ gtmId?: string }> = ({
   gtmId,
@@ -10,12 +31,17 @@ export const GoogleTagManagerComponent: FC<{ gtmId?: string }> = ({
     return null;
   }
   return (
-    <Script strategy="afterInteractive" id="gtm">
-      {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'/g.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${gtmId}');`}
-    </Script>
+    <>
+      <Script src="/g.js" strategy="afterInteractive" />
+
+      <Script id="google-ads-gtag" strategy="afterInteractive">
+        {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${gtmId}');
+  `}
+      </Script>
+    </>
   );
 };
