@@ -27,6 +27,17 @@ export const Onboarding: FC = () => {
       }
       return;
     }
+    if (typeof window !== 'undefined') {
+      const check = query.get('check') || 'unknown';
+      const key = `gtm_start_trial_${check}`;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        // @ts-ignore
+        window.dataLayer = window.dataLayer || [];
+        // @ts-ignore
+        window.dataLayer.push({ event: 'start_trial', check });
+      }
+    }
     if (modalOpen.current) {
       return;
     }
