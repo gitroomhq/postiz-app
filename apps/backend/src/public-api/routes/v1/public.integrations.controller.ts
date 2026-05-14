@@ -188,8 +188,15 @@ export class PublicIntegrationsController {
       );
     }
 
+    const allowedCreationMethods = ['CLI', 'API'] as const;
+    const creationMethod = allowedCreationMethods.includes(
+      rawBody.creationMethod
+    )
+      ? (rawBody.creationMethod as 'CLI' | 'API')
+      : 'API';
+
     console.log(JSON.stringify(body, null, 2));
-    return this._postsService.createPost(org.id, body);
+    return this._postsService.createPost(org.id, body, creationMethod);
   }
 
   @Delete('/posts/:id')
