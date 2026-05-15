@@ -722,7 +722,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV105', {
+        ?.workflow.start('postWorkflowV106', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',

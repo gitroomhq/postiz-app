@@ -4,6 +4,7 @@ import {
   ActivityMethod,
   TemporalService,
 } from 'nestjs-temporal-core';
+import * as Sentry from '@sentry/nestjs';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import {
   NotificationService,
@@ -76,7 +77,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV105', {
+        .workflow.signalWithStart('postWorkflowV106', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -409,6 +410,229 @@ export class PostActivity {
 
       return refresh;
     } catch (err) {
+      await this._refreshIntegrationService.setBetweenSteps(integration, cause);
+      return false;
+    }
+  }
+
+  @ActivityMethod()
+  async postSocialV106(integration: Integration, posts: Post[]) {
+    const ctx = {
+      provider: integration.providerIdentifier,
+      integrationId: integration.id,
+      organizationId: integration.organizationId,
+      postIds: posts.map((p) => p.id),
+    };
+
+    try {
+      if (process.env.STRIPE_SECRET_KEY) {
+        const subscription = await this._subscriptionService.getSubscription(
+          integration.organizationId
+        );
+
+        if (!subscription) {
+          throw new Error(
+            'No active subscription found for this organization.'
+          );
+        }
+      }
+
+      const getIntegration = this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      );
+
+      const newPosts = await this._postService.updateTags(
+        integration.organizationId,
+        posts
+      );
+
+      Sentry.logger.info('Posting to social channel', ctx);
+
+      const postNow = await getIntegration.post(
+        integration.internalId,
+        integration.token,
+        await Promise.all(
+          (newPosts || []).map(async (p) => ({
+            id: p.id,
+            message: stripHtmlValidation(
+              getIntegration.editor,
+              p.content,
+              true,
+              false,
+              !/<\/?[a-z][\s\S]*>/i.test(p.content),
+              getIntegration.mentionFormat
+            ),
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this._postService.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration?.convertToJPEG || false
+            ),
+          }))
+        ),
+        integration
+      );
+
+      Sentry.logger.info('Posted to social channel successfully', {
+        ...ctx,
+        published: postNow.length,
+      });
+
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.start('streakWorkflow', {
+          args: [{ organizationId: integration.organizationId }],
+          workflowId: `streak_${integration.organizationId}`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: organizationId,
+              value: integration.organizationId,
+            },
+          ]),
+        });
+
+      return postNow;
+    } catch (err) {
+      Sentry.logger.error('Failed to post to social channel', {
+        ...ctx,
+        error: err instanceof Error ? err.message : String(err),
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+      });
+      Sentry.captureException(err, {
+        tags: {
+          provider: integration.providerIdentifier,
+          activity: 'postSocial',
+        },
+        contexts: { post: ctx },
+      });
+      throw err;
+    }
+  }
+
+  @ActivityMethod()
+  async postCommentV106(
+    postId: string,
+    lastPostId: string | undefined,
+    integration: Integration,
+    posts: Post[]
+  ) {
+    const ctx = {
+      provider: integration.providerIdentifier,
+      integrationId: integration.id,
+      organizationId: integration.organizationId,
+      parentPostId: postId,
+      postIds: posts.map((p) => p.id),
+    };
+
+    try {
+      const getIntegration = this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      );
+
+      const newPosts = await this._postService.updateTags(
+        integration.organizationId,
+        posts
+      );
+
+      Sentry.logger.info('Posting comment to social channel', ctx);
+
+      const result = await getIntegration.comment(
+        integration.internalId,
+        postId,
+        lastPostId,
+        integration.token,
+        await Promise.all(
+          (newPosts || []).map(async (p) => ({
+            id: p.id,
+            message: stripHtmlValidation(
+              getIntegration.editor,
+              p.content,
+              true,
+              false,
+              !/<\/?[a-z][\s\S]*>/i.test(p.content),
+              getIntegration.mentionFormat
+            ),
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this._postService.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration?.convertToJPEG || false
+            ),
+          }))
+        ),
+        integration
+      );
+
+      Sentry.logger.info('Posted comment successfully', ctx);
+
+      return result;
+    } catch (err) {
+      Sentry.logger.error('Failed to post comment to social channel', {
+        ...ctx,
+        error: err instanceof Error ? err.message : String(err),
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+      });
+      Sentry.captureException(err, {
+        tags: {
+          provider: integration.providerIdentifier,
+          activity: 'postComment',
+        },
+        contexts: { post: ctx },
+      });
+      throw err;
+    }
+  }
+
+  @ActivityMethod()
+  async refreshTokenWithCauseV106(
+    integration: Integration,
+    cause: string
+  ): Promise<false | AuthTokenDetails> {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    const ctx = {
+      provider: integration.providerIdentifier,
+      integrationId: integration.id,
+      organizationId: integration.organizationId,
+      cause,
+    };
+
+    try {
+      Sentry.logger.info('Refreshing integration token', ctx);
+
+      const refresh = await this._refreshIntegrationService.refresh(
+        integration,
+        cause
+      );
+      if (!refresh) {
+        Sentry.logger.warn('Token refresh returned no credentials', ctx);
+        return false;
+      }
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
+
+      Sentry.logger.info('Refreshed integration token successfully', ctx);
+
+      return refresh;
+    } catch (err) {
+      Sentry.logger.error('Failed to refresh integration token', {
+        ...ctx,
+        error: err instanceof Error ? err.message : String(err),
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+      });
+      Sentry.captureException(err, {
+        tags: {
+          provider: integration.providerIdentifier,
+          activity: 'refreshTokenWithCause',
+        },
+        contexts: { integration: ctx },
+      });
       await this._refreshIntegrationService.setBetweenSteps(integration, cause);
       return false;
     }
