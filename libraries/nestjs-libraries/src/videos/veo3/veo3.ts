@@ -6,6 +6,12 @@ import {
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ArrayMaxSize, IsArray, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  getAiVideoApiKey,
+  getAiVideoBaseUrl,
+  getAiVideoModel,
+  hasAiVideoApiKey,
+} from '@gitroom/nestjs-libraries/openai/ai.config';
 
 class Image {
   @IsString()
@@ -33,7 +39,7 @@ class Veo3Params {
   dto: Veo3Params,
   tools: [],
   trial: false,
-  available: !!process.env.KIEAI_API_KEY,
+  available: hasAiVideoApiKey(),
 })
 export class Veo3 extends VideoAbstract<Veo3Params> {
   override dto = Veo3Params;
@@ -42,16 +48,16 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
     customParams: Veo3Params
   ): Promise<URL> {
     const value = await (
-      await fetch('https://api.kie.ai/api/v1/veo/generate', {
+      await fetch(`${getAiVideoBaseUrl()}/veo/generate`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
+          Authorization: `Bearer ${getAiVideoApiKey()}`,
         },
         method: 'POST',
         body: JSON.stringify({
           prompt: customParams.prompt,
           imageUrls: customParams?.images?.map((p) => p.path) || [],
-          model: 'veo3_fast',
+          model: getAiVideoModel(),
           aspectRatio: output === 'horizontal' ? '16:9' : '9:16',
         }),
       })
@@ -67,11 +73,11 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
       console.log('waiting for video to be ready');
       const data = await (
         await fetch(
-          'https://api.kie.ai/api/v1/veo/record-info?taskId=' + taskId,
+          `${getAiVideoBaseUrl()}/veo/record-info?taskId=${taskId}`,
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
+              Authorization: `Bearer ${getAiVideoApiKey()}`,
             },
           }
         )

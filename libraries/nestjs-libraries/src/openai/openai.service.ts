@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import OpenAI from 'openai';
 import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
+import {
+  getAiChatModel,
+  getAiImageModel,
+  getOpenAIClient,
+} from '@gitroom/nestjs-libraries/openai/ai.config';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  baseURL: process.env.OPENAI_BASE_URL || undefined,
-});
+const openai = getOpenAIClient('default');
+const imageOpenai = getOpenAIClient('image');
 
-const CHAT_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1';
-const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'dall-e-3';
+const CHAT_MODEL = getAiChatModel();
+const IMAGE_MODEL = getAiImageModel();
 
 const PicturePrompt = z.object({
   prompt: z.string(),
@@ -24,7 +26,7 @@ const VoicePrompt = z.object({
 export class OpenaiService {
   async generateImage(prompt: string, isUrl: boolean, isVertical = false) {
     const generate = (
-      await openai.images.generate({
+      await imageOpenai.images.generate({
         prompt,
         response_format: isUrl ? 'url' : 'b64_json',
         model: IMAGE_MODEL,

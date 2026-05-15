@@ -16,11 +16,21 @@ import pLimit from 'p-limit';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { IsString } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+import {
+  getAssemblyAuthKey,
+  getAssemblyAuthSecret,
+  getFalImageModel,
+  getVoiceApiKey,
+  hasAiApiKey,
+  hasAssemblyAuth,
+  hasFalApiKey,
+  hasVoiceApiKey,
+} from '@gitroom/nestjs-libraries/openai/ai.config';
 const limit = pLimit(2);
 
 const transloadit = new Transloadit({
-  authKey: process.env.TRANSLOADIT_AUTH || 'just empty text',
-  authSecret: process.env.TRANSLOADIT_SECRET || 'just empty text',
+  authKey: getAssemblyAuthKey(),
+  authSecret: getAssemblyAuthSecret(),
 });
 
 async function getAudioDuration(buffer: Buffer): Promise<number> {
@@ -51,11 +61,10 @@ class ImagesSlidesParams {
   dto: ImagesSlidesParams,
   trial: true,
   available:
-    !!process.env.ELEVENSLABS_API_KEY &&
-    !!process.env.TRANSLOADIT_AUTH &&
-    !!process.env.TRANSLOADIT_SECRET &&
-    !!process.env.OPENAI_API_KEY &&
-    !!process.env.FAL_KEY,
+    hasVoiceApiKey() &&
+    hasAssemblyAuth() &&
+    hasAiApiKey() &&
+    hasFalApiKey(),
 })
 export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
   override dto = ImagesSlidesParams;
@@ -82,7 +91,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
             res({
               len: 0,
               url: await this._falService.generateImageFromText(
-                'ideogram/v2',
+                getFalImageModel(),
                 current.imagePrompt,
                 output === 'vertical'
               ),
@@ -101,7 +110,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
-                        'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
+                        'xi-api-key': getVoiceApiKey(),
                       },
                       body: JSON.stringify({
                         text: current.voiceText,
@@ -249,7 +258,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
+            'xi-api-key': getVoiceApiKey(),
           },
         }
       )

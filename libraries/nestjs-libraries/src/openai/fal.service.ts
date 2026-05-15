@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import {
+  getFalApiKey,
+  getFalBaseUrl,
+} from '@gitroom/nestjs-libraries/openai/ai.config';
 
 import pLimit from 'p-limit';
 const limit = pLimit(10);
@@ -12,10 +16,10 @@ export class FalService {
   ): Promise<string> {
     const { images, video, ...all } = await (
       await limit(() =>
-        fetch(`https://fal.run/fal-ai/${model}`, {
+        fetch(`${getFalBaseUrl()}/${model}`, {
           method: 'POST',
           headers: {
-            Authorization: `Key ${process.env.FAL_KEY}`,
+            Authorization: `Key ${getFalApiKey()}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
