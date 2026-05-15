@@ -23,6 +23,11 @@ import { Request, Response } from 'express';
 import { RequestContext } from '@mastra/core/di';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  getAiCopilotModel,
+  getOpenAIClient,
+  hasAiApiKey,
+} from '@gitroom/nestjs-libraries/openai/ai.config';
 
 export type ChannelsContext = {
   integrations: string;
@@ -38,10 +43,7 @@ export class CopilotController {
   ) {}
   @Post('/chat')
   chatAgent(@Req() req: Request, @Res() res: Response) {
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
+    if (!hasAiApiKey('copilot')) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
       return;
     }
@@ -50,7 +52,8 @@ export class CopilotController {
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
+        openai: getOpenAIClient('copilot'),
+        model: getAiCopilotModel(),
       }),
     });
 
@@ -64,10 +67,7 @@ export class CopilotController {
     @Res() res: Response,
     @GetOrgFromRequest() organization: Organization
   ) {
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
+    if (!hasAiApiKey('copilot')) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
       return;
     }
@@ -96,7 +96,8 @@ export class CopilotController {
       runtime,
       // properties: req.body.variables.properties,
       serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
+        openai: getOpenAIClient('copilot'),
+        model: getAiCopilotModel(),
       }),
     });
 
