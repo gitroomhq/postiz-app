@@ -55,7 +55,7 @@ async function start() {
     })
   );
 
-  app.use(['/copilot/*', '/posts'], (req: any, res: any, next: any) => {
+  app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
     json({ limit: '50mb' })(req, res, next);
   });
 
