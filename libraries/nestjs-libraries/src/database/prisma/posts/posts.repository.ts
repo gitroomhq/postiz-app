@@ -224,6 +224,26 @@ export class PostsRepository {
     const limit = query.limit || 20;
     const skip = page * limit;
 
+    const stateFilter = query.state || 'all';
+    const stateAndDate =
+      stateFilter === 'scheduled'
+        ? {
+            state: State.QUEUE,
+            publishDate: { gte: dayjs.utc().toDate() },
+          }
+        : stateFilter === 'draft'
+        ? { state: State.DRAFT }
+        : stateFilter === 'published'
+        ? { state: State.PUBLISHED }
+        : {
+            state: {
+              in: [State.QUEUE, State.DRAFT, State.PUBLISHED, State.ERROR],
+            },
+          };
+
+    const orderDirection: 'asc' | 'desc' =
+      stateFilter === 'published' ? 'desc' : 'asc';
+
     const where = {
       AND: [
         {
@@ -233,12 +253,8 @@ export class PostsRepository {
             },
           ],
         },
-        {
-          publishDate: {
-            gte: dayjs.utc().toDate(),
-          },
-        },
       ],
+      ...stateAndDate,
       deletedAt: null as Date | null,
       parentPostId: null as string | null,
       intervalInDays: null as number | null,
@@ -257,7 +273,7 @@ export class PostsRepository {
         skip,
         take: limit,
         orderBy: {
-          publishDate: 'asc',
+          publishDate: orderDirection,
         },
         select: {
           id: true,
