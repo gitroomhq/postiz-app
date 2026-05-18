@@ -550,7 +550,7 @@ export const convertMention = (
 
 export const convertToAscii = (value: string): string => {
   return value
-    .replace(/<strong>(.+?)<\/strong>/gi, (match, p1) => {
+    .replace(/<strong>([\s\S]+?)<\/strong>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return bold?.[char] || char;
@@ -558,7 +558,7 @@ export const convertToAscii = (value: string): string => {
 
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<u>(.+?)<\/u>/gi, (match, p1) => {
+    .replace(/<u>([\s\S]+?)<\/u>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return underlineMap?.[char] || char;
@@ -566,13 +566,13 @@ export const convertToAscii = (value: string): string => {
 
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<em>(.+?)<\/em>/gi, (match, p1) => {
+    .replace(/<em>([\s\S]+?)<\/em>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         return italic?.[char] || char;
       });
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<s>(.+?)<\/s>/gi, (match, p1) => {
+    .replace(/<s>([\s\S]+?)<\/s>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         return strikethrough?.[char] || char;
       });
@@ -584,7 +584,7 @@ export const convertToAscii = (value: string): string => {
       });
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<code>(.+?)<\/code>/gi, (match, p1) => {
+    .replace(/<code>([\s\S]+?)<\/code>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         return code?.[char] || char;
       });
