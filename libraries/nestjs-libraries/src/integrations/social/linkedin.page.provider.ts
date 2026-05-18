@@ -6,12 +6,22 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+import {
+  LinkedinAuthorType,
+  LinkedinProvider,
+} from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+
+// Showcase Pages are an organizationBrand sub-type of Company Pages in LinkedIn's
+// data model. They share the linkedin-page provider but use a different URN prefix
+// (urn:li:organizationBrand vs urn:li:organization). We encode the type in
+// internalId by prefixing showcase IDs with "brand:". Bare numeric IDs remain
+// Company Pages for backward compatibility with existing integrations.
+const SHOWCASE_INTERNAL_ID_PREFIX = 'brand:';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -36,6 +46,20 @@ export class LinkedinPageProvider
   ];
 
   override editor = 'normal' as const;
+
+  protected isShowcase(internalId: string): boolean {
+    return internalId.startsWith(SHOWCASE_INTERNAL_ID_PREFIX);
+  }
+
+  protected extractRawId(internalId: string): string {
+    return this.isShowcase(internalId)
+      ? internalId.slice(SHOWCASE_INTERNAL_ID_PREFIX.length)
+      : internalId;
+  }
+
+  protected authorTypeFor(internalId: string): LinkedinAuthorType {
+    return this.isShowcase(internalId) ? 'showcase' : 'company';
+  }
 
   override async refreshToken(
     refresh_token: string
@@ -101,7 +125,7 @@ export class LinkedinPageProvider
       originalIntegration,
       postId,
       information,
-      false
+      this.authorTypeFor(integration.internalId)
     );
   }
 
@@ -116,7 +140,7 @@ export class LinkedinPageProvider
       originalIntegration,
       postId,
       information,
-      false
+      this.authorTypeFor(integration.internalId)
     );
   }
 
@@ -136,7 +160,12 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements, ...all } = await (
+    // The organizationalEntityAcls endpoint returns BOTH urn:li:organization
+    // (Company Pages) and urn:li:organizationBrand (Showcase Pages) entries.
+    // We detect the type from the URN prefix and encode showcase entries with
+    // a "brand:" id prefix so post(), analytics(), and other downstream methods
+    // can route them to the correct LinkedIn endpoints. Closes #1478.
+    const { elements } = await (
       await fetch(
         'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
@@ -149,15 +178,24 @@ export class LinkedinPageProvider
       )
     ).json();
 
-    return (elements || []).map((e: any) => ({
-      id: e.organizationalTarget.split(':').pop(),
-      page: e.organizationalTarget.split(':').pop(),
-      username: e['organizationalTarget~'].vanityName,
-      name: e['organizationalTarget~'].localizedName,
-      picture:
-        e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
-          ?.identifiers?.[0]?.identifier,
-    }));
+    return (elements || []).map((e: any) => {
+      const urn: string = e.organizationalTarget;
+      const numericId = urn.split(':').pop()!;
+      const isShowcase = urn.includes(':organizationBrand:');
+      const id = isShowcase
+        ? `${SHOWCASE_INTERNAL_ID_PREFIX}${numericId}`
+        : numericId;
+      const baseName = e['organizationalTarget~'].localizedName;
+      return {
+        id,
+        page: id,
+        username: e['organizationalTarget~'].vanityName,
+        name: isShowcase ? `${baseName} (Showcase)` : baseName,
+        picture:
+          e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
+            ?.identifiers?.[0]?.identifier,
+      };
+    });
   }
 
   async reConnect(
@@ -179,10 +217,15 @@ export class LinkedinPageProvider
   }
 
   async fetchPageInformation(accessToken: string, params: { page: string }) {
+    // Showcase Pages live under /v2/organizationBrands/{id}; Company Pages under
+    // /v2/organizations/{id}. We route based on the "brand:" prefix in page id.
     const pageId = params.page;
+    const isShowcase = this.isShowcase(pageId);
+    const rawId = this.extractRawId(pageId);
+    const endpoint = isShowcase ? 'organizationBrands' : 'organizations';
     const data = await (
       await fetch(
-        `https://api.linkedin.com/v2/organizations/${pageId}?projection=(id,localizedName,vanityName,logoV2(original~:playableStreams))`,
+        `https://api.linkedin.com/v2/${endpoint}/${rawId}?projection=(id,localizedName,vanityName,logoV2(original~:playableStreams))`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -192,8 +235,12 @@ export class LinkedinPageProvider
     ).json();
 
     return {
-      id: data.id,
-      name: data.localizedName,
+      id: isShowcase
+        ? `${SHOWCASE_INTERNAL_ID_PREFIX}${data.id}`
+        : String(data.id),
+      name: isShowcase
+        ? `${data.localizedName} (Showcase)`
+        : data.localizedName,
       access_token: accessToken,
       picture:
         data?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0].identifier,
@@ -270,7 +317,17 @@ export class LinkedinPageProvider
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    return super.post(id, accessToken, postDetails, integration, 'company');
+    // id is integration.internalId, which may carry the "brand:" prefix for
+    // Showcase Pages. We strip it and pass the raw numeric ID + the correct
+    // author-type discriminator down to the parent implementation, which
+    // handles URN construction via authorUrn().
+    return super.post(
+      this.extractRawId(id),
+      accessToken,
+      postDetails,
+      integration,
+      this.authorTypeFor(integration.internalId)
+    );
   }
 
   override async comment(
@@ -282,13 +339,13 @@ export class LinkedinPageProvider
     integration: Integration
   ): Promise<PostResponse[]> {
     return super.comment(
-      id,
+      this.extractRawId(id),
       postId,
       lastCommentId,
       accessToken,
       postDetails,
       integration,
-      'company'
+      this.authorTypeFor(integration.internalId)
     );
   }
 
@@ -297,6 +354,14 @@ export class LinkedinPageProvider
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
+    // Showcase Pages don't expose organizationPageStatistics /
+    // organizationalEntityFollowerStatistics / organizationalEntityShareStatistics
+    // endpoints — LinkedIn limits these to Company Pages. Return an empty
+    // analytics set rather than 4xx the request and break the dashboard.
+    if (this.isShowcase(id)) {
+      return [];
+    }
+
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
@@ -423,6 +488,12 @@ export class LinkedinPageProvider
     postId: string,
     date: number
   ): Promise<AnalyticsData[]> {
+    // See analytics() — share/social-action stats are not exposed for
+    // urn:li:organizationBrand entities (Showcase Pages). Skip cleanly.
+    if (this.isShowcase(integrationId)) {
+      return [];
+    }
+
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
@@ -586,7 +657,10 @@ export class LinkedinPageProvider
       await timer(2000);
       await this.fetch(`https://api.linkedin.com/rest/posts`, {
         body: JSON.stringify({
-          author: `urn:li:organization:${integration.internalId}`,
+          author: this.authorUrn(
+            this.extractRawId(integration.internalId),
+            this.authorTypeFor(integration.internalId)
+          ),
           commentary: '',
           visibility: 'PUBLIC',
           distribution: {
@@ -673,7 +747,10 @@ export class LinkedinPageProvider
             Authorization: `Bearer ${integration.token}`,
           },
           body: JSON.stringify({
-            actor: `urn:li:organization:${integration.internalId}`,
+            actor: this.authorUrn(
+              this.extractRawId(integration.internalId),
+              this.authorTypeFor(integration.internalId)
+            ),
             object: id,
             message: {
               text: this.fixText(fields.post),

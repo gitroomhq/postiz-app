@@ -17,6 +17,8 @@ import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+export type LinkedinAuthorType = 'company' | 'personal' | 'showcase';
+
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
 )
@@ -40,6 +42,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 3000;
+  }
+
+  protected authorUrn(id: string, type: LinkedinAuthorType): string {
+    if (type === 'personal') return `urn:li:person:${id}`;
+    if (type === 'showcase') return `urn:li:organizationBrand:${id}`;
+    return `urn:li:organization:${id}`;
   }
 
   override handleErrors(
@@ -232,7 +240,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     personId: string,
     picture: any,
-    type = 'personal' as 'company' | 'personal'
+    type: LinkedinAuthorType = 'personal'
   ) {
     // Determine the appropriate endpoint based on file type
     const isVideo = hasExtension(fileName, 'mp4');
@@ -262,10 +270,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           },
           body: JSON.stringify({
             initializeUploadRequest: {
-              owner:
-                type === 'personal'
-                  ? `urn:li:person:${personId}`
-                  : `urn:li:organization:${personId}`,
+              owner: this.authorUrn(personId, type),
               ...(isVideo
                 ? {
                     fileSizeBytes: picture.length,
@@ -432,7 +437,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<LinkedinDto>[],
     accessToken: string,
     personId: string,
-    type: 'company' | 'personal'
+    type: LinkedinAuthorType
   ): Promise<Record<string, string[]>> {
     const mediaUploads = await Promise.all(
       postDetails.flatMap(
@@ -518,14 +523,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
 
   private createLinkedInPostPayload(
     id: string,
-    type: 'company' | 'personal',
+    type: LinkedinAuthorType,
     message: string,
     mediaIds: string[],
     isPdf: boolean,
     pdfTitle?: string
   ) {
     const author =
-      type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
+      this.authorUrn(id, type);
 
     return {
       author,
@@ -547,7 +552,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     firstPost: PostDetails<LinkedinDto>,
     mediaIds: string[],
-    type: 'company' | 'personal',
+    type: LinkedinAuthorType,
     isPdf: boolean
   ): Promise<string> {
     const pdfTitle = isPdf
@@ -586,10 +591,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     post: PostDetails,
     parentPostId: string,
-    type: 'company' | 'personal'
+    type: LinkedinAuthorType
   ): Promise<string> {
     const actor =
-      type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
+      this.authorUrn(id, type);
 
     const response = await this.fetch(
       `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
@@ -637,7 +642,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails<LinkedinDto>[],
     integration: Integration,
-    type = 'personal' as 'company' | 'personal'
+    type: LinkedinAuthorType = 'personal'
   ): Promise<PostResponse[]> {
     let processedPostDetails = postDetails;
     const [firstPost] = postDetails;
@@ -686,7 +691,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails<LinkedinDto>[],
     integration: Integration,
-    type = 'personal' as 'company' | 'personal'
+    type: LinkedinAuthorType = 'personal'
   ): Promise<PostResponse[]> {
     const [commentPost] = postDetails;
 
@@ -720,7 +725,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     originalIntegration: Integration,
     postId: string,
     information: any,
-    isPersonal = true
+    type: LinkedinAuthorType = 'personal'
   ) {
     return this.comment(
       integration.internalId,
@@ -738,7 +743,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         },
       ],
       integration,
-      isPersonal ? 'personal' : 'company'
+      type
     );
   }
 
@@ -754,13 +759,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     originalIntegration: Integration,
     postId: string,
     information: any,
-    isPersonal = true
+    type: LinkedinAuthorType = 'personal'
   ) {
     await this.fetch(`https://api.linkedin.com/rest/posts`, {
       body: JSON.stringify({
-        author:
-          (isPersonal ? 'urn:li:person:' : `urn:li:organization:`) +
-          `${integration.internalId}`,
+        author: this.authorUrn(integration.internalId, type),
         commentary: '',
         visibility: 'PUBLIC',
         distribution: {
