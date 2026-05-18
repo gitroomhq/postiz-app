@@ -35,12 +35,17 @@ export default withProvider({
   CustomPreviewComponent: PinterestPreview,
   dto: PinterestSettingsDto,
   checkValidity: async ([firstItem, ...otherItems] = []) => {
-    const isMp4 = firstItem?.find((item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1);
+    const isMp4 = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
+    );
     const isPicture = firstItem?.find(
       (item) => (item?.path?.indexOf?.('mp4') ?? -1) === -1
     );
     if ((firstItem?.length ?? 0) === 0) {
       return 'Requires at least one media';
+    }
+    if ((firstItem?.length ?? 0)  > 5) {
+      return 'You can only have up to 5 media items';
     }
     if (isMp4 && firstItem?.length !== 2 && !isPicture) {
       return 'If posting a video you have to also include a cover image as second media';
