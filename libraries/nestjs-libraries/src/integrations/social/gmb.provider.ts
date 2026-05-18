@@ -14,6 +14,46 @@ import dayjs from 'dayjs';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { GmbSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/gmb.settings.dto';
 
+interface GoogleBusinessAccount {
+  name?: string;
+  accountName?: string;
+}
+
+interface GoogleBusinessLocation {
+  name: string;
+  title?: string;
+}
+
+interface GoogleBusinessAccountsResponse {
+  accounts?: GoogleBusinessAccount[];
+  nextPageToken?: string;
+}
+
+interface GoogleBusinessLocationsResponse {
+  locations?: GoogleBusinessLocation[];
+  nextPageToken?: string;
+}
+
+interface GoogleBusinessMediaItem {
+  mediaFormat?: string;
+  googleUrl?: string;
+  locationAssociation?: {
+    category?: string;
+  };
+}
+
+interface GoogleBusinessMediaResponse {
+  mediaItems?: GoogleBusinessMediaItem[];
+}
+
+interface GoogleBusinessPage {
+  id: string;
+  name: string;
+  picture: { data: { url: string } };
+  accountName: string;
+  locationName: string;
+}
+
 const clientAndGmb = () => {
   const client = new google.auth.OAuth2({
     clientId: process.env.GOOGLE_GMB_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID,
@@ -173,9 +213,28 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async pages(accessToken: string) {
-    // Get all accounts with pagination
-    const allAccounts: any[] = [];
+  private async fetchGoogleBusinessJson<T>(
+    url: string,
+    accessToken: string,
+    identifier: string
+  ): Promise<T> {
+    const response = await this.fetch(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+      identifier
+    );
+
+    return response.json() as Promise<T>;
+  }
+
+  private async getAllBusinessAccounts(
+    accessToken: string
+  ): Promise<GoogleBusinessAccount[]> {
+    const allAccounts: GoogleBusinessAccount[] = [];
     let accountsPageToken: string | undefined;
 
     do {
@@ -185,12 +244,12 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       }
       const url = `https://mybusinessaccountmanagement.googleapis.com/v1/accounts${params.toString() ? `?${params}` : ''}`;
 
-      const accountsResponse = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const accountsData = await accountsResponse.json();
+      const accountsData =
+        await this.fetchGoogleBusinessJson<GoogleBusinessAccountsResponse>(
+          url,
+          accessToken,
+          'fetch Google Business accounts'
+        );
 
       if (accountsData.accounts) {
         allAccounts.push(...accountsData.accounts);
@@ -198,91 +257,118 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       accountsPageToken = accountsData.nextPageToken;
     } while (accountsPageToken);
 
+    console.log(`Google Business accounts found: ${allAccounts.length}`);
+
+    return allAccounts;
+  }
+
+  private async getAllLocationsForAccount(
+    accessToken: string,
+    accountName: string
+  ): Promise<GoogleBusinessLocation[]> {
+    const allLocations: GoogleBusinessLocation[] = [];
+    let locationsPageToken: string | undefined;
+
+    do {
+      const params = new URLSearchParams({
+        readMask:
+          'name,title,storeCode,metadata,profile,phoneNumbers,storefrontAddress,websiteUri',
+      });
+      if (locationsPageToken) {
+        params.set('pageToken', locationsPageToken);
+      }
+
+      const locationsData =
+        await this.fetchGoogleBusinessJson<GoogleBusinessLocationsResponse>(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations?${params}`,
+          accessToken,
+          `fetch Google Business locations for ${accountName}`
+        );
+
+      if (locationsData.locations) {
+        allLocations.push(...locationsData.locations);
+      }
+      locationsPageToken = locationsData.nextPageToken;
+    } while (locationsPageToken);
+
+    return allLocations;
+  }
+
+  private async getLocationPhotoUrl(
+    accessToken: string,
+    locationName: string
+  ): Promise<string> {
+    try {
+      const mediaData =
+        await this.fetchGoogleBusinessJson<GoogleBusinessMediaResponse>(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/media`,
+          accessToken,
+          `fetch Google Business media for ${locationName}`
+        );
+
+      if (!mediaData.mediaItems?.length) {
+        return '';
+      }
+
+      const profilePhoto = mediaData.mediaItems.find(
+        (m) =>
+          m.mediaFormat === 'PHOTO' &&
+          m.locationAssociation?.category === 'PROFILE'
+      );
+
+      return (
+        profilePhoto?.googleUrl || mediaData.mediaItems[0]?.googleUrl || ''
+      );
+    } catch {
+      return '';
+    }
+  }
+
+  async pages(accessToken: string): Promise<GoogleBusinessPage[]> {
+    const allAccounts = await this.getAllBusinessAccounts(accessToken);
+
     if (allAccounts.length === 0) {
+      console.log('Total Google Business locations found: 0');
       return [];
     }
 
-    // Get locations for each account
-    const allLocations: Array<{
-      id: string;
-      name: string;
-      picture: { data: { url: string } };
-      accountName: string;
-      locationName: string;
-    }> = [];
+    const allLocations: GoogleBusinessPage[] = [];
 
     for (const account of allAccounts) {
       const accountName = account.name; // format: accounts/{accountId}
+      if (!accountName) {
+        continue;
+      }
+
+      console.log(`Checking Google Business account: ${accountName}`);
 
       try {
-        // Get all locations with pagination
-        let locationsPageToken: string | undefined;
+        const locations = await this.getAllLocationsForAccount(
+          accessToken,
+          accountName
+        );
 
-        do {
-          const params = new URLSearchParams({
-            readMask: 'name,title,storefrontAddress,metadata',
-          });
-          if (locationsPageToken) {
-            params.set('pageToken', locationsPageToken);
-          }
+        console.log(`Locations found for ${accountName}: ${locations.length}`);
 
-          const locationsResponse = await fetch(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations?${params}`,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
+        for (const location of locations) {
+          // location.name is in format: locations/{locationId}
+          // We need the full path: accounts/{accountId}/locations/{locationId}
+          const locationId = location.name.replace('locations/', '');
+          const fullResourceName = `${accountName}/locations/${locationId}`;
+          const photoUrl = await this.getLocationPhotoUrl(
+            accessToken,
+            location.name
           );
-          const locationsData = await locationsResponse.json();
 
-          if (locationsData.locations) {
-            for (const location of locationsData.locations) {
-              // location.name is in format: locations/{locationId}
-              // We need the full path: accounts/{accountId}/locations/{locationId}
-              const locationId = location.name.replace('locations/', '');
-              const fullResourceName = `${accountName}/locations/${locationId}`;
-
-              // Get profile photo if available
-              let photoUrl = '';
-              try {
-                const mediaResponse = await fetch(
-                  `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}/media`,
-                  {
-                    headers: {
-                      Authorization: `Bearer ${accessToken}`,
-                    },
-                  }
-                );
-                const mediaData = await mediaResponse.json();
-                if (mediaData.mediaItems && mediaData.mediaItems.length > 0) {
-                  const profilePhoto = mediaData.mediaItems.find(
-                    (m: any) =>
-                      m.mediaFormat === 'PHOTO' &&
-                      m.locationAssociation?.category === 'PROFILE'
-                  );
-                  if (profilePhoto?.googleUrl) {
-                    photoUrl = profilePhoto.googleUrl;
-                  } else if (mediaData.mediaItems[0]?.googleUrl) {
-                    photoUrl = mediaData.mediaItems[0].googleUrl;
-                  }
-                }
-              } catch {
-                // Ignore media fetch errors
-              }
-
-              allLocations.push({
-                // id is the full resource path for the v4 API: accounts/{accountId}/locations/{locationId}
-                id: fullResourceName,
-                name: location.title || 'Unnamed Location',
-                picture: { data: { url: photoUrl } },
-                accountName: accountName,
-                locationName: location.name,
-              });
-            }
-          }
-          locationsPageToken = locationsData.nextPageToken;
-        } while (locationsPageToken);
+          allLocations.push({
+            // id is the full resource path for the v4 API: accounts/{accountId}/locations/{locationId}
+            id: fullResourceName,
+            name: location.title || 'Unnamed Location',
+            picture: { data: { url: photoUrl } },
+            accountName: accountName,
+            locationName: location.name,
+          });
+        }
       } catch (error) {
         // Continue with other accounts if one fails
         console.error(
@@ -291,6 +377,8 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
         );
       }
     }
+
+    console.log(`Total Google Business locations found: ${allLocations.length}`);
 
     return allLocations;
   }
