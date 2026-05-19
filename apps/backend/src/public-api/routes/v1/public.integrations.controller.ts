@@ -35,19 +35,9 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notifications/get.notifications.dto';
 import { Readable } from 'stream';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { VALID_POST_MEDIA_MIME_TYPES } from '@gitroom/helpers/utils/has.extension';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fromBuffer } = require('file-type');
-
-const PUBLIC_API_ALLOWED_MIME = new Set<string>([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/avif',
-  'image/bmp',
-  'image/tiff',
-  'video/mp4',
-]);
 import * as Sentry from '@sentry/nestjs';
 import {
   socialIntegrationList,
@@ -108,7 +98,7 @@ export class PublicIntegrationsController {
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     const detected = await fromBuffer(buffer);
-    if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
+    if (!detected || !VALID_POST_MEDIA_MIME_TYPES.has(detected.mime)) {
       throw new HttpException({ msg: 'Unsupported file type.' }, 400);
     }
     const mimetype = detected.mime;

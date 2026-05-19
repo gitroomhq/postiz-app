@@ -3,19 +3,16 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
+import {
+  VALID_POST_MEDIA_EXTENSIONS,
+  VALID_POST_MEDIA_MIME_TYPES,
+} from '@gitroom/helpers/utils/has.extension';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fromBuffer } = require('file-type');
 
-const ALLOWED_MIME_TYPES = new Set<string>([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/avif',
-  'image/bmp',
-  'image/tiff',
-  'video/mp4',
-]);
+const ALLOWED_EXTENSIONS_MESSAGE = `Valid extensions: ${VALID_POST_MEDIA_EXTENSIONS
+  .map((ext) => '.' + ext)
+  .join(', ')}`;
 
 @Injectable()
 export class CustomFileValidationPipe implements PipeTransform {
@@ -34,8 +31,10 @@ export class CustomFileValidationPipe implements PipeTransform {
     }
 
     const detected = await fromBuffer(value.buffer);
-    if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
-      throw new BadRequestException('Unsupported file type.');
+    if (!detected || !VALID_POST_MEDIA_MIME_TYPES.has(detected.mime)) {
+      throw new BadRequestException(
+        `Unsupported file type. ${ALLOWED_EXTENSIONS_MESSAGE}`
+      );
     }
 
     const maxSize = this.getMaxSize(detected.mime);
@@ -61,7 +60,9 @@ export class CustomFileValidationPipe implements PipeTransform {
     } else if (mimeType.startsWith('video/')) {
       return 1024 * 1024 * 1024; // 1 GB
     } else {
-      throw new BadRequestException('Unsupported file type.');
+      throw new BadRequestException(
+        `Unsupported file type. ${ALLOWED_EXTENSIONS_MESSAGE}`
+      );
     }
   }
 }

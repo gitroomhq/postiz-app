@@ -12,6 +12,10 @@ import { Integration } from '@prisma/client';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import {
+  isValidPostMediaUrl,
+  VALID_POST_MEDIA_EXTENSIONS,
+} from '@gitroom/helpers/utils/has.extension';
 
 function countCharacters(text: string, type: string): number {
   if (type !== 'x') {
@@ -129,6 +133,19 @@ If the tools return errors, you would need to rerun it with the right parameters
           (context?.requestContext as any)?.get('organization') as string
         ).id;
         const finalOutput = [];
+
+        const invalidAttachment = inputData.socialPost
+          .flatMap((p) => p.postsAndComments)
+          .flatMap((p) => p.attachments ?? [])
+          .find((url: string) => !isValidPostMediaUrl(url));
+
+        if (invalidAttachment) {
+          return {
+            errors: `Attachment "${invalidAttachment}" is not supported. Valid extensions: ${VALID_POST_MEDIA_EXTENSIONS.map(
+              (ext) => '.' + ext
+            ).join(', ')}.`,
+          };
+        }
 
         const integrations = {} as Record<string, Integration>;
         for (const platform of inputData.socialPost) {
