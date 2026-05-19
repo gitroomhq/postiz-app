@@ -95,7 +95,7 @@ services:
       STRIPE_SIGNING_KEY_CONNECT: ''
 
       # === Developer Settings
-      NX_ADD_PLUGINS: false
+      NX_ADD_PLUGINS: 'false'
 
       # === Short Link Service Settings (Optional - leave blank if unused)
       # DUB_TOKEN: ""
