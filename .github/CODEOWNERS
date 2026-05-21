@@ -1,0 +1,13 @@
+* @ivanduarte
+
+# Application and shared library code
+/apps/ @ivanduarte
+/libraries/ @ivanduarte
+
+# Runtime, deploy, and container boundaries
+/deploy/ @ivanduarte
+/Dockerfile @ivanduarte
+/Dockerfile.* @ivanduarte
+
+# Repository automation
+/.github/workflows/ @ivanduarte

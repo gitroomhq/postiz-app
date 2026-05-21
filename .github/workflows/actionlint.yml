@@ -1,0 +1,25 @@
+name: actionlint
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# NOTE: actionlint must always produce a check so it can be required in branch
+# protection. Do not add paths filters here.
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          echo "${GITHUB_WORKSPACE}" >> "${GITHUB_PATH}"
+
+      - name: Run actionlint
+        run: actionlint -color

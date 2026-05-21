@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+
+bash scripts/pre-commit-npi-scan.sh

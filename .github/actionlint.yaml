@@ -1,0 +1,16 @@
+# actionlint config — narrow ignore for pre-existing upstream issues.
+#
+# Added 2026-05-21 (Phase 2 Task B) to install the actionlint gate without
+# touching upstream Postiz workflow files. The roc-publisher repo is a fork
+# of gitroomhq/postiz-app; modifying upstream-maintained workflows risks
+# merge conflicts on future upstream pulls.
+self-hosted-runner:
+  labels: []
+paths:
+  ".github/workflows/stale.yml":
+    ignore:
+      # stale.yml:30 uses `exempt-pr-label` (singular) — actions/stale@v9
+      # expects `exempt-pr-labels` (plural). Pre-existing typo in the upstream
+      # Postiz workflow. Submit upstream PR or fix when we next sync from
+      # upstream. Suppressed here to keep actionlint as a clean PR gate.
+      - 'input "exempt-pr-label" is not defined'
