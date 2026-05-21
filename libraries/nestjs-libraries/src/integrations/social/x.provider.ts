@@ -45,15 +45,22 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
     if (body.includes('You are not permitted to perform this action')) {
       return {
         type: 'bad-body',
-        value: 'There is a problem posting, please edit your post and check character count and media attachments',
-      }
+        value:
+          'There is a problem posting, please edit your post and check character count and media attachments',
+      };
+    }
+    if (body.includes('Service Unavailable')) {
+      return {
+        type: 'retry',
+        value: 'X is currently unavailable, please try again later',
+      };
     }
     if (body.includes('maximum of one cashtag')) {
       return {
