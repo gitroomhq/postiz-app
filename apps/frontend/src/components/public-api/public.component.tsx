@@ -41,7 +41,7 @@ const getMcpConfig = (
     switch (client) {
       case 'Claude Code':
         return {
-          config: `claude mcp add postiz --transport http "${urlWithKey}"`,
+          config: `claude mcp add postiz "${urlWithKey}" --transport http`,
           hint: 'Run this command in your terminal.',
         };
       case 'Cursor':
@@ -89,7 +89,7 @@ const getMcpConfig = (
   switch (client) {
     case 'Claude Code':
       return {
-        config: `claude mcp add postiz \\\n  --transport http \\\n  --header "Authorization: ${bearer}" \\\n  "${urlBase}"`,
+        config: `claude mcp add postiz "${urlBase}" \\\n  --transport http \\\n  --header "Authorization: ${bearer}"`,
         hint: 'Run this command in your terminal.',
       };
     case 'Cursor':
