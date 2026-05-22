@@ -24,7 +24,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${process.env.STRIP_LINKS_FROM_X_POSTS ? 'do not add links, they will be stripped from the post' : ''}`
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
