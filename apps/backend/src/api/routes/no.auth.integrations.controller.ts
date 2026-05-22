@@ -233,8 +233,8 @@ export class NoAuthIntegrationsController {
               Buffer.from(body.code, 'base64').toString()
             )
           : integrationProvider.isChromeExtension
-          ? AuthService.signJWT(
-              JSON.parse(Buffer.from(body.code, 'base64').toString())
+          ? AuthService.fixedEncryption(
+              Buffer.from(body.code, 'base64').toString()
             )
           : undefined
       );
@@ -297,8 +297,18 @@ export class NoAuthIntegrationsController {
         })
       : undefined;
 
+    // Never leak stored credentials (signed/encrypted secrets) back to the
+    // caller. These columns hold the integration access token, refresh token
+    // and encrypted custom instance details and must stay server-side.
+    const {
+      token: _token,
+      refreshToken: _refreshToken,
+      customInstanceDetails: _customInstanceDetails,
+      ...safeIntegration
+    } = createUpdate as any;
+
     return {
-      ...createUpdate,
+      ...safeIntegration,
       onboarding: onboarding === 'true',
       pages,
       ...(returnURL ? { returnURL } : {}),
