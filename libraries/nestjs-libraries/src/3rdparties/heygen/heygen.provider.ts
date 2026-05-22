@@ -66,7 +66,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       })
     ).json();
 
-    return voices.slice(0, 20);
+    return voices;
   }
 
   async avatars(apiKey: string) {

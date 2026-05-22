@@ -8,7 +8,7 @@ import { useThirdParty } from '@gitroom/frontend/components/third-parties/third-
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { Textarea } from '@gitroom/react/form/textarea';
 import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,31 +67,71 @@ const SelectVoiceComponent: FC<{
   onChange: (id: string) => void;
 }> = (props) => {
   const [current, setCurrent] = useState<any>({});
+  const [language, setLanguage] = useState('');
   const { voiceList, onChange } = props;
+  const languages = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          voiceList
+            ?.map((p) => p.language)
+            .filter((p): p is string => Boolean(p))
+        )
+      ).sort((a, b) => a.localeCompare(b)),
+    [voiceList]
+  );
+  const filteredVoices = useMemo(
+    () =>
+      language ? voiceList?.filter((p) => p.language === language) : voiceList,
+    [language, voiceList]
+  );
 
   return (
-    <div className="grid grid-cols-6 gap-[10px] justify-items-center justify-center">
-      {voiceList?.map((p) => (
-        <div
-          onClick={() => {
-            setCurrent(p.voice_id === current?.voice_id ? undefined : p);
-            onChange(p.voice_id === current?.voice_id ? {} : p.voice_id);
+    <>
+      {!!languages.length && (
+        <Select
+          label="Language"
+          name="voiceLanguage"
+          disableForm
+          value={language}
+          onChange={(event) => {
+            setCurrent({});
+            onChange('');
+            setLanguage(event.target.value);
           }}
-          key={p.avatar_id}
-          className={clsx(
-            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
-            current?.voice_id === p.voice_id
-              ? 'bg-input border border-red-500'
-              : 'bg-third'
-          )}
         >
-          <div className="text-[14px] text-balance whitespace-pre-line">
-            {p.name}
+          <option value="">All languages</option>
+          {languages.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </Select>
+      )}
+      <div className="grid grid-cols-6 gap-[10px] justify-items-center justify-center">
+        {filteredVoices?.map((p) => (
+          <div
+            onClick={() => {
+              const selected = p.voice_id !== current?.voice_id;
+              setCurrent(selected ? p : {});
+              onChange(selected ? p.voice_id : '');
+            }}
+            key={p.voice_id}
+            className={clsx(
+              'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
+              current?.voice_id === p.voice_id
+                ? 'bg-input border border-red-500'
+                : 'bg-third'
+            )}
+          >
+            <div className="text-[14px] text-balance whitespace-pre-line">
+              {p.name}
+            </div>
+            <div className="text-[12px]">{p.language}</div>
           </div>
-          <div className="text-[12px]">{p.language}</div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -212,7 +252,8 @@ const HeygenProviderComponent = () => {
                   form.setValue('avatar', id);
                   form.setValue(
                     'type',
-                    data?.find((p: any) => p.id === id || p.avatar_id === id)?.id
+                    data?.find((p: any) => p.id === id || p.avatar_id === id)
+                      ?.id
                       ? 'talking_photo'
                       : 'avatar'
                   );
