@@ -3,25 +3,20 @@ import {
   ValidatorConstraintInterface,
   ValidatorConstraint,
 } from 'class-validator';
+import { VALID_POST_MEDIA_EXTENSIONS } from './has.extension';
 
 @ValidatorConstraint({ name: 'checkValidExtension', async: false })
 export class ValidUrlExtension implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
-    return (
-      !!text?.split?.('?')?.[0].endsWith('.png') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpg') ||
-      !!text?.split?.('?')?.[0].endsWith('.jpeg') ||
-      !!text?.split?.('?')?.[0].endsWith('.gif') ||
-      !!text?.split?.('?')?.[0].endsWith('.webp') ||
-      !!text?.split?.('?')?.[0].endsWith('.mp4')
-    );
+    const path = text?.split?.('?')?.[0]?.toLowerCase?.();
+    if (!path) return false;
+    return VALID_POST_MEDIA_EXTENSIONS.some((ext) => path.endsWith('.' + ext));
   }
 
   defaultMessage(args: ValidationArguments) {
-    // here you can provide default error message if validation failed
-    return (
-      'File must have a valid extension: .png, .jpg, .jpeg, .gif, .webp, or .mp4'
-    );
+    return `File must have a valid extension: ${VALID_POST_MEDIA_EXTENSIONS.map(
+      (ext) => '.' + ext
+    ).join(', ')}`;
   }
 }
 
