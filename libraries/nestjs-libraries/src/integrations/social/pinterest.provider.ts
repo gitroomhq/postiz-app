@@ -13,6 +13,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
@@ -42,6 +43,45 @@ export class PinterestProvider
   }
 
   dto = PinterestSettingsDto;
+
+  override async checkValidity(
+    [firstItem]: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const isMp4 = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
+    );
+    const isPicture = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) === -1
+    );
+    if ((firstItem?.length ?? 0) === 0) {
+      return 'Requires at least one media';
+    }
+    if ((firstItem?.length ?? 0) > 5) {
+      return 'You can only have up to 5 media items';
+    }
+    if (isMp4 && firstItem?.length !== 2 && !isPicture) {
+      return 'If posting a video you have to also include a cover image as second media';
+    }
+    if (isMp4 && (firstItem?.length ?? 0) > 2) {
+      return 'If posting a video you can only have two media items';
+    }
+
+    if (
+      (firstItem?.length ?? 0) > 1 &&
+      firstItem?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)
+    ) {
+      const loadAll = await Promise.all(
+        firstItem?.map((p) => this.getImageDimensions(p?.path)) ?? []
+      );
+      const checkAllTheSameWidthHeight = loadAll?.every((p, i, arr) => {
+        return p?.width === arr?.[0]?.width && p?.height === arr?.[0]?.height;
+      });
+      if (!checkAllTheSameWidthHeight) {
+        return 'Requires all images to have the same width and height';
+      }
+    }
+    return true;
+  }
 
   editor = 'normal' as const;
 

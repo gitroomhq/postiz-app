@@ -145,6 +145,11 @@ export interface SocialProvider
   refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
+  checkValidity(
+    posts: Array<{ path: string; thumbnail?: string }[]>,
+    settings: any,
+    additionalSettings: any[]
+  ): Promise<string | true>;
   isWeb3?: boolean;
   isChromeExtension?: boolean;
   extensionCookies?: { name: string; domain: string }[];

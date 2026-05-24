@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -37,6 +38,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 2000;
+  }
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if ((firstItems?.length ?? 0) === 0) {
+      return 'No video / images selected';
+    }
+    if (
+      (firstItems?.length ?? 0) > 1 &&
+      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Only pictures are supported when selecting multiple items';
+    } else if (
+      firstItems?.length !== 1 &&
+      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
+    ) {
+      return 'You need one media';
+    }
+    return true;
   }
 
   override handleErrors(body: string):

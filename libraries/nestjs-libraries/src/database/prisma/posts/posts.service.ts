@@ -49,6 +49,10 @@ import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abst
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { stripLinks } from '@gitroom/helpers/utils/strip.links';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { weightedLength } from '@gitroom/helpers/utils/count.length';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -745,6 +749,126 @@ export class PostsService {
           ]),
         });
     } catch (err) {}
+  }
+
+  /**
+   * Server-side validation that used to live on the client (`checkValidity` +
+   * the manage modal loop). Runs the provider's settings DTO validation, the
+   * provider `checkValidity` (media rules) and the empty-content / too-long
+   * character checks. Returns one result per post so the frontend can show the
+   * same toasts it did before — and so `/posts` can refuse to create invalid
+   * posts.
+   */
+  async validatePosts(
+    orgId: string,
+    posts: Array<{
+      integration: { id: string };
+      value: Array<{
+        content?: string;
+        image?: Array<{ path: string; thumbnail?: string }>;
+      }>;
+      settings?: any;
+    }>
+  ) {
+    return Promise.all(
+      (posts || []).map(async (post) => {
+        const integration = await this._integrationService.getIntegrationById(
+          orgId,
+          post?.integration?.id
+        );
+
+        if (!integration) {
+          throw new BadRequestException(
+            `Integration with id ${post?.integration?.id} not found`
+          );
+        }
+
+        const provider = this._integrationManager.getSocialIntegration(
+          integration.providerIdentifier
+        );
+
+        let additionalSettings: any[] = [];
+        try {
+          additionalSettings = JSON.parse(integration.additionalSettings || '[]');
+        } catch {
+          additionalSettings = [];
+        }
+
+        const settings = post.settings || {};
+        const media = (post.value || []).map((p) => p.image || []);
+
+        // Settings DTO validation — mirrors the client `form.trigger()`.
+        let valid = true;
+        let settingsError = '';
+        if (provider?.dto) {
+          const instance = plainToInstance(provider.dto, settings, {
+            enableImplicitConversion: true,
+          });
+          const validationErrors = await validate(instance as object, {
+            skipMissingProperties: false,
+          });
+          settingsError = this.firstValidationError(validationErrors);
+          valid = validationErrors.length === 0;
+        }
+
+        // Provider-specific media validation (the old client `checkValidity`).
+        let errors: string | true = true;
+        try {
+          errors = await provider.checkValidity(
+            media,
+            settings,
+            additionalSettings
+          );
+        } catch (err: any) {
+          errors = err?.message || 'Invalid media';
+        }
+
+        const maximumCharacters = provider.maxLength(additionalSettings);
+        const isX = integration.providerIdentifier === 'x';
+
+        const emptyContent = (post.value || []).some((a) => {
+          const strip = stripHtmlValidation('normal', a.content || '', true);
+          const length = isX ? weightedLength(strip) : strip.length;
+          return length === 0 && (a.image || []).length === 0;
+        });
+
+        const tooLong = (post.value || []).some((a) => {
+          const strip = stripHtmlValidation('normal', a.content || '', true);
+          const weighted = isX ? weightedLength(strip) : strip.length;
+          const totalCharacters =
+            weighted > strip.length ? weighted : strip.length;
+          return totalCharacters > (maximumCharacters || 1000000);
+        });
+
+        return {
+          id: integration.id,
+          identifier: integration.providerIdentifier,
+          name: integration.name,
+          valid,
+          settingsError,
+          errors,
+          emptyContent,
+          tooLong,
+          maximumCharacters,
+        };
+      })
+    );
+  }
+
+  /** Returns the first class-validator message (incl. nested children), or ''. */
+  private firstValidationError(errors: any[]): string {
+    for (const e of errors || []) {
+      if (e?.constraints) {
+        return Object.values(e.constraints as Record<string, string>)[0] || '';
+      }
+      const child = e?.children?.length
+        ? this.firstValidationError(e.children)
+        : '';
+      if (child) {
+        return child;
+      }
+    }
+    return '';
   }
 
   async createPost(

@@ -13,6 +13,7 @@ import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provide
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
@@ -69,6 +70,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 5000;
+  }
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if (items?.[0]?.length !== 1) {
+      return 'You need one media';
+    }
+    if ((firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) === -1) {
+      return 'Item must be a video';
+    }
+    return true;
   }
 
   override handleErrors(body: string):

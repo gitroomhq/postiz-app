@@ -59,13 +59,5 @@ export default withProvider<FacebookDto>({
   SettingsComponent: FacebookSettings,
   CustomPreviewComponent: FacebookPreview,
   dto: FacebookDto,
-  checkValidity: async ([firstPost, ...otherPosts] = [], settings) => {
-    if (settings?.post_type === 'story') {
-      if (!firstPost?.length) {
-        return 'Story should have at least one media';
-      }
-    }
-    return true;
-  },
   maximumCharacters: 63206,
 });

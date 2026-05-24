@@ -8,7 +8,10 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -39,6 +42,27 @@ export class InstagramProvider
   dto = InstagramDto;
   maxLength() {
     return 2200;
+  }
+
+  override async checkValidity(
+    [firstPost]: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (!firstPost?.length) {
+      return 'Should have at least one media';
+    }
+    if (settings?.is_trial_reel) {
+      if ((firstPost?.length ?? 0) > 1) {
+        return 'Trial Reels can only have one video';
+      }
+      const hasVideo = firstPost?.some(
+        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
+      );
+      if (!hasVideo) {
+        return 'Trial Reels must be a video';
+      }
+    }
+    return true;
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {

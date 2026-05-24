@@ -336,23 +336,5 @@ export default withProvider({
   comments: false,
   CustomPreviewComponent: TiktokPreview,
   dto: TikTokDto,
-  checkValidity: async (items) => {
-    const [firstItems] = items ?? [];
-    if ((firstItems?.length ?? 0) === 0) {
-      return 'No video / images selected';
-    }
-    if (
-      (firstItems?.length ?? 0) > 1 &&
-      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
-    ) {
-      return 'Only pictures are supported when selecting multiple items';
-    } else if (
-      firstItems?.length !== 1 &&
-      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
-    ) {
-      return 'You need one media';
-    }
-    return true;
-  },
   maximumCharacters: 2000,
 });

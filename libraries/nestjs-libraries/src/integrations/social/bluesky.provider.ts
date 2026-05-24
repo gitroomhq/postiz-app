@@ -9,6 +9,7 @@ import {
   BadBody,
   RefreshToken,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import {
   BskyAgent,
@@ -156,6 +157,25 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 300;
+  }
+
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    if (
+      posts?.some(
+        (p) =>
+          p?.some((a) => (a?.path?.indexOf?.('mp4') ?? -1) > -1) &&
+          (p?.length ?? 0) > 1
+      )
+    ) {
+      return 'You can only upload one video per post.';
+    }
+
+    if (posts?.some((p) => (p?.length ?? 0) > 4)) {
+      return 'There can be maximum 4 pictures in a post.';
+    }
+    return true;
   }
 
   async customFields() {

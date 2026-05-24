@@ -23,7 +23,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -32,7 +31,6 @@ import { capitalize } from 'lodash';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
   SettingsIcon,
@@ -45,13 +43,6 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
-
-function countCharacters(text: string, type: string): number {
-  if (type !== 'x') {
-    return text.length;
-  }
-  return weightedLength(text);
-}
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -246,90 +237,111 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       setLoading(true);
-      const checkAllValid = await ref.current.checkAllValid();
 
-      const notEnoughChars = checkAllValid.filter((p: any) => {
-        return p.values.some((a: any) => {
-          return (
-            countCharacters(
-              stripHtmlValidation('normal', a.content, true),
-              p?.integration?.identifier || ''
-            ) === 0 && a.media?.length === 0
-          );
-        });
-      });
+      // Pull the local values to build the payload, but rely on the server
+      // (`/posts/valid`) for the actual validation — checkValidity now lives
+      // server-side so it can't be bypassed.
+      const allValues = await ref.current.getAllValues();
 
-      for (const item of notEnoughChars) {
-        toaster.show(
-          `${capitalize(item.integration.identifier.split('-')[0])} (${
-            item.integration.name
-          }):` +
-            ' ' +
-            t(
-              'post_needs_content_or_image',
-              'Your post should have at least one character or one image.'
-            ),
-          'warning'
-        );
-        setLoading(false);
-        item.preview();
-        return;
-      }
+      const integrationById = (id: string) =>
+        selectedIntegrations.find((p) => p.integration.id === id);
 
-      if (type !== 'draft') {
-        for (const item of checkAllValid) {
-          if (item.valid === false) {
-            toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
-              }): ${t('please_fix_your_settings', 'Please fix your settings')}`,
-              'warning'
-            );
-            item.fix();
-            setLoading(false);
-            setShowSettings(true);
-            return;
-          }
+      const group = existingData.group || makeId(10);
 
-          if (item.errors !== true) {
-            toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
-              }): ${item.errors}`,
-              'warning'
-            );
-            item.preview();
-            setLoading(false);
-            setShowSettings(false);
-            return;
-          }
-        }
+      const posts = allValues.map((post: any) => ({
+        integration: {
+          id: post.id,
+        },
+        group,
+        settings: { ...(post.settings || {}) },
+        value: post.values.map((value: any) => ({
+          ...(value.id ? { id: value.id } : {}),
+          content: value.content,
+          delay: value.delay || 0,
+          image:
+            (value?.media || []).map(
+              ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
+                id,
+                path,
+                alt,
+                thumbnail,
+                thumbnailTimestamp,
+              })
+            ) || [],
+        })),
+      }));
 
-        const sliceNeeded = checkAllValid.filter((p: any) => {
-          return p.values.some((a: any) => {
-            const strip = stripHtmlValidation('normal', a.content, true);
-            const weightedLength = countCharacters(
-              strip,
-              p?.integration?.identifier || ''
-            );
-            const totalCharacters =
-              weightedLength > strip.length ? weightedLength : strip.length;
+      if (!dummy) {
+        const checkAllValid = await (
+          await fetch('/posts/valid', {
+            method: 'POST',
+            body: JSON.stringify({ type, posts }),
+          })
+        ).json();
 
-            return totalCharacters > (p.maximumCharacters || 1000000);
-          });
-        });
+        const focus = (id: string, where: 'fix' | 'preview') => {
+          integrationById(id)?.ref?.current?.[where]?.();
+        };
 
-        for (const item of sliceNeeded) {
+        const notEnoughChars = checkAllValid.filter((p: any) => p.emptyContent);
+
+        for (const item of notEnoughChars) {
           toaster.show(
-            `${item?.integration?.name} (${item?.integration?.identifier}) ${t(
-              'post_is_too_long',
-              'post is too long, please fix it'
-            )}`,
+            `${capitalize(item.identifier.split('-')[0])} (${item.name}):` +
+              ' ' +
+              t(
+                'post_needs_content_or_image',
+                'Your post should have at least one character or one image.'
+              ),
             'warning'
           );
-          item.preview();
           setLoading(false);
+          focus(item.id, 'preview');
           return;
+        }
+
+        if (type !== 'draft') {
+          for (const item of checkAllValid) {
+            if (item.valid === false) {
+              toaster.show(
+                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                  item.settingsError ||
+                  t('please_fix_your_settings', 'Please fix your settings')
+                }`,
+                'warning'
+              );
+              focus(item.id, 'fix');
+              setLoading(false);
+              setShowSettings(true);
+              return;
+            }
+
+            if (item.errors !== true) {
+              toaster.show(
+                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                  item.errors
+                }`,
+                'warning'
+              );
+              focus(item.id, 'preview');
+              setLoading(false);
+              setShowSettings(false);
+              return;
+            }
+
+            if (item.tooLong) {
+              toaster.show(
+                `${item.name} (${item.identifier}) ${t(
+                  'post_is_too_long',
+                  'post is too long, please fix it'
+                )}`,
+                'warning'
+              );
+              focus(item.id, 'preview');
+              setLoading(false);
+              return;
+            }
+          }
         }
       }
 
@@ -342,12 +354,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           await fetch('/posts/should-shortlink', {
             method: 'POST',
             body: JSON.stringify({
-              messages: checkAllValid
+              messages: allValues
                 // platforms that remove links won't keep shortlinks either
-                .filter((p: any) => !p?.integration?.stripLinks)
-                .flatMap((p: any) =>
-                  p.values.flatMap((a: any) => a.content)
-                ),
+                .filter(
+                  (p: any) => !integrationById(p.id)?.integration?.stripLinks
+                )
+                .flatMap((p: any) => p.values.flatMap((a: any) => a.content)),
             }),
           })
         ).json();
@@ -369,35 +381,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
-      const group = existingData.group || makeId(10);
       const data = {
         type,
         ...(repeater ? { inter: repeater } : {}),
         tags,
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
-        posts: checkAllValid.map((post: any) => ({
-          integration: {
-            id: post.integration.id,
-          },
-          group,
-          settings: { ...(post.settings || {}) },
-          value: post.values.map((value: any) => ({
-            ...(value.id ? { id: value.id } : {}),
-            content: value.content,
-            delay: value.delay || 0,
-            image:
-              (value?.media || []).map(
-                ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
-                  id,
-                  path,
-                  alt,
-                  thumbnail,
-                  thumbnailTimestamp,
-                })
-              ) || [],
-          })),
-        })),
+        posts,
       };
 
       if (dummy) {

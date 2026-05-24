@@ -2,23 +2,12 @@ import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.in
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
-import { validate } from 'class-validator';
 import { Integration } from '@prisma/client';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
-
-function countCharacters(text: string, type: string): number {
-  if (type !== 'x') {
-    return text.length;
-  }
-  return weightedLength(text);
-}
 
 @Injectable()
 export class IntegrationSchedulePostTool implements AgentToolInterface {
@@ -138,50 +127,56 @@ If the tools return errors, you would need to rerun it with the right parameters
               platform.integrationId
             );
 
-          const { dto, maxLength, identifier } = socialIntegrationList.find(
-            (p) =>
-              p.identifier ===
-              integrations[platform.integrationId].providerIdentifier
-          )!;
+          // Same server-side validation as the dashboard / public API
+          // (settings DTO + media checkValidity + empty / too-long content).
+          const settings = platform.settings.reduce(
+            (acc: AllProvidersSettings, s: { key: string; value: any }) => ({
+              ...acc,
+              [s.key]: s.value,
+            }),
+            {} as AllProvidersSettings
+          );
 
-          if (dto) {
-            const newDTO = new dto();
-            const obj = Object.assign(
-              newDTO,
-              platform.settings.reduce(
-                (acc: AllProvidersSettings, s: { key: string; value: any }) => ({
-                  ...acc,
-                  [s.key]: s.value,
-                }),
-                {} as AllProvidersSettings
-              )
-            );
-            const errors = await validate(obj);
-            if (errors.length) {
+          const [validation] = await this._postsService.validatePosts(
+            organizationId,
+            [
+              {
+                integration: { id: platform.integrationId },
+                settings,
+                value: platform.postsAndComments.map((p: any) => ({
+                  content: p.content,
+                  image: (p.attachments || []).map((path: string) => ({
+                    path,
+                  })),
+                })),
+              },
+            ]
+          );
+
+          if (validation.emptyContent) {
+            return {
+              errors: `${validation.name}: Your post should have at least one character or one image.`,
+            };
+          }
+
+          if (platform.type !== 'draft') {
+            if (!validation.valid) {
               return {
-                errors: JSON.stringify(errors),
+                errors: `${validation.name}: ${
+                  validation.settingsError || 'Please fix your settings'
+                }, please fix it, and try integrationSchedulePostTool again.`,
               };
             }
 
-            const errorsLength = [];
-            for (const post of platform.postsAndComments) {
-              const maximumCharacters = maxLength(platform.isPremium);
-              const strip = stripHtmlValidation('normal', post.content, true);
-              const weightedLength = countCharacters(strip, identifier || '');
-              const totalCharacters =
-                weightedLength > strip.length ? weightedLength : strip.length;
-
-              if (totalCharacters > (maximumCharacters || 1000000)) {
-                errorsLength.push({
-                  value: post.content,
-                  error: `The maximum characters is ${maximumCharacters}, we got ${totalCharacters}, please fix it, and try integrationSchedulePostTool again.`,
-                });
-              }
+            if (validation.errors !== true) {
+              return {
+                errors: `${validation.name}: ${validation.errors}, please fix it, and try integrationSchedulePostTool again.`,
+              };
             }
 
-            if (errorsLength.length) {
+            if (validation.tooLong) {
               return {
-                errors: JSON.stringify(errorsLength),
+                errors: `${validation.name}: The maximum characters is ${validation.maximumCharacters}, please fix it, and try integrationSchedulePostTool again.`,
               };
             }
           }

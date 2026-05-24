@@ -9,7 +9,10 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
@@ -40,6 +43,32 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 3000;
+  }
+
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    vals: any
+  ): Promise<string | true> {
+    const [firstPost, ...restPosts] = posts ?? [];
+
+    if (
+      vals?.post_as_images_carousel &&
+      ((firstPost?.length ?? 0) < 2 ||
+        firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
+    ) {
+      return 'Carousel can only be created with 2 or more images and no videos.';
+    }
+
+    if (
+      (firstPost?.length ?? 0) > 1 &&
+      firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Can have maximum 1 media when selecting a video.';
+    }
+    if (restPosts?.some((p) => (p?.length ?? 0) > 0)) {
+      return 'Comments can only contain text.';
+    }
+    return true;
   }
 
   override handleErrors(

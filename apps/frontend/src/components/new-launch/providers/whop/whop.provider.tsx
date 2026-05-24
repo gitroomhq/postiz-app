@@ -42,6 +42,5 @@ export default withProvider({
   SettingsComponent: WhopSettings,
   CustomPreviewComponent: undefined,
   dto: WhopDto,
-  checkValidity: undefined,
   maximumCharacters: 50000,
 });
