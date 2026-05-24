@@ -8,6 +8,24 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { Integration } from '@prisma/client';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import {
+  ValidUrlExtension,
+  ValidUrlPath,
+} from '@gitroom/helpers/utils/valid.url.path';
+
+const validUrlExtension = new ValidUrlExtension();
+const validUrlPath = new ValidUrlPath();
+
+// Same URL validation as MediaDto (valid.url.path) - each attachment must
+// point to an allowed upload domain and a supported file extension.
+const attachmentUrl = z
+  .string()
+  .refine((url) => validUrlPath.validate(url, {} as any), {
+    message: validUrlPath.defaultMessage({} as any),
+  })
+  .refine((url) => validUrlExtension.validate(url, {} as any), {
+    message: validUrlExtension.defaultMessage({} as any),
+  });
 
 @Injectable()
 export class IntegrationSchedulePostTool implements AgentToolInterface {
@@ -75,7 +93,7 @@ If the tools return errors, you would need to rerun it with the right parameters
                         "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together)"
                       ),
                     attachments: z
-                      .array(z.string())
+                      .array(attachmentUrl)
                       .describe('The image of the post (URLS)'),
                   })
                 )
