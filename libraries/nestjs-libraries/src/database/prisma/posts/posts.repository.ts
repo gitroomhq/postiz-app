@@ -17,6 +17,67 @@ dayjs.extend(weekOfYear);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(utc);
 
+function normalizePostError(err: unknown): string {
+  if (typeof err === 'string') {
+    try {
+      const parsed = JSON.parse(err);
+      if (parsed && typeof parsed === 'object') {
+        return normalizePostError(parsed);
+      }
+    } catch {
+      return err;
+    }
+  }
+
+  if (err && typeof err === 'object') {
+    const e = err as {
+      cause?: {
+        message?: string;
+        failure?: { message?: string };
+        cause?: { message?: string; failure?: { message?: string } };
+      };
+      failure?: { message?: string };
+      message?: string;
+    };
+
+    const candidates = [
+      e.cause?.failure?.message,
+      e.cause?.cause?.failure?.message,
+      e.cause?.cause?.message,
+      e.cause?.message,
+      e.failure?.message,
+      e.message,
+    ];
+
+    for (const message of candidates) {
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    }
+  }
+
+  return JSON.stringify(err);
+}
+
+function formatStoredPostError(error: string | null | undefined) {
+  if (!error) {
+    return error;
+  }
+
+  if (error.startsWith('{') || error.startsWith('[')) {
+    return normalizePostError(error);
+  }
+
+  return error;
+}
+
+function withReadablePostError<T extends { error?: string | null }>(post: T) {
+  return {
+    ...post,
+    error: formatStoredPostError(post.error),
+  };
+}
+
 @Injectable()
 export class PostsRepository {
   constructor(
@@ -171,6 +232,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         tags: {
@@ -191,18 +253,20 @@ export class PostsRepository {
 
     return list.reduce((all, post) => {
       if (!post.intervalInDays) {
-        return [...all, post];
+        return [...all, withReadablePostError(post)];
       }
 
       const addMorePosts = [];
       let startingDate = dayjs.utc(post.publishDate);
       while (dayjs.utc(endDate).isSameOrAfter(startingDate)) {
         if (dayjs(startingDate).isSameOrAfter(dayjs.utc(post.publishDate))) {
-          addMorePosts.push({
-            ...post,
-            publishDate: startingDate.toDate(),
-            actualDate: post.publishDate,
-          });
+          addMorePosts.push(
+            withReadablePostError({
+              ...post,
+              publishDate: startingDate.toDate(),
+              actualDate: post.publishDate,
+            })
+          );
         }
 
         startingDate = startingDate.add(post.intervalInDays, 'days');
@@ -259,6 +323,7 @@ export class PostsRepository {
           releaseURL: true,
           releaseId: true,
           state: true,
+          error: true,
           group: true,
           tags: {
             select: {
@@ -279,7 +344,7 @@ export class PostsRepository {
     ]);
 
     return {
-      posts,
+      posts: posts.map(withReadablePostError),
       total,
       page,
       limit,
@@ -383,15 +448,15 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    const errorMessage = err ? normalizePostError(err) : undefined;
+
     const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        ...(err
-          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
-          : {}),
+        ...(errorMessage ? { error: errorMessage } : {}),
       },
       include: {
         integration: {
@@ -406,7 +471,7 @@ export class PostsRepository {
       try {
         await this._errors.model.errors.create({
           data: {
-            message: typeof err === 'string' ? err : JSON.stringify(err),
+            message: errorMessage!,
             organizationId: update.organizationId,
             platform: update.integration.providerIdentifier,
             postId: update.id,

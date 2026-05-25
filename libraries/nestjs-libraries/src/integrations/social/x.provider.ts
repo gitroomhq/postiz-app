@@ -58,6 +58,18 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: 'Posting failed - capped reached. Please try again later',
       };
     }
+
+    if (
+      body.includes('CreditsDepleted') ||
+      body.includes('does not have any credits') ||
+      body.includes('402 Payment Required')
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          "X couldn't publish this post — add credits to your X developer account.",
+      };
+    }
     if (body.includes('duplicate-rules')) {
       return {
         type: 'bad-body',

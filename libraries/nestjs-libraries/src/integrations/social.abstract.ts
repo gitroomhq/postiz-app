@@ -46,6 +46,30 @@ function safeStringify(obj: any) {
   });
 }
 
+function errorToHandleString(err: unknown): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>;
+
+    if (e.data !== undefined) {
+      return typeof e.data === 'string' ? e.data : safeStringify(e.data);
+    }
+
+    if (e.errors !== undefined) {
+      return safeStringify(e.errors);
+    }
+
+    if (typeof e.message === 'string') {
+      return e.message;
+    }
+  }
+
+  return safeStringify(err);
+}
+
 export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
@@ -79,7 +103,7 @@ export abstract class SocialAbstract {
     try {
       value = await func();
     } catch (err) {
-      const handle = this.handleErrors(safeStringify(err), 200);
+      const handle = this.handleErrors(errorToHandleString(err), 200);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
     }
 
