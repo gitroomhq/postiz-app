@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { User } from '@prisma/client';
 import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
@@ -37,14 +37,14 @@ export class AgenciesService {
     if (action === 'approve') {
       await this._notificationService.sendEmail(
         agency?.user?.email!,
-        'Your Agency has been approved and added to Postiz 🚀',
+        'Your Agency has been approved and added to Postiz ðŸš€',
         `
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Agency has been approved and added to Postiz 🚀</title>
+    <title>Your Agency has been approved and added to Postiz ðŸš€</title>
 </head>
 
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
@@ -61,7 +61,7 @@ export class AgenciesService {
 
     await this._notificationService.sendEmail(
       agency?.user?.email!,
-      'Your Agency has been declined 😔',
+      'Your Agency has been declined ðŸ˜”',
       `
 <html lang="en">
 
@@ -85,7 +85,7 @@ export class AgenciesService {
   async createAgency(user: User, body: CreateAgencyDto) {
     const agency = await this._agenciesRepository.createAgency(user, body);
     await this._notificationService.sendEmail(
-      'nevo@postiz.com',
+      'nevo@d3analytics.vercel.app',
       'New agency created',
       `
 <html lang="en">

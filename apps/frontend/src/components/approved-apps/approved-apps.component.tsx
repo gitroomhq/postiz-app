@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FC, Fragment, useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -67,7 +67,7 @@ export const ApprovedAppsComponent: FC = () => {
         <div className="text-customColor18 mt-[4px]">
           {t(
             'apps_you_have_authorized',
-            'Applications you have authorized to access your Postiz account.'
+            'Applications you have authorized to access your D3 Analytics account.'
           )}
         </div>
       </div>

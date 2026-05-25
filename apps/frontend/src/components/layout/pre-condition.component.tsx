@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react';
+﻿import React, { FC, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -9,7 +9,7 @@ export const PreConditionComponentModal: FC = () => {
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="whitespace-pre-line">
-        This social channel was connected previously to another Postiz account.
+        This social channel was connected previously to another D3 Analytics account.
         {'\n'}
         To continue, please fast-track your trial for an immediate charge.{'\n'}
         {'\n'}

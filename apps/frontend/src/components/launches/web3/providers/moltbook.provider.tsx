@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
@@ -37,7 +37,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
         method: 'POST',
         body: JSON.stringify({
           name: agentName.trim(),
-          description: agentDescription.trim() || 'Postiz social media scheduler',
+          description: agentDescription.trim() || 'D3 Analytics social media scheduler',
         }),
       });
 
@@ -105,7 +105,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
               name="agentName"
               disableForm={true}
               onChange={(e) => setAgentName(e.target.value)}
-              placeholder="MyPostizAgent"
+              placeholder="MyD3AnalyticsAgent"
             />
             <Input
               label={t('description_optional', 'Description (optional)')}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FC, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -32,7 +32,7 @@ export const Onboarding: FC = () => {
     }
     modalOpen.current = true;
     modal.openModal({
-      // title: t('onboarding', 'Welcome to Postiz'),
+      // title: t('onboarding', 'Welcome to D3 Analytics'),
       withCloseButton: true,
       closeOnEscape: false,
       removeLayout: true,

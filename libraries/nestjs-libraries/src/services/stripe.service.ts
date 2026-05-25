@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+﻿import Stripe from 'stripe';
 import { Injectable } from '@nestjs/common';
 import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -166,7 +166,7 @@ export class StripeService {
 
     const users = await this._organizationService.getTeam(organization.id);
     const customer = await stripe.customers.create({
-      email: users.users[0].user.email.indexOf('@') > -1 ? users.users[0].user.email : `${users.users[0].user.email}@postiz.com`,
+      email: users.users[0].user.email.indexOf('@') > -1 ? users.users[0].user.email : `${users.users[0].user.email}@d3analytics.vercel.app`,
       name: organization.name,
     });
     await this._subscriptionService.updateCustomerId(
@@ -332,7 +332,7 @@ export class StripeService {
       latestInvoice?.status === 'uncollectible';
 
     if (hasFailedPayment) {
-      // Payment already failed — cancel immediately and delete subscription
+      // Payment already failed â€” cancel immediately and delete subscription
       await stripe.subscriptions.cancel(sub.id);
       await this._subscriptionService.deleteSubscription(customer);
 
@@ -342,7 +342,7 @@ export class StripeService {
       };
     }
 
-    // Payment succeeded — cancel at end of billing period
+    // Payment succeeded â€” cancel at end of billing period
     const { cancel_at } = await stripe.subscriptions.update(sub.id, {
       cancel_at_period_end: true,
       metadata: { service: 'gitroom', id },
@@ -431,7 +431,7 @@ export class StripeService {
 
     try {
       await stripe.customers.update(customer, {
-        email: user.email.indexOf('@') > -1 ? user.email : `${user.email}@postiz.com`,
+        email: user.email.indexOf('@') > -1 ? user.email : `${user.email}@d3analytics.vercel.app`,
         ...(body.dub
           ? {
               metadata: {

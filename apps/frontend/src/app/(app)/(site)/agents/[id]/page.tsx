@@ -1,8 +1,8 @@
-import { Metadata } from 'next';
+﻿import { Metadata } from 'next';
 import { Agent } from '@gitroom/frontend/components/agents/agent';
 import { AgentChat } from '@gitroom/frontend/components/agents/agent.chat';
 export const metadata: Metadata = {
-  title: 'Postiz - Agent',
+  title: 'D3 Analytics - Agent',
   description: '',
 };
 export default async function Page() {

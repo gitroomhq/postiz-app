@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { FC, useCallback } from 'react';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -44,7 +44,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
             data-tooltip-id="tooltip"
             data-tooltip-content={`
             ${t('logout_from', 'Logout from')}${' '}
-            ${isGeneral ? ' Postiz' : ' Gitroom'}
+            ${' D3 Analytics'}
             `}
           >
             <path
@@ -55,7 +55,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
         ) : (
           <span className="text-red-400">
             {t('logout_from', 'Logout from')}
-            {isGeneral ? ' Postiz' : ' Gitroom'}
+            {' D3 Analytics'}
           </span>
         )}
       </div>
