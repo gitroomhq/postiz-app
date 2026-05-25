@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 export const metadata: Metadata = {
   title: 'D3 Analytics — All your social analytics in one place',
   description:
