@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, { FC, useCallback, useMemo } from 'react';

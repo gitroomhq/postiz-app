@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { FC, useCallback } from 'react';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';

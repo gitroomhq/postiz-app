@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';

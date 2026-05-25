@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';

@@ -1,4 +1,4 @@
-﻿import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
+import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';

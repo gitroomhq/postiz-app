@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';

@@ -1,4 +1,4 @@
-﻿import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
