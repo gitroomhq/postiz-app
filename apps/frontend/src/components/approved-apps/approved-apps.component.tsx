@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { FC, Fragment, useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';

@@ -1,4 +1,4 @@
-﻿{
+{
   "calendar": "ÐšÐ°Ð»ÐµÐ½Ð´Ð°Ñ€ÑŒ",
   "webhooks": "Ð’ÐµÐ±Ñ…ÑƒÐºÐ¸",
   "webhooks_are_a_way_to_get_notified_when_something_happens_in_postiz_via_an_http_request": "Ð’ÐµÐ±Ñ…ÑƒÐºÐ¸ â€” ÑÑ‚Ð¾ ÑÐ¿Ð¾ÑÐ¾Ð± Ð¿Ð¾Ð»ÑƒÑ‡Ð°Ñ‚ÑŒ ÑƒÐ²ÐµÐ´Ð¾Ð¼Ð»ÐµÐ½Ð¸Ñ Ð¾ ÑÐ¾Ð±Ñ‹Ñ‚Ð¸ÑÑ… Ð² D3 Analytics Ñ‡ÐµÑ€ÐµÐ· HTTP-Ð·Ð°Ð¿Ñ€Ð¾Ñ.",

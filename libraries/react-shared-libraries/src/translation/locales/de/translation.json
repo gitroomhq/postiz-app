@@ -1,4 +1,4 @@
-﻿{
+{
   "calendar": "Kalender",
   "webhooks": "Webhooks",
   "webhooks_are_a_way_to_get_notified_when_something_happens_in_postiz_via_an_http_request": "Webhooks sind eine MÃ¶glichkeit, benachrichtigt zu werden, wenn etwas in D3 Analytics passiert,\n Ã¼ber eine HTTP-Anfrage.",
