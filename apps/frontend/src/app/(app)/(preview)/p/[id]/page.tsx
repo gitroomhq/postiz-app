@@ -1,4 +1,4 @@
-import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+﻿import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
@@ -16,7 +16,7 @@ import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creat
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
+  title: `D3 Analytics Preview`,
   description: '',
 };
 export default async function Auth(
@@ -58,7 +58,7 @@ export default async function Auth(
                 >
                   <div className="max-w-[55px]">
                     <SafeImage
-                      src={'/postiz.svg'}
+                      src={'/d3-logo.svg'}
                       width={55}
                       height={55}
                       alt="Logo"

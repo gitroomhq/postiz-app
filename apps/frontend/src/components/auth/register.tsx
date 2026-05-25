@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -219,7 +219,7 @@ export function RegisterAfter({
                 )}
                 &nbsp;
                 <a
-                  href={`https://postiz.com/terms`}
+                  href={`/terms`}
                   className="underline hover:font-bold"
                   rel="nofollow"
                 >
@@ -228,7 +228,7 @@ export function RegisterAfter({
                 &nbsp;
                 {t('and', 'and')}&nbsp;
                 <a
-                  href={`https://postiz.com/privacy`}
+                  href={`/privacy`}
                   rel="nofollow"
                   className="underline hover:font-bold"
                 >

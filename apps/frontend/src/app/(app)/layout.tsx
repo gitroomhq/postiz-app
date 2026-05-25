@@ -40,11 +40,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" sizes="any" />
         {!!process.env.DATAFAST_WEBSITE_ID && (
           <Script
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
-            data-domain="postiz.com"
+            data-domain="d3analytics.vercel.app"
             src="https://datafa.st/js/script.js"
             strategy="afterInteractive"
           />
@@ -100,9 +101,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <DubAnalytics />
             <FacebookComponent />
             <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
-            <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-            >
+            <Plausible domain="d3analytics.vercel.app">
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}

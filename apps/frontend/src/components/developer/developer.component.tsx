@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -213,19 +213,19 @@ export const DeveloperComponent: FC = () => {
     return null;
   }
 
-  // No app yet — show create prompt
+  // No app yet â€” show create prompt
   if (!app && !creating) {
     return (
       <div className="flex flex-col gap-[40px]">
         <div className="text-[14px] text-textColor leading-[1.7]">
           {t(
             'oauth_app_note_line1',
-            'Create an OAuth App to let other Postiz users authorize your product to post on their behalf.'
+            'Create an OAuth App to let other D3 Analytics users authorize your product to post on their behalf.'
           )}
           <br />
           {t(
             'oauth_app_note_line2',
-            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
+            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does â€” API, MCP, and CLI.'
           )}
         </div>
         <div className="bg-newBgColorInner rounded-[12px] border border-newBorder overflow-hidden">
@@ -237,7 +237,7 @@ export const DeveloperComponent: FC = () => {
               <div className="text-[13px] text-customColor18 mt-[2px]">
                 {t(
                   'create_an_oauth_application',
-                  'Create an OAuth application to allow third-party integrations with Postiz on behalf of your users.'
+                  'Create an OAuth application to allow third-party integrations with D3 Analytics on behalf of your users.'
                 )}
               </div>
             </div>
@@ -273,12 +273,12 @@ export const DeveloperComponent: FC = () => {
         <div className="text-[14px] text-textColor leading-[1.7]">
           {t(
             'oauth_app_note_line1',
-            'Create an OAuth App to let other Postiz users authorize your product to post on their behalf.'
+            'Create an OAuth App to let other D3 Analytics users authorize your product to post on their behalf.'
           )}
           <br />
           {t(
             'oauth_app_note_line2',
-            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
+            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does â€” API, MCP, and CLI.'
           )}
         </div>
         <div className="bg-newBgColorInner rounded-[12px] border border-newBorder overflow-hidden">
@@ -376,18 +376,18 @@ export const DeveloperComponent: FC = () => {
     );
   }
 
-  // App exists — show details
+  // App exists â€” show details
   return (
     <div className="flex flex-col gap-[40px]">
       <div className="text-[14px] text-textColor leading-[1.7]">
         {t(
           'oauth_app_note_line1',
-          'Create an OAuth App to let other Postiz users authorize your product to post on their behalf.'
+          'Create an OAuth App to let other D3 Analytics users authorize your product to post on their behalf.'
         )}
         <br />
         {t(
           'oauth_app_note_line2',
-          'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
+          'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does â€” API, MCP, and CLI.'
         )}
       </div>
       {/* App details / edit */}
