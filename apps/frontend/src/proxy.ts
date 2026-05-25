@@ -43,6 +43,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
   }
 
+  // Public marketing/legal pages — allow without auth and without the
+  // implicit `/` -> `/launches` redirect below. These pages live in the
+  // (public) route group and must be reachable by anonymous visitors
+  // (required for Meta/TikTok developer review of privacy & terms URLs).
+  if (
+    nextUrl.pathname === '/' ||
+    nextUrl.pathname === '/privacy' ||
+    nextUrl.pathname === '/terms'
+  ) {
+    return topResponse;
+  }
+
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
