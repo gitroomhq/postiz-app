@@ -10,7 +10,7 @@ export const DubAnalytics = () => {
   return (
     <DubAnalyticsIn
       domainsConfig={{
-        refer: 'd3analytics.vercel.app',
+        refer: 'd3-analytics.vercel.app',
       }}
     />
   );

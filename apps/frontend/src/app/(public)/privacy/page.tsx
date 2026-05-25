@@ -32,8 +32,8 @@ export default function PrivacyPage() {
         &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your
         privacy. This Privacy Policy explains how we collect, use, store, and disclose your personal
         information when you use our website at{' '}
-        <a className={linkBlue} href="https://d3analytics.vercel.app">
-          d3analytics.vercel.app
+        <a className={linkBlue} href="https://d3-analytics.vercel.app">
+          d3-analytics.vercel.app
         </a>{' '}
         and our related social media analytics services (collectively, the &ldquo;Service&rdquo;).
       </p>
@@ -207,8 +207,8 @@ export default function PrivacyPage() {
       <p className={paragraph}>
         You can exercise most of these rights directly from your account settings, or by emailing
         us at{' '}
-        <a className={linkBlue} href="mailto:privacy@d3analytics.vercel.app">
-          privacy@d3analytics.vercel.app
+        <a className={linkBlue} href="mailto:privacy@d3-analytics.vercel.app">
+          privacy@d3-analytics.vercel.app
         </a>
         . We will respond to your request within thirty (30) days.
       </p>
@@ -280,8 +280,8 @@ export default function PrivacyPage() {
         </p>
         <p className="text-[14px] text-[#c8c8c8]">
           Email:{' '}
-          <a className={linkBlue} href="mailto:privacy@d3analytics.vercel.app">
-            privacy@d3analytics.vercel.app
+          <a className={linkBlue} href="mailto:privacy@d3-analytics.vercel.app">
+            privacy@d3-analytics.vercel.app
           </a>
         </p>
       </div>

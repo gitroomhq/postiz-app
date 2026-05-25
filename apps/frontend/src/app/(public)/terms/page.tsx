@@ -33,8 +33,8 @@ export default function TermsPage() {
         <strong className="text-white">D3 Analytics</strong> (&ldquo;D3 Analytics&rdquo;,
         &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) governing your access to and use
         of the D3 Analytics website at{' '}
-        <a className={linkBlue} href="https://d3analytics.vercel.app">
-          d3analytics.vercel.app
+        <a className={linkBlue} href="https://d3-analytics.vercel.app">
+          d3-analytics.vercel.app
         </a>{' '}
         and our related social media analytics services (collectively, the &ldquo;Service&rdquo;).
       </p>
@@ -337,8 +337,8 @@ export default function TermsPage() {
         </p>
         <p className="text-[14px] text-[#c8c8c8]">
           Email:{' '}
-          <a className={linkBlue} href="mailto:legal@d3analytics.vercel.app">
-            legal@d3analytics.vercel.app
+          <a className={linkBlue} href="mailto:legal@d3-analytics.vercel.app">
+            legal@d3-analytics.vercel.app
           </a>
         </p>
       </div>
