@@ -50,9 +50,9 @@ interface Props {
 }
 
 const inputClass =
-  'w-full px-[14px] py-[10px] rounded-[8px] bg-[#0E0E0E] border border-[#252525] text-[14px] text-white placeholder:text-[#696868] focus:outline-none focus:border-[#1D4ED8]/60 transition-colors';
+  'w-full px-[14px] py-[10px] bg-lamboIron border border-[#202020] text-[14px] text-white placeholder:text-lamboAsh focus:outline-none focus:border-lamboGold transition-colors';
 
-const labelClass = 'block text-[12px] uppercase tracking-[1px] text-[#9c9c9c] mb-[6px]';
+const labelClass = 'block text-[10px] uppercase tracking-[0.225px] text-lamboAsh mb-[6px]';
 
 function slugify(value: string): string {
   return value
@@ -113,7 +113,7 @@ export function CreatorForm({ mode, initial }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[24px]">
-      <div className="p-[24px] rounded-[12px] bg-[#1A1919] border border-[#252525] flex flex-col gap-[20px]">
+      <div className="p-[24px] bg-lamboCharcoal flex flex-col gap-[20px]">
         <div>
           <label className={labelClass} htmlFor="creator-name">
             Display name
@@ -142,19 +142,19 @@ export function CreatorForm({ mode, initial }: Props) {
             onChange={(e) => onSlugChange(e.target.value)}
             required
           />
-          <p className="text-[11px] text-[#696868] mt-[6px]">
+          <p className="text-[10px] text-lamboAsh mt-[6px] uppercase tracking-[0.225px]">
             Public URL will be{' '}
-            <span className="text-[#9c9c9c]">/creators/{values.slug || '…'}</span>
+            <span className="text-white">/creators/{values.slug || '…'}</span>
           </p>
         </div>
       </div>
 
-      <div className="p-[24px] rounded-[12px] bg-[#1A1919] border border-[#252525] flex flex-col gap-[16px]">
+      <div className="p-[24px] bg-lamboCharcoal flex flex-col gap-[16px]">
         <div>
-          <h2 className="text-[16px] font-semibold text-white mb-[4px]">
+          <h2 className="text-[24px] text-white mb-[4px] uppercase tracking-tight">
             Platform URLs
           </h2>
-          <p className="text-[12px] text-[#9c9c9c]">
+          <p className="text-[14px] text-lamboAsh">
             Add one or more profile URLs. Leave any platform blank if not
             applicable.
           </p>
@@ -177,7 +177,7 @@ export function CreatorForm({ mode, initial }: Props) {
         ))}
 
         {!hasAnyUrl && (
-          <p className="text-[11px] text-[#f97066]">
+          <p className="text-[10px] text-lamboAsh uppercase tracking-[0.225px]">
             Add at least one platform URL to save.
           </p>
         )}
@@ -187,14 +187,14 @@ export function CreatorForm({ mode, initial }: Props) {
         <button
           type="button"
           onClick={() => router.push('/admin')}
-          className="px-[20px] py-[12px] rounded-[10px] bg-[#0E0E0E] border border-[#252525] hover:border-[#454444] text-white text-[14px] font-semibold transition-colors"
+          className="text-[12px] text-lamboAsh underline uppercase tracking-[0.14px] hover:text-white transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!canSubmit}
-          className="px-[20px] py-[12px] rounded-[10px] bg-[#1D4ED8] hover:bg-[#1842b8] disabled:bg-[#252525] disabled:text-[#696868] disabled:cursor-not-allowed text-white text-[14px] font-semibold transition-colors"
+          className="px-[24px] py-[12px] bg-lamboGold hover:bg-[#917300] disabled:bg-lamboIron disabled:text-lamboAsh disabled:cursor-not-allowed text-black text-[14px] uppercase tracking-[0.14px] transition-colors"
         >
           {mode === 'create' ? 'Add creator' : 'Save changes'}
         </button>

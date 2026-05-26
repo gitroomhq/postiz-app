@@ -135,7 +135,7 @@ export const LanguageComponent = () => {
   return (
     <div
       onClick={openModal}
-      className="rounded-full overflow-hidden h-[22px] w-[22px] relative cursor-pointer"
+      className="overflow-hidden h-[22px] w-[22px] relative cursor-pointer"
     >
       <ReactCountryFlag
         countryCode={getCountryCodeForFlag(currentLanguage)}

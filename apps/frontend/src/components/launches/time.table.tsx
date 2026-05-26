@@ -130,9 +130,9 @@ export const TimeTable: FC<{
   return (
     <div className="relative w-full max-w-[400px] mx-auto">
       {/* Add Time Slot Section */}
-      <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
-        <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
-          <DelayIcon size={18} className="text-[#612BD3]" />
+      <div className="bg-newBgColorInner p-[20px] border border-newTableBorder">
+        <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px] uppercase tracking-tight font-lambo">
+          <DelayIcon size={18} className="text-[#FFEE00]" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
 
@@ -172,7 +172,7 @@ export const TimeTable: FC<{
           <button
             type="button"
             onClick={addHour}
-            className="h-[42px] px-[16px] bg-[#612BD3] hover:bg-[#7640e0] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
+            className="h-[42px] px-[16px] bg-lamboGold hover:bg-[#917300] transition-colors flex items-center gap-[6px] text-lamboBlack text-[14px] font-medium uppercase tracking-[0.14px]"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}
@@ -187,7 +187,7 @@ export const TimeTable: FC<{
         </div>
 
         {times.length === 0 ? (
-          <div className="text-center py-[32px] text-newTextColor/40 text-[14px] border border-dashed border-newTableBorder rounded-[12px]">
+          <div className="text-center py-[32px] text-newTextColor/40 text-[14px] border border-dashed border-newTableBorder">
             {t('no_time_slots', 'No time slots added yet')}
           </div>
         ) : (
@@ -197,13 +197,13 @@ export const TimeTable: FC<{
                 key={`${timeSlot.value}-${index}`}
                 className={clsx(
                   'group flex items-center justify-between',
-                  'h-[48px] px-[16px] rounded-[8px]',
+                  'h-[48px] px-[16px]',
                   'bg-newBgColorInner border border-newTableBorder',
-                  'hover:border-[#612BD3]/40 transition-colors'
+                  'hover:border-lamboGold/40 transition-colors'
                 )}
               >
                 <div className="flex items-center gap-[12px]">
-                  <div className="w-[8px] h-[8px] rounded-full bg-[#612BD3]" />
+                  <div className="w-[8px] h-[8px] rounded-full bg-lamboGold" />
                   <span className="text-[15px] font-medium tabular-nums">
                     {timeSlot.formatted}
                   </span>
@@ -211,7 +211,7 @@ export const TimeTable: FC<{
                 <button
                   type="button"
                   onClick={removeSlot(index)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-[8px] hover:bg-red-500/10 rounded-[6px] text-red-400 hover:text-red-500"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-[8px] hover:bg-red-500/10 text-red-400 hover:text-red-500"
                 >
                   <TrashIcon size={16} />
                 </button>
@@ -223,7 +223,7 @@ export const TimeTable: FC<{
 
       {/* Save Button */}
       <div className="mt-[24px]">
-        <Button type="button" className="w-full rounded-[8px]" onClick={save}>
+        <Button type="button" className="w-full" onClick={save}>
           {t('save_changes', 'Save Changes')}
         </Button>
       </div>

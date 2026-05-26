@@ -52,7 +52,7 @@ export function ForgotReturn({ token }: { token: string }) {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div>
-          <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+          <h1 className="text-[40px] text-start mb-[16px] cursor-pointer font-lambo uppercase leading-[1.15] text-white">
             {t('forgot_password_1', 'Forgot Password')}
           </h1>
         </div>
@@ -80,8 +80,8 @@ export function ForgotReturn({ token }: { token: string }) {
                   {t('change_password', 'Change Password')}
                 </Button>
               </div>
-              <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="underline cursor-pointer">
+              <p className="mt-[16px] text-[14px] text-lamboAsh">
+                <Link href="/auth/login" className="text-white underline hover:text-lamboGold transition-colors cursor-pointer">
                   {t('go_back_to_login', 'Go back to login')}
                 </Link>
               </p>
@@ -89,14 +89,14 @@ export function ForgotReturn({ token }: { token: string }) {
           </>
         ) : (
           <>
-            <div className="text-start mt-6">
+            <div className="text-start mt-[24px] text-[16px] leading-[1.56] text-[#c8c8c8]">
               {t(
                 'we_successfully_reset_your_password_you_can_now_login_with_your',
                 'We successfully reset your password. You can now login with your'
               )}
             </div>
-            <p className="mt-4 text-sm">
-              <Link href="/auth/login" className="underline cursor-pointer">
+            <p className="mt-[16px] text-[14px] text-lamboAsh">
+              <Link href="/auth/login" className="text-white underline hover:text-lamboGold transition-colors cursor-pointer">
                 {t('go_back_to_login', 'Go back to login')}
               </Link>
             </p>

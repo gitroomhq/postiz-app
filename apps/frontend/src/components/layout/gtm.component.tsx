@@ -41,9 +41,9 @@ export const GoogleTagManagerComponent: FC<{ gtmId?: string }> = ({
   }
   return (
     <>
-      <Script src="/g.js" strategy="afterInteractive" />
+      <Script src="/g.js" strategy="lazyOnload" />
 
-      <Script id="google-ads-gtag" strategy="afterInteractive">
+      <Script id="google-ads-gtag" strategy="lazyOnload">
         {`
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}

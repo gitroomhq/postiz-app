@@ -161,8 +161,8 @@ export const TagsComponentInner: FC<{
     <div
       ref={ref}
       className={clsx(
-        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-[#612BD3]' : 'border-newTextColor/10'
+        'border justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        isOpen ? 'border-lamboGold' : 'border-newTextColor/10'
       )}
     >
       <div
@@ -178,7 +178,7 @@ export const TagsComponentInner: FC<{
           ) : (
             <>
               <div
-                className="h-full flex justify-center items-center px-[8px] rounded-[4px]"
+                className="h-full flex justify-center items-center px-[8px]"
                 style={{ backgroundColor: tagValue[0].color }}
               >
                 <span className="text-shadow-tags text-[#fff]">
@@ -225,7 +225,7 @@ export const TagsComponentInner: FC<{
               />
               <div className="h-full flex items-center flex-1 break-all">
                 <span
-                  className="text-[#fff] px-[8px] rounded-[8px] text-shadow-tags"
+                  className="text-[#fff] px-[8px] text-shadow-tags"
                   style={{ backgroundColor: p.color }}
                 >
                   {p.name}
@@ -243,7 +243,7 @@ export const TagsComponentInner: FC<{
           ))}
           <div
             onClick={addTag}
-            className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#612BD3] text-white"
+            className="cursor-pointer gap-[8px] flex w-full h-[34px] mt-[12px] px-[16px] justify-center items-center bg-lamboGold text-lamboBlack uppercase tracking-[0.14px]"
           >
             <div>
               <PlusIcon />
@@ -266,11 +266,11 @@ const Check: FC<{ value: boolean; onChange: (value: boolean) => void }> = ({
     <div
       onClick={() => onChange(!value)}
       className={clsx(
-        'text-[10px] font-[500] text-center flex border border-btnSimple rounded-[6px] min-w-[20px] min-h-[20px] w-[20px] h-[20px] justify-center items-center',
-        value && 'bg-[#612BD3]'
+        'text-[10px] font-[500] text-center flex border border-btnSimple min-w-[20px] min-h-[20px] w-[20px] h-[20px] justify-center items-center',
+        value && 'bg-lamboGold'
       )}
     >
-      {value ? <CheckmarkIcon className="text-white" /> : ''}
+      {value ? <CheckmarkIcon className="text-lamboBlack" /> : ''}
     </div>
   );
 };
@@ -444,19 +444,19 @@ export const TagsComponentA: FC<{
             );
             return (
               <div
-                className={`min-w-[50px] float-left ms-[4px] p-[3px] rounded-sm relative`}
+                className={`min-w-[50px] float-left ms-[4px] p-[3px] relative`}
                 style={{
                   backgroundColor: findTag?.color,
                 }}
               >
                 <div
-                  className="absolute -top-[5px] start-[10px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] start-[10px] text-[12px] text-red-600 bg-white px-[3px]"
                   onClick={edit(findTag)}
                 >
                   {t('edit', 'Edit')}
                 </div>
                 <div
-                  className="absolute -top-[5px] -start-[5px] text-[12px] text-red-600 bg-white px-[3px] rounded-full"
+                  className="absolute -top-[5px] -start-[5px] text-[12px] text-red-600 bg-white px-[3px]"
                   onClick={() => onDelete(findIndex)}
                 >
                   X

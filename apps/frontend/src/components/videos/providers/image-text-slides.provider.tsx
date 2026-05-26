@@ -116,7 +116,7 @@ const VoiceSelector: FC = () => {
           <div
             key={voice.id}
             className={clsx(
-              'flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer',
+              'flex items-center justify-between p-3 border transition-colors cursor-pointer',
               selectedVoice === voice.id
                 ? 'border-primary bg-primary/10'
                 : 'border-tableBorder bg-sixth hover:bg-seventh'

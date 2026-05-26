@@ -165,14 +165,14 @@ export const TeamsComponent = () => {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('team_members', 'Team Members')}</h3>
+      <h3 className="text-[20px] font-lambo uppercase tracking-tight">{t('team_members', 'Team Members')}</h3>
       <div className="text-customColor18 mt-[4px]">
         {t(
           'invite_your_assistant_or_team_member_to_manage_your_account',
           'Invite your assistant or team member to manage your account'
         )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
+      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border p-[24px] flex flex-col gap-[24px]">
         <div className="flex flex-col gap-[16px]">
           {(data || []).map((p) => (
             <div key={p.user.id} className="flex items-center">
@@ -189,7 +189,7 @@ export const TeamsComponent = () => {
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">
                   <Button
-                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
+                    className={`!bg-customColor3 !h-[24px] border border-customColor21 text-[12px]`}
                     onClick={remove(p)}
                     secondary={true}
                   >

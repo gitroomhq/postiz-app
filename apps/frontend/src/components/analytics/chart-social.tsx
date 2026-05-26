@@ -28,25 +28,15 @@ export const ChartSocial: FC<{
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);
 
-  const colorSchemes = {
-    purple: {
-      start: 'rgba(97, 43, 211, 0.8)',
-      end: 'rgba(97, 43, 211, 0.1)',
-      border: 'rgb(97, 43, 211)',
-    },
-    green: {
-      start: 'rgba(50, 213, 131, 0.8)',
-      end: 'rgba(50, 213, 131, 0.1)',
-      border: 'rgb(50, 213, 131)',
-    },
-    blue: {
-      start: 'rgba(29, 155, 240, 0.8)',
-      end: 'rgba(29, 155, 240, 0.1)',
-      border: 'rgb(29, 155, 240)',
-    },
+  // Lamborghini palette is monochrome + gold only. All chart variants route
+  // to Primary Yellow (#FFEE00) per DESIGN.md §2 — no chromatic accents.
+  const goldScheme = {
+    start: 'rgba(255, 238, 0, 0.6)',
+    end: 'rgba(255, 238, 0, 0)',
+    border: '#FFEE00',
   };
 
-  const colors = colorSchemes[color];
+  const colors = goldScheme;
 
   useEffect(() => {
     const ctx = ref.current.getContext('2d');
@@ -79,12 +69,32 @@ export const ChartSocial: FC<{
           y: {
             beginAtZero: true,
             display: false,
+            grid: {
+              color: '#202020',
+            },
+            ticks: {
+              color: '#7D7D7D',
+              font: {
+                family: 'Archivo',
+              },
+            },
           },
           x: {
             display: false,
+            grid: {
+              color: '#202020',
+            },
             ticks: {
               stepSize: 10,
               maxTicksLimit: 7,
+              color: '#7D7D7D',
+              font: {
+                family: 'Archivo',
+              },
+              callback: function (value: any) {
+                const label = this.getLabelForValue(value);
+                return typeof label === 'string' ? label.toUpperCase() : label;
+              },
             },
           },
         },
@@ -94,21 +104,23 @@ export const ChartSocial: FC<{
           },
           tooltip: {
             enabled: true,
-            backgroundColor: mode === 'dark' ? '#1e1d1d' : '#fff',
-            titleColor: mode === 'dark' ? '#fff' : '#000',
-            bodyColor: mode === 'dark' ? '#9c9c9c' : '#777',
-            borderColor: mode === 'dark' ? '#2b2b2b' : '#e7e9eb',
+            backgroundColor: '#000000',
+            titleColor: '#FFFFFF',
+            bodyColor: '#7D7D7D',
+            borderColor: '#FFEE00',
             borderWidth: 1,
-            padding: 10,
-            cornerRadius: 8,
+            padding: 8,
+            cornerRadius: 0,
             displayColors: false,
             titleFont: {
               size: 12,
               weight: 'normal',
+              family: 'Archivo',
             },
             bodyFont: {
               size: 14,
-              weight: 'bold',
+              weight: 'normal',
+              family: 'Archivo',
             },
           },
         },
@@ -127,7 +139,7 @@ export const ChartSocial: FC<{
             pointRadius: 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: colors.border,
-            pointHoverBorderColor: mode === 'dark' ? '#1e1d1d' : '#fff',
+            pointHoverBorderColor: '#000000',
             pointHoverBorderWidth: 2,
           },
         ],

@@ -269,14 +269,14 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
         </div>
 
         <div className="relative z-10 text-center">
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-green-500/20 flex items-center justify-center">
+          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-lamboGold/20 flex items-center justify-center">
             <svg
-              className="w-[40px] h-[40px] text-green-500"
+              className="w-[40px] h-[40px] text-lamboGold"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -290,7 +290,7 @@ export const ContinueIntegration: FC<{
           <div className="text-[28px] font-semibold mb-[12px]">
             {t('channel_connected', 'Channel Connected!')}
           </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
+          <div className="text-[16px] text-lamboAsh max-w-[400px]">
             {successState.message ||
               t(
                 'channel_connected_description',
@@ -308,18 +308,18 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
         </div>
 
         {/* Content */}
         <div className="relative z-10 w-full max-w-[550px] mx-auto px-[20px]">
-          <div className="bg-[#1A1919] rounded-[16px] p-[32px] flex flex-col gap-[24px]">
+          <div className="bg-lamboCharcoal p-[32px] flex flex-col gap-[24px]">
             <div className="flex flex-col gap-[8px] text-center">
               <h1 className="text-[24px] font-semibold">
                 {t('configure_your_channel', 'Configure Your Channel')}
               </h1>
-              <p className="text-[14px] text-gray-400">
+              <p className="text-[14px] text-lamboAsh">
                 {t(
                   'select_the_page_or_account',
                   `Select the ${providerDisplayName} page or account you want to connect.`
@@ -366,14 +366,14 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
         </div>
 
         <div className="relative z-10 text-center">
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
+          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-[#FF4D4D]/20 flex items-center justify-center">
             <svg
-              className="w-[40px] h-[40px] text-red-500"
+              className="w-[40px] h-[40px] text-[#FF4D4D]"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -387,7 +387,7 @@ export const ContinueIntegration: FC<{
           <div className="text-[28px] font-semibold mb-[12px]">
             {t('could_not_add_provider', 'Could not add provider')}
           </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
+          <div className="text-[16px] text-lamboAsh max-w-[400px]">
             {errorMessage ||
               t(
                 'you_are_being_redirected_back',
@@ -405,20 +405,20 @@ export const ContinueIntegration: FC<{
     <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
       {/* Background gradient decoration */}
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 text-center">
         <div className="text-[28px] font-semibold mb-[12px]">
           {t('adding_channel', 'Adding Channel')}
         </div>
-        <div className="text-[16px] text-gray-400">
+        <div className="text-[16px] text-lamboAsh">
           {t('please_wait', 'Please wait while we connect your account...')}
         </div>
         {/* Loading spinner */}
         <div className="mt-[32px] flex justify-center">
-          <div className="w-[48px] h-[48px] border-[3px] border-[#612BD3] border-t-transparent rounded-full animate-spin" />
+          <div className="w-[48px] h-[48px] border-[3px] border-[#FFEE00] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     </div>

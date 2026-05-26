@@ -14,8 +14,10 @@ export const MenuItem: FC<{ label: string; icon: ReactNode; path: string; onClic
   const isActive = currentPath.indexOf(path) === 0;
 
   const className = clsx(
-    'w-full minCustom:h-[54px] custom:h-[30px] py-[8px] px-[6px] gap-[4px] flex flex-col custom:flex-row text-[10px] font-[600] items-center minCustom:justify-center rounded-[12px] hover:text-textItemFocused hover:bg-boxFocused',
-    isActive ? 'text-textItemFocused bg-boxFocused' : 'text-textItemBlur'
+    'relative w-full minCustom:h-[54px] custom:h-[30px] py-[8px] px-[6px] gap-[4px] flex flex-col custom:flex-row text-[10px] font-[400] items-center minCustom:justify-center uppercase tracking-[0.14px] border-l-2 transition-colors hover:text-lamboGold hover:bg-lamboIron',
+    isActive
+      ? 'text-lamboGold bg-lamboIron border-lamboGold'
+      : 'text-lamboAsh border-transparent'
   );
 
   if (onClick) {

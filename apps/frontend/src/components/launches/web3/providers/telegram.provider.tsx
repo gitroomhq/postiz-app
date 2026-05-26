@@ -75,7 +75,7 @@ export const TelegramProvider: FC<Web3ProviderInterface> = (props) => {
         {!step ? (
           <div className="w-full mt-[16px]" onClick={loadAll}>
             <div
-              className={`cursor-pointer bg-[#2EA6DD] h-[44px] rounded-[4px] flex justify-center items-center text-white gap-[4px]`}
+              className={`cursor-pointer bg-[#2EA6DD] h-[44px] flex justify-center items-center text-white gap-[4px]`}
             >
               <svg
                 width="51"

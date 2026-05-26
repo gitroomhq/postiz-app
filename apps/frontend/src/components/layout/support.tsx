@@ -20,7 +20,7 @@ export const Support = () => {
   return (
     <div
       id="support-discord"
-      className="bg-customColor39 w-[194px] h-[58px] fixed end-[20px] bottom-[20px] z-[500] text-[16px] text-customColor40 rounded-[30px] !rounded-br-[0] cursor-pointer flex justify-center items-center gap-[10px]"
+      className="bg-lamboGold hover:bg-lamboGoldDark w-[194px] h-[58px] fixed end-[20px] bottom-[20px] z-[500] text-[14px] text-lamboBlack cursor-pointer flex justify-center items-center gap-[10px] uppercase tracking-[0.14px] font-[500] transition-colors"
       onClick={() => window.open(discordUrl)}
     >
       <div>

@@ -319,7 +319,7 @@ export const DayView = () => {
             </div>
             <div
               key={option[0].time}
-              className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
+              className="min-h-[60px] flex justify-center items-center gap-[10px] mb-[20px]"
             >
               <CalendarContext.Provider
                 value={{
@@ -366,14 +366,14 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
+        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
+              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] sticky top-0 z-[20]"
             >
-              <div className="text-[14px] font-[500] text-newTableText">
+              <div className="font-lambo uppercase text-[10px] tracking-[0.225px] text-lamboAsh font-[500]">
                 {day.name}
               </div>
               <div
@@ -392,7 +392,7 @@ export const WeekView = () => {
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
+              <div className="p-2 pe-4 text-center items-center justify-center flex font-lambo uppercase text-[10px] tracking-[0.225px] text-lamboAsh">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {localizedDays.map((day, indexDay) => (
@@ -465,13 +465,13 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] sticky top-0"
             >
-              <div>{day}</div>
+              <div className="font-lambo uppercase text-[10px] tracking-[0.225px] text-lamboAsh">{day}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
@@ -828,12 +828,12 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full relative',
+        'flex flex-col w-full min-h-full relative bg-lamboBlack hover:bg-lamboIron transition-colors',
         isBeforeNow && 'repeated-strip',
         loading && 'animate-pulse',
         isBeforeNow
           ? 'cursor-not-allowed'
-          : 'border border-newTextColor/5 rounded-[8px]'
+          : 'border border-newTextColor/5'
       )}
       ref={drop as any}
     >
@@ -842,8 +842,8 @@ export const CalendarColumn: FC<{
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
-          canDrop && 'border border-[#612BD3]'
+          'relative flex flex-col flex-1 text-white min-h-[70px]',
+          canDrop && 'border-2 border-lamboGold'
         )}
       >
         <div
@@ -855,7 +855,7 @@ export const CalendarColumn: FC<{
         >
           {loading && (
             <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
-              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+              <div className="h-full w-full bg-newSettings" />
             </div>
           )}
           {list.map((post) => (
@@ -918,17 +918,17 @@ export const CalendarColumn: FC<{
               {display !== 'day' && (
                 <div
                   className={clsx(
-                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                    'group hover:before:h-[30px] w-full h-full flex justify-center items-center text-white'
                   )}
                 >
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
                   />
                 </div>
               )}
               {display === 'day' && (
                 <div
-                  className={`w-full h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                  className={`w-full h-full py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
                 >
                   {integrations.map((selectedIntegrations) => (
                     <div
@@ -937,14 +937,13 @@ export const CalendarColumn: FC<{
                     >
                       <div
                         className={clsx(
-                          'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
+                          'relative w-[34px] h-[34px] flex justify-center items-center filter transition-all duration-500'
                         )}
                       >
                         <SafeImage
                           src={
                             selectedIntegrations.picture || '/no-picture.jpg'
                           }
-                          className="rounded-[8px]"
                           alt={selectedIntegrations.identifier}
                           width={32}
                           height={32}
@@ -958,7 +957,7 @@ export const CalendarColumn: FC<{
                         ) : (
                           <SafeImage
                             src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                            className="absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
                             alt={selectedIntegrations.identifier}
                             width={20}
                             height={20}
@@ -1039,9 +1038,9 @@ const CalendarItem: FC<{
       // @ts-ignore
       ref={dragRef}
       className={clsx(
-        'w-full flex h-full flex-1 flex-col group',
+        'w-full flex h-full flex-1 flex-col group cursor-grab active:cursor-grabbing',
         'relative',
-        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+        state === 'ERROR' && 'ring-2 ring-[#FF4D4D]'
       )}
       style={{
         opacity,
@@ -1049,7 +1048,7 @@ const CalendarItem: FC<{
     >
       {state === 'ERROR' && (
         <div
-          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] bg-[#FF4D4D] flex items-center justify-center text-lamboBlack text-[11px] font-[700] cursor-pointer"
           data-tooltip-id="tooltip"
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
         >
@@ -1066,7 +1065,10 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full flex items-center justify-center gap-[10px] px-[5px] uppercase tracking-[0.14px]',
+          state === 'PUBLISHED'
+            ? 'bg-lamboGold text-lamboBlack'
+            : 'bg-lamboCharcoal text-white border border-white/30'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -1147,18 +1149,18 @@ const CalendarItem: FC<{
       <div
         onClick={editPost}
         className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
+          'gap-[5px] w-full flex h-full flex-1 p-[8px] text-[14px] bg-newColColor',
           'relative',
           isBeforeNow && '!grayscale'
         )}
       >
         <div className={clsx('relative min-w-[20px]')}>
           <img
-            className="w-[20px] h-[20px] rounded-[8px]"
+            className="w-[20px] h-[20px]"
             src={post.integration.picture! || '/no-picture.jpg'}
           />
           <img
-            className="w-[12px] h-[12px] rounded-[8px] absolute z-10 top-[10px] end-0 border border-fifth"
+            className="w-[12px] h-[12px] absolute z-10 top-[10px] end-0 border border-fifth"
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
@@ -1290,7 +1292,7 @@ export const SetSelectionModal: FC<{
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-lg font-medium">
+      <div className="text-lg font-medium font-lambo uppercase tracking-tight">
         {t('choose_set_or_continue', 'Choose a set or continue without one')}
       </div>
 
@@ -1299,11 +1301,11 @@ export const SetSelectionModal: FC<{
           <div
             key={set.id}
             onClick={() => onSelect(set)}
-            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:transition-colors"
+            className="p-3 border border-tableBorder cursor-pointer hover:transition-colors"
           >
             <div className="font-medium">{set.name}</div>
             {set.description && (
-              <div className="text-sm text-gray-400 mt-1">
+              <div className="text-sm text-lamboAsh mt-1">
                 {set.description}
               </div>
             )}
@@ -1314,7 +1316,7 @@ export const SetSelectionModal: FC<{
       <div className="flex gap-2 pt-2 border-t border-tableBorder">
         <button
           onClick={onContinueWithoutSet}
-          className="flex-1 px-4 py-2 text-textColor rounded-lg hover:transition-colors"
+          className="flex-1 px-4 py-2 text-textColor hover:transition-colors uppercase tracking-[0.14px]"
         >
           {t('continue_without_set', 'Continue without set')}
         </button>

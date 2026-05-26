@@ -14,7 +14,7 @@ export const Bullets: FC<{
       data-tooltip-id="tooltip"
       data-tooltip-content="Bullets"
       onClick={bullet}
-      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+      className="select-none cursor-pointer w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

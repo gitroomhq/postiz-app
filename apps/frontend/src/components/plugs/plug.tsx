@@ -47,7 +47,7 @@ export const TextArea: FC<{
         placeholder={props.placeHolder}
         value={value}
         className={clsx(
-          '!min-h-40 !max-h-80 p-[24px] overflow-hidden bg-customColor2 outline-none rounded-[4px] border-fifth border'
+          '!min-h-40 !max-h-80 p-[24px] overflow-hidden bg-customColor2 outline-none border-fifth border'
         )}
         onChange={(e) => {
           onChange({
@@ -62,7 +62,7 @@ export const TextArea: FC<{
           chatApiConfigs: {},
         }}
       />
-      <div className="text-red-400 text-[12px]">
+      <div className="text-lamboGold text-[12px] uppercase tracking-[0.14px]">
         {form?.formState?.errors?.[props.name]?.message as string}
       </div>
     </>
@@ -145,7 +145,7 @@ export const PlugPop: FC<{
                   <Input
                     name={field.name}
                     label={field.description}
-                    className="w-full mt-[8px] p-[8px] border border-tableBorder rounded-md text-black"
+                    className="w-full mt-[8px] p-[8px] border border-tableBorder text-black"
                     placeholder={field.placeholder}
                     type={field.type}
                   />
@@ -198,7 +198,7 @@ export const PlugItem: FC<{
     <div
       onClick={() => addPlug(data)}
       key={plug.title}
-      className="w-full h-[300px] rounded-[8px] bg-newTableHeader hover:bg-newTableBorder"
+      className="w-full h-[300px] bg-newTableHeader hover:bg-newTableBorder"
     >
       <div key={plug.title} className="p-[16px] h-full flex flex-col flex-1">
         <div className="flex">

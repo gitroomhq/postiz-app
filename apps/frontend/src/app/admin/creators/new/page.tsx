@@ -15,17 +15,17 @@ export default function NewCreatorPage() {
       <div>
         <Link
           href="/admin"
-          className="text-[13px] text-[#9c9c9c] hover:text-white transition-colors mb-[12px] inline-block"
+          className="text-[12px] text-lamboAsh hover:text-white transition-colors mb-[12px] inline-block uppercase tracking-[0.14px]"
         >
           ← Back to creators
         </Link>
-        <p className="text-[13px] uppercase tracking-[2px] text-[#1D4ED8] font-semibold mb-[8px]">
+        <p className="text-[10px] uppercase tracking-[0.225px] text-lamboGold mb-[8px]">
           New creator
         </p>
-        <h1 className="text-[28px] md:text-[36px] font-bold text-white leading-[1.1] tracking-tight mb-[8px]">
+        <h1 className="text-[40px] md:text-[54px] text-white leading-[1.19] tracking-tight mb-[8px] uppercase">
           Add a creator
         </h1>
-        <p className="text-[14px] text-[#c8c8c8] leading-[1.6]">
+        <p className="text-[16px] text-lamboAsh leading-[1.5]">
           Give them a display name, pick a URL slug, and paste in their
           platform URLs. They show up on the public showcase as soon as the
           scraper indexes them.

@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   {
@@ -16,36 +16,131 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
-import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
-import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
-import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
-import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
-import { MediaSettingsLayout } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
-import { Toaster } from '@gitroom/react/toaster/toaster';
-import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
-import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
-import { Support } from '@gitroom/frontend/components/layout/support';
-import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
 import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
-import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
-import { AnnouncementBanner } from '@gitroom/frontend/components/layout/announcement.banner';
 import { Title } from '@gitroom/frontend/components/layout/title';
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
-import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
-import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
-import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
-import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
-import { StreakComponent } from '@gitroom/frontend/components/layout/streak.component';
-import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
-import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
-import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
-import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
+import { Toaster } from '@gitroom/react/toaster/toaster';
 
-const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500', '700'],
-  style: ['normal', 'italic'],
+// Heavy chrome / always-mounted-but-rarely-used modals — defer from initial bundle.
+const CheckPayment = dynamic(
+  () => import('@gitroom/frontend/components/layout/check.payment').then((m) => m.CheckPayment),
+  { ssr: false }
+);
+const ToolTip = dynamic(
+  () => import('@gitroom/frontend/components/layout/top.tip').then((m) => m.ToolTip),
+  { ssr: false }
+);
+const ShowMediaBoxModal = dynamic(
+  () => import('@gitroom/frontend/components/media/media.component').then((m) => m.ShowMediaBoxModal),
+  { ssr: false }
+);
+const ShowLinkedinCompany = dynamic(
+  () =>
+    import('@gitroom/frontend/components/launches/helpers/linkedin.component').then(
+      (m) => m.ShowLinkedinCompany
+    ),
+  { ssr: false }
+);
+const MediaSettingsLayout = dynamic(
+  () =>
+    import('@gitroom/frontend/components/launches/helpers/media.settings.component').then(
+      (m) => m.MediaSettingsLayout
+    ),
+  { ssr: false }
+);
+const ShowPostSelector = dynamic(
+  () =>
+    import('@gitroom/frontend/components/post-url-selector/post.url.selector').then(
+      (m) => m.ShowPostSelector
+    ),
+  { ssr: false }
+);
+const NewSubscription = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/new.subscription').then((m) => m.NewSubscription),
+  { ssr: false }
+);
+const Support = dynamic(
+  () => import('@gitroom/frontend/components/layout/support').then((m) => m.Support),
+  { ssr: false }
+);
+const ContinueProvider = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/continue.provider').then((m) => m.ContinueProvider),
+  { ssr: false }
+);
+const Impersonate = dynamic(
+  () => import('@gitroom/frontend/components/layout/impersonate').then((m) => m.Impersonate),
+  { ssr: false }
+);
+const AnnouncementBanner = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/announcement.banner').then(
+      (m) => m.AnnouncementBanner
+    ),
+  { ssr: false }
+);
+const LanguageComponent = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/language.component').then(
+      (m) => m.LanguageComponent
+    ),
+  { ssr: false }
+);
+const ChromeExtensionComponent = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/chrome.extension.component').then(
+      (m) => m.ChromeExtensionComponent
+    ),
+  { ssr: false }
+);
+const NotificationComponent = dynamic(
+  () => import('@gitroom/frontend/components/notifications/notification.component'),
+  { ssr: false }
+);
+const OrganizationSelector = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/organization.selector').then(
+      (m) => m.OrganizationSelector
+    ),
+  { ssr: false }
+);
+const StreakComponent = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/streak.component').then((m) => m.StreakComponent),
+  { ssr: false }
+);
+const PreConditionComponent = dynamic(
+  () =>
+    import('@gitroom/frontend/components/layout/pre-condition.component').then(
+      (m) => m.PreConditionComponent
+    ),
+  { ssr: false }
+);
+const AttachToFeedbackIcon = dynamic(
+  () =>
+    import('@gitroom/frontend/components/new-layout/sentry.feedback.component').then(
+      (m) => m.AttachToFeedbackIcon
+    ),
+  { ssr: false }
+);
+const FirstBillingComponent = dynamic(
+  () =>
+    import('@gitroom/frontend/components/billing/first.billing.component').then(
+      (m) => m.FirstBillingComponent
+    ),
+  { ssr: false }
+);
+const TrialTracker = dynamic(
+  () => import('@gitroom/frontend/components/layout/gtm.component').then((m) => m.TrialTracker),
+  { ssr: false }
+);
+
+const jakartaSans = Archivo({
+  weight: ['400', '500', '600', '700', '900'],
+  style: ['normal'],
   subsets: ['latin'],
 });
 
@@ -102,7 +197,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <div className="flex-1 flex gap-[8px]">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                    <div className="flex flex-col bg-newBgColorInner w-[80px]">
                       <div
                         id="left-menu"
                         className={clsx(
@@ -116,9 +211,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
+                    <div className="flex-1 bg-newBgLineColor overflow-hidden flex flex-col gap-[1px] blurMe">
                       <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                        <div className="text-[24px] font-[600] flex flex-1">
+                        <div className="text-[24px] font-[600] flex flex-1 font-lambo uppercase tracking-tight">
                           <Title />
                         </div>
                         <div className="flex gap-[20px] text-textItemBlur">

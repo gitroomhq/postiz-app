@@ -211,7 +211,7 @@ export const CreateThumbnail: FC<{
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="relative bg-black rounded-lg overflow-hidden">
+      <div className="relative bg-black overflow-hidden">
         <video
           ref={videoRef}
           src={
@@ -237,7 +237,7 @@ export const CreateThumbnail: FC<{
               step="0.1"
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 bg-fifth rounded-lg appearance-none cursor-pointer slider"
+              className="w-full h-2 bg-fifth appearance-none cursor-pointer slider"
               style={{
                 background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
                   (currentTime / duration) * 100
@@ -254,7 +254,7 @@ export const CreateThumbnail: FC<{
             <button
               onClick={captureFrame}
               disabled={isCapturing}
-              className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
             </button>
@@ -373,7 +373,7 @@ export const MediaComponentInner: FC<{
           value={altText}
           onChange={(e) => setAltText(e.target.value)}
           placeholder="Describe the image/video content..."
-          className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
+          className="w-full px-3 py-2 bg-fifth border border-tableBorder text-textColor placeholder-lamboAsh focus:outline-none focus:ring-2 focus:ring-lamboGold focus:border-transparent"
         />
       </div>
       {hasExtension(media?.path, 'mp4') && (
@@ -391,7 +391,7 @@ export const MediaComponentInner: FC<{
                     <img
                       src={newThumbnail || thumbnail}
                       alt="Current thumbnail"
-                      className="max-w-full max-h-[500px] object-contain rounded-lg border border-tableBorder"
+                      className="max-w-full max-h-[500px] object-contain border border-tableBorder"
                     />
                   </div>
                 )}
@@ -401,7 +401,7 @@ export const MediaComponentInner: FC<{
                   <button
                     disabled={loading}
                     onClick={() => setIsEditingThumbnail(true)}
-                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
+                    className="bg-third text-textColor px-6 py-2 hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
                   >
                     {media.thumbnail || newThumbnail
                       ? 'Edit Thumbnail'
@@ -414,7 +414,7 @@ export const MediaComponentInner: FC<{
                         setNewThumbnail(null);
                         setThumbnail(null);
                       }}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700"
+                      className="bg-red-600 text-white px-6 py-2 hover:bg-opacity-80 transition-all flex-1 border border-red-700"
                     >
                       Clear Thumbnail
                     </button>
@@ -477,13 +477,13 @@ export const MediaComponentInner: FC<{
           <button
             disabled={loading}
             onClick={onClose}
-            className="flex-1 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+            className="flex-1 bg-gray-600 text-white px-6 py-2 hover:bg-opacity-80 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={save}
-            className="flex-1 bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+            className="flex-1 bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-all"
           >
             Save Changes
           </button>

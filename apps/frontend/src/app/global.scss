@@ -3,6 +3,8 @@
 @use '@uppy/core/dist/style.css' as uppyCore;
 @use '@uppy/dashboard/dist/style.css' as uppyDashboard;
 
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=Archivo+Black&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,6 +16,67 @@
 body {
   background: var(--new-bgColor) !important;
   color: var(--new-btn-text);
+  font-family: 'Archivo', 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+// DESIGN.md typography hierarchy (LamboType-substituted with Archivo)
+h1, h2, h3, h4 {
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+h1 { line-height: 1.13; letter-spacing: normal; }   // Display 2 - 80px
+h2 { line-height: 1.19; letter-spacing: normal; }   // Section - 54px
+h3 { line-height: 1.15; letter-spacing: normal; }   // Sub-section - 40px
+h4 { line-height: 1.37; letter-spacing: normal; }   // Feature - 27px
+
+.lambo-hero {
+  font-family: 'Archivo Black', 'Archivo', sans-serif;
+  text-transform: uppercase;
+  font-size: clamp(54px, 8vw, 120px);
+  line-height: 0.92;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+button {
+  border-radius: 0 !important;
+}
+
+// DESIGN.md exceptions to the zero-radius rule
+.lambo-badge {
+  border-radius: 2px !important;
+  background: var(--new-textItemBlur);
+  color: #fff;
+  padding: 8px;
+  font-size: 10px;
+  letter-spacing: 0.225px;
+  text-transform: uppercase;
+}
+.lambo-switch,
+input[type="checkbox"].switch,
+.mantine-Switch-track {
+  border-radius: 20px !important;
+}
+
+// Primary CTA hover: gold -> dark gold #917300
+.bg-forth:hover:not(:disabled) {
+  background-color: #917300 !important;
+}
+
+// Negative tracking on captions per DESIGN.md (14px caption, -0.42px)
+.lambo-caption {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.42px;
+  text-transform: uppercase;
+}
+
+// Positive tracking on micro labels per DESIGN.md (10px label, +0.225px)
+.lambo-micro {
+  font-size: 10px;
+  letter-spacing: 0.225px;
+  text-transform: uppercase;
 }
 
 body * {
@@ -105,7 +168,7 @@ body * {
   font-size: 14px;
   background-color: var(--new-bgColorInner);
   height: 42px;
-  border-radius: 8px;
+  border-radius: 0;
   /* shared font styles */
   line-height: 1.2;
   /* clicking anywhere will focus the input */
@@ -237,7 +300,7 @@ body * {
   max-height: 12.5rem;
   overflow-y: auto;
   @apply bg-input border border-customColor54;
-  border-radius: 6px;
+  border-radius: 0;
   box-shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -4px,
     rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 }
@@ -281,9 +344,7 @@ body * {
   @apply bg-input #{!important};
   border: 0 !important;
   box-shadow: none !important;
-  border-radius: 8px !important;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
+  border-radius: 0 !important;
 }
 
 .w-md-editor-toolbar {
@@ -629,7 +690,7 @@ html[dir='rtl'] [dir='ltr'] {
 .mantine-Modal-modal {
   padding: 0;
   @apply bg-newBgColorInner;
-  border-radius: 24px;
+  border-radius: 0;
 }
 
 .mantine-Overlay-root {
@@ -640,7 +701,7 @@ html[dir='rtl'] [dir='ltr'] {
   @apply shadow-menu;
   background: var(--new-bgColorInner);
   border: 1px solid var(--new-bgLineColor);
-  border-radius: 18px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   overflow: auto;
@@ -732,12 +793,12 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .blackGradBottomBg {
-  background: linear-gradient(180deg, #0e0e0e 0%, rgba(14, 14, 14, 0) 100%);
+  background: linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0) 100%);
   rotate: 180deg;
 }
 
 .blackGradTopBg {
-  background: linear-gradient(180deg, #0e0e0e 0%, rgba(14, 14, 14, 0) 100%);
+  background: linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 .billing-form input {

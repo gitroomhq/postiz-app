@@ -14,20 +14,20 @@ export default async function AuthLayout({
   const t = await getT();
 
   return (
-    <div className="bg-[#0E0E0E] flex flex-1 p-[12px] gap-[12px] min-h-screen w-screen text-white">
+    <div className="bg-lamboBlack flex flex-1 min-h-screen w-screen text-white">
       {/*<style>{`html, body {overflow-x: hidden;}`}</style>*/}
       <ReturnUrlComponent />
-      <div className="flex flex-col py-[40px] px-[20px] flex-1 lg:w-[600px] lg:flex-none rounded-[12px] text-white p-[12px] bg-[#1A1919]">
+      <div className="flex flex-col py-[40px] px-[40px] flex-1 lg:w-[600px] lg:flex-none text-white bg-lamboBlack">
         <div className="w-full max-w-[440px] mx-auto justify-center gap-[20px] h-full flex flex-col text-white">
           <LogoTextComponent />
           <div className="flex">{children}</div>
         </div>
       </div>
-      <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
-        <div className="text-center leading-[1.2]">
+      <div className="flex-1 pt-[88px] hidden lg:flex flex-col items-center bg-lamboCharcoal font-lambo uppercase">
+        <div className="text-center text-[54px] leading-[1.19]">
           All your social analytics
           <br />
-          in <span className="text-[#1D4ED8]">one place</span>
+          in <span className="text-lamboGold">one place</span>
         </div>
         <TestimonialComponent />
       </div>

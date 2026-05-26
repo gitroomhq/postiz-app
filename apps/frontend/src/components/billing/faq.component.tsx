@@ -69,10 +69,10 @@ export const FAQSection: FC<{
   }, [show]);
   return (
     <div
-      className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
+      className="bg-lamboCharcoal p-[24px] border border-tableBorder flex flex-col"
       onClick={changeShow}
     >
-      <div className={`text-[20px] cursor-pointer flex justify-center`}>
+      <div className={`text-[20px] font-lambo uppercase tracking-tight cursor-pointer flex justify-center`}>
         <div className="flex-1">{title}</div>
         <div className="flex items-center justify-center w-[32px]">
           {!show ? (

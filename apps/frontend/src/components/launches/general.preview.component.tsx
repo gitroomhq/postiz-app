@@ -119,7 +119,7 @@ export const GeneralPreviewComponent: FC<{
               {!!value?.images?.length && (
                 <div
                   className={clsx(
-                    'w-full rounded-[16px] overflow-hidden mt-[12px]',
+                    'w-full overflow-hidden mt-[12px]',
                     value?.images?.length > 3
                       ? 'grid grid-cols-2 gap-[4px]'
                       : 'flex gap-[4px]'

@@ -218,7 +218,7 @@ const HeygenProviderComponent = () => {
                   );
                 }}
               />
-              <div className="text-red-400 text-[12px] mb-3">
+              <div className="text-lamboGold text-[12px] uppercase tracking-[0.14px] mb-3">
                 {form?.formState?.errors?.avatar?.message || ''}
               </div>
             </>
@@ -231,7 +231,7 @@ const HeygenProviderComponent = () => {
                 voiceList={voices}
                 onChange={(id: string) => form.setValue('selectedVoice', id)}
               />
-              <div className="text-red-400 text-[12px] mb-3">
+              <div className="text-lamboGold text-[12px] uppercase tracking-[0.14px] mb-3">
                 {form?.formState?.errors?.selectedVoice?.message || ''}
               </div>
             </>

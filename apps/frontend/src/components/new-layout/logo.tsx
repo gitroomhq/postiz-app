@@ -2,12 +2,12 @@
 
 export const Logo = () => {
   return (
-    <div className="mt-[8px] flex items-center gap-[6px] whitespace-nowrap select-none">
-      <span className="font-bold text-[22px] leading-none tracking-tight text-[#1D4ED8]">
+    <div className="mt-[8px] flex flex-col items-center gap-[2px] whitespace-nowrap select-none font-lambo uppercase">
+      <span className="font-[400] text-[22px] leading-none tracking-tight text-lamboGold">
         D3
       </span>
-      <span className="font-semibold text-[16px] leading-none tracking-tight text-white">
-        Analytics
+      <span className="font-[400] text-[10px] leading-none tracking-[0.225px] text-white">
+        Creator
       </span>
     </div>
   );

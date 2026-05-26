@@ -9,23 +9,23 @@ export const metadata: Metadata = {
     'D3 Creator Privacy Policy: how we collect, use, and protect your information when you use our social media analytics service.',
 };
 
-const sectionTitle = 'text-[20px] md:text-[22px] font-bold text-white mt-[40px] mb-[16px]';
-const subTitle = 'text-[16px] md:text-[17px] font-semibold text-white mt-[24px] mb-[8px]';
-const paragraph = 'text-[15px] leading-[1.7] text-[#c8c8c8] mb-[12px]';
-const bullet = 'text-[15px] leading-[1.7] text-[#c8c8c8] mb-[6px] pl-[8px]';
-const linkBlue = 'text-[#1D4ED8] hover:underline';
+const sectionTitle = 'text-[27px] md:text-[27px] text-white mt-[40px] mb-[16px] font-lambo uppercase leading-[1.37]';
+const subTitle = 'text-[18px] md:text-[18px] text-white mt-[24px] mb-[8px] font-lambo uppercase leading-[1.5]';
+const paragraph = 'text-[16px] leading-[1.56] text-[#c8c8c8] mb-[12px]';
+const bullet = 'text-[16px] leading-[1.56] text-[#c8c8c8] mb-[6px] pl-[8px]';
+const linkBlue = 'text-lamboGold hover:text-lamboLink transition-colors';
 
 export default function PrivacyPage() {
   return (
     <article>
-      <header className="mb-[40px] pb-[24px] border-b border-[#252525]">
-        <p className="text-[13px] uppercase tracking-[2px] text-[#1D4ED8] font-semibold mb-[12px]">
+      <header className="mb-[40px] pb-[24px] border-b border-lamboCharcoal">
+        <p className="lambo-caption text-lamboGold mb-[12px]">
           Legal
         </p>
-        <h1 className="text-[36px] md:text-[44px] font-bold text-white leading-[1.15] mb-[16px]">
+        <h1 className="text-[54px] md:text-[80px] text-white leading-[1.13] mb-[16px] font-lambo uppercase">
           Privacy Policy
         </h1>
-        <p className="text-[14px] text-[#9c9c9c]">
+        <p className="lambo-micro text-lamboAsh">
           Effective Date: 1 January 2025 &middot; Last Updated: 1 January 2025
         </p>
       </header>
@@ -111,9 +111,9 @@ export default function PrivacyPage() {
       </ul>
       <p className={paragraph}>
         We process your personal data on the following lawful bases under the GDPR:{' '}
-        <em>(a) performance of a contract</em> with you (providing the Service);{' '}
-        <em>(b) your consent</em> (where applicable, for marketing communications or optional
-        features); and <em>(c) our legitimate interests</em> in operating, securing, and improving
+        <span className="text-white">(a) performance of a contract</span> with you (providing the Service);{' '}
+        <span className="text-white">(b) your consent</span> (where applicable, for marketing communications or optional
+        features); and <span className="text-white">(c) our legitimate interests</span> in operating, securing, and improving
         the Service.
       </p>
 
@@ -277,7 +277,7 @@ export default function PrivacyPage() {
         If you have any questions, concerns, or requests relating to this Privacy Policy or your
         personal data, please contact us at:
       </p>
-      <div className="mt-[12px] mb-[24px] p-[20px] bg-[#1a1919] border border-[#252525] rounded-[8px]">
+      <div className="mt-[12px] mb-[24px] p-[20px] bg-lamboCharcoal">
         <p className="text-[14px] text-[#c8c8c8] mb-[4px]">
           <strong className="text-white">D3 Creator</strong>
         </p>
@@ -289,8 +289,8 @@ export default function PrivacyPage() {
         </p>
       </div>
 
-      <div className="mt-[40px] pt-[20px] border-t border-[#252525]">
-        <p className="text-[12px] text-[#696868] italic leading-[1.6]">
+      <div className="mt-[40px] pt-[20px] border-t border-lamboCharcoal">
+        <p className="text-[12px] text-lamboAsh leading-[1.6]">
           This Privacy Policy is provided as a general informational template and does not
           constitute legal advice. You are responsible for ensuring compliance with all laws
           applicable to your specific operations. We strongly recommend consulting a qualified

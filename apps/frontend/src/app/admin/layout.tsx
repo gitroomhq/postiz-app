@@ -1,12 +1,12 @@
 import '../global.scss';
 import { ReactNode } from 'react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isAdmin } from './is-admin';
 
-const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['400', '500', '600', '700', '800'],
+const jakartaSans = Archivo({
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   style: ['normal'],
   subsets: ['latin'],
 });
@@ -24,46 +24,46 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/favicon.ico" sizes="any" />
       </head>
       <body
-        className={`${jakartaSans.className} dark text-white bg-[#0E0E0E] min-h-screen flex flex-col`}
+        className={`${jakartaSans.className} dark text-white bg-black min-h-screen flex flex-col`}
       >
-        <header className="border-b border-[#252525]">
+        <header className="border-b border-[#202020]">
           <div className="max-w-[1080px] mx-auto px-[24px] py-[16px] flex items-center justify-between">
             <Link
               href="/admin"
               className="flex items-center gap-[8px] select-none hover:opacity-90 transition-opacity"
             >
-              <span className="font-bold text-[20px] leading-none tracking-tight text-[#1D4ED8]">
+              <span className="text-[20px] leading-none tracking-tight text-lamboGold uppercase">
                 D3
               </span>
-              <span className="font-bold text-[20px] leading-none tracking-tight text-white">
+              <span className="text-[20px] leading-none tracking-tight text-white uppercase">
                 Creator
               </span>
-              <span className="ml-[10px] px-[8px] py-[3px] rounded-full bg-[#1D4ED8]/15 text-[#60A5FA] text-[10px] font-semibold uppercase tracking-[1.5px]">
+              <span className="ml-[10px] px-[8px] py-[3px] bg-lamboGold text-black text-[10px] uppercase tracking-[0.225px]">
                 Admin
               </span>
             </Link>
             <nav className="flex items-center gap-[20px] text-[14px]">
               <Link
                 href="/admin"
-                className="text-[#c8c8c8] hover:text-white font-semibold transition-colors"
+                className="text-white hover:text-lamboGold transition-colors uppercase tracking-[0.14px]"
               >
                 Creators
               </Link>
               <Link
                 href="/"
-                className="text-[12px] text-[#696868] hover:text-[#9c9c9c] transition-colors uppercase tracking-[1px]"
+                className="text-[12px] text-lamboAsh hover:text-white transition-colors uppercase tracking-[0.225px]"
               >
                 View Site
               </Link>
               <Link
                 href="/auth/logout"
-                className="text-[12px] text-[#696868] hover:text-[#9c9c9c] transition-colors uppercase tracking-[1px]"
+                className="text-[12px] text-lamboAsh hover:text-white transition-colors uppercase tracking-[0.225px]"
               >
                 Logout
               </Link>
@@ -77,8 +77,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
         </main>
 
-        <footer className="border-t border-[#252525] mt-[48px]">
-          <div className="max-w-[1080px] mx-auto px-[24px] py-[16px] text-[12px] text-[#696868] text-center uppercase tracking-[1px]">
+        <footer className="border-t border-[#202020] mt-[48px]">
+          <div className="max-w-[1080px] mx-auto px-[24px] py-[16px] text-[10px] text-lamboAsh text-center uppercase tracking-[0.225px]">
             D3 Creator — Admin Console
           </div>
         </footer>

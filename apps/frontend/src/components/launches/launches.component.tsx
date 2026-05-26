@@ -54,8 +54,8 @@ export const SVGLine = () => {
           y2="-28.6843"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#662FDA" />
-          <stop offset="1" stopColor="#5720CB" />
+          <stop stopColor="#FFEE00" />
+          <stop offset="1" stopColor="#FFCE3E" />
         </linearGradient>
         <radialGradient
           id="paint1_radial_1930_1119"
@@ -65,8 +65,8 @@ export const SVGLine = () => {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(1.19333 7.45342) rotate(21.2064) scale(16.1503 188.627)"
         >
-          <stop stopColor="#8C66FF" />
-          <stop offset="1" stopColor="#8C66FF" stopOpacity="0" />
+          <stop stopColor="#FFEE00" />
+          <stop offset="1" stopColor="#FFEE00" stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>
@@ -167,7 +167,7 @@ export const MenuGroupComponent: FC<
       {collectedProps.isOver && (
         <div className="absolute start-0 top-0 w-full h-full pointer-events-none">
           <div className="w-full h-full start-0 top-0 relative">
-            <div className="bg-white/30 w-full h-full p-[8px] box-content rounded-md" />
+            <div className="bg-white/30 w-full h-full p-[8px] box-content" />
           </div>
         </div>
       )}
@@ -260,7 +260,7 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -270,7 +270,7 @@ export const MenuComponent: FC<
           integration.disabled && 'opacity-50'
         )}
       >
-        <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+        <div className="h-full w-[4px] -ms-[12px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
           <SVGLine />
         </div>
         {(integration.inBetweenSteps || integration.refreshNeeded) && (
@@ -282,16 +282,16 @@ export const MenuComponent: FC<
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="bg-[#FF4D4D] text-lamboBlack w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] font-[700] flex justify-center items-center">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
+            <div className="bg-lamboBlack/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
           </div>
         )}
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px] min-w-[36px] min-h-[36px]"
+          className="min-w-[36px] min-h-[36px]"
           alt={integration.identifier}
           width={36}
           height={36}
@@ -305,7 +305,7 @@ export const MenuComponent: FC<
         ) : (
           <SafeImage
             src={`/icons/platforms/${integration.identifier}.png`}
-            className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
+            className="absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
             alt={integration.identifier}
             width={18.41}
             height={18.41}
@@ -509,14 +509,14 @@ export const LaunchesComponent = () => {
             )}
           >
             <div className="flex items-center">
-              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] font-lambo uppercase tracking-tight">
                 {t('channels')}
               </h2>
               <div
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -557,7 +557,7 @@ export const LaunchesComponent = () => {
                       alt="No channels"
                       className="mx-auto min-w-[100%]"
                     />
-                    <div className="font-[600] text-[20px]">
+                    <div className="font-[600] text-[20px] font-lambo uppercase tracking-tight">
                       {t('no_channels', 'No channels yet')}
                     </div>
                     <div className="text-[14px]">

@@ -22,14 +22,14 @@ export function CreatorRowActions({ id, name }: Props) {
     <div className="flex items-center justify-end gap-[8px]">
       <Link
         href={`/admin/creators/${encodeURIComponent(id)}/edit`}
-        className="px-[12px] py-[6px] rounded-[8px] bg-[#0E0E0E] border border-[#252525] hover:border-[#1D4ED8]/40 text-[12px] text-white font-semibold transition-colors"
+        className="px-[12px] py-[6px] bg-lamboIron hover:bg-lamboCharcoal text-[12px] text-white uppercase tracking-[0.14px] transition-colors"
       >
         Edit
       </Link>
       <button
         type="button"
         onClick={onDelete}
-        className="px-[12px] py-[6px] rounded-[8px] bg-[#0E0E0E] border border-[#252525] hover:border-[#f97066]/60 text-[12px] text-[#f97066] font-semibold transition-colors"
+        className="text-[12px] text-lamboAsh underline uppercase tracking-[0.14px] hover:text-white transition-colors"
       >
         Delete
       </button>

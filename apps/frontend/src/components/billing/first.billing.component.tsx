@@ -114,9 +114,9 @@ export const FirstBillingComponent = () => {
   const JoinOver = () => {
     return (
       <>
-        <div className="text-[46px] font-[600] leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
+        <div className="text-[46px] font-lambo uppercase tracking-tight leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
           {t('billing_join_over', 'Join Over')}{' '}
-          <span className="text-[#FC69FF]">
+          <span className="text-lamboGold">
             {t('billing_entrepreneurs_count', '20,000+ Entrepreneurs')}
           </span>{' '}
           {t('billing_who_use', 'who use')}{' '}
@@ -127,7 +127,7 @@ export const FirstBillingComponent = () => {
         </div>
 
         <div className="flex" onClick={showYouTube}>
-          <div className="tablet:mb-[32px] cursor-pointer mt-[32px] flex gap-[10px] items-center underline hover:font-[700]">
+          <div className="tablet:mb-[32px] cursor-pointer mt-[32px] flex gap-[10px] items-center underline hover:text-lamboGold transition-colors">
             <div>
               <SafeImage
                 className="text-[12px]"
@@ -142,7 +142,7 @@ export const FirstBillingComponent = () => {
         </div>
 
         {!!user?.allowTrial && (
-          <div className="flex mt-[32px] mb-[10px] gap-[15px] tablet:mt-[32px] tablet:mb-[32px] text-[16px] font-[500] mobile:flex-col">
+          <div className="flex mt-[32px] mb-[10px] gap-[15px] tablet:mt-[32px] tablet:mb-[32px] text-[16px] mobile:flex-col">
             <div className="flex gap-[8px]">
               <div>
                 <CheckIconComponent />
@@ -222,13 +222,13 @@ export const FirstBillingComponent = () => {
               <JoinOver />
             </div>
             <div className="flex mb-[24px] mobile:flex-col">
-              <div className="flex-1 text-[24px] font-[700]">
+              <div className="flex-1 text-[24px] font-lambo uppercase tracking-tight">
                 {t('billing_choose_plan', 'Choose a Plan')}
               </div>
-              <div className="h-[44px] px-[6px] mobile:px-0 flex items-center justify-center mobile:justify-start gap-[12px] border border-newColColor rounded-[12px] select-none">
+              <div className="h-[44px] px-[6px] mobile:px-0 flex items-center justify-center mobile:justify-start gap-[12px] border border-newColColor  select-none">
                 <div
                   className={clsx(
-                    'h-[32px] mobile:flex-1 rounded-[6px] text-[16px] px-[12px] flex justify-center items-center',
+                    'h-[32px] mobile:flex-1  text-[16px] px-[12px] flex justify-center items-center',
                     period === 'MONTHLY'
                       ? 'bg-boxFocused text-textItemFocused'
                       : 'cursor-pointer'
@@ -239,7 +239,7 @@ export const FirstBillingComponent = () => {
                 </div>
                 <div
                   className={clsx(
-                    'gap-[10px] h-[32px] mobile:flex-1 rounded-[6px] text-[16px] px-[12px] flex justify-center items-center',
+                    'gap-[10px] h-[32px] mobile:flex-1  text-[16px] px-[12px] flex justify-center items-center',
                     period === 'YEARLY'
                       ? 'bg-boxFocused text-textItemFocused'
                       : 'cursor-pointer'
@@ -247,7 +247,7 @@ export const FirstBillingComponent = () => {
                   onClick={() => setPeriod('YEARLY')}
                 >
                   <div>{t('billing_yearly', 'Yearly')}</div>
-                  <div className="bg-[#AA0FA4] text-[white] px-[8px] rounded-[4px] mobile:hidden">
+                  <div className="bg-lamboGold text-black uppercase tracking-[0.14px] px-[8px]  mobile:hidden">
                     {t('billing_20_percent_off', '20% Off')}
                   </div>
                 </div>
@@ -260,17 +260,17 @@ export const FirstBillingComponent = () => {
                     onClick={() => setTier(key)}
                     key={key}
                     className={clsx(
-                      'cursor-pointer select-none w-[266px] h-[138px] tablet:w-full tablet:h-[124px] p-[24px] tablet:p-[15px] rounded-[20px] flex flex-col',
+                      'cursor-pointer select-none w-[266px] h-[138px] tablet:w-full tablet:h-[124px] p-[24px] tablet:p-[15px]  flex flex-col',
                       key === tier
-                        ? 'border-[1.5px] border-[#618DFF]'
+                        ? 'border-[1.5px] border-lamboGold'
                         : 'border-[1.5px] border-newColColor'
                     )}
                   >
-                    <div className="text-[20px] mobile:text-[18px] font-[500]">
+                    <div className="text-[20px] mobile:text-[18px] font-lambo uppercase tracking-tight">
                       {capitalize(key)}
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
-                      <span className="text-[44px] mobile:text-[30px] font-[600]">
+                      <span className="text-[44px] mobile:text-[30px] font-lambo">
                         $
                         {
                           value[
@@ -288,7 +288,7 @@ export const FirstBillingComponent = () => {
               )}
             </div>
             <div className="flex flex-col mt-[54px] gap-[24px] tablet:mt-[40px]">
-              <div className="text-[24px] font-[700]">
+              <div className="text-[24px] font-lambo uppercase tracking-tight">
                 {t('billing_features', 'Features')}
               </div>
               <BillingFeatures tier={tier} />

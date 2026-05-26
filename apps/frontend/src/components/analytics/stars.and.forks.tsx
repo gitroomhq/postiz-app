@@ -29,7 +29,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   />
                 </svg>
               </div>
-              <div className="text-[20px]">
+              <div className="text-[20px] font-lambo uppercase tracking-tight">
                 {item.login
                   .split('/')[1]
                   .split('')
@@ -45,13 +45,13 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                 {item.stars.length ? (
                   <Chart list={item.stars} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl">
+                  <div className="w-full h-full flex items-center justify-center text-3xl text-lamboAsh">
                     {t('processing_stars', 'Processing stars...')}
                   </div>
                 )}
               </div>
             </div>
-            <div className="text-[50px] leading-[60px]">
+            <div className="text-[50px] leading-[60px] font-lambo uppercase tracking-tight text-lamboGold">
               {item?.stars[item.stars.length - 1]?.totalStars}
             </div>
           </div>
@@ -72,7 +72,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   />
                 </svg>
               </div>
-              <div className="text-[20px]">
+              <div className="text-[20px] font-lambo uppercase tracking-tight">
                 {item.login
                   .split('/')[1]
                   .split('')
@@ -88,13 +88,13 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                 {item.forks.length ? (
                   <Chart list={item.forks} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl">
+                  <div className="w-full h-full flex items-center justify-center text-3xl text-lamboAsh">
                     {t('processing_stars', 'Processing stars...')}
                   </div>
                 )}
               </div>
             </div>
-            <div className="text-[50px] leading-[60px]">
+            <div className="text-[50px] leading-[60px] font-lambo uppercase tracking-tight text-lamboGold">
               {item?.forks[item.forks.length - 1]?.totalForks}
             </div>
           </div>
@@ -136,7 +136,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   </svg>
                 )}
               </div>
-              <div className="text-[20px]">
+              <div className="text-[20px] font-lambo uppercase tracking-tight">
                 {p === 0
                   ? t('last_github_trending', 'Last Github Trending')
                   : t('next_predicted_github_trending', 'Next Predicted GitHub Trending')}

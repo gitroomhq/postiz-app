@@ -189,7 +189,7 @@ const FirstStep: FC = (props) => {
     >
       <FormProvider {...form}>
         <div className="flex flex-col">
-          <div className="pb-[10px] rounded-[4px]">
+          <div className="pb-[10px]">
             <div className="flex">
               <div className="flex-1">
                 {!showStep ? (
@@ -282,7 +282,7 @@ export const GeneratorPopup = () => {
     modals.closeAll();
   }, []);
   return (
-    <div className="w-full flex flex-col rounded-[4px] relative">
+    <div className="w-full flex flex-col relative">
       <FirstStep />
     </div>
   );
@@ -322,7 +322,7 @@ export const GeneratorComponent = () => {
   }, [user, all]);
   return (
     <div
-      className="h-[44px] w-[44px] group-[.sidebar]:w-full bg-ai justify-center items-center flex rounded-[8px] cursor-pointer"
+      className="h-[44px] w-[44px] group-[.sidebar]:w-full bg-ai justify-center items-center flex cursor-pointer"
       onClick={generate}
     >
       <svg

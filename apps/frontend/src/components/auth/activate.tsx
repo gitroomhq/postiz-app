@@ -69,11 +69,11 @@ export function Activate() {
   return (
     <div className="flex flex-col flex-1">
       <div>
-        <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+        <h1 className="text-[40px] text-start mb-[16px] cursor-pointer font-lambo uppercase leading-[1.15] text-white">
           {t('activate_your_account', 'Activate your account')}
         </h1>
       </div>
-      <div className="text-textColor">
+      <div className="text-[16px] leading-[1.56] text-[#c8c8c8]">
         {t('thank_you_for_registering', 'Thank you for registering!')}
         <br />
         {t(
@@ -82,41 +82,41 @@ export function Activate() {
         )}
       </div>
 
-      <div className="mt-8 border-t border-fifth pt-6">
-        <h2 className="text-lg font-semibold mb-4">
+      <div className="mt-[32px] border-t border-lamboIron pt-[24px]">
+        <h4 className="text-[20px] mb-[16px] font-lambo uppercase text-white">
           {t('didnt_receive_email', "Didn't receive the email?")}
-        </h2>
+        </h4>
         {status === 'sent' ? (
-          <div className="flex flex-col gap-4">
-            <div className="text-green-400">
+          <div className="flex flex-col gap-[16px]">
+            <div className="text-lamboGold text-[14px] leading-[1.5]">
               {t(
                 'activation_email_sent',
                 'Activation email has been sent! Please check your inbox.'
               )}
             </div>
             {cooldown > 0 ? (
-              <p className="text-sm text-textColor">
+              <p className="text-[14px] text-lamboAsh">
                 {t('resend_available_in', 'You can resend in')} {cooldown}s
               </p>
             ) : (
               <Button
                 onClick={resetToForm}
-                className="rounded-[10px] !h-[52px]"
+                className="!h-[52px]"
               >
                 {t('send_again', 'Send Again')}
               </Button>
             )}
           </div>
         ) : status === 'already_activated' ? (
-          <div className="flex flex-col gap-4">
-            <div className="text-green-400">
+          <div className="flex flex-col gap-[16px]">
+            <div className="text-lamboGold text-[14px] leading-[1.5]">
               {t(
                 'account_already_activated',
                 'Great news! Your account is already activated.'
               )}
             </div>
             <Link href="/auth/login">
-              <Button className="rounded-[10px] !h-[52px] w-full">
+              <Button className="!h-[52px] w-full">
                 {t('go_to_login', 'Go to Login')}
               </Button>
             </Link>
@@ -133,7 +133,7 @@ export function Activate() {
               />
               <Button
                 type="submit"
-                className="rounded-[10px] !h-[52px]"
+                className="!h-[52px]"
                 loading={loading}
                 disabled={cooldown > 0}
               >
@@ -145,9 +145,9 @@ export function Activate() {
           </FormProvider>
         )}
         {status !== 'already_activated' && (
-          <p className="mt-4 text-sm text-textColor">
+          <p className="mt-[16px] text-[14px] text-lamboAsh">
             {t('already_activated', 'Already activated?')}&nbsp;
-            <Link href="/auth/login" className="underline cursor-pointer">
+            <Link href="/auth/login" className="text-white underline hover:text-lamboGold transition-colors cursor-pointer">
               {t('sign_in', 'Sign In')}
             </Link>
           </p>

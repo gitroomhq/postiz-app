@@ -174,7 +174,7 @@ const CopyButton = ({
         copy(text);
         toaster.show(`${label} copied to clipboard`, 'success');
       }}
-      className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+      className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
     >
       <svg
         width="14"
@@ -225,10 +225,10 @@ const McpSection = ({
     : remoteUrl.replace(user.publicApi, '*'.repeat(user.publicApi.length));
 
   return (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+    <div className="bg-newBgColorInnerInner border border-newBorder overflow-hidden">
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
-          <div className="text-[15px] font-[600]">
+          <div className="text-[15px] uppercase tracking-[0.14px]">
             {t('mcp_client_configuration', 'MCP Client Configuration')}
           </div>
           <div className="text-[13px] text-customColor18 mt-[2px]">
@@ -240,7 +240,7 @@ const McpSection = ({
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-forth hover:bg-lamboGold/80 text-black uppercase tracking-[0.14px] transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             href="https://docs.postiz.com/mcp/introduction"
             target="_blank"
           >
@@ -251,7 +251,7 @@ const McpSection = ({
       </div>
       <div className="p-[20px] flex flex-col gap-[16px]">
         <div className="flex flex-col gap-[6px]">
-          <div className="text-[13px] font-[600] text-customColor18">
+          <div className="text-[13px] uppercase tracking-[0.14px] text-customColor18">
             {t('auth_method', 'Authentication')}
           </div>
           <div className="flex gap-[6px]">
@@ -260,9 +260,9 @@ const McpSection = ({
                 key={m}
                 type="button"
                 className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                  'cursor-pointer px-[14px] h-[36px] text-[13px] uppercase tracking-[0.14px] transition-colors',
                   method === m
-                    ? 'bg-[#612BD3] text-white'
+                    ? 'bg-forth text-black uppercase tracking-[0.14px]'
                     : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
                 )}
                 onClick={() => setMethod(m)}
@@ -276,7 +276,7 @@ const McpSection = ({
         </div>
         {method === 'header' && (
           <div className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] uppercase tracking-[0.14px] text-customColor18">
               {t('mcp_client', 'Client')}
             </div>
             <div className="flex flex-wrap gap-[6px]">
@@ -285,9 +285,9 @@ const McpSection = ({
                   key={client}
                   type="button"
                   className={clsx(
-                    'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                    'cursor-pointer px-[14px] h-[36px] text-[13px] uppercase tracking-[0.14px] transition-colors',
                     activeClient === client
-                      ? 'bg-[#612BD3] text-white'
+                      ? 'bg-forth text-black uppercase tracking-[0.14px]'
                       : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
                   )}
                   onClick={() => setActiveClient(client)}
@@ -299,7 +299,7 @@ const McpSection = ({
           </div>
         )}
         <div className="flex flex-col gap-[8px]">
-          <div className="text-[12px] text-customColor18 font-[500]">
+          <div className="text-[12px] text-customColor18 uppercase tracking-[0.14px]">
             {method === 'header'
               ? hint
               : t(
@@ -307,14 +307,14 @@ const McpSection = ({
                   'Paste this URL into your remote MCP client (ChatGPT, Claude, etc.).'
                 )}
           </div>
-          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
+          <pre className="bg-newBgColorInner border border-newBorder p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
             {method === 'header' ? maskedConfig : maskedRemoteUrl}
           </pre>
           <div className="flex gap-[8px]">
             <button
               type="button"
               onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -413,10 +413,10 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
       : steps;
 
   return (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+    <div className="bg-newBgColorInnerInner border border-newBorder overflow-hidden">
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
-          <div className="text-[15px] font-[600]">
+          <div className="text-[15px] uppercase tracking-[0.14px]">
             {t('cli_and_skills', 'CLI & AI Skills')}
           </div>
           <div className="text-[13px] text-customColor18 mt-[2px]">
@@ -428,7 +428,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-forth hover:bg-lamboGold/80 text-black uppercase tracking-[0.14px] transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             href="https://docs.postiz.com/cli/introduction"
             target="_blank"
           >
@@ -444,9 +444,9 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
               key={m}
               type="button"
               className={clsx(
-                'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                'cursor-pointer px-[14px] h-[36px] text-[13px] uppercase tracking-[0.14px] transition-colors',
                 mode === m
-                  ? 'bg-[#612BD3] text-white'
+                  ? 'bg-forth text-black uppercase tracking-[0.14px]'
                   : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
               )}
               onClick={() => setMode(m)}
@@ -459,10 +459,10 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
         </div>
         {displaySteps.map((step, i) => (
           <div key={i} className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] uppercase tracking-[0.14px] text-customColor18">
               {i + 1}. {step.label}
             </div>
-            <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
+            <pre className="bg-newBgColorInner border border-newBorder p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
               {step.code}
             </pre>
           </div>
@@ -472,7 +472,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
             <button
               type="button"
               onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -569,10 +569,10 @@ const PublicApiContent = () => {
           'and you will receive a pos_ prefixed token that works with the API, MCP, and CLI â€” just like an API Key.'
         )}
       </div>
-      <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+      <div className="bg-newBgColorInnerInner border border-newBorder overflow-hidden">
         <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
           <div>
-            <div className="text-[15px] font-[600]">
+            <div className="text-[15px] uppercase tracking-[0.14px]">
               {t('api_key', 'API Key')}
             </div>
             <div className="text-[13px] text-customColor18 mt-[2px]">
@@ -584,7 +584,7 @@ const PublicApiContent = () => {
           </div>
           <div className="flex gap-[6px] shrink-0 pt-[2px]">
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-forth hover:bg-lamboGold/80 text-black uppercase tracking-[0.14px] transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
               href="https://docs.postiz.com/public-api"
               target="_blank"
             >
@@ -592,7 +592,7 @@ const PublicApiContent = () => {
             {t('read_the_docs', 'Docs')}
             </a>
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-forth hover:bg-lamboGold/80 text-black uppercase tracking-[0.14px] transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
               href="https://www.npmjs.com/package/n8n-nodes-postiz"
               target="_blank"
             >
@@ -602,7 +602,7 @@ const PublicApiContent = () => {
           </div>
         </div>
         <div className="p-[20px] flex flex-col gap-[16px]">
-          <div className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
+          <div className="bg-newBgColorInner border border-newBorder px-[16px] h-[44px] flex items-center overflow-hidden">
             <code className="text-[14px] flex-1 truncate">
               {reveal ? (
                 user.publicApi
@@ -620,7 +620,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={() => setReveal(!reveal)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -651,7 +651,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={rotateKey}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -678,7 +678,7 @@ const PublicApiContent = () => {
               onClick={() =>
                 window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
               }
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors text-[13px] uppercase tracking-[0.14px] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -719,9 +719,9 @@ export const PublicComponent = () => {
             key={tab}
             type="button"
             className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
+              'cursor-pointer px-[20px] h-[44px] text-[15px] uppercase tracking-[0.14px] transition-colors',
               subTab === tab
-                ? 'bg-[#612BD3] text-white'
+                ? 'bg-forth text-black uppercase tracking-[0.14px]'
                 : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
             )}
             onClick={() => setSubTab(tab)}

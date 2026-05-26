@@ -62,19 +62,21 @@ export const EmbeddedBilling: FC<{
           elementsOptions: {
             appearance: {
               variables: {
-                colorText: mode === 'dark' ? '#ffffff' : '#0e0e0e',
-                borderRadius: '8px',
-                colorBackground: mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
+                colorText: mode === 'dark' ? '#ffffff' : '#000000',
+                borderRadius: '0px',
+                colorBackground: mode === 'dark' ? '#202020' : '#FFFFFF',
               },
               rules: {
                 '.Label': {
                   fontSize: '14px',
                   fontWeight: '600',
                   marginBottom: '8px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14px',
                 },
                 '.Input': {
                   height: '44px',
-                  backgroundColor: mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
+                  backgroundColor: mode === 'dark' ? '#202020' : '#FFFFFF',
                 },
               },
             },
@@ -139,7 +141,7 @@ const StripeInputs: FC<{
   return (
     <>
       {/*<div>*/}
-      {/*  <h4 className="mb-[32px] text-[24px] font-[700]">*/}
+      {/*  <h4 className="mb-[32px] text-[24px] font-lambo">*/}
       {/*    {checkout.type === 'loading'*/}
       {/*      ? ''*/}
       {/*      : t('billing_billing_address', 'Billing Address')}*/}
@@ -147,7 +149,7 @@ const StripeInputs: FC<{
       {/*  <BillingAddressElement />*/}
       {/*</div>*/}
       <div>
-        <h4 className="mb-[32px] text-[24px] font-[700]">
+        <h4 className="mb-[32px] text-[24px] font-lambo uppercase tracking-tight">
           {checkout.type === 'loading' ? '' : t('billing_payment', 'Payment')}
         </h4>
         <PaymentElement
@@ -164,7 +166,7 @@ const StripeInputs: FC<{
         )}
         {ready && <SubmitBar loading={loading} />}
         {checkout.type === 'loading' ? null : (
-          <div className="mt-[24px] text-[16px] font-[600] flex gap-[4px] items-center">
+          <div className="mt-[24px] text-[16px] uppercase tracking-[0.14px] flex gap-[4px] items-center">
             <div>
               {t('billing_powered_by_stripe', 'Secure payments processed by')}
             </div>
@@ -220,24 +222,24 @@ const PriceBreakdown: FC = () => {
 
   return (
     <div className="mt-[40px]">
-      <h4 className="mb-[16px] text-[24px] font-[700]">
+      <h4 className="mb-[16px] text-[24px] font-lambo uppercase tracking-tight">
         {t('billing_order_summary', 'Order Summary')}
       </h4>
-      <div className="rounded-[12px] border border-newColColor p-[20px] flex flex-col gap-[12px]">
+      <div className=" border border-newColColor p-[20px] flex flex-col gap-[12px]">
         {/* Plan */}
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
-            <span className="font-[600] text-textColor">{planName}</span>
+            <span className="uppercase tracking-[0.14px] text-textColor">{planName}</span>
             <span className="text-[13px] text-textColor/60">
               {billingInterval}
             </span>
           </div>
-          <span className="font-[500] text-textColor">{unitAmount}</span>
+          <span className="font-normal text-textColor">{unitAmount}</span>
         </div>
 
         {/* Discount */}
         {discountDisplay && (
-          <div className="flex justify-between items-center font-[600]">
+          <div className="flex justify-between items-center uppercase tracking-[0.14px]">
             <div className="flex items-center gap-[6px]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -253,13 +255,13 @@ const PriceBreakdown: FC = () => {
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                 <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
-              <span className="font-[500]">
+              <span className="font-normal">
                 {discountDisplay.displayName || discountDisplay.promotionCode}
                 {discountDisplay.percentOff &&
                   ` (${discountDisplay.percentOff}% off)`}
               </span>
             </div>
-            <span className="font-[500]">
+            <span className="font-normal">
               {discountDisplay.amount !== '$0.00'
                 ? `-${discountDisplay.amount}`
                 : t('billing_applied', 'Applied')}
@@ -272,10 +274,10 @@ const PriceBreakdown: FC = () => {
 
         {/* Due today */}
         <div className="flex justify-between items-center">
-          <span className="font-[600] text-textColor">
+          <span className="uppercase tracking-[0.14px] text-textColor">
             {t('billing_due_today', 'Due today')}
           </span>
-          <span className="font-[700] text-[18px] text-textColor">
+          <span className="font-lambo text-[18px] text-textColor">
             {dueToday}
           </span>
         </div>
@@ -375,7 +377,7 @@ const AppliedCouponDisplay: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#AA0FA4]/30 bg-[#AA0FA4]/10">
+      <div className="flex items-center gap-[12px] p-[16px]  border border-[#FFEE00]/30 bg-[#FFEE00]/10">
         <div className="flex-1">
           <div className="flex items-center gap-[8px] flex-wrap">
             <svg
@@ -384,7 +386,7 @@ const AppliedCouponDisplay: FC<{
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#FC69FF"
+              stroke="#FFEE00"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -392,7 +394,7 @@ const AppliedCouponDisplay: FC<{
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            <span className="font-[600] text-[#FC69FF]">{appliedCode}</span>
+            <span className="uppercase tracking-[0.14px] text-lamboGold">{appliedCode}</span>
             <span className="text-[14px] text-textColor/70">
               {t('billing_discount_applied', 'applied')}
               {discountDisplay && ` (${discountDisplay})`}
@@ -403,7 +405,7 @@ const AppliedCouponDisplay: FC<{
           type="button"
           onClick={onRemove}
           disabled={isApplying}
-          className="text-[14px] text-textColor/50 hover:text-textColor font-[500] disabled:opacity-50"
+          className="text-[14px] text-textColor/50 hover:text-textColor font-normal disabled:opacity-50"
         >
           {t('billing_remove', 'Remove')}
         </button>
@@ -525,7 +527,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
         <button
           type="button"
           onClick={() => setShowInput(true)}
-          className="text-[16px] text-textColor/60 hover:text-textColor font-[500] flex items-center gap-[8px] transition-colors"
+          className="text-[16px] text-textColor/60 hover:text-textColor font-normal flex items-center gap-[8px] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -550,7 +552,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
   return (
     <div className="mt-[40px]">
       <div className="flex items-center gap-[12px] mb-[12px]">
-        <h4 className="text-[18px] font-[600] text-textColor">
+        <h4 className="text-[18px] uppercase tracking-[0.14px] text-textColor">
           {t('billing_discount_coupon', 'Discount Coupon')}
         </h4>
         <button
@@ -572,7 +574,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
           placeholder={t('billing_enter_coupon_code', 'Enter coupon code')}
           disabled={isApplying}
           autoFocus
-          className="flex-1 h-[44px] px-[16px] rounded-[8px] border border-newColColor bg-newBgColor text-textColor placeholder:text-textColor/50 focus:outline-none focus:border-boxFocused disabled:opacity-50"
+          className="flex-1 h-[44px] px-[16px]  border border-newColColor bg-newBgColor text-textColor placeholder:text-textColor/50 focus:outline-none focus:border-boxFocused disabled:opacity-50"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -588,7 +590,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
           type="button"
           onClick={() => handleApplyCoupon()}
           disabled={isApplying || !couponCode.trim()}
-          className="h-[44px] px-[24px] rounded-[8px] bg-boxFocused text-textItemFocused font-[600] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="h-[44px] px-[24px]  bg-boxFocused text-textItemFocused uppercase tracking-[0.14px] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {isApplying
             ? t('billing_applying', 'Applying...')
@@ -612,18 +614,18 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
         {checkout.checkout.recurring?.trial?.trialEnd ? (
           <div>
             {t('billing_your_7_day_trial_is', 'Your 7-day trial is')}{' '}
-            <span className="text-textColor font-[600]">
+            <span className="text-textColor uppercase tracking-[0.14px]">
               {t('billing_100_percent_free', '100% free')}
             </span>{' '}
             {t('billing_ending', 'ending')}{' '}
             <br className="hidden mobile:block" />
-            <span className="text-textColor font-[600]">
+            <span className="text-textColor uppercase tracking-[0.14px]">
               {dayjs(
                 checkout.checkout.recurring?.trial?.trialEnd * 1000
               ).format('MMMM D, YYYY')}{' '}
               —{' '}
             </span>
-            <span className="text-textColor font-[600]">
+            <span className="text-textColor uppercase tracking-[0.14px]">
               {t(
                 'billing_cancel_anytime_short',
                 'Cancel anytime from settings'
@@ -633,7 +635,7 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
         ) : null}
         <div>
           <Button
-            className="h-[42px] rounded-[10px] mobile:w-full"
+            className="h-[42px]  mobile:w-full"
             type="submit"
             loading={loading}
           >

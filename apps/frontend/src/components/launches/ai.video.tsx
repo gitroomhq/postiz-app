@@ -183,7 +183,7 @@ export const AiVideo: FC<{
               }
             : {})}
           className={clsx(
-            'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]',
+            'cursor-pointer h-[30px] justify-center items-center flex bg-newColColor px-[8px]',
             value.length < 30 && 'opacity-50'
           )}
         >
@@ -229,7 +229,7 @@ export const AiVideo: FC<{
         </div>
         {value.length >= 30 && !loading && (
           <div className="text-[12px] -mt-[10px] w-[200px] absolute bottom-[100%] z-[500] start-0 hidden group-hover:block">
-            <ul className="cursor-pointer rounded-[4px] border border-dashed border-newBgLineColor bg-newColColor mt-[3px] p-[5px]">
+            <ul className="cursor-pointer border border-dashed border-newBgLineColor bg-newColColor mt-[3px] p-[5px]">
               {data.map((p: any) => (
                 <li
                   onClick={generateVideo(p)}

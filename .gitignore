@@ -64,3 +64,5 @@ apps/frontend/public/g.js
 
 # Local install logs
 install.log
+.gstack/
+__pycache__/

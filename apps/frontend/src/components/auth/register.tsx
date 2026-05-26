@@ -150,11 +150,11 @@ export function RegisterAfter({
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[54px] text-start cursor-pointer font-lambo uppercase leading-[1.19] text-white">
               {t('sign_up', 'Sign Up')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">
+          <div className="lambo-micro text-lamboAsh mt-[32px] mb-[12px]">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -174,11 +174,11 @@ export function RegisterAfter({
               ))}
             {!isAfterProvider && (
               <div className="h-[20px] mb-[24px] mt-[24px] relative">
-                <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+                <div className="absolute w-full h-[1px] bg-lamboIron top-[50%] -translate-y-[50%]" />
                 <div
-                  className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
+                  className={`absolute z-[1] justify-center items-center w-full start-0 top-0 flex`}
                 >
-                  <div className="px-[16px]">{t('or', 'or')}</div>
+                  <div className="lambo-micro text-lamboAsh px-[16px] bg-lamboBlack">{t('or', 'or')}</div>
                 </div>
               </div>
             )}
@@ -212,7 +212,7 @@ export function RegisterAfter({
                   placeholder={t('label_company', 'Company')}
                 />
               </div>
-              <div className={clsx('text-[12px]')}>
+              <div className={clsx('text-[12px] text-lamboAsh leading-[1.5]')}>
                 {t(
                   'by_registering_you_agree_to_our',
                   'By registering you agree to our'
@@ -220,7 +220,7 @@ export function RegisterAfter({
                 &nbsp;
                 <a
                   href={`/terms`}
-                  className="underline hover:font-bold"
+                  className="text-white underline hover:text-lamboGold transition-colors"
                   rel="nofollow"
                 >
                   {t('terms_of_service', 'Terms of Service')}
@@ -230,7 +230,7 @@ export function RegisterAfter({
                 <a
                   href={`/privacy`}
                   rel="nofollow"
-                  className="underline hover:font-bold"
+                  className="text-white underline hover:text-lamboGold transition-colors"
                 >
                   {t('privacy_policy', 'Privacy Policy')}
                 </a>
@@ -240,18 +240,18 @@ export function RegisterAfter({
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 rounded-[10px] !h-[52px]"
+                    className="flex-1 !h-[52px]"
                     loading={loading}
                   >
                     {t('create_account', 'Create Account')}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
+                <p className="mt-[16px] text-[14px] text-lamboAsh">
                   {t('already_have_an_account', 'Already Have An Account?')}
                   &nbsp;
                   <Link
                     href="/auth/login"
-                    className="underline  cursor-pointer"
+                    className="text-white underline hover:text-lamboGold transition-colors cursor-pointer"
                   >
                     {t('sign_in', 'Sign In')}
                   </Link>

@@ -6,7 +6,7 @@ import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
@@ -25,9 +25,9 @@ import { HtmlComponent } from '@gitroom/frontend/components/layout/html.componen
 import Script from 'next/script';
 import { ChangeDirClient } from '@gitroom/frontend/components/new-layout/change.dir.client';
 
-const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500'],
-  style: ['normal', 'italic'],
+const jakartaSans = Archivo({
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  style: ['normal'],
   subsets: ['latin'],
 });
 
@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     ? PlausibleProvider
     : Fragment;
   return (
-    <html>
+    <html suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/favicon.ico" sizes="any" />
@@ -47,7 +47,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
             data-domain="d3-creator.vercel.app"
             src="https://datafa.st/js/script.js"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
         )}
       </head>

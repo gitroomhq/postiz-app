@@ -113,14 +113,14 @@ export const StatisticsModal: FC<{
                   const color = colorVariants[index % colorVariants.length];
                   return (
                     <div key={`analytics-${index}`} className="group">
-                      <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden transition-all duration-200 hover:border-[#612bd3]/50">
+                      <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder overflow-hidden transition-all duration-200 hover:border-lamboGold/50">
                         <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
                           <div className="flex items-center gap-[10px]">
                             <div
                               className={`w-[8px] h-[8px] rounded-full ${
-                                color === 'purple' ? 'bg-[#612bd3]' : ''
-                              } ${color === 'green' ? 'bg-[#32d583]' : ''} ${
-                                color === 'blue' ? 'bg-[#1d9bf0]' : ''
+                                color === 'purple' ? 'bg-lamboGold' : ''
+                              } ${color === 'green' ? 'bg-lamboGoldText' : ''} ${
+                                color === 'blue' ? 'bg-lamboCyan' : ''
                               }`}
                             />
                             <span className="text-[15px] font-medium text-newTableText">
@@ -152,18 +152,18 @@ export const StatisticsModal: FC<{
               {t('short_links_statistics', 'Short Links Statistics')}
             </h3>
             {statisticsData?.clicks?.length === 0 ? (
-              <div className="text-gray-400">
+              <div className="text-lamboAsh">
                 {t('no_short_link_results', 'No short link results')}
               </div>
             ) : (
               <div className="grid grid-cols-3">
-                <div className="bg-forth p-[4px] rounded-tl-lg">
+                <div className="bg-forth p-[4px]">
                   {t('short_link', 'Short Link')}
                 </div>
                 <div className="bg-forth p-[4px]">
                   {t('original_link', 'Original Link')}
                 </div>
-                <div className="bg-forth p-[4px] rounded-tr-lg">
+                <div className="bg-forth p-[4px]">
                   {t('clicks', 'Clicks')}
                 </div>
                 {statisticsData?.clicks?.map((p: any) => (
@@ -186,7 +186,7 @@ export const StatisticsModal: FC<{
           {/* No analytics available message */}
           {(!analyticsData || !Array.isArray(analyticsData) || analyticsData.length === 0) &&
             (!statisticsData?.clicks || statisticsData.clicks.length === 0) && (
-              <div className="text-center text-gray-400 py-[20px]">
+              <div className="text-center text-lamboAsh py-[20px]">
                 {t('no_statistics_available', 'No statistics available for this post')}
               </div>
             )}

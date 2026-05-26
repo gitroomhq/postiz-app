@@ -18,8 +18,8 @@ export const Chart: FC<{
     const gradient = ref.current
       .getContext('2d')
       .createLinearGradient(0, 0, 0, ref.current.height);
-    gradient.addColorStop(0, 'rgba(114, 118, 137, 1)'); // Start color with some transparency
-    gradient.addColorStop(1, 'rgb(9, 11, 19, 1)');
+    gradient.addColorStop(0, 'rgba(255, 238, 0, 0.6)'); // Start color with some transparency
+    gradient.addColorStop(1, 'rgba(255, 238, 0, 0)');
     chart.current = new DrawChart(ref.current!, {
       type: 'line',
       options: {
@@ -37,14 +37,57 @@ export const Chart: FC<{
           y: {
             beginAtZero: true,
             display: false,
+            grid: {
+              color: '#202020',
+            },
+            ticks: {
+              color: '#7D7D7D',
+              font: {
+                family: 'Archivo',
+              },
+            },
           },
           x: {
             display: false,
+            grid: {
+              color: '#202020',
+            },
+            ticks: {
+              color: '#7D7D7D',
+              font: {
+                family: 'Archivo',
+              },
+              callback: function (value: any) {
+                const label = this.getLabelForValue(value);
+                return typeof label === 'string' ? label.toUpperCase() : label;
+              },
+            },
           },
         },
         plugins: {
           legend: {
             display: false,
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: '#000000',
+            titleColor: '#FFFFFF',
+            bodyColor: '#7D7D7D',
+            borderColor: '#FFEE00',
+            borderWidth: 1,
+            padding: 8,
+            cornerRadius: 0,
+            displayColors: false,
+            titleFont: {
+              size: 12,
+              weight: 'normal',
+              family: 'Archivo',
+            },
+            bodyFont: {
+              size: 14,
+              weight: 'normal',
+              family: 'Archivo',
+            },
           },
         },
       },
@@ -52,7 +95,7 @@ export const Chart: FC<{
         labels: list.map((row) => newDayjs(row.date).format('DD/MM/YYYY')),
         datasets: [
           {
-            borderColor: '#fff',
+            borderColor: '#FFEE00',
             // @ts-ignore
             label: list?.[0]?.totalForks ? 'Forks by date' : 'Stars by date',
             backgroundColor: gradient,

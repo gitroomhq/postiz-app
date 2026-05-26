@@ -273,7 +273,7 @@ export const PickPlatforms: FC<{
                       <div
                         onClick={addPlatform(integration)}
                         className={clsx(
-                          'cursor-pointer rounded-[50px] w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          'cursor-pointer w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
                           selectedAccounts.findIndex(
                             (p) => p.id === integration.id
                           ) === -1

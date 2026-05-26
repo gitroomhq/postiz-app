@@ -58,8 +58,8 @@ export const SelectCustomer: FC<{
         data-tooltip-content={t('select_customer_tooltip', 'Select Customer')}
         onClick={openClose}
         className={clsx(
-          'relative z-[20] cursor-pointer h-[42px] rounded-[8px] pl-[16px] pr-[12px] gap-[8px] border flex items-center',
-          open ? 'border-[#612BD3]' : 'border-newColColor'
+          'relative z-[20] cursor-pointer h-[42px] pl-[16px] pr-[12px] gap-[8px] border flex items-center',
+          open ? 'border-lamboGold' : 'border-newColColor'
         )}
       >
         <div>

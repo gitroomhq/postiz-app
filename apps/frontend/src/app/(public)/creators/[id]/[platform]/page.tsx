@@ -27,11 +27,7 @@ export async function generateMetadata({
   };
 }
 
-const cardClass =
-  'p-[24px] rounded-[12px] bg-[#1A1919] border border-[#252525]';
-
-const placeholderBadge =
-  'inline-flex items-center gap-[6px] px-[10px] py-[4px] rounded-full bg-[#1D4ED8]/15 text-[#60A5FA] text-[11px] font-semibold uppercase tracking-[1px]';
+const cardClass = 'p-[24px] bg-lamboCharcoal';
 
 export default async function CreatorPlatformPage({
   params,
@@ -51,14 +47,14 @@ export default async function CreatorPlatformPage({
       <div>
         <Link
           href={`/creators/${encodeURIComponent(id)}`}
-          className="text-[13px] text-[#9c9c9c] hover:text-white transition-colors mb-[12px] inline-block"
+          className="lambo-micro text-lamboAsh hover:text-white transition-colors mb-[12px] inline-block"
         >
           ← Back to {id}
         </Link>
-        <p className="text-[13px] uppercase tracking-[2px] text-[#1D4ED8] font-semibold mb-[8px]">
+        <p className="lambo-caption text-lamboGold mb-[8px]">
           {platformLabel}
         </p>
-        <h1 className="text-[28px] md:text-[36px] font-bold text-white leading-[1.1] tracking-tight">
+        <h1 className="text-[40px] md:text-[54px] text-white leading-[1.19] font-lambo uppercase">
           {id} on {platformLabel}
         </h1>
       </div>
@@ -67,25 +63,25 @@ export default async function CreatorPlatformPage({
         {['Followers', 'Following', 'Posts', 'Engagement Rate'].map((label) => (
           <div key={label} className={cardClass}>
             <div className="flex items-center justify-between mb-[12px]">
-              <span className="text-[12px] text-[#9c9c9c] uppercase tracking-[1px]">
+              <span className="lambo-micro text-[#9c9c9c]">
                 {label}
               </span>
-              <span className={placeholderBadge}>Soon</span>
+              <span className="lambo-badge">Soon</span>
             </div>
-            <div className="text-[28px] font-bold text-white leading-none">—</div>
+            <div className="text-[40px] text-white leading-[1.15] font-lambo uppercase">—</div>
           </div>
         ))}
       </div>
 
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-[16px]">
-          <h2 className="text-[18px] font-semibold text-white">
+          <h4 className="text-[20px] text-white font-lambo uppercase">
             Follower Growth — Last 30 Days
-          </h2>
-          <span className={placeholderBadge}>Soon</span>
+          </h4>
+          <span className="lambo-badge">Soon</span>
         </div>
-        <div className="h-[240px] rounded-[8px] bg-[#0E0E0E] border border-dashed border-[#252525] flex items-center justify-center">
-          <p className="text-[14px] text-[#696868]">
+        <div className="h-[240px] bg-lamboBlack flex items-center justify-center">
+          <p className="text-[14px] text-lamboAsh">
             Chart appears once tracking starts.
           </p>
         </div>
@@ -93,11 +89,11 @@ export default async function CreatorPlatformPage({
 
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-[16px]">
-          <h2 className="text-[18px] font-semibold text-white">Recent Posts</h2>
-          <span className={placeholderBadge}>Soon</span>
+          <h4 className="text-[20px] text-white font-lambo uppercase">Recent Posts</h4>
+          <span className="lambo-badge">Soon</span>
         </div>
-        <div className="rounded-[8px] bg-[#0E0E0E] border border-dashed border-[#252525] p-[32px] text-center">
-          <p className="text-[14px] text-[#696868]">
+        <div className="bg-lamboBlack p-[32px] text-center">
+          <p className="text-[14px] text-lamboAsh">
             Posts appear once scraper indexes this account.
           </p>
         </div>

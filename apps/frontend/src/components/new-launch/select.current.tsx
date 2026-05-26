@@ -108,10 +108,10 @@ export const SelectCurrent: FC = () => {
               setCurrent('global');
             }}
             className={clsx(
-              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
+              'cursor-pointer flex gap-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
               current !== 'global'
-                ? 'text-[#A3A3A3]'
-                : 'border border-[#FC69FF] text-[#FC69FF]'
+                ? 'text-lamboAsh'
+                : 'border border-lamboGold text-lamboGold'
             )}
           >
             <div>
@@ -126,15 +126,15 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] items-center bg-newBgLineColor justify-center',
                 current === integration.id
-                  ? 'border-[#FC69FF] text-[#FC69FF]'
+                  ? 'border-lamboGold text-lamboGold'
                   : 'border-transparent'
               )}
             >
               <div
                 onClick={removeSocial(integration)}
-                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
+                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-[#FF4D4D] rounded-full text-lamboBlack text-[8px]"
               >
                 X
               </div>
@@ -203,7 +203,7 @@ export const IsGlobal: FC<{ id: string }> = ({ id }) => {
         'no_longer_global_mode',
         'No longer in global mode'
       )}
-      className="w-[8px] h-[8px] bg-[#FC69FF] -top-[1px] -end-[3px] absolute rounded-full"
+      className="w-[8px] h-[8px] bg-lamboGold -top-[1px] -end-[3px] absolute rounded-full"
     />
   );
 };

@@ -122,7 +122,7 @@ export const Pagination: FC<{
     <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
+          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-lamboAsh hover:text-white border-lamboCharcoal hover:bg-forth hover:text-black uppercase tracking-[0.14px]"
           aria-label="Go to previous page"
           onClick={() => setPage(current - 1)}
         >
@@ -141,10 +141,10 @@ export const Pagination: FC<{
               aria-current="page"
               onClick={() => setPage(item - 1)}
               className={clsx(
-                'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-newBorder',
+                'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-black border-newBorder uppercase tracking-[0.14px]',
                 current === item - 1
-                  ? 'bg-forth !text-white'
-                  : 'text-textColor hover:text-white'
+                  ? 'bg-forth !text-black'
+                  : 'text-textColor hover:text-black'
               )}
             >
               {item}
@@ -158,7 +158,7 @@ export const Pagination: FC<{
         )}
       >
         <a
-          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
+          className="text-textColor hover:text-black group cursor-pointer inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-lamboAsh border-lamboCharcoal hover:bg-forth uppercase tracking-[0.14px]"
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
@@ -399,7 +399,7 @@ export const MediaBox: FC<{
       <button
         disabled={loading}
         onClick={() => uploaderRef?.current?.click()}
-        className="relative cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
+        className="relative cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center"
       >
         {loading ? (
           <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
@@ -431,7 +431,7 @@ export const MediaBox: FC<{
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('search_media_by_name', 'Search by file name')}
-              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
+              className="w-full h-[44px] px-[14px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-lamboGold"
             />
           </div>
           <input
@@ -467,7 +467,7 @@ export const MediaBox: FC<{
             'flex-1 relative',
             !isLoading &&
               !data?.results?.length &&
-              'bg-newTextColor/[0.02] rounded-[12px]'
+              'bg-newTextColor/[0.02]'
           )}
         >
           <div
@@ -481,7 +481,7 @@ export const MediaBox: FC<{
             {!isLoading && !data?.results?.length && (
               <>
                 <NoMediaIcon />
-                <div className="text-[20px] font-[600]">
+                <div className="text-[20px] font-lambo uppercase tracking-tight">
                   {debouncedSearch
                     ? t(
                         'no_media_match_search',
@@ -514,11 +514,11 @@ export const MediaBox: FC<{
                 {[...new Array(16)].map((_, i) => (
                   <div
                     className={clsx(
-                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max aspect-square'
+                      'px-[3px] py-[3px] float-left cursor-pointer w8-max aspect-square'
                     )}
                     key={i}
                   >
-                    <div className="w-full h-full bg-newSep rounded-[6px] animate-pulse" />
+                    <div className="w-full h-full bg-newSep animate-pulse" />
                   </div>
                 ))}
               </>
@@ -535,22 +535,22 @@ export const MediaBox: FC<{
               .map((media: any) => (
                 <div
                   className={clsx(
-                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
+                    'group px-[3px] py-[3px] float-left w8-max aspect-square',
                     !standalone && 'cursor-pointer'
                   )}
                   key={media.id}
                 >
                   <div
                     className={clsx(
-                      'w-full h-full rounded-[6px] border-[4px] relative',
+                      'w-full h-full border-[4px] relative',
                       !!selected.find((p) => p.id === media.id)
-                        ? 'border-[#612BD3]'
+                        ? 'border-lamboGold'
                         : 'border-transparent'
                     )}
                     onClick={addRemoveSelected(media)}
                   >
                     {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                      <div className="text-black flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-lamboGold absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (
@@ -560,7 +560,7 @@ export const MediaBox: FC<{
                       />
                     )}
                     <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
-                    <div className="w-full h-full rounded-[6px] overflow-hidden relative">
+                    <div className="w-full h-full overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
                           onClick={maximize(media)}
@@ -608,7 +608,7 @@ export const MediaBox: FC<{
           <div className="flex justify-end mt-[32px] gap-[8px]">
             <button
               onClick={() => modals.closeCurrent()}
-              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
+              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex uppercase tracking-[0.14px]"
             >
               {t('cancel', 'Cancel')}
             </button>
@@ -616,7 +616,7 @@ export const MediaBox: FC<{
               <button
                 onClick={standalone ? () => {} : addMedia}
                 disabled={selected.length === 0}
-                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px]"
+                className="cursor-pointer text-black disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-lamboGold flex uppercase tracking-[0.14px] font-medium"
               >
                 {t('add_selected_media', 'Add selected media')}
               </button>
@@ -754,7 +754,7 @@ export const MultiMediaComponent: FC<{
 
   return (
     <>
-      <div className="b1 flex flex-col gap-[8px] rounded-bl-[8px] select-none w-full">
+      <div className="b1 flex flex-col gap-[8px] select-none w-full">
         <div className="flex gap-[10px] px-[12px]">
           {!!currentMedia && (
             <ReactSortable
@@ -768,7 +768,7 @@ export const MultiMediaComponent: FC<{
               handle=".dragging"
             >
               {currentMedia.map((media, index) => (
-                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                  <div key={media.id} className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
                     <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
                     <div className="w-full h-full relative group">
@@ -800,7 +800,7 @@ export const MultiMediaComponent: FC<{
                             ),
                           });
                         }}
-                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
+                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
                       >
                         <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                       </div>
@@ -808,7 +808,7 @@ export const MultiMediaComponent: FC<{
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img
-                          className="w-full h-full object-cover rounded-[4px]"
+                          className="w-full h-full object-cover"
                           src={mediaDirectory.set(media?.path)}
                         />
                       )}
@@ -828,26 +828,26 @@ export const MultiMediaComponent: FC<{
             <div className="flex py-[10px] b2 items-center gap-[4px]">
               <div
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="cursor-pointer h-[30px] justify-center items-center flex bg-newColColor px-[8px]"
               >
                 <div className="flex gap-[8px] items-center">
                   <div>
                     <InsertMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] maxMedia:hidden block">
+                  <div className="text-[10px] uppercase tracking-[0.225px] maxMedia:hidden block">
                     {t('insert_media', 'Insert Media')}
                   </div>
                 </div>
               </div>
               <div
                 onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="cursor-pointer h-[30px] justify-center items-center flex bg-newColColor px-[8px]"
               >
                 <div className="flex gap-[5px] items-center">
                   <div>
                     <DesignMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
+                  <div className="text-[10px] uppercase tracking-[0.225px] iconBreak:hidden block">
                     {t('design_media', 'Design Media')}
                   </div>
                 </div>
@@ -880,7 +880,7 @@ export const MultiMediaComponent: FC<{
           )}
         </div>
       </div>
-      <div className="text-[12px] text-red-400">{error}</div>
+      <div className="text-[12px] text-lamboGold uppercase tracking-[0.14px]">{error}</div>
     </>
   );
 };

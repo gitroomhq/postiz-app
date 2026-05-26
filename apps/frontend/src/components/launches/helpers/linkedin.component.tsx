@@ -130,7 +130,7 @@ export const LinkedinCompany: FC<{
   };
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex">
-      <div className="flex flex-col w-[500px] h-[250px] bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
+      <div className="flex flex-col w-[500px] h-[250px] bg-sixth border-tableBorder border-2 pb-[20px] px-[20px] relative">
         <div className="flex">
           <div className="flex-1">
             <TopTitle title={'Select Company'} />

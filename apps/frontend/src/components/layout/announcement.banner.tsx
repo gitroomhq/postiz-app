@@ -81,7 +81,7 @@ const AnnouncementDetailModal: FC<{
           <Button
             onClick={handleDelete}
             loading={deleting}
-            className="!bg-red-700 rounded-[4px]"
+            className="!bg-red-700"
           >
             {t('delete_announcement', 'Delete Announcement')}
           </Button>
@@ -132,7 +132,7 @@ export const AnnouncementBanner: FC = () => {
 
   return (
     <div
-      className={`${style.bg} ${style.hover} text-white px-[16px] py-[8px] text-center cursor-pointer rounded-[8px] text-[14px] font-[500] transition-colors`}
+      className={`${style.bg} ${style.hover} text-white px-[16px] py-[8px] text-center cursor-pointer text-[14px] font-[500] uppercase tracking-[0.14px] transition-colors`}
       onClick={handleClick(latest)}
     >
       {latest.title}

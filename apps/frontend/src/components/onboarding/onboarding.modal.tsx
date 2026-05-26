@@ -24,7 +24,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
       <style>
         {`#support-discord {display: none}`}
       </style>
-      <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col relative">
+      <div className="flex flex-1 bg-newBgColorInner flex-col relative">
         <button
           className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
           type="button"
@@ -52,39 +52,39 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
               <div className="flex items-center gap-[8px]">
                 <div
                   className={clsx(
-                    'w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-semibold transition-colors',
+                    'w-[32px] h-[32px] flex items-center justify-center text-[14px] font-lambo uppercase transition-colors',
                     step === 1
-                      ? 'bg-boxFocused text-textItemFocused'
-                      : 'bg-newTableHeader'
+                      ? 'bg-lamboGold text-lamboBlack'
+                      : 'bg-lamboCharcoal text-lamboAsh'
                   )}
                 >
                   1
                 </div>
                 <span
                   className={clsx(
-                    'text-[14px]',
-                    step === 1 ? 'font-medium' : 'text-textColor'
+                    'lambo-micro',
+                    step === 1 ? 'text-white' : 'text-lamboAsh'
                   )}
                 >
                   {t('connect_channels', 'Connect Channels')}
                 </span>
               </div>
-              <div className="w-[40px] h-[2px] bg-boxFocused" />
+              <div className="w-[40px] h-[1px] bg-lamboGold" />
               <div className="flex items-center gap-[8px]">
                 <div
                   className={clsx(
-                    'w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-semibold transition-colors',
+                    'w-[32px] h-[32px] flex items-center justify-center text-[14px] font-lambo uppercase transition-colors',
                     step === 2
-                      ? 'bg-boxFocused text-textItemFocused'
-                      : 'bg-newTableHeader'
+                      ? 'bg-lamboGold text-lamboBlack'
+                      : 'bg-lamboCharcoal text-lamboAsh'
                   )}
                 >
                   2
                 </div>
                 <span
                   className={clsx(
-                    'text-[14px]',
-                    step === 2 ? 'font-medium' : 'text-textColor'
+                    'lambo-micro',
+                    step === 2 ? 'text-white' : 'text-lamboAsh'
                   )}
                 >
                   {t('watch_tutorial', 'Watch Tutorial')}
@@ -147,11 +147,11 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
 
   return (
     <div className="flex flex-col gap-[24px]">
-      <div className="flex gap-[4px] flex-col text-center">
-        <div className="text-[24px] font-semibold">
+      <div className="flex gap-[8px] flex-col text-center">
+        <div className="text-[40px] font-lambo uppercase leading-[1.15] text-white">
           {t('connect_your_channels', 'Connect Your Channels')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[16px] leading-[1.56] text-lamboAsh">
           {t(
             'connect_social_media_to_start',
             'Connect your social media accounts to start scheduling posts'
@@ -161,8 +161,8 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
 
       {/* Connected channels */}
       {sortedIntegrations.length > 0 && (
-        <div className="bg-newTableHeader rounded-[8px] p-[16px]">
-          <div className="text-[14px] font-medium mb-[12px]">
+        <div className="bg-lamboCharcoal p-[16px]">
+          <div className="lambo-micro text-lamboAsh mb-[12px]">
             {t('connected_channels', 'Connected Channels')} (
             {sortedIntegrations.length})
           </div>
@@ -170,25 +170,24 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
             {sortedIntegrations.map((integration: any) => (
               <div
                 key={integration.id}
-                className="flex items-center gap-[8px] bg-customColor47/30 rounded-[8px] px-[12px] py-[8px]"
+                className="flex items-center gap-[8px] bg-lamboBlack px-[12px] py-[8px]"
               >
                 <div className="relative w-[28px] h-[28px]">
                   <SafeImage
                     src={integration.picture}
-                    className="rounded-full"
                     alt={integration.identifier}
                     width={28}
                     height={28}
                   />
                   <SafeImage
                     src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute -bottom-[3px] -end-[3px] border border-fifth"
+                    className="absolute -bottom-[3px] -end-[3px] border border-lamboCharcoal"
                     alt={integration.identifier}
                     width={14}
                     height={14}
                   />
                 </div>
-                <span className="text-[13px]">{integration.name}</span>
+                <span className="text-[13px] text-white">{integration.name}</span>
               </div>
             ))}
           </div>
@@ -197,7 +196,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
 
       {/* Available platforms - using AddProviderComponent */}
       <div className="flex flex-col gap-[12px]">
-        <div className="text-[14px] font-medium">
+        <div className="lambo-micro text-lamboAsh">
           {t('click_channel_to_add', 'Click a channel to add it')}
         </div>
         {data && (
@@ -214,7 +213,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
       <div className="flex justify-end pt-[24px] mt-[8px]">
         <button
           onClick={onNext}
-          className="group flex items-center gap-[12px] bg-gradient-to-r from-[#622aff] to-[#8b5cf6] hover:from-[#7c3aff] hover:to-[#9d6eff] text-white font-semibold px-[32px] py-[14px] rounded-[12px] text-[16px] transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+          className="flex items-center gap-[12px] bg-forth hover:bg-lamboGoldDark text-black px-[24px] py-[14px] text-[16px] uppercase tracking-[0.14px] transition-colors"
         >
           {sortedIntegrations.length > 0
             ? t('continue', 'Continue')
@@ -229,7 +228,6 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="group-hover:translate-x-1 transition-transform"
           >
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />
@@ -248,11 +246,11 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
 
   return (
     <div className="flex flex-col gap-[24px] flex-1">
-      <div className="flex gap-[4px] flex-col text-center">
-        <div className="text-[24px] font-semibold">
+      <div className="flex gap-[8px] flex-col text-center">
+        <div className="text-[40px] font-lambo uppercase leading-[1.15] text-white">
           {t('watch_tutorial_title', 'Learn How to Use D3 Creator')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[16px] leading-[1.56] text-lamboAsh">
           {t(
             'watch_tutorial_description',
             'Watch this short video to learn how to get the most out of D3 Creator'
@@ -261,7 +259,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
       </div>
 
       {/* YouTube Video Embed */}
-      <div className="relative flex-1 rounded-[12px] overflow-hidden">
+      <div className="relative flex-1 overflow-hidden">
         <div className="absolute left-0 top-0 w-full h-full flex justify-center">
           <iframe
             className="h-full aspect-video"
@@ -277,7 +275,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
       <div className="flex justify-between pt-[24px] mt-[8px]">
         <button
           onClick={onBack}
-          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-[12px] text-[15px] transition-all"
+          className="flex items-center gap-[8px] bg-transparent opacity-50 hover:opacity-70 hover:bg-lamboTeal/70 border border-white/50 text-white px-[16px] py-[12px] text-[14.4px] uppercase tracking-[0.2px] transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -289,7 +287,6 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="group-hover:-translate-x-1 transition-transform"
           >
             <path d="m12 19-7-7 7-7" />
             <path d="M19 12H5" />
@@ -298,7 +295,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
         </button>
         <button
           onClick={onFinish}
-          className="group flex items-center gap-[12px] bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#34d399] hover:to-[#10b981] text-white font-semibold px-[32px] py-[14px] rounded-[12px] text-[16px] transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
+          className="flex items-center gap-[12px] bg-forth hover:bg-lamboGoldDark text-black px-[24px] py-[14px] text-[16px] uppercase tracking-[0.14px] transition-colors"
         >
           {t('get_started', 'Get Started')}
           <svg
@@ -311,7 +308,6 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="group-hover:scale-110 transition-transform"
           >
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />

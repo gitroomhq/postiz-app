@@ -138,7 +138,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                 >
                   <td className="p-[8px]">
                     <div
-                      className={`w-[20px] h-[20px] rounded-[4px] border-2 flex items-center justify-center ${
+                      className={`w-[20px] h-[20px] border-2 flex items-center justify-center ${
                         charge.refunded
                           ? 'border-newTextColor/20 opacity-40'
                           : selected.has(charge.id)
@@ -188,7 +188,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-[4px] hover:bg-tableBorder transition-colors"
+                        className="inline-flex items-center justify-center w-[28px] h-[28px] hover:bg-tableBorder transition-colors"
                         title={charge.invoice_pdf ? t('download_invoice', 'Download Invoice') : t('view_receipt', 'View Receipt')}
                       >
                         <svg
@@ -220,7 +220,6 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
           onClick={handleRefund}
           loading={refunding}
           disabled={!selected.size}
-          className="rounded-[4px]"
         >
           {t('refund_selected', 'Refund Selected')}
           {selected.size > 0 && ` (${selected.size})`}
@@ -228,7 +227,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
         <Button
           onClick={handleCancel}
           loading={cancelling}
-          className="!bg-red-700 rounded-[4px]"
+          className="!bg-red-700"
         >
           {t('cancel_subscription', 'Cancel Subscription')}
         </Button>
@@ -250,7 +249,7 @@ const ManageBilling = () => {
 
   return (
     <div
-      className="px-[10px] rounded-[4px] bg-red-700 text-white cursor-pointer whitespace-nowrap"
+      className="px-[10px] bg-red-700 text-white cursor-pointer whitespace-nowrap"
       onClick={handleClick}
     >
       {t('manage_billing', 'Manage Billing')}
@@ -349,7 +348,7 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
           {t('announcement_description', 'Description')}
         </label>
         <textarea
-          className="bg-input border border-tableBorder rounded-[8px] p-[10px] text-newTextColor min-h-[120px] outline-none resize-y"
+          className="bg-input border border-tableBorder p-[10px] text-newTextColor min-h-[120px] outline-none resize-y"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t(
@@ -367,7 +366,7 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
             <div
               key={opt.value}
               onClick={() => setColor(opt.value)}
-              className={`flex-1 text-center py-[8px] rounded-[8px] text-white text-[13px] cursor-pointer transition-opacity ${opt.className} ${
+              className={`flex-1 text-center py-[8px] text-white text-[13px] cursor-pointer transition-opacity ${opt.className} ${
                 color === opt.value ? 'opacity-100 ring-2 ring-white' : 'opacity-40'
               }`}
             >
@@ -381,7 +380,6 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
           onClick={handleSubmit}
           loading={saving}
           disabled={!title.trim() || !description.trim()}
-          className="rounded-[4px]"
         >
           {t('create_announcement', 'Create Announcement')}
         </Button>
@@ -403,7 +401,7 @@ const AddAnnouncement = () => {
 
   return (
     <div
-      className="px-[10px] rounded-[4px] bg-green-700 text-white cursor-pointer whitespace-nowrap"
+      className="px-[10px] bg-green-700 text-white cursor-pointer whitespace-nowrap"
       onClick={handleClick}
     >
       {t('add_announcement', 'Add Announcement')}
@@ -418,7 +416,7 @@ const ViewErrors = () => {
   }, []);
   return (
     <div
-      className="px-[10px] rounded-[4px] bg-blue-700 text-white cursor-pointer whitespace-nowrap"
+      className="px-[10px] bg-blue-700 text-white cursor-pointer whitespace-nowrap"
       onClick={handleClick}
     >
       {t('view_errors', 'View Errors')}
@@ -440,7 +438,7 @@ const ImportDebugPost = () => {
 
   return (
     <div
-      className="px-[10px] rounded-[4px] bg-yellow-600 text-white cursor-pointer whitespace-nowrap"
+      className="px-[10px] bg-yellow-600 text-white cursor-pointer whitespace-nowrap"
       onClick={handleClick}
     >
       {t('import_debug_post', 'Import Debug Post')}
@@ -508,7 +506,7 @@ export const Impersonate = () => {
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
+      <div className="bg-forth h-[52px] flex justify-center items-center border-input border text-black uppercase tracking-[0.14px]">
         <div className="relative flex flex-col w-[600px]">
           <div className="relative z-[1]">
             {user?.impersonate ? (
@@ -518,7 +516,7 @@ export const Impersonate = () => {
                 </div>
                 <div>
                   <div
-                    className="px-[10px] rounded-[4px] bg-red-500 text-white cursor-pointer"
+                    className="px-[10px] bg-red-500 text-white cursor-pointer"
                     onClick={stopImpersonating}
                   >
                     X

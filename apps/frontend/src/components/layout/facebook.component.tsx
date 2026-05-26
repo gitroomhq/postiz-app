@@ -6,7 +6,7 @@ export const FacebookComponent = () => {
     return null;
   }
   return (
-    <Script strategy="afterInteractive" id="fb-pixel">
+    <Script strategy="lazyOnload" id="fb-pixel">
       {`!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};

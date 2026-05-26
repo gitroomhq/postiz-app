@@ -128,7 +128,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
   return (
     <div className="flex flex-col gap-[16px] min-w-[500px]">
       <textarea
-        className="w-full h-[200px] p-[12px] rounded-[8px] bg-input border border-tableBorder text-textColor font-mono text-[13px] resize-y"
+        className="w-full h-[200px] p-[12px] bg-input border border-tableBorder text-textColor font-mono text-[13px] resize-y"
         placeholder={t(
           'paste_debug_json',
           'Paste the debug JSON copied from a failed post...'
@@ -143,7 +143,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
 
       {parsed && (
         <div className="flex flex-col gap-[12px]">
-          <div className="flex flex-col gap-[8px] p-[12px] rounded-[8px] bg-input border border-tableBorder">
+          <div className="flex flex-col gap-[8px] p-[12px] bg-input border border-tableBorder">
             <div className="text-[13px] font-[600] text-textColor">
               {t('debug_info', 'Debug Info')}
             </div>
@@ -175,7 +175,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                   <span className="font-[500]">
                     {t('error_details', 'Error Details')}:
                   </span>
-                  <div className="mt-[4px] max-h-[100px] overflow-y-auto bg-newBgColor p-[8px] rounded-[4px] text-[11px] font-mono break-all whitespace-pre-wrap">
+                  <div className="mt-[4px] max-h-[100px] overflow-y-auto bg-newBgColor p-[8px] text-[11px] font-mono break-all whitespace-pre-wrap">
                     {parsed._debug.errors.map((err, i) => (
                       <div key={i} className="mb-[4px]">
                         [{err.platform}] {err.message}
@@ -214,7 +214,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                   <div
                     key={integration.id}
                     className={clsx(
-                      'flex items-center gap-[10px] p-[10px] rounded-[8px] border cursor-pointer transition-all',
+                      'flex items-center gap-[10px] p-[10px] border cursor-pointer transition-all',
                       selectedIntegrationId === integration.id
                         ? 'border-forth bg-forth/10'
                         : 'border-tableBorder hover:border-textColor/30'
@@ -223,7 +223,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                   >
                     <img
                       src={integration.picture || '/no-picture.jpg'}
-                      className="w-[24px] h-[24px] rounded-[6px]"
+                      className="w-[24px] h-[24px]"
                       alt={integration.name}
                     />
                     <div className="text-[13px] text-textColor">
@@ -231,7 +231,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                     </div>
                     <img
                       src={`/icons/platforms/${integration.identifier}.png`}
-                      className="w-[14px] h-[14px] rounded-[4px] ml-auto"
+                      className="w-[14px] h-[14px] ml-auto"
                       alt={integration.identifier}
                     />
                   </div>
@@ -244,7 +244,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
             onClick={handleImport}
             loading={importing}
             disabled={!selectedIntegrationId}
-            className="rounded-[4px]"
+            className=""
           >
             {t('import_as_draft', 'Import as Draft')}
           </Button>

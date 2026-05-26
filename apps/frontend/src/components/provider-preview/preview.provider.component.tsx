@@ -222,7 +222,7 @@ export const ProviderPreviewComponent: FC<ProviderPreviewProps> = ({
       <FormProvider {...form}>
         <div className="flex flex-col text-white p-[10px]">
           {errors && errors.length > 0 && (
-            <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+            <div className="border border-lamboGold bg-lamboCharcoal p-3 text-[14px] text-lamboGold uppercase tracking-[0.14px]">
               <ul className="list-disc ps-5">
                 {errors.map((e, i) => (
                   <li key={i}>{e}</li>

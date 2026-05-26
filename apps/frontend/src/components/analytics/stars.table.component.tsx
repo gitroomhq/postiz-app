@@ -173,7 +173,7 @@ export const StarsTableComponent = () => {
             />
           </svg>
         </div>
-        <h2 className="text-[24px]">{t('stars_per_day', 'Stars per day')}</h2>
+        <h2 className="text-[24px] font-lambo uppercase tracking-tight">{t('stars_per_day', 'Stars per day')}</h2>
         <div
           onClick={changePage('increase')}
           className={clsx(

@@ -5,6 +5,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        lamboBlack: '#000000',
+        lamboCharcoal: '#202020',
+        lamboIron: '#181818',
+        lamboGold: '#FFEE00',
+        lamboGoldDark: '#917300',
+        lamboGoldText: '#FFCE3E',
+        lamboWhite: '#FFFFFF',
+        lamboSmoke: '#F5F5F5',
+        lamboAsh: '#7D7D7D',
+        lamboSteel: '#969696',
+        lamboGraphite: '#494949',
+        lamboShadow: '#313131',
+        lamboCyan: '#29ABE2',
+        lamboLink: '#3860BE',
+        lamboTeal: '#1EAEDB',
         primary: 'var(--color-primary)',
         secondary: 'var(--color-secondary)',
         textColor: 'var(--new-btn-text)',
@@ -122,7 +137,20 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['Helvetica Neue'],
+        sans: ['Archivo', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        display: ['"Archivo Black"', 'Archivo', 'Helvetica Neue', 'sans-serif'],
+        lambo: ['Archivo', 'Helvetica Neue', 'sans-serif'],
+      },
+      borderRadius: {
+        none: '0px',
+        DEFAULT: '0px',
+        sm: '0px',
+        md: '0px',
+        lg: '0px',
+        xl: '0px',
+        '2xl': '0px',
+        '3xl': '0px',
+        full: '9999px',
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',

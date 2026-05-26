@@ -64,7 +64,7 @@ export const ThirdPartyMenuComponent: FC<{
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
+          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] border border-tableBorder text-nowrap`}
         >
           <div
             className="flex gap-[12px] items-center"
@@ -122,12 +122,12 @@ export const ThirdPartyComponent = () => {
       >
         <div className="flex gap-[12px] flex-col">
           <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-lambo uppercase tracking-tight">
               {t('integrations')}
             </h2>
             <div
               onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -150,7 +150,7 @@ export const ThirdPartyComponent = () => {
             <div className="flex-1 flex flex-col gap-[14px]">
               <div
                 className={clsx(
-                  'gap-[16px] flex flex-col relative justify-center rounded-e-[8px]'
+                  'gap-[16px] flex flex-col relative justify-center'
                 )}
               >
                 {!isLoading && !data?.length ? (
@@ -161,7 +161,7 @@ export const ThirdPartyComponent = () => {
                       key={p.id}
                       className={clsx('flex gap-[8px] items-center group/profile hover:bg-boxHover')}
                     >
-                      <div className="h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
+                      <div className="h-full w-[4px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
                         <SVGLine />
                       </div>
                       <div

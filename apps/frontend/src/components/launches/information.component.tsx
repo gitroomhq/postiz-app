@@ -171,7 +171,7 @@ export const InformationComponent: FC<{
   return (
     <div
       className={clsx(
-        'group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
+        'group gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
         isValid ? 'border border-newColColor' : 'bg-[#FF3F3F]'
       )}
     >
@@ -205,7 +205,7 @@ export const InformationComponent: FC<{
       {((isGlobal && selectedIntegrations.length) || !isValid) && (
         <div
           className={clsx(
-            'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
+            'z-[300] hidden bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
             isValid ? 'border border-newColColor' : 'border border-[#FF3F3F]'
           )}
         >
@@ -227,7 +227,7 @@ export const InformationComponent: FC<{
                     <SafeImage
                       src={`/icons/platforms/${p.integration.identifier}.png`}
                       alt={p.integration.name}
-                      className="rounded-[4px] w-[16px] h-[16px] min-w-[16px] min-h-[16px]"
+                      className="w-[16px] h-[16px] min-w-[16px] min-h-[16px]"
                       width={16}
                       height={16}
                     />

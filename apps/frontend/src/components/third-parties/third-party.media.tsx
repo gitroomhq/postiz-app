@@ -102,7 +102,7 @@ export const ThirdPartyPopup: FC<{
                 setThirdParty(p);
               }}
               key={p.identifier}
-              className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+              className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
             >
               <div>
                 <img
@@ -184,7 +184,7 @@ export const ThirdPartyMedia: FC<{
       <div className="relative group">
         <div
           className={clsx(
-            'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]'
+            'cursor-pointer h-[30px] justify-center items-center flex bg-newColColor px-[8px]'
           )}
           onClick={() => {
             modals.openModal({
@@ -216,7 +216,7 @@ export const ThirdPartyMedia: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[10px] font-[600] iconBreak:hidden block">
+            <div className="text-[10px] uppercase tracking-[0.225px] iconBreak:hidden block">
               {t('integrations', 'Integrations')}
             </div>
           </div>

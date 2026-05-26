@@ -13,7 +13,7 @@ function replaceLinks(text: string) {
     /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
   return text.replace(
     urlRegex,
-    '<a class="cursor-pointer underline font-bold" target="_blank" href="$1">$1</a>'
+    '<a class="cursor-pointer underline text-lamboGold" target="_blank" href="$1">$1</a>'
   );
 }
 export const ShowNotification: FC<{
@@ -33,8 +33,8 @@ export const ShowNotification: FC<{
   return (
     <div
       className={clsx(
-        `text-textColor px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors`,
-        newNotification && 'font-bold bg-seventh animate-newMessages'
+        `text-textColor px-[16px] py-[16px] border-b border-tableBorder last:border-b-0 transition-colors`,
+        newNotification && 'border-l-2 border-l-lamboGold bg-lamboIron animate-newMessages'
       )}
     >
       <div
@@ -63,10 +63,10 @@ export const NotificationOpenComponent = () => {
   return (
     <div
       id="notification-popup"
-      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] end-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[600]"
+      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[360px] min-h-[200px] top-[100%] end-0 bg-lamboCharcoal text-textColor flex flex-col z-[600]"
     >
       <div
-        className={`p-[16px] border-b border-tableBorder font-bold`}
+        className={`p-[16px] border-b border-tableBorder font-lambo uppercase tracking-[0.14px] text-[14px]`}
       >
         {t('notifications', 'Notifications')}
       </div>
@@ -145,8 +145,8 @@ const NotificationComponent = () => {
               cx="17.0625"
               cy="5"
               r="4"
-              fill="#FF3EA2"
-              stroke="#1A1919"
+              fill="#FFEE00"
+              stroke="#000000"
               strokeWidth="2"
             />
           )}

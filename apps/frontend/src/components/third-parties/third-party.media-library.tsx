@@ -84,7 +84,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
 
   return (
     <div className="flex flex-col gap-[16px] h-full">
-      <div className="text-[14px] font-[600]">
+      <div className="text-[14px] uppercase tracking-[0.14px]">
         {t('select_media_to_import', 'Select media to import from')}{' '}
         {integration.title}: {integration.name}
       </div>
@@ -95,7 +95,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
               {[...new Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square bg-newSep rounded-[6px] animate-pulse"
+                  className="aspect-square bg-newSep animate-pulse"
                 />
               ))}
             </div>
@@ -113,13 +113,13 @@ const ThirdPartyMediaLibraryBrowser: FC<{
                   <div
                     key={item.id}
                     onClick={() => toggleSelect(item)}
-                    className="cursor-pointer aspect-square rounded-[6px] overflow-hidden relative group"
+                    className="cursor-pointer aspect-square overflow-hidden relative group"
                   >
                     <div
                       className={clsx(
-                        'w-full h-full border-[4px] rounded-[6px]',
+                        'w-full h-full border-[4px]',
                         isSelected
-                          ? 'border-[#612BD3]'
+                          ? 'border-lamboGold'
                           : 'border-transparent'
                       )}
                     >
@@ -127,14 +127,14 @@ const ThirdPartyMediaLibraryBrowser: FC<{
                         <VideoFrame url={item.thumbnail || item.url} />
                       ) : (
                         <img
-                          className="w-full h-full object-cover rounded-[4px]"
+                          className="w-full h-full object-cover"
                           src={item.thumbnail || item.url}
                           alt={item.name || ''}
                         />
                       )}
                     </div>
                     {isSelected && (
-                      <div className="text-white flex z-[10] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[2px] -end-[2px]">
+                      <div className="text-black flex z-[10] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-lamboGold absolute -bottom-[2px] -end-[2px]">
                         {selected.findIndex((s) => s.id === item.id) + 1}
                       </div>
                     )}
@@ -160,14 +160,14 @@ const ThirdPartyMediaLibraryBrowser: FC<{
       <div className="flex justify-end gap-[8px]">
         <button
           onClick={() => modals.closeCurrent()}
-          className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
+          className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex uppercase tracking-[0.14px]"
         >
           {t('cancel', 'Cancel')}
         </button>
         <button
           onClick={importSelected}
           disabled={!selected.length || importing}
-          className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px] gap-[8px]"
+          className="cursor-pointer text-black disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-lamboGold flex gap-[8px] uppercase tracking-[0.14px] font-medium"
         >
           {importing && (
             <div className="animate-spin h-[16px] w-[16px] border-2 border-white border-t-transparent rounded-full" />
@@ -209,7 +209,7 @@ const ThirdPartyMediaLibraryPicker: FC<{
         <div
           key={p.id}
           onClick={() => setSelected(p)}
-          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
         >
           <div>
             <img
@@ -271,7 +271,7 @@ export const ThirdPartyMediaLibrary: FC<{
           ),
         });
       }}
-      className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
+      className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center"
     >
       <svg
         width="14"

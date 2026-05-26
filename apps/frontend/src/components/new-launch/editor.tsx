@@ -363,7 +363,7 @@ export const EditorWrapper: FC<{
         'relative flex-col gap-[20px] flex-1',
         (items.length === 1 || !canEdit || !comments) && 'flex',
         ((!canEdit && !isCreateSet) || !comments) &&
-          'bg-newSettings rounded-[12px]'
+          'bg-newSettings'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -382,7 +382,7 @@ export const EditorWrapper: FC<{
               )}
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100]" />
         </>
       )}
       {!canEdit && !isCreateSet && (
@@ -407,12 +407,12 @@ export const EditorWrapper: FC<{
               )}
             </div>
             <div>
-              <div className="text-white rounded-[8px] h-[44px] px-[20px] bg-[#D82D7E] cursor-pointer flex justify-center items-center">
+              <div className="text-lamboBlack h-[44px] px-[20px] bg-lamboGold cursor-pointer flex justify-center items-center uppercase tracking-[0.14px] font-medium">
                 {t('edit_content', 'Edit content')}
               </div>
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100]" />
         </>
       )}
       {items.map((g, index) => (
@@ -471,7 +471,7 @@ export const EditorWrapper: FC<{
                             onClick={goBackToGlobal}
                           >
                             <div className="flex gap-[6px] items-center">
-                              <div className="w-[8px] h-[8px] rounded-full bg-[#FC69FF]" />
+                              <div className="w-[8px] h-[8px] rounded-full bg-lamboGold" />
                               <div className="text-[14px] font-[600]">
                                 {t(
                                   'editing_a_specific_network',
@@ -810,7 +810,7 @@ export const Editor: FC<{
                       <div
                         data-tooltip-id="tooltip"
                         data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                        className="select-none cursor-pointer w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
                         onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                       >
                         <EmojiIcon />

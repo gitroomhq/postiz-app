@@ -10,7 +10,7 @@ export const DummyCodeComponent: FC<{ code: any }> = ({ code }) => {
   const toaster = useToaster();
 
   return (
-    <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
+    <div className="border border-customColor6 bg-sixth px-[16px] pb-[16px] relative w-full">
       <TopTitle title={`Output`}>
         <Button
           className="mr-[50px]"
