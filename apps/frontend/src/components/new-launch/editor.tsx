@@ -300,7 +300,7 @@ export const EditorWrapper: FC<{
   const addValue = useCallback(
     (index: number) => () => {
       setTimeout(() => {
-        // scroll the the bottom
+        // scroll to the bottom
         document.querySelector('#social-content').scrollTo({
           top: document.querySelector('#social-content').scrollHeight,
         });
