@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev -p 4200",
+    "dev:webpack": "dotenv -e ../../.env -- next dev -p 4200 --webpack",
+    "prewarm": "node scripts/prewarm.mjs",
     "fetch-gtm": "node scripts/fetch-gtm.mjs",
     "postinstall": "node scripts/fetch-gtm.mjs",
     "build": "next build",
