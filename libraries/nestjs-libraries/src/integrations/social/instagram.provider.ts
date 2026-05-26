@@ -99,7 +99,7 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
+    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1 || body.indexOf('"error_subcode":33') > -1) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -347,8 +347,9 @@ export class InstagramProvider
   async reConnect(
     id: string,
     requiredId: string,
-    accessToken: string
+    token: string
   ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
+    const [accessToken, userToken] = token.split('___');
     const findPage = (await this.pages(accessToken)).find(
       (p) => p.id === requiredId
     );
@@ -440,7 +441,8 @@ export class InstagramProvider
     };
   }
 
-  async pages(accessToken: string) {
+  async pages(token: string) {
+    const [accessToken, userToken] = token.split('___');
     const seenPageIds = new Set<string>();
     const allFacebookPages: any[] = [];
 
@@ -524,9 +526,10 @@ export class InstagramProvider
   }
 
   async fetchPageInformation(
-    accessToken: string,
+    token: string,
     data: { pageId: string; id: string }
   ) {
+    const [accessToken, userToken] = token.split('___');
     const { access_token, ...all } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
@@ -543,18 +546,19 @@ export class InstagramProvider
       id,
       name,
       picture: profile_picture_url,
-      access_token,
+      access_token: access_token + '___' + accessToken,
       username,
     };
   }
 
   async post(
     id: string,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
@@ -615,7 +619,7 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              `https://${type}/v20.0/${photoId}?access_token=${userToken || accessToken}&fields=status_code`,
               undefined,
               '',
               0,
@@ -648,7 +652,7 @@ export class InstagramProvider
 
         const { permalink } = await (
           await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
           )
         ).json();
         lastPermalink = permalink;
@@ -674,7 +678,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
         )
       ).json();
 
@@ -704,7 +708,7 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${userToken || accessToken}`,
             undefined,
             '',
             0,
@@ -726,7 +730,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
         )
       ).json();
 
@@ -745,11 +749,12 @@ export class InstagramProvider
     id: string,
     postId: string,
     lastCommentId: string | undefined,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [commentPost] = postDetails;
 
     const { id: commentId } = await (
@@ -766,7 +771,7 @@ export class InstagramProvider
     // Get the permalink from the parent post
     const { permalink } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${accessToken}`
+        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${userToken || accessToken}`
       )
     ).json();
 
@@ -824,10 +829,11 @@ export class InstagramProvider
 
   async analytics(
     id: string,
-    accessToken: string,
+    token: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
+    const [accessToken, userToken] = token.split('___');
     const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
@@ -885,11 +891,12 @@ export class InstagramProvider
 
   async postAnalytics(
     integrationId: string,
-    accessToken: string,
+    token: string,
     postId: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
+    const [accessToken, userToken] = token.split('___');
     const today = dayjs().format('YYYY-MM-DD');
 
     try {
