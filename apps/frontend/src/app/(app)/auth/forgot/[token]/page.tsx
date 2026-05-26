@@ -3,7 +3,7 @@ import { ForgotReturn } from '@gitroom/frontend/components/auth/forgot-return';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
-  title: `D3 Analytics Forgot Password`,
+  title: `D3 Creator — Forgot Password`,
   description: '',
 };
 export default async function Auth(params: {

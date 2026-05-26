@@ -1,4 +1,4 @@
-# D3 Analytics — Scraper-Based Analytics Platform (v1 Design)
+# D3 Creator — Scraper-Based Analytics Platform (v1 Design)
 
 **Status:** Approved design, awaiting implementation plan
 **Date:** 2026-05-26
@@ -8,7 +8,7 @@
 
 ## Overview
 
-D3 Analytics is a social-analytics SaaS forked from Postiz. This design replaces the existing developer-API integration with a **login-free, Apify-based scraper approach** so users can track any public social profile by URL alone — no OAuth, no API keys.
+D3 Creator is a social-analytics SaaS forked from Postiz. This design replaces the existing developer-API integration with a **login-free, Apify-based scraper approach** so users can track any public social profile by URL alone — no OAuth, no API keys.
 
 **Product shape:** Agency tool + white-label client login portal.
 **Hierarchy:** `Agency → Client → Creator → Profile (one per platform per account)`.
@@ -364,8 +364,8 @@ Breadcrumbs start at **the client's name**, not the agency. No awareness of D3's
 
 | Tier | URL | Branding | Build cost |
 |---|---|---|---|
-| **L1 — Branded portal on shared domain** (v1) | `d3-analytics.vercel.app/portal/[client-id]` | Agency logo, color, name on every page. Tiny "Powered by D3 Analytics" footer | Days |
-| **L2 — Subdomain per agency** (v2) | `acmeagency.d3analytics.com` | Same + footer hidden | ~1–2 weeks |
+| **L1 — Branded portal on shared domain** (v1) | `d3-creator.vercel.app/portal/[client-id]` | Agency logo, color, name on every page. Tiny "Powered by D3 Creator" footer | Days |
+| **L2 — Subdomain per agency** (v2) | `acmeagency.d3creator.com` | Same + footer hidden | ~1–2 weeks |
 | **L3 — Full custom domain** (v3) | `reports.acmeagency.com` | Zero D3 branding | ~2–4 weeks |
 
 **v1 ships L1.** Three branding fields on the agency/organization:
@@ -432,7 +432,7 @@ Concrete scenario: **Sarah** (agency owner) onboards her first client **Acme Tal
 
 | Time | Step | Behind the scenes |
 |---|---|---|
-| 0:00 | Sarah signs up at `d3-analytics.vercel.app/signup` | `user` row + `organization` row created |
+| 0:00 | Sarah signs up at `d3-creator.vercel.app/signup` | `user` row + `organization` row created |
 | 0:02 | Onboarding wizard: agency name, logo, primary color, ToS | Logo → Vercel Blob; `user_agreements` row written with timestamp + IP |
 | 0:05 | Empty dashboard with "Add your first client" CTA | — |
 | 0:07 | `+ Add Client` → "Acme Talent Co." | `client` row created |

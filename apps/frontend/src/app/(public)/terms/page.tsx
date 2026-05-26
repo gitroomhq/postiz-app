@@ -4,9 +4,9 @@ export const dynamic = 'force-static';
 export const revalidate = false;
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — D3 Analytics',
+  title: 'Terms of Service — D3 Creator',
   description:
-    'D3 Analytics Terms of Service: the rules and conditions for using our social media analytics platform.',
+    'D3 Creator Terms of Service: the rules and conditions for using our social media analytics platform.',
 };
 
 const sectionTitle = 'text-[20px] md:text-[22px] font-bold text-white mt-[40px] mb-[16px]';
@@ -33,11 +33,11 @@ export default function TermsPage() {
       <p className={paragraph}>
         These Terms of Service (&ldquo;<strong className="text-white">Terms</strong>&rdquo;) form
         a binding agreement between you (&ldquo;you&rdquo; or &ldquo;User&rdquo;) and{' '}
-        <strong className="text-white">D3 Analytics</strong> (&ldquo;D3 Analytics&rdquo;,
+        <strong className="text-white">D3 Creator</strong> (&ldquo;D3 Creator&rdquo;,
         &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) governing your access to and use
-        of the D3 Analytics website at{' '}
-        <a className={linkBlue} href="https://d3-analytics.vercel.app">
-          d3-analytics.vercel.app
+        of the D3 Creator website at{' '}
+        <a className={linkBlue} href="https://d3-creator.vercel.app">
+          d3-creator.vercel.app
         </a>{' '}
         and our related social media analytics services (collectively, the &ldquo;Service&rdquo;).
       </p>
@@ -67,7 +67,7 @@ export default function TermsPage() {
 
       <h2 className={sectionTitle}>2. Description of the Service</h2>
       <p className={paragraph}>
-        D3 Analytics is a self-serve social media analytics platform that allows you to connect
+        D3 Creator is a self-serve social media analytics platform that allows you to connect
         your own social media accounts and view your analytics in a single dashboard. The Service
         currently supports analytics for Instagram, Facebook, TikTok, Douyin, and Xiaohongshu
         (RedNote). We may add or remove supported platforms from time to time.
@@ -132,7 +132,7 @@ export default function TermsPage() {
       <p className={paragraph}>
         For OAuth-supported platforms, you connect your account by logging in through the
         platform&rsquo;s official authorization flow. You may revoke our access at any time from
-        within your D3 Analytics dashboard or directly from the social platform&rsquo;s settings.
+        within your D3 Creator dashboard or directly from the social platform&rsquo;s settings.
         Your continued use of these connections is also subject to each platform&rsquo;s own terms
         and policies (for example, the{' '}
         <a className={linkBlue} href="https://developers.facebook.com/terms/" target="_blank" rel="noopener noreferrer">
@@ -174,7 +174,7 @@ export default function TermsPage() {
       <h2 className={sectionTitle}>7. Intellectual Property</h2>
       <h3 className={subTitle}>7.1 Our Rights</h3>
       <p className={paragraph}>
-        The Service, including its software, design, branding (such as the &ldquo;D3 Analytics&rdquo;
+        The Service, including its software, design, branding (such as the &ldquo;D3 Creator&rdquo;
         name and logo), and content (excluding User Content), is owned by us or our licensors and
         is protected by copyright, trademark, and other intellectual property laws.
       </p>
@@ -229,7 +229,7 @@ export default function TermsPage() {
 
       <h2 className={sectionTitle}>11. Limitation of Liability</h2>
       <p className={paragraph}>
-        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL D3 ANALYTICS, ITS
+        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL D3 CREATOR, ITS
         OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, OR LICENSORS BE LIABLE FOR ANY INDIRECT,
         INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION LOSS
         OF PROFITS, REVENUE, DATA, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN
@@ -245,7 +245,7 @@ export default function TermsPage() {
 
       <h2 className={sectionTitle}>12. Indemnification</h2>
       <p className={paragraph}>
-        You agree to indemnify, defend, and hold harmless D3 Analytics and its affiliates, officers,
+        You agree to indemnify, defend, and hold harmless D3 Creator and its affiliates, officers,
         agents, and employees from and against any claims, liabilities, damages, losses, and
         expenses (including reasonable legal fees) arising out of or in any way connected with:
       </p>
@@ -298,7 +298,7 @@ export default function TermsPage() {
         without regard to its conflict of laws principles.
       </p>
       <p className={paragraph}>
-        You and D3 Analytics agree that the courts of Malaysia shall have exclusive jurisdiction
+        You and D3 Creator agree that the courts of Malaysia shall have exclusive jurisdiction
         to settle any dispute arising out of or in connection with these Terms or the Service,
         except where such exclusive jurisdiction would deprive you of mandatory consumer
         protections available to you under the law of your country of residence.
@@ -308,7 +308,7 @@ export default function TermsPage() {
       <h3 className={subTitle}>16.1 Entire Agreement</h3>
       <p className={paragraph}>
         These Terms, together with the Privacy Policy, constitute the entire agreement between you
-        and D3 Analytics regarding the Service and supersede any prior agreements.
+        and D3 Creator regarding the Service and supersede any prior agreements.
       </p>
 
       <h3 className={subTitle}>16.2 Severability</h3>
@@ -336,12 +336,12 @@ export default function TermsPage() {
       </p>
       <div className="mt-[12px] mb-[24px] p-[20px] bg-[#1a1919] border border-[#252525] rounded-[8px]">
         <p className="text-[14px] text-[#c8c8c8] mb-[4px]">
-          <strong className="text-white">D3 Analytics</strong>
+          <strong className="text-white">D3 Creator</strong>
         </p>
         <p className="text-[14px] text-[#c8c8c8]">
           Email:{' '}
-          <a className={linkBlue} href="mailto:legal@d3-analytics.vercel.app">
-            legal@d3-analytics.vercel.app
+          <a className={linkBlue} href="mailto:legal@d3-creator.vercel.app">
+            legal@d3-creator.vercel.app
           </a>
         </p>
       </div>

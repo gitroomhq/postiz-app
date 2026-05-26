@@ -4,9 +4,9 @@ export const dynamic = 'force-static';
 export const revalidate = false;
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — D3 Analytics',
+  title: 'Privacy Policy — D3 Creator',
   description:
-    'D3 Analytics Privacy Policy: how we collect, use, and protect your information when you use our social media analytics service.',
+    'D3 Creator Privacy Policy: how we collect, use, and protect your information when you use our social media analytics service.',
 };
 
 const sectionTitle = 'text-[20px] md:text-[22px] font-bold text-white mt-[40px] mb-[16px]';
@@ -31,12 +31,12 @@ export default function PrivacyPage() {
       </header>
 
       <p className={paragraph}>
-        D3 Analytics (&ldquo;<strong className="text-white">D3 Analytics</strong>&rdquo;,
+        D3 Creator (&ldquo;<strong className="text-white">D3 Creator</strong>&rdquo;,
         &ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your
         privacy. This Privacy Policy explains how we collect, use, store, and disclose your personal
         information when you use our website at{' '}
-        <a className={linkBlue} href="https://d3-analytics.vercel.app">
-          d3-analytics.vercel.app
+        <a className={linkBlue} href="https://d3-creator.vercel.app">
+          d3-creator.vercel.app
         </a>{' '}
         and our related social media analytics services (collectively, the &ldquo;Service&rdquo;).
       </p>
@@ -100,8 +100,8 @@ export default function PrivacyPage() {
       <p className={paragraph}>We use the information we collect for the following purposes:</p>
       <ul className="list-disc pl-[24px] mb-[12px]">
         <li className={bullet}>To provide and display analytics for your connected social media
-          accounts in your D3 Analytics dashboard</li>
-        <li className={bullet}>To create and manage your D3 Analytics account</li>
+          accounts in your D3 Creator dashboard</li>
+        <li className={bullet}>To create and manage your D3 Creator account</li>
         <li className={bullet}>To authenticate you and keep your account secure</li>
         <li className={bullet}>To improve, maintain, and operate the Service</li>
         <li className={bullet}>To respond to your support requests and communicate with you about
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
 
       <h2 className={sectionTitle}>3. Third-Party Services We Use</h2>
       <p className={paragraph}>
-        D3 Analytics relies on the following third-party services to deliver its features.
+        D3 Creator relies on the following third-party services to deliver its features.
         Each third party is responsible for its own data handling under its own privacy policy.
       </p>
       <ul className="list-disc pl-[24px] mb-[12px]">
@@ -210,18 +210,18 @@ export default function PrivacyPage() {
       <p className={paragraph}>
         You can exercise most of these rights directly from your account settings, or by emailing
         us at{' '}
-        <a className={linkBlue} href="mailto:privacy@d3-analytics.vercel.app">
-          privacy@d3-analytics.vercel.app
+        <a className={linkBlue} href="mailto:privacy@d3-creator.vercel.app">
+          privacy@d3-creator.vercel.app
         </a>
         . We will respond to your request within thirty (30) days.
       </p>
 
       <h2 className={sectionTitle}>7. Disconnecting Social Media Accounts</h2>
       <p className={paragraph}>
-        You may disconnect any connected social media account at any time from your D3 Analytics
+        You may disconnect any connected social media account at any time from your D3 Creator
         dashboard. Once disconnected, we will revoke the relevant OAuth tokens and stop fetching
         new analytics data for that account. Historical analytics snapshots already collected may
-        remain in your account until you delete them or delete your D3 Analytics account.
+        remain in your account until you delete them or delete your D3 Creator account.
       </p>
       <p className={paragraph}>
         You can also revoke our access directly from the social platform&rsquo;s settings (for
@@ -279,12 +279,12 @@ export default function PrivacyPage() {
       </p>
       <div className="mt-[12px] mb-[24px] p-[20px] bg-[#1a1919] border border-[#252525] rounded-[8px]">
         <p className="text-[14px] text-[#c8c8c8] mb-[4px]">
-          <strong className="text-white">D3 Analytics</strong>
+          <strong className="text-white">D3 Creator</strong>
         </p>
         <p className="text-[14px] text-[#c8c8c8]">
           Email:{' '}
-          <a className={linkBlue} href="mailto:privacy@d3-analytics.vercel.app">
-            privacy@d3-analytics.vercel.app
+          <a className={linkBlue} href="mailto:privacy@d3-creator.vercel.app">
+            privacy@d3-creator.vercel.app
           </a>
         </p>
       </div>

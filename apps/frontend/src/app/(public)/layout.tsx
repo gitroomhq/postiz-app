@@ -33,18 +33,27 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 D3
               </span>
               <span className="font-bold text-[22px] leading-none tracking-tight text-white">
-                Analytics
+                Creator
               </span>
             </Link>
-            <nav className="flex items-center gap-[24px] text-[14px] text-[#9c9c9c]">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy
+            <nav className="flex items-center gap-[20px] sm:gap-[28px] text-[14px]">
+              <Link
+                href="/dashboard"
+                className="text-[#c8c8c8] hover:text-white font-semibold transition-colors"
+              >
+                Dashboard
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms
+              <Link
+                href="/leaderboard"
+                className="text-[#c8c8c8] hover:text-white font-semibold transition-colors"
+              >
+                Leaderboard
               </Link>
-              <Link href="/auth/login" className="hover:text-white transition-colors">
-                Login
+              <Link
+                href="/admin"
+                className="text-[12px] text-[#696868] hover:text-[#9c9c9c] transition-colors uppercase tracking-[1px]"
+              >
+                Admin
               </Link>
             </nav>
           </div>
@@ -60,7 +69,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         {/* Footer */}
         <footer className="border-t border-[#252525] mt-[48px]">
           <div className="max-w-[920px] mx-auto px-[24px] py-[24px] flex flex-col md:flex-row items-center justify-between gap-[12px] text-[13px] text-[#9c9c9c]">
-            <div>© 2025 D3 Analytics. All rights reserved.</div>
+            <div>© 2025 D3 Creator. All rights reserved.</div>
             <div className="flex items-center gap-[20px]">
               <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy

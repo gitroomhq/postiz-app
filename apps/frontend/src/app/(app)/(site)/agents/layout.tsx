@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { Agent } from '@gitroom/frontend/components/agents/agent';
 export const metadata: Metadata = {
-  title: 'D3 Analytics - Agent',
+  title: 'D3 Creator - Agent',
   description: 'agents',
 };
 export default async function Layout({

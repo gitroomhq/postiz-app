@@ -1,55 +1,52 @@
-This project is Postiz, a tool to schedule social media and chat posts to 28+ channels.
-You can add posts to the calendar, they will be added into a workflow and posted at the right time.
-You can find things like:
+Project Postiz: schedule social/chat posts 28+ channels. Add posts to calendar, workflow posts at right time.
+Features:
 - Schedule posts
 - Calendar view
 - Analytics
 - Team management
 - Media library
 
-This project is a monorepo with a root only package.json of dependencies.
-Made with PNPM.
-We have 3 important folders
+Monorepo, root-only `package.json` deps. PNPM. 3 key folders:
 
-- apps/backend - this is where the API code is (NESTJS)
-- apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
-- /libraries contains a lot of services shared between backend and orchestrator and frontend components.
+- apps/backend - API code (NESTJS)
+- apps/orchestrator - temporal, background jobs (NESTJS), workflows + activities
+- apps/frontend - frontend code (Vite ReactJS)
+- /libraries - shared services for backend, orchestrator, frontend
 
-We are using only pnpm, don't use any other dependency manager.
-Never install frontend components from npmjs, focus on writing native components.
+Use only pnpm. No frontend deps from npmjs, write native components.
 
-The project uses tailwind 3, before writing any component look at:
+**UI work: ALWAYS read `DESIGN.md` (project root) FIRST before writing any UI.** Brand colors, typography, spacing, component styling — all live there. Match the spec exactly; deviations need approval.
+
+Tailwind 3. Before writing component check:
 - /apps/frontend/src/app/colors.scss
 - /apps/frontend/src/app/global.scss
 - /apps/frontend/tailwind.config.js
 
-All the --color-custom* are deprecated, don't use them.
+`--color-custom*` deprecated, don't use.
 
-And check other components in the system before to get the right design.
+Check existing components for design.
 
-When working on the backend we need to pass the 3 layers:
+Backend: 3 layers required:
 Controller >> Service >> Repository (no shortcuts)
-In some cases we will have
+Sometimes:
 Controller >> Mananger >> Service >> Repository.
 
-Most of the server logic should be inside of libs/server.
-The backend repository is mostly used to write controller, and import files from libs.server.
+Server logic mostly in libs/server. Backend repo mostly controllers + imports from libs.server.
 
-For the frontend follow this:
-- Many of the UI components lives in /apps/frontend/src/components/ui
-- Routing is in /apps/frontend/src/app
-- Components are in /apps/frontend/src/components
-- always use SWR to fetch stuff, and use "useFetch" hook from /libraries/helpers/src/utils/custom.fetch.tsx
+Frontend:
+- UI components: /apps/frontend/src/components/ui
+- Routing: /apps/frontend/src/app
+- Components: /apps/frontend/src/components
+- Always SWR for fetching, use `useFetch` from /libraries/helpers/src/utils/custom.fetch.tsx
 
-When using SWR, each one have to be in a seperate hook and must comply with react-hooks/rules-of-hooks, never put eslint-disable-next-line on it.
+SWR: each in separate hook, must comply `react-hooks/rules-of-hooks`, never `eslint-disable-next-line`.
 
-It means that this is valid:
+Valid:
 const useCommunity = () => {
    return useSWR....
 }
 
-This is not valid:
+Invalid:
 const useCommunity = () => {
   return {
     communities: () => useSWR<CommunitiesListResponse>("communities", getCommunities),
@@ -57,6 +54,75 @@ const useCommunity = () => {
   };
 }
 
-- Linting of the project can run only from the root.
-- Use only pnpm.
-- The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
+- Lint runs only from root.
+- Only pnpm.
+- Production system, many users — don't break existing users, migration may be needed.
+
+---
+
+# Behavioral Guidelines
+
+Reduce common LLM coding mistakes. Merge with project instructions.
+
+**Tradeoff:** bias caution over speed. Trivial tasks → judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State assumptions. Uncertain → ask.
+- Multiple interpretations → present them, don't pick silently.
+- Simpler approach exists → say so. Push back when warranted.
+- Unclear → stop. Name confusion. Ask.
+
+## 2. Simplicity First
+
+**Min code solves problem. Nothing speculative.**
+
+- No features beyond asked.
+- No abstractions for single-use code.
+- No unrequested flexibility/configurability.
+- No error handling for impossible scenarios.
+- 200 lines → 50? Rewrite.
+
+Ask: "Senior engineer call this overcomplicated?" Yes → simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean only your own mess.**
+
+Editing existing code:
+- No "improving" adjacent code/comments/formatting.
+- No refactoring unbroken things.
+- Match existing style.
+- Notice unrelated dead code → mention, don't delete.
+
+Your changes create orphans:
+- Remove imports/vars/funcs YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+Test: every changed line traces to user request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks → verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make pass"
+- "Fix bug" → "Write test reproducing it, then make pass"
+- "Refactor X" → "Tests pass before + after"
+
+Multi-step → brief plan:
+
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong criteria → loop independently. Weak ("make it work") → constant clarification.
+
+---
+
+**Guidelines working if:** fewer unnecessary diff changes, fewer overcomplication rewrites, clarifying questions before implementation not after mistakes.

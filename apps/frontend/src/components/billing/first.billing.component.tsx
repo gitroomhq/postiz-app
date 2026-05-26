@@ -81,12 +81,12 @@ export const FirstBillingComponent = () => {
 
   const showYouTube = () => {
     modals.openModal({
-      title: 'Grow Fast With D3 Analytics (Play the video)',
+      title: 'Grow Fast With D3 Creator (Play the video)',
       children: (
         <iframe
           className="h-full aspect-video min-w-[800px]"
           src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-          title="D3 Analytics Tutorial"
+          title="D3 Creator Tutorial"
           allow="autoplay"
           allowFullScreen
         />
@@ -122,7 +122,7 @@ export const FirstBillingComponent = () => {
           {t('billing_who_use', 'who use')}{' '}
           {t(
             'billing_postiz_grow_social',
-            'D3 Analytics To Grow Their Social Presence'
+            'D3 Creator To Grow Their Social Presence'
           )}
         </div>
 
@@ -137,7 +137,7 @@ export const FirstBillingComponent = () => {
                 alt="YouTube"
               />
             </div>
-            <div>See the power of D3 Analytics (click here)</div>
+            <div>See the power of D3 Creator (click here)</div>
           </div>
         </div>
 

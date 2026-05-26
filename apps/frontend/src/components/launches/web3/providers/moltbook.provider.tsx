@@ -37,7 +37,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
         method: 'POST',
         body: JSON.stringify({
           name: agentName.trim(),
-          description: agentDescription.trim() || 'D3 Analytics social media scheduler',
+          description: agentDescription.trim() || 'D3 Creator social media scheduler',
         }),
       });
 
@@ -105,7 +105,7 @@ export const MoltbookProvider: FC<Web3ProviderInterface> = (props) => {
               name="agentName"
               disableForm={true}
               onChange={(e) => setAgentName(e.target.value)}
-              placeholder="MyD3AnalyticsAgent"
+              placeholder="MyD3CreatorAgent"
             />
             <Input
               label={t('description_optional', 'Description (optional)')}

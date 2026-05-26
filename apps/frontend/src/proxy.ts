@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import {
   cookieName,
@@ -10,7 +9,17 @@ import {
 } from '@gitroom/react/translation/i18n.config';
 acceptLanguage.languages(languages);
 
-// This function can be marked `async` if using `await` inside
+// D3 Creator proxy.
+//
+// Public-by-default: anyone can browse the showcase (homepage, dashboard,
+// per-creator analytics, leaderboard, legal pages) without logging in.
+//
+// Only `/admin/*` requires auth. An unauthenticated visitor hitting any
+// `/admin/*` URL gets bounced to `/admin/login` (built in Step 6; until then
+// it falls back to Postiz's existing `/auth/login`).
+//
+// The Postiz `/auth/*` machinery is kept intact so the admin login flow has
+// a working backend, but no public nav link points at it.
 export async function proxy(request: NextRequest) {
   const nextUrl = request.nextUrl;
   const authCookie =
@@ -39,22 +48,12 @@ export async function proxy(request: NextRequest) {
     topResponse.headers.set(cookieName, lng);
   }
 
+  // Postiz modal pages still require auth.
   if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
     return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
   }
 
-  // Public marketing/legal pages — allow without auth and without the
-  // implicit `/` -> `/launches` redirect below. These pages live in the
-  // (public) route group and must be reachable by anonymous visitors
-  // (required for Meta/TikTok developer review of privacy & terms URLs).
-  if (
-    nextUrl.pathname === '/' ||
-    nextUrl.pathname === '/privacy' ||
-    nextUrl.pathname === '/terms'
-  ) {
-    return topResponse;
-  }
-
+  // Static / asset passthroughs.
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
@@ -71,11 +70,9 @@ export async function proxy(request: NextRequest) {
     return topResponse;
   }
 
-  // If the URL is logout, delete the cookie and redirect to login
+  // Logout: clear cookie and bounce back to the public homepage.
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
-    const response = NextResponse.redirect(
-      new URL('/auth/login', nextUrl.href)
-    );
+    const response = NextResponse.redirect(new URL('/', nextUrl.href));
     response.cookies.set('auth', '', {
       path: '/',
       ...(!process.env.NOT_SECURED
@@ -91,98 +88,52 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // D3 Creator: public self-signup is permanently disabled. The Postiz
+  // `/auth/register` endpoint is hard-blocked here regardless of env config.
+  // Visitors are routed to the admin login surface instead.
+  if (nextUrl.pathname.startsWith('/auth/register')) {
+    return NextResponse.redirect(new URL('/admin/login', nextUrl.href));
+  }
+
+  // Admin gate. Every `/admin/*` URL except the login page itself requires
+  // a valid auth cookie. Unauth visitors → `/auth/login` (which the
+  // `/admin/login` page also aliases to). Direct redirect avoids a
+  // double-hop when admins click the public nav's "Admin" link.
   if (
-    nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.DISABLE_REGISTRATION === 'true'
+    nextUrl.pathname.startsWith('/admin') &&
+    nextUrl.pathname !== '/admin/login' &&
+    !authCookie
   ) {
     return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }
 
-  const org = nextUrl.searchParams.get('org');
-  const url = new URL(nextUrl).search;
-  if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
-    const providers = ['google', 'settings'];
-    const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
-    const additional = !findIndex
-      ? ''
-      : (url.indexOf('?') > -1 ? '&' : '?') +
-        `provider=${(findIndex === 'settings'
-          ? process.env.POSTIZ_GENERIC_OAUTH
-            ? 'generic'
-            : 'github'
-          : findIndex
-        ).toUpperCase()}`;
-    return NextResponse.redirect(
-      new URL(`/auth${url}${additional}`, nextUrl.href)
-    );
-  }
-
-  // If the url is /auth and the cookie exists, redirect to /
+  // Already logged in and visiting an /auth/* page → send to admin area.
   if (nextUrl.pathname.startsWith('/auth') && authCookie) {
-    return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
+    return NextResponse.redirect(new URL('/admin', nextUrl.href));
   }
-  if (nextUrl.pathname.startsWith('/auth') && !authCookie) {
-    if (org) {
-      const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
-      redirect.cookies.set('org', org, {
-        ...(!process.env.NOT_SECURED
-          ? {
-              path: '/',
-              secure: true,
-              httpOnly: true,
-              sameSite: false,
-              domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-            }
-          : {}),
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-      });
-      return redirect;
-    }
-    return topResponse;
-  }
-  try {
-    if (org) {
-      const { id } = await (
-        await internalFetch('/user/join-org', {
-          body: JSON.stringify({
-            org,
-          }),
-          method: 'POST',
-        })
-      ).json();
-      const redirect = NextResponse.redirect(
-        new URL(`/?added=true`, nextUrl.href)
-      );
-      if (id) {
-        redirect.cookies.set('showorg', id, {
-          ...(!process.env.NOT_SECURED
-            ? {
-                path: '/',
-                secure: true,
-                httpOnly: true,
-                sameSite: false,
-                domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-              }
-            : {}),
-          expires: new Date(Date.now() + 15 * 60 * 1000),
-        });
-      }
-      return redirect;
-    }
-    if (nextUrl.pathname === '/') {
-      return NextResponse.redirect(
-        new URL(
-          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
-          nextUrl.href
-        )
-      );
-    }
 
-    return topResponse;
-  } catch (err) {
-    console.log('err', err);
-    return NextResponse.redirect(new URL('/auth/logout', nextUrl.href));
+  // 1-hour idle expiry for admin sessions. Every authenticated request to
+  // `/admin/*` re-stamps the auth cookie with a fresh 3600s maxAge. After an
+  // hour of inactivity the cookie expires and the visitor is bounced back to
+  // `/admin/login`.
+  if (nextUrl.pathname.startsWith('/admin') && authCookie) {
+    const cookieValue =
+      typeof authCookie === 'string' ? authCookie : authCookie.value;
+    topResponse.cookies.set('auth', cookieValue, {
+      path: '/',
+      maxAge: 3600,
+      ...(!process.env.NOT_SECURED
+        ? { secure: true, httpOnly: true, sameSite: false }
+        : {}),
+      ...(process.env.FRONTEND_URL
+        ? { domain: getCookieUrlFromDomain(process.env.FRONTEND_URL) }
+        : {}),
+    });
   }
+
+  // Everything else is public — homepage, dashboard, creators, leaderboard,
+  // legal pages, and the /auth/* surface itself when not logged in.
+  return topResponse;
 }
 
 // See "Matching Paths" below to learn more

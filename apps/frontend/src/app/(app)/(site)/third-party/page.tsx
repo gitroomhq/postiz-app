@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
-  title: `D3 Analytics Integrations`,
+  title: `D3 Creator Integrations`,
   description: '',
 };
 export default async function Index() {

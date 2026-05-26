@@ -259,7 +259,7 @@ const ExtensionNotFound: FC = () => {
       <p className="text-[14px] text-textColor/80">
         {t(
           'extension_not_available',
-          'The D3 Analytics browser extension is not installed. You need to install it before connecting this channel.'
+          'The D3 Creator browser extension is not installed. You need to install it before connecting this channel.'
         )}
       </p>
       <div className="flex gap-[10px]">
@@ -325,7 +325,7 @@ const ChromeExtensionWarning: FC<{
           We will store your cookies securely to facilitate the connection.
         </li>
         <li>
-          D3 Analytics does not take responsibility for any issues arising or account
+          D3 Creator does not take responsibility for any issues arising or account
           termination due to the use of this method.
         </li>
       </ul>
@@ -551,7 +551,7 @@ export const AddProviderComponent: FC<{
             toaster.show(
               t(
                 'extension_not_installed',
-                'D3 Analytics browser extension is not installed or not reachable.'
+                'D3 Creator browser extension is not installed or not reachable.'
               ),
               'warning'
             );

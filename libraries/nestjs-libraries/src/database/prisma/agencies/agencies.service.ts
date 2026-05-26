@@ -85,7 +85,7 @@ export class AgenciesService {
   async createAgency(user: User, body: CreateAgencyDto) {
     const agency = await this._agenciesRepository.createAgency(user, body);
     await this._notificationService.sendEmail(
-      'nevo@d3-analytics.vercel.app',
+      'nevo@d3-creator.vercel.app',
       'New agency created',
       `
 <html lang="en">

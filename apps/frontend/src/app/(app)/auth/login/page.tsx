@@ -3,7 +3,7 @@ import { Login } from '@gitroom/frontend/components/auth/login';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
-  title: `D3 Analytics Login`,
+  title: `D3 Creator — Admin Login`,
   description: '',
 };
 export default async function Auth() {

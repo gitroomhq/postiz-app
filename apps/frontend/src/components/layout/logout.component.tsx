@@ -44,7 +44,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
             data-tooltip-id="tooltip"
             data-tooltip-content={`
             ${t('logout_from', 'Logout from')}${' '}
-            ${' D3 Analytics'}
+            ${' D3 Creator'}
             `}
           >
             <path
@@ -55,7 +55,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
         ) : (
           <span className="text-red-400">
             {t('logout_from', 'Logout from')}
-            {' D3 Analytics'}
+            {' D3 Creator'}
           </span>
         )}
       </div>

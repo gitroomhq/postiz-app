@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 
 export const metadata: Metadata = {
-  title: `D3 Analytics Admin Errors`,
+  title: `D3 Creator Admin Errors`,
   description: '',
 };
 

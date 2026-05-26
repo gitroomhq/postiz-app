@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         {!!process.env.DATAFAST_WEBSITE_ID && (
           <Script
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
-            data-domain="d3-analytics.vercel.app"
+            data-domain="d3-creator.vercel.app"
             src="https://datafa.st/js/script.js"
             strategy="afterInteractive"
           />
@@ -101,7 +101,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <DubAnalytics />
             <FacebookComponent />
             <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
-            <Plausible domain="d3-analytics.vercel.app">
+            <Plausible domain="d3-creator.vercel.app">
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}

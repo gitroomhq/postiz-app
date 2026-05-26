@@ -32,7 +32,7 @@ export const Onboarding: FC = () => {
     }
     modalOpen.current = true;
     modal.openModal({
-      // title: t('onboarding', 'Welcome to D3 Analytics'),
+      // title: t('onboarding', 'Welcome to D3 Creator'),
       withCloseButton: true,
       closeOnEscape: false,
       removeLayout: true,

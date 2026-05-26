@@ -16,7 +16,7 @@ import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creat
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `D3 Analytics Preview`,
+  title: `D3 Creator Preview`,
   description: '',
 };
 export default async function Auth(
