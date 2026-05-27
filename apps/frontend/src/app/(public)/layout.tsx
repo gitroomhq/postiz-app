@@ -14,7 +14,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="dark text-fg bg-canvas min-h-screen flex flex-col font-sans">
         {/* Header — quiet, full-bleed underline */}
-        <header className="relative z-10 sticky top-0 border-b border-borderGlass bg-canvas/80 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-borderGlass bg-canvas">
           <div className="max-w-[1200px] mx-auto px-6 md:px-8 h-14 flex items-center justify-between">
             <Link
               href="/"

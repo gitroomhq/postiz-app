@@ -13,15 +13,28 @@ Typography is **Inter** — neutral, modern, legible. Body type is `15-16px` at 
 Surfaces are **flat**: solid fills, 1px borders, square-cornered or `8-12px` radius. Depth comes from **hairline borders and subtle dark shadows** — never from glow or color bleed. Motion is **brief and purposeful**: 150-200ms ease-out on opacity, transform, and color only. Nothing loops, nothing pulses.
 
 **Key Characteristics:**
-- Near-black canvas (`#0A0A0A`) with flat surfaces — no blur, no backdrop-filter
-- Single brand yellow `#F2E600` used scarcely as accent
-- Inter typography, body `15-16px / 1.6`, headings tight-tracked
+- Near-black canvas (`#0A0A0D`) with flat **neutral** surfaces — zero yellow undertone in chrome
+- Single brand yellow `#F2E600` used **scarcely** — yellow ledger below
+- Inter typography, body `15-16px / 1.6`, headings tight-tracked, **headlines white not yellow**
 - Hairline 1px borders (`rgba(255,255,255,0.08)` default)
 - Radii: `6px` (inputs/badges), `8px` (buttons), `12px` (cards)
 - Shadows: dark only — `rgba(0,0,0,0.4)` for elevation
 - Motion: 150-200ms ease-out, opacity + transform + color only
 - 4/8px spacing grid; max content width `1100-1280px`
 - Dark default; light mode optional (not priority)
+
+### Yellow Ledger — Where Yellow IS Allowed (and ONLY here)
+
+| Surface | Use |
+|---------|-----|
+| Logo | The D3 chain-link icon (image asset) |
+| Primary CTA | One per screen — solid `#F2E600` bg + near-black text |
+| CTA hover | Lighter `#FDE047` |
+| Focus ring | `outline: 2px solid #F2E600` on keyboard focus |
+| Active nav | Indicator stripe / dot |
+| Active data point | Highlighted row / focused table cell |
+
+**Everywhere else: neutral.** Chip/badge bg → white at 6-8% opacity. Section divider → white at 8% opacity. Status dot → white at 78%. Hero headline → solid white (`#F5F5F5`).
 
 ---
 
@@ -42,16 +55,18 @@ Surfaces are **flat**: solid fills, 1px borders, square-cornered or `8-12px` rad
 | `--brand-800` | `#7C7500` | Deep accent, used in data viz only |
 | `--brand-900` | `#3E3A00` | Yellow on near-black emphasis backgrounds |
 
-### Surface — Dark (default)
+### Surface — Dark (default) · **Neutral, zero yellow undertone**
 
 | Token | Hex / Value | Role |
 |-------|-------------|------|
-| `--surface-canvas` | `#0A0A0A` | Page background |
-| `--surface-base` | `#111111` | Card / panel base |
-| `--surface-raised` | `#161616` | Elevated card, dropdown |
-| `--surface-overlay` | `#1C1C1C` | Modal, popover, command palette |
-| `--surface-inset` | `#080808` | Inset wells, code blocks |
+| `--canvas` | `#0A0A0D` | Page background |
+| `--canvas-deep` | `#050507` | Deepest layer, behind canvas |
+| `--glass-subtle` | `#0F0F12` | Inset well, code block, subtle container |
+| `--glass-base` | `#16161A` | Card / panel base |
+| `--glass-elevated` | `#1A1A1F` | Elevated card, dropdown, modal |
 | `--scrim` | `rgba(0,0,0,0.72)` | Modal backdrop |
+
+> Surfaces moved from yellow-undertone (`#0E0D00`/`#1A1900`) to true neutral cool-black after the scarce-yellow rebalance. Chrome reads gray-neutral; yellow only appears where the Yellow Ledger §1 allows.
 
 ### Border
 
@@ -64,14 +79,15 @@ Surfaces are **flat**: solid fills, 1px borders, square-cornered or `8-12px` rad
 
 ### Text
 
-| Token | Hex | Role |
-|-------|-----|------|
-| `--text-primary` | `#F5F5F5` | Headings, primary body |
-| `--text-secondary` | `#A3A3A3` | Secondary body, captions |
-| `--text-tertiary` | `#737373` | Disabled, meta, timestamps |
-| `--text-muted` | `#525252` | Placeholder, faintest meta |
-| `--text-on-brand` | `#0A0A0A` | Text on yellow buttons (near-black) |
-| `--text-inverse` | `#0A0A0A` | Text on white surfaces (light mode) |
+| Token | Value | Role |
+|-------|-------|------|
+| `--fg` | `#FFFFFF` | Headings, primary body, **all hero headlines (NOT yellow)** |
+| `--fg-muted` | `rgba(255,255,255,0.62)` | Secondary body, captions |
+| `--fg-subtle` | `rgba(255,255,255,0.40)` | Disabled, meta, timestamps, placeholders |
+| `--text-on-brand` | `#0A0A0D` | Text on yellow CTAs (near-black) |
+| `--text-inverse` | `#0A0A0D` | Text on white surfaces (light mode) |
+
+> **Headlines stay white.** Yellow text is forbidden except inside the Yellow Ledger §1 surfaces. ShinyText component renders solid white in this system.
 
 ### Semantic — Yellow-mono (strict brand)
 

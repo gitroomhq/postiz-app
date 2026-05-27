@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <link rel="apple-touch-icon" href="/d3-logo.png?v=3" />
       </head>
       <body className="dark text-fg bg-canvas min-h-screen flex flex-col font-sans">
-        <header className="relative z-10 sticky top-0 border-b border-borderGlass bg-canvas/80 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-borderGlass bg-canvas">
           <div className="max-w-[1200px] mx-auto px-6 md:px-8 h-14 flex items-center justify-between">
             <Link
               href="/admin"
