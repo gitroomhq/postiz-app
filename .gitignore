@@ -66,3 +66,17 @@ apps/frontend/public/g.js
 install.log
 .gstack/
 __pycache__/
+
+# D3 — local agent tooling, never commit
+.claude/
+.agents/
+
+# D3 — exploration / scratch
+design-system/
+qa-report.md
+skills-lock.json
+
+# D3 — Postiz runtime artifacts (legacy, no longer used)
+reports/
+var/
+dynamicconfig/

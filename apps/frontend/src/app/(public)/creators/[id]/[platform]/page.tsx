@@ -5,6 +5,7 @@ import { GlassCard } from '@gitroom/frontend/components/ui/glass-card';
 import { BentoGrid, BentoItem } from '@gitroom/frontend/components/ui/bento-grid';
 import { PlatformPill } from '@gitroom/frontend/components/ui/platform-pill';
 import { PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
+import { ContentGrid } from '@gitroom/frontend/components/creator-showcase/content-grid';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +66,7 @@ export default async function CreatorPlatformPage({
           <PlatformPill platform={platformKey as PlatformKey} />
         </div>
         <h1 className="text-display-2 text-fg leading-[1.04]">
-          {id} on <span className="text-brand">{platformInfo.label}</span>
+          {id} on {platformInfo.label}
         </h1>
       </header>
 
@@ -113,16 +114,20 @@ export default async function CreatorPlatformPage({
 
       <GlassCard variant="base" padding="lg" radius="2xl">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-heading text-fg">Recent Posts</h2>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-heading text-fg">Recent Posts</h2>
+            <p className="text-caption text-fgMuted">
+              Hover a thumbnail to preview · click to open
+            </p>
+          </div>
           <span className="text-caption px-2.5 py-1 rounded-full glass-subtle border border-borderGlass text-fgMuted">
-            Soon
+            Preview
           </span>
         </div>
-        <div className="rounded-xl bg-glass-subtle border border-borderGlass p-12 text-center">
-          <p className="text-body-sm text-fgMuted">
-            Posts appear once scraper indexes this account.
-          </p>
-        </div>
+        <ContentGrid
+          creatorSlug={id.toLowerCase()}
+          platform={platformKey as PlatformKey}
+        />
       </GlassCard>
     </div>
   );

@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { isAdmin } from '../../../admin/is-admin';
 import { GlassCard } from '@gitroom/frontend/components/ui/glass-card';
 import { BentoGrid, BentoItem } from '@gitroom/frontend/components/ui/bento-grid';
 import {
@@ -44,7 +43,6 @@ export default async function CreatorPage({
   params: Promise<Params>;
 }) {
   const { id } = await params;
-  const admin = await isAdmin();
 
   return (
     <div className="flex flex-col gap-16 pt-12 pb-24">
@@ -61,15 +59,6 @@ export default async function CreatorPage({
             <h1 className="text-display-2 text-fg leading-[1.04]">{id}</h1>
           </div>
         </div>
-        {admin && (
-          <Link
-            href={`/admin/creators/${encodeURIComponent(id)}/edit`}
-            data-admin-only="true"
-            className="text-label px-4 py-2 rounded-lg glass-subtle border border-borderGlass text-fgMuted hover:text-fg hover:bg-white/[0.06] transition-colors whitespace-nowrap"
-          >
-            Edit creator
-          </Link>
-        )}
       </header>
 
       <BentoGrid gap="md">

@@ -11,6 +11,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="icon" href="/d3-logo.png?v=3" type="image/png" />
         <link rel="apple-touch-icon" href="/d3-logo.png?v=3" />
+        {/* Page is already dark — tell Dark Reader to skip it so it doesn't
+            inject data-darkreader-* attrs pre-hydration and cause mismatch */}
+        <meta name="darkreader-lock" />
       </head>
       <body className="dark text-fg bg-canvas min-h-screen flex flex-col font-sans">
         {/* Header — quiet, full-bleed underline */}
