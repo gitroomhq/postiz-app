@@ -29,8 +29,11 @@ import {
 
 // Server Component fetches live counts on each request — disable static
 // optimization so the hero never goes stale.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR: regenerate from Supabase at most once per hour. Daily cron writes
+// snapshots once/day; 1h cache means at worst data is ~1h stale, no DB hit
+// on warm requests, fast TTFB. Background revalidation happens on first
+// request after expiry (stale-while-revalidate).
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'D3 Creator — Real creators. Real numbers. Live.',

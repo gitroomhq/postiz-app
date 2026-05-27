@@ -8,8 +8,8 @@ import {
 } from '@gitroom/frontend/lib/queries';
 import type { CreatorRow } from '@gitroom/frontend/components/dashboard-showcase/showcase-data';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR: 1h cache, see (public)/page.tsx for rationale.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Dashboard — D3 Creator',
