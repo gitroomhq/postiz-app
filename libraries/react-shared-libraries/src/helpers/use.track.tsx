@@ -37,9 +37,9 @@ export const useTrack = () => {
           });
         }
       } catch (e) {
-        console.log(e);
+        // Tracking failures are non-critical; no action needed
       }
     },
-    [user]
+    [user],
   );
 };
