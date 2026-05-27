@@ -1,34 +1,31 @@
 /**
- * TikTok adapter — Apify Actor: clockworks/tiktok-scraper.
- * https://apify.com/clockworks/tiktok-scraper
+ * TikTok adapter — TikHub REST (api.tikhub.io/api/v1/tiktok/app/v3/...).
  *
- * Input shape (per actor docs):
- *   profiles:          string[]   — profile URLs OR plain usernames
- *   resultsPerPage:    number     — we use 30 per spec (same window as IG)
- *   excludePinnedPosts: true      — keeps the "latest N" window honest;
- *                                    pinned old videos would distort the
- *                                    window's engagement totals.
+ * Endpoints used:
+ *   GET /api/v1/tiktok/app/v3/handler_user_profile?unique_id=<handle>
+ *   GET /api/v1/tiktok/app/v3/fetch_user_post_videos_v3?unique_id=<handle>&count=30
  *
- * Output: each dataset item is a video with `authorMeta` nested object
- * carrying profile-level fields (followers, following, lifetime likes,
- * lifetime post count). First item is our source of truth for the profile
- * snapshot; every item maps to a post snapshot.
+ * The "_v3" endpoints return the simplified TikTok app payload — same fields
+ * as the full version but lighter / faster. Both endpoints accept unique_id
+ * directly, so we don't need a sec_uid round-trip.
  *
  * Output mapping:
  *   Profile
- *     - total_posts:  authorMeta.video (lifetime)
- *     - total_likes:  authorMeta.heart (lifetime — unlike IG, TikTok exposes
- *                     this directly on the profile)
- *     - total_views:  sum of playCount across the fetched window (TikTok
- *                     does NOT expose a lifetime view count; this is a
- *                     window-total, document in UI per spec §6)
+ *     - followers:    user.follower_count
+ *     - following:    user.following_count
+ *     - total_posts:  user.aweme_count (lifetime, exposed by app API)
+ *     - total_likes:  user.total_favorited (lifetime hearts received)
+ *     - total_views:  sum of statistics.play_count across the fetched window
+ *                     (TikTok does not expose a lifetime view total).
  *   Post
- *     - content_type: always 'short' (TikTok is short-form video)
- *     - shares:       shareCount (TikTok exposes this; IG does not)
+ *     - content_type: 'short' (TikTok is short-form video only)
+ *     - shares:       statistics.share_count
+ *
+ * Migrated from Apify Actor clockworks/tiktok-scraper (2026-05-28).
  */
 
-import { runActor } from '../apify-client';
-import { ProfileNotFoundError, ProfilePrivateError } from '../errors';
+import { tikhubGet } from '../tikhub-client';
+import { ProfileNotFoundError, ProfilePrivateError, ScrapeError } from '../errors';
 import type {
   NormalizedPostSnapshot,
   NormalizedProfileSnapshot,
@@ -36,63 +33,88 @@ import type {
   ScrapeResult,
 } from '../types';
 
-const ACTOR_ID = 'clockworks/tiktok-scraper';
+const PLATFORM = 'tiktok';
 const POSTS_PER_SCRAPE = 30;
 const CAPTION_LIMIT = 280;
 
-/** Profile-level fields nested under each video item's `authorMeta`. */
-interface TtAuthorMeta {
-  id?: string;
-  name?: string;            // username (no @)
-  nickName?: string | null;
-  verified?: boolean;
-  signature?: string | null;     // bio
-  avatar?: string | null;
-  profileUrl?: string;
-  fans?: number | null;          // follower count
-  following?: number | null;
-  heart?: number | null;         // lifetime likes
-  video?: number | null;         // lifetime post count
-  privateAccount?: boolean;
+/** Extract unique_id (no @) from a normalized tiktok.com URL. */
+function extractHandle(profileUrl: string): string {
+  const u = new URL(profileUrl);
+  const m = u.pathname.match(/^\/@([A-Za-z0-9._]+)\/?$/);
+  if (!m) {
+    throw new ScrapeError(
+      'failed',
+      `Cannot extract TikTok handle from path "${u.pathname}"`,
+      PLATFORM,
+      profileUrl,
+    );
+  }
+  return m[1];
 }
 
-/** Per-video metadata, including thumbnail. */
-interface TtVideoMeta {
-  /**
-   * Thumbnail URL — always present, served by *.tiktokcdn.com or muscdn.
-   * The actor does NOT return a direct videoUrl unless downloads are
-   * requested, so this is the only media URL available without paying
-   * for video file downloads.
-   */
-  coverUrl?: string | null;
-  originalCoverUrl?: string | null;
-  width?: number;
-  height?: number;
+interface TtUrlList {
+  /** TikTok image/video URLs come as a list of CDN mirrors. */
+  url_list?: string[];
+}
+
+interface TtUser {
+  uid?: string;
+  sec_uid?: string;
+  unique_id?: string;
+  nickname?: string | null;
+  signature?: string | null;
+  avatar_thumb?: TtUrlList;
+  avatar_larger?: TtUrlList;
+  avatar_medium?: TtUrlList;
+  follower_count?: number | null;
+  following_count?: number | null;
+  aweme_count?: number | null;
+  total_favorited?: number | null;
+  verification_type?: number | null;
+  custom_verify?: string | null;
+  is_private_account?: boolean;
+  /** Some responses use this name instead. */
+  privacy_setting?: { private_account?: boolean };
+}
+
+interface TtProfileResponse {
+  user?: TtUser;
+  /** Some endpoints return the user at root. */
+  uid?: string;
+  unique_id?: string;
+}
+
+interface TtStatistics {
+  play_count?: number | null;
+  digg_count?: number | null;
+  comment_count?: number | null;
+  share_count?: number | null;
+  collect_count?: number | null;
+  download_count?: number | null;
+}
+
+interface TtVideo {
+  cover?: TtUrlList;
+  origin_cover?: TtUrlList;
+  dynamic_cover?: TtUrlList;
   duration?: number;
+  play_addr?: TtUrlList;
 }
 
-/** Subset of fields we actually read from Apify's dataset item. */
-interface TtItem {
-  // Post-level
-  id?: string;
-  text?: string | null;
-  webVideoUrl?: string;
-  videoUrl?: string | null;       // only populated with shouldDownloadVideos
-  videoMeta?: TtVideoMeta;
-  createTime?: number | null;
-  createTimeISO?: string | null;
-  playCount?: number | null;
-  diggCount?: number | null;      // likes
-  shareCount?: number | null;
-  commentCount?: number | null;
-  collectCount?: number | null;
-  // Parent profile
-  authorMeta?: TtAuthorMeta;
-  // Some payloads put a privacy flag at the top level too
-  isPrivate?: boolean;
-  // Error / empty markers some Apify actors set
-  error?: string;
-  errorDescription?: string;
+interface TtAweme {
+  aweme_id?: string;
+  desc?: string | null;
+  create_time?: number | null;
+  statistics?: TtStatistics;
+  video?: TtVideo;
+  /** Author is sometimes nested per-item (verify on smoke). */
+  author?: TtUser;
+}
+
+interface TtPostsResponse {
+  aweme_list?: TtAweme[];
+  has_more?: number | boolean;
+  max_cursor?: number | string;
 }
 
 function truncate(s: string | null | undefined, n: number): string | null {
@@ -100,28 +122,59 @@ function truncate(s: string | null | undefined, n: number): string | null {
   return s.length <= n ? s : s.slice(0, n - 1) + '…';
 }
 
-function mapPost(item: TtItem): NormalizedPostSnapshot | null {
-  const externalId = item.id;
+function pickCover(v?: TtVideo): string | null {
+  const lists = [v?.cover, v?.dynamic_cover, v?.origin_cover];
+  for (const l of lists) {
+    if (l?.url_list && l.url_list.length > 0) return l.url_list[0];
+  }
+  return null;
+}
+
+function pickAvatar(u: TtUser): string | null {
+  const lists = [u.avatar_larger, u.avatar_medium, u.avatar_thumb];
+  for (const l of lists) {
+    if (l?.url_list && l.url_list.length > 0) return l.url_list[0];
+  }
+  return null;
+}
+
+function unwrapTimestamp(t: number | null | undefined): string | null {
+  if (typeof t === 'number' && Number.isFinite(t)) {
+    return new Date(t * 1000).toISOString();
+  }
+  return null;
+}
+
+function mapPost(a: TtAweme): NormalizedPostSnapshot | null {
+  const externalId = a.aweme_id;
   if (!externalId) return null;
+  const stats = a.statistics ?? {};
   return {
     external_post_id: externalId,
-    posted_at: item.createTimeISO ?? null,
-    caption_excerpt: truncate(item.text, CAPTION_LIMIT),
-    views: item.playCount ?? null,
-    likes: item.diggCount ?? null,
-    comments: item.commentCount ?? null,
-    shares: item.shareCount ?? null,
-    media_url: item.videoMeta?.coverUrl ?? item.videoUrl ?? null,
+    posted_at: unwrapTimestamp(a.create_time),
+    caption_excerpt: truncate(a.desc, CAPTION_LIMIT),
+    views: stats.play_count ?? null,
+    likes: stats.digg_count ?? null,
+    comments: stats.comment_count ?? null,
+    shares: stats.share_count ?? null,
+    media_url: pickCover(a.video),
     content_type: 'short',
-    raw: item,
+    raw: a,
   };
 }
 
+function unwrapUser(resp: TtProfileResponse): TtUser {
+  return resp.user ?? (resp as unknown as TtUser);
+}
+
+function isPrivate(u: TtUser): boolean {
+  return Boolean(u.is_private_account || u.privacy_setting?.private_account);
+}
+
 function mapProfile(
-  first: TtItem,
+  user: TtUser,
   posts: NormalizedPostSnapshot[],
 ): NormalizedProfileSnapshot {
-  const author = first.authorMeta ?? {};
   let totalViews = 0;
   let viewsSeen = false;
   for (const p of posts) {
@@ -131,73 +184,66 @@ function mapProfile(
     }
   }
   return {
-    followers: author.fans ?? null,
-    following: author.following ?? null,
-    total_posts: author.video ?? null,
+    followers: user.follower_count ?? null,
+    following: user.following_count ?? null,
+    total_posts: user.aweme_count ?? null,
     total_views: viewsSeen ? totalViews : null,
-    total_likes: author.heart ?? null,
+    total_likes: user.total_favorited ?? null,
     raw: {
-      username: author.name,
-      nickName: author.nickName,
-      verified: author.verified,
-      avatarUrl: author.avatar,
-      biography: author.signature,
+      uid: user.uid,
+      sec_uid: user.sec_uid,
+      unique_id: user.unique_id,
+      nickname: user.nickname,
+      verified: (user.verification_type ?? 0) > 0,
+      avatar_url: pickAvatar(user),
+      biography: user.signature,
       sample_size: posts.length,
     },
   };
 }
 
-function isPrivate(item: TtItem): boolean {
-  return !!(item.isPrivate || item.authorMeta?.privateAccount);
-}
-
 export const tiktokAdapter: PlatformAdapter = {
   platform: 'tiktok',
-  actorId: ACTOR_ID,
+  actorId: 'tikhub:tiktok/app/v3',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
-    const items = await runActor<TtItem>({
-      actorId: ACTOR_ID,
-      platform: 'tiktok',
-      profileUrl,
-      input: {
-        profiles: [profileUrl],
-        resultsPerPage: POSTS_PER_SCRAPE,
-        excludePinnedPosts: true,
-      },
-      timeoutSecs: 300,
-    });
+    const handle = extractHandle(profileUrl);
 
-    // Inspect first item for error / state markers Apify embeds.
-    const first = items[0];
-    if (first?.error) {
-      const msg = (first.errorDescription || first.error).toLowerCase();
-      if (msg.includes('private')) {
-        throw new ProfilePrivateError('tiktok', profileUrl);
-      }
-      if (
-        msg.includes('not found') ||
-        msg.includes('does not exist') ||
-        msg.includes('no such user') ||
-        msg.includes('couldn\'t find')
-      ) {
-        throw new ProfileNotFoundError('tiktok', profileUrl);
-      }
+    const [profileResp, postsResp] = await Promise.all([
+      tikhubGet<TtProfileResponse>({
+        path: '/api/v1/tiktok/app/v3/handler_user_profile',
+        query: { unique_id: handle },
+        platform: PLATFORM,
+        profileUrl,
+      }),
+      tikhubGet<TtPostsResponse>({
+        path: '/api/v1/tiktok/app/v3/fetch_user_post_videos_v3',
+        query: { unique_id: handle, count: POSTS_PER_SCRAPE, max_cursor: 0 },
+        platform: PLATFORM,
+        profileUrl,
+      }).catch((err) => {
+        // Private accounts often return profile fine but reject posts —
+        // surface the profile shape with empty posts in that case.
+        if (err instanceof ProfilePrivateError) return { aweme_list: [] } as TtPostsResponse;
+        throw err;
+      }),
+    ]);
+
+    const user = unwrapUser(profileResp);
+    if (!user || (!user.uid && !user.sec_uid && !user.unique_id)) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
-    if (first && isPrivate(first)) {
-      throw new ProfilePrivateError('tiktok', profileUrl);
-    }
-    if (!first || !first.authorMeta?.name) {
-      throw new ProfileNotFoundError('tiktok', profileUrl);
+    if (isPrivate(user)) {
+      throw new ProfilePrivateError(PLATFORM, profileUrl);
     }
 
     const posts: NormalizedPostSnapshot[] = [];
-    for (const it of items) {
-      const p = mapPost(it);
-      if (p) posts.push(p);
+    for (const a of postsResp.aweme_list ?? []) {
+      const mapped = mapPost(a);
+      if (mapped) posts.push(mapped);
     }
 
     return {
-      profile: mapProfile(first, posts),
+      profile: mapProfile(user, posts),
       posts,
     };
   },

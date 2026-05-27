@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "tikhub-tiktok": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.tikhub.io/tiktok/mcp",
+        "--header",
+        "Authorization: Bearer ${TIKHUB_API_KEY}"
+      ]
+    },
+    "tikhub-xiaohongshu": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.tikhub.io/xiaohongshu/mcp",
+        "--header",
+        "Authorization: Bearer ${TIKHUB_API_KEY}"
+      ]
+    },
+    "tikhub-instagram": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.tikhub.io/instagram/mcp",
+        "--header",
+        "Authorization: Bearer ${TIKHUB_API_KEY}"
+      ]
+    },
+    "tikhub-douyin": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.tikhub.io/douyin/mcp",
+        "--header",
+        "Authorization: Bearer ${TIKHUB_API_KEY}"
+      ]
+    }
+  }
+}

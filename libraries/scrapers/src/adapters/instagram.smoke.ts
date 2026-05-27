@@ -1,10 +1,12 @@
 /**
- * Live smoke test — costs Apify compute units.
+ * Live smoke test — costs TikHub API credits.
  * Run: pnpm exec tsx libraries/scrapers/src/adapters/instagram.smoke.ts
  *
  * NOT part of the standard test suite. Manually triggered when an adapter
- * lands or when Apify-side changes are suspected (per spec §6 operational
+ * lands or when TikHub-side changes are suspected (per spec §6 operational
  * hygiene — per-platform success-rate monitoring starts here).
+ *
+ * Requires TIKHUB_API_KEY in env (loaded from .env when run via tsx -r dotenv/config).
  */
 
 import { instagramAdapter } from './instagram';

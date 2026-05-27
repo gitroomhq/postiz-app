@@ -1,48 +1,33 @@
 /**
- * Douyin (抖音) adapter — Apify Actor: zen-studio/douyin-profile-scraper.
- * https://apify.com/zen-studio/douyin-profile-scraper
+ * Douyin adapter — TikHub REST (api.tikhub.io/api/v1/douyin/web/...).
  *
- * Douyin is the mainland-China app from ByteDance — DIFFERENT product from
- * international TikTok (different domain douyin.com, different content,
- * different APIs). The clockworks/tiktok-scraper used for `tiktok` will
- * NOT work here.
+ * Endpoints used:
+ *   GET /api/v1/douyin/web/handler_user_profile?sec_user_id=<sec_uid>
+ *   GET /api/v1/douyin/web/fetch_user_post_videos?sec_user_id=<sec_uid>&count=30
  *
- * Actor choice rationale: Apify does not publish a first-party Douyin
- * scraper. `zen-studio/douyin-profile-scraper` is the closest analogue to
- * `clockworks/tiktok-scraper` — purpose-built for profile + recent posts,
- * with engagement metrics and follower counts. Sibling actors from the same
- * publisher (douyin-video-scraper, douyin-comments-scraper) signal active
- * maintenance. Output shape mirrors TikTok's `authorMeta` nesting pattern.
- *
- * Input shape (per actor docs, verified 2026-05-28):
- *   profileUrls:        string[]  — browser URLs, app share links, secUids,
- *                                    or numeric IDs all accepted
- *   maxPostsPerProfile: number    — 0 = profile-only, else recent N posts
- *   excludePinnedPosts: true      — keep the "latest N" window honest
- *                                    (same rationale as TikTok adapter)
- *
- * Output: dataset of post items, each carrying nested `authorMeta` with
- * profile-level fields. First item is the source of truth for the profile
- * snapshot; every item maps to a post snapshot. Engagement counts live
- * under each item's nested `statistics` object (NOT top-level — this is
- * the main shape divergence from TikTok).
+ * Douyin is the mainland-China ByteDance app — different product from
+ * international TikTok (different domain douyin.com, different APIs). Both
+ * web endpoints accept the sec_uid that lives in the profile URL path
+ * (douyin.com/user/<sec_uid>) so we don't need an extra lookup.
  *
  * Output mapping:
  *   Profile
- *     - total_posts:  authorMeta.awemeCount (lifetime)
- *     - total_likes:  authorMeta.totalLikesReceived (lifetime — Douyin
- *                     exposes this on the profile, like TikTok's heart)
- *     - total_views:  sum of statistics.playCount across the fetched
- *                     window. Douyin does NOT expose a lifetime view
- *                     count on the profile; this is a window-total,
- *                     document in UI per spec §6.
+ *     - followers:    user.follower_count
+ *     - following:    user.following_count
+ *     - total_posts:  user.aweme_count (lifetime)
+ *     - total_likes:  user.total_favorited (lifetime — Douyin exposes this on
+ *                     the profile, unlike TikTok which only exposes via app v3)
+ *     - total_views:  sum of statistics.play_count across the fetched window
+ *                     (Douyin does NOT expose a lifetime view count).
  *   Post
- *     - content_type: always 'short' (Douyin is short-form video)
- *     - shares:       statistics.shareCount
+ *     - content_type: 'short' (Douyin is short-form video only)
+ *     - shares:       statistics.share_count
+ *
+ * Migrated from Apify Actor zen-studio/douyin-profile-scraper (2026-05-28).
  */
 
-import { runActor } from '../apify-client';
-import { ProfileNotFoundError, ProfilePrivateError } from '../errors';
+import { tikhubGet } from '../tikhub-client';
+import { ProfileNotFoundError, ScrapeError } from '../errors';
 import type {
   NormalizedPostSnapshot,
   NormalizedProfileSnapshot,
@@ -50,82 +35,81 @@ import type {
   ScrapeResult,
 } from '../types';
 
-const ACTOR_ID = 'zen-studio/douyin-profile-scraper';
+const PLATFORM = 'douyin';
 const POSTS_PER_SCRAPE = 30;
 const CAPTION_LIMIT = 280;
 
-/** Profile-level fields nested under each post item's `authorMeta`. */
-interface DyAuthorMeta {
-  id?: string;
-  secUid?: string;
-  name?: string | null;            // display name / nickname
-  username?: string | null;        // @handle (may be empty)
-  customUsername?: string | null;
-  verified?: boolean;
-  verifyType?: string | null;
-  signature?: string | null;       // bio
-  avatarLarge?: string | null;
-  avatarMedium?: string | null;
-  avatarThumb?: string | null;
-  followersCount?: number | null;
-  followingCount?: number | null;
-  /** Lifetime likes received across all of the author's posts. */
-  totalLikesReceived?: number | null;
-  /** Sometimes-present legacy alias for totalLikesReceived. */
-  heartCount?: number | null;
-  /** Lifetime post count — README calls awemeCount the "real total". */
-  awemeCount?: number | null;
-  /** Older actor builds returned videoCount; keep as fallback. */
-  videoCount?: number | null;
-  ipLocation?: string | null;
-  country?: string | null;
-  isLiving?: boolean;
+/** Extract sec_uid from a normalized douyin.com URL: /user/<sec_uid>. */
+function extractSecUid(profileUrl: string): string {
+  const u = new URL(profileUrl);
+  const m = u.pathname.match(/^\/user\/([A-Za-z0-9_-]+)\/?$/);
+  if (!m) {
+    throw new ScrapeError(
+      'failed',
+      `Cannot extract Douyin sec_uid from path "${u.pathname}"`,
+      PLATFORM,
+      profileUrl,
+    );
+  }
+  return m[1];
 }
 
-/** Per-post engagement counts — Douyin nests these (unlike TikTok). */
+interface DyUrlList {
+  url_list?: string[];
+}
+
+interface DyUser {
+  uid?: string;
+  sec_uid?: string;
+  short_id?: string;
+  unique_id?: string;
+  nickname?: string | null;
+  signature?: string | null;
+  avatar_thumb?: DyUrlList;
+  avatar_larger?: DyUrlList;
+  avatar_medium?: DyUrlList;
+  follower_count?: number | null;
+  following_count?: number | null;
+  aweme_count?: number | null;
+  total_favorited?: number | null;
+  custom_verify?: string | null;
+  ip_location?: string | null;
+}
+
+interface DyProfileResponse {
+  user?: DyUser;
+  uid?: string;
+  sec_uid?: string;
+}
+
 interface DyStatistics {
-  diggCount?: number | null;       // likes (点赞)
-  commentCount?: number | null;    // comments (评论)
-  shareCount?: number | null;      // shares (分享)
-  collectCount?: number | null;    // saves / favorites
-  downloadCount?: number | null;
-  playCount?: number | null;       // views (播放)
-  forwardCount?: number | null;
+  play_count?: number | null;
+  digg_count?: number | null;
+  comment_count?: number | null;
+  share_count?: number | null;
+  collect_count?: number | null;
+  forward_count?: number | null;
 }
 
-/** Video media metadata — covers + (optional) playable URLs. */
-interface DyVideoMeta {
-  cover?: string | null;
-  originCover?: string | null;
-  dynamicCover?: string | null;
-  /** Only populated when downloads are requested; we don't request them. */
-  playUrl?: string | null;
-  downloadUrl?: string | null;
+interface DyVideo {
+  cover?: DyUrlList;
+  origin_cover?: DyUrlList;
+  dynamic_cover?: DyUrlList;
   duration?: number;
-  width?: number;
-  height?: number;
 }
 
-/** Subset of fields we actually read from Apify's dataset item. */
-interface DyItem {
-  // Post-level
-  id?: string;
-  type?: string | null;            // 'video' | 'imageText' | 'story'
-  text?: string | null;            // caption
-  url?: string;
-  shareUrl?: string;
-  /** Top-level thumbnail URL — always present per README. */
-  thumb?: string | null;
-  images?: string[];
-  createTime?: number | null;      // unix seconds
-  createDate?: string | null;      // ISO
+interface DyAweme {
+  aweme_id?: string;
+  desc?: string | null;
+  create_time?: number | null;
   statistics?: DyStatistics;
-  videoMeta?: DyVideoMeta;
-  // Parent profile
-  authorMeta?: DyAuthorMeta;
-  // Error / state markers some Apify actors set
-  error?: string;
-  errorDescription?: string;
+  video?: DyVideo;
+}
+
+interface DyPostsResponse {
+  aweme_list?: DyAweme[];
+  has_more?: number | boolean;
+  max_cursor?: number | string;
 }
 
 function truncate(s: string | null | undefined, n: number): string | null {
@@ -133,29 +117,55 @@ function truncate(s: string | null | undefined, n: number): string | null {
   return s.length <= n ? s : s.slice(0, n - 1) + '…';
 }
 
-function mapPost(item: DyItem): NormalizedPostSnapshot | null {
-  const externalId = item.id;
+function pickCover(v?: DyVideo): string | null {
+  const lists = [v?.cover, v?.dynamic_cover, v?.origin_cover];
+  for (const l of lists) {
+    if (l?.url_list && l.url_list.length > 0) return l.url_list[0];
+  }
+  return null;
+}
+
+function pickAvatar(u: DyUser): string | null {
+  const lists = [u.avatar_larger, u.avatar_medium, u.avatar_thumb];
+  for (const l of lists) {
+    if (l?.url_list && l.url_list.length > 0) return l.url_list[0];
+  }
+  return null;
+}
+
+function unwrapTimestamp(t: number | null | undefined): string | null {
+  if (typeof t === 'number' && Number.isFinite(t)) {
+    return new Date(t * 1000).toISOString();
+  }
+  return null;
+}
+
+function mapPost(a: DyAweme): NormalizedPostSnapshot | null {
+  const externalId = a.aweme_id;
   if (!externalId) return null;
-  const stats = item.statistics ?? {};
+  const stats = a.statistics ?? {};
   return {
     external_post_id: externalId,
-    posted_at: item.createDate ?? null,
-    caption_excerpt: truncate(item.text, CAPTION_LIMIT),
-    views: stats.playCount ?? null,
-    likes: stats.diggCount ?? null,
-    comments: stats.commentCount ?? null,
-    shares: stats.shareCount ?? null,
-    media_url: item.thumb ?? item.videoMeta?.cover ?? null,
+    posted_at: unwrapTimestamp(a.create_time),
+    caption_excerpt: truncate(a.desc, CAPTION_LIMIT),
+    views: stats.play_count ?? null,
+    likes: stats.digg_count ?? null,
+    comments: stats.comment_count ?? null,
+    shares: stats.share_count ?? null,
+    media_url: pickCover(a.video),
     content_type: 'short',
-    raw: item,
+    raw: a,
   };
 }
 
+function unwrapUser(resp: DyProfileResponse): DyUser {
+  return resp.user ?? (resp as unknown as DyUser);
+}
+
 function mapProfile(
-  first: DyItem,
+  user: DyUser,
   posts: NormalizedPostSnapshot[],
 ): NormalizedProfileSnapshot {
-  const author = first.authorMeta ?? {};
   let totalViews = 0;
   let viewsSeen = false;
   for (const p of posts) {
@@ -164,24 +174,22 @@ function mapProfile(
       viewsSeen = true;
     }
   }
-  // Prefer the documented field; fall back to legacy aliases that older
-  // actor builds returned.
-  const totalPosts = author.awemeCount ?? author.videoCount ?? null;
-  const totalLikes = author.totalLikesReceived ?? author.heartCount ?? null;
   return {
-    followers: author.followersCount ?? null,
-    following: author.followingCount ?? null,
-    total_posts: totalPosts,
+    followers: user.follower_count ?? null,
+    following: user.following_count ?? null,
+    total_posts: user.aweme_count ?? null,
     total_views: viewsSeen ? totalViews : null,
-    total_likes: totalLikes,
+    total_likes: user.total_favorited ?? null,
     raw: {
-      secUid: author.secUid,
-      username: author.username,
-      nickname: author.name,
-      verified: author.verified,
-      avatarUrl: author.avatarLarge,
-      biography: author.signature,
-      ipLocation: author.ipLocation,
+      uid: user.uid,
+      sec_uid: user.sec_uid,
+      short_id: user.short_id,
+      unique_id: user.unique_id,
+      nickname: user.nickname,
+      verified: Boolean(user.custom_verify),
+      avatar_url: pickAvatar(user),
+      biography: user.signature,
+      ip_location: user.ip_location,
       sample_size: posts.length,
     },
   };
@@ -189,52 +197,38 @@ function mapProfile(
 
 export const douyinAdapter: PlatformAdapter = {
   platform: 'douyin',
-  actorId: ACTOR_ID,
+  actorId: 'tikhub:douyin/web',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
-    const items = await runActor<DyItem>({
-      actorId: ACTOR_ID,
-      platform: 'douyin',
-      profileUrl,
-      input: {
-        profileUrls: [profileUrl],
-        maxPostsPerProfile: POSTS_PER_SCRAPE,
-        excludePinnedPosts: true,
-      },
-      timeoutSecs: 300,
-    });
+    const secUid = extractSecUid(profileUrl);
 
-    // Inspect first item for error / state markers Apify embeds. Per the
-    // actor README, private accounts and blocked profiles "are not
-    // addressable" — there's no documented isPrivate flag, so we match on
-    // error message text (consistent with the TikTok adapter pattern).
-    const first = items[0];
-    if (first?.error) {
-      const msg = (first.errorDescription || first.error).toLowerCase();
-      if (msg.includes('private') || msg.includes('restricted')) {
-        throw new ProfilePrivateError('douyin', profileUrl);
-      }
-      if (
-        msg.includes('not found') ||
-        msg.includes('does not exist') ||
-        msg.includes('no such user') ||
-        msg.includes("couldn't find") ||
-        msg.includes('invalid')
-      ) {
-        throw new ProfileNotFoundError('douyin', profileUrl);
-      }
-    }
-    if (!first || !first.authorMeta?.secUid) {
-      throw new ProfileNotFoundError('douyin', profileUrl);
+    const [profileResp, postsResp] = await Promise.all([
+      tikhubGet<DyProfileResponse>({
+        path: '/api/v1/douyin/web/handler_user_profile',
+        query: { sec_user_id: secUid },
+        platform: PLATFORM,
+        profileUrl,
+      }),
+      tikhubGet<DyPostsResponse>({
+        path: '/api/v1/douyin/web/fetch_user_post_videos',
+        query: { sec_user_id: secUid, count: POSTS_PER_SCRAPE, max_cursor: '0' },
+        platform: PLATFORM,
+        profileUrl,
+      }),
+    ]);
+
+    const user = unwrapUser(profileResp);
+    if (!user || (!user.sec_uid && !user.uid)) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
 
     const posts: NormalizedPostSnapshot[] = [];
-    for (const it of items) {
-      const p = mapPost(it);
-      if (p) posts.push(p);
+    for (const a of postsResp.aweme_list ?? []) {
+      const mapped = mapPost(a);
+      if (mapped) posts.push(mapped);
     }
 
     return {
-      profile: mapProfile(first, posts),
+      profile: mapProfile(user, posts),
       posts,
     };
   },

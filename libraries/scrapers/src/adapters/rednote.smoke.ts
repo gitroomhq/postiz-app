@@ -1,17 +1,18 @@
 /**
- * Live smoke test — costs Apify compute units.
+ * Live smoke test — costs TikHub API credits.
  * Run: pnpm exec tsx libraries/scrapers/src/adapters/rednote.smoke.ts
  *
  * NOT part of the standard test suite. Manually triggered when an adapter
- * lands or when Apify-side changes are suspected (per spec §6 operational
+ * lands or when TikHub-side changes are suspected (per spec §6 operational
  * hygiene — per-platform success-rate monitoring starts here).
  *
+ * Requires TIKHUB_API_KEY in env.
+ *
  * Note on the RedNote adapter's profile snapshot:
- * The chosen actor (easyapi/all-in-one-rednote-xiaohongshu-scraper) in
- * userPosts mode does not return follower-side counters. profile.followers
- * is null by design — see rednote.ts header. The sanity gate below
- * proxies "real active account" via post count + top-post likes rather
- * than profile.followers.
+ * Unlike the prior Apify actor, TikHub's xiaohongshu/web/v2/fetch_user_info
+ * DOES return follower / following / interaction counters — so the sanity
+ * gates below check both: profile.followers when present, with top-likes
+ * as a fallback for accounts where the interactions payload is missing.
  */
 
 import { rednoteAdapter } from './rednote';
@@ -64,28 +65,30 @@ async function main() {
     console.log('[smoke] first post:', display);
   }
 
-  // Sanity gates — this adapter does not return follower counts (see header),
-  // so we gate on posts arriving and a recognisable embedded user identity.
+  // Sanity gates — TikHub now returns followers, so prefer that when present.
+  // Fall back to top-post likes when interactions payload is missing.
   if (posts.length === 0) {
     throw new Error('Sanity fail: expected >=1 post');
   }
-  const rawProfile = profile.raw as { userId?: string; nickname?: string };
-  if (!rawProfile?.userId || !rawProfile?.nickname) {
+  const rawProfile = profile.raw as { red_id?: string; nickname?: string };
+  if (!rawProfile?.nickname) {
     throw new Error(
-      `Sanity fail: expected embedded userId+nickname in profile.raw, got ${JSON.stringify(
-        rawProfile,
-      )}`,
+      `Sanity fail: expected nickname in profile.raw, got ${JSON.stringify(rawProfile)}`,
     );
   }
-  // The task asks for a 100K-follower-equivalent gate. Since we cannot
-  // observe followers via this actor, we proxy it with engagement on the
-  // most-liked recent post: a 100K+ follower account should comfortably
-  // have at least one post with >=1000 likes in its latest 30.
-  const topLikes = posts.reduce((m, p) => Math.max(m, p.likes ?? 0), 0);
-  if (topLikes < 1000) {
-    throw new Error(
-      `Sanity fail: top-liked post had ${topLikes} likes — expected >=1000 for a major public account`,
-    );
+  if (profile.followers !== null) {
+    if (profile.followers < 100_000) {
+      throw new Error(
+        `Sanity fail: expected 100K+ followers, got ${profile.followers}`,
+      );
+    }
+  } else {
+    const topLikes = posts.reduce((m, p) => Math.max(m, p.likes ?? 0), 0);
+    if (topLikes < 1000) {
+      throw new Error(
+        `Sanity fail: followers null and top-liked post had ${topLikes} likes — expected >=1000`,
+      );
+    }
   }
   console.log('[smoke] PASS');
 }

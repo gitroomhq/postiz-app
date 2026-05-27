@@ -1,57 +1,41 @@
 /**
- * RedNote (Xiaohongshu / 小红书) adapter
- * Apify Actor: easyapi/all-in-one-rednote-xiaohongshu-scraper.
- * https://apify.com/easyapi/all-in-one-rednote-xiaohongshu-scraper
+ * RedNote (Xiaohongshu / 小红书) adapter — TikHub REST.
  *
- * Why this actor:
- *   - Most-used RedNote scraper on Apify Store (~1.3k users, recently updated).
- *   - Supports a `userPosts` mode that takes a profile URL and returns the
- *     latest N notes with engagement counts — closest match to the IG/TikTok
- *     pattern (one actor call yields posts + embedded user identifier).
- *   - Same publisher (easyapi) also ships a profile-only scraper. We chose
- *     the all-in-one to keep a single Apify call per snapshot; we accept that
- *     follower-level fields are not returned in this mode (see "Profile
- *     fields not exposed" below).
+ * Endpoints used:
+ *   GET /api/v1/xiaohongshu/web/v2/fetch_user_info?user_id=<id>
+ *   GET /api/v1/xiaohongshu/web/get_user_notes_v2?user_id=<id>
  *
- * Input shape (per actor input schema, verified 2026-05-28):
- *   mode:           'userPosts'           — picks the user-posts operation
- *   profileUrls:    string[]              — profile URLs (single-entry array)
- *   maxItems:       number                — caps posts per profile (min 30)
+ * The user_id lives in the profile URL path (xiaohongshu.com/user/profile/<id>),
+ * so no lookup round-trip needed.
  *
- * Output: dataset items shaped as
- *   { profileUrl, postData: { noteId, displayTitle, type, user, interactInfo,
- *                             cover, ... }, scrapedAt }
+ * KEY IMPROVEMENT OVER APIFY: TikHub's web/v2/fetch_user_info returns the
+ * follower / following / interaction (likes+collects) counters that the
+ * easyapi Apify actor did NOT expose. Those go from null → live values.
+ *
+ * XHS encodes counters as STRINGS ("8794") — we parse them to numbers.
  *
  * Output mapping:
+ *   Profile
+ *     - followers:    interactions[count=fans].count (parsed to number)
+ *     - following:    interactions[count=follows].count (parsed to number)
+ *     - total_posts:  null (web/v2 endpoint does not expose lifetime post count)
+ *     - total_likes:  interactions[count=interaction].count — XHS aggregates
+ *                     likes + collects into a single 获赞与收藏 counter
+ *     - total_views:  null (XHS does not expose per-note view counts)
  *   Post
- *     - external_post_id: postData.noteId
- *     - caption_excerpt:  postData.displayTitle (XHS notes have a "title" not
- *                         a "caption"; we treat the title as the excerpt)
- *     - likes:            interactInfo.likedCount (string in payload, parsed)
- *     - comments:         interactInfo.commentCount when present (XHS exposes
- *                         it on richer payloads; null when absent)
- *     - shares:           interactInfo.collectedCount when present (XHS uses
- *                         收藏/collects as the closest analog to shares — it
- *                         is the share-and-save metric surfaced on a note)
- *     - views:            null (XHS does not expose per-note view counts on
- *                         the user-posts endpoint)
- *     - media_url:        cover.urlDefault → urlPre → url (first non-empty)
- *     - content_type:     'video' if postData.type === 'video', else 'image'
- *                         (image-notes show as 'normal' or 'image')
- *     - posted_at:        null when absent — the user-posts endpoint does
- *                         not consistently return a per-note timestamp.
+ *     - content_type: 'video' if type==='video', else 'image'
+ *     - likes:        interact_info.liked_count (string → number)
+ *     - comments:     interact_info.comment_count
+ *     - shares:       interact_info.collected_count (XHS uses 收藏 as the
+ *                     closest analog to "share"; documented in spec §6)
+ *     - views:        null (not exposed)
  *
- *   Profile fields not exposed by this actor in userPosts mode:
- *     - followers, following, total_posts, total_views, total_likes
- *     All five return null. The actor's userPosts payload embeds only
- *     user.nickName / userId / avatar — not follower-side counters.
- *     If/when we need these we'll either upgrade to a two-call flow
- *     (userPosts + profile) or switch to an actor that returns both.
- *     Documented in spec §6 "data accuracy gaps".
+ * Migrated from Apify Actor easyapi/all-in-one-rednote-xiaohongshu-scraper
+ * (2026-05-28).
  */
 
-import { runActor } from '../apify-client';
-import { ProfileNotFoundError } from '../errors';
+import { tikhubGet } from '../tikhub-client';
+import { ProfileNotFoundError, ScrapeError } from '../errors';
 import type {
   ContentType,
   NormalizedPostSnapshot,
@@ -60,57 +44,81 @@ import type {
   ScrapeResult,
 } from '../types';
 
-const ACTOR_ID = 'easyapi/all-in-one-rednote-xiaohongshu-scraper';
+const PLATFORM = 'rednote';
 const POSTS_PER_SCRAPE = 30;
 const CAPTION_LIMIT = 280;
 
-/** User block embedded in every postData item. */
-interface XhsUser {
-  userId?: string;
-  nickName?: string;
-  nickname?: string; // actor returns both casings; tolerate either
-  avatar?: string | null;
+/** Extract user_id from a normalized xiaohongshu.com URL: /user/profile/<id>. */
+function extractUserId(profileUrl: string): string {
+  const u = new URL(profileUrl);
+  const m = u.pathname.match(/^\/user\/profile\/([A-Za-z0-9]+)\/?$/);
+  if (!m) {
+    throw new ScrapeError(
+      'failed',
+      `Cannot extract Xiaohongshu user_id from path "${u.pathname}"`,
+      PLATFORM,
+      profileUrl,
+    );
+  }
+  return m[1];
 }
 
-/** Engagement counters. XHS returns counts as strings (e.g. "8794"). */
+interface XhsBasicInfo {
+  nickname?: string | null;
+  desc?: string | null;
+  /** Profile picture. */
+  images?: string | null;
+  imageb?: string | null;
+  red_id?: string | null;
+  gender?: number;
+  ip_location?: string | null;
+}
+
+interface XhsInteraction {
+  /** XHS keys these by a logical name: "follows" | "fans" | "interaction". */
+  type?: string;
+  /** Human label, e.g. 关注 / 粉丝 / 获赞与收藏. */
+  name?: string;
+  /** Count as STRING. */
+  count?: string;
+}
+
+interface XhsUserInfoData {
+  basic_info?: XhsBasicInfo;
+  interactions?: XhsInteraction[];
+  tab_public?: { collection?: boolean; collection_note?: boolean };
+}
+
 interface XhsInteractInfo {
-  likedCount?: string | number | null;
-  commentCount?: string | number | null;
-  collectedCount?: string | number | null;
-  sharedCount?: string | number | null;
+  liked_count?: string | null;
+  comment_count?: string | null;
+  collected_count?: string | null;
+  shared_count?: string | null;
+  /** Some payloads also expose 'liked' as boolean — ignore. */
 }
 
-/** Cover/thumbnail metadata. */
 interface XhsCover {
   url?: string | null;
-  urlPre?: string | null;
-  urlDefault?: string | null;
+  url_pre?: string | null;
+  url_default?: string | null;
   width?: number;
   height?: number;
 }
 
-/** Inner postData object on each dataset item. */
-interface XhsPostData {
-  noteId?: string;
-  postUrl?: string | null;
-  displayTitle?: string | null;
-  /** 'video' for video notes; 'normal' or 'image' for image notes. */
+interface XhsNote {
+  note_id?: string;
+  display_title?: string | null;
+  /** 'video' | 'normal' (image) */
   type?: string | null;
-  user?: XhsUser;
-  interactInfo?: XhsInteractInfo;
   cover?: XhsCover;
-  /** Optional timestamp — rarely present on user-posts payloads. */
-  time?: number | string | null;
+  interact_info?: XhsInteractInfo;
+  user?: { user_id?: string; nickname?: string };
 }
 
-/** Top-level dataset item shape. */
-interface XhsItem {
-  profileUrl?: string;
-  postData?: XhsPostData;
-  scrapedAt?: string;
-  // Error / empty markers some Apify actors set
-  error?: string;
-  errorDescription?: string;
+interface XhsNotesData {
+  notes?: XhsNote[];
+  has_more?: boolean;
+  cursor?: string;
 }
 
 function truncate(s: string | null | undefined, n: number): string | null {
@@ -118,61 +126,64 @@ function truncate(s: string | null | undefined, n: number): string | null {
   return s.length <= n ? s : s.slice(0, n - 1) + '…';
 }
 
-/** Coerce XHS string counters ("8794") to numbers; tolerate already-numeric. */
 function toNum(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
-function pickContentType(post: XhsPostData): ContentType {
-  const t = (post.type || '').toLowerCase();
-  if (t === 'video') return 'video';
-  return 'image';
+function pickInteraction(
+  list: XhsInteraction[] | undefined,
+  type: string,
+): number | null {
+  if (!list) return null;
+  const found = list.find((i) => (i.type || '').toLowerCase() === type);
+  return found ? toNum(found.count) : null;
 }
 
-function pickMediaUrl(cover: XhsCover | undefined): string | null {
-  if (!cover) return null;
-  return cover.urlDefault || cover.urlPre || cover.url || null;
+function pickContentType(n: XhsNote): ContentType {
+  return (n.type || '').toLowerCase() === 'video' ? 'video' : 'image';
 }
 
-function mapPost(item: XhsItem): NormalizedPostSnapshot | null {
-  const post = item.postData;
-  if (!post) return null;
-  const externalId = post.noteId;
-  if (!externalId) return null;
+function pickMediaUrl(c: XhsCover | undefined): string | null {
+  if (!c) return null;
+  return c.url_default || c.url_pre || c.url || null;
+}
 
-  const info = post.interactInfo ?? {};
+function mapNote(n: XhsNote): NormalizedPostSnapshot | null {
+  if (!n.note_id) return null;
+  const info = n.interact_info ?? {};
   return {
-    external_post_id: externalId,
-    posted_at: typeof post.time === 'string' ? post.time : null,
-    caption_excerpt: truncate(post.displayTitle, CAPTION_LIMIT),
-    views: null, // XHS user-posts endpoint does not expose view counts
-    likes: toNum(info.likedCount),
-    comments: toNum(info.commentCount),
-    shares: toNum(info.collectedCount ?? info.sharedCount),
-    media_url: pickMediaUrl(post.cover),
-    content_type: pickContentType(post),
-    raw: item,
+    external_post_id: n.note_id,
+    posted_at: null, // XHS user-notes endpoint does not expose per-note timestamps
+    caption_excerpt: truncate(n.display_title, CAPTION_LIMIT),
+    views: null,
+    likes: toNum(info.liked_count),
+    comments: toNum(info.comment_count),
+    shares: toNum(info.collected_count ?? info.shared_count),
+    media_url: pickMediaUrl(n.cover),
+    content_type: pickContentType(n),
+    raw: n,
   };
 }
 
 function mapProfile(
-  first: XhsItem,
+  info: XhsUserInfoData,
   posts: NormalizedPostSnapshot[],
 ): NormalizedProfileSnapshot {
-  const user = first.postData?.user ?? {};
+  const basic = info.basic_info ?? {};
   return {
-    // Not exposed by this actor's userPosts mode — see file header.
-    followers: null,
-    following: null,
-    total_posts: null,
-    total_views: null,
-    total_likes: null,
+    followers: pickInteraction(info.interactions, 'fans'),
+    following: pickInteraction(info.interactions, 'follows'),
+    total_posts: null, // not exposed by web/v2/fetch_user_info
+    total_views: null, // XHS doesn't expose view counts
+    total_likes: pickInteraction(info.interactions, 'interaction'),
     raw: {
-      userId: user.userId,
-      nickname: user.nickName ?? user.nickname,
-      avatarUrl: user.avatar ?? null,
+      nickname: basic.nickname,
+      desc: basic.desc,
+      red_id: basic.red_id,
+      avatar_url: basic.imageb ?? basic.images ?? null,
+      ip_location: basic.ip_location,
       sample_size: posts.length,
     },
   };
@@ -180,47 +191,44 @@ function mapProfile(
 
 export const rednoteAdapter: PlatformAdapter = {
   platform: 'rednote',
-  actorId: ACTOR_ID,
+  actorId: 'tikhub:xiaohongshu/web',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
-    const items = await runActor<XhsItem>({
-      actorId: ACTOR_ID,
-      platform: 'rednote',
-      profileUrl,
-      input: {
-        mode: 'userPosts',
-        profileUrls: [profileUrl],
-        maxItems: POSTS_PER_SCRAPE,
-      },
-      timeoutSecs: 300,
-    });
+    const userId = extractUserId(profileUrl);
 
-    // Inspect first item for error markers Apify sometimes embeds.
-    // XHS rarely surfaces a "private" state — accounts are either reachable
-    // or 404 — so we only check for not-found here.
-    const first = items[0];
-    if (first?.error) {
-      const msg = (first.errorDescription || first.error).toLowerCase();
-      if (
-        msg.includes('not found') ||
-        msg.includes('does not exist') ||
-        msg.includes('404') ||
-        msg.includes('invalid')
-      ) {
-        throw new ProfileNotFoundError('rednote', profileUrl);
-      }
-    }
-    if (!first || !first.postData?.noteId) {
-      throw new ProfileNotFoundError('rednote', profileUrl);
+    const [userInfo, notesData] = await Promise.all([
+      tikhubGet<XhsUserInfoData>({
+        path: '/api/v1/xiaohongshu/web/v2/fetch_user_info',
+        query: { user_id: userId },
+        platform: PLATFORM,
+        profileUrl,
+      }),
+      tikhubGet<XhsNotesData>({
+        path: '/api/v1/xiaohongshu/web/get_user_notes_v2',
+        query: { user_id: userId },
+        platform: PLATFORM,
+        profileUrl,
+      }).catch((err) => {
+        // Some XHS accounts hide their notes tab — still surface profile data.
+        if (err instanceof ScrapeError && err.status === 'private') {
+          return { notes: [] } as XhsNotesData;
+        }
+        throw err;
+      }),
+    ]);
+
+    if (!userInfo.basic_info && (!userInfo.interactions || userInfo.interactions.length === 0)) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
 
+    const notes = (notesData.notes ?? []).slice(0, POSTS_PER_SCRAPE);
     const posts: NormalizedPostSnapshot[] = [];
-    for (const it of items) {
-      const p = mapPost(it);
-      if (p) posts.push(p);
+    for (const n of notes) {
+      const mapped = mapNote(n);
+      if (mapped) posts.push(mapped);
     }
 
     return {
-      profile: mapProfile(first, posts),
+      profile: mapProfile(userInfo, posts),
       posts,
     };
   },
