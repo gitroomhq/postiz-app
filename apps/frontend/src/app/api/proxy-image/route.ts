@@ -43,6 +43,25 @@ function isAllowedHost(host: string): boolean {
   return ALLOWED_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 }
 
+/**
+ * Some IG images are served from `*.fna.fbcdn.net` — Facebook Network
+ * Appliance hosts that are geo-pinned to a *viewer's* region and not globally
+ * DNS-resolvable. Server-side fetch from Vercel fails with ENOTFOUND.
+ *
+ * The Meta signature in the URL (`oh`, `oe`, `_nc_*`) is host-agnostic, so
+ * we can swap the host to a globally-resolvable IG edge and the signed URL
+ * still validates. Verified live 2026-05-27: scontent.cdninstagram.com
+ * returns the identical bytes (Content-Digest match).
+ */
+function rewriteHostForFetch(target: URL): URL {
+  if (target.hostname.toLowerCase().endsWith('.fna.fbcdn.net')) {
+    const rewritten = new URL(target.toString());
+    rewritten.hostname = 'scontent.cdninstagram.com';
+    return rewritten;
+  }
+  return target;
+}
+
 export async function GET(request: Request): Promise<Response> {
   const u = new URL(request.url);
   const raw = u.searchParams.get('url');
@@ -66,11 +85,12 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
+  const fetchTarget = rewriteHostForFetch(target);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const upstream = await fetch(target.toString(), {
+    const upstream = await fetch(fetchTarget.toString(), {
       signal: controller.signal,
       // Important: no Referer (default in server-side fetch).
       headers: {
@@ -106,6 +126,7 @@ export async function GET(request: Request): Promise<Response> {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=86400, s-maxage=86400, immutable',
         'X-Proxied-Host': target.hostname,
+        'X-Fetch-Host': fetchTarget.hostname,
       },
     });
   } catch (err) {
