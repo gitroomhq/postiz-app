@@ -21,8 +21,11 @@ import {
   percentFormatter,
   signedPercentFormatter,
   type CreatorRow,
+  type MetricView,
+  type PlatformBreakdown,
   type PlatformFilter,
 } from './showcase-data';
+import type { LivePlatformBreakdown } from '@gitroom/frontend/lib/queries';
 
 interface TabDef {
   value: PlatformFilter;
@@ -43,26 +46,98 @@ function filterLabel(filter: PlatformFilter): string {
 }
 
 export interface DashboardShowcaseProps {
-  /** Live creator rows from Supabase. When non-empty + non-null, overrides
-   *  the demo list. METRICS aggregates stay demo-shaped until we have 14+
-   *  days of snapshots (spec §4 insufficient-data guard). */
+  /** Live creator rows from Supabase. When non-empty, drives leaderboard +
+   *  derived metrics (totals, growth, engagement, active count). */
   liveCreators?: CreatorRow[] | null;
+  /** Live per-platform aggregates from Supabase. When provided, merges with
+   *  demo PLATFORM_BREAKDOWN: live wins per-platform, demo fills the rest
+   *  so the strip always renders all five rows. */
+  livePlatformBreakdown?: LivePlatformBreakdown[] | null;
 }
 
-export function DashboardShowcase({ liveCreators }: DashboardShowcaseProps = {}) {
+/**
+ * Derive a MetricView from live creator rows filtered by platform.
+ * - growthSeries: kept from demo until we have a real time-series query
+ *   (the Hero card already labels itself "Preview" for this reason).
+ * - engagementRateDelta: 0 (need historical engagement to compute).
+ * - All other fields computed from the filtered live set.
+ */
+function computeLiveMetrics(
+  liveCreators: CreatorRow[],
+  filter: PlatformFilter,
+): MetricView {
+  const filtered =
+    filter === 'all'
+      ? liveCreators
+      : liveCreators.filter((c) => c.primaryPlatform === filter);
+
+  const totalFollowers = filtered.reduce((s, c) => s + c.followers, 0);
+  const netGrowth30d = filtered.reduce((s, c) => s + c.growth30d, 0);
+  const activeCreators = filtered.length;
+  const engagementRate =
+    filtered.length > 0
+      ? filtered.reduce((s, c) => s + c.engagementRate, 0) / filtered.length
+      : 0;
+
+  const prior = totalFollowers - netGrowth30d;
+  const netGrowth30dPct = prior > 0 ? netGrowth30d / prior : 0;
+
+  return {
+    totalFollowers,
+    totalFollowersDeltaPct: netGrowth30dPct,
+    engagementRate,
+    engagementRateDelta: 0,
+    activeCreators,
+    growthSeries: METRICS[filter].growthSeries, // sparkline still demo
+    netGrowth30d,
+    netGrowth30dPct,
+  };
+}
+
+export function DashboardShowcase({
+  liveCreators,
+  livePlatformBreakdown,
+}: DashboardShowcaseProps = {}) {
   const [filter, setFilter] = useState<PlatformFilter>('all');
-  const metrics = METRICS[filter];
+  const isLive = !!(liveCreators && liveCreators.length > 0);
+
+  const metrics = useMemo<MetricView>(
+    () => (isLive ? computeLiveMetrics(liveCreators!, filter) : METRICS[filter]),
+    [isLive, liveCreators, filter],
+  );
+
   const creators = useMemo(() => {
-    if (liveCreators && liveCreators.length > 0) {
-      // Live mode: filter the real list by platform tab
+    if (isLive) {
       const filtered =
         filter === 'all'
-          ? liveCreators
-          : liveCreators.filter((c) => c.primaryPlatform === filter);
+          ? liveCreators!
+          : liveCreators!.filter((c) => c.primaryPlatform === filter);
       return filtered.map((c, i) => ({ ...c, rank: i + 1 }));
     }
     return getCreatorsForFilter(filter);
-  }, [filter, liveCreators]);
+  }, [filter, liveCreators, isLive]);
+
+  // Merge live + demo per platform so the breakdown card always shows all
+  // five rows. Live wins where present; demo fills the gaps.
+  const breakdownRows = useMemo<PlatformBreakdown[]>(() => {
+    if (!livePlatformBreakdown || livePlatformBreakdown.length === 0) {
+      return PLATFORM_BREAKDOWN;
+    }
+    const liveMap = new Map<PlatformKey, LivePlatformBreakdown>();
+    for (const p of livePlatformBreakdown) liveMap.set(p.platform, p);
+    return PLATFORM_BREAKDOWN.map((demo) => {
+      const live = liveMap.get(demo.platform);
+      if (!live) return demo;
+      return {
+        platform: demo.platform,
+        followers: live.followers,
+        growth30d: live.growth30d,
+        // No per-platform engagement yet — keep demo as visual placeholder
+        // rather than showing 0. The card has no "engagement-pending" UI.
+        engagementRate: demo.engagementRate,
+      };
+    });
+  }, [livePlatformBreakdown]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,7 +163,7 @@ export function DashboardShowcase({ liveCreators }: DashboardShowcaseProps = {})
             label="Avg Engagement Rate"
             value={percentFormatter.format(metrics.engagementRate)}
             delta={signedPercentFormatter.format(metrics.engagementRateDelta)}
-            note={`${metrics.activeCreators} active creators`}
+            note={`${metrics.activeCreators} active creator${metrics.activeCreators === 1 ? '' : 's'}`}
             deltaPositive={metrics.engagementRateDelta >= 0}
           />
         </BentoItem>
@@ -98,13 +173,19 @@ export function DashboardShowcase({ liveCreators }: DashboardShowcaseProps = {})
         </BentoItem>
 
         <BentoItem colSpan={5} rowSpan={2} tabletColSpan={6}>
-          <PlatformBreakdownCard activeFilter={filter} onSelect={setFilter} />
+          <PlatformBreakdownCard
+            activeFilter={filter}
+            onSelect={setFilter}
+            rows={breakdownRows}
+          />
         </BentoItem>
       </BentoGrid>
 
-      <p className="text-caption text-fgSubtle text-center pt-2 tabular-nums">
-        Showcase preview · synthetic data. Live numbers replace this the moment the scraper switches on.
-      </p>
+      {!isLive && (
+        <p className="text-caption text-fgSubtle text-center pt-2 tabular-nums">
+          Showcase preview · synthetic data. Live numbers replace this the moment the scraper switches on.
+        </p>
+      )}
     </div>
   );
 }
@@ -311,10 +392,17 @@ function LeaderboardCard({ rows, filter }: LeaderboardCardProps) {
 interface PlatformBreakdownCardProps {
   activeFilter: PlatformFilter;
   onSelect: (filter: PlatformFilter) => void;
+  rows: PlatformBreakdown[];
 }
 
-function PlatformBreakdownCard({ activeFilter, onSelect }: PlatformBreakdownCardProps) {
-  const max = Math.max(...PLATFORM_BREAKDOWN.map((p) => p.followers));
+function PlatformBreakdownCard({
+  activeFilter,
+  onSelect,
+  rows,
+}: PlatformBreakdownCardProps) {
+  // Avoid divide-by-zero when every platform is empty; the bar widths will
+  // just collapse to 0% which renders fine.
+  const max = Math.max(1, ...rows.map((p) => p.followers));
   return (
     <GlassCard variant="base" padding="lg" radius="2xl" className="h-full flex flex-col">
       <div className="flex flex-col gap-1 mb-5">
@@ -327,7 +415,7 @@ function PlatformBreakdownCard({ activeFilter, onSelect }: PlatformBreakdownCard
       </div>
 
       <ul className="flex-1 flex flex-col gap-3">
-        {PLATFORM_BREAKDOWN.map((row) => {
+        {rows.map((row) => {
           const Icon = PLATFORM_ICONS[row.platform];
           const widthPct = (row.followers / max) * 100;
           const isFocused = activeFilter === row.platform;

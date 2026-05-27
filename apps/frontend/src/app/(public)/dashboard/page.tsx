@@ -1,6 +1,11 @@
 import { Metadata } from 'next';
 import { DashboardShowcase } from '@gitroom/frontend/components/dashboard-showcase/dashboard-showcase';
-import { getLiveCreatorRows, type LiveCreatorRow } from '@gitroom/frontend/lib/queries';
+import {
+  getLiveCreatorRows,
+  getPlatformBreakdown,
+  type LiveCreatorRow,
+  type LivePlatformBreakdown,
+} from '@gitroom/frontend/lib/queries';
 import type { CreatorRow } from '@gitroom/frontend/components/dashboard-showcase/showcase-data';
 
 export const dynamic = 'force-dynamic';
@@ -13,10 +18,16 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const live = await getLiveCreatorRows().catch((err) => {
-    console.error('[dashboard] getLiveCreatorRows failed — falling back to demo', err);
-    return null;
-  });
+  const [live, livePlatformBreakdown] = await Promise.all([
+    getLiveCreatorRows().catch((err) => {
+      console.error('[dashboard] getLiveCreatorRows failed', err);
+      return null;
+    }),
+    getPlatformBreakdown().catch((err) => {
+      console.error('[dashboard] getPlatformBreakdown failed', err);
+      return null;
+    }),
+  ]);
   // Strip the `insufficient` flag — showcase consumes plain CreatorRow.
   const liveCreators: CreatorRow[] | null = live
     ? live.map((r: LiveCreatorRow): CreatorRow => {
@@ -48,7 +59,10 @@ export default async function DashboardPage() {
         )}
       </header>
 
-      <DashboardShowcase liveCreators={liveCreators} />
+      <DashboardShowcase
+        liveCreators={liveCreators}
+        livePlatformBreakdown={livePlatformBreakdown}
+      />
     </div>
   );
 }

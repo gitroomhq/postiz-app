@@ -38,7 +38,12 @@ export interface LiveCreatorRow {
   followers: number;
   /** 0 when tracked <14 days (spec §4 insufficient-data guard). */
   growth30d: number;
-  /** 0 when no posts yet OR no followers. (likes + comments + shares) / followers × 100 */
+  /**
+   * Average (likes + comments + shares) per post divided by followers.
+   * Stored as a fraction (0.052 = 5.2%) to match the demo data convention
+   * and the Intl percentFormatter consumers in the showcase components.
+   * 0 when no posts yet OR no followers.
+   */
   engagementRate: number;
   /** When true, growth/engagement cells should render an empty-state in the UI. */
   insufficient: boolean;
@@ -250,7 +255,7 @@ export async function getLiveCreatorRows(): Promise<LiveCreatorRow[] | null> {
     const growth30d = priorSeen && !insufficient ? followers - prior : 0;
     const engagementRate =
       followers > 0 && totalPosts > 0
-        ? (totalEng / totalPosts / followers) * 100
+        ? totalEng / totalPosts / followers
         : 0;
 
     rows.push({
