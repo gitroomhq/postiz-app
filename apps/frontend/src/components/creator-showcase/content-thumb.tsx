@@ -76,6 +76,10 @@ export function ContentThumb({ post, onOpen }: ContentThumbProps) {
           src={post.thumbnailUrl}
           alt=""
           loading="lazy"
+          // IG/TikTok/etc CDNs return 403 when Referer is set to localhost or
+          // any unfamiliar domain. no-referrer drops the header entirely so
+          // their public-asset path serves the file.
+          referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ease-out motion-reduce:transition-none"
           style={{ opacity: active && hasVideo ? 0 : 1 }}
         />

@@ -114,6 +114,7 @@ export function ContentLightbox({ post, onClose }: ContentLightboxProps) {
               <img
                 src={post.thumbnailUrl}
                 alt=""
+                referrerPolicy="no-referrer"
                 className={clsx(
                   'absolute inset-0 w-full h-full object-contain bg-black',
                   hasVideo && 'motion-reduce:block hidden'

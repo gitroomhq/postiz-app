@@ -18,7 +18,7 @@ interface ContentGridProps {
 export function ContentGrid({
   creatorSlug,
   platform,
-  limit = 24,
+  limit = 30,
   posts: livePosts,
 }: ContentGridProps) {
   const posts = useMemo(() => {

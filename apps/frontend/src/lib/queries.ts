@@ -15,6 +15,17 @@
 import { getSupabaseRead } from './supabase-server';
 import type { PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
 
+/**
+ * Wrap a social-CDN URL through our /api/proxy-image route so the browser
+ * never hits the CDN directly. Fixes signed-URL expiry + Referer blocks.
+ * Returns null unchanged.
+ */
+function viaProxy(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (!url.startsWith('http')) return null;
+  return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+}
+
 // DB stores 'rednote'; showcase uses 'xiaohongshu' — single map point.
 function dbPlatformToKey(platform: string): PlatformKey {
   return platform === 'rednote' ? 'xiaohongshu' : (platform as PlatformKey);
@@ -415,7 +426,7 @@ export async function getCreatorByHandle(
 
   // 6. Roll up
   let totalFollowers = 0;
-  let bestAvatar: string | null = creatorRes.data.avatar_url ?? null;
+  let bestAvatar: string | null = viaProxy(creatorRes.data.avatar_url);
   let bestFullName: string | null = creatorRes.data.display_name;
   let bestBio: string | null = null;
   const slots: CreatorPlatformSlot[] = [];
@@ -428,7 +439,7 @@ export async function getCreatorByHandle(
     const rawFromSnap = snap?.raw;
     const fromPost = extractRawProfileFields(rawFromPost);
     const fromSnap = extractRawProfileFields(rawFromSnap);
-    if (!bestAvatar) bestAvatar = fromPost.avatarUrl ?? fromSnap.avatarUrl;
+    if (!bestAvatar) bestAvatar = viaProxy(fromPost.avatarUrl ?? fromSnap.avatarUrl);
     if (!bestFullName) bestFullName = fromPost.fullName ?? fromSnap.fullName;
     if (!bestBio) bestBio = fromPost.biography ?? fromSnap.biography;
 
@@ -499,7 +510,7 @@ function mapPostSnapshotToRow(raw: unknown, content_type: string | null, post: {
     externalId: post.external_post_id,
     url: typeof r.url === 'string' ? r.url : `https://www.instagram.com/p/${shortCode}/`,
     type,
-    thumbnailUrl: post.media_url,
+    thumbnailUrl: viaProxy(post.media_url),
     caption: post.caption_excerpt ?? '',
     hashtags,
     publishedAt: post.posted_at ?? new Date().toISOString(),
