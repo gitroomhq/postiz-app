@@ -1,128 +1,96 @@
-Project Postiz: schedule social/chat posts 28+ channels. Add posts to calendar, workflow posts at right time.
-Features:
-- Schedule posts
-- Calendar view
-- Analytics
-- Team management
-- Media library
+# D3 Creator
 
-Monorepo, root-only `package.json` deps. PNPM. 3 key folders:
+Login-free social analytics. Agency tool + white-label client portal. Scraper-based — no OAuth, no platform APIs.
 
-- apps/backend - API code (NESTJS)
-- apps/orchestrator - temporal, background jobs (NESTJS), workflows + activities
-- apps/frontend - frontend code (Vite ReactJS)
-- /libraries - shared services for backend, orchestrator, frontend
+**Hierarchy:** Agency → Client → Creator → Profile (one per platform per account).
+**Platforms (v1 build order):** Instagram → TikTok → Facebook → RedNote → Douyin.
+**Spec:** [docs/superpowers/specs/2026-05-26-scraper-analytics-design.md](docs/superpowers/specs/2026-05-26-scraper-analytics-design.md)
 
-Use only pnpm. No frontend deps from npmjs, write native components.
+## Stack
 
-**UI work: ALWAYS read `DESIGN.md` (project root) FIRST before writing any UI.** Brand colors, typography, spacing, component styling — all live there. Match the spec exactly; deviations need approval.
+| Layer | Choice |
+|---|---|
+| Frontend | Next.js App Router (React 19) + Tailwind 3 |
+| Database | Supabase Postgres + Storage |
+| Scrapers | Apify (official pre-built actors only) |
+| Hosting | Vercel (frontend + functions + cron) |
+| Scheduling | Vercel Cron — NOT Temporal |
+| Package mgr | pnpm only |
+
+Note: spec mentions Temporal (`apps/orchestrator`) — that was Postiz architecture. Deleted. Scheduling is now Vercel Cron.
+
+## Layout
+
+```
+apps/frontend/                              Next.js app
+  src/app/(public)/                         Public routes (home, dashboard, leaderboard, creators)
+  src/components/{ui,layout,*-showcase}/    Components
+libraries/react-shared-libraries/src/translation/   i18n only
+supabase/                                   Migrations (CLI-managed, created Task 2)
+docs/superpowers/specs/                     Design docs
+```
+
+## UI work — read first
+
+**Before writing any UI, read `DESIGN.md`.** Brand colors, typography, spacing — all live there. Match exactly; deviations need approval.
 
 Tailwind 3. Before writing component check:
-- /apps/frontend/src/app/colors.scss
-- /apps/frontend/src/app/global.scss
-- /apps/frontend/tailwind.config.js
+- `apps/frontend/src/app/colors.scss`
+- `apps/frontend/src/app/global.scss`
+- `apps/frontend/tailwind.config.cjs`
 
-`--color-custom*` deprecated, don't use.
+`--color-custom*` deprecated — don't use.
 
-Check existing components for design.
+UI components live in `apps/frontend/src/components/ui/`. Check existing ones first for design language.
 
-Backend: 3 layers required:
-Controller >> Service >> Repository (no shortcuts)
-Sometimes:
-Controller >> Mananger >> Service >> Repository.
+## Data layer
 
-Server logic mostly in libs/server. Backend repo mostly controllers + imports from libs.server.
+- Migrations via Supabase CLI. No manual schema in dashboard.
+- Tables (v1 minimal MVP — Plan-wins-over-spec):
+  - `client` — one per agency client
+  - `creator` — one per influencer
+  - `profile` — one per (creator × platform)
+  - `profile_snapshot` — daily snapshot, time-series
+  - `post_snapshot` — per-post snapshot
+- Per spec also: `scrape_log`, `user_client_access`, `user_agreements` — deferred per user decision.
+- No `agency` table in v1 — deferred per user decision.
 
-Frontend:
-- UI components: /apps/frontend/src/components/ui
-- Routing: /apps/frontend/src/app
-- Components: /apps/frontend/src/components
-- Always SWR for fetching, use `useFetch` from /libraries/helpers/src/utils/custom.fetch.tsx
+## Scraper layer
 
-SWR: each in separate hook, must comply `react-hooks/rules-of-hooks`, never `eslint-disable-next-line`.
+- One adapter file per platform in `libraries/scrapers/` (created Task 4).
+- Use ONLY official Apify Actors — never build custom Actors.
+- `APIFY_API_KEY` from env, never hardcoded.
+- Daily cron loops active profiles, calls correct adapter, UPSERTs into `profile_snapshot` + `post_snapshot`.
+- Skip duplicates: `(profile_id, captured_at::date)` for profile, `(profile_id, external_post_id, captured_at::date)` for posts.
 
-Valid:
-const useCommunity = () => {
-   return useSWR....
-}
+## Frontend rules
 
-Invalid:
-const useCommunity = () => {
-  return {
-    communities: () => useSWR<CommunitiesListResponse>("communities", getCommunities),
-    providers: () => useSWR<ProvidersListResponse>("providers", getProviders),
-  };
-}
-
+- SWR for data fetching. Each `useSWR` in its own hook. Comply with `react-hooks/rules-of-hooks`. Never `eslint-disable-next-line`.
 - Lint runs only from root.
-- Only pnpm.
-- Production system, many users — don't break existing users, migration may be needed.
+- Production system — don't break existing users, migration may be needed.
 
----
+## Behavioral guidelines
 
-# Behavioral Guidelines
-
-Reduce common LLM coding mistakes. Merge with project instructions.
-
-**Tradeoff:** bias caution over speed. Trivial tasks → judgment.
-
-## 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
+### Think before coding
 - State assumptions. Uncertain → ask.
-- Multiple interpretations → present them, don't pick silently.
-- Simpler approach exists → say so. Push back when warranted.
-- Unclear → stop. Name confusion. Ask.
+- Multiple interpretations → present them.
+- Simpler approach exists → say so, push back.
 
-## 2. Simplicity First
-
-**Min code solves problem. Nothing speculative.**
-
+### Simplicity first
 - No features beyond asked.
-- No abstractions for single-use code.
-- No unrequested flexibility/configurability.
-- No error handling for impossible scenarios.
-- 200 lines → 50? Rewrite.
+- No abstractions for single-use.
+- No unrequested flexibility.
 
-Ask: "Senior engineer call this overcomplicated?" Yes → simplify.
-
-## 3. Surgical Changes
-
-**Touch only what you must. Clean only your own mess.**
-
-Editing existing code:
-- No "improving" adjacent code/comments/formatting.
-- No refactoring unbroken things.
+### Surgical changes
+- Touch only what task needs.
 - Match existing style.
 - Notice unrelated dead code → mention, don't delete.
+- Remove imports/vars YOUR changes orphaned.
 
-Your changes create orphans:
-- Remove imports/vars/funcs YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+### Goal-driven
+- "Add validation" → "Write test for invalid input, then make pass."
+- Multi-step → brief plan, verify each step.
 
-Test: every changed line traces to user request.
+## Memory note
 
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks → verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make pass"
-- "Fix bug" → "Write test reproducing it, then make pass"
-- "Refactor X" → "Tests pass before + after"
-
-Multi-step → brief plan:
-
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong criteria → loop independently. Weak ("make it work") → constant clarification.
-
----
-
-**Guidelines working if:** fewer unnecessary diff changes, fewer overcomplication rewrites, clarifying questions before implementation not after mistakes.
+Prior memory said "TanStack migration in progress" — **disregard**. Migration branch deleted as failure (2026-05-27). Frontend stays on Next.js App Router. Postiz scaffolding stripped — see commit `eeb77d18` for clean baseline.
