@@ -48,12 +48,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               >
                 Leaderboard
               </Link>
-              <Link
-                href="/admin"
-                className="px-3 py-1.5 rounded-md text-fgSubtle hover:text-fg hover:bg-white/[0.04] transition-colors"
-              >
-                Admin
-              </Link>
             </nav>
           </div>
         </header>
