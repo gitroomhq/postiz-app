@@ -51,11 +51,35 @@ function filterLabel(filter: PlatformFilter): string {
   return filter === 'all' ? 'All platforms' : PLATFORM_LABELS[filter];
 }
 
-export function LeaderboardShowcase() {
+export interface LeaderboardShowcaseProps {
+  /** Live creator rows from Supabase. When non-empty + non-null, overrides
+   *  the demo list. Sort/filter still applied client-side. */
+  liveCreators?: CreatorRow[] | null;
+}
+
+function applySort(rows: CreatorRow[], sortBy: LeaderboardSort): CreatorRow[] {
+  const sorted = [...rows].sort((a, b) => {
+    if (sortBy === 'growth30d') return b.growth30d - a.growth30d;
+    if (sortBy === 'engagementRate') return b.engagementRate - a.engagementRate;
+    return b.followers - a.followers;
+  });
+  return sorted.map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+export function LeaderboardShowcase({ liveCreators }: LeaderboardShowcaseProps = {}) {
   const [filter, setFilter] = useState<PlatformFilter>('all');
   const [sortBy, setSortBy] = useState<LeaderboardSort>('followers');
 
-  const rows = useMemo(() => getSortedCreators(filter, sortBy), [filter, sortBy]);
+  const rows = useMemo(() => {
+    if (liveCreators && liveCreators.length > 0) {
+      const filtered =
+        filter === 'all'
+          ? liveCreators
+          : liveCreators.filter((c) => c.primaryPlatform === filter);
+      return applySort(filtered, sortBy);
+    }
+    return getSortedCreators(filter, sortBy);
+  }, [filter, sortBy, liveCreators]);
   const stats = useMemo(() => summarize(filter), [filter]);
 
   return (

@@ -42,10 +42,27 @@ function filterLabel(filter: PlatformFilter): string {
   return filter === 'all' ? 'All platforms' : PLATFORM_LABELS[filter];
 }
 
-export function DashboardShowcase() {
+export interface DashboardShowcaseProps {
+  /** Live creator rows from Supabase. When non-empty + non-null, overrides
+   *  the demo list. METRICS aggregates stay demo-shaped until we have 14+
+   *  days of snapshots (spec §4 insufficient-data guard). */
+  liveCreators?: CreatorRow[] | null;
+}
+
+export function DashboardShowcase({ liveCreators }: DashboardShowcaseProps = {}) {
   const [filter, setFilter] = useState<PlatformFilter>('all');
   const metrics = METRICS[filter];
-  const creators = useMemo(() => getCreatorsForFilter(filter), [filter]);
+  const creators = useMemo(() => {
+    if (liveCreators && liveCreators.length > 0) {
+      // Live mode: filter the real list by platform tab
+      const filtered =
+        filter === 'all'
+          ? liveCreators
+          : liveCreators.filter((c) => c.primaryPlatform === filter);
+      return filtered.map((c, i) => ({ ...c, rank: i + 1 }));
+    }
+    return getCreatorsForFilter(filter);
+  }, [filter, liveCreators]);
 
   return (
     <div className="flex flex-col gap-6">
