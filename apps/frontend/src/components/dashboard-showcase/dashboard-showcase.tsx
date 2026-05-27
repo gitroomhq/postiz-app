@@ -117,8 +117,12 @@ export function DashboardShowcase({
     return getCreatorsForFilter(filter);
   }, [filter, liveCreators, isLive]);
 
-  // Merge live + demo per platform so the breakdown card always shows all
-  // five rows. Live wins where present; demo fills the gaps.
+  // Breakdown card rows.
+  //   - No live data at all → demo (full demo mode).
+  //   - At least one live platform → live-only: every row uses the live
+  //     followers/growth (0 if that platform has no profile yet), and
+  //     engagement renders as "—" since we don't aggregate engagement-by-
+  //     platform on the live side yet (avoiding the prior demo-leak bug).
   const breakdownRows = useMemo<PlatformBreakdown[]>(() => {
     if (!livePlatformBreakdown || livePlatformBreakdown.length === 0) {
       return PLATFORM_BREAKDOWN;
@@ -127,14 +131,11 @@ export function DashboardShowcase({
     for (const p of livePlatformBreakdown) liveMap.set(p.platform, p);
     return PLATFORM_BREAKDOWN.map((demo) => {
       const live = liveMap.get(demo.platform);
-      if (!live) return demo;
       return {
         platform: demo.platform,
-        followers: live.followers,
-        growth30d: live.growth30d,
-        // No per-platform engagement yet — keep demo as visual placeholder
-        // rather than showing 0. The card has no "engagement-pending" UI.
-        engagementRate: demo.engagementRate,
+        followers: live?.followers ?? 0,
+        growth30d: live?.growth30d ?? 0,
+        engagementRate: NaN, // sentinel — card renders "—" instead of a %
       };
     });
   }, [livePlatformBreakdown]);
@@ -419,6 +420,8 @@ function PlatformBreakdownCard({
           const Icon = PLATFORM_ICONS[row.platform];
           const widthPct = (row.followers / max) * 100;
           const isFocused = activeFilter === row.platform;
+          const isEmpty = row.followers === 0;
+          const showEngagement = Number.isFinite(row.engagementRate);
           return (
             <li key={row.platform}>
               <button
@@ -428,7 +431,8 @@ function PlatformBreakdownCard({
                   'w-full text-left rounded-xl border px-3 py-3 transition-colors duration-150 ease-out',
                   isFocused
                     ? 'bg-customColor16 border-borderGlassStrong'
-                    : 'bg-transparent border-borderGlass hover:border-borderGlassStrong hover:bg-white/[0.025]'
+                    : 'bg-transparent border-borderGlass hover:border-borderGlassStrong hover:bg-white/[0.025]',
+                  isEmpty && 'opacity-50'
                 )}
                 aria-pressed={isFocused}
               >
@@ -442,7 +446,7 @@ function PlatformBreakdownCard({
                     </span>
                   </div>
                   <span className="text-body-sm font-mono tabular-nums text-fg">
-                    {compactFormatter.format(row.followers)}
+                    {isEmpty ? '—' : compactFormatter.format(row.followers)}
                   </span>
                 </div>
 
@@ -457,9 +461,16 @@ function PlatformBreakdownCard({
                 </div>
 
                 <div className="flex items-center justify-between mt-2 text-caption text-fgMuted font-mono tabular-nums">
-                  <span>Eng {percentFormatter.format(row.engagementRate)}</span>
+                  <span>
+                    Eng{' '}
+                    {showEngagement
+                      ? percentFormatter.format(row.engagementRate)
+                      : '—'}
+                  </span>
                   <span className="text-fg">
-                    +{compactFormatter.format(row.growth30d)} · 30d
+                    {isEmpty
+                      ? 'Not yet tracked'
+                      : `+${compactFormatter.format(row.growth30d)} · 30d`}
                   </span>
                 </div>
               </button>

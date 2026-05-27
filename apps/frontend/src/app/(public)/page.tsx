@@ -15,7 +15,6 @@ import {
   exactFormatter,
   handleToSlug,
   METRICS,
-  PLATFORM_BREAKDOWN,
   signedPercentFormatter,
   summarize,
   TOP_CREATORS,
@@ -264,21 +263,16 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5">
           {PLATFORM_ORDER.map((platform) => {
             const Icon = PLATFORM_ICONS[platform];
-            // Prefer live data; fall back to the demo entry so empty
-            // platforms still render a card.
             const live = liveByPlatform.get(platform);
-            const demo = PLATFORM_BREAKDOWN.find((p) => p.platform === platform);
-            const followers = live?.followers ?? demo?.followers ?? 0;
-            const growth30d = live?.growth30d ?? demo?.growth30d ?? 0;
-            const creatorCount =
-              live?.creatorCount ??
-              TOP_CREATORS.filter((c) => c.primaryPlatform === platform).length;
-            if (!live && !demo) return null;
+            const isEmpty = !live;
+            const followers = live?.followers ?? 0;
+            const growth30d = live?.growth30d ?? 0;
+            const creatorCount = live?.creatorCount ?? 0;
             return (
               <Link
                 key={platform}
                 href="/dashboard"
-                className="block h-full group"
+                className={`block h-full group ${isEmpty ? 'opacity-50' : ''}`}
               >
                 <GlassCard
                   variant="base"
@@ -292,7 +286,9 @@ export default async function HomePage() {
                       <Icon size={18} />
                     </span>
                     <span className="text-caption text-fgSubtle font-mono tabular-nums">
-                      {creatorCount} creator{creatorCount === 1 ? '' : 's'}
+                      {isEmpty
+                        ? 'Not yet tracked'
+                        : `${creatorCount} creator${creatorCount === 1 ? '' : 's'}`}
                     </span>
                   </div>
 
@@ -301,12 +297,12 @@ export default async function HomePage() {
                       {PLATFORM_LABELS[platform]}
                     </span>
                     <span className="text-[clamp(20px,2vw,24px)] leading-none tracking-[-0.02em] font-semibold text-fg tabular-nums">
-                      {compactFormatter.format(followers)}
+                      {isEmpty ? '—' : compactFormatter.format(followers)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-caption text-fgMuted font-mono tabular-nums pt-3 border-t border-borderGlass">
-                    <span>+{compactFormatter.format(growth30d)}</span>
+                    <span>{isEmpty ? '—' : `+${compactFormatter.format(growth30d)}`}</span>
                     <span>30d</span>
                   </div>
                 </GlassCard>

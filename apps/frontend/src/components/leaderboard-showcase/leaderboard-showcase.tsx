@@ -19,6 +19,7 @@ import {
   summarize,
   type CreatorRow,
   type LeaderboardSort,
+  type LeaderboardSummary,
   type PlatformFilter,
 } from '../dashboard-showcase/showcase-data';
 
@@ -66,21 +67,39 @@ function applySort(rows: CreatorRow[], sortBy: LeaderboardSort): CreatorRow[] {
   return sorted.map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
+function summarizeLive(rows: CreatorRow[], filter: PlatformFilter): LeaderboardSummary {
+  const base =
+    filter === 'all' ? rows : rows.filter((c) => c.primaryPlatform === filter);
+  const trackedCreators = base.length;
+  const combinedFollowers = base.reduce((s, c) => s + c.followers, 0);
+  const combinedGrowth30d = base.reduce((s, c) => s + c.growth30d, 0);
+  const avgEngagementRate =
+    trackedCreators === 0
+      ? 0
+      : base.reduce((s, c) => s + c.engagementRate, 0) / trackedCreators;
+  return { trackedCreators, combinedFollowers, combinedGrowth30d, avgEngagementRate };
+}
+
 export function LeaderboardShowcase({ liveCreators }: LeaderboardShowcaseProps = {}) {
   const [filter, setFilter] = useState<PlatformFilter>('all');
   const [sortBy, setSortBy] = useState<LeaderboardSort>('followers');
+  const isLive = !!(liveCreators && liveCreators.length > 0);
 
   const rows = useMemo(() => {
-    if (liveCreators && liveCreators.length > 0) {
+    if (isLive) {
       const filtered =
         filter === 'all'
-          ? liveCreators
-          : liveCreators.filter((c) => c.primaryPlatform === filter);
+          ? liveCreators!
+          : liveCreators!.filter((c) => c.primaryPlatform === filter);
       return applySort(filtered, sortBy);
     }
     return getSortedCreators(filter, sortBy);
-  }, [filter, sortBy, liveCreators]);
-  const stats = useMemo(() => summarize(filter), [filter]);
+  }, [filter, sortBy, liveCreators, isLive]);
+
+  const stats = useMemo(
+    () => (isLive ? summarizeLive(liveCreators!, filter) : summarize(filter)),
+    [isLive, liveCreators, filter],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,9 +130,11 @@ export function LeaderboardShowcase({ liveCreators }: LeaderboardShowcaseProps =
         filter={filter}
       />
 
-      <p className="text-caption text-fgSubtle text-center pt-2 tabular-nums">
-        Showcase preview · synthetic data. Live numbers replace this the moment the scraper switches on.
-      </p>
+      {!isLive && (
+        <p className="text-caption text-fgSubtle text-center pt-2 tabular-nums">
+          Showcase preview · synthetic data. Live numbers replace this the moment the scraper switches on.
+        </p>
+      )}
     </div>
   );
 }
