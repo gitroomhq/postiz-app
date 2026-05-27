@@ -20,9 +20,12 @@ import {
   summarize,
   TOP_CREATORS,
 } from '@gitroom/frontend/components/dashboard-showcase/showcase-data';
+import { getSiteSummary } from '@gitroom/frontend/lib/queries';
 
-export const dynamic = 'force-static';
-export const revalidate = false;
+// Server Component fetches live counts on each request — disable static
+// optimization so the hero never goes stale.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'D3 Creator — Real creators. Real numbers. Live.',
@@ -38,8 +41,21 @@ const PLATFORM_ORDER: PlatformKey[] = [
   'xiaohongshu',
 ];
 
-export default function HomePage() {
-  const summary = summarize('all');
+export default async function HomePage() {
+  const demoSummary = summarize('all');
+  // Live counts from Supabase when present; otherwise the design demo stays in.
+  const liveSummary = await getSiteSummary().catch((err) => {
+    console.error('[home] getSiteSummary failed — falling back to demo data', err);
+    return null;
+  });
+  const summary = liveSummary
+    ? {
+        ...demoSummary,
+        trackedCreators: liveSummary.trackedCreators,
+        combinedFollowers: liveSummary.combinedFollowers,
+        combinedGrowth30d: liveSummary.combinedFollowersDelta30d,
+      }
+    : demoSummary;
   const topThree = TOP_CREATORS.slice(0, 3);
   const allMetrics = METRICS.all;
 
