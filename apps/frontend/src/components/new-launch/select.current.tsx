@@ -134,7 +134,7 @@ export const SelectCurrent: FC = () => {
             >
               <div
                 onClick={removeSocial(integration)}
-                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-[#FF4D4D] rounded-full text-lamboBlack text-[8px]"
+                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-[#4D3800] rounded-full text-lamboBlack text-[8px]"
               >
                 X
               </div>
@@ -145,7 +145,7 @@ export const SelectCurrent: FC = () => {
                   'data-tooltip-content': integration.name,
                 }}
                 className={clsx(
-                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-[opacity,filter] duration-[180ms] ease-out'
                 )}
               >
                 <SafeImage

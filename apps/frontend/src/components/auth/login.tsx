@@ -15,12 +15,14 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
 import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 type Inputs = {
   email: string;
   password: string;
   providerToken: '';
   provider: 'LOCAL';
 };
+
 export function Login() {
   const t = useT();
   const [loading, setLoading] = useState(false);
@@ -63,13 +65,15 @@ export function Login() {
   return (
     <FormProvider {...form}>
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex flex-col flex-1">
-          <div>
-            <h1 className="text-[54px] text-start cursor-pointer font-lambo uppercase leading-[1.19] text-white">
-              {t('sign_in', 'Sign In')}
-            </h1>
-          </div>
-          <div className="lambo-micro text-lamboAsh mt-[32px] mb-[12px]">
+        <div className="flex flex-col flex-1 glass rounded-2xl p-8">
+          <h1 className="text-section text-start mb-2 text-fg">
+            {t('sign_in', 'Sign In')}
+          </h1>
+          <p className="text-body-sm text-fgMuted mb-8">
+            Welcome back. Glad to see you again.
+          </p>
+
+          <div className="text-micro uppercase text-fgSubtle mb-3">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -78,22 +82,24 @@ export function Login() {
             ) : !isGeneral ? (
               <GithubProvider />
             ) : (
-              <div className="gap-[8px] flex">
+              <div className="gap-2 flex">
                 <GoogleProvider />
                 {!!neynarClientId && <FarcasterProvider />}
                 {billingEnabled && <WalletProvider />}
               </div>
             )}
-            <div className="h-[20px] mb-[24px] mt-[24px] relative">
-              <div className="absolute w-full h-[1px] bg-lamboIron top-[50%] -translate-y-[50%]" />
-              <div
-                className={`absolute z-[1] justify-center items-center w-full start-0 top-0 flex`}
-              >
-                <div className="lambo-micro text-lamboAsh px-[16px] bg-lamboBlack">{t('or', 'or')}</div>
+
+            <div className="h-5 mt-8 mb-6 relative">
+              <div className="absolute w-full h-px bg-borderGlass top-1/2 -translate-y-1/2" />
+              <div className="absolute z-[1] justify-center items-center w-full start-0 top-0 flex">
+                <div className="text-micro uppercase text-fgSubtle px-3 bg-canvas rounded-full">
+                  {t('or', 'or')}
+                </div>
               </div>
             </div>
-            <div className="flex flex-col gap-[12px]">
-              <div className="text-textColor">
+
+            <div className="flex flex-col gap-4">
+              <div className="text-textColor flex flex-col gap-4">
                 <Input
                   label="Email"
                   translationKey="label_email"
@@ -110,9 +116,10 @@ export function Login() {
                   placeholder={t('label_password', 'Password')}
                 />
               </div>
+
               {notActivated && (
-                <div className="bg-lamboCharcoal p-[16px] mb-[16px]">
-                  <p className="text-lamboGold text-[14px] mb-[8px] leading-[1.5]">
+                <div className="rounded-xl p-4 bg-brand/10 border border-brand/30">
+                  <p className="text-brand text-body-sm mb-2">
                     {t(
                       'account_not_activated',
                       'Your account is not activated yet. Please check your email for the activation link.'
@@ -120,32 +127,32 @@ export function Login() {
                   </p>
                   <Link
                     href="/auth/activate"
-                    className="lambo-micro text-lamboGold underline hover:text-white transition-colors"
+                    className="text-label text-brand underline hover:text-brand-light transition-colors"
                   >
                     {t('resend_activation_email', 'Resend Activation Email')}
                   </Link>
                 </div>
               )}
-              <div className="text-center mt-6">
+
+              <div className="text-center mt-2">
                 <div className="w-full flex">
-                  <Button
-                    type="submit"
-                    className="flex-1 !h-[52px]"
-                    loading={loading}
-                  >
+                  <Button type="submit" className="flex-1 !h-[48px]" loading={loading}>
                     {t('sign_in_1', 'Sign in')}
                   </Button>
                 </div>
-                <p className="mt-[16px] text-[14px] text-lamboAsh">
+                <p className="mt-6 text-body-sm text-fgMuted">
                   {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="text-white underline hover:text-lamboGold transition-colors cursor-pointer">
+                  <Link
+                    href="/auth"
+                    className="text-fg font-medium hover:text-brand transition-colors"
+                  >
                     {t('sign_up', 'Sign Up')}
                   </Link>
                 </p>
-                <p className="mt-[16px] text-[14px]">
+                <p className="mt-3 text-body-sm">
                   <Link
                     href="/auth/forgot"
-                    className="text-lamboAsh underline hover:text-white transition-colors cursor-pointer"
+                    className="text-fgMuted hover:text-brand transition-colors"
                   >
                     {t('forgot_password', 'Forgot password')}
                   </Link>

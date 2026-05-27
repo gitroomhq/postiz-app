@@ -1,288 +1,438 @@
-# Design System Inspired by Lamborghini
+# Design System: D3 Yellow — Linear-Flat
+
+> **Style:** Linear-flat · **Mood:** Premium, minimal, intentional · **Default theme:** Dark (near-black) · **Brand:** Yellow `#F2E600` on near-black `#0A0A0A`
 
 ## 1. Visual Theme & Atmosphere
 
-Lamborghini's website is a cathedral of darkness — a digital stage where jet-black surfaces stretch infinitely and every element emerges from the void like a machine under a spotlight. The page is almost entirely black. Not dark gray, not near-black — true, uncompromising black (`#000000`) that saturates the viewport and refuses to yield. Into this abyss, white type and Primary Yellow (`#FFEE00`) are deployed with surgical precision, creating a visual language that feels like walking through a nighttime motorsport event where every surface absorbs light except the things that matter.
+D3 Creator is a creator-growth showcase across 5 platforms. The interface is **calm, confident, and editorial** — inspired by Linear.app: near-black canvas, flat surfaces, hairline borders, and a single high-energy yellow used like a flashlight beam. Every pixel has a job. No glow, no aurora, no decorative noise.
 
-The hero is a full-viewport video — dark, cinematic, immersive — showing event footage or vehicle reveals with the Lamborghini bull logo floating ethereally above. The navigation is minimal: a centered bull logo, a "MENU" hamburger on the left, and search/bookmark icons on the right, all rendered in white against the black canvas. There are no borders, no visible nav containers, no background color on the header — just white marks floating in darkness. The overall mood is nocturnal luxury: exclusive, theatrical, and deliberately intimidating. Each section transition is a scroll through darkness into the next revelation.
+The brand color `#F2E600` comes directly from the D3 logo. It is **scarce by design** — reserved for the logo, primary CTAs, focus rings, key data points, and the active state of navigation. Everything else lives in a precise grayscale tonal scale on near-black.
 
-Typography is the voice of this darkness. LamboType — a custom Neo-Grotesk typeface created by Character Type and design agency Strichpunkt — is used for everything from 120px uppercase display headlines to 10px micro labels. Its distinctive 12° angled terminals are inspired by the aerodynamic lines of Lamborghini's super sports cars, and its proportions range from Normal to Ultracompressed width. Headlines SHOUT in uppercase at enormous scales with tight line-heights (0.92 at 120px), creating dense blocks of text that feel stamped from steel. The typeface carries hexagonal geometric DNA — constructed from hexagons, three-armed stars, and circles — that echoes throughout the interface in the hexagonal pause button and UI icons. Built on Bootstrap grid with 68 Element Plus/UI components, the technical infrastructure is substantial beneath the theatrical surface.
+Typography is **Inter** — neutral, modern, legible. Body type is `15-16px` at `line-height: 1.6` for editorial calm. Headings are large and confident with tight tracking (`-0.025em` to `-0.035em`). Zero gradient text. Zero text-shadow. Letterforms carry the design.
+
+Surfaces are **flat**: solid fills, 1px borders, square-cornered or `8-12px` radius. Depth comes from **hairline borders and subtle dark shadows** — never from glow or color bleed. Motion is **brief and purposeful**: 150-200ms ease-out on opacity, transform, and color only. Nothing loops, nothing pulses.
 
 **Key Characteristics:**
-- True black (`#000000`) dominant surfaces with white and gold as the only relief colors
-- LamboType custom Neo-Grotesk font with 12° angled terminals inspired by aerodynamic car lines
-- Primary Yellow (`#FFEE00`) as the sole accent color — used exclusively for primary CTA buttons
-- All-uppercase display typography at extreme scales (120px, 80px, 54px) with tight line-heights
-- Full-viewport video heroes with cinematic event/vehicle content
-- Zero border-radius on buttons — sharp, angular, uncompromising rectangles
-- Hexagonal motifs in UI elements (pause button, icon system) echoing brand geometry
-- Bootstrap grid system + Element Plus/UI 68 components underneath
-- Transparent ghost buttons with white borders at 50% opacity as the secondary CTA pattern
+- Near-black canvas (`#0A0A0A`) with flat surfaces — no blur, no backdrop-filter
+- Single brand yellow `#F2E600` used scarcely as accent
+- Inter typography, body `15-16px / 1.6`, headings tight-tracked
+- Hairline 1px borders (`rgba(255,255,255,0.08)` default)
+- Radii: `6px` (inputs/badges), `8px` (buttons), `12px` (cards)
+- Shadows: dark only — `rgba(0,0,0,0.4)` for elevation
+- Motion: 150-200ms ease-out, opacity + transform + color only
+- 4/8px spacing grid; max content width `1100-1280px`
+- Dark default; light mode optional (not priority)
+
+---
 
 ## 2. Color Palette & Roles
 
-### Primary
-- **Primary Yellow** (`#FFEE00`): The signature accent color — a warm, saturated amber-gold (rgb 255, 238, 0) used exclusively for primary action buttons ("Discover More", "Tickets", "Start Configuration"). The only chromatic color in the entire interface, it ignites against the black canvas like a headlight cutting through night
-- **Pure White** (`#FFFFFF`): Primary text color on dark surfaces, logo rendering, nav elements, and light-mode button fills — the voice that speaks from the darkness
+### Brand Yellow — Tonal Scale (sourced from logo `#F2E600`)
 
-### Secondary & Accent
-- **Dark Gold** (`#917300`): Hover/pressed state for gold buttons — a deep amber (rgb 145, 115, 0) that darkens the gold to signal interaction
-- **Gold Text** (`#FFCE3E`): Slightly lighter gold variant (rgb 255, 206, 62) used for inline text accents and highlighted labels
-- **Cyan Pulse** (`#29ABE2`): Electric blue-cyan (rgb 41, 171, 226) appearing as an informational accent and interactive element highlight
-- **Link Blue** (`#3860BE`): Medium blue (rgb 56, 96, 190) used universally for link hover states across all text colors
+| Token | Hex | Role |
+|-------|-----|------|
+| `--brand-50` | `#FFFEF0` | Faintest tint, hover-on-white surfaces (light mode) |
+| `--brand-100` | `#FFFBC4` | Subtle yellow background wash, badge fill |
+| `--brand-200` | `#FFF587` | Inactive yellow indicator |
+| `--brand-300` | `#FFEE4A` | Hover state for primary CTA |
+| `--brand-400` | `#F8EA10` | Bright yellow accent (rare use) |
+| `--brand-500` | `#F2E600` | **Primary brand — logo, CTA, focus ring** |
+| `--brand-600` | `#D4C900` | CTA pressed state, focused border |
+| `--brand-700` | `#A89F00` | Dark yellow on light surfaces (text on white) |
+| `--brand-800` | `#7C7500` | Deep accent, used in data viz only |
+| `--brand-900` | `#3E3A00` | Yellow on near-black emphasis backgrounds |
 
-### Surface & Background
-- **Absolute Black** (`#000000`): The dominant surface color — used for page background, hero sections, header, footer, and most containers
-- **Charcoal** (`#202020`): Elevated dark surface (rgb 32, 32, 32) — the primary "dark gray" for cards, panels, and text containers sitting above the black canvas
-- **Dark Iron** (`#181818`): Subtle surface variant (rgb 24, 24, 24) — barely distinguishable from black, used for footer and deep sections
-- **Overlay Black** (`rgba(0,0,0,0.7)`): Semi-transparent overlay for modals and video dimming
-- **Near White** (`#F8F8F8`): Rare light surface (rgb 248, 248, 248) for content blocks in white-mode sections
-- **Mist** (`#E6E6E6`): Light gray surface for secondary light-mode containers
+### Surface — Dark (default)
 
-### Neutrals & Text
-- **Pure White** (`#FFFFFF`): Primary text on dark backgrounds — headlines, body, nav labels
-- **Smoke** (`#F5F5F5`): Secondary text on dark surfaces — slightly softer than pure white
-- **Graphite** (`#494949`): Dark gray text on light surfaces (rgb 73, 73, 73)
-- **Ash** (`#7D7D7D`): Mid-range gray for muted text, timestamps, and metadata (rgb 125, 125, 125)
-- **Steel** (`#969696`): Lighter gray for disabled text and subtle labels (rgb 150, 150, 150)
-- **Slate** (`#666666`): Alternative mid-gray for secondary content
-- **Iron** (`#555555`): Dark mid-gray for body text variants
-- **Shadow** (`#313131`): Very dark gray for text on dark surfaces where white is too strong
+| Token | Hex / Value | Role |
+|-------|-------------|------|
+| `--surface-canvas` | `#0A0A0A` | Page background |
+| `--surface-base` | `#111111` | Card / panel base |
+| `--surface-raised` | `#161616` | Elevated card, dropdown |
+| `--surface-overlay` | `#1C1C1C` | Modal, popover, command palette |
+| `--surface-inset` | `#080808` | Inset wells, code blocks |
+| `--scrim` | `rgba(0,0,0,0.72)` | Modal backdrop |
 
-### Semantic & Accent
-- **Cyan Pulse** (`#29ABE2`): Used for informational highlights and interactive feedback
-- **Link Blue** (`#3860BE`): Universal hover state for all hyperlinks
-- **Teal Action** (`#1EAEDB`): Button hover background for transparent/ghost variants (rgb 30, 174, 219)
+### Border
 
-### Gradient System
-- No explicit gradients in the color palette — the dark-to-light progression is achieved through surface layering: `#000000` → `#181818` → `#202020` → `#494949` → `#7D7D7D`
-- Video heroes use natural atmospheric gradients from the content itself
-- Top-of-page gradient: subtle dark-to-darker fade at the edges of full-bleed imagery
+| Token | Value | Role |
+|-------|-------|------|
+| `--border-subtle` | `rgba(255,255,255,0.06)` | Faintest divider |
+| `--border-default` | `rgba(255,255,255,0.08)` | Card / panel border |
+| `--border-strong` | `rgba(255,255,255,0.14)` | Hovered card, emphasized input |
+| `--border-brand` | `#F2E600` | Focused input, active tab |
 
-## 3. Typography Rules
+### Text
 
-### Font Family
-- **Display & UI**: `LamboType`, Roboto, Helvetica Neue, Arial — custom Neo-Grotesk typeface by Character Type for Lamborghini's 2024 brand refresh. Available in widths from Normal to Ultracompressed and weights from Light (300) to Black. Features 12° angled terminals inspired by aerodynamic car geometry, hexagonal construction logic, and support for 200+ languages including Latin, Cyrillic, and Greek
-- **Fallback/UI**: `Open Sans` — used for some button/form contexts as system fallback
-- **No italic variants** observed on the marketing site — the brand voice is always upright
+| Token | Hex | Role |
+|-------|-----|------|
+| `--text-primary` | `#F5F5F5` | Headings, primary body |
+| `--text-secondary` | `#A3A3A3` | Secondary body, captions |
+| `--text-tertiary` | `#737373` | Disabled, meta, timestamps |
+| `--text-muted` | `#525252` | Placeholder, faintest meta |
+| `--text-on-brand` | `#0A0A0A` | Text on yellow buttons (near-black) |
+| `--text-inverse` | `#0A0A0A` | Text on white surfaces (light mode) |
 
-### Hierarchy
+### Semantic — Yellow-mono (strict brand)
 
-| Role | Size | Weight | Line Height | Letter Spacing | Notes |
-|------|------|--------|-------------|----------------|-------|
-| Hero Display | 120px (7.50rem) | 400 | 0.92 | normal | LamboType, uppercase, maximum impact |
-| Display 2 | 80px (5.00rem) | 400 | 1.13 | normal | LamboType, uppercase, major section titles |
-| Section Title | 54px (3.38rem) | 400 | 1.19 | normal | LamboType, uppercase |
-| Sub-section | 40px (2.50rem) | 400 | 1.15 | normal | LamboType, uppercase |
-| Feature Heading | 27px (1.69rem) | 400 | 1.37 | normal | LamboType, uppercase |
-| Card Title | 24px (1.50rem) | 400 | — | normal | LamboType |
-| Body Large | 18px (1.13rem) | 400 | 1.56 | normal | LamboType, mixed case and uppercase variants |
-| Body / UI | 16px (1.00rem) | 400/700 | 1.50 | normal/0.16px | LamboType, primary body text |
-| Button Large | 16px (1.00rem) | 400 | 1.50 | normal | Gold CTA buttons |
-| Button Standard | 14.4px (0.90rem) | 300/700 | 1.00 | 0.14–0.2px | LamboType, uppercase, ghost buttons |
-| Button Small | 13px (0.81rem) | 300/500 | 1.20 | 0.13–0.2px | LamboType, compact button variant |
-| Caption | 14px (0.88rem) | 600/700 | 1.14–1.50 | -0.42px | LamboType, uppercase, negative tracking |
-| Label | 12px (0.75rem) | 400/500 | 1.83 | 0.96px | LamboType, uppercase badges and micro labels |
-| Micro | 10px (0.63rem) | 400 | 1.00–2.00 | 0.225px | LamboType, uppercase, smallest text |
+User mandate: **zero foreign colors anywhere**. Status states communicate through **icon + label + intensity of yellow**, not chromatic variance.
 
-### Principles
-- **ALL-CAPS is the default voice**: Display and feature headings are universally uppercase. This creates a shouting, commanding tone that matches the brand's aggression
-- **Extreme scale range**: From 120px heroes to 10px micro labels — a 12:1 ratio that creates dramatic visual hierarchy
-- **Tight line-heights at scale**: Display sizes use 0.92-1.19 line-height, creating dense, compressed blocks of type that feel stamped rather than typeset
-- **Weight 400 dominates**: Unlike many design systems that use bold for emphasis, Lamborghini's regular weight carries the headlines — the typeface itself is so distinctive it doesn't need weight variation
-- **Negative tracking on captions**: -0.42px letter-spacing on 14px captions creates a compressed, technical aesthetic
-- **Positive tracking on micro text**: +0.225px at 10px ensures legibility at the smallest sizes
-- **Single typeface discipline**: LamboType handles everything — the 12° angled terminals and hexagonal geometry provide visual coherence across all sizes
+| Token | Hex | Role |
+|-------|-----|------|
+| `--success` | `#F2E600` (brand-500) | Success — paired with checkmark icon |
+| `--warning` | `#FDE047` (brand-300) | Warning — paired with caution icon |
+| `--danger` | `#4D3800` (brand-900) | Error / destructive — paired with X icon + clear label |
+| `--info` | `#FACC15` (brand-400) | Info — paired with info icon |
+
+> All status comes from icon + label. Color tones stay inside the yellow scale. No red, green, blue, or any foreign hue — anywhere. WCAG safety covered by icon + text, not chromatic differentiation.
+
+---
+
+## 3. Typography
+
+### Font Stack
+
+```css
+--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+```
+
+Inter is loaded with `font-display: swap`. Variable-weight axis used (`100-900`).
+
+### Scale
+
+| Token | Size | Line | Tracking | Use |
+|-------|------|------|----------|-----|
+| `--text-xs` | `12px` | `1.5` | `0` | Meta, labels, badges |
+| `--text-sm` | `14px` | `1.55` | `-0.005em` | Secondary body, captions |
+| `--text-base` | `15px` | `1.6` | `-0.01em` | **Body default** |
+| `--text-md` | `16px` | `1.6` | `-0.01em` | Long-form reading |
+| `--text-lg` | `18px` | `1.5` | `-0.015em` | Lead paragraphs |
+| `--text-xl` | `22px` | `1.4` | `-0.02em` | Section subheads |
+| `--text-2xl` | `28px` | `1.3` | `-0.025em` | Card titles, h3 |
+| `--text-3xl` | `36px` | `1.2` | `-0.03em` | Page headings, h2 |
+| `--text-4xl` | `48px` | `1.1` | `-0.032em` | Section heroes, h1 |
+| `--text-5xl` | `64px` | `1.05` | `-0.035em` | Landing hero |
+| `--text-6xl` | `80px` | `1.0` | `-0.035em` | Marquee only |
+
+### Weight
+
+- Body: `400`
+- Medium emphasis: `500`
+- Headings: `600` (not 700 — avoid heavy)
+- Display hero: `700` (rare)
+
+### Rules
+
+- **No gradient text.** Solid color only.
+- **No text-shadow.** Ever.
+- **No uppercase tracking-wide titles.** (Linear-flat is sentence-case, tight-tracked.)
+- Headings use `--text-primary` (`#F5F5F5`), never yellow.
+- Yellow text reserved for inline brand mentions and active nav state.
+- Line-length: max `68ch` for long-form, `52ch` for marketing prose.
+
+---
 
 ## 4. Component Stylings
 
 ### Buttons
-All buttons use **zero border-radius** — sharp, angular rectangles that echo the aggressive lines of Lamborghini vehicles.
 
-**Gold Accent CTA** — The primary action:
-- Default: bg `#FFEE00` (Primary Yellow), text `#000000`, padding 24px, fontSize 16px, fontWeight 400, borderRadius 0px, no border
-- Hover: bg `#917300` (Dark Gold), darkens significantly
-- Class: `btn-accent btn-large`
-- Used for: "Discover More", "Tickets", "Start Configuration"
+**Primary (yellow)**
+```css
+background: #F2E600;
+color: #0A0A0A;
+border: 1px solid #F2E600;
+border-radius: 8px;
+padding: 10px 16px;
+font-weight: 500;
+font-size: 14px;
+transition: background 150ms ease-out, transform 150ms ease-out;
 
-**Transparent Ghost** — The secondary action on dark backgrounds:
-- Default: bg transparent, text `#FFFFFF`, border 1px solid `#FFFFFF`, padding 16px, opacity 0.5
-- Hover: bg `#1EAEDB` (Teal Action), text white, opacity 0.7
-- Focus: bg `#1EAEDB`, border 1px solid `#000000`, outline 2px solid `#000000`
-- Used for: secondary CTAs on hero sections and dark panels
+/* hover */
+background: #FFEE4A;
 
-**White Filled** — Light-mode primary:
-- Default: bg `#FFFFFF`, text `#202020`, no border
-- Used for: CTAs on dark sections where gold isn't appropriate
+/* active */
+background: #D4C900;
+transform: translateY(1px);
 
-**Black Filled** — Dark filled variant:
-- Default: bg `#000000`, text `#202020`
-- Used for: Inverted CTA on light sections
+/* focus */
+outline: 2px solid #F2E600;
+outline-offset: 2px;
+```
 
-**Gray Neutral** — Subtle action:
-- Default: bg `#969696`, text `#202020`
-- Used for: secondary/tertiary actions, badge-like buttons
+**Secondary (ghost)**
+```css
+background: transparent;
+color: #F5F5F5;
+border: 1px solid rgba(255,255,255,0.14);
+border-radius: 8px;
+padding: 10px 16px;
 
-### Cards & Containers
-- Background: `#202020` (Charcoal) on black canvas, or `#000000` on lighter sections
-- Border: `0px 1px solid #202020` bottom borders for section dividers
-- Border-radius: 0px (completely sharp corners)
-- Shadow: minimal, uses overlay opacity for depth
-- Content: full-bleed photography + overlaid text in white
+/* hover */
+background: rgba(255,255,255,0.04);
+border-color: rgba(255,255,255,0.20);
+```
 
-### Inputs & Forms
-- Minimal form presence on the marketing site
-- Switch elements: border-radius 20px (the only rounded element), border 1px solid `#DDDDDD`
-- Cookie banner input style: white text on black with `#7D7D7D` borders
+**Tertiary (text)**
+```css
+background: transparent;
+color: #A3A3A3;
+border: none;
+padding: 8px 12px;
 
-### Navigation
-- **Desktop**: Centered bull logo, "MENU" hamburger with icon on left, search icon + bookmarks icon on right
-- **Background**: Transparent (inherits black page background)
-- **Sticky**: Fixed to top, floats above content
-- **No visible borders or shadows** — elements float in the darkness
-- **"MENU" label**: White text at 14px weight 400, uppercase, accompanies hamburger icon
-- **Hexagonal motifs**: Pause button on hero sections uses hexagonal outline shape
+/* hover */
+color: #F5F5F5;
+```
 
-### Image Treatment
-- **Hero**: Full-viewport video sections (100vh) with cinematic event/vehicle footage
-- **Event photography**: Full-bleed aerial shots of Lamborghini Arena events
-- **Vehicle imagery**: High-contrast studio shots on dark backgrounds, full-width
-- **Aspect ratios**: Predominantly 16:9 and wider for cinematic feel
-- **Dark gradient overlays**: Subtle darkening at top/bottom edges of video to ensure text legibility
+**Sizes:** `sm` (32px h, 12px font), `md` (40px h, 14px font), `lg` (48px h, 16px font).
 
-### Distinctive Components
-- **Hexagonal Pause Button**: Video control uses a hexagonal outline (matching the brand's geometric DNA from the typeface), positioned bottom-right of hero sections
-- **Progress Bar**: Thin white line at bottom of hero sections indicating video/slide progress
-- **Badge/Tag**: bg `#969696`, text white, padding 8px, fontSize 10px, borderRadius 2px — tiny metallic pills
+### Cards
+
+```css
+background: #111111;
+border: 1px solid rgba(255,255,255,0.08);
+border-radius: 12px;
+padding: 24px;
+transition: border-color 150ms ease-out, background 150ms ease-out;
+
+/* hover (interactive cards only) */
+border-color: rgba(255,255,255,0.14);
+background: #161616;
+```
+
+No shadow on default cards. Elevated cards (modals, popovers) get `box-shadow: 0 8px 24px rgba(0,0,0,0.4)`.
+
+### Navbar
+
+```css
+height: 56px;
+background: rgba(10,10,10,0.85);
+border-bottom: 1px solid rgba(255,255,255,0.06);
+backdrop-filter: blur(8px);  /* only place blur is allowed */
+padding: 0 24px;
+```
+
+- Logo left, nav center, profile right.
+- Active link: `color: #F2E600`, no underline, no pill.
+- Inactive link: `color: #A3A3A3` → hover `#F5F5F5`.
+
+### Inputs
+
+```css
+background: #0A0A0A;
+border: 1px solid rgba(255,255,255,0.08);
+border-radius: 8px;
+padding: 10px 12px;
+color: #F5F5F5;
+font-size: 14px;
+transition: border-color 150ms ease-out;
+
+/* focus */
+border-color: #F2E600;
+outline: none;
+box-shadow: 0 0 0 3px rgba(242,230,0,0.15);  /* only colored shadow allowed */
+
+/* placeholder */
+color: #525252;
+```
+
+### Badges
+
+```css
+display: inline-flex;
+align-items: center;
+padding: 2px 8px;
+border-radius: 6px;
+font-size: 12px;
+font-weight: 500;
+height: 22px;
+```
+
+Variants: `default` (`#161616` bg, `#A3A3A3` text), `brand` (`rgba(242,230,0,0.12)` bg, `#F2E600` text), `success` / `warning` / `danger` / `info` (use semantic tokens).
+
+### Tables
+
+- Row height `48px`, cell padding `12px 16px`.
+- Header row: `#A3A3A3` text, `12px` uppercase tracking `0.04em` (only place caps are allowed).
+- Row border-bottom: `1px solid rgba(255,255,255,0.06)`.
+- Hover row: `background: rgba(255,255,255,0.02)`.
+
+---
 
 ## 5. Layout Principles
 
-### Spacing System
-- **Base unit**: 8px
-- **Full scale**: 2px, 4px, 5px, 8px, 10px, 12px, 15px, 16px, 20px, 24px, 32px, 40px, 48px, 56px
-- **Button padding**: 16px (ghost), 24px (gold accent)
-- **Section padding**: 48–56px vertical, 40px horizontal
-- **Small spacing**: 2–5px for fine adjustments (badge padding, border spacing)
+### Spacing Grid
 
-### Grid & Container
-- **Framework**: Bootstrap grid system (container + row + col)
-- **Max width**: 1440px (largest breakpoint)
-- **Columns**: Standard 12-column Bootstrap grid
-- **Full-bleed**: Hero sections break out of grid to fill viewport edge-to-edge
-- **Content areas**: Centered within 1200px max-width containers
+**4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 / 128px** — every value used must come from this scale.
 
-### Whitespace Philosophy
-Lamborghini uses darkness as whitespace. The generous black expanses between content blocks serve the same function as white space in a light design — creating breathing room that elevates each element to the status of exhibit. A model name floating in the middle of a black viewport has the same visual weight as a gallery piece on a white wall. The absence of color IS the design.
+```css
+--space-1: 4px;
+--space-2: 8px;
+--space-3: 12px;
+--space-4: 16px;
+--space-6: 24px;
+--space-8: 32px;
+--space-12: 48px;
+--space-16: 64px;
+--space-24: 96px;
+--space-32: 128px;
+```
 
-### Border Radius Scale
-| Value | Context |
-|-------|---------|
-| 0px | Default for everything — buttons, cards, containers, images |
-| 1px | Subtle span elements |
-| 2px | Badges, close buttons, cookie elements — barely perceptible |
-| 20px | Toggle switches only — the sole rounded element |
+### Containers
+
+- **Marketing pages:** `max-width: 1100px`, centered, `padding: 0 24px`.
+- **App pages:** `max-width: 1280px`, centered, `padding: 0 32px`.
+- **Reading content:** `max-width: 720px`, centered.
+
+### Page Rhythm
+
+1. **Hero** — `padding: 96px 0` top/bottom, single column, max-width `720px` for headline.
+2. **Features** — `padding: 64px 0`, grid of 2-4 cards.
+3. **CTA** — `padding: 96px 0`, centered headline + single primary button.
+4. **Footer** — `padding: 48px 0`, hairline top border.
+
+### Grid
+
+- 12-column grid, `gap: 24px`.
+- Mobile: single column, `gap: 16px`.
+
+---
 
 ## 6. Depth & Elevation
 
-| Level | Treatment | Use |
-|-------|-----------|-----|
-| Level 0 (Abyss) | `#000000` flat | Page background, deepest layer |
-| Level 1 (Surface) | `#181818` or `#202020` | Cards, content panels, elevated sections |
-| Level 2 (Overlay) | `rgba(0,0,0,0.7)` | Modal backdrops, video dimming |
-| Level 3 (Fog) | `rgba(0,0,0,0.5)` | Lighter overlays, hover states |
-| Level 4 (Mist) | `rgba(0,0,0,0.25)` | Subtle depth hints |
+Depth is **structural, not visual**. No glow. No colored shadows. No outer-glow halos.
 
-### Shadow Philosophy
-Lamborghini achieves depth through surface color layering rather than shadows. On a black canvas, traditional drop shadows are invisible — instead, the system creates elevation by shifting from absolute black to progressively lighter dark grays: `#000000` → `#181818` → `#202020` → `#494949`. This "darkness gradient" approach means that elevated elements are literally lighter than their surroundings, inverting the traditional shadow model.
+### Elevation Tiers
 
-### Decorative Depth
-- Full-bleed video provides atmospheric depth through cinematic lighting
-- The hexagonal pause button floats with a thin white outline stroke
-- Progress bars at hero section bottoms create a subtle horizon line
-- No gradients, glows, or blur effects on UI elements — the photography provides all visual richness
+| Tier | Treatment |
+|------|-----------|
+| **0** (canvas) | `#0A0A0A`, no border |
+| **1** (card) | `#111111`, `1px solid rgba(255,255,255,0.08)` |
+| **2** (raised card) | `#161616`, `1px solid rgba(255,255,255,0.08)` |
+| **3** (popover) | `#1C1C1C`, `1px solid rgba(255,255,255,0.10)`, `box-shadow: 0 4px 16px rgba(0,0,0,0.4)` |
+| **4** (modal) | `#1C1C1C`, `1px solid rgba(255,255,255,0.12)`, `box-shadow: 0 16px 48px rgba(0,0,0,0.6)` |
 
-## 7. Do's and Don'ts
+Only colored shadow permitted: focus ring `box-shadow: 0 0 0 3px rgba(242,230,0,0.15)` on inputs.
 
-### Do
-- Use absolute black (`#000000`) as the primary background — never dark gray as a substitute
-- Apply Primary Yellow (`#FFEE00`) exclusively for primary CTA buttons — never for decorative purposes
-- Set all display headings in uppercase with LamboType — the brand voice is always SHOUTING
-- Use zero border-radius on buttons and cards — sharp angles are non-negotiable
-- Maintain tight line-heights (0.92–1.19) on display type to create dense, architectural text blocks
-- Use the transparent ghost button (white border, 50% opacity) as the secondary CTA on dark backgrounds
-- Let full-viewport video/photography carry emotional weight — UI is infrastructure, not decoration
-- Reserve hexagonal geometry for UI icons and the video control button
-- Use weight 400 (regular) for headlines — the typeface is distinctive enough without bold emphasis
-- Keep the gray palette achromatic — all neutrals are pure gray without color tinting
+---
 
-### Don't
-- Introduce additional accent colors beyond gold — the monochrome-plus-gold system is sacred
-- Apply border-radius to buttons or cards — curved edges contradict the angular vehicle aesthetic
-- Use LamboType in italic or decorative styles — the brand is always upright and direct
-- Add gradients to buttons or surfaces — depth comes from surface layering, not blending
-- Use light backgrounds as the primary canvas — darkness is the default state, light is the exception
-- Mix lowercase into display headings — the uppercase convention communicates authority and power
-- Add hover animations with scale or translate — interactions should be color-only (background/opacity shifts)
-- Use Open Sans for display text — LamboType must handle all visible typography
-- Create busy layouts with many small elements — Lamborghini's design is about singular, bold statements
-- Apply shadows to elements — on a black canvas, shadows are meaningless; use surface color shifts instead
+## 7. Motion Rules
 
-## 8. Responsive Behavior
+### Durations
 
-### Breakpoints
-| Name | Width | Key Changes |
-|------|-------|-------------|
-| Mobile Small | <425px | Single column, reduced type scale, stacked buttons |
-| Mobile | 425-576px | Single column, hamburger nav, hero text ~40px |
-| Tablet Small | 576-768px | 2-column grid begins, padding adjusts |
-| Tablet | 768-1024px | 2-column layout, expanded hero, vehicle cards side-by-side |
-| Desktop | 1024-1280px | Full navigation, 3+ column grids, display text at 80px |
-| Desktop Large | 1280-1440px | Full layout, hero at 120px display, max-width containers |
-| Wide | >1440px | Content centered, margins expand, hero fills viewport |
+| Token | Value | Use |
+|-------|-------|-----|
+| `--duration-fast` | `100ms` | Color, opacity micro-states |
+| `--duration-base` | `150ms` | **Default — buttons, links, cards** |
+| `--duration-slow` | `200ms` | Modals, drawers, page transitions |
 
-### Touch Targets
-- Gold CTA buttons: 48px+ minimum height with 24px padding (exceeds WCAG 44×44px)
-- Ghost buttons: 48px+ with 16px padding
-- Hamburger menu: large touch target (~48px square)
-- Hexagonal pause button: approximately 48px diameter
+### Easings
 
-### Collapsing Strategy
-- **Navigation**: Always hamburger-based ("MENU" + icon) — no horizontal nav expansion on any breakpoint
-- **Hero video**: Maintains full-viewport height across all breakpoints, adjusting object-fit
-- **Display type**: Scales from 120px (desktop) → 80px (tablet) → 54px/40px (mobile)
-- **Button layout**: Side-by-side on desktop, stacks vertically on mobile
-- **Grid columns**: 3-column → 2-column → 1-column progression
-- **Section spacing**: Reduces from 56px → 40px → 24px vertical padding
+```css
+--ease-out: cubic-bezier(0.16, 1, 0.3, 1);  /* standard */
+--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);  /* symmetric only */
+```
 
-### Image Behavior
-- Hero videos use `object-fit: cover` to maintain cinematic framing at all sizes
-- Vehicle images scale within their containers with maintained aspect ratios
-- Event photography crops to viewport width on narrow screens
-- Background images darken at edges to maintain text contrast on all viewports
+### Allowed Properties
 
-## 9. Agent Prompt Guide
+- `opacity`
+- `transform` (translate, scale)
+- `color`, `background-color`, `border-color`
 
-### Quick Color Reference
-- Primary CTA: "Primary Yellow (#FFEE00)"
-- Background: "Absolute Black (#000000)"
-- Surface: "Charcoal (#202020)"
-- Heading text: "Pure White (#FFFFFF)"
-- Body text: "Ash (#7D7D7D)"
-- Link hover: "Link Blue (#3860BE)"
-- Accent: "Cyan Pulse (#29ABE2)"
-- Border: "Pure White (#FFFFFF) at 50% opacity"
+### Forbidden
 
-### Example Component Prompts
-- "Create a hero section with a full-viewport black background, the model name 'TEMERARIO' in LamboType at 120px uppercase weight 400 white text with 0.92 line-height, centered vertically, with a Primary Yellow (#FFEE00) 'Discover More' button below — sharp corners, 0px radius, 24px padding, black text"
-- "Design a transparent ghost button with 1px solid white border at 50% opacity, white text at 14.4px uppercase with 0.2px letter-spacing, padding 16px, on a black background — hover state changes to Teal Action (#1EAEDB) background with 70% opacity"
-- "Build a navigation bar with zero visible background on absolute black, a centered bull logo, 'MENU' text label with hamburger icon on the left, and search + bookmark icons on the right — all in white, sticky position"
-- "Create a news card grid on charcoal (#202020) background with white headlines at 27px uppercase, body text in #7D7D7D at 16px, and a white underlined 'Read More' link that turns #3860BE on hover"
-- "Design a section divider using a 1px solid bottom border in #202020 on a black canvas — the elevation difference is purely through surface color shift, not shadow"
+- `width`, `height`, `padding`, `margin`, `top`, `left`, `font-size`
+- Infinite animations on decorative elements
+- Spring physics (use ease-out curves only)
+- Parallax, scroll-jacking, fireworks, confetti
 
-### Iteration Guide
-When refining existing screens generated with this design system:
-1. Focus on ONE component at a time — Lamborghini's system is extreme and every element must feel aggressive
-2. Reference specific color names and hex codes from this document — the palette has only about 5 active colors
-3. Use natural language descriptions, not CSS values — "sharp-cut golden rectangle" not "border-radius: 0px; background: #FFEE00"
-4. Describe the desired "feel" alongside specific measurements — "floating in total darkness" communicates the black canvas better than "background: #000000"
-5. Remember that UPPERCASE IS THE DEFAULT — if text isn't uppercase at display sizes, it probably should be
+### Reduced Motion
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+---
+
+## 8. Anti-Slop Rules
+
+**Forbidden — zero tolerance:**
+
+- ❌ Purple / cyan / pink / red / green colors outside the semantic table
+- ❌ Gradient text (`background-clip: text`)
+- ❌ Glow / colored box-shadows (except `#F2E600` focus ring at 15% alpha)
+- ❌ Aurora / radial / mesh gradients
+- ❌ Rainbow / multi-color borders
+- ❌ Scroll-triggered fireworks, confetti, particle systems
+- ❌ Backdrop-filter blur (except navbar)
+- ❌ Infinite decorative animations (pulse, bounce, shimmer)
+- ❌ Text-shadow on any element
+- ❌ Drop-shadow on icons
+- ❌ Hardcoded hex values outside the token tables in this file
+- ❌ Border-radius above `16px`
+- ❌ Heavy font weights (`800` / `900`) outside special display cases
+
+**Permitted single-axis gradients only:**
+
+- Background fade `#0A0A0A` → `#111111` for sectioning (vertical only)
+- Yellow-to-yellow tonal gradient `#F2E600` → `#D4C900` on hero CTA (vertical, subtle)
+
+---
+
+## 9. Social Platform Icons
+
+### Source
+
+- Real platform SVGs only — sourced from [simpleicons.org](https://simpleicons.org).
+- **No emoji.** No Lucide / Feather generic substitutes for branded platforms.
+- **No colored dots / circles** as placeholders.
+
+### Style
+
+- Fill: `#FFFFFF` on dark surfaces, `#0A0A0A` on light surfaces.
+- Size: `16px` (badges), `20px` (nav), `24px` (cards), `32px` (heroes).
+- Always within a flat circular or square container — never raw on canvas.
+- Container background: `#161616` with `1px solid rgba(255,255,255,0.08)`.
+
+### Supported Platforms (5)
+
+| Platform | Source | Container |
+|----------|--------|-----------|
+| YouTube | simpleicons.org/youtube | flat circle |
+| Instagram | simpleicons.org/instagram | flat circle |
+| TikTok | simpleicons.org/tiktok | flat circle |
+| Twitter / X | simpleicons.org/x | flat circle |
+| LinkedIn | simpleicons.org/linkedin | flat circle |
+
+Containers stay neutral — **never** tint container with platform brand color.
+
+---
+
+## Anti-Slop Checklist (QA reference)
+
+- [ ] Zero hardcoded hex values outside token tables
+- [ ] Zero colored box-shadows (focus ring at 15% alpha is the only exception)
+- [ ] Zero gradient text (no `background-clip: text`)
+- [ ] Zero aurora / mesh / radial gradients
+- [ ] Zero infinite decorative animations
+- [ ] Single-axis linear gradients only (vertical fade for sectioning)
+- [ ] All transitions `150-200ms ease-out` on opacity/transform/color only
+- [ ] Social icons real SVG from simpleicons.org, white `#FFFFFF`, no colored dots
+- [ ] Brand color sourced from logo (`#F2E600`)
+- [ ] Inter font, body `15-16px / 1.6`, headings tight-tracked
+- [ ] All spacing values from 4/8px scale
+- [ ] Max content widths respected (`1100px` marketing, `1280px` app)
+- [ ] Hairline 1px borders for elevation (no glow)
+- [ ] Yellow used scarcely — CTA, focus, logo, active state only
+- [ ] `prefers-reduced-motion` honored everywhere
+- [ ] No backdrop-filter outside navbar
+- [ ] No purple / cyan / pink outside semantic status
+
+---
+
+**Owner:** Brand Agent · **Source of truth:** this file · **Conflicts:** this file wins.

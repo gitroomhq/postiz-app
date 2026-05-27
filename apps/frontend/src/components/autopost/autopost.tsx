@@ -357,7 +357,7 @@ export const AddOrEditWebhook: FC<{
                 <CopilotTextarea
                   disableBranding={true}
                   className={clsx(
-                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#FFEE00] bg-customColor2 outline-none mb-[16px] border-fifth border'
+                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#F2E600] bg-customColor2 outline-none mb-[16px] border-fifth border'
                   )}
                   value={content}
                   onChange={(e) => {

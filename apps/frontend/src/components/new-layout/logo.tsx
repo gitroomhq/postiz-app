@@ -2,11 +2,16 @@
 
 export const Logo = () => {
   return (
-    <div className="mt-[8px] flex flex-col items-center gap-[2px] whitespace-nowrap select-none font-lambo uppercase">
-      <span className="font-[400] text-[22px] leading-none tracking-tight text-lamboGold">
-        D3
-      </span>
-      <span className="font-[400] text-[10px] leading-none tracking-[0.225px] text-white">
+    <div className="mt-1 flex flex-col items-center gap-1 select-none">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/d3-logo.png"
+        alt="D3"
+        width={32}
+        height={32}
+        suppressHydrationWarning
+      />
+      <span className="text-[10px] leading-none tracking-[0.04em] uppercase text-fgMuted">
         Creator
       </span>
     </div>

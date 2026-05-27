@@ -18,8 +18,6 @@ export async function generateMetadata({
   };
 }
 
-// Mock prefill so the edit form has something to render. Replaced with a
-// real fetch once the scraper backend lands.
 function mockPrefill(id: string): CreatorFormValues {
   return {
     name: 'Demo Creator',
@@ -43,25 +41,23 @@ export default async function EditCreatorPage({
   const initial = mockPrefill(id);
 
   return (
-    <div className="flex flex-col gap-[24px] max-w-[680px]">
-      <div>
+    <div className="flex flex-col gap-10 max-w-[680px] pt-12 pb-24">
+      <header>
         <Link
           href="/admin"
-          className="text-[12px] text-lamboAsh hover:text-white transition-colors mb-[12px] inline-block uppercase tracking-[0.14px]"
+          className="inline-flex items-center gap-1.5 text-caption text-fgMuted hover:text-fg transition-colors mb-6"
         >
           ← Back to creators
         </Link>
-        <p className="text-[10px] uppercase tracking-[0.225px] text-lamboGold mb-[8px]">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full glass-subtle border border-borderGlass text-caption text-fgMuted mb-4">
           Edit creator
+        </span>
+        <h1 className="text-display-2 text-fg mb-4">{initial.name}</h1>
+        <p className="text-body-lg text-fgMuted">
+          Update their display name, slug, or platform URLs. Changes go live on
+          the public showcase as soon as the scraper picks them up.
         </p>
-        <h1 className="text-[40px] md:text-[54px] text-white leading-[1.19] tracking-tight mb-[8px] uppercase">
-          {initial.name}
-        </h1>
-        <p className="text-[16px] text-lamboAsh leading-[1.5]">
-          Update their display name, slug, or platform URLs. Changes go live
-          on the public showcase as soon as the scraper picks them up.
-        </p>
-      </div>
+      </header>
 
       <CreatorForm mode="edit" initial={initial} />
     </div>

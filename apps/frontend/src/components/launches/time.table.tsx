@@ -132,7 +132,7 @@ export const TimeTable: FC<{
       {/* Add Time Slot Section */}
       <div className="bg-newBgColorInner p-[20px] border border-newTableBorder">
         <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px] uppercase tracking-tight font-lambo">
-          <DelayIcon size={18} className="text-[#FFEE00]" />
+          <DelayIcon size={18} className="text-[#F2E600]" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
 
@@ -172,7 +172,7 @@ export const TimeTable: FC<{
           <button
             type="button"
             onClick={addHour}
-            className="h-[42px] px-[16px] bg-lamboGold hover:bg-[#917300] transition-colors flex items-center gap-[6px] text-lamboBlack text-[14px] font-medium uppercase tracking-[0.14px]"
+            className="h-[42px] px-[16px] bg-lamboGold hover:bg-[#1E3A8A] transition-colors flex items-center gap-[6px] text-lamboBlack text-[14px] font-medium uppercase tracking-[0.14px]"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}

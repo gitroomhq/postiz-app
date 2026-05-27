@@ -830,7 +830,7 @@ export const CalendarColumn: FC<{
       className={clsx(
         'flex flex-col w-full min-h-full relative bg-lamboBlack hover:bg-lamboIron transition-colors',
         isBeforeNow && 'repeated-strip',
-        loading && 'animate-pulse',
+        loading && 'opacity-60',
         isBeforeNow
           ? 'cursor-not-allowed'
           : 'border border-newTextColor/5'
@@ -854,7 +854,7 @@ export const CalendarColumn: FC<{
           )}
         >
           {loading && (
-            <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
+            <div className="h-full w-full p-[5px] absolute left-0 top-0 z-[50]">
               <div className="h-full w-full bg-newSettings" />
             </div>
           )}
@@ -922,7 +922,7 @@ export const CalendarColumn: FC<{
                   )}
                 >
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center transition-colors duration-180 ease-out group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
                   />
                 </div>
               )}
@@ -937,7 +937,7 @@ export const CalendarColumn: FC<{
                     >
                       <div
                         className={clsx(
-                          'relative w-[34px] h-[34px] flex justify-center items-center filter transition-all duration-500'
+                          'relative w-[34px] h-[34px] flex justify-center items-center filter transition-[opacity,filter] duration-[180ms] ease-out'
                         )}
                       >
                         <SafeImage
@@ -1040,7 +1040,7 @@ const CalendarItem: FC<{
       className={clsx(
         'w-full flex h-full flex-1 flex-col group cursor-grab active:cursor-grabbing',
         'relative',
-        state === 'ERROR' && 'ring-2 ring-[#FF4D4D]'
+        state === 'ERROR' && 'ring-2 ring-[#4D3800]'
       )}
       style={{
         opacity,
@@ -1048,7 +1048,7 @@ const CalendarItem: FC<{
     >
       {state === 'ERROR' && (
         <div
-          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] bg-[#FF4D4D] flex items-center justify-center text-lamboBlack text-[11px] font-[700] cursor-pointer"
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] bg-[#4D3800] flex items-center justify-center text-lamboBlack text-[11px] font-[700] cursor-pointer"
           data-tooltip-id="tooltip"
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
         >

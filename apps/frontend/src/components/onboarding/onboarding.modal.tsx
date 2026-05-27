@@ -275,7 +275,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
       <div className="flex justify-between pt-[24px] mt-[8px]">
         <button
           onClick={onBack}
-          className="flex items-center gap-[8px] bg-transparent opacity-50 hover:opacity-70 hover:bg-lamboTeal/70 border border-white/50 text-white px-[16px] py-[12px] text-[14.4px] uppercase tracking-[0.2px] transition-all"
+          className="flex items-center gap-[8px] bg-transparent opacity-50 hover:opacity-70 hover:bg-lamboTeal/70 border border-white/50 text-white px-[16px] py-[12px] text-[14.4px] uppercase tracking-[0.2px] transition-[opacity,background-color] duration-180 ease-out"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

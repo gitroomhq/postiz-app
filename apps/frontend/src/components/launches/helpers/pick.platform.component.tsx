@@ -214,7 +214,7 @@ export const PickPlatforms: FC<{
         <div
           className={clsx(
             props.singleSelect
-              ? 'absolute w-full h-[40px] flex flex-nowrap overflow-hidden transition-all'
+              ? 'absolute w-full h-[40px] flex flex-nowrap overflow-hidden transition-[transform] duration-180 ease-out'
               : 'flex-1 flex'
           )}
           ref={ref}
@@ -236,7 +236,7 @@ export const PickPlatforms: FC<{
                       <div
                         onClick={addPlatform(integration)}
                         className={clsx(
-                          'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          'cursor-pointer relative w-[34px] h-[34px] rounded-full flex justify-center items-center bg-fifth filter transition-[opacity,filter] duration-[180ms] ease-out',
                           selectedAccounts.findIndex(
                             (p) => p.id === integration.id
                           ) === -1
@@ -273,7 +273,7 @@ export const PickPlatforms: FC<{
                       <div
                         onClick={addPlatform(integration)}
                         className={clsx(
-                          'cursor-pointer w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-all duration-500',
+                          'cursor-pointer w-[200px] relative h-[40px] flex justify-center items-center bg-fifth filter transition-[background-color,border-color,opacity,filter] duration-[180ms] ease-out',
                           selectedAccounts.findIndex(
                             (p) => p.id === integration.id
                           ) === -1

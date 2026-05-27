@@ -43,7 +43,7 @@ const SelectAvatarComponent: FC<{
           }}
           key={p.avatar_id}
           className={clsx(
-            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
+            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-colors duration-180 ease-out text-textColor relative flex flex-col gap-[15px] cursor-pointer',
             current?.avatar_id === p.avatar_id
               ? 'bg-input border border-red-500'
               : 'bg-third'
@@ -79,7 +79,7 @@ const SelectVoiceComponent: FC<{
           }}
           key={p.avatar_id}
           className={clsx(
-            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
+            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-colors duration-180 ease-out text-textColor relative flex flex-col gap-[15px] cursor-pointer',
             current?.voice_id === p.voice_id
               ? 'bg-input border border-red-500'
               : 'bg-third'

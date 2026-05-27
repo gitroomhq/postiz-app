@@ -73,7 +73,7 @@ export const Chart: FC<{
             backgroundColor: '#000000',
             titleColor: '#FFFFFF',
             bodyColor: '#7D7D7D',
-            borderColor: '#FFEE00',
+            borderColor: '#F2E600',
             borderWidth: 1,
             padding: 8,
             cornerRadius: 0,
@@ -95,7 +95,7 @@ export const Chart: FC<{
         labels: list.map((row) => newDayjs(row.date).format('DD/MM/YYYY')),
         datasets: [
           {
-            borderColor: '#FFEE00',
+            borderColor: '#F2E600',
             // @ts-ignore
             label: list?.[0]?.totalForks ? 'Forks by date' : 'Stars by date',
             backgroundColor: gradient,

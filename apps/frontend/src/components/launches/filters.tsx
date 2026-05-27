@@ -312,7 +312,7 @@ export const Filters = () => {
               </svg>
             </div>
             <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] transition-all text-[14px]">
+              <div className="py-[3px] px-[9px] text-[14px]">
                 {getDisplayText()}
               </div>
             </div>
@@ -341,7 +341,7 @@ export const Filters = () => {
             <div className="text-center flex h-[42px]">
               <div
                 onClick={setToday}
-                className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
+                className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center transition-colors duration-180 ease-out cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
               >
                 {t('today', 'Today')}
               </div>
@@ -378,7 +378,7 @@ export const Filters = () => {
               </svg>
             </div>
             <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] transition-all text-[14px]">
+              <div className="py-[3px] px-[9px] text-[14px]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
             </div>

@@ -1,13 +1,16 @@
-import React from 'react';
-
 export const LogoTextComponent = () => {
   return (
-    <div className="flex items-center gap-[8px] select-none font-lambo uppercase tracking-tight">
-      <span className="font-black text-[32px] leading-none text-lamboGold">
-        D3
-      </span>
-      <span className="font-black text-[32px] leading-none text-white">
-        Creator
+    <div className="flex items-center gap-2.5 select-none">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/d3-logo.png"
+        alt="D3 Creator"
+        width={40}
+        height={40}
+        suppressHydrationWarning
+      />
+      <span className="text-[22px] font-semibold leading-none tracking-[-0.025em] text-fg">
+        D3 Creator
       </span>
     </div>
   );

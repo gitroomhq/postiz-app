@@ -120,8 +120,8 @@ export const DelayComponent: FC<{
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Custom min"
                 className={clsx(
-                  'flex-1 w-full h-[32px] px-[8px] bg-newBgColor border text-[13px] outline-none focus:border-[#FFEE00]',
-                  isCustomDelay ? 'border-[#FFEE00]' : 'border-newTextColor/10'
+                  'flex-1 w-full h-[32px] px-[8px] bg-newBgColor border text-[13px] outline-none focus:border-[#F2E600]',
+                  isCustomDelay ? 'border-[#F2E600]' : 'border-newTextColor/10'
                 )}
               />
               <button

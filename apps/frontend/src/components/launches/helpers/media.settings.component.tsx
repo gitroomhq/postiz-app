@@ -239,7 +239,7 @@ export const CreateThumbnail: FC<{
               onChange={handleSeek}
               className="w-full h-2 bg-fifth appearance-none cursor-pointer slider"
               style={{
-                background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
+                background: `linear-gradient(to right, #F2E600 0%, #F2E600 ${
                   (currentTime / duration) * 100
                 }%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
               }}
@@ -254,7 +254,7 @@ export const CreateThumbnail: FC<{
             <button
               onClick={captureFrame}
               disabled={isCapturing}
-              className="bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-opacity duration-180 ease-out disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
             </button>
@@ -268,7 +268,7 @@ export const CreateThumbnail: FC<{
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #4f46e5;
+          background: #F2E600;
           cursor: pointer;
           border: 2px solid #ffffff;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -278,7 +278,7 @@ export const CreateThumbnail: FC<{
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #4f46e5;
+          background: #F2E600;
           cursor: pointer;
           border: 2px solid #ffffff;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -401,7 +401,7 @@ export const MediaComponentInner: FC<{
                   <button
                     disabled={loading}
                     onClick={() => setIsEditingThumbnail(true)}
-                    className="bg-third text-textColor px-6 py-2 hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
+                    className="bg-third text-textColor px-6 py-2 hover:bg-opacity-80 transition-opacity duration-180 ease-out flex-1 border border-tableBorder"
                   >
                     {media.thumbnail || newThumbnail
                       ? 'Edit Thumbnail'
@@ -414,7 +414,7 @@ export const MediaComponentInner: FC<{
                         setNewThumbnail(null);
                         setThumbnail(null);
                       }}
-                      className="bg-red-600 text-white px-6 py-2 hover:bg-opacity-80 transition-all flex-1 border border-red-700"
+                      className="bg-red-600 text-white px-6 py-2 hover:bg-opacity-80 transition-opacity duration-180 ease-out flex-1 border border-red-700"
                     >
                       Clear Thumbnail
                     </button>
@@ -477,13 +477,13 @@ export const MediaComponentInner: FC<{
           <button
             disabled={loading}
             onClick={onClose}
-            className="flex-1 bg-gray-600 text-white px-6 py-2 hover:bg-opacity-80 transition-all"
+            className="flex-1 bg-gray-600 text-white px-6 py-2 hover:bg-opacity-80 transition-opacity duration-180 ease-out"
           >
             Cancel
           </button>
           <button
             onClick={save}
-            className="flex-1 bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-all"
+            className="flex-1 bg-forth text-black uppercase tracking-[0.14px] px-6 py-2 hover:bg-opacity-80 transition-opacity duration-180 ease-out"
           >
             Save Changes
           </button>

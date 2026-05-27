@@ -86,7 +86,7 @@ export const Plugs = () => {
 
   if (isLoading || plugLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -94,7 +94,7 @@ export const Plugs = () => {
 
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] items-center justify-center">
         <div>
           <img src="/peoplemarketplace.svg" />
         </div>
@@ -122,7 +122,7 @@ export const Plugs = () => {
     <>
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
+          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-[width] duration-180 ease-out',
           collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
         )}
       >

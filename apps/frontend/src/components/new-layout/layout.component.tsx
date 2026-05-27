@@ -2,7 +2,6 @@
 
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
-import { Archivo } from 'next/font/google';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   {
@@ -138,12 +137,6 @@ const TrialTracker = dynamic(
   { ssr: false }
 );
 
-const jakartaSans = Archivo({
-  weight: ['400', '500', '600', '700', '900'],
-  style: ['normal'],
-  subsets: ['latin'],
-});
-
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
@@ -183,55 +176,53 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <PreConditionComponent />
             <NewSubscription />
             <ContinueProvider />
-            <div
-              className={clsx(
-                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
-                jakartaSans.className
-              )}
-            >
+            <div className="flex flex-col min-h-screen min-w-screen text-fg p-3 font-sans bg-canvas">
               <div>{user?.admin ? <Impersonate /> : <div />}</div>
               {user.tier === 'FREE' && isGeneral && billingEnabled ? (
                 <FirstBillingComponent />
               ) : (
                 <>
                   <AnnouncementBanner />
-                  <div className="flex-1 flex gap-[8px]">
+                  <div className="relative z-10 flex-1 flex gap-3">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px]">
+                    {/* Sidebar — Linear-flat */}
+                    <div className="flex flex-col w-[80px]">
                       <div
                         id="left-menu"
                         className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
+                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0 glass rounded-2xl',
                           user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                         )}
                       >
-                        <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
+                        <div className="flex flex-col h-full gap-8 flex-1 py-4">
                           <Logo />
                           <TopMenu />
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                        <div className="text-[24px] font-[600] flex flex-1 font-lambo uppercase tracking-tight">
+                    {/* Main column */}
+                    <div className="flex-1 overflow-hidden flex flex-col gap-3 blurMe">
+                      {/* Top bar — Linear-flat */}
+                      <div className="flex glass rounded-2xl h-[64px] px-6 items-center">
+                        <div className="text-heading flex flex-1 font-semibold tracking-[-0.02em] text-fg">
                           <Title />
                         </div>
-                        <div className="flex gap-[20px] text-textItemBlur">
+                        <div className="flex gap-4 items-center text-fgMuted">
                           <StreakComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                          <div className="w-px h-4 bg-borderGlass" />
                           <OrganizationSelector />
-                          <div className="hover:text-newTextColor">
+                          <div className="hover:text-fg transition-colors">
                             <ModeComponent />
                           </div>
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                          <div className="w-px h-4 bg-borderGlass" />
                           <LanguageComponent />
                           <ChromeExtensionComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                          <div className="w-px h-4 bg-borderGlass" />
                           <AttachToFeedbackIcon />
                           <NotificationComponent />
                         </div>
                       </div>
-                      <div className="flex flex-1 gap-[1px]">{children}</div>
+                      <div className="flex flex-1 gap-3">{children}</div>
                     </div>
                   </div>
                 </>

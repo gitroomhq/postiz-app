@@ -214,7 +214,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                   <div
                     key={integration.id}
                     className={clsx(
-                      'flex items-center gap-[10px] p-[10px] border cursor-pointer transition-all',
+                      'flex items-center gap-[10px] p-[10px] border cursor-pointer transition-[background-color,border-color] duration-180 ease-out',
                       selectedIntegrationId === integration.id
                         ? 'border-forth bg-forth/10'
                         : 'border-tableBorder hover:border-textColor/30'

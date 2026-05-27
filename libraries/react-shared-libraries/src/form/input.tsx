@@ -62,7 +62,7 @@ export const Input: FC<
       )}
       <div
         className={clsx(
-          'bg-newBgColorInner h-[42px] border-newTableBorder border text-textColor placeholder-textColor flex items-center justify-center focus-within:border-lamboGold',
+          'bg-customColor16 h-[44px] border-borderGlass border rounded-md text-textColor placeholder-textColor flex items-center justify-center transition-[border-color,box-shadow] duration-180 ease-out focus-within:border-brand-500 focus-within:shadow-focusRing',
           className
         )}
       >

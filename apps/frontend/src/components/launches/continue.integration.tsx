@@ -269,8 +269,8 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#F2E600] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FDE047] rounded-full blur-[120px]" />
         </div>
 
         <div className="relative z-10 text-center">
@@ -308,8 +308,8 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#F2E600] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FDE047] rounded-full blur-[120px]" />
         </div>
 
         {/* Content */}
@@ -366,14 +366,14 @@ export const ContinueIntegration: FC<{
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#F2E600] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FDE047] rounded-full blur-[120px]" />
         </div>
 
         <div className="relative z-10 text-center">
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-[#FF4D4D]/20 flex items-center justify-center">
+          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-[#4D3800]/20 flex items-center justify-center">
             <svg
-              className="w-[40px] h-[40px] text-[#FF4D4D]"
+              className="w-[40px] h-[40px] text-[#4D3800]"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -405,8 +405,8 @@ export const ContinueIntegration: FC<{
     <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
       {/* Background gradient decoration */}
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#FFEE00] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FFCE3E] rounded-full blur-[120px]" />
+        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#F2E600] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FDE047] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 text-center">
@@ -418,7 +418,7 @@ export const ContinueIntegration: FC<{
         </div>
         {/* Loading spinner */}
         <div className="mt-[32px] flex justify-center">
-          <div className="w-[48px] h-[48px] border-[3px] border-[#FFEE00] border-t-transparent rounded-full animate-spin" />
+          <div className="w-[48px] h-[48px] border-[3px] border-[#F2E600] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     </div>

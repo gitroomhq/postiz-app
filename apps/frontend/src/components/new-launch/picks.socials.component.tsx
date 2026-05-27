@@ -57,19 +57,19 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-[opacity,filter,border-color] duration-[180ms] ease-out',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
                         ? 'grayscale border-transparent'
-                        : 'border-[#622FF6]'
+                        : 'border-[#F2E600]'
                     )}
                   >
                     <ImageWithFallback
                       fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
                       className={clsx(
-                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
+                        'rounded-full transition-[border-color] duration-180 ease-out min-w-[42px] border-[1.5px] min-h-[42px]',
                         selectedIntegrations.findIndex(
                           (p) => p.integration.id === integration.id
                         ) === -1

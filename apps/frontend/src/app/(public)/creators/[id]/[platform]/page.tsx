@@ -1,17 +1,21 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { GlassCard } from '@gitroom/frontend/components/ui/glass-card';
+import { BentoGrid, BentoItem } from '@gitroom/frontend/components/ui/bento-grid';
+import { PlatformPill } from '@gitroom/frontend/components/ui/platform-pill';
+import { PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
 
 export const dynamic = 'force-dynamic';
 
 type Params = { id: string; platform: string };
 
-const VALID_PLATFORMS: Record<string, string> = {
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  tiktok: 'TikTok',
-  douyin: 'Douyin',
-  xiaohongshu: 'Xiaohongshu',
+const VALID_PLATFORMS: Record<string, { label: string }> = {
+  instagram: { label: 'Instagram' },
+  facebook: { label: 'Facebook' },
+  tiktok: { label: 'TikTok' },
+  douyin: { label: 'Douyin' },
+  xiaohongshu: { label: 'Xiaohongshu' },
 };
 
 export async function generateMetadata({
@@ -20,14 +24,13 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { id, platform } = await params;
-  const platformLabel = VALID_PLATFORMS[platform.toLowerCase()] ?? platform;
+  const platformInfo = VALID_PLATFORMS[platform.toLowerCase()];
+  const platformLabel = platformInfo?.label ?? platform;
   return {
     title: `${id} on ${platformLabel} — D3 Creator`,
     description: `Live ${platformLabel} stats for creator ${id} — followers, engagement, and growth.`,
   };
 }
-
-const cardClass = 'p-[24px] bg-lamboCharcoal';
 
 export default async function CreatorPlatformPage({
   params,
@@ -36,68 +39,91 @@ export default async function CreatorPlatformPage({
 }) {
   const { id, platform } = await params;
   const platformKey = platform.toLowerCase();
-  const platformLabel = VALID_PLATFORMS[platformKey];
+  const platformInfo = VALID_PLATFORMS[platformKey];
 
-  if (!platformLabel) {
+  if (!platformInfo) {
     notFound();
   }
 
+  const headlineStats = [
+    { label: 'Followers' },
+    { label: 'Following' },
+    { label: 'Posts' },
+    { label: 'Engagement Rate' },
+  ];
+
   return (
-    <div className="flex flex-col gap-[32px]">
-      <div>
+    <div className="flex flex-col gap-16 pt-12 pb-24">
+      <header className="max-w-[760px]">
         <Link
           href={`/creators/${encodeURIComponent(id)}`}
-          className="lambo-micro text-lamboAsh hover:text-white transition-colors mb-[12px] inline-block"
+          className="inline-flex items-center gap-1.5 text-caption text-fgMuted hover:text-fg transition-colors mb-6"
         >
-          ← Back to {id}
+          <span>←</span> Back to {id}
         </Link>
-        <p className="lambo-caption text-lamboGold mb-[8px]">
-          {platformLabel}
-        </p>
-        <h1 className="text-[40px] md:text-[54px] text-white leading-[1.19] font-lambo uppercase">
-          {id} on {platformLabel}
-        </h1>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px]">
-        {['Followers', 'Following', 'Posts', 'Engagement Rate'].map((label) => (
-          <div key={label} className={cardClass}>
-            <div className="flex items-center justify-between mb-[12px]">
-              <span className="lambo-micro text-[#9c9c9c]">
-                {label}
-              </span>
-              <span className="lambo-badge">Soon</span>
-            </div>
-            <div className="text-[40px] text-white leading-[1.15] font-lambo uppercase">—</div>
-          </div>
-        ))}
-      </div>
-
-      <div className={cardClass}>
-        <div className="flex items-center justify-between mb-[16px]">
-          <h4 className="text-[20px] text-white font-lambo uppercase">
-            Follower Growth — Last 30 Days
-          </h4>
-          <span className="lambo-badge">Soon</span>
+        <div className="mb-4">
+          <PlatformPill platform={platformKey as PlatformKey} />
         </div>
-        <div className="h-[240px] bg-lamboBlack flex items-center justify-center">
-          <p className="text-[14px] text-lamboAsh">
+        <h1 className="text-display-2 text-fg leading-[1.04]">
+          {id} on <span className="text-brand">{platformInfo.label}</span>
+        </h1>
+      </header>
+
+      <BentoGrid gap="md">
+        {headlineStats.map((stat) => (
+          <BentoItem key={stat.label} colSpan={3} tabletColSpan={6}>
+            <GlassCard
+              variant="base"
+              hover
+              padding="lg"
+              radius="2xl"
+              className="h-full text-left"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-micro uppercase text-fgSubtle">
+                  {stat.label}
+                </span>
+                <span className="text-caption px-2.5 py-1 rounded-full glass-subtle border border-borderGlass text-fgMuted">
+                  Soon
+                </span>
+              </div>
+              <div className="text-[clamp(36px,4vw,48px)] leading-[1.04] tracking-[-0.03em] font-semibold text-fg">
+                —
+              </div>
+            </GlassCard>
+          </BentoItem>
+        ))}
+      </BentoGrid>
+
+      <GlassCard variant="base" padding="lg" radius="2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-heading text-fg">
+            Follower Growth — Last 30 Days
+          </h2>
+          <span className="text-caption px-2.5 py-1 rounded-full glass-subtle border border-borderGlass text-fgMuted">
+            Soon
+          </span>
+        </div>
+        <div className="rounded-xl bg-glass-subtle border border-borderGlass h-[280px] flex items-center justify-center">
+          <p className="text-body-sm text-fgMuted">
             Chart appears once tracking starts.
           </p>
         </div>
-      </div>
+      </GlassCard>
 
-      <div className={cardClass}>
-        <div className="flex items-center justify-between mb-[16px]">
-          <h4 className="text-[20px] text-white font-lambo uppercase">Recent Posts</h4>
-          <span className="lambo-badge">Soon</span>
+      <GlassCard variant="base" padding="lg" radius="2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-heading text-fg">Recent Posts</h2>
+          <span className="text-caption px-2.5 py-1 rounded-full glass-subtle border border-borderGlass text-fgMuted">
+            Soon
+          </span>
         </div>
-        <div className="bg-lamboBlack p-[32px] text-center">
-          <p className="text-[14px] text-lamboAsh">
+        <div className="rounded-xl bg-glass-subtle border border-borderGlass p-12 text-center">
+          <p className="text-body-sm text-fgMuted">
             Posts appear once scraper indexes this account.
           </p>
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }

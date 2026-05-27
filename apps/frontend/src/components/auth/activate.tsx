@@ -26,11 +26,9 @@ export function Activate() {
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    
     const timer = setInterval(() => {
       setCooldown((prev) => prev - 1);
     }, 1000);
-
     return () => clearInterval(timer);
   }, [cooldown]);
 
@@ -67,56 +65,51 @@ export function Activate() {
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <div>
-        <h1 className="text-[40px] text-start mb-[16px] cursor-pointer font-lambo uppercase leading-[1.15] text-white">
-          {t('activate_your_account', 'Activate your account')}
-        </h1>
-      </div>
-      <div className="text-[16px] leading-[1.56] text-[#c8c8c8]">
+    <div className="flex flex-col flex-1 glass rounded-2xl p-8">
+      <h1 className="text-section text-start mb-3 text-fg">
+        {t('activate_your_account', 'Activate your account')}
+      </h1>
+      <p className="text-body-sm text-fgMuted">
         {t('thank_you_for_registering', 'Thank you for registering!')}
         <br />
         {t(
           'please_check_your_email_to_activate_your_account',
           'Please check your email to activate your account.'
         )}
-      </div>
+      </p>
 
-      <div className="mt-[32px] border-t border-lamboIron pt-[24px]">
-        <h4 className="text-[20px] mb-[16px] font-lambo uppercase text-white">
+      <div className="mt-10 border-t border-borderGlass pt-8">
+        <h4 className="text-heading mb-5 text-fg">
           {t('didnt_receive_email', "Didn't receive the email?")}
         </h4>
         {status === 'sent' ? (
-          <div className="flex flex-col gap-[16px]">
-            <div className="text-lamboGold text-[14px] leading-[1.5]">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl p-4 bg-brand/10 border border-brand/30 text-brand text-body-sm">
               {t(
                 'activation_email_sent',
                 'Activation email has been sent! Please check your inbox.'
               )}
             </div>
             {cooldown > 0 ? (
-              <p className="text-[14px] text-lamboAsh">
+              <p className="text-body-sm text-fgMuted">
                 {t('resend_available_in', 'You can resend in')} {cooldown}s
               </p>
             ) : (
-              <Button
-                onClick={resetToForm}
-                className="!h-[52px]"
-              >
+              <Button onClick={resetToForm} className="!h-[48px]">
                 {t('send_again', 'Send Again')}
               </Button>
             )}
           </div>
         ) : status === 'already_activated' ? (
-          <div className="flex flex-col gap-[16px]">
-            <div className="text-lamboGold text-[14px] leading-[1.5]">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl p-4 bg-success/10 border border-success/30 text-success text-body-sm">
               {t(
                 'account_already_activated',
                 'Great news! Your account is already activated.'
               )}
             </div>
             <Link href="/auth/login">
-              <Button className="!h-[52px] w-full">
+              <Button className="!h-[48px] w-full">
                 {t('go_to_login', 'Go to Login')}
               </Button>
             </Link>
@@ -133,7 +126,7 @@ export function Activate() {
               />
               <Button
                 type="submit"
-                className="!h-[52px]"
+                className="!h-[48px]"
                 loading={loading}
                 disabled={cooldown > 0}
               >
@@ -145,9 +138,12 @@ export function Activate() {
           </FormProvider>
         )}
         {status !== 'already_activated' && (
-          <p className="mt-[16px] text-[14px] text-lamboAsh">
+          <p className="mt-6 text-body-sm text-fgMuted">
             {t('already_activated', 'Already activated?')}&nbsp;
-            <Link href="/auth/login" className="text-white underline hover:text-lamboGold transition-colors cursor-pointer">
+            <Link
+              href="/auth/login"
+              className="text-fg hover:text-brand transition-colors font-medium"
+            >
               {t('sign_in', 'Sign In')}
             </Link>
           </p>

@@ -377,7 +377,7 @@ const AppliedCouponDisplay: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center gap-[12px] p-[16px]  border border-[#FFEE00]/30 bg-[#FFEE00]/10">
+      <div className="flex items-center gap-[12px] p-[16px]  border border-[#F2E600]/30 bg-[#F2E600]/10">
         <div className="flex-1">
           <div className="flex items-center gap-[8px] flex-wrap">
             <svg
@@ -386,7 +386,7 @@ const AppliedCouponDisplay: FC<{
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#FFEE00"
+              stroke="#F2E600"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -590,7 +590,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
           type="button"
           onClick={() => handleApplyCoupon()}
           disabled={isApplying || !couponCode.trim()}
-          className="h-[44px] px-[24px]  bg-boxFocused text-textItemFocused uppercase tracking-[0.14px] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="h-[44px] px-[24px]  bg-boxFocused text-textItemFocused uppercase tracking-[0.14px] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity duration-180 ease-out"
         >
           {isApplying
             ? t('billing_applying', 'Applying...')

@@ -93,7 +93,7 @@ export const MissingReleaseModal: FC<{
           <div
             key={item.id}
             onClick={() => setSelected(item.id)}
-            className={`cursor-pointer overflow-hidden border-2 transition-all ${
+            className={`cursor-pointer overflow-hidden border-2 transition-[border-color,transform] duration-180 ease-out ${
               selected === item.id
                 ? 'border-lamboGold scale-[1.02]'
                 : 'border-transparent hover:border-textColor/20'

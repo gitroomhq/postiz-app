@@ -32,7 +32,7 @@ export const HeadingComponent: FC<{
       <div
         data-tooltip-id="tooltip"
         data-tooltip-content="Title"
-        className="flex p-[10px] gap-[5px] -left-[50%] bottom-[100%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-newColColor border border-newColColor z-[100] absolute transition-all"
+        className="flex p-[10px] gap-[5px] -left-[50%] bottom-[100%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-newColColor border border-newColColor z-[100] absolute transition-opacity duration-180 ease-out"
       >
         <div onClick={setHeading(1)}>
           <svg

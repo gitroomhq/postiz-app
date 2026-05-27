@@ -54,8 +54,8 @@ export const SVGLine = () => {
           y2="-28.6843"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#FFEE00" />
-          <stop offset="1" stopColor="#FFCE3E" />
+          <stop stopColor="#F2E600" />
+          <stop offset="1" stopColor="#FDE047" />
         </linearGradient>
         <radialGradient
           id="paint1_radial_1930_1119"
@@ -65,8 +65,8 @@ export const SVGLine = () => {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(1.19333 7.45342) rotate(21.2064) scale(16.1503 188.627)"
         >
-          <stop stopColor="#FFEE00" />
-          <stop offset="1" stopColor="#FFEE00" stopOpacity="0" />
+          <stop stopColor="#F2E600" />
+          <stop offset="1" stopColor="#F2E600" stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>
@@ -96,7 +96,7 @@ export const OpenClose: FC<{
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={clsx(
-        'rotate-180 transition-all',
+        'rotate-180 transition-transform duration-180 ease-out',
         isOpen ? 'rotate-180' : 'rotate-90'
       )}
     >
@@ -260,7 +260,7 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all',
+        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-colors duration-180 ease-out',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -282,7 +282,7 @@ export const MenuComponent: FC<
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-[#FF4D4D] text-lamboBlack w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] font-[700] flex justify-center items-center">
+            <div className="bg-[#4D3800] text-lamboBlack w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] font-[700] flex justify-center items-center">
               !
             </div>
             <div className="bg-lamboBlack/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
@@ -486,7 +486,7 @@ export const LaunchesComponent = () => {
   }, []);
   if (isLoading || reload) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -505,7 +505,7 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-[width] duration-180 ease-out absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">

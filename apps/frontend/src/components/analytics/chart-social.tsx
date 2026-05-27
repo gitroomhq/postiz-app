@@ -28,12 +28,12 @@ export const ChartSocial: FC<{
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);
 
-  // Lamborghini palette is monochrome + gold only. All chart variants route
-  // to Primary Yellow (#FFEE00) per DESIGN.md §2 — no chromatic accents.
+  // Brand palette is monochrome + yellow only. All chart variants route
+  // to Brand Yellow (#F2E600) per DESIGN.md — no chromatic accents.
   const goldScheme = {
-    start: 'rgba(255, 238, 0, 0.6)',
-    end: 'rgba(255, 238, 0, 0)',
-    border: '#FFEE00',
+    start: 'rgba(242, 230, 0, 0.6)',
+    end: 'rgba(242, 230, 0, 0)',
+    border: '#F2E600',
   };
 
   const colors = goldScheme;
@@ -107,7 +107,7 @@ export const ChartSocial: FC<{
             backgroundColor: '#000000',
             titleColor: '#FFFFFF',
             bodyColor: '#7D7D7D',
-            borderColor: '#FFEE00',
+            borderColor: '#F2E600',
             borderWidth: 1,
             padding: 8,
             cornerRadius: 0,

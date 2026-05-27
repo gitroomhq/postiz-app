@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
-const ReactLoading = ({ color = '#fff', width = 20, height = 20 }: { type?: string; color?: string; width?: number; height?: number }) => {
+const ReactLoading = ({ color = 'currentColor', width = 20, height = 20 }: { type?: string; color?: string; width?: number; height?: number }) => {
   const size = Math.min(width, height);
   const borderWidth = Math.max(2, Math.round(size / 8));
   return (
@@ -49,9 +49,9 @@ export const Button: FC<
         (props.disabled || loading) && 'opacity-50 pointer-events-none',
         `${
           secondary
-            ? 'bg-transparent text-white border border-white/50 hover:bg-lamboTeal/70'
-            : 'bg-forth text-black font-medium uppercase tracking-[0.14px]'
-        } px-[24px] h-[40px] cursor-pointer items-center justify-center flex relative`,
+            ? 'bg-customColor1 text-fg border border-borderGlass hover:bg-customColor35 hover:border-borderGlassStrong'
+            : 'bg-brand-500 text-brand-darker font-semibold hover:bg-brand-300 hover:-translate-y-px active:translate-y-0'
+        } px-6 h-10 cursor-pointer items-center justify-center flex relative rounded-md transition-[background-color,border-color,transform,opacity] duration-180 ease-out focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2`,
         props?.className
       )}
     >
@@ -59,7 +59,7 @@ export const Button: FC<
         <div className="absolute inset-0 flex items-center justify-center">
           <ReactLoading
             type="spin"
-            color={secondary ? '#fff' : '#000'}
+            color="currentColor"
             width={height! / 2}
             height={height! / 2}
           />

@@ -26,7 +26,7 @@ export const OauthProvider = () => {
   return (
     <div
       onClick={gotoLogin}
-      className={`cursor-pointer flex-1 bg-transparent border border-white/50 opacity-50 hover:opacity-70 hover:bg-lamboTeal/70 transition-all h-[44px] flex justify-center items-center text-white gap-[8px] uppercase tracking-[0.2px] text-[14.4px]`}
+      className={`cursor-pointer flex-1 bg-transparent border border-white/50 opacity-50 hover:opacity-70 hover:bg-lamboTeal/70 transition-[opacity,background-color] duration-180 ease-out h-[44px] flex justify-center items-center text-white gap-[8px] uppercase tracking-[0.2px] text-[14.4px]`}
     >
       <div>
         <SafeImage

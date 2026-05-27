@@ -5,7 +5,9 @@ import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
 import { TestimonialComponent } from '@gitroom/frontend/components/auth/testimonial.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
+
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
+
 export default async function AuthLayout({
   children,
 }: {
@@ -14,22 +16,30 @@ export default async function AuthLayout({
   const t = await getT();
 
   return (
-    <div className="bg-lamboBlack flex flex-1 min-h-screen w-screen text-white">
-      {/*<style>{`html, body {overflow-x: hidden;}`}</style>*/}
+    <div className="relative bg-canvas flex flex-1 min-h-screen w-screen text-fg overflow-hidden">
       <ReturnUrlComponent />
-      <div className="flex flex-col py-[40px] px-[40px] flex-1 lg:w-[600px] lg:flex-none text-white bg-lamboBlack">
-        <div className="w-full max-w-[440px] mx-auto justify-center gap-[20px] h-full flex flex-col text-white">
+
+      {/* Left: form column */}
+      <div className="relative z-10 flex flex-col py-12 px-6 sm:px-10 flex-1 lg:w-[560px] lg:flex-none">
+        <div className="w-full max-w-[400px] mx-auto justify-center gap-8 h-full flex flex-col">
           <LogoTextComponent />
           <div className="flex">{children}</div>
         </div>
       </div>
-      <div className="flex-1 pt-[88px] hidden lg:flex flex-col items-center bg-lamboCharcoal font-lambo uppercase">
-        <div className="text-center text-[54px] leading-[1.19]">
-          All your social analytics
-          <br />
-          in <span className="text-lamboGold">one place</span>
+
+      {/* Right: testimonial column (Linear-flat, no aurora) */}
+      <div className="relative z-10 flex-1 hidden lg:flex border-l border-borderGlass">
+        <div className="h-full w-full flex flex-col items-center justify-center px-12 py-16">
+          <div className="text-center max-w-[520px] mb-12">
+            <h2 className="text-display-2 leading-[1.04] tracking-[-0.03em] mb-4 font-semibold text-fg">
+              All your social analytics in one place.
+            </h2>
+            <p className="text-body-lg text-fgMuted">
+              Real follower counts across every platform we run.
+            </p>
+          </div>
+          <TestimonialComponent />
         </div>
-        <TestimonialComponent />
       </div>
     </div>
   );

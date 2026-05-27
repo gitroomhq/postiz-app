@@ -518,7 +518,7 @@ export const MediaBox: FC<{
                     )}
                     key={i}
                   >
-                    <div className="w-full h-full bg-newSep animate-pulse" />
+                    <div className="w-full h-full bg-newSep" />
                   </div>
                 ))}
               </>
@@ -564,7 +564,7 @@ export const MediaBox: FC<{
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
                           onClick={maximize(media)}
-                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
+                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-transform duration-180 ease-out"
                         >
                           <svg
                             width="30"
@@ -768,7 +768,7 @@ export const MultiMediaComponent: FC<{
               handle=".dragging"
             >
               {currentMedia.map((media, index) => (
-                  <div key={media.id} className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                  <div key={media.id} className="cursor-pointer w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-colors duration-180 ease-out">
                     <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
                     <div className="w-full h-full relative group">

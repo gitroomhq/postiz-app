@@ -1,233 +1,312 @@
+// D3 Creator — Yellow brand mono, Linear-flat.
+// Primary color extracted from D3 TALENT ACADEMY logo: #F2E600.
+// One hue. Tonal shades only. No foreign colors.
+
 :root {
+  // ---- BRAND tonal scale (built from logo #F2E600) -----------------------
+  --brand-50:  #FEFCE8;
+  --brand-100: #FEF9C3;
+  --brand-200: #FEF08A;
+  --brand-300: #FDE047;
+  --brand-400: #FACC15;
+  --brand-500: #F2E600;   // *** LOGO ***
+  --brand-600: #CA8A04;
+  --brand-700: #A16207;
+  --brand-800: #854D0E;
+  --brand-900: #4D3800;
+  --brand-950: #1A1900;
+
+  // ---- Semantic aliases (all yellow) -------------------------------------
+  --color-primary: #F2E600;          // exact logo
+  --color-primary-light: #FDE047;    // hover, focus
+  --color-primary-lighter: #FEF08A;  // subtle highlights
+  --color-primary-dark: #9C9400;     // section bg, elevated surfaces
+  --color-primary-darker: #0E0D00;   // page bg (near-black, yellow undertone)
+  --color-primary-deepest: #050500;  // deepest
+  --color-surface: #1A1900;          // card surface (yellow-tinted dark)
+  --color-surface-elevated: #2A2810; // elevated card / modal
+  --color-border: rgba(242, 230, 0, 0.10);
+  --color-border-strong: rgba(242, 230, 0, 0.22);
+  --color-text: #FFFFFF;
+  --color-text-muted: rgba(255, 255, 255, 0.65);
+  --color-text-subtle: rgba(255, 255, 255, 0.40);
+
+  // ---- Semantic states (brand-derived) -----------------------------------
+  --color-danger: #4D3800;
+  --color-danger-fg: #FEF08A;
+  --color-success: #F2E600;
+  --color-warning: #FDE047;
+  --color-info: #FACC15;
+
   .dark {
-    --new-back-drop: #000000;
-    --new-settings: #202020;
-    --new-border: #202020;
-    --new-bgColor: #000000;
-    --new-bgColorInner: #202020;
-    --new-sep: #202020;
-    --new-bgLineColor: #181818;
-    --new-textItemFocused: #181818;
-    --new-textItemBlur: #7D7D7D;
-    --new-boxFocused: #FFEE00;
+    // ---- Canvas & surfaces (neutral near-black, no yellow tint) ----------
+    --canvas: #0A0A0D;
+    --canvas-deep: #050507;
+    --glass-base: #16161A;
+    --glass-elevated: #1A1A1F;
+    --glass-subtle: #0F0F12;
+    --glass-modal: #1A1A1F;
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --border-glass-strong: rgba(255, 255, 255, 0.16);
+    --scrim: rgba(0, 0, 0, 0.72);
+
+    // ---- Foreground ------------------------------------------------------
+    --fg: #FFFFFF;
+    --fg-muted: rgba(255, 255, 255, 0.62);
+    --fg-subtle: rgba(255, 255, 255, 0.40);
+
+    // ---- Legacy/compat tokens (neutral, yellow only on CTA + focus) ------
+    --new-back-drop: #0A0A0D;
+    --new-settings: #16161A;
+    --new-border: rgba(255, 255, 255, 0.08);
+    --new-bgColor: #0A0A0D;
+    --new-bgColorInner: #16161A;
+    --new-sep: rgba(255, 255, 255, 0.08);
+    --new-bgLineColor: #0F0F12;
+    --new-textItemFocused: rgba(242, 230, 0, 0.10);  // yellow tint kept low for active state
+    --new-textItemBlur: rgba(255, 255, 255, 0.62);
+    --new-boxFocused: #F2E600;                        // focus ring KEEP yellow
     --new-textColor: 255 255 255;
-    --new-blockSeparator: #202020;
-    --new-btn-simple: #202020;
-    --new-btn-text: #ffffff;
-    --new-btn-primary: #FFEE00;
-    --new-ai-btn: #FFEE00;
-    --new-box-hover: #181818;
-    --new-table-border: #202020;
-    --new-table-header: #181818;
-    --new-table-text: #7D7D7D;
-    --new-table-text-focused: #FFEE00;
-    --new-small-strips: #181818;
-    --new-big-strips: #181818;
-    --new-col-color: #202020;
-    --new-menu-dots: #7D7D7D;
-    --new-menu-hover: #FFEE00;
-    --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
-    --popup-color: rgba(0, 0, 0, 0.7);
-    --border-preview: transparent;
-    --preview-box-shadow: none;
-    --linkedin-border: #202020;
-    --linkedin-bg: #181818;
-    --linkedin-text: #7D7D7D;
-    --facebook-bg: #181818;
-    --facebook-bg-comment: #202020;
-    --instagram-bg: #000000;
-    --tiktok-item-bg: #202020;
+    --new-blockSeparator: rgba(255, 255, 255, 0.08);
+    --new-btn-simple: rgba(255, 255, 255, 0.05);
+    --new-btn-text: #FFFFFF;
+    --new-btn-primary: #F2E600;                       // primary CTA KEEP
+    --new-ai-btn: #F2E600;                            // AI CTA KEEP
+    --new-box-hover: rgba(255, 255, 255, 0.06);
+    --new-table-border: rgba(255, 255, 255, 0.08);
+    --new-table-header: rgba(255, 255, 255, 0.04);
+    --new-table-text: rgba(255, 255, 255, 0.62);
+    --new-table-text-focused: #F2E600;                // active data point KEEP
+    --new-small-strips: #0F0F12;
+    --new-big-strips: #0F0F12;
+    --new-col-color: #16161A;
+    --new-menu-dots: rgba(255, 255, 255, 0.40);
+    --new-menu-hover: #F2E600;                        // active nav KEEP
+    --menu-shadow: 0 8px 24px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.30);
+    --popup-color: rgba(0, 0, 0, 0.72);
+    --border-preview: rgba(255, 255, 255, 0.08);
+    --preview-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
+
+    // ---- Social platform surfaces (neutral) ------------------------------
+    --linkedin-border: rgba(255, 255, 255, 0.10);
+    --linkedin-bg: #16161A;
+    --linkedin-text: rgba(255, 255, 255, 0.62);
+    --facebook-bg: #16161A;
+    --facebook-bg-comment: #0F0F12;
+    --instagram-bg: #16161A;
+    --tiktok-item-bg: #16161A;
     --tiktok-item-icon-bg: #FFFFFF;
-    --youtube-bg: #0F0F0F;
-    --youtube-button: #F1F1F1;
-    --youtube-action-color: #202020;
-    --youtube-svg-border: #7D7D7D;
+    --youtube-bg: #16161A;
+    --youtube-button: #FFFFFF;
+    --youtube-action-color: rgba(255, 255, 255, 0.05);
+    --youtube-svg-border: rgba(255, 255, 255, 0.40);
   }
+
   .light {
-    --new-back-drop: #181818;
-    --new-settings: #272727;
-    --new-sep: #2A2A2A;
-    --new-border: #2A2A2A;
-    --new-bgColor: #181818;
-    --new-bgColorInner: #272727;
-    --new-bgLineColor: #202020;
-    --new-textItemFocused: #202020;
-    --new-textItemBlur: #969696;
-    --new-boxFocused: #FFEE00;
-    --new-textColor: 248 248 248;
-    --new-blockSeparator: #2A2A2A;
-    --new-btn-simple: #272727;
-    --new-btn-text: #F8F8F8;
-    --new-btn-primary: #FFEE00;
-    --new-ai-btn: #FFEE00;
-    --new-box-hover: #202020;
-    --new-table-border: #2A2A2A;
-    --new-table-header: #202020;
-    --new-table-text: #969696;
-    --new-table-text-focused: #FFEE00;
-    --new-small-strips: #202020;
-    --new-big-strips: #202020;
-    --new-col-color: #272727;
-    --new-menu-dots: #969696;
-    --new-menu-hover: #FFEE00;
-    --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
-    --popup-color: rgba(0, 0, 0, 0.6);
-    --border-preview: #2A2A2A;
-    --preview-box-shadow: none;
-    --linkedin-border: #2A2A2A;
-    --linkedin-bg: #202020;
-    --linkedin-text: #969696;
-    --facebook-bg: #202020;
-    --facebook-bg-comment: #272727;
-    --instagram-bg: #181818;
-    --tiktok-item-bg: #272727;
-    --tiktok-item-icon-bg: #F8F8F8;
-    --youtube-bg: #181818;
-    --youtube-button: #F8F8F8;
-    --youtube-action-color: #272727;
-    --youtube-svg-border: #969696;
+    --canvas: #FEFCE8;
+    --canvas-deep: #FEF9C3;
+    --glass-base: #FFFFFF;
+    --glass-elevated: #FFFFFF;
+    --glass-subtle: #FEFCE8;
+    --glass-modal: #FFFFFF;
+    --border-glass: rgba(161, 98, 7, 0.12);
+    --border-glass-strong: rgba(161, 98, 7, 0.24);
+    --scrim: rgba(26, 25, 0, 0.40);
+
+    --fg: #0E0D00;
+    --fg-muted: rgba(14, 13, 0, 0.70);
+    --fg-subtle: rgba(14, 13, 0, 0.45);
+
+    --new-back-drop: #FEFCE8;
+    --new-settings: #FFFFFF;
+    --new-border: rgba(161, 98, 7, 0.12);
+    --new-bgColor: #FEFCE8;
+    --new-bgColorInner: #FFFFFF;
+    --new-sep: rgba(161, 98, 7, 0.08);
+    --new-bgLineColor: #FEF9C3;
+    --new-textItemFocused: rgba(242, 230, 0, 0.16);
+    --new-textItemBlur: rgba(14, 13, 0, 0.55);
+    --new-boxFocused: #F2E600;
+    --new-textColor: 14 13 0;
+    --new-blockSeparator: rgba(161, 98, 7, 0.10);
+    --new-btn-simple: rgba(161, 98, 7, 0.06);
+    --new-btn-text: #0E0D00;
+    --new-btn-primary: #F2E600;
+    --new-ai-btn: #F2E600;
+    --new-box-hover: rgba(242, 230, 0, 0.10);
+    --new-table-border: rgba(161, 98, 7, 0.10);
+    --new-table-header: rgba(161, 98, 7, 0.04);
+    --new-table-text: rgba(14, 13, 0, 0.55);
+    --new-table-text-focused: #F2E600;
+    --new-small-strips: #FEF9C3;
+    --new-big-strips: #FEF9C3;
+    --new-col-color: #FFFFFF;
+    --new-menu-dots: rgba(14, 13, 0, 0.45);
+    --new-menu-hover: #F2E600;
+    --menu-shadow: 0 4px 16px rgba(161, 98, 7, 0.10), 0 1px 4px rgba(161, 98, 7, 0.06);
+    --popup-color: rgba(26, 25, 0, 0.40);
+    --border-preview: rgba(161, 98, 7, 0.12);
+    --preview-box-shadow: 0 2px 8px rgba(161, 98, 7, 0.10);
+
+    --linkedin-border: rgba(161, 98, 7, 0.14);
+    --linkedin-bg: #FEFCE8;
+    --linkedin-text: rgba(14, 13, 0, 0.55);
+    --facebook-bg: #FEFCE8;
+    --facebook-bg-comment: #FEF9C3;
+    --instagram-bg: #FEFCE8;
+    --tiktok-item-bg: #FEFCE8;
+    --tiktok-item-icon-bg: #0E0D00;
+    --youtube-bg: #FEFCE8;
+    --youtube-button: #0E0D00;
+    --youtube-action-color: rgba(242, 230, 0, 0.08);
+    --youtube-svg-border: rgba(14, 13, 0, 0.45);
   }
 }
 
+// Legacy customColor1-55 — every value derived from yellow brand scale.
 :root {
   .dark {
-    --color-primary: #000000;
-    --color-secondary: #000000;
-    --color-text: #ffffff;
-    --color-third: #000000;
-    --color-forth: #FFEE00;
-    --color-fifth: var(--new-bgLineColor);
-    --color-sixth: var(--new-table-header);
-    --color-seventh: #FFEE00;
-    --color-gray: #7D7D7D;
-    --color-input: var(--new-table-header);
-    --color-input-text: #7D7D7D;
-    --color-table-border: var(--new-table-border);
-    --color-custom1: #202020;
-    --color-custom2: #181818;
-    --color-custom3: #000000;
-    --color-custom4: #FFEE00;
-    --color-custom5: #F8F8F8;
-    --color-custom6: var(--new-bgLineColor);
-    --color-custom7: #FFEE00;
-    --color-custom8: var(--new-btn-simple);
-    --color-custom9: #202020;
-    --color-custom10: #FFCE3E;
-    --color-custom11: #FFEE00;
-    --color-custom12: #FFEE00;
-    --color-custom13: #FFEE00;
-    --color-custom14: #7D7D7D;
-    --color-custom15: #000000;
-    --color-custom16: #181818;
+    // Yellow reserved for: --color-forth (primary CTA), --new-btn-primary,
+    // --new-boxFocused, --color-custom45/50 (button-grade slots), focus ring.
+    // Everything else: neutral white-tints on dark canvas.
+    --color-secondary: #16161A;
+    --color-text: #FFFFFF;
+    --color-third: #0B0B0E;
+    --color-forth: #F2E600;                         // CTA — KEEP yellow
+    --color-fifth: rgba(255, 255, 255, 0.08);
+    --color-sixth: rgba(255, 255, 255, 0.05);
+    --color-seventh: rgba(255, 255, 255, 0.85);
+    --color-gray: rgba(255, 255, 255, 0.62);
+    --color-input: #16161A;
+    --color-input-text: rgba(255, 255, 255, 0.62);
+    --color-table-border: rgba(255, 255, 255, 0.08);
+
+    --color-custom1: #16161A;                       // glass surface
+    --color-custom2: #0B0B0E;                       // glass subtle
+    --color-custom3: #0A0A0D;                       // canvas
+    --color-custom4: #F2E600;                       // CTA — KEEP yellow
+    --color-custom5: #FFFFFF;
+    --color-custom6: rgba(255, 255, 255, 0.05);
+    --color-custom7: rgba(255, 255, 255, 0.85);
+    --color-custom8: rgba(255, 255, 255, 0.05);
+    --color-custom9: #16161A;
+    --color-custom10: rgba(255, 255, 255, 0.75);
+    --color-custom11: #F2E600;                      // CTA variant — KEEP
+    --color-custom12: #FDE047;                      // CTA hover — KEEP light
+    --color-custom13: rgba(255, 255, 255, 0.85);
+    --color-custom14: rgba(255, 255, 255, 0.62);
+    --color-custom15: #0A0A0D;
+    --color-custom16: #0F0F12;
     --color-custom17: #FFFFFF;
-    --color-custom18: #969696;
-    --color-custom19: #FF4D4D;
-    --color-custom20: #181818;
-    --color-custom21: #2A2A2A;
-    --color-custom22: #FF4D4D;
-    --color-custom23: #000000;
-    --color-custom24: #FFEE00;
-    --color-custom25: #202020;
-    --color-custom26: #FFEE00;
-    --color-custom27: #7D7D7D;
-    --color-custom28: #FFEE00;
-    --color-custom29: #202020;
-    --color-custom30: #FFEE00;
-    --color-custom31: #181818;
-    --color-custom32: #181818;
-    --color-custom33: #F8F8F8;
-    --color-custom34: #2A2A2A;
-    --color-custom35: #202020;
-    --color-custom36: #7D7D7D;
-    --color-custom37: #181818;
-    --color-custom38: #969696;
+    --color-custom18: rgba(255, 255, 255, 0.40);
+    --color-custom19: #2A1A1A;                      // danger surface
+    --color-custom20: #0F0F12;
+    --color-custom21: rgba(255, 255, 255, 0.08);
+    --color-custom22: #4D2424;                      // danger border
+    --color-custom23: #0A0A0D;
+    --color-custom24: rgba(255, 255, 255, 0.85);
+    --color-custom25: rgba(255, 255, 255, 0.08);
+    --color-custom26: rgba(255, 255, 255, 0.78);
+    --color-custom27: rgba(255, 255, 255, 0.62);
+    --color-custom28: rgba(255, 255, 255, 0.85);
+    --color-custom29: rgba(255, 255, 255, 0.08);
+    --color-custom30: rgba(255, 255, 255, 0.85);
+    --color-custom31: #0F0F12;
+    --color-custom32: #0F0F12;
+    --color-custom33: #FFFFFF;
+    --color-custom34: rgba(255, 255, 255, 0.08);
+    --color-custom35: #16161A;
+    --color-custom36: rgba(255, 255, 255, 0.62);
+    --color-custom37: #0F0F12;
+    --color-custom38: rgba(255, 255, 255, 0.40);
     --color-custom39: #FFFFFF;
-    --color-custom40: #000000;
-    --color-custom41: #FFEE00;
-    --color-custom42: #29ABE2;
-    --color-custom43: #7D7D7D;
-    --color-custom44: #202020;
-    --color-custom45: #FFEE00;
-    --color-custom46: #7D7D7D;
-    --color-custom47: #181818;
-    --color-custom48: #000000;
-    --color-custom49: #000000;
-    --color-custom50: #FFEE00;
-    --color-custom51: #FFEE00;
-    --color-custom52: #181818;
-    --color-custom53: #7D7D7D;
-    --color-custom54: #2A2A2A;
-    --color-custom55: #202020;
-    --color-modalCustom: #000000;
+    --color-custom40: #0A0A0D;
+    --color-custom41: rgba(255, 255, 255, 0.85);
+    --color-custom42: rgba(255, 255, 255, 0.78);
+    --color-custom43: rgba(255, 255, 255, 0.62);
+    --color-custom44: rgba(255, 255, 255, 0.08);
+    --color-custom45: #F2E600;                      // CTA — KEEP yellow
+    --color-custom46: rgba(255, 255, 255, 0.62);
+    --color-custom47: #0F0F12;
+    --color-custom48: #0A0A0D;
+    --color-custom49: #0A0A0D;
+    --color-custom50: #F2E600;                      // CTA variant — KEEP
+    --color-custom51: rgba(255, 255, 255, 0.85);
+    --color-custom52: #0F0F12;
+    --color-custom53: rgba(255, 255, 255, 0.62);
+    --color-custom54: rgba(255, 255, 255, 0.08);
+    --color-custom55: #16161A;
+    --color-modalCustom: #1A1A1F;
   }
+
   .light {
-    --color-primary: #181818;
-    --color-secondary: #202020;
-    --color-text: #F8F8F8;
-    --color-third: #202020;
-    --color-forth: #FFEE00;
-    --color-fifth: var(--new-bgLineColor);
-    --color-sixth: var(--new-table-header);
-    --color-seventh: #FFEE00;
-    --color-gray: #969696;
-    --color-input: var(--new-table-header);
-    --color-input-text: #969696;
-    --color-table-border: #2A2A2A;
-    --color-custom1: #2A2A2A;
-    --color-custom2: #202020;
-    --color-custom3: #181818;
-    --color-custom4: #FFEE00;
-    --color-custom5: #F8F8F8;
-    --color-custom6: var(--new-bgLineColor);
-    --color-custom7: #FFEE00;
-    --color-custom8: var(--new-btn-simple);
-    --color-custom9: #2A2A2A;
-    --color-custom10: #FFCE3E;
-    --color-custom11: #FFEE00;
-    --color-custom12: #FFEE00;
-    --color-custom13: #FFEE00;
-    --color-custom14: #969696;
-    --color-custom15: #202020;
-    --color-custom16: #202020;
-    --color-custom17: #F8F8F8;
-    --color-custom18: #F8F8F8;
-    --color-custom19: #FF4D4D;
-    --color-custom20: #202020;
-    --color-custom21: #2A2A2A;
-    --color-custom22: #FF4D4D;
-    --color-custom23: #202020;
-    --color-custom24: #FFEE00;
-    --color-custom25: #2A2A2A;
-    --color-custom26: #FFEE00;
-    --color-custom27: #969696;
-    --color-custom28: #FFEE00;
-    --color-custom29: #2A2A2A;
-    --color-custom30: #2A2A2A;
-    --color-custom31: #2A2A2A;
-    --color-custom32: #202020;
-    --color-custom33: #F8F8F8;
-    --color-custom34: #2A2A2A;
-    --color-custom35: #2A2A2A;
-    --color-custom36: #969696;
-    --color-custom37: #202020;
-    --color-custom38: #969696;
-    --color-custom39: #F8F8F8;
-    --color-custom40: #181818;
-    --color-custom41: #FFEE00;
-    --color-custom42: #29ABE2;
-    --color-custom43: #969696;
-    --color-custom44: #2A2A2A;
-    --color-custom45: #FFEE00;
-    --color-custom46: #969696;
-    --color-custom47: #202020;
-    --color-custom48: #181818;
-    --color-custom49: #202020;
-    --color-custom50: #FFEE00;
-    --color-custom51: #FFEE00;
-    --color-custom52: #202020;
-    --color-custom53: #969696;
-    --color-custom54: #2A2A2A;
-    --color-custom55: #2A2A2A;
-    --color-modalCustom: #181818;
+    --color-secondary: #FFFFFF;
+    --color-text: #0E0D00;
+    --color-third: #FEFCE8;
+    --color-forth: #F2E600;
+    --color-fifth: rgba(161, 98, 7, 0.10);
+    --color-sixth: rgba(161, 98, 7, 0.04);
+    --color-seventh: #F2E600;
+    --color-gray: rgba(14, 13, 0, 0.55);
+    --color-input: #FFFFFF;
+    --color-input-text: rgba(14, 13, 0, 0.55);
+    --color-table-border: rgba(161, 98, 7, 0.10);
+
+    --color-custom1: #FFFFFF;
+    --color-custom2: #FEFCE8;
+    --color-custom3: #FEFCE8;
+    --color-custom4: #F2E600;
+    --color-custom5: #0E0D00;
+    --color-custom6: rgba(161, 98, 7, 0.04);
+    --color-custom7: #F2E600;
+    --color-custom8: rgba(161, 98, 7, 0.04);
+    --color-custom9: #FFFFFF;
+    --color-custom10: #FDE047;
+    --color-custom11: #F2E600;
+    --color-custom12: #F2E600;
+    --color-custom13: #F2E600;
+    --color-custom14: rgba(14, 13, 0, 0.55);
+    --color-custom15: #FEFCE8;
+    --color-custom16: #FEF9C3;
+    --color-custom17: #0E0D00;
+    --color-custom18: rgba(14, 13, 0, 0.55);
+    --color-custom19: #4D3800;
+    --color-custom20: #FEF9C3;
+    --color-custom21: rgba(161, 98, 7, 0.10);
+    --color-custom22: #4D3800;
+    --color-custom23: #FEFCE8;
+    --color-custom24: #F2E600;
+    --color-custom25: rgba(161, 98, 7, 0.10);
+    --color-custom26: #FDE047;
+    --color-custom27: rgba(14, 13, 0, 0.55);
+    --color-custom28: #F2E600;
+    --color-custom29: rgba(161, 98, 7, 0.10);
+    --color-custom30: #F2E600;
+    --color-custom31: #FEF9C3;
+    --color-custom32: #FEF9C3;
+    --color-custom33: #0E0D00;
+    --color-custom34: rgba(161, 98, 7, 0.10);
+    --color-custom35: #FFFFFF;
+    --color-custom36: rgba(14, 13, 0, 0.55);
+    --color-custom37: #FEF9C3;
+    --color-custom38: rgba(14, 13, 0, 0.40);
+    --color-custom39: #0E0D00;
+    --color-custom40: #FEFCE8;
+    --color-custom41: #F2E600;
+    --color-custom42: #FDE047;
+    --color-custom43: rgba(14, 13, 0, 0.55);
+    --color-custom44: rgba(161, 98, 7, 0.10);
+    --color-custom45: #F2E600;
+    --color-custom46: rgba(14, 13, 0, 0.55);
+    --color-custom47: #FEF9C3;
+    --color-custom48: #FEFCE8;
+    --color-custom49: #FEFCE8;
+    --color-custom50: #F2E600;
+    --color-custom51: #F2E600;
+    --color-custom52: #FEF9C3;
+    --color-custom53: rgba(14, 13, 0, 0.55);
+    --color-custom54: rgba(161, 98, 7, 0.10);
+    --color-custom55: #FFFFFF;
+    --color-modalCustom: #FFFFFF;
   }
 }

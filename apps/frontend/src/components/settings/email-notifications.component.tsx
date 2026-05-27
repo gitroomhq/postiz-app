@@ -99,7 +99,7 @@ const EmailNotificationsComponent = () => {
   if (isLoading) {
     return (
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border p-[24px]">
-        <div className="animate-pulse">
+        <div className="opacity-70">
           {t('loading', 'Loading...')}
         </div>
       </div>

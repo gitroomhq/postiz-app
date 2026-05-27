@@ -13,7 +13,7 @@ export const TestimonialComponent = () => {
         <div className="absolute w-full h-[120px] left-0 top-0 blackGradTopBg z-[100]" />
         <div className="absolute w-full h-[120px] left-0 bottom-0 blackGradBottomBg z-[100]" />
         <div className="flex justify-center gap-[12px]">
-          <div className="flex flex-col animate-marqueeUp flex-1 gap-[12px]">
+          <div className="flex flex-col animate-fadeIn flex-1 gap-[12px]">
             {[1, 2].flatMap((p) =>
               testimonials1.flatMap((a) => (
                 <div
@@ -25,7 +25,7 @@ export const TestimonialComponent = () => {
               ))
             )}
           </div>
-          <div className="flex flex-col animate-marqueeDown flex-1 gap-[12px]">
+          <div className="flex flex-col animate-fadeIn flex-1 gap-[12px]">
             {[1, 2].flatMap((p) =>
               testimonials2.flatMap((a) => (
                 <div

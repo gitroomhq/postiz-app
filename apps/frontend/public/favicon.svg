@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#1D4ED8"/>
-  <text x="32" y="44" font-family="-apple-system, 'Segoe UI', Inter, system-ui, sans-serif" font-size="34" font-weight="800" text-anchor="middle" fill="#ffffff" letter-spacing="-1">D3</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <g fill="#F2E600">
+    <path d="M 40 30 L 130 30 L 160 60 L 160 78 L 188 100 L 160 122 L 160 110 L 130 110 L 130 75 L 70 75 L 70 110 L 40 110 Z"/>
+    <path d="M 200 210 L 110 210 L 80 180 L 80 162 L 52 140 L 80 118 L 80 130 L 110 130 L 110 165 L 170 165 L 170 130 L 200 130 Z"/>
+  </g>
 </svg>

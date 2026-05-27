@@ -1,25 +1,79 @@
 const { join } = require('path');
+// D3 Creator — Yellow brand mono, Linear-flat. See /DESIGN.md.
+// Primary color: #F2E600 (logo). One hue, tonal shades only.
 module.exports = {
   darkMode: 'class',
   content: ['./src/**/*.{ts,tsx,html}', '../../libraries/**/*.{ts,tsx,html}'],
   theme: {
     extend: {
       colors: {
-        lamboBlack: '#000000',
-        lamboCharcoal: '#202020',
-        lamboIron: '#181818',
-        lamboGold: '#FFEE00',
-        lamboGoldDark: '#917300',
-        lamboGoldText: '#FFCE3E',
+        // ---- BRAND tonal scale (built from logo #F2E600) -----------------
+        brand: {
+          50: '#FEFCE8',
+          100: '#FEF9C3',
+          200: '#FEF08A',
+          300: '#FDE047',
+          400: '#FACC15',
+          500: '#F2E600',   // *** LOGO ***
+          600: '#CA8A04',
+          700: '#A16207',
+          800: '#854D0E',
+          900: '#4D3800',
+          950: '#1A1900',
+          DEFAULT: '#F2E600',
+          light: '#FDE047',
+          lighter: '#FEF08A',
+          dark: '#9C9400',
+          darker: '#0E0D00',
+          deepest: '#050500',
+        },
+        // Aurora aliases: neutral white-tints (yellow scarce per Linear).
+        // Only cta + ctaHover stay yellow. Pages that use aurora.violet/cyan/pink
+        // for chips/dots now render as muted neutrals — no decorative yellow.
+        aurora: {
+          cyan: 'rgba(255, 255, 255, 0.78)',
+          violet: 'rgba(255, 255, 255, 0.85)',
+          pink: 'rgba(255, 255, 255, 0.62)',
+          cta: '#F2E600',
+          ctaHover: '#FDE047',
+        },
+        canvas: 'var(--canvas)',
+        canvasDeep: 'var(--canvas-deep)',
+        glass: {
+          base: 'var(--glass-base)',
+          elevated: 'var(--glass-elevated)',
+          subtle: 'var(--glass-subtle)',
+          modal: 'var(--glass-modal)',
+        },
+        borderGlass: 'var(--border-glass)',
+        borderGlassStrong: 'var(--border-glass-strong)',
+        scrim: 'var(--scrim)',
+        fg: 'var(--fg)',
+        fgMuted: 'var(--fg-muted)',
+        fgSubtle: 'var(--fg-subtle)',
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        danger: 'var(--color-danger)',
+        info: 'var(--color-info)',
+
+        // ---- Legacy lambo* aliases — every value now yellow brand --------
+        lamboBlack: '#0E0D00',
+        lamboCharcoal: '#1A1900',
+        lamboIron: '#050500',
+        lamboGold: '#F2E600',
+        lamboGoldDark: '#9C9400',
+        lamboGoldText: '#FDE047',
         lamboWhite: '#FFFFFF',
-        lamboSmoke: '#F5F5F5',
-        lamboAsh: '#7D7D7D',
-        lamboSteel: '#969696',
-        lamboGraphite: '#494949',
-        lamboShadow: '#313131',
-        lamboCyan: '#29ABE2',
-        lamboLink: '#3860BE',
-        lamboTeal: '#1EAEDB',
+        lamboSmoke: '#FEF9C3',
+        lamboAsh: 'rgba(255, 255, 255, 0.65)',
+        lamboSteel: 'rgba(255, 255, 255, 0.65)',
+        lamboGraphite: '#4D3800',
+        lamboShadow: '#2A2810',
+        lamboCyan: '#FDE047',
+        lamboLink: '#F2E600',
+        lamboTeal: '#F2E600',
+
+        // ---- Legacy token mapping (preserves existing class names) -------
         primary: 'var(--color-primary)',
         secondary: 'var(--color-secondary)',
         textColor: 'var(--new-btn-text)',
@@ -88,7 +142,6 @@ module.exports = {
         customColor54: 'var(--color-custom54)',
         customColor55: 'var(--color-custom55)',
         modalCustom: 'var(--color-modalCustom)',
-
         newBgColor: 'var(--new-bgColor)',
         newBackdrop: 'var(--new-back-drop)',
         newSep: 'var(--new-sep)',
@@ -131,182 +184,215 @@ module.exports = {
       },
       gridTemplateColumns: {
         13: 'repeat(13, minmax(0, 1fr));',
+        bento: 'repeat(12, minmax(0, 1fr))',
+      },
+      gridAutoRows: {
+        bento: 'minmax(180px, auto)',
       },
       backgroundImage: {
+        // Single-axis linear only. Yellow shades only. No multi-hue.
+        brandVert: 'linear-gradient(180deg, #F2E600 0%, #9C9400 100%)',
+        brandHoriz: 'linear-gradient(90deg, #9C9400 0%, #F2E600 100%)',
+        brandFade: 'linear-gradient(180deg, rgba(242, 230, 0, 0.10) 0%, transparent 100%)',
+        brandSheen: 'linear-gradient(90deg, transparent 0%, rgba(242, 230, 0, 0.10) 50%, transparent 100%)',
+        // Aurora aliases (kept for backwards compat — all yellow shades now)
+        aurora: 'linear-gradient(180deg, #F2E600 0%, #9C9400 100%)',
+        auroraSoft: 'linear-gradient(180deg, rgba(242, 230, 0, 0.10) 0%, transparent 100%)',
+        auroraGlow: 'linear-gradient(180deg, rgba(242, 230, 0, 0.12) 0%, transparent 100%)',
+        glassShimmer: 'linear-gradient(90deg, transparent 40%, rgba(242, 230, 0, 0.08) 50%, transparent 60%)',
         loginBox: 'url(/auth/login-box.png)',
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['Archivo', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        display: ['"Archivo Black"', 'Archivo', 'Helvetica Neue', 'sans-serif'],
-        lambo: ['Archivo', 'Helvetica Neue', 'sans-serif'],
+        sans: ['Inter', 'Geist', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'Geist', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['"Geist Mono"', '"JetBrains Mono"', '"SF Mono"', 'Menlo', 'monospace'],
+        lambo: ['Inter', 'Geist', '-apple-system', 'sans-serif'],
+      },
+      fontSize: {
+        // Linear-style type scale — large confident headings, 15-16px body
+        'display-1': ['clamp(48px, 6vw, 88px)', { lineHeight: '1.04', letterSpacing: '-0.035em', fontWeight: '700' }],
+        'display-2': ['clamp(36px, 4vw, 56px)', { lineHeight: '1.08', letterSpacing: '-0.03em', fontWeight: '700' }],
+        'section': ['32px', { lineHeight: '1.15', letterSpacing: '-0.025em', fontWeight: '600' }],
+        'subsection': ['22px', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '600' }],
+        'heading': ['18px', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'body-lg': ['17px', { lineHeight: '1.6' }],
+        'body': ['15px', { lineHeight: '1.6' }],
+        'body-sm': ['14px', { lineHeight: '1.55' }],
+        'label': ['13px', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '500' }],
+        'caption': ['12px', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '500' }],
+        'micro': ['11px', { lineHeight: '1.4', letterSpacing: '0.03em', fontWeight: '500' }],
       },
       borderRadius: {
         none: '0px',
-        DEFAULT: '0px',
-        sm: '0px',
-        md: '0px',
-        lg: '0px',
-        xl: '0px',
-        '2xl': '0px',
-        '3xl': '0px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '6px',
+        lg: '8px',
+        xl: '10px',
+        '2xl': '12px',
+        '3xl': '16px',
+        '4xl': '24px',
         full: '9999px',
       },
-      animation: {
-        fade: 'fadeOut 0.5s ease-in-out',
-        normalFadeIn: 'normalFadeIn 0.5s ease-in-out',
-        fadeIn: 'normalFadeIn 0.2s ease-in-out forwards',
-        normalFadeOut: 'normalFadeOut 0.5s linear 5s forwards',
-        overflow: 'overFlow 0.5s ease-in-out forwards',
-        overflowReverse: 'overFlowReverse 0.5s ease-in-out forwards',
-        fadeDown: 'fadeDown 4s ease-in-out forwards',
-        normalFadeDown: 'normalFadeDown 0.5s ease-in-out forwards',
-        newMessages: 'newMessages 1s ease-in-out 4s forwards',
-        marqueeUp: 'marquee-up 100s linear infinite',
-        marqueeDown: 'marquee-down 100s linear infinite',
+      backdropBlur: {
+        xs: '4px',
+        sm: '8px',
+        DEFAULT: '12px',
+        md: '16px',
+        lg: '20px',
+        xl: '28px',
+        '2xl': '40px',
+        '3xl': '56px',
+      },
+      backdropSaturate: {
+        125: '1.25',
+        150: '1.5',
+        180: '1.8',
+        200: '2',
       },
       boxShadow: {
-        yellow: '0 0 60px 20px #6b6237',
-        yellowToast: '0px 0px 50px rgba(252, 186, 3, 0.3)',
-        greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
+        // Linear-style: minimal, dark, no colored glow
+        glass: '0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30)',
+        glassSm: '0 1px 2px rgba(0, 0, 0, 0.30)',
+        glassLg: '0 4px 16px rgba(0, 0, 0, 0.40), 0 16px 48px rgba(0, 0, 0, 0.50)',
+        glassInsetTop: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+        // CTA: subtle dark drop, no yellow glow
+        ctaGlow: '0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30)',
+        violetGlow: '0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30)',
+        brandGlow: '0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30)',
+        focusRing: '0 0 0 2px rgba(242, 230, 0, 0.40)',
+        focusRingCyan: '0 0 0 2px rgba(242, 230, 0, 0.40)',
+        // Legacy
+        yellow: '0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30)',
+        yellowToast: '0 4px 16px rgba(0, 0, 0, 0.40)',
+        greenToast: '0 4px 16px rgba(0, 0, 0, 0.40)',
         menu: 'var(--menu-shadow)',
         previewShadow: 'var(--preview-box-shadow)',
       },
       dropShadow: {
-        glow: [
-          '0 0 6px rgba(250,204,21,0.6)',
-          '0 0 12px rgba(250,204,21,0.5)',
-          '0 0 24px rgba(250,204,21,0.4)',
-        ],
+        // Stripped colored glows — Linear uses none
+        glow: ['0 1px 2px rgba(0, 0, 0, 0.50)'],
+        aurora: ['0 1px 2px rgba(0, 0, 0, 0.50)'],
       },
-      // that is actual animation
+      animation: {
+        // Linear-style: 150-200ms ease-out only, no decorative loops
+        riseIn: 'riseIn 0.18s ease-out forwards',
+        scaleIn: 'scaleIn 0.18s ease-out forwards',
+        // Legacy preserved — capped to ≤200ms ease-out single-fire
+        fade: 'fadeOut 0.18s ease-out',
+        normalFadeIn: 'normalFadeIn 0.18s ease-out',
+        fadeIn: 'normalFadeIn 0.18s ease-out forwards',
+        normalFadeOut: 'normalFadeOut 0.18s ease-out 4s forwards',
+        overflow: 'overFlow 0.18s ease-out forwards',
+        overflowReverse: 'overFlowReverse 0.18s ease-out forwards',
+        fadeDown: 'normalFadeDown 0.18s ease-out forwards',
+        normalFadeDown: 'normalFadeDown 0.18s ease-out forwards',
+        newMessages: 'newMessages 0.2s ease-out 4s forwards',
+        // Anti-slop: no infinite decorative loops. All replaced with single-fire fade.
+        sheen: 'normalFadeIn 0.18s ease-out',
+        marqueeUp: 'normalFadeIn 0.18s ease-out',
+        marqueeDown: 'normalFadeIn 0.18s ease-out',
+        auroraDrift: 'normalFadeIn 0.18s ease-out',
+        shimmer: 'normalFadeIn 0.18s ease-out',
+        glow: 'normalFadeIn 0.18s ease-out',
+      },
       keyframes: (theme) => ({
+        sheen: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        riseIn: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.98)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
         fadeOut: {
-          '0%': {
-            opacity: 0,
-            transform: 'translateY(30px)',
-          },
-          '100%': {
-            opacity: 1,
-            transform: 'translateY(0)',
-          },
+          '0%': { opacity: 0, transform: 'translateY(8px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
         },
-        normalFadeOut: {
-          '0%': {
-            opacity: 1,
-          },
-          '100%': {
-            opacity: 0,
-          },
-        },
-        normalFadeIn: {
-          '0%': {
-            opacity: 0,
-          },
-          '100%': {
-            opacity: 1,
-          },
-        },
+        normalFadeOut: { '0%': { opacity: 1 }, '100%': { opacity: 0 } },
+        normalFadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
         overFlow: {
-          '0%': {
-            overflow: 'hidden',
-          },
-          '99%': {
-            overflow: 'hidden',
-          },
-          '100%': {
-            overflow: 'visible',
-          },
+          '0%': { overflow: 'hidden' },
+          '99%': { overflow: 'hidden' },
+          '100%': { overflow: 'visible' },
         },
         overFlowReverse: {
-          '0%': {
-            overflow: 'visible',
-          },
-          '99%': {
-            overflow: 'visible',
-          },
-          '100%': {
-            overflow: 'hidden',
-          },
+          '0%': { overflow: 'visible' },
+          '99%': { overflow: 'visible' },
+          '100%': { overflow: 'hidden' },
         },
         fadeDown: {
-          '0%': {
-            opacity: 0,
-            marginTop: -30,
-          },
-          '10%': {
-            opacity: 1,
-            marginTop: 0,
-          },
-          '85%': {
-            opacity: 1,
-            marginTop: 0,
-          },
-          '90%': {
-            opacity: 1,
-            marginTop: 10,
-          },
-          '100%': {
-            opacity: 0,
-            marginTop: -30,
-          },
+          '0%': { opacity: 0, marginTop: -16 },
+          '10%': { opacity: 1, marginTop: 0 },
+          '85%': { opacity: 1, marginTop: 0 },
+          '90%': { opacity: 1, marginTop: 4 },
+          '100%': { opacity: 0, marginTop: -16 },
         },
         normalFadeDown: {
-          '0%': {
-            opacity: 0,
-            transform: 'translateY(-30px)',
-          },
-          '100%': {
-            opacity: 1,
-            transform: 'translateY(0)',
-          },
+          '0%': { opacity: 0, transform: 'translateY(-8px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
         },
         newMessages: {
-          '0%': {
-            backgroundColor: 'var(--color-seventh)',
-            fontWeight: 'bold',
-          },
-          '99%': {
-            backgroundColor: 'var(--color-third)',
-            fontWeight: 'bold',
-          },
-          '100%': {
-            backgroundColor: 'var(--color-third)',
-            fontWeight: 'normal',
-          },
+          '0%': { backgroundColor: 'var(--color-seventh)' },
+          '100%': { backgroundColor: 'var(--color-third)' },
         },
       }),
       screens: {
-        mobile: {
-          raw: '(max-width: 1025px)',
-        },
-        tablet: {
-          raw: '(max-width: 1300px)',
-        },
-        iconBreak: {
-          raw: '(max-width: 1560px)',
-        },
-        maxMedia: {
-          raw: '(max-width: 1400px)',
-        },
-        minCustom: {
-          raw: '(min-height: 800px)',
-        },
-        custom: {
-          raw: '(max-height: 800px)',
-        },
-        xs: {
-          max: '401px',
-        },
+        mobile: { raw: '(max-width: 1025px)' },
+        tablet: { raw: '(max-width: 1300px)' },
+        iconBreak: { raw: '(max-width: 1560px)' },
+        maxMedia: { raw: '(max-width: 1400px)' },
+        minCustom: { raw: '(min-height: 800px)' },
+        custom: { raw: '(max-height: 800px)' },
+        xs: { max: '401px' },
+      },
+      transitionTimingFunction: {
+        // Linear uses ease-out exclusively. Spring/liquid mapped to ease-out (anti-slop).
+        spring: 'cubic-bezier(0, 0, 0.2, 1)',
+        liquid: 'cubic-bezier(0, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        DEFAULT: '180ms',
       },
     },
   },
   plugins: [
     require('tailwind-scrollbar'),
     require('tailwindcss-rtl'),
-    function ({ addVariant }) {
+    function ({ addVariant, addUtilities }) {
       addVariant('child', '& > *');
       addVariant('child-hover', '& > *:hover');
+      addUtilities({
+        // Linear-flat surfaces — solid dark, no backdrop blur required
+        '.glass': {
+          background: 'var(--glass-base)',
+          border: '1px solid var(--border-glass)',
+        },
+        '.glass-elevated': {
+          background: 'var(--glass-elevated)',
+          border: '1px solid var(--border-glass-strong)',
+        },
+        '.glass-subtle': {
+          background: 'var(--glass-subtle)',
+          border: '1px solid var(--border-glass)',
+        },
+        '.glass-modal': {
+          background: 'var(--glass-modal)',
+          border: '1px solid var(--border-glass-strong)',
+        },
+        // Anti-slop: gradient text utilities stripped to solid yellow.
+        '.aurora-text': {
+          color: '#F2E600',
+        },
+        '.brand-text': {
+          color: '#F2E600',
+        },
+      });
     },
   ],
 };

@@ -95,7 +95,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
               {[...new Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square bg-newSep animate-pulse"
+                  className="aspect-square bg-newSep"
                 />
               ))}
             </div>
@@ -209,7 +209,7 @@ const ThirdPartyMediaLibraryPicker: FC<{
         <div
           key={p.id}
           onClick={() => setSelected(p)}
-          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder transition-colors duration-180 ease-out text-textColor relative flex flex-col gap-[15px] cursor-pointer"
         >
           <div>
             <img
