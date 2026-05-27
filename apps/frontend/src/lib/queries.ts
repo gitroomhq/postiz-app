@@ -270,6 +270,131 @@ export async function getLiveCreatorRows(): Promise<LiveCreatorRow[] | null> {
   return rows.map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
+/**
+ * Top creators for the home page "Top Creators" bento.
+ *
+ * Ranking strategy is signal-aware:
+ *   - If any creator has a real 30d growth signal (≥14 days tracked, positive
+ *     delta), rank by growth30d desc. This is the intended "movers" ranking.
+ *   - Otherwise (early days, no 30d history yet), fall back to ranking by
+ *     current follower count so the bento still shows live creators while
+ *     growth history accrues.
+ *
+ * Returns null only when there are zero creators (caller falls back to demo).
+ */
+export async function getTopCreatorsByGrowth(
+  limit = 3,
+): Promise<LiveCreatorRow[] | null> {
+  const rows = await getLiveCreatorRows();
+  if (!rows || rows.length === 0) return null;
+
+  const withGrowth = rows.filter((r) => !r.insufficient && r.growth30d > 0);
+  const sorted =
+    withGrowth.length > 0
+      ? [...withGrowth].sort((a, b) => b.growth30d - a.growth30d)
+      : [...rows].sort((a, b) => b.followers - a.followers);
+
+  return sorted.slice(0, limit).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+// ---------- Platform breakdown (Task 5 step 4 — home page) ----------
+
+export interface LivePlatformBreakdown {
+  platform: PlatformKey;
+  /** DB platform string (e.g. 'rednote' even when key is 'xiaohongshu'). */
+  dbPlatform: string;
+  followers: number;
+  /** 0 when no profile on this platform has ≥30d of snapshots yet. */
+  growth30d: number;
+  creatorCount: number;
+}
+
+/**
+ * Per-platform aggregate for the home page "Five platforms. One showcase."
+ * strip. Sums latest follower counts and 30d net adds across every profile
+ * on each platform.
+ *
+ * Returns only platforms with at least one profile in the DB. The home page
+ * merges these with the synthetic PLATFORM_BREAKDOWN so all five cards
+ * always render — empty platforms show demo data.
+ *
+ * Returns null when the snapshot table is empty (caller falls back to demo).
+ */
+export async function getPlatformBreakdown(): Promise<
+  LivePlatformBreakdown[] | null
+> {
+  const sb = getSupabaseRead();
+
+  const profiles = await sb.from('profile').select('id, creator_id, platform');
+  if (profiles.error || !profiles.data || profiles.data.length === 0) {
+    if (profiles.error)
+      console.error('[queries] getPlatformBreakdown profiles', profiles.error);
+    return null;
+  }
+
+  const snaps = await sb
+    .from('profile_snapshot')
+    .select('profile_id, captured_at, followers')
+    .order('captured_at', { ascending: false })
+    .limit(5000);
+  if (snaps.error) {
+    console.error('[queries] getPlatformBreakdown snaps', snaps.error);
+    return null;
+  }
+
+  // Latest + earliest-in-30d-window per profile.
+  const latestByProfile = new Map<string, number>();
+  const earliest30dByProfile = new Map<string, number>();
+  const thirtyDaysAgoIso = new Date(
+    Date.now() - 30 * 86400_000,
+  ).toISOString();
+  for (const s of snaps.data ?? []) {
+    const id = s.profile_id as string;
+    const followers = (s.followers as number | null) ?? 0;
+    if (!latestByProfile.has(id)) latestByProfile.set(id, followers);
+    if ((s.captured_at as string) > thirtyDaysAgoIso) {
+      earliest30dByProfile.set(id, followers);
+    }
+  }
+
+  // Group profiles by platform and roll up.
+  interface Bucket {
+    followers: number;
+    prior: number;
+    priorSeen: boolean;
+    creatorIds: Set<string>;
+  }
+  const byPlatform = new Map<string, Bucket>();
+  for (const p of profiles.data) {
+    const bucket: Bucket = byPlatform.get(p.platform) ?? {
+      followers: 0,
+      prior: 0,
+      priorSeen: false,
+      creatorIds: new Set(),
+    };
+    bucket.followers += latestByProfile.get(p.id) ?? 0;
+    const prior = earliest30dByProfile.get(p.id);
+    if (prior !== undefined) {
+      bucket.prior += prior;
+      bucket.priorSeen = true;
+    }
+    bucket.creatorIds.add(p.creator_id as string);
+    byPlatform.set(p.platform, bucket);
+  }
+
+  const out: LivePlatformBreakdown[] = [];
+  for (const [dbPlatform, b] of byPlatform.entries()) {
+    out.push({
+      platform: dbPlatformToKey(dbPlatform),
+      dbPlatform,
+      followers: b.followers,
+      growth30d: b.priorSeen ? b.followers - b.prior : 0,
+      creatorCount: b.creatorIds.size,
+    });
+  }
+  return out.length > 0 ? out : null;
+}
+
 // ---------- Creator detail (Task 5 step 3) ----------
 
 export interface CreatorPlatformSlot {

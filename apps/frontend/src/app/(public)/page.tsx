@@ -20,7 +20,13 @@ import {
   summarize,
   TOP_CREATORS,
 } from '@gitroom/frontend/components/dashboard-showcase/showcase-data';
-import { getSiteSummary } from '@gitroom/frontend/lib/queries';
+import {
+  getSiteSummary,
+  getTopCreatorsByGrowth,
+  getPlatformBreakdown,
+  type LiveCreatorRow,
+  type LivePlatformBreakdown,
+} from '@gitroom/frontend/lib/queries';
 
 // Server Component fetches live counts on each request — disable static
 // optimization so the hero never goes stale.
@@ -44,10 +50,23 @@ const PLATFORM_ORDER: PlatformKey[] = [
 export default async function HomePage() {
   const demoSummary = summarize('all');
   // Live counts from Supabase when present; otherwise the design demo stays in.
-  const liveSummary = await getSiteSummary().catch((err) => {
-    console.error('[home] getSiteSummary failed — falling back to demo data', err);
-    return null;
-  });
+  // Fire all three queries in parallel — Server Component renders block on
+  // the slowest one anyway, no point in serializing.
+  const [liveSummary, liveTopCreators, livePlatformBreakdown] = await Promise.all([
+    getSiteSummary().catch((err) => {
+      console.error('[home] getSiteSummary failed', err);
+      return null;
+    }),
+    getTopCreatorsByGrowth(3).catch((err) => {
+      console.error('[home] getTopCreatorsByGrowth failed', err);
+      return null;
+    }),
+    getPlatformBreakdown().catch((err) => {
+      console.error('[home] getPlatformBreakdown failed', err);
+      return null;
+    }),
+  ]);
+
   const summary = liveSummary
     ? {
         ...demoSummary,
@@ -56,7 +75,20 @@ export default async function HomePage() {
         combinedGrowth30d: liveSummary.combinedFollowersDelta30d,
       }
     : demoSummary;
-  const topThree = TOP_CREATORS.slice(0, 3);
+
+  // Top Creators bento: live when we have ≥1 creator past the 14-day
+  // sufficiency gate with positive 30d growth; else fall back to the
+  // synthetic top-3 so the section still has something to show.
+  const topThree: TopCreatorCard[] = liveTopCreators
+    ? liveTopCreators.map(liveRowToCard)
+    : TOP_CREATORS.slice(0, 3).map(demoRowToCard);
+
+  // Per-platform cards: merge live + demo. Each of the five platforms either
+  // has live data (preferred) or falls back to its demo entry so the strip
+  // always renders five cards.
+  const liveByPlatform = new Map<PlatformKey, LivePlatformBreakdown>();
+  for (const p of livePlatformBreakdown ?? []) liveByPlatform.set(p.platform, p);
+
   const allMetrics = METRICS.all;
 
   return (
@@ -232,13 +264,16 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5">
           {PLATFORM_ORDER.map((platform) => {
             const Icon = PLATFORM_ICONS[platform];
-            const breakdown = PLATFORM_BREAKDOWN.find(
-              (p) => p.platform === platform
-            );
-            const creatorCount = TOP_CREATORS.filter(
-              (c) => c.primaryPlatform === platform
-            ).length;
-            if (!breakdown) return null;
+            // Prefer live data; fall back to the demo entry so empty
+            // platforms still render a card.
+            const live = liveByPlatform.get(platform);
+            const demo = PLATFORM_BREAKDOWN.find((p) => p.platform === platform);
+            const followers = live?.followers ?? demo?.followers ?? 0;
+            const growth30d = live?.growth30d ?? demo?.growth30d ?? 0;
+            const creatorCount =
+              live?.creatorCount ??
+              TOP_CREATORS.filter((c) => c.primaryPlatform === platform).length;
+            if (!live && !demo) return null;
             return (
               <Link
                 key={platform}
@@ -266,12 +301,12 @@ export default async function HomePage() {
                       {PLATFORM_LABELS[platform]}
                     </span>
                     <span className="text-[clamp(20px,2vw,24px)] leading-none tracking-[-0.02em] font-semibold text-fg tabular-nums">
-                      {compactFormatter.format(breakdown.followers)}
+                      {compactFormatter.format(followers)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-caption text-fgMuted font-mono tabular-nums pt-3 border-t border-borderGlass">
-                    <span>+{compactFormatter.format(breakdown.growth30d)}</span>
+                    <span>+{compactFormatter.format(growth30d)}</span>
                     <span>30d</span>
                   </div>
                 </GlassCard>
@@ -338,6 +373,38 @@ export default async function HomePage() {
       </section>
     </div>
   );
+}
+
+// Normalized shape used by the Top Creators bento; both live and demo
+// rows are projected into this so the JSX doesn't branch.
+interface TopCreatorCard {
+  rank: number;
+  handle: string;
+  primaryPlatform: PlatformKey;
+  followers: number;
+}
+
+function liveRowToCard(r: LiveCreatorRow): TopCreatorCard {
+  return {
+    rank: r.rank,
+    handle: r.handle,
+    primaryPlatform: r.primaryPlatform,
+    followers: r.followers,
+  };
+}
+
+function demoRowToCard(r: {
+  rank: number;
+  handle: string;
+  primaryPlatform: PlatformKey;
+  followers: number;
+}): TopCreatorCard {
+  return {
+    rank: r.rank,
+    handle: r.handle,
+    primaryPlatform: r.primaryPlatform,
+    followers: r.followers,
+  };
 }
 
 interface SectionLabelProps {
