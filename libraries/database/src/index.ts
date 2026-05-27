@@ -16,6 +16,14 @@ export {
   type ProfileUrlValidationError,
 } from './profile-url';
 export { addProfile, type AddProfileInput } from './profile';
+export {
+  listScrapeableProfiles,
+  upsertProfileSnapshot,
+  upsertPostSnapshots,
+  setProfileStatus,
+  type ProfileSnapshotInput,
+  type PostSnapshotInput,
+} from './snapshots';
 export type {
   Platform,
   ScrapeStatus,

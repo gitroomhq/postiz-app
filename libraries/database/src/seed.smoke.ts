@@ -36,7 +36,7 @@ async function main() {
     profile_url: 'https://www.instagram.com/cristiano/',
   });
   console.log('[seed] addProfile p1:', p1);
-  if (!p1.ok) throw new Error('addProfile failed: ' + p1.error);
+  if (p1.ok !== true) throw new Error('addProfile failed: ' + p1.error);
 
   // 4. addProfile() — second IG without nickname should fail per spec §3 step 2
   const p2 = await addProfile({
@@ -55,7 +55,7 @@ async function main() {
     nickname: 'Personal',
   });
   console.log('[seed] addProfile p3 (with nickname):', p3);
-  if (!p3.ok) throw new Error('addProfile p3 failed: ' + p3.error);
+  if (p3.ok !== true) throw new Error('addProfile p3 failed: ' + p3.error);
 
   // 6. Cleanup: cascade delete via client
   const del = await sb.from('client').delete().eq('id', c.data.id);
