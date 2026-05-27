@@ -11,15 +11,25 @@ interface ContentGridProps {
   platform: PlatformKey;
   /** Number of posts to render (default 24) */
   limit?: number;
+  /** Real posts from Supabase. When non-null + non-empty, overrides the mock. */
+  posts?: ContentPost[] | null;
 }
 
-export function ContentGrid({ creatorSlug, platform, limit = 24 }: ContentGridProps) {
+export function ContentGrid({
+  creatorSlug,
+  platform,
+  limit = 24,
+  posts: livePosts,
+}: ContentGridProps) {
   const posts = useMemo(() => {
-    const all = getCreatorPosts(creatorSlug, platform);
-    return [...all]
+    const source =
+      livePosts && livePosts.length > 0
+        ? livePosts
+        : getCreatorPosts(creatorSlug, platform);
+    return [...source]
       .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
       .slice(0, limit);
-  }, [creatorSlug, platform, limit]);
+  }, [creatorSlug, platform, limit, livePosts]);
 
   const [open, setOpen] = useState<ContentPost | null>(null);
 
