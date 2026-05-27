@@ -12,12 +12,13 @@
  * profile fields (username/followersCount/etc). First item is our source of
  * truth for the profile snapshot; all items map to post snapshots.
  *
- * Note: IG does not expose lifetime totals via the public profile page.
- *  - total_posts:  null  (not in this actor's output — would need separate scrape)
- *  - total_views:  sum of videoViewCount across the fetched window
- *  - total_likes:  sum of likesCount across the fetched window
- * These are window-totals, not platform-lifetime. Document in UI per spec
- * §6 "data accuracy gaps" tooltip.
+ * Output mapping:
+ *   Profile
+ *     - total_posts:  raw.postsCount (lifetime, from parent profile data)
+ *     - total_views:  sum of videoViewCount across the fetched window
+ *     - total_likes:  sum of likesCount across the fetched window
+ * total_views/total_likes are window-totals, not platform-lifetime. Document
+ * in UI per spec §6 "data accuracy gaps" tooltip.
  */
 
 import { runActor } from '../apify-client';
@@ -55,6 +56,7 @@ interface IgItem {
   fullName?: string | null;
   followersCount?: number | null;
   followsCount?: number | null;
+  postsCount?: number | null;
   isPrivate?: boolean;
   // Error/empty markers some Apify actors set
   error?: string;
@@ -114,7 +116,7 @@ function mapProfile(
   return {
     followers: first.followersCount ?? null,
     following: first.followsCount ?? null,
-    total_posts: null, // actor doesn't expose lifetime post count
+    total_posts: first.postsCount ?? null,
     total_views: viewsSeen ? totalViews : null,
     total_likes: likesSeen ? totalLikes : null,
     raw: {
