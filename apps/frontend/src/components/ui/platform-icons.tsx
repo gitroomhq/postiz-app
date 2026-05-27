@@ -6,7 +6,7 @@
  * All glyphs use `fill="currentColor"` so they inherit text color.
  */
 
-import { SVGProps } from 'react';
+import type { SVGProps, ReactElement } from 'react';
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> {
   size?: number;
@@ -89,7 +89,7 @@ export type PlatformKey =
 
 export const PLATFORM_ICONS: Record<
   PlatformKey,
-  (props: IconProps) => JSX.Element
+  (props: IconProps) => ReactElement
 > = {
   instagram: InstagramIcon,
   tiktok: TikTokIcon,
