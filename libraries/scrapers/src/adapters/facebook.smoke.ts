@@ -44,9 +44,9 @@ async function main() {
   if (posts.length === 0) {
     throw new Error('Sanity fail: expected >=1 post');
   }
-  const rawProfile = profile.raw as { page_name?: string; facebook_id?: string };
-  if (!rawProfile?.page_name && !rawProfile?.facebook_id) {
-    throw new Error('Sanity fail: page_name and facebook_id both missing from profile.raw');
+  const rawProfile = profile.raw as { page_name?: string; facebook_id?: string; username?: string };
+  if (!rawProfile?.page_name && !rawProfile?.facebook_id && !rawProfile?.username) {
+    throw new Error('Sanity fail: page_name, facebook_id, and username all missing from profile.raw');
   }
   if (profile.followers !== null) {
     if (profile.followers < 100_000_000) {

@@ -2,12 +2,18 @@
  * Facebook adapter — Bright Data Web Scraper API.
  *
  * Datasets used (Bright Data prebuilt collectors):
- *   - Facebook profile by URL: gd_lkay758p1eanlolqw8
- *       Exposes followers / page_likes / post_count / verified / category /
- *       intro / profile_pic — fields the previous Apify actor did NOT.
- *   - Facebook posts by URL:   gd_lkaxegm826bjpoo9m5fd
+ *   - Facebook profile/page by URL: gd_mf124a0511bauquyow ("Facebook - Pages and Profiles")
+ *       Accepts BOTH personal profiles AND public pages. Exposes followers /
+ *       page_likes / post_count / verified / category / intro / profile_pic
+ *       — fields the previous Apify actor did NOT.
+ *       (Note: gd_mf0urb782734ik94dz "Facebook - Profiles" rejects PAGE-type
+ *       URLs with error_code "bad_input". Use the Pages-and-Profiles dataset
+ *       to cover both.)
+ *   - Facebook posts by URL:   gd_lkaxegm826bjpoo9m5    ("Facebook - Pages Posts by Profile URL")
  *       Latest N posts per profile URL with likes / comments / shares /
  *       views / attachments / timestamp.
+ *
+ * IDs verified live against /datasets/list on 2026-05-28.
  *
  * Both datasets run in parallel via runDataset (trigger → poll → snapshot).
  * 5-minute budget total, 5s poll — matches Vercel Function maxDuration.
@@ -28,7 +34,7 @@
  */
 
 import { runDataset } from '../brightdata-client';
-import { ProfileNotFoundError, ProfilePrivateError } from '../errors';
+import { ProfileNotFoundError, ProfilePrivateError, ScrapeError } from '../errors';
 import type {
   ContentType,
   NormalizedPostSnapshot,
@@ -38,36 +44,47 @@ import type {
 } from '../types';
 
 const PLATFORM = 'facebook';
-const PROFILE_DATASET_ID = 'gd_lkay758p1eanlolqw8';
-const POSTS_DATASET_ID = 'gd_lkaxegm826bjpoo9m5fd';
+const PROFILE_DATASET_ID = 'gd_mf124a0511bauquyow';
+const POSTS_DATASET_ID = 'gd_lkaxegm826bjpoo9m5';
 const POSTS_PER_SCRAPE = 30;
 const CAPTION_LIMIT = 280;
 
-/** Bright Data FB profile item (gd_lkay758p1eanlolqw8). */
+/** Bright Data FB profile item (gd_mf124a0511bauquyow). */
 interface BdFbProfile {
   url?: string;
   id?: string;
   page_name?: string | null;
-  name?: string | null;
-  /** Lifetime page followers. */
+  username?: string | null;
+  /** "PAGE" | "PROFILE" — dataset returns both. */
+  entity_type?: string | null;
+  /** Lifetime page followers (live, the headline win over the old Apify actor). */
   followers?: number | null;
-  /** Lifetime page likes (the "likes" counter, distinct from per-post likes). */
-  likes?: number | null;
-  /** Lifetime post count on the page. */
-  posts_count?: number | null;
-  intro?: string | null;
+  /** Bio / intro text on the page. */
+  summary_text?: string | null;
+  /** Page logo / avatar URL. */
+  logo?: string | null;
+  /** Profile-page (personal) avatar — present when entity_type==='PROFILE'. */
   profile_pic?: string | null;
-  profile_picture_url?: string | null;
-  cover_picture_url?: string | null;
-  category?: string | null;
-  verified?: boolean;
+  cover_picture?: string | null;
+  primary_category?: string | null;
+  is_verified?: boolean;
   is_business_page?: boolean;
-  /** BD sets these on failed collections. */
+  page_transparency?: {
+    page_id?: string | null;
+    creation_date?: string | null;
+    is_running_ads?: boolean;
+  };
+  contact_and_basic_info?: {
+    categories?: string[];
+  };
+  /** BD sets these on failed per-row collections. */
   error?: string;
+  /** Distinct codes: 'bad_input' (wrong URL type), 'dead_page', etc. */
+  error_code?: string;
   warning?: string;
 }
 
-/** Bright Data FB post item (gd_lkaxegm826bjpoo9m5fd). */
+/** Bright Data FB post item (gd_lkaxegm826bjpoo9m5). */
 interface BdFbPost {
   url?: string;
   post_id?: string;
@@ -146,29 +163,40 @@ function mapProfile(
   posts: NormalizedPostSnapshot[],
 ): NormalizedProfileSnapshot {
   let totalViews = 0;
+  let totalLikes = 0;
   let viewsSeen = false;
+  let likesSeen = false;
   for (const p of posts) {
     if (p.views !== null) {
       totalViews += p.views;
       viewsSeen = true;
     }
+    if (p.likes !== null) {
+      totalLikes += p.likes;
+      likesSeen = true;
+    }
   }
+  // Pages-and-Profiles dataset does NOT expose a lifetime page-likes counter
+  // or a post_count, despite returning followers cleanly. Window-sum likes
+  // from the post-window — matches the prior Apify adapter's fallback.
   return {
     followers: prof.followers ?? null,
     following: null, // FB pages have no following counter
-    total_posts: prof.posts_count ?? null,
+    total_posts: null, // not exposed by gd_mf124a0511bauquyow
     total_views: viewsSeen ? totalViews : null,
-    // Bright Data exposes the lifetime page-likes counter — prefer it over
-    // window-sum which the prior Apify adapter had to fall back to.
-    total_likes: prof.likes ?? null,
+    total_likes: likesSeen ? totalLikes : null,
     raw: {
       facebook_id: prof.id,
-      page_name: prof.page_name ?? prof.name,
-      profile_pic: prof.profile_pic ?? prof.profile_picture_url ?? null,
-      cover_picture_url: prof.cover_picture_url,
-      category: prof.category,
-      verified: prof.verified ?? null,
-      intro: prof.intro,
+      page_name: prof.page_name,
+      username: prof.username,
+      entity_type: prof.entity_type,
+      logo: prof.logo,
+      profile_pic: prof.profile_pic ?? null,
+      cover_picture: prof.cover_picture,
+      primary_category: prof.primary_category,
+      verified: prof.is_verified ?? null,
+      summary_text: prof.summary_text,
+      page_id: prof.page_transparency?.page_id,
       sample_size: posts.length,
     },
   };
@@ -190,18 +218,30 @@ export const facebookAdapter: PlatformAdapter = {
   // tagged with the profile dataset for traceability.
   actorId: `brightdata:${PROFILE_DATASET_ID}`,
   async scrape(profileUrl: string): Promise<ScrapeResult> {
+    // BD Pages-and-Profiles dataset has historically taken 3-7 min per scrape
+    // on cold inputs (avg_duration_per_input ~390s observed live). Bump the
+    // adapter budget past the default 5 min so cron retries don't time out
+    // before BD's snapshot becomes ready. The daily cron's maxDuration is
+    // still 300s — if FB scrapes consistently exceed that, the FB platform
+    // needs to move to a queue/webhook pattern (see commit notes).
+    const FB_BUDGET_MS = 600_000; // 10 min — covers BD avg + safety margin
+    const FB_POLL_MS = 10_000;
     const [profileItems, postItems] = await Promise.all([
       runDataset<BdFbProfile>({
         datasetId: PROFILE_DATASET_ID,
         inputs: [{ url: profileUrl }],
         platform: PLATFORM,
         profileUrl,
+        timeoutMs: FB_BUDGET_MS,
+        pollIntervalMs: FB_POLL_MS,
       }),
       runDataset<BdFbPost>({
         datasetId: POSTS_DATASET_ID,
         inputs: [{ url: profileUrl, num_of_posts: POSTS_PER_SCRAPE }],
         platform: PLATFORM,
         profileUrl,
+        timeoutMs: FB_BUDGET_MS,
+        pollIntervalMs: FB_POLL_MS,
       }).catch((err) => {
         // Posts collector can return private/not_found independently of the
         // profile collector — degrade gracefully and let the profile half
@@ -216,6 +256,29 @@ export const facebookAdapter: PlatformAdapter = {
     if (!first) {
       throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
+    // BD records can include error_code on per-row failures. Distinguish:
+    //   'bad_input' / 'invalid_url' → caller passed an unsupported URL shape.
+    //                                  Map to failed (configuration issue), not not_found.
+    //   'dead_page' / 'profile_not_found' → genuine 404.
+    //   'private' / 'restricted'          → private.
+    if (first.error_code) {
+      const code = first.error_code.toLowerCase();
+      const msg = first.error || code;
+      if (code.includes('private') || code.includes('restricted')) {
+        throw new ProfilePrivateError(PLATFORM, profileUrl);
+      }
+      if (code.includes('dead') || code.includes('not_found') || code.includes('deleted')) {
+        throw new ProfileNotFoundError(PLATFORM, profileUrl);
+      }
+      // bad_input + everything else → surface as failed with the BD message so
+      // operators see exactly what Bright Data rejected.
+      throw new ScrapeError(
+        'failed',
+        `Bright Data rejected input (${code}): ${msg}`,
+        PLATFORM,
+        profileUrl,
+      );
+    }
     if (isPrivate(first)) {
       throw new ProfilePrivateError(PLATFORM, profileUrl);
     }
@@ -223,7 +286,7 @@ export const facebookAdapter: PlatformAdapter = {
       throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
     // No page identity at all = treat as not_found.
-    if (!first.id && !first.page_name && !first.name && !first.url) {
+    if (!first.id && !first.page_name && !first.username && !first.url) {
       throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
 
