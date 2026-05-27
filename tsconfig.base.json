@@ -28,7 +28,9 @@
       "@gitroom/frontend/*": ["apps/frontend/src/*"],
       "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],
       "@d3/scrapers": ["libraries/scrapers/src/index.ts"],
-      "@d3/scrapers/*": ["libraries/scrapers/src/*"]
+      "@d3/scrapers/*": ["libraries/scrapers/src/*"],
+      "@d3/database": ["libraries/database/src/index.ts"],
+      "@d3/database/*": ["libraries/database/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

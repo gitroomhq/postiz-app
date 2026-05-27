@@ -291,6 +291,7 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.2",
     "tsup": "^8.5.0",
+    "tsx": "^4.22.3",
     "typescript": "5.5.4",
     "vite": "^6.3.5",
     "vite-tsconfig-paths": "^5.1.4",
