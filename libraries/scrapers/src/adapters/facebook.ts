@@ -1,54 +1,33 @@
 /**
- * Facebook adapter — Apify Actor: apify/facebook-posts-scraper.
- * https://apify.com/apify/facebook-posts-scraper
+ * Facebook adapter — Bright Data Web Scraper API.
  *
- * Input shape (per actor docs):
- *   startUrls:     { url: string }[]  — public Facebook PAGE URLs only.
- *                                       Personal profiles are not supported by
- *                                       this actor (Apify documents this; we
- *                                       cannot work around it without going
- *                                       outside the "official actors only"
- *                                       rule).
- *   resultsLimit:  number              — we use 30 per spec, matching IG/TikTok.
- *                                       Without this set, the actor only
- *                                       returns the first page of posts.
+ * Datasets used (Bright Data prebuilt collectors):
+ *   - Facebook profile by URL: gd_lkay758p1eanlolqw8
+ *       Exposes followers / page_likes / post_count / verified / category /
+ *       intro / profile_pic — fields the previous Apify actor did NOT.
+ *   - Facebook posts by URL:   gd_lkaxegm826bjpoo9m5fd
+ *       Latest N posts per profile URL with likes / comments / shares /
+ *       views / attachments / timestamp.
  *
- * Output: each dataset item is one post. Items carry page identity fields
- * (pageName, facebookId, facebookUrl) and a nested `user` object — but
- * notably, this actor does NOT return lifetime page metrics: there is no
- * follower count, no page-likes total, and no lifetime post count anywhere
- * in the dataset. The sister actor `apify/facebook-pages-scraper` returns
- * those, but pinning to a single actor per platform is the spec rule. We
- * accept the gap and document it via null profile rollups.
+ * Both datasets run in parallel via runDataset (trigger → poll → snapshot).
+ * 5-minute budget total, 5s poll — matches Vercel Function maxDuration.
  *
  * Output mapping:
- *   Profile
- *     - followers:    null (not exposed by this actor — see above)
- *     - following:    null (Facebook pages don't have a "following" concept)
- *     - total_posts:  null (not exposed by this actor)
- *     - total_views:  sum of viewsCount across the fetched window (video posts
- *                     only; photo posts have no view count). Window-total,
- *                     not lifetime — document in UI per spec §6.
- *     - total_likes:  sum of likes across the fetched window. Window-total,
- *                     not lifetime.
- *   Post
- *     - external_post_id: postId
- *     - posted_at:        time (already ISO 8601)
- *     - content_type:     'video' when any media entry is __typename 'Video'
- *                         OR when viewsCount is populated; otherwise 'image'.
- *                         FB doesn't have a "reel" or "short" concept that
- *                         this actor surfaces distinctly.
- *     - shares:           shares (FB exposes this; IG does not, TikTok does)
+ *   Profile (from gd_lkay758p1eanlolqw8 first item)
+ *     - followers:    followers (LIVE — was null on Apify)
+ *     - following:    null (FB pages don't have a following concept)
+ *     - total_posts:  posts_count (LIVE — was null on Apify)
+ *     - total_likes:  likes (lifetime page likes — LIVE)
+ *     - total_views:  sum of num_views across the post window (lifetime
+ *                     view total is not exposed; window-only per spec §6)
+ *   Post (from gd_lkaxegm826bjpoo9m5fd items)
+ *     - content_type: 'video' if has_video / video_view_count > 0, else 'image'
+ *     - shares:       shares (FB exposes; IG does not, TikTok does)
  *
- * Error handling: this actor does NOT document explicit error markers on
- * empty/private/missing pages — it returns zero items. apify-client.ts
- * already throws ApifyEmptyResultError on zero items, so adapters mostly
- * just guard against "first item missing the page identity" as a fallback
- * not_found signal. We still check first.error / first.errorDescription
- * defensively in case the actor adds them in a future build.
+ * Migrated from Apify Actor apify/facebook-posts-scraper (2026-05-28).
  */
 
-import { runActor } from '../apify-client';
+import { runDataset } from '../brightdata-client';
 import { ProfileNotFoundError, ProfilePrivateError } from '../errors';
 import type {
   ContentType,
@@ -58,53 +37,61 @@ import type {
   ScrapeResult,
 } from '../types';
 
-const ACTOR_ID = 'apify/facebook-posts-scraper';
+const PLATFORM = 'facebook';
+const PROFILE_DATASET_ID = 'gd_lkay758p1eanlolqw8';
+const POSTS_DATASET_ID = 'gd_lkaxegm826bjpoo9m5fd';
 const POSTS_PER_SCRAPE = 30;
 const CAPTION_LIMIT = 280;
 
-/** Nested page-owner object on each post item. */
-interface FbUser {
+/** Bright Data FB profile item (gd_lkay758p1eanlolqw8). */
+interface BdFbProfile {
+  url?: string;
   id?: string;
-  name?: string;
-  profileUrl?: string;
-  profilePic?: string | null;
-}
-
-/**
- * One entry inside a post's `media` array. The actor uses GraphQL-style
- * `__typename` to discriminate Photo vs Video. We only read fields we
- * actually use — there's a lot more in the raw payload (resolutions,
- * accessibility captions, etc.) that we keep on `raw` for debugging.
- */
-interface FbMedia {
-  __typename?: string;
-  thumbnail?: string | null;
-  url?: string | null;
-  photo_image?: { uri?: string | null } | null;
-}
-
-/** Subset of fields we actually read from Apify's dataset item. */
-interface FbItem {
-  // Post-level
-  postId?: string;
-  text?: string | null;
-  url?: string;                  // direct post URL
-  time?: string | null;          // ISO 8601 from the actor
-  timestamp?: number | null;     // unix seconds, redundant fallback
+  page_name?: string | null;
+  name?: string | null;
+  /** Lifetime page followers. */
+  followers?: number | null;
+  /** Lifetime page likes (the "likes" counter, distinct from per-post likes). */
   likes?: number | null;
-  comments?: number | null;
-  shares?: number | null;
-  viewsCount?: number | null;    // video posts only
-  media?: FbMedia[];
-  // Page identity (flat on each item)
-  pageName?: string;
-  facebookId?: string;
-  facebookUrl?: string;
-  user?: FbUser;
-  // Defensive — not documented but adapters in IG/TikTok hit these in practice
-  isPrivate?: boolean;
+  /** Lifetime post count on the page. */
+  posts_count?: number | null;
+  intro?: string | null;
+  profile_pic?: string | null;
+  profile_picture_url?: string | null;
+  cover_picture_url?: string | null;
+  category?: string | null;
+  verified?: boolean;
+  is_business_page?: boolean;
+  /** BD sets these on failed collections. */
   error?: string;
-  errorDescription?: string;
+  warning?: string;
+}
+
+/** Bright Data FB post item (gd_lkaxegm826bjpoo9m5fd). */
+interface BdFbPost {
+  url?: string;
+  post_id?: string;
+  user_url?: string;
+  user_username_raw?: string;
+  content?: string | null;
+  /** ISO 8601 timestamp. */
+  date_posted?: string | null;
+  timestamp?: string | null;
+  num_comments?: number | null;
+  num_shares?: number | null;
+  num_likes_type?: { type?: string; num?: number }[];
+  /** Aggregate likes — sometimes 'likes', sometimes 'num_likes'. */
+  likes?: number | null;
+  num_likes?: number | null;
+  /** Video view count (videos only). */
+  num_views?: number | null;
+  video_view_count?: number | null;
+  has_video?: boolean;
+  attachments?: Array<{ type?: string; url?: string; thumbnail?: string }>;
+  thumbnail?: string | null;
+  /** BD per-row error marker. */
+  error?: string;
+  warning?: string;
 }
 
 function truncate(s: string | null | undefined, n: number): string | null {
@@ -112,130 +99,138 @@ function truncate(s: string | null | undefined, n: number): string | null {
   return s.length <= n ? s : s.slice(0, n - 1) + '…';
 }
 
-function pickContentType(item: FbItem): ContentType {
-  const media = item.media ?? [];
-  for (const m of media) {
-    if ((m.__typename ?? '').toLowerCase() === 'video') return 'video';
-  }
-  // viewsCount is populated on video posts; if it's set but media lacked a
-  // Video typename (some FB GraphQL responses do this), still call it video.
-  if (typeof item.viewsCount === 'number' && item.viewsCount > 0) {
-    return 'video';
-  }
-  // Default to image — covers single photo, carousel, link previews. FB
-  // posts that are pure text will still hit this branch; that's acceptable
-  // for v1 since 'text' isn't in the ContentType union and we'd otherwise
-  // need to widen the type system for a single platform's edge case.
+function pickContentType(p: BdFbPost): ContentType {
+  if (p.has_video || (p.video_view_count ?? p.num_views ?? 0) > 0) return 'video';
+  const attTypes = (p.attachments ?? []).map((a) => (a.type ?? '').toLowerCase());
+  if (attTypes.includes('video')) return 'video';
   return 'image';
 }
 
-function pickMediaUrl(item: FbItem): string | null {
-  const first = item.media?.[0];
+function pickMediaUrl(p: BdFbPost): string | null {
+  if (p.thumbnail) return p.thumbnail;
+  const first = p.attachments?.[0];
   if (!first) return null;
-  // photo_image.uri is the canonical full-size image when present; thumbnail
-  // is the always-present preview. url is the link the media points to
-  // (often the same as photo_image.uri for photos, or the video file URL).
-  return first.photo_image?.uri ?? first.thumbnail ?? first.url ?? null;
+  return first.thumbnail ?? first.url ?? null;
 }
 
-function mapPost(item: FbItem): NormalizedPostSnapshot | null {
-  const externalId = item.postId;
+function pickLikes(p: BdFbPost): number | null {
+  if (typeof p.likes === 'number') return p.likes;
+  if (typeof p.num_likes === 'number') return p.num_likes;
+  // Aggregate the typed likes array if present.
+  const arr = p.num_likes_type;
+  if (Array.isArray(arr) && arr.length > 0) {
+    return arr.reduce((sum, e) => sum + (typeof e.num === 'number' ? e.num : 0), 0);
+  }
+  return null;
+}
+
+function mapPost(p: BdFbPost): NormalizedPostSnapshot | null {
+  const externalId = p.post_id;
   if (!externalId) return null;
   return {
     external_post_id: externalId,
-    posted_at: item.time ?? null,
-    caption_excerpt: truncate(item.text, CAPTION_LIMIT),
-    views: item.viewsCount ?? null,
-    likes: item.likes ?? null,
-    comments: item.comments ?? null,
-    shares: item.shares ?? null,
-    media_url: pickMediaUrl(item),
-    content_type: pickContentType(item),
-    raw: item,
+    posted_at: p.date_posted ?? p.timestamp ?? null,
+    caption_excerpt: truncate(p.content, CAPTION_LIMIT),
+    views: p.video_view_count ?? p.num_views ?? null,
+    likes: pickLikes(p),
+    comments: p.num_comments ?? null,
+    shares: p.num_shares ?? null,
+    media_url: pickMediaUrl(p),
+    content_type: pickContentType(p),
+    raw: p,
   };
 }
 
 function mapProfile(
-  first: FbItem,
+  prof: BdFbProfile,
   posts: NormalizedPostSnapshot[],
 ): NormalizedProfileSnapshot {
   let totalViews = 0;
-  let totalLikes = 0;
   let viewsSeen = false;
-  let likesSeen = false;
   for (const p of posts) {
     if (p.views !== null) {
       totalViews += p.views;
       viewsSeen = true;
     }
-    if (p.likes !== null) {
-      totalLikes += p.likes;
-      likesSeen = true;
-    }
   }
   return {
-    // Not exposed by apify/facebook-posts-scraper — see file-level JSDoc.
-    followers: null,
-    following: null,
-    total_posts: null,
+    followers: prof.followers ?? null,
+    following: null, // FB pages have no following counter
+    total_posts: prof.posts_count ?? null,
     total_views: viewsSeen ? totalViews : null,
-    total_likes: likesSeen ? totalLikes : null,
+    // Bright Data exposes the lifetime page-likes counter — prefer it over
+    // window-sum which the prior Apify adapter had to fall back to.
+    total_likes: prof.likes ?? null,
     raw: {
-      pageName: first.pageName ?? first.user?.name,
-      facebookId: first.facebookId ?? first.user?.id,
-      facebookUrl: first.facebookUrl ?? first.user?.profileUrl,
-      profilePic: first.user?.profilePic,
+      facebook_id: prof.id,
+      page_name: prof.page_name ?? prof.name,
+      profile_pic: prof.profile_pic ?? prof.profile_picture_url ?? null,
+      cover_picture_url: prof.cover_picture_url,
+      category: prof.category,
+      verified: prof.verified ?? null,
+      intro: prof.intro,
       sample_size: posts.length,
     },
   };
 }
 
+function isPrivate(p: BdFbProfile): boolean {
+  const msg = (p.error || p.warning || '').toLowerCase();
+  return msg.includes('private') || msg.includes('restricted') || msg.includes('login required');
+}
+
+function isNotFound(p: BdFbProfile): boolean {
+  const msg = (p.error || p.warning || '').toLowerCase();
+  return msg.includes('not found') || msg.includes('does not exist') || msg.includes('404');
+}
+
 export const facebookAdapter: PlatformAdapter = {
   platform: 'facebook',
-  actorId: ACTOR_ID,
+  // Kept for backward compat with the type — Bright Data has no Actor IDs;
+  // tagged with the profile dataset for traceability.
+  actorId: `brightdata:${PROFILE_DATASET_ID}`,
   async scrape(profileUrl: string): Promise<ScrapeResult> {
-    const items = await runActor<FbItem>({
-      actorId: ACTOR_ID,
-      platform: 'facebook',
-      profileUrl,
-      input: {
-        startUrls: [{ url: profileUrl }],
-        resultsLimit: POSTS_PER_SCRAPE,
-      },
-      timeoutSecs: 300,
-    });
+    const [profileItems, postItems] = await Promise.all([
+      runDataset<BdFbProfile>({
+        datasetId: PROFILE_DATASET_ID,
+        inputs: [{ url: profileUrl }],
+        platform: PLATFORM,
+        profileUrl,
+      }),
+      runDataset<BdFbPost>({
+        datasetId: POSTS_DATASET_ID,
+        inputs: [{ url: profileUrl, num_of_posts: POSTS_PER_SCRAPE }],
+        platform: PLATFORM,
+        profileUrl,
+      }).catch((err) => {
+        // Posts collector can return private/not_found independently of the
+        // profile collector — degrade gracefully and let the profile half
+        // decide the canonical status.
+        if (err instanceof ProfilePrivateError) return [] as BdFbPost[];
+        if (err instanceof ProfileNotFoundError) return [] as BdFbPost[];
+        throw err;
+      }),
+    ]);
 
-    // Inspect first item for error / state markers Apify may embed. This
-    // actor doesn't document them, but the IG and TikTok actors both do —
-    // cheap to check defensively in case behavior aligns later.
-    const first = items[0];
-    if (first?.error) {
-      const msg = (first.errorDescription || first.error).toLowerCase();
-      if (msg.includes('private')) {
-        throw new ProfilePrivateError('facebook', profileUrl);
-      }
-      if (
-        msg.includes('not found') ||
-        msg.includes('does not exist') ||
-        msg.includes('unavailable')
-      ) {
-        throw new ProfileNotFoundError('facebook', profileUrl);
-      }
+    const first = profileItems[0];
+    if (!first) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
-    if (first?.isPrivate) {
-      throw new ProfilePrivateError('facebook', profileUrl);
+    if (isPrivate(first)) {
+      throw new ProfilePrivateError(PLATFORM, profileUrl);
     }
-    // No page identity at all = treat as not_found. apify-client already
-    // threw ApifyEmptyResultError if items.length === 0, so reaching here
-    // means we got items but they're shaped wrong.
-    if (!first || (!first.pageName && !first.user?.name && !first.facebookId)) {
-      throw new ProfileNotFoundError('facebook', profileUrl);
+    if (isNotFound(first)) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
+    }
+    // No page identity at all = treat as not_found.
+    if (!first.id && !first.page_name && !first.name && !first.url) {
+      throw new ProfileNotFoundError(PLATFORM, profileUrl);
     }
 
     const posts: NormalizedPostSnapshot[] = [];
-    for (const it of items) {
-      const p = mapPost(it);
-      if (p) posts.push(p);
+    for (const p of postItems) {
+      const mapped = mapPost(p);
+      if (mapped) posts.push(mapped);
     }
 
     return {

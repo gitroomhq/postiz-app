@@ -1,23 +1,23 @@
 /**
- * Live smoke test — costs Apify compute units.
+ * Live smoke test — costs Bright Data credits.
  * Run: pnpm exec tsx libraries/scrapers/src/adapters/facebook.smoke.ts
  *
  * NOT part of the standard test suite. Manually triggered when an adapter
- * lands or when Apify-side changes are suspected (per spec §6 operational
- * hygiene — per-platform success-rate monitoring starts here).
+ * lands or when Bright Data-side changes are suspected (per spec §6
+ * operational hygiene — per-platform success-rate monitoring starts here).
  *
- * Note: apify/facebook-posts-scraper does not expose follower count for the
- * scraped page (see facebook.ts JSDoc), so the usual "followers > N" gate
- * IG and TikTok smoke tests use can't apply here. We instead gate on
- * window-totals (likes summed across posts) which scale similarly with page
- * size, and on the page identity coming back populated.
+ * Requires BRIGHTDATA_API_KEY in env.
+ *
+ * Unlike the prior Apify actor, Bright Data's FB profile dataset
+ * (gd_lkay758p1eanlolqw8) DOES expose followers / posts_count / lifetime
+ * page likes — so we gate on the live counters when present and fall back
+ * to window-total likes only if profile.followers is null.
  */
 
 import { facebookAdapter } from './facebook';
 
 // Cristiano Ronaldo — most-followed person on Facebook (170M+). Stable
-// public page, posts frequently. Public pages only — this actor does not
-// scrape personal profiles.
+// public page, posts frequently. Public pages only.
 const TEST_PROFILE = 'https://www.facebook.com/Cristiano';
 
 async function main() {
@@ -44,14 +44,23 @@ async function main() {
   if (posts.length === 0) {
     throw new Error('Sanity fail: expected >=1 post');
   }
-  if (!profile.total_likes || profile.total_likes < 10_000_000) {
-    throw new Error(
-      `Sanity fail: Cristiano's last ${posts.length} posts should sum to 10M+ likes, got ${profile.total_likes}`,
-    );
+  const rawProfile = profile.raw as { page_name?: string; facebook_id?: string };
+  if (!rawProfile?.page_name && !rawProfile?.facebook_id) {
+    throw new Error('Sanity fail: page_name and facebook_id both missing from profile.raw');
   }
-  const rawProfile = profile.raw as { pageName?: string };
-  if (!rawProfile?.pageName) {
-    throw new Error('Sanity fail: pageName missing from profile.raw');
+  if (profile.followers !== null) {
+    if (profile.followers < 100_000_000) {
+      throw new Error(
+        `Sanity fail: Cristiano page should have 100M+ followers, got ${profile.followers}`,
+      );
+    }
+  } else {
+    // Profile counter missing — fall back to window-sum likes check.
+    if (!profile.total_likes || profile.total_likes < 10_000_000) {
+      throw new Error(
+        `Sanity fail: followers null and last ${posts.length} posts should sum to 10M+ likes, got ${profile.total_likes}`,
+      );
+    }
   }
   console.log('[smoke] PASS');
 }
