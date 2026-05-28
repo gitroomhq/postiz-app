@@ -1,11 +1,12 @@
 import '../global.scss';
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import { getAuthContext } from '@gitroom/frontend/lib/auth';
+import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
 
-// Root layout for public pages (/, /privacy, /terms).
-// Lives in its own route group so it is independent from the (app)
-// authenticated UI and stays accessible without login.
-export default function PublicLayout({ children }: { children: ReactNode }) {
+export default async function PublicLayout({ children }: { children: ReactNode }) {
+  const auth = await getAuthContext();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -48,6 +49,32 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               >
                 Leaderboard
               </Link>
+              {auth ? (
+                <>
+                  <Link
+                    href={auth.role === 'admin' ? '/admin' : '/me'}
+                    className="px-3 py-1.5 rounded-md text-fg hover:bg-white/[0.04] transition-colors"
+                  >
+                    {auth.role === 'admin' ? 'Admin' : 'My data'}
+                  </Link>
+                  <SignOutButton />
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="ml-1 inline-flex items-center px-3 py-1.5 rounded-md bg-aurora-cta text-brand-darker hover:bg-aurora-ctaHover transition-colors text-label font-medium"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </header>
