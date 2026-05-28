@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
 
+// Cookie-bound. Never prerender — Supabase env required at construction.
+export const dynamic = 'force-dynamic';
+
 // Creator-scoped layout. Middleware already enforces auth + onboarding gating;
 // we re-fetch here so child server components can rely on the auth context.
 export default async function CreatorLayout({ children }: { children: ReactNode }) {

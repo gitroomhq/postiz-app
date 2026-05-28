@@ -17,6 +17,8 @@
  *   Header:   Authorization: Bearer <CRON_SECRET>
  */
 
+import { timingSafeEqual } from 'node:crypto';
+
 import { NextResponse } from 'next/server';
 
 import { getSupabaseAdmin } from '@d3/database';
@@ -35,7 +37,11 @@ function assertAuth(request: Request): Response | null {
     );
   }
   const auth = request.headers.get('authorization') || '';
-  if (auth !== `Bearer ${expected}`) {
+  const expectedFull = `Bearer ${expected}`;
+  if (
+    auth.length !== expectedFull.length ||
+    !timingSafeEqual(Buffer.from(auth, 'utf8'), Buffer.from(expectedFull, 'utf8'))
+  ) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   return null;

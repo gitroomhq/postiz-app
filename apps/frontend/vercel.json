@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/daily-snapshot",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/archive-and-purge",
+      "schedule": "30 2 * * *"
     }
   ]
 }

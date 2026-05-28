@@ -17,6 +17,8 @@
  *   so the UI can surface badges (Task 5 step 2).
  */
 
+import { timingSafeEqual } from 'node:crypto';
+
 import { NextResponse } from 'next/server';
 
 import { runScraper, ScrapeError } from '@d3/scrapers';
@@ -55,7 +57,14 @@ function assertAuth(request: Request): Response | null {
     );
   }
   const auth = request.headers.get('authorization') || '';
-  if (auth !== `Bearer ${expected}`) {
+  const expectedFull = `Bearer ${expected}`;
+  // Length check first so timingSafeEqual doesn't throw on mismatched buffers.
+  // The length-mismatch path leaks only "wrong length", not which character —
+  // an acceptable oracle for a high-entropy random secret.
+  if (
+    auth.length !== expectedFull.length ||
+    !timingSafeEqual(Buffer.from(auth, 'utf8'), Buffer.from(expectedFull, 'utf8'))
+  ) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   return null;

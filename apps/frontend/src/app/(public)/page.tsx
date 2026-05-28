@@ -4,6 +4,10 @@ import { GlassCard } from '@gitroom/frontend/components/ui/glass-card';
 import { BentoGrid, BentoItem } from '@gitroom/frontend/components/ui/bento-grid';
 import { AuroraButton } from '@gitroom/frontend/components/ui/aurora-button';
 import { Reveal } from '@gitroom/frontend/components/ui/reveal';
+import { ShinyText } from '@gitroom/frontend/components/ui/shiny-text';
+import { DottedSurface } from '@gitroom/frontend/components/reactbits/dotted-surface';
+import { D3LogoParticles } from '@gitroom/frontend/components/reactbits/d3-logo-particles';
+import FadeContent from '@gitroom/frontend/components/FadeContent';
 import {
   PLATFORM_ICONS,
   PLATFORM_LABELS,
@@ -36,9 +40,9 @@ import {
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'D3 Creator — Real creators. Real numbers. Live.',
+  title: 'D3 Creator — A public leaderboard of the creators built by D3.',
   description:
-    'D3 Creator is a live public showcase of the creators we grow. Real follower counts, real engagement, real growth — across Instagram, TikTok, Facebook, Douyin, and Xiaohongshu (RedNote).',
+    'Public leaderboard of D3-built creators. Track live followers, engagement, reach, and growth across TikTok, Instagram, Facebook, Douyin, and Xiaohongshu. No screenshots. No fake case studies. Just live numbers.',
 };
 
 const PLATFORM_ORDER: PlatformKey[] = [
@@ -96,36 +100,124 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* ----- HERO ----- */}
-      <section className="w-full pt-16 pb-20 sm:pt-24 sm:pb-24 lg:pt-32 lg:pb-32 max-w-[1100px] mx-auto text-center">
-        <Reveal>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-subtle border border-borderGlass text-caption text-fgMuted mb-8">
-            <span className="inline-block size-1.5 rounded-full bg-white/[0.78]" />
-            Live creator showcase
-          </span>
-          <h1 className="text-display-1 text-fg mb-6 max-w-[900px] mx-auto">
-            Real creators. Real numbers. Live.
-          </h1>
-          <p className="text-body-lg text-fgMuted max-w-[600px] mx-auto mb-10">
-            A public window into the creators we grow at D3. Follower counts,
-            engagement, and growth — updated live across every platform we run.
+      <DottedSurface className="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)]">
+        <section className="w-full pt-16 pb-24 sm:pt-24 sm:pb-32 lg:pt-32 lg:pb-40 max-w-[1100px] mx-auto px-6 md:px-8">
+          <Reveal>
+            <div className="grid grid-cols-1 lg:grid-cols-[5fr_6fr] gap-12 lg:gap-14 items-center">
+              {/* Text column */}
+              <div className="flex flex-col gap-5 text-center lg:text-left">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-subtle border border-borderGlass text-caption text-fgMuted self-center lg:self-start">
+                  <span className="inline-block size-1.5 rounded-full bg-brand-500" />
+                  A public leaderboard
+                </span>
+                <h1 className="text-[clamp(36px,4.5vw,64px)] leading-[1.04] tracking-[-0.03em] font-semibold text-fg max-w-[520px] mx-auto lg:mx-0 text-balance">
+                  A public leaderboard of the creators built by{' '}
+                  <span className="text-brand">D3</span>.
+                </h1>
+                <p className="text-body text-fgMuted max-w-[480px] mx-auto lg:mx-0">
+                  Track live followers, engagement, reach, and growth across
+                  TikTok, Instagram, Facebook and more.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mt-2">
+                  <Link href="/dashboard" className="contents">
+                    <AuroraButton variant="cta" size="lg">
+                      View Dashboard
+                    </AuroraButton>
+                  </Link>
+                  <Link href="/leaderboard" className="contents">
+                    <AuroraButton variant="ghost" size="lg">
+                      View Leaderboard
+                    </AuroraButton>
+                  </Link>
+                </div>
+                <ShinyText className="text-caption text-fgSubtle mt-1">
+                  Built by D3
+                </ShinyText>
+              </div>
+
+              {/* Visual column — push logo to the outer right edge */}
+              <div className="flex items-center justify-center lg:justify-end lg:-mr-6">
+                <D3LogoParticles
+                  size={460}
+                  particleCount={22000}
+                  className="cursor-crosshair max-w-full"
+                />
+              </div>
+            </div>
+          </Reveal>
+        </section>
+      </DottedSurface>
+
+      {/* ----- MANIFESTO STRIP ----- */}
+      <section
+        aria-labelledby="manifesto-heading"
+        className="w-full pb-20 sm:pb-24 max-w-[1100px] mx-auto text-center"
+      >
+        <FadeContent>
+          <h2 id="manifesto-heading" className="sr-only">
+            Manifesto
+          </h2>
+          <p className="text-body-lg text-fgSubtle">
+            <span className="line-through decoration-fgSubtle/60 mr-3">
+              No screenshots.
+            </span>
+            <span className="line-through decoration-fgSubtle/60 mr-3">
+              No fake case studies.
+            </span>
+            <span className="text-brand font-medium">Just live numbers.</span>
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/dashboard" className="contents">
-              <AuroraButton variant="cta" size="lg">
-                View Dashboard
-              </AuroraButton>
-            </Link>
-            <Link href="/leaderboard" className="contents">
-              <AuroraButton variant="ghost" size="lg">
-                View Leaderboard
-              </AuroraButton>
-            </Link>
+          <blockquote className="mt-8 text-display-2 text-fg tracking-[-0.03em] leading-[1.06] max-w-[640px] mx-auto">
+            <div>Real growth.</div>
+            <div>Real-time numbers.</div>
+          </blockquote>
+        </FadeContent>
+      </section>
+
+      {/* ----- ETHOS (FadeContent on scroll) ----- */}
+      <section
+        aria-labelledby="ethos-heading"
+        className="w-full pb-20 sm:pb-24 max-w-[1100px] mx-auto"
+      >
+        <FadeContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <p className="text-micro uppercase text-fgSubtle tracking-[0.04em] mb-2">
+                Why this exists
+              </p>
+              <h3 id="ethos-heading" className="text-subsection text-fg mb-3">
+                Numbers, not narratives.
+              </h3>
+              <p className="text-body text-fgMuted">
+                Every creator we&apos;ve built shows up here with their live
+                counts — not a cherry-picked deck.
+              </p>
+            </div>
+            <div>
+              <p className="text-micro uppercase text-fgSubtle tracking-[0.04em] mb-2">
+                What you&apos;ll see
+              </p>
+              <h3 className="text-subsection text-fg mb-3">
+                Followers, engagement, growth, reach.
+              </h3>
+              <p className="text-body text-fgMuted">
+                Across every platform we operate. Snapshots every day. No
+                edited screenshots.
+              </p>
+            </div>
+            <div>
+              <p className="text-micro uppercase text-fgSubtle tracking-[0.04em] mb-2">
+                Who&apos;s behind it
+              </p>
+              <h3 className="text-subsection text-fg mb-3">
+                A creator-growth ecosystem from Malaysia.
+              </h3>
+              <p className="text-body text-fgMuted">
+                Since 2021. Founders, operators, and creators building real
+                commercial IP.
+              </p>
+            </div>
           </div>
-          <p className="text-caption text-fgSubtle mt-8 tabular-nums">
-            {exactFormatter.format(summary.trackedCreators)} creators ·{' '}
-            {compactFormatter.format(summary.combinedFollowers)} combined followers
-          </p>
-        </Reveal>
+        </FadeContent>
       </section>
 
       {/* ----- LIVE PREVIEW BENTO ----- */}

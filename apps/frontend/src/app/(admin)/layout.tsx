@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
 
+// Cookie-bound. Never prerender — Supabase env required at construction.
+export const dynamic = 'force-dynamic';
+
 // Admin-only layout. Middleware blocks non-admins; this server-side check is a
 // defense-in-depth second gate.
 export default async function AdminLayout({ children }: { children: ReactNode }) {

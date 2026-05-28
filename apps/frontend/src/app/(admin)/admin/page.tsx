@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getSupabaseAdmin } from '@d3/database';
+import { getAuthContext } from '@gitroom/frontend/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -10,6 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
+  // Defense-in-depth: layout already gates on role=admin, but if a future
+  // refactor breaks layout ordering, re-check here before touching service-role.
+  const auth = await getAuthContext();
+  if (!auth) redirect('/login');
+  if (auth.role !== 'admin') redirect('/me');
+
   const admin = getSupabaseAdmin();
 
   const [{ count: creatorCount }, { count: profileCount }, { count: userCount }] =

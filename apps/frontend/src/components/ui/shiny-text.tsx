@@ -1,6 +1,6 @@
 'use client';
 
-import { type HTMLAttributes, type ElementType, type ReactNode } from 'react';
+import { createElement, type HTMLAttributes, type ElementType, type ReactNode } from 'react';
 import clsx from 'clsx';
 
 interface ShinyTextProps extends HTMLAttributes<HTMLElement> {
@@ -13,19 +13,21 @@ interface ShinyTextProps extends HTMLAttributes<HTMLElement> {
 /**
  * ShinyText — solid yellow text. Anti-slop: NO gradient text per DESIGN.md.
  * Kept as a thin wrapper so existing imports keep working.
+ *
+ * Uses createElement instead of <Tag /> so the polymorphic `as` prop doesn't
+ * trip TS's "children: never" inference on ElementType.
  */
 export function ShinyText({
-  as: Tag = 'span',
+  as = 'span',
   className,
   children,
+  variant: _variant,
+  speed: _speed,
   ...rest
 }: ShinyTextProps) {
-  return (
-    <Tag
-      className={clsx('inline-block text-fg', className)}
-      {...rest}
-    >
-      {children}
-    </Tag>
+  return createElement(
+    as,
+    { className: clsx('inline-block text-fg', className), ...rest },
+    children,
   );
 }

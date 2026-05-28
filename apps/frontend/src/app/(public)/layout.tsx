@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
+import { Footer } from '@gitroom/frontend/components/ui/footer';
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
   const auth = await getAuthContext();
@@ -37,6 +38,12 @@ export default async function PublicLayout({ children }: { children: ReactNode }
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-label">
+              <Link
+                href="/about"
+                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
+              >
+                About
+              </Link>
               <Link
                 href="/dashboard"
                 className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
@@ -80,32 +87,41 @@ export default async function PublicLayout({ children }: { children: ReactNode }
         </header>
 
         {/* Main content */}
-        <main className="relative z-10 flex-1 w-full">
+        <main className="relative z-10 flex-1 w-full overflow-x-clip">
           <div className="max-w-[1200px] mx-auto px-6 md:px-8">
             {children}
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 mt-24 border-t border-borderGlass">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-caption text-fgSubtle">
-            <div>© 2025 D3 Creator. All rights reserved.</div>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/privacy"
-                className="hover:text-fg transition-colors"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/terms"
-                className="hover:text-fg transition-colors"
-              >
-                Terms
-              </Link>
-            </div>
-          </div>
-        </footer>
+        <div className="relative z-10 mt-12">
+          <Footer
+            logo={
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src="/d3-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                suppressHydrationWarning
+              />
+            }
+            brandName="D3 Creator"
+            mainLinks={[
+              { href: '/about', label: 'About' },
+              { href: '/dashboard', label: 'Dashboard' },
+              { href: '/leaderboard', label: 'Leaderboard' },
+            ]}
+            legalLinks={[
+              { href: '/privacy', label: 'Privacy' },
+              { href: '/terms', label: 'Terms' },
+            ]}
+            copyright={{
+              text: '© 2025 D3 Creator',
+              license: 'All rights reserved',
+            }}
+          />
+        </div>
       </body>
     </html>
   );

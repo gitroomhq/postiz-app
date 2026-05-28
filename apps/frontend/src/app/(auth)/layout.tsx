@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: 'Sign in — D3 Creator',
 };
 
+// Auth pages read cookies (getAuthContext) and must never prerender at build
+// time — Supabase env is required at construction and Next.js otherwise tries
+// to statically render /onboarding and friends.
+export const dynamic = 'force-dynamic';
+
 // Auth route group has its own html/body so the AuthShell can take the full
 // viewport without inheriting (public)'s header/footer chrome.
 export default function AuthLayout({ children }: { children: ReactNode }) {
