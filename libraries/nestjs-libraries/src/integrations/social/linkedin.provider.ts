@@ -9,7 +9,9 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { timer } from '@gitroom/helpers/utils/timer';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -338,7 +340,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (isVideo) {
-      const a = await this.fetch(
+      await this.fetch(
         'https://api.linkedin.com/rest/videos?action=finalizeUpload',
         {
           method: 'POST',
@@ -357,9 +359,85 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           },
         }
       );
+
+      // After finalizing, the video is processed asynchronously. We have to
+      // wait until it reaches the AVAILABLE status before attaching it to a
+      // post, otherwise LinkedIn rejects the post with a processing error.
+      await this.waitForMediaToBeReady(video, accessToken, 'videos');
+    } else if (!isPdf) {
+      // Images are also processed asynchronously and must be AVAILABLE before
+      // being attached to a post.
+      if (type === 'company') {
+        // Organization-owned images can be polled for their processing status.
+        await this.waitForMediaToBeReady(image, accessToken, 'images');
+      } else {
+        // A w_member_social (personal) token is write-only for rest/images and
+        // can't perform the GET, so polling would always be forbidden. Images
+        // are quick to process, so we just give LinkedIn a moment before
+        // attaching it to the post.
+        await timer(10000);
+      }
     }
 
     return finalOutput;
+  }
+
+  // Polls the "Get a Video"/"Get an Image" API until the media finishes
+  // processing (status === AVAILABLE).
+  // videos: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api#get-a-video
+  // images: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api#get-a-single-image
+  private async waitForMediaToBeReady(
+    urn: string,
+    accessToken: string,
+    type: 'videos' | 'images',
+    maxAttempts = 20,
+    intervalMs = 30000
+  ): Promise<void> {
+    const label = type === 'videos' ? 'video' : 'image';
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const json = await (
+        await this.fetch(
+          `https://api.linkedin.com/rest/${type}/${encodeURIComponent(urn)}`,
+          {
+            method: 'GET',
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+      ).json();
+
+      const { status, processingFailureReason } = json;
+
+      if (status === 'AVAILABLE') {
+        return;
+      }
+
+      if (status === 'PROCESSING_FAILED') {
+        throw new BadBody(
+          this.identifier,
+          JSON.stringify(json),
+          '{}',
+          `LinkedIn ${label} processing failed${
+            processingFailureReason ? `: ${processingFailureReason}` : ''
+          }`
+        );
+      }
+
+      // status is PROCESSING or WAITING_UPLOAD, keep polling.
+      await timer(intervalMs);
+    }
+
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      `Timed out waiting for LinkedIn ${label} to be ready`
+    );
   }
 
   protected fixText(text: string) {
@@ -604,7 +682,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     });
 
     if (response.status !== 201 && response.status !== 200) {
-      throw new Error('Error posting to LinkedIn');
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        JSON.stringify(postPayload),
+        'Error posting to LinkedIn'
+      );
     }
 
     return response.headers.get('x-restli-id')!;
@@ -621,13 +704,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+      `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+        'LinkedIn-Version': '202306',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
