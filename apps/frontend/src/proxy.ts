@@ -5,7 +5,7 @@ const ADMIN_PREFIXES = ['/admin'];
 const CREATOR_PREFIXES = ['/me', '/onboarding'];
 const AUTH_PAGES = new Set(['/login', '/signup']);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
