@@ -42,35 +42,32 @@ export default async function AdminPage() {
         </span>
         <h1 className="text-display-2 text-fg mb-4">Full agency view.</h1>
         <p className="text-body-lg text-fgMuted max-w-[600px]">
-          Admins see everything across every creator and every platform. Use the
-          public dashboard for the day-to-day roll-up, or jump to a specific
-          creator below.
+          Everything across every creator and every platform. Jump into an
+          account to review its profiles, growth, and pending claims.
         </p>
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((s) => (
-          <article key={s.label} className="glass-elevated rounded-2xl p-6">
+          <Link
+            key={s.label}
+            href="/admin/profiles"
+            className="glass-elevated rounded-2xl p-6 hover:bg-white/[0.04] hover:border-borderGlassStrong transition-colors"
+          >
             <div className="text-caption text-fgMuted uppercase tracking-wide">{s.label}</div>
             <div className="text-display-2 text-fg tabular-nums mt-2">
               {Intl.NumberFormat().format(s.value)}
             </div>
-          </article>
+          </Link>
         ))}
       </section>
 
-      <section className="flex gap-3">
+      <section className="flex flex-wrap gap-3">
         <Link
-          href="/dashboard"
-          className="inline-flex items-center px-4 py-2 rounded-md glass-elevated text-fg hover:bg-white/[0.06] transition-colors text-label"
+          href="/admin/profiles"
+          className="inline-flex items-center px-4 py-2 rounded-md bg-aurora-cta text-bg hover:bg-aurora-ctaHover transition-colors text-label"
         >
-          Open public dashboard
-        </Link>
-        <Link
-          href="/leaderboard"
-          className="inline-flex items-center px-4 py-2 rounded-md glass-elevated text-fg hover:bg-white/[0.06] transition-colors text-label"
-        >
-          Open public leaderboard
+          Manage accounts →
         </Link>
       </section>
     </div>

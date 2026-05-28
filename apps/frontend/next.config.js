@@ -6,8 +6,35 @@ const nextConfig = {
   experimental: {
     proxyTimeout: 90_000,
   },
-  // Document-Policy header for browser profiling
+  // Security and Document-Policy headers
   async headers() {
+    // CSP: static policy (no per-request nonce — nonce requires middleware refactor).
+    // img-src includes *.supabase.co for stored avatars/media, *.scdn.cc for TikTok CDN
+    // thumbnails served via our proxy-image route (the proxy validates host; these
+    // domains appear in the browser as the origin of the proxied response).
+    // media-src includes commondatastorage.googleapis.com for showcase sample videos.
+    // Dev React/Next (webpack eval-source-map + Turbopack HMR) require eval() for
+    // hydration and debugging. Prod CSP stays strict — React never evals in prod.
+    const scriptSrc =
+      process.env.NODE_ENV === 'production'
+        ? "script-src 'self' 'unsafe-inline'"
+        : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+    const csp = [
+      "default-src 'self'",
+      scriptSrc,
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https://*.supabase.co https://*.scdn.cc https://picsum.photos",
+      "media-src 'self' https://commondatastorage.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      // Dev points at a local Supabase stack on 127.0.0.1:54321 — allow it (and ws HMR).
+      process.env.NODE_ENV === 'production'
+        ? "connect-src 'self' https://*.supabase.co"
+        : "connect-src 'self' https://*.supabase.co http://127.0.0.1:54321 http://localhost:54321 ws://127.0.0.1:54321 ws://localhost:4200",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "object-src 'none'",
+    ].join('; ');
+
     return [
       {
         source: '/:path*',
@@ -16,14 +43,35 @@ const nextConfig = {
             key: 'Document-Policy',
             value: 'js-profiling',
           },
+          {
+            key: 'Content-Security-Policy',
+            value: csp,
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
         ],
       },
     ];
   },
   reactStrictMode: false,
   transpilePackages: ['crypto-hash'],
-  // Enable production sourcemaps for Sentry
-  productionBrowserSourceMaps: true,
+  // Browser sourcemaps disabled in production — prevents source exposure to end-users.
+  // Sentry still receives server-side maps via the Sentry webpack plugin (deleteSourcemapsAfterUpload: true).
+  productionBrowserSourceMaps: false,
 
   // Custom webpack config to ensure sourcemaps are generated properly
   webpack: (config, { buildId, dev, isServer, defaultLoaders }) => {

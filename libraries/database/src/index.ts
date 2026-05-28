@@ -11,11 +11,21 @@
 export { getSupabaseAdmin } from './supabase-server';
 export {
   detectPlatform,
+  normalizeHandle,
   validateProfileUrl,
   type ProfileUrlValidation,
   type ProfileUrlValidationError,
 } from './profile-url';
 export { addProfile, type AddProfileInput } from './profile';
+export {
+  addProfileClaim,
+  decideInitialClaimKind,
+  findCandidatesByHandle,
+  findOrCreateProfile,
+  type AddClaimInput,
+  type FindOrCreateInput,
+  type FindOrCreateResult,
+} from './claim';
 export {
   listScrapeableProfiles,
   upsertProfileSnapshot,
@@ -32,5 +42,9 @@ export type {
   ProfileRow,
   ProfileSnapshotRow,
   PostSnapshotRow,
+  ProfileClaimRow,
+  ClaimKind,
+  ClaimedVia,
+  DiscoveryCandidate,
   Result,
 } from './types';
