@@ -3,7 +3,7 @@ import FadeContent from '@gitroom/frontend/components/FadeContent';
 
 export function ManifestoOpening() {
   return (
-    <DottedSurface className="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)]">
+    <DottedSurface>
       <section
         aria-labelledby="about-manifesto-heading"
         className="w-full pt-16 pb-20 sm:pt-24 sm:pb-28 lg:pt-32 lg:pb-36 max-w-[1100px] mx-auto px-6 md:px-8"

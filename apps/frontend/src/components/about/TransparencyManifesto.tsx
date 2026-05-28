@@ -6,7 +6,7 @@ export function TransparencyManifesto() {
   return (
     <section
       aria-labelledby="about-transparency-heading"
-      className="w-full pb-20 sm:pb-24 max-w-[1100px] mx-auto text-center"
+      className="w-full pb-20 sm:pb-24 max-w-[1100px] mx-auto px-6 md:px-8 text-center"
     >
       <FadeContent>
         <h2

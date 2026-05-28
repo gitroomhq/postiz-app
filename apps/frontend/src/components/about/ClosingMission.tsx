@@ -7,7 +7,7 @@ export function ClosingMission() {
   return (
     <section
       aria-labelledby="about-mission-heading"
-      className="w-full pb-24 max-w-[1100px] mx-auto"
+      className="w-full pb-24 max-w-[1100px] mx-auto px-6 md:px-8"
     >
       <FadeContent>
         <GlassCard

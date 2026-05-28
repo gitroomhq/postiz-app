@@ -16,7 +16,11 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <article className="flex flex-col w-full">
+    // Full-bleed: break out of the layout's max-w-[1200px] wrapper so every
+    // section shares one viewport-centered column (and the hero particles span
+    // edge-to-edge like the landing hero). Each section re-centers its own
+    // max-w-[1100px] px-6 column, so they all align at every width.
+    <article className="flex flex-col w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)]">
       <ManifestoOpening />
       <StoryTimeline />
       <FivePillars />

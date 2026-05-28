@@ -6,6 +6,10 @@ import * as THREE from 'three';
 const SEPARATION = 150;
 const AMOUNT_X = 40;
 const AMOUNT_Y = 60;
+// Phase drift per second. Time-based (not per-frame) so the wave moves at the
+// same speed on 60Hz and 120Hz displays. Lower = calmer. Was ~6/s (0.1/frame
+// at 60fps) which read as too fast; 1.5/s is a smooth, slow drift.
+const PHASE_SPEED = 1.5;
 
 /**
  * The Three.js scene that owns the animated dot grid. Lives inside an
@@ -74,6 +78,7 @@ export function DottedSurfaceCanvas() {
 
     let animationId = 0;
     let count = 0;
+    let lastTime = 0;
 
     const positionAttribute = geometry.attributes.position;
     const positionArray = positionAttribute.array as Float32Array;
@@ -96,11 +101,15 @@ export function DottedSurfaceCanvas() {
       renderer.render(scene, camera);
     };
 
-    const animate = () => {
+    const animate = (now = performance.now()) => {
       animationId = requestAnimationFrame(animate);
+      if (lastTime === 0) lastTime = now;
+      // Clamp dt so returning from a backgrounded tab doesn't jump the phase.
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      count += PHASE_SPEED * dt;
       tickPositions();
       renderer.render(scene, camera);
-      count += 0.1;
     };
 
     const start = () => {
