@@ -3,7 +3,8 @@
  *
  * Endpoints used:
  *   GET /api/v1/tiktok/app/v3/handler_user_profile?unique_id=<handle>
- *   GET /api/v1/tiktok/app/v3/fetch_user_post_videos_v3?unique_id=<handle>&count=30
+ *   GET /api/v1/tiktok/app/v3/fetch_user_post_videos_v2?unique_id=<handle>&count=30
+ *   (was _v3 — switched to _v2 2026-05-28; see notes inside scrape().)
  *
  * The "_v3" endpoints return the simplified TikTok app payload — same fields
  * as the full version but lighter / faster. Both endpoints accept unique_id
@@ -216,7 +217,11 @@ export const tiktokAdapter: PlatformAdapter = {
         profileUrl,
       }),
       tikhubGet<TtPostsResponse>({
-        path: '/api/v1/tiktok/app/v3/fetch_user_post_videos_v3',
+        // v3 of this endpoint currently returns 400 universally on TikHub
+        // (verified 2026-05-28, same backend issue as IG v3 get_user_posts).
+        // v2 returns the same response shape, just on a healthy worker.
+        // Swap back to _v3 once TikHub fixes their backend.
+        path: '/api/v1/tiktok/app/v3/fetch_user_post_videos_v2',
         query: { unique_id: handle, count: POSTS_PER_SCRAPE, max_cursor: 0 },
         platform: PLATFORM,
         profileUrl,

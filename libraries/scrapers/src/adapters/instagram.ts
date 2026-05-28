@@ -1,12 +1,22 @@
 /**
- * Instagram adapter — TikHub REST (api.tikhub.io/api/v1/instagram/v3/...).
+ * Instagram adapter — TikHub REST.
  *
  * Endpoints used:
  *   GET /api/v1/instagram/v3/get_user_profile?username=<handle>
- *   GET /api/v1/instagram/v3/get_user_posts?username=<handle>&first=30
+ *   GET /api/v1/instagram/v2/fetch_user_posts?username=<handle>
  *
- * Both calls fire in parallel — profile call gives the follower/following/
- * media totals, posts call gives the per-post engagement window.
+ * Note the version mix: the V3 profile endpoint is healthy and returns
+ * follower/following/media totals; the V3 posts endpoint
+ * (/api/v1/instagram/v3/get_user_posts) is currently broken on TikHub's
+ * backend (returns generic 400 for every username, charged or otherwise —
+ * verified 2026-05-28). The V2 fetch_user_posts endpoint covers the same
+ * post fields and is healthy, so we use it instead. Switch back to V3
+ * when TikHub fixes the backend.
+ *
+ * V2 returns up to ~12 posts by default — smaller window than the spec's
+ * "up to 30" target but still useful for the engagement rollup. Pagination
+ * via the response's pagination_token is possible if we ever need more
+ * (not wired today).
  *
  * Output mapping:
  *   Profile
@@ -90,7 +100,10 @@ interface IgImageCandidate {
 }
 
 interface IgImageVersions {
+  /** v3 endpoint shape — image_versions2.candidates[]. */
   candidates?: IgImageCandidate[];
+  /** v2 endpoint shape — image_versions.items[]. */
+  items?: IgImageCandidate[];
 }
 
 interface IgPost {
@@ -108,9 +121,14 @@ interface IgPost {
   play_count?: number | null;
   view_count?: number | null;
   video_view_count?: number | null;
+  /** Some v2 payloads use this instead of play_count. */
+  ig_play_count?: number | null;
   taken_at?: number | string | null;
   taken_at_timestamp?: number | null;
+  /** v3 endpoint field name. */
   image_versions2?: IgImageVersions;
+  /** v2 endpoint field name (currently in use; see file header). */
+  image_versions?: IgImageVersions;
   display_url?: string | null;
   thumbnail_url?: string | null;
   carousel_media?: unknown[];
@@ -118,7 +136,14 @@ interface IgPost {
 }
 
 interface IgPostsResponse {
+  /** v3 shape — items at top of unwrapped data. */
   items?: IgPost[];
+  /** v2 shape — items nested under data.data. tikhubGet strips the outer
+   *  envelope so we see data.{data: {items}} here. */
+  data?: {
+    items?: IgPost[];
+    pagination_token?: string | null;
+  };
   /** Some endpoints nest under data.user.edge_owner_to_timeline_media.edges */
   edges?: { node?: IgPost }[];
   num_results?: number;
@@ -158,14 +183,21 @@ function pickContentType(p: IgPost): ContentType {
 function pickMediaUrl(p: IgPost): string | null {
   if (p.display_url) return p.display_url;
   if (p.thumbnail_url) return p.thumbnail_url;
-  const candidate = p.image_versions2?.candidates?.[0]?.url;
-  return candidate ?? null;
+  // v3 used image_versions2.candidates; v2 uses image_versions.items.
+  // Check both so a future endpoint swap (or a payload variant) keeps working.
+  const v3 = p.image_versions2?.candidates?.[0]?.url;
+  if (v3) return v3;
+  const v2 = p.image_versions?.items?.[0]?.url;
+  return v2 ?? null;
 }
 
 function mapPost(p: IgPost): NormalizedPostSnapshot | null {
   const externalId = p.code ?? p.shortcode ?? (p.pk !== undefined ? String(p.pk) : p.id);
   if (!externalId) return null;
-  const views = p.play_count ?? p.view_count ?? p.video_view_count ?? null;
+  // v2 prefers ig_play_count; v3 uses play_count; older payloads use view_count
+  // or video_view_count. Fall through in that order.
+  const views =
+    p.play_count ?? p.ig_play_count ?? p.view_count ?? p.video_view_count ?? null;
   return {
     external_post_id: externalId,
     posted_at: unwrapTimestamp(p),
@@ -185,8 +217,16 @@ function unwrapUser(resp: IgProfileResponse): IgUser {
   return resp.user ?? (resp as unknown as IgUser);
 }
 
-/** Unwrap TikHub's posts response, which may use {items} or {edges:[{node}]}. */
+/**
+ * Unwrap TikHub's posts response.
+ * v2 fetch_user_posts → data.data.items[] (after tikhubGet strips the
+ *   outer envelope, we see resp.data.items).
+ * v3 get_user_posts   → data.items[] (resp.items at this layer).
+ * Some endpoints use GraphQL-style edges[].node — kept as fallback.
+ */
 function unwrapPosts(resp: IgPostsResponse): IgPost[] {
+  const v2Items = resp.data?.items;
+  if (Array.isArray(v2Items) && v2Items.length > 0) return v2Items;
   if (Array.isArray(resp.items) && resp.items.length > 0) return resp.items;
   if (Array.isArray(resp.edges) && resp.edges.length > 0) {
     return resp.edges
@@ -241,7 +281,8 @@ export const instagramAdapter: PlatformAdapter = {
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     const handle = extractHandle(profileUrl);
 
-    // Parallel: profile + recent posts.
+    // Parallel: profile (v3 — healthy) + recent posts (v2 — v3 backend
+    // currently returns 400 universally; see file header).
     const [profileResp, postsResp] = await Promise.all([
       tikhubGet<IgProfileResponse>({
         path: '/api/v1/instagram/v3/get_user_profile',
@@ -250,8 +291,8 @@ export const instagramAdapter: PlatformAdapter = {
         profileUrl,
       }),
       tikhubGet<IgPostsResponse>({
-        path: '/api/v1/instagram/v3/get_user_posts',
-        query: { username: handle, first: POSTS_PER_SCRAPE },
+        path: '/api/v1/instagram/v2/fetch_user_posts',
+        query: { username: handle },
         platform: PLATFORM,
         profileUrl,
       }),
