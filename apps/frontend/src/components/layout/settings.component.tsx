@@ -32,15 +32,21 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import { Input } from '@gitroom/react/form/input';
+import { Textarea } from '@gitroom/react/form/textarea';
+import { Button } from '@gitroom/react/form/button';
+
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
+  initialTab?: string;
 }> = (props) => {
   const { isGeneral } = useVariables();
-  const { getRef } = props;
+  const { getRef, initialTab = 'global_settings' } = props;
   const fetch = useFetch();
   const toast = useToaster();
-  const swr = useSWRConfig();
+  const { mutate } = useSWRConfig();
   const user = useUser();
+  const t = useT();
   const resolver = useMemo(() => {
     return classValidatorResolver(UserDetailDto);
   }, []);
@@ -74,6 +80,7 @@ export const SettingsPopup: FC<{
       method: 'POST',
       body: JSON.stringify(val),
     });
+    await mutate('/user/self');
     if (getRef) {
       return;
     }
@@ -81,12 +88,15 @@ export const SettingsPopup: FC<{
     close();
   }, []);
 
-  const [tab, setTab] = useState('global_settings');
+  const [tab, setTab] = useState(initialTab);
 
-  const t = useT();
   const list = useMemo(() => {
     const arr = [];
-    arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
+    arr.push({ tab: 'profile', label: t('profile', 'Profile') });
+    arr.push({
+      tab: 'global_settings',
+      label: t('global_settings', 'Global Settings'),
+    });
     // Populate tabs based on user permissions
     if (user?.tier?.team_members && isGeneral) {
       arr.push({ tab: 'teams', label: t('teams', 'Teams') });
@@ -106,7 +116,10 @@ export const SettingsPopup: FC<{
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('developers', 'Developers') });
     }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    arr.push({
+      tab: 'approved_apps',
+      label: t('approved_apps', 'Approved Apps'),
+    });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);
@@ -160,6 +173,68 @@ export const SettingsPopup: FC<{
                 !getRef && 'rounded-[4px]'
               )}
             >
+              {tab === 'profile' && (
+                <div className="flex flex-col">
+                  <h3 className="text-[20px]">{t('profile', 'Profile')}</h3>
+                  <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
+                    <div className="flex flex-col gap-[6px]">
+                      <div className="text-[14px]">
+                        {t('profile_picture', 'Profile Picture')}
+                      </div>
+                      <div className="flex items-center gap-[20px]">
+                        {picture?.path ? (
+                          <img
+                            src={picture.path}
+                            alt={t('profile_picture', 'Profile Picture')}
+                            className="w-[96px] h-[96px] rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-[96px] h-[96px] rounded-full bg-btnSimple flex items-center justify-center text-customColor18 text-[32px]">
+                            ?
+                          </div>
+                        )}
+                        <div className="flex gap-[8px]">
+                          <Button
+                            type="button"
+                            onClick={openMedia}
+                            className="rounded-[8px]"
+                          >
+                            {t('upload', 'Upload')}
+                          </Button>
+                          {picture?.path && (
+                            <Button
+                              type="button"
+                              secondary
+                              onClick={remove}
+                              className="rounded-[8px]"
+                            >
+                              {t('remove', 'Remove')}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Input
+                      name="fullname"
+                      label="Full Name"
+                      translationKey="label_full_name"
+                      placeholder={t('label_full_name', 'Full Name')}
+                    />
+                    <Textarea
+                      name="bio"
+                      label="Bio"
+                      translationKey="label_bio"
+                      placeholder={t('label_bio', 'Bio')}
+                    />
+                    <div className="flex justify-end">
+                      <Button type="submit" className="rounded-[8px]">
+                        {t('save', 'Save')}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />
@@ -218,15 +293,11 @@ export const SettingsPopup: FC<{
 };
 export const SettingsComponent = () => {
   const settings = useModals();
-  const user = useUser();
   const openModal = useCallback(() => {
-    if (user?.tier.current !== 'FREE') {
-      return;
-    }
     settings.openModal({
       children: (
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] w-[500px] mx-auto">
-          <SettingsPopup />
+          <SettingsPopup initialTab="profile" />
         </div>
       ),
       classNames: {
@@ -235,7 +306,7 @@ export const SettingsComponent = () => {
       withCloseButton: false,
       size: '100%',
     });
-  }, [user]);
+  }, [settings]);
   return (
     <Link href="/settings" onClick={openModal}>
       <svg
