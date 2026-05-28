@@ -1,6 +1,6 @@
 -- D3 Creator v1 core schema
 -- Plan-wins-over-spec: 5 tables, no agency/scrape_log/user_*
--- Applied via Supabase MCP on 2026-05-27 to project wmesjldkqvbzrcpitclu.
+-- Applied via Supabase MCP on 2026-05-27 to project <project-ref>.
 
 -- 1. client (agency client)
 create table public.client (

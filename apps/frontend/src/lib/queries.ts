@@ -53,6 +53,7 @@ export interface SiteSummary {
   trackedCreators: number;
   combinedFollowers: number;
   combinedFollowersDelta30d: number;
+  /** Fraction (0.103 = 10.3%) to match Intl percent-style formatters. */
   combinedFollowersDelta30dPct: number;
 }
 
@@ -121,8 +122,9 @@ export async function getSiteSummary(): Promise<SiteSummary | null> {
     priorCombined += snapshot.followers;
   }
   const combinedFollowersDelta30d = priorCombined ? combinedFollowers - priorCombined : 0;
+  // Fraction not percent — Intl.NumberFormat percent style multiplies by 100.
   const combinedFollowersDelta30dPct =
-    priorCombined > 0 ? (combinedFollowersDelta30d / priorCombined) * 100 : 0;
+    priorCombined > 0 ? combinedFollowersDelta30d / priorCombined : 0;
 
   return {
     trackedCreators,
@@ -183,11 +185,24 @@ export async function getLiveCreatorRows(): Promise<LiveCreatorRow[] | null> {
   const earliest30d = new Map<string, number>();
   const earliestEver = new Map<string, string>();
   const thirty = new Date(Date.now() - 30 * 86400_000).toISOString();
+  // Explicit "keep earliest in 30d window" — defensive even though DESC order
+  // already happens to produce that with naive overwrite. Storing {ts,followers}
+  // so the comparison is self-documenting and robust to future ordering changes.
+  const earliest30dWithTs = new Map<string, { ts: string; followers: number }>();
   for (const s of snaps.data ?? []) {
     if (!latestSnap.has(s.profile_id)) latestSnap.set(s.profile_id, s.followers ?? 0);
-    if (s.captured_at > thirty) earliest30d.set(s.profile_id, s.followers ?? 0);
+    if (s.captured_at > thirty) {
+      const existing = earliest30dWithTs.get(s.profile_id);
+      if (!existing || s.captured_at < existing.ts) {
+        earliest30dWithTs.set(s.profile_id, {
+          ts: s.captured_at,
+          followers: s.followers ?? 0,
+        });
+      }
+    }
     earliestEver.set(s.profile_id, s.captured_at);
   }
+  for (const [id, v] of earliest30dWithTs) earliest30d.set(id, v.followers);
 
   // 3. Recent posts → engagement (limit to last 30 per profile)
   const posts = await sb
@@ -347,9 +362,10 @@ export async function getPlatformBreakdown(): Promise<
     return null;
   }
 
-  // Latest + earliest-in-30d-window per profile.
+  // Latest + earliest-in-30d-window per profile. Explicit "earliest" comparison
+  // so the intent doesn't drift if the .order() above ever changes.
   const latestByProfile = new Map<string, number>();
-  const earliest30dByProfile = new Map<string, number>();
+  const earliest30dByProfileTs = new Map<string, { ts: string; followers: number }>();
   const thirtyDaysAgoIso = new Date(
     Date.now() - 30 * 86400_000,
   ).toISOString();
@@ -357,10 +373,16 @@ export async function getPlatformBreakdown(): Promise<
     const id = s.profile_id as string;
     const followers = (s.followers as number | null) ?? 0;
     if (!latestByProfile.has(id)) latestByProfile.set(id, followers);
-    if ((s.captured_at as string) > thirtyDaysAgoIso) {
-      earliest30dByProfile.set(id, followers);
+    const ts = s.captured_at as string;
+    if (ts > thirtyDaysAgoIso) {
+      const existing = earliest30dByProfileTs.get(id);
+      if (!existing || ts < existing.ts) {
+        earliest30dByProfileTs.set(id, { ts, followers });
+      }
     }
   }
+  const earliest30dByProfile = new Map<string, number>();
+  for (const [id, v] of earliest30dByProfileTs) earliest30dByProfile.set(id, v.followers);
 
   // Group profiles by platform and roll up.
   interface Bucket {
@@ -403,6 +425,8 @@ export async function getPlatformBreakdown(): Promise<
 // ---------- Creator detail (Task 5 step 3) ----------
 
 export interface CreatorPlatformSlot {
+  /** Internal profile.id — needed so per-platform queries can avoid an extra lookup. */
+  profileId: string;
   platform: PlatformKey;
   /** The DB platform string (e.g. 'rednote' even when key is 'xiaohongshu'). */
   dbPlatform: string;
@@ -411,6 +435,7 @@ export interface CreatorPlatformSlot {
   profileUrl: string;
   followers: number | null;
   following: number | null;
+  totalPosts: number | null;
   totalViews: number | null;
   totalLikes: number | null;
   capturedAt: string | null;
@@ -437,13 +462,13 @@ export interface CreatorDetail {
  */
 async function latestSnapshotsForProfiles(
   profileIds: string[],
-): Promise<Map<string, { followers: number | null; following: number | null; total_views: number | null; total_likes: number | null; captured_at: string; raw: unknown }>> {
-  const map = new Map<string, { followers: number | null; following: number | null; total_views: number | null; total_likes: number | null; captured_at: string; raw: unknown }>();
+): Promise<Map<string, { followers: number | null; following: number | null; total_posts: number | null; total_views: number | null; total_likes: number | null; captured_at: string; raw: unknown }>> {
+  const map = new Map<string, { followers: number | null; following: number | null; total_posts: number | null; total_views: number | null; total_likes: number | null; captured_at: string; raw: unknown }>();
   if (profileIds.length === 0) return map;
   const sb = getSupabaseRead();
   const res = await sb
     .from('profile_snapshot')
-    .select('profile_id, followers, following, total_views, total_likes, captured_at, raw')
+    .select('profile_id, followers, following, total_posts, total_views, total_likes, captured_at, raw')
     .in('profile_id', profileIds)
     .order('captured_at', { ascending: false });
   if (res.error) {
@@ -455,6 +480,7 @@ async function latestSnapshotsForProfiles(
       map.set(row.profile_id, {
         followers: row.followers,
         following: row.following,
+        total_posts: row.total_posts,
         total_views: row.total_views,
         total_likes: row.total_likes,
         captured_at: row.captured_at,
@@ -574,6 +600,7 @@ export async function getCreatorByHandle(
     if (!bestBio) bestBio = fromPost.biography ?? fromSnap.biography;
 
     slots.push({
+      profileId: p.id,
       platform: dbPlatformToKey(p.platform),
       dbPlatform: p.platform,
       handle: p.handle,
@@ -581,6 +608,7 @@ export async function getCreatorByHandle(
       profileUrl: p.profile_url,
       followers: snap?.followers ?? null,
       following: snap?.following ?? null,
+      totalPosts: snap?.total_posts ?? null,
       totalViews: snap?.total_views ?? null,
       totalLikes: snap?.total_likes ?? null,
       capturedAt: snap?.captured_at ?? null,
@@ -667,18 +695,15 @@ export async function getCreatorPlatformDetail(
   const slot = creator.platforms.find((p) => p.platform === platformKey) ?? null;
   if (!slot) return { creator, slot: null, posts: [] };
 
+  // Use the profile id already loaded by getCreatorByHandle — eliminates a
+  // 4th serial round-trip just to re-look-up a value we already have.
   const sb = getSupabaseRead();
   const postsRes = await sb
     .from('post_snapshot')
     .select(
       'external_post_id, posted_at, caption_excerpt, likes, comments, shares, views, media_url, content_type, raw',
     )
-    .eq('profile_id', (
-      await sb.from('profile').select('id')
-        .eq('creator_id', creator.creatorId)
-        .eq('platform', slot.dbPlatform)
-        .limit(1).single()
-    ).data?.id ?? '')
+    .eq('profile_id', slot.profileId)
     .order('captured_at', { ascending: false })
     .limit(60);
 

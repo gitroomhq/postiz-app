@@ -51,6 +51,15 @@ const ratelimit: Ratelimit | null =
       })
     : null;
 
+// Warn once at module init if running in production without rate limiting configured.
+// Requests are NOT blocked — the host whitelist + content-type guard still apply —
+// but the lack of per-IP limiting creates an abuse vector for compute budget exhaustion.
+if (process.env.NODE_ENV === 'production' && ratelimit === null) {
+  console.error(
+    '[proxy-image] UPSTASH not configured in production — abuse risk',
+  );
+}
+
 /**
  * Allowed host suffixes. Match the IG/TikTok/FB/Douyin/RedNote CDNs.
  * Wildcard subdomain matching done via .endsWith().

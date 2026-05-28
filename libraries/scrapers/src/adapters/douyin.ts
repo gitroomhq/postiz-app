@@ -197,7 +197,7 @@ function mapProfile(
 
 export const douyinAdapter: PlatformAdapter = {
   platform: 'douyin',
-  actorId: 'tikhub:douyin/web',
+  sourceId: 'tikhub:douyin/web',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     const secUid = extractSecUid(profileUrl);
 

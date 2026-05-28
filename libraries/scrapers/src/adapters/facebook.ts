@@ -214,17 +214,21 @@ function isNotFound(p: BdFbProfile): boolean {
 
 export const facebookAdapter: PlatformAdapter = {
   platform: 'facebook',
-  // Kept for backward compat with the type — Bright Data has no Actor IDs;
-  // tagged with the profile dataset for traceability.
-  actorId: `brightdata:${PROFILE_DATASET_ID}`,
+  // Tagged with the BrightData profile dataset ID for traceability.
+  sourceId: `brightdata:${PROFILE_DATASET_ID}`,
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     // BD Pages-and-Profiles dataset has historically taken 3-7 min per scrape
-    // on cold inputs (avg_duration_per_input ~390s observed live). Bump the
-    // adapter budget past the default 5 min so cron retries don't time out
-    // before BD's snapshot becomes ready. The daily cron's maxDuration is
-    // still 300s — if FB scrapes consistently exceed that, the FB platform
-    // needs to move to a queue/webhook pattern (see commit notes).
-    const FB_BUDGET_MS = 600_000; // 10 min — covers BD avg + safety margin
+    // on cold inputs (avg_duration_per_input ~390s observed live). The
+    // adapter budget MUST stay under Vercel's Function maxDuration (300s) so
+    // the adapter throws a clean ScrapeError before the Function dies — that
+    // way we can write `failed` status to the profile row instead of leaving
+    // it orphaned in `pending`. Cap at 240s (4 min) to leave ~60s of margin
+    // for Supabase round-trips, status update, and JSON response.
+    //
+    // Consequence: FB scrapes that exceed 4 min get marked `failed` and the
+    // next cron will retry. If failures become chronic, move FB to a
+    // queue/webhook pattern (track snapshot_id, poll out-of-band).
+    const FB_BUDGET_MS = 240_000;
     const FB_POLL_MS = 10_000;
     const [profileItems, postItems] = await Promise.all([
       runDataset<BdFbProfile>({

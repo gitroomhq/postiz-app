@@ -127,7 +127,6 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "accept-language": "^3.0.20",
-    "apify-client": "^2.23.3",
     "array-move": "^4.0.0",
     "async-mutex": "^0.5.0",
     "axios": "^1.14.0",

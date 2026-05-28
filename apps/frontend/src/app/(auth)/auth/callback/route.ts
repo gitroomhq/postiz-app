@@ -16,7 +16,13 @@ export async function GET(request: NextRequest) {
   const redirectTo = safeRedirect(searchParams.get('redirectTo'), '/me');
 
   if (!code) {
-    return NextResponse.redirect(new URL(redirectTo, origin));
+    // Missing code means the callback was hit without a real auth handshake
+    // (manual navigation, broken link, expired magic link). Send the user to
+    // /login with an explicit error so they know to retry, instead of
+    // silently dropping them onto /me with no session.
+    const missingUrl = new URL('/login', origin);
+    missingUrl.searchParams.set('error', 'missing_code');
+    return NextResponse.redirect(missingUrl);
   }
 
   const supabase = await getSupabaseRoute();

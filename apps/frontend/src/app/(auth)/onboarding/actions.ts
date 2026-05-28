@@ -76,15 +76,19 @@ export async function saveOnboarding(formData: FormData): Promise<OnboardingResu
     creatorId = creator.id;
   }
 
-  const { error: linkErr } = await admin
-    .from('creator_link')
-    .update({
+  // Upsert so the call works whether or not handle_new_auth_user has already
+  // created the creator_link row. A plain .update() silently no-ops if the
+  // row is missing, leaving the user stuck on /onboarding with no error.
+  const { error: linkErr } = await admin.from('creator_link').upsert(
+    {
+      user_id: user.id,
       creator_id: creatorId,
       dashboard_url: parsed.data.dashboardUrl,
       leaderboard_url: parsed.data.leaderboardUrl,
       onboarding_completed: true,
-    })
-    .eq('user_id', user.id);
+    },
+    { onConflict: 'user_id' }
+  );
   if (linkErr) return { ok: false, error: linkErr.message };
 
   redirect('/me');

@@ -107,16 +107,22 @@ export default async function CreatorPlatformPage({
       </header>
 
       <BentoGrid gap="md">
-        <BentoItem colSpan={3} tabletColSpan={6}>
+        <BentoItem colSpan={2} tabletColSpan={4}>
           <StatCard
             label="Followers"
             value={slot?.followers != null ? compact.format(slot.followers) : '—'}
           />
         </BentoItem>
-        <BentoItem colSpan={3} tabletColSpan={6}>
+        <BentoItem colSpan={2} tabletColSpan={4}>
           <StatCard
             label="Following"
             value={slot?.following != null ? compact.format(slot.following) : '—'}
+          />
+        </BentoItem>
+        <BentoItem colSpan={2} tabletColSpan={4}>
+          <StatCard
+            label="Posts"
+            value={slot?.totalPosts != null ? compact.format(slot.totalPosts) : '—'}
           />
         </BentoItem>
         <BentoItem colSpan={3} tabletColSpan={6}>

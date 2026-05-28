@@ -38,6 +38,16 @@ export const maxDuration = 300;
 // Server-only — never prerender at build time.
 export const dynamic = 'force-dynamic';
 
+// Per-run capacity cap. Sequential scrapes run ~50s each; 5 × 50s = 250s
+// leaves a 50s safety margin under the 300s function timeout. Profiles
+// beyond this cap are deferred to the next cron tick — we sort by
+// last_scraped_at NULLS FIRST so the least-recently-scraped go first.
+//
+// TODO: For real scale, migrate to Vercel Queues so each profile gets its
+// own invocation budget instead of sharing one 300s window.
+// See https://vercel.com/docs/queues
+const PROFILES_PER_RUN = 5;
+
 interface ProfileResult {
   profile_id: string;
   platform: string;
@@ -51,8 +61,12 @@ function assertAuth(request: Request): Response | null {
   const expected = process.env.CRON_SECRET;
   if (!expected) {
     // Be loud — never let a misconfigured prod silently accept anonymous traffic.
+    console.error('[cron] CRON_SECRET not set — cron auth will fail');
     return NextResponse.json(
-      { error: 'CRON_SECRET not configured on the server' },
+      {
+        error:
+          'CRON_SECRET not configured on the server — add it to Vercel project env vars',
+      },
       { status: 500 },
     );
   }
@@ -75,14 +89,36 @@ export async function GET(request: Request): Promise<Response> {
   if (authFail) return authFail;
 
   const startedAt = new Date();
-  let profiles;
+  let allProfiles;
   try {
-    profiles = await listScrapeableProfiles();
+    allProfiles = await listScrapeableProfiles();
   } catch (err) {
     return NextResponse.json(
       { error: 'listScrapeableProfiles failed', detail: (err as Error).message },
       { status: 500 },
     );
+  }
+
+  // Sort by last_scraped_at NULLS FIRST (never-scraped profiles win priority,
+  // then oldest first). DB-side ORDER BY would be cleaner — the database lib
+  // currently sorts by created_at; sorting here keeps the change surgical.
+  const ordered = [...allProfiles].sort((a, b) => {
+    if (a.last_scraped_at === null && b.last_scraped_at === null) return 0;
+    if (a.last_scraped_at === null) return -1;
+    if (b.last_scraped_at === null) return 1;
+    return a.last_scraped_at.localeCompare(b.last_scraped_at);
+  });
+
+  const totalEligible = ordered.length;
+  const profiles = ordered.slice(0, PROFILES_PER_RUN);
+  const skipped = Math.max(0, totalEligible - profiles.length);
+
+  if (totalEligible > PROFILES_PER_RUN) {
+    console.warn('[daily-snapshot] capacity reached', {
+      total: totalEligible,
+      processed: PROFILES_PER_RUN,
+      skipped,
+    });
   }
 
   const results: ProfileResult[] = [];
@@ -127,7 +163,10 @@ export async function GET(request: Request): Promise<Response> {
     started_at: startedAt.toISOString(),
     finished_at: finishedAt.toISOString(),
     elapsed_ms: finishedAt.getTime() - startedAt.getTime(),
-    total: profiles.length,
+    total_eligible: totalEligible,
+    processed: profiles.length,
+    skipped,
+    capacity_per_run: PROFILES_PER_RUN,
     by_status: results.reduce<Record<string, number>>((acc, r) => {
       acc[r.status] = (acc[r.status] ?? 0) + 1;
       return acc;

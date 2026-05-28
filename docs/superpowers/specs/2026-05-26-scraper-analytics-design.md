@@ -601,3 +601,18 @@ Every leaderboard ranking requires running the same query twice (current + previ
 ---
 
 **End of design. Implementation plan to follow.**
+
+---
+
+## Update 2026-05-28
+
+**Scraper backend migrated from Apify to TikHub + BrightData.**
+
+All references to Apify in this document reflect the original design intent only and are superseded by the following:
+
+- **Instagram, TikTok, RedNote (Xiaohongshu), Douyin** — scraped via TikHub REST API. Auth via `TIKHUB_API_KEY`.
+- **Facebook** — scraped via BrightData Pages-and-Profiles dataset. Auth via `BRIGHTDATA_API_KEY`.
+- The `apify-client` npm package has been removed from the monorepo.
+- `libraries/scrapers/src/apify-client.ts` has been deleted; per-platform clients (`tikhub-client.ts`, `brightdata-client.ts`) are the new entrypoints.
+- The `actorId` field on `PlatformAdapter` has been renamed to `sourceId` to reflect that it no longer refers to an Apify Actor ID. Values follow the convention `<provider>:<endpoint>`, e.g. `tikhub:instagram/v3` or `brightdata:<dataset-id>`.
+- Error classes `ApifyTimeoutError`, `ApifyEmptyResultError`, `ApifyThrottledError` are retained in `errors.ts` under their original names to avoid breaking callers; they are now semantically generic timeout/empty/throttle errors regardless of backend.

@@ -12,11 +12,11 @@ import type { PlatformAdapter, ScrapeResult } from '../types';
 
 export function notYetImplemented(
   platform: PlatformAdapter['platform'],
-  actorId: string,
+  sourceId: string,
 ): PlatformAdapter {
   return {
     platform,
-    actorId,
+    sourceId,
     async scrape(profileUrl: string): Promise<ScrapeResult> {
       throw new ScrapeError(
         'failed',

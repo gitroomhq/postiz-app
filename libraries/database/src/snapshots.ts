@@ -53,11 +53,15 @@ export async function listScrapeableProfiles(): Promise<ProfileRow[]> {
   return (res.data ?? []) as ProfileRow[];
 }
 
-/** Idempotent UPSERT keyed on (profile_id, captured_date). */
+/**
+ * Idempotent UPSERT keyed on (profile_id, captured_date).
+ * Returns the count of rows actually written so callers can report real
+ * observability data instead of an assumed 1.
+ */
 export async function upsertProfileSnapshot(
   profileId: string,
   snap: ProfileSnapshotInput,
-): Promise<void> {
+): Promise<{ written: number }> {
   const sb = getSupabaseAdmin();
   const res = await sb
     .from('profile_snapshot')
@@ -71,11 +75,13 @@ export async function upsertProfileSnapshot(
         total_likes: snap.total_likes,
         raw: snap.raw,
       },
-      { onConflict: 'profile_id,captured_date' },
-    );
+      { onConflict: 'profile_id,captured_date', ignoreDuplicates: false },
+    )
+    .select('id');
   if (res.error) {
     throw new Error(`upsertProfileSnapshot failed: ${res.error.message}`);
   }
+  return { written: res.data?.length ?? 0 };
 }
 
 /**
@@ -103,11 +109,15 @@ export async function upsertPostSnapshots(
   }));
   const res = await sb
     .from('post_snapshot')
-    .upsert(rows, { onConflict: 'profile_id,external_post_id,captured_date' });
+    .upsert(rows, {
+      onConflict: 'profile_id,external_post_id,captured_date',
+      ignoreDuplicates: false,
+    })
+    .select('id');
   if (res.error) {
     throw new Error(`upsertPostSnapshots failed: ${res.error.message}`);
   }
-  return { written: posts.length };
+  return { written: res.data?.length ?? 0 };
 }
 
 /** Update profile.scrape_status + last_scraped_at after a scrape attempt. */
