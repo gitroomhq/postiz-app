@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
-import { getSupabaseAdmin } from '@d3/database';
+import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,15 +16,24 @@ export default async function CreatorMePage() {
   if (!auth) redirect('/login');
   if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
 
-  // Pull this creator's own profiles + latest snapshots. Service-role client
-  // is needed because public RLS reads everything; we want a server-driven
-  // filter scoped to creator_id == auth.creatorLink.creator_id.
-  const admin = getSupabaseAdmin();
+  // Pull this creator's own profiles + latest snapshots via the cookie-aware
+  // client (NOT the service-role client). RLS on the data tables is "public
+  // read for anon + authenticated" — required for the public showcase — so
+  // this query has the same effective visibility as the anon user has on
+  // /dashboard. Scoping to creator_id is then enforced at the query level.
+  //
+  // Why this matters: previously this page used the service-role client,
+  // which bypasses RLS entirely. If the app-level filter ever drifted (a
+  // bad creator_id, a forgotten `.eq()`), the page could have leaked rows
+  // for ANY creator. With the cookie-aware client, the worst-case leak is
+  // bounded by what an anon visitor already sees — i.e. no privilege
+  // escalation, just possible UI confusion.
+  const sb = await getSupabaseRoute();
   const creatorId = auth.creatorLink.creator_id;
 
   // Step 1: pull this creator's profiles, scoped by creator_id.
   const { data: profiles } = creatorId
-    ? await admin
+    ? await sb
         .from('profile')
         .select('id, platform, handle, display_name, profile_url, scrape_status')
         .eq('creator_id', creatorId)
@@ -39,7 +48,7 @@ export default async function CreatorMePage() {
   // /me/leaderboard already uses.
   const profileIds = (profiles ?? []).map((p) => p.id);
   const { data: latestSnapshots } = profileIds.length
-    ? await admin
+    ? await sb
         .from('profile_snapshot')
         .select(
           'profile_id, followers, total_posts, total_views, total_likes, captured_at',

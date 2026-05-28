@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
-import { getSupabaseAdmin } from '@d3/database';
+import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,19 +25,25 @@ export default async function CreatorMeLeaderboardPage() {
   if (!auth) redirect('/login');
   if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
 
-  const admin = getSupabaseAdmin();
+  // Cookie-aware client — same defense-in-depth reasoning as /me/page.tsx.
+  // The data tables have "public read for anon + authenticated" RLS for the
+  // showcase, so this client sees the same rows an anon visitor would, and
+  // the creator_id filter narrows to this user's own posts at the query
+  // level. If the filter ever broke, the leak is bounded by what's already
+  // public via /leaderboard.
+  const sb = await getSupabaseRoute();
   const creatorId = auth.creatorLink.creator_id;
 
   // Top posts across this creator's profiles, by views.
   let posts: PostRow[] = [];
   if (creatorId) {
-    const { data: profileIds } = await admin
+    const { data: profileIds } = await sb
       .from('profile')
       .select('id')
       .eq('creator_id', creatorId);
     const ids = (profileIds ?? []).map((p) => p.id);
     if (ids.length) {
-      const { data } = await admin
+      const { data } = await sb
         .from('post_snapshot')
         .select(
           'external_post_id, caption_excerpt, views, likes, comments, posted_at, media_url',
