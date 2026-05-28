@@ -35,6 +35,13 @@
         "--header",
         "Authorization: Bearer ${TIKHUB_API_KEY}"
       ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }

@@ -18,12 +18,38 @@
  *   - Response forwarded with the CDN's content-type, plus aggressive
  *     immutable caching for 1 day (signed URLs change, but the underlying
  *     image bytes for a given URL don't).
+ *   - Optional per-IP rate limit via Upstash. Inert until
+ *     UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set in env
+ *     (Vercel Marketplace integration auto-injects these). Sliding
+ *     window of 30 req per 10s — generous for any real user loading a
+ *     page, hostile to a bot trying to bounce signed URLs through our
+ *     compute budget.
  */
 
 import { NextResponse } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+/**
+ * Lazily constructed rate limiter. We instantiate at module load so the
+ * Upstash client connection is reused across invocations of this Function
+ * (Fluid Compute pins state across requests when warm). If the env vars
+ * aren't set — local dev without the Marketplace integration, or before
+ * it's been provisioned in production — `ratelimit` stays null and the
+ * guard becomes a no-op.
+ */
+const ratelimit: Ratelimit | null =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Ratelimit({
+        redis: Redis.fromEnv(),
+        limiter: Ratelimit.slidingWindow(30, '10 s'),
+        analytics: false,
+        prefix: 'proxy-image',
+      })
+    : null;
 
 /**
  * Allowed host suffixes. Match the IG/TikTok/FB/Douyin/RedNote CDNs.
@@ -36,6 +62,8 @@ const ALLOWED_SUFFIXES = [
   '.tiktokcdn-us.com',
   '.muscdn.com',         // Douyin / TikTok media
   '.xhscdn.com',         // RedNote / Xiaohongshu CDN
+  '.rednotecdn.com',     // RedNote thumbnails surfaced by TikHub adapter
+  '.douyinpic.com',      // Douyin thumbnails surfaced by TikHub adapter
 ];
 
 function isAllowedHost(host: string): boolean {
@@ -62,7 +90,40 @@ function rewriteHostForFetch(target: URL): URL {
   return target;
 }
 
+/**
+ * Best-effort caller IP for rate-limiting. Vercel always populates
+ * x-forwarded-for upstream of the function; the first entry is the
+ * originating client. The fallback only fires in local dev / missing
+ * header — we use a placeholder so all those requests share a single
+ * bucket rather than escaping the limiter entirely.
+ */
+function callerIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0]!.trim();
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
 export async function GET(request: Request): Promise<Response> {
+  // Rate limit early — before we parse the URL or touch the upstream. A
+  // 429 here costs less than the URL validation, even though the limiter
+  // itself is a remote Redis call. When ratelimit is null (no env vars
+  // set), this is free.
+  if (ratelimit) {
+    const { success, limit, remaining, reset } = await ratelimit.limit(
+      callerIp(request),
+    );
+    if (!success) {
+      return new NextResponse('rate limited', {
+        status: 429,
+        headers: {
+          'Retry-After': Math.max(0, Math.ceil((reset - Date.now()) / 1000)).toString(),
+          'X-RateLimit-Limit': String(limit),
+          'X-RateLimit-Remaining': String(remaining),
+        },
+      });
+    }
+  }
+
   const u = new URL(request.url);
   const raw = u.searchParams.get('url');
   if (!raw) {
