@@ -26,7 +26,10 @@ import { douyinAdapter } from './douyin';
 //   https://v.douyin.com/<short-id>/                    (mobile share)
 //   <bare secUid>                                       (UserSecID alone)
 //   <numeric user id>
-const TEST_PROFILE = 'https://www.douyin.com/user/REPLACE_WITH_REAL_SEC_UID';
+// from_tab_name query param is a Douyin web UI hint and is not needed for
+// the API. The bare /user/<sec_uid> path is what the adapter consumes.
+const TEST_PROFILE =
+  'https://www.douyin.com/user/MS4wLjABAAAAMUN7covDsXGClbE9QcNE46sdavPndbC9_Tm64AhDs38OizGajwgL_wsNzNI0KsXj';
 
 async function main() {
   if (TEST_PROFILE.includes('REPLACE_WITH_REAL_SEC_UID')) {
@@ -54,14 +57,24 @@ async function main() {
     console.log('[smoke] first post:', display);
   }
 
-  // Sanity gates
-  if (!profile.followers || profile.followers < 500_000) {
+  // Sanity gates — tuned to "real active account" rather than a specific
+  // follower threshold, since secUid-based test profiles vary in size and
+  // the goal is to exercise the adapter, not assert a known creator's
+  // numbers. A real account should have a non-null follower count, at
+  // least one fetched post, and that post should show some engagement.
+  if (profile.followers == null || profile.followers < 10_000) {
     throw new Error(
-      `Sanity fail: test profile should have 500K+ followers, got ${profile.followers}`,
+      `Sanity fail: expected a real account with >=10K followers, got ${profile.followers}`,
     );
   }
   if (posts.length === 0) {
     throw new Error('Sanity fail: expected >=1 post');
+  }
+  const topLikes = posts.reduce((m, p) => Math.max(m, p.likes ?? 0), 0);
+  if (topLikes < 100) {
+    throw new Error(
+      `Sanity fail: top-liked post had only ${topLikes} likes — expected real engagement`,
+    );
   }
   console.log('[smoke] PASS');
 }

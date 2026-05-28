@@ -35,8 +35,11 @@ import { rednoteAdapter } from './rednote';
 // public account (lifestyle/beauty/food influencers are most discoverable),
 // and copy the URL from the address bar. Format:
 //   https://www.xiaohongshu.com/user/profile/<24-char-hex-id>
+// xsec_token / xsec_source are session-bound tokens used by the web UI and
+// are not needed (or honoured) by the TikHub API. Strip them — the bare
+// /user/profile/<id> path is all we need.
 const TEST_PROFILE =
-  'https://www.xiaohongshu.com/user/profile/REPLACE_WITH_REAL_USER_ID';
+  'https://www.xiaohongshu.com/user/profile/5cd115eb0000000016020d88';
 
 async function main() {
   if (TEST_PROFILE.includes('REPLACE_WITH_REAL_USER_ID')) {
