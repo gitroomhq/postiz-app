@@ -28,28 +28,6 @@ const DEFAULT_BASE = 'https://api.brightdata.com/datasets/v3';
 /** Per-request network timeout (trigger/progress/snapshot each). */
 const PER_REQUEST_TIMEOUT_MS = 30_000;
 
-/**
- * Parse a JSON body, mapping a non-JSON response (maintenance/HTML/proxy error
- * page served with 200) to a ScrapeError instead of a raw SyntaxError that
- * would bypass the status-mapping layer.
- */
-async function parseJson<T>(
-  res: Response,
-  platform: string,
-  profileUrl: string,
-): Promise<T> {
-  try {
-    return (await res.json()) as T;
-  } catch {
-    throw new ScrapeError(
-      'failed',
-      'Bright Data returned a non-JSON body',
-      platform,
-      profileUrl,
-    );
-  }
-}
-
 type ProgressStatus = 'running' | 'ready' | 'failed' | 'collecting' | 'building';
 
 interface ProgressResponse {
@@ -114,96 +92,132 @@ function looksLikePrivate(msg: string): boolean {
   return m.includes('private') || m.includes('restricted') || m.includes('login required');
 }
 
-async function brightdataFetch(
+/**
+ * Fetch a Bright Data endpoint and parse its JSON body inside a SINGLE
+ * per-request timeout window.
+ *
+ * The timer stays armed until JSON parsing finishes (or fails), so a stalled
+ * body read is aborted too — not just a hung connection. The signal passed to
+ * fetch also governs the response body stream it produces, so an abort while
+ * `res.json()` is draining rejects that read. Clearing the timer before the
+ * body was consumed (the previous bug) let a slow body defeat the timeout.
+ *
+ * A non-JSON 2xx body (maintenance/HTML/proxy page) maps to a ScrapeError
+ * rather than a raw SyntaxError that would bypass the status-mapping layer.
+ */
+async function brightdataFetchJson<T>(
   method: 'GET' | 'POST',
   path: string,
   platform: string,
   profileUrl: string,
   body?: unknown,
-): Promise<Response> {
+): Promise<T> {
   const url = new URL(path, getBaseUrl() + '/').toString();
   const headers: Record<string, string> = authHeaders();
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  // Per-request timeout so a hung TCP connection can't pin the function open
-  // until the platform kills it. This is independent of the poll-loop budget
-  // in pollProgress (which bounds total time across many progress calls).
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), PER_REQUEST_TIMEOUT_MS);
 
-  let res: Response;
+  // An abort/timeout surfaces as either a DOMException or a plain Error named
+  // AbortError/TimeoutError depending on runtime — match on the name only.
+  const isAbort = (err: unknown): boolean => {
+    const name = (err as { name?: unknown } | null)?.name;
+    return name === 'AbortError' || name === 'TimeoutError';
+  };
+
   try {
-    res = await fetch(url, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: ac.signal,
-    });
-  } catch (err) {
-    const isAbort = err instanceof DOMException && err.name === 'AbortError';
-    throw new ScrapeError(
-      'failed',
-      isAbort
-        ? `Bright Data request timed out after ${PER_REQUEST_TIMEOUT_MS}ms on ${path}`
-        : `Bright Data fetch failed: ${err instanceof Error ? err.message : String(err)}`,
-      platform,
-      profileUrl,
-    );
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: ac.signal,
+      });
+    } catch (err) {
+      throw new ScrapeError(
+        'failed',
+        isAbort(err)
+          ? `Bright Data request timed out after ${PER_REQUEST_TIMEOUT_MS}ms on ${path}`
+          : `Bright Data fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+        platform,
+        profileUrl,
+      );
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      throw new ScrapeError(
+        'failed',
+        `Bright Data auth rejected (${res.status}) — check BRIGHTDATA_API_KEY`,
+        platform,
+        profileUrl,
+      );
+    }
+    if (res.status === 402) {
+      throw new ScrapeError(
+        'failed',
+        `Bright Data returned 402 — out of credits or dataset not in plan`,
+        platform,
+        profileUrl,
+      );
+    }
+    if (res.status === 429) {
+      throw new ScrapeError(
+        'throttled',
+        'Bright Data rate-limited the request (429)',
+        platform,
+        profileUrl,
+      );
+    }
+    if (res.status === 404) {
+      // 404 here means the dataset_id / snapshot_id was unknown — not a
+      // missing profile. Surface as 'failed' so the cron retries next day
+      // rather than marking the profile not_found.
+      throw new ScrapeError(
+        'failed',
+        `Bright Data 404 on ${path} — dataset_id or snapshot_id invalid`,
+        platform,
+        profileUrl,
+      );
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new ScrapeError(
+        'failed',
+        `Bright Data HTTP ${res.status} on ${path}: ${text.slice(0, 200)}`,
+        platform,
+        profileUrl,
+      );
+    }
+
+    // Parse while the timer is still armed so a stalled body read is aborted.
+    try {
+      return (await res.json()) as T;
+    } catch (err) {
+      throw new ScrapeError(
+        'failed',
+        isAbort(err)
+          ? `Bright Data body read timed out after ${PER_REQUEST_TIMEOUT_MS}ms on ${path}`
+          : 'Bright Data returned a non-JSON body',
+        platform,
+        profileUrl,
+      );
+    }
   } finally {
     clearTimeout(timer);
   }
-
-  if (res.status === 401 || res.status === 403) {
-    throw new ScrapeError(
-      'failed',
-      `Bright Data auth rejected (${res.status}) — check BRIGHTDATA_API_KEY`,
-      platform,
-      profileUrl,
-    );
-  }
-  if (res.status === 402) {
-    throw new ScrapeError(
-      'failed',
-      `Bright Data returned 402 — out of credits or dataset not in plan`,
-      platform,
-      profileUrl,
-    );
-  }
-  if (res.status === 429) {
-    throw new ScrapeError(
-      'throttled',
-      'Bright Data rate-limited the request (429)',
-      platform,
-      profileUrl,
-    );
-  }
-  if (res.status === 404) {
-    // 404 here means the dataset_id / snapshot_id was unknown — not a
-    // missing profile. Surface as 'failed' so the cron retries next day
-    // rather than marking the profile not_found.
-    throw new ScrapeError(
-      'failed',
-      `Bright Data 404 on ${path} — dataset_id or snapshot_id invalid`,
-      platform,
-      profileUrl,
-    );
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new ScrapeError(
-      'failed',
-      `Bright Data HTTP ${res.status} on ${path}: ${text.slice(0, 200)}`,
-      platform,
-      profileUrl,
-    );
-  }
-  return res;
 }
 
 async function triggerScrape(opts: RunDatasetOptions): Promise<string> {
   const path = `trigger?dataset_id=${encodeURIComponent(opts.datasetId)}&format=json&include_errors=true`;
-  const res = await brightdataFetch('POST', path, opts.platform, opts.profileUrl, opts.inputs);
-  const body = await parseJson<TriggerResponse>(res, opts.platform, opts.profileUrl);
+  const body = await brightdataFetchJson<TriggerResponse>(
+    'POST',
+    path,
+    opts.platform,
+    opts.profileUrl,
+    opts.inputs,
+  );
   if (!body.snapshot_id) {
     throw new ScrapeError(
       'failed',
@@ -224,13 +238,12 @@ async function pollProgress(
   const deadline = Date.now() + budget;
 
   while (Date.now() < deadline) {
-    const res = await brightdataFetch(
+    const body = await brightdataFetchJson<ProgressResponse>(
       'GET',
       `progress/${encodeURIComponent(snapshotId)}`,
       opts.platform,
       opts.profileUrl,
     );
-    const body = await parseJson<ProgressResponse>(res, opts.platform, opts.profileUrl);
     const status = (body.status || '').toLowerCase();
 
     if (status === 'ready') return;
@@ -261,13 +274,12 @@ async function fetchSnapshot<T>(
   snapshotId: string,
   opts: RunDatasetOptions,
 ): Promise<T[]> {
-  const res = await brightdataFetch(
+  const body = await brightdataFetchJson<T[] | { data?: T[] }>(
     'GET',
     `snapshot/${encodeURIComponent(snapshotId)}?format=json`,
     opts.platform,
     opts.profileUrl,
   );
-  const body = await parseJson<T[] | { data?: T[] }>(res, opts.platform, opts.profileUrl);
   if (Array.isArray(body)) return body;
   // Some endpoints wrap in { data: [...] } — tolerate.
   if (body && Array.isArray((body as { data?: T[] }).data)) {
