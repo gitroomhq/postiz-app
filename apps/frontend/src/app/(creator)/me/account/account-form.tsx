@@ -7,15 +7,9 @@ import { updateAccount } from './actions';
 
 interface AccountFormProps {
   defaultDisplayName?: string | null;
-  defaultDashboardUrl?: string | null;
-  defaultLeaderboardUrl?: string | null;
 }
 
-export function AccountForm({
-  defaultDisplayName,
-  defaultDashboardUrl,
-  defaultLeaderboardUrl,
-}: AccountFormProps) {
+export function AccountForm({ defaultDisplayName }: AccountFormProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -40,41 +34,12 @@ export function AccountForm({
           name="displayName"
           required
           maxLength={120}
-          placeholder="How you'd like your creator to appear"
+          placeholder="How you'd like to appear"
           defaultValue={defaultDisplayName ?? ''}
           onChange={() => setSaved(false)}
         />
-      </label>
-
-      <label className="block space-y-1.5">
-        <span className="text-label text-fgMuted">
-          Dashboard URL <span className="text-fgSubtle">(optional)</span>
-        </span>
-        <Input
-          name="dashboardUrl"
-          type="url"
-          placeholder="https://…"
-          defaultValue={defaultDashboardUrl ?? ''}
-          onChange={() => setSaved(false)}
-        />
         <span className="text-caption text-fgSubtle">
-          An external dashboard you want D3 to surface in your personal view.
-        </span>
-      </label>
-
-      <label className="block space-y-1.5">
-        <span className="text-label text-fgMuted">
-          Leaderboard URL <span className="text-fgSubtle">(optional)</span>
-        </span>
-        <Input
-          name="leaderboardUrl"
-          type="url"
-          placeholder="https://…"
-          defaultValue={defaultLeaderboardUrl ?? ''}
-          onChange={() => setSaved(false)}
-        />
-        <span className="text-caption text-fgSubtle">
-          An external leaderboard you want D3 to surface in your personal view.
+          The name shown for your creator across D3.
         </span>
       </label>
 
@@ -89,7 +54,7 @@ export function AccountForm({
         </p>
       )}
 
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending}>
         {pending ? 'Saving…' : 'Save changes'}
       </Button>
     </form>

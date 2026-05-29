@@ -44,15 +44,11 @@ export default async function AccountPage() {
         <h1 className="text-display-2 text-fg mb-4">Your account.</h1>
         <p className="text-body-lg text-fgMuted">
           Signed in as <span className="text-fg">{auth.email}</span>. Manage how
-          your creator appears and the optional links D3 surfaces in your view.
+          your creator appears.
         </p>
       </header>
 
-      <AccountForm
-        defaultDisplayName={displayName}
-        defaultDashboardUrl={auth.creatorLink?.dashboard_url ?? null}
-        defaultLeaderboardUrl={auth.creatorLink?.leaderboard_url ?? null}
-      />
+      <AccountForm defaultDisplayName={displayName} />
 
       <section className="glass-subtle border border-borderGlass rounded-2xl p-6 flex flex-col gap-2">
         <h2 className="text-heading text-fg">Tracked profiles</h2>

@@ -58,44 +58,6 @@ export default async function CreatorMePage() {
       ) : (
         <CreatorStats metrics={metrics} />
       )}
-
-      {/* Share links — de-emphasized below the stats. */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <article className="glass-subtle border border-borderGlass p-5 rounded-2xl">
-          <h2 className="text-label text-fgMuted uppercase tracking-wide mb-2">
-            Dashboard URL
-          </h2>
-          {auth.creatorLink.dashboard_url ? (
-            <a
-              href={auth.creatorLink.dashboard_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-body text-aurora-cta underline underline-offset-4 break-all"
-            >
-              {auth.creatorLink.dashboard_url}
-            </a>
-          ) : (
-            <p className="text-body text-fgMuted">Not set.</p>
-          )}
-        </article>
-        <article className="glass-subtle border border-borderGlass p-5 rounded-2xl">
-          <h2 className="text-label text-fgMuted uppercase tracking-wide mb-2">
-            Leaderboard URL
-          </h2>
-          {auth.creatorLink.leaderboard_url ? (
-            <a
-              href={auth.creatorLink.leaderboard_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-body text-aurora-cta underline underline-offset-4 break-all"
-            >
-              {auth.creatorLink.leaderboard_url}
-            </a>
-          ) : (
-            <p className="text-body text-fgMuted">Not set.</p>
-          )}
-        </article>
-      </section>
     </div>
   );
 }

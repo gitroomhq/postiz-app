@@ -18,6 +18,7 @@ import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 
 import { AddProfileForm } from './add-profile-form';
+import { removeClaim } from './actions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -79,9 +80,10 @@ export default async function MyProfilesPage() {
         </span>
         <h1 className="text-display-2 text-fg mb-4">Manage your URLs.</h1>
         <p className="text-body-lg text-fgMuted max-w-[600px]">
-          Add Instagram, TikTok, Facebook, RedNote, or Douyin profile URLs. We
-          dedupe across all users — pasting a URL someone else already tracks
-          attaches you to the existing canonical record, no extra scrape jobs.
+          Add an Instagram, TikTok, Facebook, RedNote, or Douyin profile URL —
+          one per platform — and stats start flowing to your dashboard. Remove
+          any you no longer want tracked. To change a URL, remove it and add the
+          new one.
         </p>
       </header>
 
@@ -142,7 +144,18 @@ function Section(props: {
                     {c.profile.profile_url}
                   </a>
                 </div>
-                <div className="text-caption text-fgSubtle shrink-0">{c.profile.scrape_status}</div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-caption text-fgSubtle uppercase">{c.profile.scrape_status}</span>
+                  <form action={removeClaim}>
+                    <input type="hidden" name="profile_id" value={c.profile.id} />
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 rounded-md text-red-400 hover:bg-red-500/10 text-label border border-red-500/30"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                </div>
               </li>
             ) : null,
           )}
