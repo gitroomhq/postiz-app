@@ -10,6 +10,15 @@ The main documentation site has a [developer guide](https://docs.postiz.com/deve
 
 To submit your contribution, please fill out the [contribution form](https://contribute.postiz.com/p/postiz). This helps us evaluate whether your contribution is a good fit for the project. We will review your submission and get back to you as soon as possible.
 
+## Sign the Contributor License Agreement (CLA)
+
+Before we can merge your contribution, you must agree to our Contributor License Agreement (CLA). This documents the rights you grant us and helps ensure that Postiz can always remain Free and Open Source Software.
+
+- Contributing as an individual? The [Individual Contributor License Agreement (ICLA)](./ICLA.md) applies.
+- Contributing on behalf of a company or other legal entity? The [Entity Contributor License Agreement (CCLA)](./CCLA.md) applies.
+
+You accept the agreement by following the instructions on the [CLA page](https://contribute.postiz.com/p/postiz/cla). You only need to do this once, and it covers your present and future contributions to Postiz.
+
 ## Write code with others
 
 This is an open source project, with an open and welcoming community that is always keen to welcome new contributors. We recommend the two best ways to interact with the community are:
