@@ -2,6 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     { "name": "frontend", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "./apps/frontend", "run", "dev:webpack"], "port": 4200 },
+    { "name": "frontend-local", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "./apps/frontend", "exec", "dotenv", "-e", "../../.env.local-ui", "--", "next", "dev", "-p", "4200", "--webpack"], "port": 4200 },
+    { "name": "frontend-local-turbo", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "./apps/frontend", "exec", "dotenv", "-e", "../../.env.local-ui", "--", "next", "dev", "-p", "4200"], "port": 4200 },
     { "name": "frontend-turbo", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "./apps/frontend", "run", "dev"], "port": 4200 },
     { "name": "frontend-prod", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "./apps/frontend", "run", "start"], "port": 4200 },
     { "name": "showcase", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "5500"], "port": 5500 }

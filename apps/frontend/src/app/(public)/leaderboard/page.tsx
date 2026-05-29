@@ -33,11 +33,14 @@ export default async function LeaderboardPage() {
           Leaderboard
         </span>
         <h1 className="text-display-2 text-fg mb-4">
-          Top creators, ranked live.
+          A public leaderboard of the creators built by D3.
         </h1>
+        <p className="text-body-lg text-fgMuted max-w-[600px] mb-3">
+          Track live followers, engagement, reach, and growth across TikTok,
+          Instagram, Facebook, and more.
+        </p>
         <p className="text-body-lg text-fgMuted max-w-[600px]">
-          Sort by followers, 30-day growth, or engagement. Filter by platform.
-          Updated as soon as our scraper kicks in.
+          No screenshots. No fake case studies. Just live numbers.
         </p>
         {liveCreators && insufficient && (
           <p className="mt-4 text-caption text-fgSubtle">
