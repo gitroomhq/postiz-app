@@ -53,7 +53,10 @@
     // ---- Foreground ------------------------------------------------------
     --fg: #FFFFFF;
     --fg-muted: rgba(255, 255, 255, 0.62);
-    --fg-subtle: rgba(255, 255, 255, 0.40);
+    // 0.40 computed to ~3.8:1 on the #0A0A0D canvas — below WCAG AA 4.5:1 for
+    // normal text (flagged by the a11y audit). 0.55 → ~6:1 on canvas and still
+    // ~5.9:1 on the glass card surfaces, while staying visibly under fg-muted.
+    --fg-subtle: rgba(255, 255, 255, 0.55);
 
     // ---- Legacy/compat tokens (neutral, yellow only on CTA + focus) ------
     --new-back-drop: #0A0A0D;
@@ -115,7 +118,8 @@
 
     --fg: #0E0D00;
     --fg-muted: rgba(14, 13, 0, 0.70);
-    --fg-subtle: rgba(14, 13, 0, 0.45);
+    // 0.45 was ~3:1 on the light canvas — below WCAG AA. 0.64 clears 4.5:1.
+    --fg-subtle: rgba(14, 13, 0, 0.64);
 
     --new-back-drop: #FEFCE8;
     --new-settings: #FFFFFF;
