@@ -107,19 +107,36 @@ export function AddProfileForm() {
     setSubmitting(true);
     setError(null);
     try {
+      const succeeded = new Set<string>();
+      const failed: string[] = [];
       for (const profileId of accepted) {
-        const res = await fetch('/api/profiles/claim', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ profile_id: profileId }),
-        });
-        const json = await res.json();
-        if (!res.ok || json.ok !== true) {
-          setError(`Claim failed for one profile: ${json.error ?? res.status}`);
+        try {
+          const res = await fetch('/api/profiles/claim', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ profile_id: profileId }),
+          });
+          const json = await res.json();
+          if (res.ok && json.ok === true) succeeded.add(profileId);
+          else failed.push(profileId);
+        } catch {
+          failed.push(profileId);
         }
       }
-      setCandidates([]);
-      setAccepted(new Set());
+
+      // Clear only the claims that succeeded; keep failures selected so the
+      // user can retry them without re-running discovery.
+      setCandidates((prev) => prev.filter((c) => !succeeded.has(c.profile.id)));
+      setAccepted((prev) => {
+        const next = new Set(prev);
+        for (const id of succeeded) next.delete(id);
+        return next;
+      });
+      if (failed.length > 0) {
+        setError(
+          `Claim failed for ${failed.length} profile${failed.length === 1 ? '' : 's'} — left selected so you can retry.`,
+        );
+      }
       router.refresh();
     } finally {
       setSubmitting(false);

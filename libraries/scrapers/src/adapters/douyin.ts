@@ -213,6 +213,17 @@ export const douyinAdapter: PlatformAdapter = {
         query: { sec_user_id: secUid, count: POSTS_PER_SCRAPE, max_cursor: '0' },
         platform: PLATFORM,
         profileUrl,
+      }).catch((err) => {
+        // Posts are supplementary — a private/missing posts tab must not sink
+        // the profile snapshot. The profile response below still decides
+        // not_found. Degrade to empty posts.
+        if (
+          err instanceof ProfileNotFoundError ||
+          (err instanceof ScrapeError && err.status === 'private')
+        ) {
+          return { aweme_list: [] } as DyPostsResponse;
+        }
+        throw err;
       }),
     ]);
 

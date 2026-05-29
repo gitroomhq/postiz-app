@@ -152,8 +152,8 @@ export async function POST(request: Request): Promise<Response> {
 
   // 5. Decide claim kind. created=true → auto-owner (first claimant rule).
   const ownHandles = await collectOwnHandles(user.id, {
-    dashboard_url: link.dashboard_url,
-    leaderboard_url: link.leaderboard_url,
+    dashboard_url: link?.dashboard_url ?? null,
+    leaderboard_url: link?.leaderboard_url ?? null,
   });
   const claimKind = decideInitialClaimKind({
     created,
@@ -174,7 +174,13 @@ export async function POST(request: Request): Promise<Response> {
   // 6. Fire first scrape if newly created. Fire-and-forget — the daily cron
   //    will retry if this Function dies before the scrape returns.
   if (created) {
-    const origin = new URL(request.url).origin;
+    // Prefer a trusted, server-controlled origin so a spoofed Host/
+    // X-Forwarded-Host on `request.url` can't redirect this authenticated
+    // self-call (cookie is replayed below) to an attacker origin. Falls back
+    // to the request origin locally where VERCEL_URL is unset.
+    const origin = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : new URL(request.url).origin;
     // `void` so we don't await; the route can return immediately.
     void fetch(`${origin}/api/scrape/${profile.id}`, {
       method: 'POST',

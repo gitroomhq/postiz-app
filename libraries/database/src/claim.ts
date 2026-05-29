@@ -35,6 +35,18 @@ import type {
 
 const UNIQUE_VIOLATION = '23505';
 
+/**
+ * Escape LIKE/ILIKE wildcards (`%`, `_`) and the escape char (`\`) in a value
+ * so it is matched literally. Without this:
+ *   - `_` in a handle/URL acts as a single-char wildcard → matches the WRONG row.
+ *   - user-controlled values fed into an ILIKE pattern become an injection
+ *     vector (see findCandidatesByHandle / findOrCreateProfile).
+ * Postgres LIKE uses `\` as the default escape character.
+ */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
 export interface FindOrCreateInput {
   platform: Platform;
   profile_url: string;
@@ -75,12 +87,14 @@ export async function findOrCreateProfile(
 
   const supabase = getSupabaseAdmin();
 
-  // 1. Fast path — case-insensitive URL match.
+  // 1. Fast path — case-insensitive URL match. Escape LIKE wildcards so a `_`
+  //    in the URL/handle is matched literally instead of as a wildcard
+  //    (otherwise a different profile can be returned as a false match).
   const existing = await supabase
     .from('profile')
     .select('*')
     .eq('platform', input.platform)
-    .ilike('profile_url', validation.normalizedUrl)
+    .ilike('profile_url', escapeLikePattern(validation.normalizedUrl))
     .maybeSingle();
 
   if (existing.error && existing.error.code !== 'PGRST116') {
@@ -118,7 +132,7 @@ export async function findOrCreateProfile(
         .from('profile')
         .select('*')
         .eq('platform', input.platform)
-        .ilike('profile_url', validation.normalizedUrl)
+        .ilike('profile_url', escapeLikePattern(validation.normalizedUrl))
         .maybeSingle();
       if (retry.error) {
         return { ok: false, error: `Race recovery failed: ${retry.error.message}` };
@@ -327,17 +341,35 @@ export async function findCandidatesByHandle(input: {
   // We do scoring app-side rather than SQL because (a) the variants are easy
   // to read in TS, (b) the candidate pool stays small (<=200 rows in practice),
   // (c) we can introduce a real RPC later without breaking the API.
-  const pool = await supabase
-    .from('profile')
-    .select('*')
-    .neq('platform', input.seedPlatform)
-    .not('handle', 'is', null)
-    .or(`handle.ilike.%${lowered}%,handle.ilike.%${folded}%`)
-    .limit(200);
+  //
+  // Two parameterized .ilike() queries (not a string-built .or()): the seed
+  // handle is user input, and interpolating it into a PostgREST `.or()` filter
+  // is an injection vector (a `,`/`)`/`*` in the handle breaks out of the
+  // intended predicate). Wildcards in the value are escaped so only our outer
+  // `%...%` act as wildcards. Results are merged + de-duped by id.
+  const poolQuery = (pattern: string) =>
+    supabase
+      .from('profile')
+      .select('*')
+      .neq('platform', input.seedPlatform)
+      .not('handle', 'is', null)
+      .ilike('handle', `%${escapeLikePattern(pattern)}%`)
+      .limit(200);
 
-  if (pool.error) {
-    return { ok: false, error: `Candidate pool query failed: ${pool.error.message}` };
+  const queries = [poolQuery(lowered)];
+  if (folded && folded !== lowered) queries.push(poolQuery(folded));
+  const results = await Promise.all(queries);
+
+  const firstError = results.find((r) => r.error);
+  if (firstError?.error) {
+    return { ok: false, error: `Candidate pool query failed: ${firstError.error.message}` };
   }
+
+  const byId = new Map<string, ProfileRow>();
+  for (const r of results) {
+    for (const row of (r.data ?? []) as ProfileRow[]) byId.set(row.id, row);
+  }
+  const poolRows = [...byId.values()];
 
   // Hide profiles already owned by anyone else.
   const ownedRes = await supabase
@@ -350,7 +382,7 @@ export async function findCandidatesByHandle(input: {
   const ownedIds = new Set((ownedRes.data ?? []).map((r) => r.profile_id as string));
 
   const candidates: DiscoveryCandidate[] = [];
-  for (const row of (pool.data ?? []) as ProfileRow[]) {
+  for (const row of poolRows) {
     if (excludeIds.includes(row.id)) continue;
     if (ownedIds.has(row.id)) continue;
 

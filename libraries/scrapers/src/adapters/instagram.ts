@@ -294,6 +294,14 @@ export const instagramAdapter: PlatformAdapter = {
         query: { username: handle },
         platform: PLATFORM,
         profileUrl,
+      }).catch((err) => {
+        // Posts are supplementary — a private/missing posts tab must not sink
+        // the profile snapshot (followers etc.). The profile response below
+        // still decides not_found/private. Degrade to empty posts.
+        if (err instanceof ProfilePrivateError || err instanceof ProfileNotFoundError) {
+          return {} as IgPostsResponse;
+        }
+        throw err;
       }),
     ]);
 
