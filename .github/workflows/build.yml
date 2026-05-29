@@ -52,3 +52,10 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          # Public (non-secret) Supabase client vars — required so Next can
+          # prerender the public/showcase pages at build time, the same way the
+          # Vercel build has them. The service-role key is NOT needed here:
+          # admin/server-write pages are dynamic and aren't prerendered.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
