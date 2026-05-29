@@ -5,7 +5,12 @@ import { Prisma } from '@prisma/client';
 export interface StatsParams {
   from: Date;
   to: Date;
+  unknownOnly?: boolean;
 }
+
+// Unknown errors are stored as the serialized error payload, e.g.
+// {..."message":"Unknown Error"...}. Matches `message LIKE '%"message":"Unknown Error"%'`.
+const UNKNOWN_ERROR_TOKEN = '"message":"Unknown Error"';
 
 interface PerSocial {
   provider: string;
@@ -34,6 +39,9 @@ export class AdminStatsRepository {
   private async errorStats(params: StatsParams) {
     const where: Prisma.ErrorsWhereInput = {
       createdAt: { gte: params.from, lte: params.to },
+      ...(params.unknownOnly
+        ? { message: { contains: UNKNOWN_ERROR_TOKEN } }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([

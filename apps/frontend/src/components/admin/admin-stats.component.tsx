@@ -55,9 +55,17 @@ const PRESETS: { label: string; range: () => { from: string; to: string } }[] = 
   { label: 'Last 30 days', range: () => ({ from: isoDaysAgo(30), to: today() }) },
 ];
 
-const useStats = (params: { from: string; to: string }) => {
+const useStats = (params: {
+  from: string;
+  to: string;
+  unknownOnly: boolean;
+}) => {
   const fetch = useFetch();
-  const query = new URLSearchParams({ from: params.from, to: params.to });
+  const query = new URLSearchParams({
+    from: params.from,
+    to: params.to,
+    ...(params.unknownOnly ? { unknownOnly: 'true' } : {}),
+  });
   const key = `/admin/stats?${query.toString()}`;
   return useSWR<StatsResponse>(
     key,
@@ -118,8 +126,9 @@ export const AdminStatsComponent: FC = () => {
   const [fromInput, setFromInput] = useState(today());
   const [toInput, setToInput] = useState(today());
   const [range, setRange] = useState({ from: today(), to: today() });
+  const [unknownOnly, setUnknownOnly] = useState(false);
 
-  const { data, isLoading, error } = useStats(range);
+  const { data, isLoading, error } = useStats({ ...range, unknownOnly });
 
   const applyRange = useCallback((next: { from: string; to: string }) => {
     setFromInput(next.from);
@@ -196,6 +205,18 @@ export const AdminStatsComponent: FC = () => {
         >
           Apply
         </Button>
+
+        <label
+          className="flex items-center gap-[6px] text-[13px] cursor-pointer h-[38px]"
+          title='Only count errors whose message matches "message":"Unknown Error" (affects the error stats only)'
+        >
+          <input
+            type="checkbox"
+            checked={unknownOnly}
+            onChange={(e) => setUnknownOnly(e.target.checked)}
+          />
+          Unknown errors only
+        </label>
       </div>
 
       {isLoading ? (
@@ -210,7 +231,10 @@ export const AdminStatsComponent: FC = () => {
               label="Total connected accounts"
               value={data.connected.total}
             />
-            <SummaryCard label="Total errors" value={data.errors.total} />
+            <SummaryCard
+              label={unknownOnly ? 'Total unknown errors' : 'Total errors'}
+              value={data.errors.total}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
@@ -222,7 +246,12 @@ export const AdminStatsComponent: FC = () => {
               title="Connected accounts per social"
               block={data.connected}
             />
-            <PerSocialTable title="Errors per social" block={data.errors} />
+            <PerSocialTable
+              title={
+                unknownOnly ? 'Unknown errors per social' : 'Errors per social'
+              }
+              block={data.errors}
+            />
           </div>
         </>
       )}

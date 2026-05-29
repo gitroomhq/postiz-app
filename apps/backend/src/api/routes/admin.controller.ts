@@ -54,7 +54,8 @@ export class AdminController {
   async getStats(
     @GetUserFromRequest() user: User,
     @Query('from') from?: string,
-    @Query('to') to?: string
+    @Query('to') to?: string,
+    @Query('unknownOnly') unknownOnly?: string
   ) {
     this.assertSuperAdmin(user);
 
@@ -64,6 +65,7 @@ export class AdminController {
     return this._adminStatsService.getStats({
       from: fromDate.startOf('day').toDate(),
       to: toDate.endOf('day').toDate(),
+      unknownOnly: unknownOnly === 'true' || unknownOnly === '1',
     });
   }
 }
