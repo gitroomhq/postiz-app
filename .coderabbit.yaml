@@ -31,12 +31,15 @@ reviews:
   abort_on_close: true
   disable_cache: false
   auto_review:
-    enabled: false
+    enabled: true
     auto_incremental_review: true
-    ignore_title_keywords: []
+    ignore_title_keywords:
+      - WIP
+      - wip
     labels: []
     drafts: false
-    base_branches: []
+    base_branches:
+      - .*
   finishing_touches:
     docstrings:
       enabled: true
