@@ -551,6 +551,33 @@ export class InstagramProvider
     };
   }
 
+  // The post is already published once media_publish returns an id. The
+  // permalink read is non-critical: Instagram intermittently returns errors
+  // (e.g. error_subcode 33, or 2207051) on reads of just-published objects,
+  // which previously threw BadBody and marked an already-published post as
+  // ERROR. Treat the permalink read as best-effort so a transient read failure
+  // never discards a successful publish.
+  private async getPermalinkSafe(
+    type: string,
+    mediaId: string,
+    token: string
+  ): Promise<string> {
+    try {
+      const { permalink } = await (
+        await this.fetch(
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${token}`
+        )
+      ).json();
+      return permalink || '';
+    } catch (err) {
+      console.error(
+        'Instagram: non-fatal permalink read failure after publish',
+        err
+      );
+      return '';
+    }
+  }
+
   async post(
     id: string,
     token: string,
@@ -650,12 +677,11 @@ export class InstagramProvider
         ).json();
         lastMediaId = mediaId;
 
-        const { permalink } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
-          )
-        ).json();
-        lastPermalink = permalink;
+        lastPermalink = await this.getPermalinkSafe(
+          type,
+          mediaId,
+          userToken || accessToken
+        );
       }
 
       return [
@@ -676,11 +702,11 @@ export class InstagramProvider
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
-        )
-      ).json();
+      const permalink = await this.getPermalinkSafe(
+        type,
+        mediaId,
+        userToken || accessToken
+      );
 
       return [
         {
@@ -728,11 +754,11 @@ export class InstagramProvider
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
-        )
-      ).json();
+      const permalink = await this.getPermalinkSafe(
+        type,
+        mediaId,
+        userToken || accessToken
+      );
 
       return [
         {
