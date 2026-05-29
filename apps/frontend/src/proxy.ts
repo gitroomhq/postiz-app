@@ -103,21 +103,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  // Confine admins to the admin surface: bounce them off every public route
-  // (home, showcase dashboard/leaderboard, creator browse pages) to their own
-  // dashboard. "Public" here = not an admin route and not a creator route
-  // (auth pages + /api were handled above).
-  if (role === 'admin' && !isAdminRoute && !isCreatorRoute) {
+  // Confine admins to the admin surface: ANY non-admin route — public (home,
+  // showcase) AND creator routes (/me, /onboarding) — bounces to /admin.
+  // Admins are managers; they never go through the creator onboarding flow.
+  // (auth pages + /api were handled above.)
+  if (role === 'admin' && !isAdminRoute) {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
 
-  // Admin-only routes.
+  // Admin-only routes for non-admins.
   if (isAdminRoute && role !== 'admin') {
     return NextResponse.redirect(new URL('/me', request.url));
   }
 
-  // Creator routes: admins are allowed in too (read-only convenience),
-  // but creators who haven't onboarded must finish that first.
+  // Creator routes: creators who haven't onboarded must finish that first.
   if (isCreatorRoute && role === 'creator' && !onboarded && pathname !== '/onboarding') {
     return NextResponse.redirect(new URL('/onboarding', request.url));
   }

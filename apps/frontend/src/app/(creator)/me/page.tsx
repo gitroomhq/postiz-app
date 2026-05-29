@@ -16,6 +16,8 @@ export const metadata: Metadata = {
 export default async function CreatorMePage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
+  // Admins manage from /admin and never go through creator onboarding.
+  if (auth.role === 'admin') redirect('/admin');
   if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
 
   // Cookie-aware client (NOT service-role). The data tables are public-read

@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 export default async function OnboardingPage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
+  // Admins don't onboard — they manage from /admin.
+  if (auth.role === 'admin') redirect('/admin');
   if (auth.creatorLink?.onboarding_completed) redirect('/me');
 
   return (
