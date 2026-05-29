@@ -4,7 +4,17 @@ import Link from 'next/link';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 import { getCreatorMetrics } from '@gitroom/frontend/lib/creator-metrics';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state';
+import { PLATFORM_ICONS, PLATFORM_LABELS, type PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
 import { CreatorStats } from './creator-stats';
+
+const SUPPORTED_PLATFORMS: PlatformKey[] = [
+  'instagram',
+  'tiktok',
+  'facebook',
+  'xiaohongshu',
+  'douyin',
+];
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -48,13 +58,32 @@ export default async function CreatorMePage() {
       </header>
 
       {!metrics.hasProfiles ? (
-        <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-          You haven&apos;t added any profiles yet.{' '}
-          <Link href="/me/profiles" className="text-aurora-cta underline underline-offset-4">
-            Add a profile URL
-          </Link>{' '}
-          to start tracking — daily stats appear here once collected.
-        </div>
+        <EmptyState
+          icon={
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 3v18h18" />
+              <path d="M7 15l3-3 3 2 4-5" />
+            </svg>
+          }
+          title="Track your first profile"
+          description="Paste an Instagram, TikTok, Facebook, RedNote, or Douyin profile URL — daily stats appear on this dashboard within 24 hours."
+          action={{ href: '/me/profiles', label: 'Add a profile' }}
+        >
+          <div className="flex items-center gap-2.5 mt-1">
+            {SUPPORTED_PLATFORMS.map((p) => {
+              const Icon = PLATFORM_ICONS[p];
+              return (
+                <span
+                  key={p}
+                  title={PLATFORM_LABELS[p]}
+                  className="flex items-center justify-center size-9 rounded-full glass-base border border-borderGlass text-fgMuted"
+                >
+                  <Icon size={16} />
+                </span>
+              );
+            })}
+          </div>
+        </EmptyState>
       ) : (
         <CreatorStats metrics={metrics} />
       )}

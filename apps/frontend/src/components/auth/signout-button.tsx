@@ -36,8 +36,8 @@ export function SignOutButton() {
         {pending ? 'Signing out…' : 'Sign out'}
       </button>
       {error ? (
-        <span role="alert" className="text-caption text-red-400">
-          {error}
+        <span role="alert" className="text-caption text-fgMuted">
+          ⚠ {error}
         </span>
       ) : null}
     </div>

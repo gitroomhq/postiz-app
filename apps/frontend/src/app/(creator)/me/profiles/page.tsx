@@ -17,8 +17,55 @@ import Link from 'next/link';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state';
+import { PlatformPill } from '@gitroom/frontend/components/ui/platform-pill';
+import type { PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
+
 import { AddProfileForm } from './add-profile-form';
-import { removeClaim } from './actions';
+import { RemoveClaimButton } from './remove-claim-button';
+
+// DB stores 'rednote'; the icon set keys it as 'xiaohongshu'.
+function toPlatformKey(platform: string): PlatformKey {
+  return platform === 'rednote' ? 'xiaohongshu' : (platform as PlatformKey);
+}
+
+type ScrapeGlyph = 'check' | 'clock' | 'x';
+
+// Yellow-mono scrape-status badge: icon + label + yellow intensity, no hue.
+function statusBadge(status: string): { cls: string; glyph: ScrapeGlyph; label: string } {
+  switch (status) {
+    case 'ok':
+      return { cls: 'bg-brand/10 text-fg border-brand/20', glyph: 'check', label: 'Tracking' };
+    case 'failed':
+    case 'not_found':
+      return { cls: 'bg-white/[0.04] text-fgSubtle border-white/10', glyph: 'x', label: "Couldn't fetch" };
+    default:
+      return { cls: 'bg-white/[0.04] text-fgMuted border-white/10', glyph: 'clock', label: 'Collecting…' };
+  }
+}
+
+function ScrapeBadge({ status }: { status: string }) {
+  const { cls, glyph, label } = statusBadge(status);
+  const common = {
+    width: 12,
+    height: 12,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full border ${cls}`}>
+      {glyph === 'check' && <svg {...common}><path d="M20 6L9 17l-5-5" /></svg>}
+      {glyph === 'x' && <svg {...common}><path d="M18 6L6 18M6 6l12 12" /></svg>}
+      {glyph === 'clock' && <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>}
+      {label}
+    </span>
+  );
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -120,41 +167,38 @@ function Section(props: {
       <h2 className="text-section text-fg">{props.title}</h2>
       {props.hint && <p className="text-caption text-fgMuted">{props.hint}</p>}
       {props.rows.length === 0 ? (
-        <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-          {props.empty}
-        </div>
+        <EmptyState size="sm" title={props.empty} />
       ) : (
         <ul className="divide-y divide-borderGlass border border-borderGlass rounded-2xl overflow-hidden">
           {props.rows.map((c) =>
             c.profile ? (
               <li key={c.profile.id} className="flex items-center justify-between gap-4 p-4 bg-glass-base">
-                <div className="min-w-0">
-                  <div className="text-label text-fgMuted uppercase tracking-wide">
-                    {c.profile.platform} · {c.claim_kind}
+                <div className="flex items-center gap-3 min-w-0">
+                  <PlatformPill platform={toPlatformKey(c.profile.platform)} iconSize={13} />
+                  <div className="min-w-0">
+                    <div className="text-body text-fg truncate">
+                      {c.profile.display_name ?? c.profile.handle ?? c.profile.profile_url}
+                    </div>
+                    <a
+                      href={c.profile.profile_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-caption text-fgSubtle hover:text-aurora-cta underline-offset-4 hover:underline truncate block"
+                    >
+                      {c.profile.profile_url}
+                    </a>
                   </div>
-                  <div className="text-body text-fg truncate">
-                    {c.profile.display_name ?? c.profile.handle ?? c.profile.profile_url}
-                  </div>
-                  <a
-                    href={c.profile.profile_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-caption text-fgSubtle hover:text-aurora-cta underline-offset-4 hover:underline truncate block"
-                  >
-                    {c.profile.profile_url}
-                  </a>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-caption text-fgSubtle uppercase">{c.profile.scrape_status}</span>
-                  <form action={removeClaim}>
-                    <input type="hidden" name="profile_id" value={c.profile.id} />
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 rounded-md text-red-400 hover:bg-red-500/10 text-label border border-red-500/30"
-                    >
-                      Remove
-                    </button>
-                  </form>
+                  <div className="flex flex-col items-end gap-1">
+                    <ScrapeBadge status={c.profile.scrape_status} />
+                    {c.profile.scrape_status !== 'ok' &&
+                      c.profile.scrape_status !== 'failed' &&
+                      c.profile.scrape_status !== 'not_found' && (
+                        <span className="text-caption text-fgSubtle">First stats within ~24h</span>
+                      )}
+                  </div>
+                  <RemoveClaimButton profileId={c.profile.id} />
                 </div>
               </li>
             ) : null,

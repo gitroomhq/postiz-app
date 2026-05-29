@@ -12,7 +12,7 @@ export default function SignUpPage() {
     <AuthShell
       eyebrow="New creator"
       heading="Create your D3 account."
-      subheading="After sign-up, connect your dashboard and leaderboard URLs to see your personal view."
+      subheading="Add your social profiles on your dashboard and stats appear within 24 hours."
     >
       <SignUpForm />
 

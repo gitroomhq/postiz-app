@@ -40,9 +40,9 @@ import {
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'D3 Creator — A public leaderboard of the creators built by D3.',
+  title: 'D3 Creator — We don’t sell dreams. We show numbers.',
   description:
-    'Public leaderboard of D3-built creators. Track live followers, engagement, reach, and growth across TikTok, Instagram, Facebook, Douyin, and Xiaohongshu. No screenshots. No fake case studies. Just live numbers.',
+    'D3 Creator is a live showcase of the creators, brands, and IPs we grow across every platform. Real traffic. Real engagement. Real growth.',
 };
 
 const PLATFORM_ORDER: PlatformKey[] = [
@@ -114,15 +114,16 @@ export default async function HomePage() {
               <div className="flex flex-col gap-5 text-center lg:text-left">
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-subtle border border-borderGlass text-caption text-fgMuted self-center lg:self-start">
                   <span className="inline-block size-1.5 rounded-full bg-brand-500" />
-                  A public leaderboard
+                  Live showcase
                 </span>
                 <h1 className="text-[clamp(36px,4.5vw,64px)] leading-[1.04] tracking-[-0.03em] font-semibold text-fg max-w-[520px] mx-auto lg:mx-0 text-balance">
-                  A public leaderboard of the creators built by{' '}
-                  <span className="text-brand">D3</span>.
+                  We don&rsquo;t sell dreams.{' '}
+                  <span className="text-brand">We show numbers.</span>
                 </h1>
                 <p className="text-body text-fgMuted max-w-[480px] mx-auto lg:mx-0">
-                  Track live followers, engagement, reach, and growth across
-                  TikTok, Instagram, Facebook and more.
+                  D3 Creator is a live showcase of the creators, brands, and IPs
+                  we grow across every platform. Real traffic. Real engagement.
+                  Real growth.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mt-2">
                   <Link href="/dashboard" className="contents">
@@ -466,9 +467,11 @@ export default async function HomePage() {
               </AuroraButton>
             </Link>
           </div>
-          <p className="text-caption text-fgSubtle mt-8 tabular-nums">
-            Showcase preview · synthetic data until the scraper switches on.
-          </p>
+          {!liveSummary && !liveTopCreators && (
+            <p className="text-caption text-fgSubtle mt-8 tabular-nums">
+              Showcase preview · synthetic data until the scraper switches on.
+            </p>
+          )}
         </GlassCard>
         </Reveal>
       </section>

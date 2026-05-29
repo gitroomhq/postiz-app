@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
 import { resolveCreatorProfiles } from '@gitroom/frontend/lib/creator-metrics';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -73,37 +74,92 @@ export default async function CreatorMeLeaderboardPage() {
       </header>
 
       {posts.length === 0 ? (
-        <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-          No post snapshots yet.
-        </div>
+        <EmptyState
+          icon={
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 21V9M10 21V4M16 21v-7M22 21H2" />
+            </svg>
+          }
+          title="No posts to rank yet"
+          description={
+            ids.length === 0
+              ? "You're not tracking any profiles yet. Add one and your highest-viewed posts will appear here."
+              : 'Your top posts appear here once the first daily scrape collects them — usually within 24 hours.'
+          }
+          action={ids.length === 0 ? { href: '/me/profiles', label: 'Add a profile' } : undefined}
+        />
       ) : (
         <ol className="space-y-2">
-          {posts.map((p, i) => (
-            <li
-              key={p.external_post_id + i}
-              className="glass-elevated rounded-xl p-4 flex items-center gap-4"
-            >
-              <span className="text-section text-fgSubtle w-10 text-right tabular-nums">
-                {i + 1}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-body text-fg truncate">
-                  {p.caption_excerpt ?? '(no caption)'}
-                </p>
-                <p className="text-caption text-fgMuted">
-                  {p.posted_at ? new Date(p.posted_at).toLocaleDateString() : '—'}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-body text-fg tabular-nums">
-                  {p.views != null ? Intl.NumberFormat().format(p.views) : '—'}
+          {posts.map((p, i) => {
+            const thumb =
+              p.media_url && p.media_url.startsWith('http')
+                ? `/api/proxy-image?url=${encodeURIComponent(p.media_url)}`
+                : null;
+            const isWinner = i === 0;
+            return (
+              <li
+                key={p.external_post_id + i}
+                className="glass-elevated rounded-xl p-4 flex items-center gap-4"
+              >
+                <span
+                  className={`text-section w-10 text-right tabular-nums ${
+                    isWinner ? 'text-aurora-cta font-semibold' : 'text-fgSubtle'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <div className="relative size-14 rounded-md overflow-hidden bg-customColor1 shrink-0">
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- proxied, dims vary by platform
+                    <img
+                      src={thumb}
+                      alt={p.caption_excerpt ?? 'Post thumbnail'}
+                      loading="lazy"
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-caption text-fgSubtle">
+                      —
+                    </div>
+                  )}
                 </div>
-                <div className="text-caption text-fgSubtle">views</div>
-              </div>
-            </li>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <p className="text-body text-fg truncate">
+                    {p.caption_excerpt ?? '(no caption)'}
+                  </p>
+                  <p className="text-caption text-fgMuted">
+                    {p.posted_at ? new Date(p.posted_at).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-5 shrink-0 text-right tabular-nums">
+                  <PostStat label="views" value={p.views} strong />
+                  <PostStat label="likes" value={p.likes} />
+                  <PostStat label="comments" value={p.comments} />
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
+    </div>
+  );
+}
+
+function PostStat({
+  label,
+  value,
+  strong = false,
+}: {
+  label: string;
+  value: number | null;
+  strong?: boolean;
+}) {
+  return (
+    <div className={label === 'views' ? '' : 'hidden sm:block'}>
+      <div className={`text-body tabular-nums ${strong ? 'text-fg' : 'text-fgMuted'}`}>
+        {value != null ? Intl.NumberFormat().format(value) : '—'}
+      </div>
+      <div className="text-caption text-fgSubtle">{label}</div>
     </div>
   );
 }

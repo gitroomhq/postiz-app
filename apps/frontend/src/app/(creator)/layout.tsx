@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
+import NavLink from '@gitroom/frontend/components/ui/nav-link';
 
 // Cookie-bound. Never prerender — Supabase env required at construction.
 export const dynamic = 'force-dynamic';
@@ -34,30 +35,10 @@ export default async function CreatorLayout({ children }: { children: ReactNode 
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-label">
-              <Link
-                href="/me"
-                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/me/profiles"
-                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
-              >
-                Profiles
-              </Link>
-              <Link
-                href="/me/leaderboard"
-                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
-              >
-                Leaderboard
-              </Link>
-              <Link
-                href="/me/account"
-                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
-              >
-                Account
-              </Link>
+              <NavLink href="/me" exact>Dashboard</NavLink>
+              <NavLink href="/me/profiles">Profiles</NavLink>
+              <NavLink href="/me/leaderboard">Leaderboard</NavLink>
+              <NavLink href="/me/account">Account</NavLink>
               {auth.role === 'admin' && (
                 <Link
                   href="/admin"

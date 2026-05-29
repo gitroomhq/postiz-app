@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { SignOutButton } from '@gitroom/frontend/components/auth/signout-button';
+import NavLink from '@gitroom/frontend/components/ui/nav-link';
 
 // Cookie-bound. Never prerender — Supabase env required at construction.
 export const dynamic = 'force-dynamic';
@@ -32,8 +33,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-label">
-              <Link href="/admin" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Dashboard</Link>
-              <Link href="/admin/profiles" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Accounts</Link>
+              <NavLink href="/admin" exact>Dashboard</NavLink>
+              <NavLink href="/admin/profiles">Accounts</NavLink>
               <span className="hidden sm:inline-block ml-3 text-caption text-fgSubtle">{auth.email}</span>
               <SignOutButton />
             </nav>

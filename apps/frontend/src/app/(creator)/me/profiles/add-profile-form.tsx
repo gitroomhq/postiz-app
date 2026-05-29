@@ -148,13 +148,13 @@ export function AddProfileForm() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://www.instagram.com/yourhandle"
-            className="flex-1 px-4 py-2 rounded-md bg-glass-base border border-borderGlass text-fg placeholder:text-fgSubtle focus:outline-none focus:border-aurora-cta"
+            className="flex-1 px-4 py-2 rounded-md bg-glass-base border border-borderGlass text-fg placeholder:text-fgSubtle transition-colors duration-150 ease-out focus:outline-none focus:border-aurora-cta focus:shadow-focusRing"
             disabled={submitting}
           />
           <button
             type="submit"
             disabled={submitting || !url}
-            className="px-5 py-2 rounded-md bg-aurora-cta text-bg disabled:opacity-50 disabled:cursor-not-allowed text-label"
+            className="px-5 py-2 rounded-md bg-aurora-cta text-brand-darker font-medium hover:bg-aurora-ctaHover disabled:opacity-50 disabled:cursor-not-allowed text-label transition-colors"
           >
             {submitting ? 'Adding…' : 'Add'}
           </button>
@@ -163,8 +163,8 @@ export function AddProfileForm() {
           {detected ? `Detected platform: ${detected}` : 'Paste any profile URL — we detect the platform automatically.'}
         </div>
         {error && (
-          <div className="text-caption text-red-400" role="alert">
-            {error}
+          <div className="text-caption text-fgMuted" role="alert">
+            ⚠ {error}
           </div>
         )}
       </form>
@@ -189,7 +189,7 @@ export function AddProfileForm() {
                   className="accent-aurora-cta"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-label text-fgMuted uppercase tracking-wide">{c.profile.platform}</div>
+                  <div className="text-label text-fgMuted">{c.profile.platform}</div>
                   <div className="text-body text-fg truncate">{c.profile.handle ?? c.profile.profile_url}</div>
                 </div>
                 <div className="text-caption text-fgSubtle shrink-0">
@@ -213,7 +213,7 @@ export function AddProfileForm() {
               type="button"
               onClick={handleAcceptCandidates}
               disabled={submitting || accepted.size === 0}
-              className="px-4 py-2 rounded-md bg-aurora-cta text-bg disabled:opacity-50 text-label"
+              className="px-4 py-2 rounded-md bg-aurora-cta text-brand-darker font-medium hover:bg-aurora-ctaHover disabled:opacity-50 text-label transition-colors"
             >
               Add selected ({accepted.size})
             </button>

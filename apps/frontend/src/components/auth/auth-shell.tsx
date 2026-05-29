@@ -61,6 +61,17 @@ export function AuthShell({ children, eyebrow, heading, subheading }: AuthShellP
           </Link>
         </div>
 
+        {/* Mobile-only brand bar (the full brand panel is lg+ only). Kept to a
+            logo + wordmark so it doesn't duplicate the form's eyebrow pill /
+            heading that sit directly below. */}
+        <div className="lg:hidden flex items-center gap-2 select-none mb-8 mt-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/d3-logo.png" alt="D3" width={28} height={28} />
+          <span className="text-heading font-semibold tracking-[-0.02em] text-fg">
+            D3 Creator
+          </span>
+        </div>
+
         <div className="mx-auto w-full max-w-[420px] space-y-8">
           <header className="space-y-2">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-subtle border border-borderGlass text-caption text-fgMuted">

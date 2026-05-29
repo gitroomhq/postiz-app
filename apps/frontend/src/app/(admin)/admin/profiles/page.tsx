@@ -30,7 +30,8 @@ import {
   formatPercent,
 } from '@gitroom/frontend/lib/creator-metrics';
 
-import { approveClaim, deleteProfile, rejectClaim } from './actions';
+import { ClaimActions, DeleteProfileButton } from './admin-actions';
+import { AdminSearchForm } from './admin-search';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -43,28 +44,90 @@ function toPlatformKey(platform: string): PlatformKey {
   return platform === 'rednote' ? 'xiaohongshu' : (platform as PlatformKey);
 }
 
+// Yellow-mono: direction reads from a caret glyph + text intensity, never hue.
 function deltaClass(n: number | null): string {
   if (n == null || n === 0) return 'text-fgSubtle';
-  return n > 0 ? 'text-emerald-400' : 'text-red-400';
+  return n > 0 ? 'text-fg' : 'text-fgMuted';
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  ok: 'text-emerald-400 border-emerald-500/30',
-  pending: 'text-amber-400 border-amber-500/30',
-  failed: 'text-red-400 border-red-500/30',
-  not_found: 'text-red-400 border-red-500/30',
-  private: 'text-fgMuted border-borderGlass',
-  throttled: 'text-amber-400 border-amber-500/30',
-  handle_changed: 'text-amber-400 border-amber-500/30',
+function deltaCaret(n: number | null): string {
+  if (n == null || n === 0) return '— ';
+  return n > 0 ? '▲ ' : '▼ ';
+}
+
+// Status communicates through icon + label + yellow intensity (DESIGN.md §2),
+// never a foreign hue. "ok" carries the brand tint; everything else is neutral.
+type StatusGlyph = 'check' | 'clock' | 'x';
+
+const STATUS_META: Record<string, { cls: string; glyph: StatusGlyph }> = {
+  ok: { cls: 'bg-brand/10 text-fg border-brand/20', glyph: 'check' },
+  pending: { cls: 'bg-white/[0.04] text-fgMuted border-white/10', glyph: 'clock' },
+  throttled: { cls: 'bg-white/[0.04] text-fgMuted border-white/10', glyph: 'clock' },
+  handle_changed: { cls: 'bg-white/[0.04] text-fgMuted border-white/10', glyph: 'clock' },
+  private: { cls: 'bg-white/[0.04] text-fgMuted border-white/10', glyph: 'clock' },
+  failed: { cls: 'bg-white/[0.04] text-fgSubtle border-white/10', glyph: 'x' },
+  not_found: { cls: 'bg-white/[0.04] text-fgSubtle border-white/10', glyph: 'x' },
 };
 
-export default async function AdminProfilesPage() {
+function StatusGlyphIcon({ glyph }: { glyph: StatusGlyph }) {
+  const common = {
+    width: 12,
+    height: 12,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  if (glyph === 'check') return <svg {...common}><path d="M20 6L9 17l-5-5" /></svg>;
+  if (glyph === 'x') return <svg {...common}><path d="M18 6L6 18M6 6l12 12" /></svg>;
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+export default async function AdminProfilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; platform?: string }>;
+}) {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
   if (auth.role !== 'admin') redirect('/me');
 
   const admin = getSupabaseAdmin();
   const { groups, pendingClaims, totals } = await getAdminCreatorsData(admin);
+
+  // URL-as-state filtering — server-side on the already-fetched data, no new
+  // query. ?q= matches creator name or any profile handle; ?platform= narrows
+  // to accounts running that platform.
+  const { q = '', platform = '' } = await searchParams;
+  const query = q.trim().toLowerCase();
+  const platforms = Array.from(new Set(groups.flatMap((g) => g.platforms))).sort();
+  const filteredGroups = groups.filter((g) => {
+    const matchesPlatform = !platform || g.platforms.includes(platform);
+    const matchesQuery =
+      !query ||
+      g.displayName.toLowerCase().includes(query) ||
+      g.profiles.some(
+        (p) =>
+          (p.handle ?? '').toLowerCase().includes(query) ||
+          (p.displayName ?? '').toLowerCase().includes(query),
+      );
+    return matchesPlatform && matchesQuery;
+  });
+  const chipHref = (p: string) => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', q.trim());
+    if (p) params.set('platform', p);
+    const qs = params.toString();
+    return qs ? `/admin/profiles?${qs}` : '/admin/profiles';
+  };
 
   return (
     <div className="flex flex-col gap-10 pt-12 pb-24">
@@ -107,7 +170,7 @@ export default async function AdminProfilesPage() {
                 className="flex items-center justify-between gap-4 p-4 bg-glass-base"
               >
                 <div className="min-w-0">
-                  <div className="text-label text-fgMuted uppercase tracking-wide">
+                  <div className="text-label text-fgMuted">
                     {c.platform} · {c.creatorName}
                   </div>
                   <div className="text-body text-fg truncate">
@@ -115,28 +178,7 @@ export default async function AdminProfilesPage() {
                   </div>
                   <div className="text-caption text-fgSubtle">User: {c.userId}</div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <form action={approveClaim}>
-                    <input type="hidden" name="user_id" value={c.userId} />
-                    <input type="hidden" name="profile_id" value={c.profileId} />
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 rounded-md bg-aurora-cta text-bg text-label"
-                    >
-                      Approve
-                    </button>
-                  </form>
-                  <form action={rejectClaim}>
-                    <input type="hidden" name="user_id" value={c.userId} />
-                    <input type="hidden" name="profile_id" value={c.profileId} />
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 rounded-md text-fg hover:bg-white/[0.06] text-label border border-borderGlass"
-                    >
-                      Reject
-                    </button>
-                  </form>
-                </div>
+                <ClaimActions userId={c.userId} profileId={c.profileId} />
               </li>
             ))}
           </ul>
@@ -145,14 +187,56 @@ export default async function AdminProfilesPage() {
 
       {/* Accounts (creators) */}
       <section className="flex flex-col gap-4">
-        <h2 className="text-section text-fg">All accounts ({groups.length})</h2>
+        <h2 className="text-section text-fg">
+          All accounts ({filteredGroups.length}
+          {filteredGroups.length !== groups.length ? ` of ${groups.length}` : ''})
+        </h2>
+
+        {/* Filter toolbar — URL-as-state via GET form + platform chip links */}
+        <div className="flex flex-col gap-3">
+          <AdminSearchForm defaultQuery={q} platform={platform} />
+          {platforms.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={chipHref('')}
+                scroll={false}
+                className={`text-caption px-2.5 py-1 rounded-full border transition-colors ${
+                  !platform
+                    ? 'bg-brand/10 text-fg border-brand/20'
+                    : 'bg-white/[0.04] text-fgMuted border-white/10 hover:text-fg'
+                }`}
+              >
+                All
+              </Link>
+              {platforms.map((p) => (
+                <Link
+                  key={p}
+                  href={chipHref(p)}
+                  scroll={false}
+                  className={`text-caption px-2.5 py-1 rounded-full border transition-colors ${
+                    platform === p
+                      ? 'bg-brand/10 text-fg border-brand/20'
+                      : 'bg-white/[0.04] text-fgMuted border-white/10 hover:text-fg'
+                  }`}
+                >
+                  {p}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         {groups.length === 0 ? (
           <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
             No creators yet.
           </div>
+        ) : filteredGroups.length === 0 ? (
+          <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
+            No accounts match your filters.
+          </div>
         ) : (
           <div className="flex flex-col gap-5">
-            {groups.map((g) => (
+            {filteredGroups.map((g) => (
               <CreatorCard key={g.creatorId} group={g} />
             ))}
           </div>
@@ -171,7 +255,7 @@ export default async function AdminProfilesPage() {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <article className="glass-subtle border border-borderGlass rounded-2xl p-5">
-      <div className="text-label text-fgMuted uppercase tracking-wide">{label}</div>
+      <div className="text-label text-fgMuted">{label}</div>
       <div className="text-section text-fg tabular-nums mt-2">{value}</div>
     </article>
   );
@@ -214,7 +298,7 @@ function CreatorCard({ group }: { group: AdminCreatorGroup }) {
         </div>
         {/* Account aggregates */}
         <div className="flex items-center gap-6 text-right tabular-nums shrink-0">
-          <Agg label="reach" value={formatCompact(group.totalReach)} sub={`${formatDelta(group.reachDelta)} today`} subClass={deltaClass(group.reachDelta)} />
+          <Agg label="reach" value={formatCompact(group.totalReach)} sub={`${deltaCaret(group.reachDelta)}${formatDelta(group.reachDelta)} today`} subClass={deltaClass(group.reachDelta)} />
           <Agg label="views" value={formatCompact(group.totalViews)} />
           <Agg label="engagement" value={formatPercent(group.engagement)} />
         </div>
@@ -240,9 +324,9 @@ function ProfileRowItem({ p }: { p: AdminProfileRow }) {
       <div className="flex items-center gap-3 min-w-0">
         <PlatformPill platform={toPlatformKey(p.platform)} iconSize={13} />
         <div className="min-w-0">
-          <div className="text-body text-fg truncate">
-            {p.displayName ?? p.handle ?? p.profileUrl}
-            <span className="text-caption text-fgSubtle ml-2 uppercase">{p.scrapeStatus}</span>
+          <div className="text-body text-fg truncate flex items-center gap-2">
+            <span className="truncate">{p.displayName ?? p.handle ?? p.profileUrl}</span>
+            <StatusPill status={p.scrapeStatus} />
           </div>
           <a
             href={p.profileUrl}
@@ -258,22 +342,19 @@ function ProfileRowItem({ p }: { p: AdminProfileRow }) {
         <div>
           <div className="text-body text-fg">{formatCompact(p.followers)}</div>
           <div className={`text-caption ${deltaClass(p.followersDelta)}`}>
+            {deltaCaret(p.followersDelta)}
             {formatDelta(p.followersDelta)} · followers
           </div>
         </div>
         <div className="hidden sm:block text-caption text-fgSubtle">
           {p.ownerCount} owner · {p.trackerCount} tracker
-          {p.pendingCount > 0 && <div className="text-amber-400">{p.pendingCount} pending</div>}
+          {p.pendingCount > 0 && (
+            <div className="inline-flex items-center mt-0.5 px-1.5 rounded-full bg-brand/10 text-fg border border-brand/20">
+              {p.pendingCount} pending
+            </div>
+          )}
         </div>
-        <form action={deleteProfile}>
-          <input type="hidden" name="profile_id" value={p.id} />
-          <button
-            type="submit"
-            className="px-3 py-1.5 rounded-md text-red-400 hover:bg-red-500/10 text-label border border-red-500/30"
-          >
-            Delete
-          </button>
-        </form>
+        <DeleteProfileButton profileId={p.id} />
       </div>
     </li>
   );
@@ -291,8 +372,14 @@ function Agg(props: { label: string; value: string; sub?: string; subClass?: str
 }
 
 function StatusPill({ status }: { status: string }) {
-  const cls = STATUS_STYLE[status] ?? 'text-fgMuted border-borderGlass';
+  const meta = STATUS_META[status] ?? {
+    cls: 'bg-white/[0.04] text-fgMuted border-white/10',
+    glyph: 'clock' as StatusGlyph,
+  };
   return (
-    <span className={`text-caption px-2 py-0.5 rounded-full border ${cls}`}>{status}</span>
+    <span className={`inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full border ${meta.cls}`}>
+      <StatusGlyphIcon glyph={meta.glyph} />
+      {status}
+    </span>
   );
 }

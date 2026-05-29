@@ -54,7 +54,7 @@ export default async function AdminPage() {
             href="/admin/profiles"
             className="glass-elevated rounded-2xl p-6 hover:bg-white/[0.04] hover:border-borderGlassStrong transition-colors"
           >
-            <div className="text-caption text-fgMuted uppercase tracking-wide">{s.label}</div>
+            <div className="text-caption text-fgMuted">{s.label}</div>
             <div className="text-display-2 text-fg tabular-nums mt-2">
               {Intl.NumberFormat().format(s.value)}
             </div>
@@ -65,7 +65,7 @@ export default async function AdminPage() {
       <section className="flex flex-wrap gap-3">
         <Link
           href="/admin/profiles"
-          className="inline-flex items-center px-4 py-2 rounded-md bg-aurora-cta text-bg hover:bg-aurora-ctaHover transition-colors text-label"
+          className="inline-flex items-center px-4 py-2 rounded-md bg-aurora-cta text-brand-darker hover:bg-aurora-ctaHover transition-colors text-label"
         >
           Manage accounts →
         </Link>

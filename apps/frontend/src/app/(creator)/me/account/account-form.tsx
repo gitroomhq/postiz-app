@@ -44,13 +44,13 @@ export function AccountForm({ defaultDisplayName }: AccountFormProps) {
       </label>
 
       {error && (
-        <p className="text-caption text-danger-fg" role="alert">
-          {error}
+        <p className="text-caption text-fgMuted" role="alert">
+          ⚠ {error}
         </p>
       )}
       {saved && !error && (
-        <p className="text-caption text-emerald-400" role="status">
-          Saved ✓
+        <p className="text-caption text-fg" role="status">
+          ✓ Saved
         </p>
       )}
 

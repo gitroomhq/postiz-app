@@ -8,6 +8,7 @@
  */
 
 import Link from 'next/link';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state';
 import { PlatformPill } from '@gitroom/frontend/components/ui/platform-pill';
 import type { PlatformKey } from '@gitroom/frontend/components/ui/platform-icons';
 import {
@@ -28,9 +29,15 @@ function viaProxy(url: string | null): string | null {
   return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
+// Yellow-mono: direction reads from a caret glyph + text intensity, never hue.
 function deltaClass(n: number | null): string {
   if (n == null || n === 0) return 'text-fgSubtle';
-  return n > 0 ? 'text-emerald-400' : 'text-red-400';
+  return n > 0 ? 'text-fg' : 'text-fgMuted';
+}
+
+function deltaCaret(n: number | null): string {
+  if (n == null || n === 0) return '— ';
+  return n > 0 ? '▲ ' : '▼ ';
 }
 
 export function CreatorStats({ metrics }: { metrics: CreatorMetrics }) {
@@ -41,9 +48,7 @@ export function CreatorStats({ metrics }: { metrics: CreatorMetrics }) {
       {/* KPIs — hero followers card spans wide, rest are uniform tiles */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="col-span-2 glass-elevated rounded-2xl p-6 flex flex-col justify-between min-h-[140px]">
-          <div className="text-label text-fgMuted uppercase tracking-wide">
-            Total followers
-          </div>
+          <div className="text-label text-fgMuted">Total followers</div>
           <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1">
             <span className="text-display-2 text-fg tabular-nums leading-none">
               {formatCompact(t.followers)}
@@ -53,20 +58,18 @@ export function CreatorStats({ metrics }: { metrics: CreatorMetrics }) {
                 t.followersGainedToday,
               )}`}
             >
+              {deltaCaret(t.followersGainedToday)}
               {formatDelta(t.followersGainedToday)} today
             </span>
           </div>
+          {/* TODO: render a 30d follower Sparkline here once CreatorMetrics
+              exposes a daily series (currently only scalar totals). */}
         </div>
 
         <Kpi label="Total views" value={formatCompact(t.views)} />
         <Kpi label="Engagement" value={formatPercent(t.engagement)} hint="likes ÷ views" />
         <Kpi label="Total likes" value={formatCompact(t.likes)} />
         <Kpi label="Posts" value={formatCompact(t.posts)} />
-        <Kpi
-          label="New followers today"
-          value={formatDelta(t.followersGainedToday)}
-          valueClass={deltaClass(t.followersGainedToday)}
-        />
       </section>
 
       {/* Top content */}
@@ -81,7 +84,17 @@ export function CreatorStats({ metrics }: { metrics: CreatorMetrics }) {
           </Link>
         </div>
         {metrics.topPosts.length === 0 ? (
-          <Empty>No post data yet — your top videos appear after the first scrape.</Empty>
+          <EmptyState
+            size="sm"
+            icon={
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+            }
+            title="No post data yet"
+            description="Your top videos appear here after the first daily scrape — usually within 24 hours of adding a profile."
+          />
         ) : (
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {metrics.topPosts.map((p, i) => (
@@ -120,6 +133,7 @@ export function CreatorStats({ metrics }: { metrics: CreatorMetrics }) {
                 <div>
                   <div className="text-body text-fg">{formatCompact(m.followers)}</div>
                   <div className={`text-caption ${deltaClass(m.followersDelta)}`}>
+                    {deltaCaret(m.followersDelta)}
                     {formatDelta(m.followersDelta)} · followers
                   </div>
                 </div>
@@ -144,7 +158,7 @@ function Kpi(props: {
 }) {
   return (
     <div className="glass-subtle border border-borderGlass rounded-2xl p-5 flex flex-col justify-between min-h-[140px]">
-      <div className="text-label text-fgMuted uppercase tracking-wide">{props.label}</div>
+      <div className="text-label text-fgMuted">{props.label}</div>
       <div>
         <div className={`text-section text-fg tabular-nums ${props.valueClass ?? ''}`}>
           {props.value}
@@ -206,10 +220,3 @@ function Stat(props: { label: string; value: string; strong?: boolean }) {
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-      {children}
-    </div>
-  );
-}
