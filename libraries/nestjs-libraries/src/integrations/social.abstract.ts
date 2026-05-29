@@ -59,7 +59,7 @@ export abstract class SocialAbstract {
 
   public handleErrors(
     body: string,
-    status: number,
+    status: number
   ):
     | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
     | undefined {
@@ -117,12 +117,14 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
+    let globalErr = {};
     let value: any;
     try {
       value = await func();
     } catch (err) {
       const handle = this.handleErrors(safeStringify(err), 200);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
+      globalErr = err;
     }
 
     if (value && value?.err && value?.value) {
@@ -134,7 +136,7 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
-      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
+      throw new BadBody('', safeStringify(globalErr), {} as any, value.value || '');
     }
 
     return value;
