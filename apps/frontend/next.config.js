@@ -27,9 +27,13 @@ const nextConfig = {
       "media-src 'self' https://commondatastorage.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       // Dev points at a local Supabase stack on 127.0.0.1:54321 — allow it (and ws HMR).
+      // https://*.sentry.io covers the Sentry ingest endpoint for client-side
+      // error reporting, tracing, and session replay.
       process.env.NODE_ENV === 'production'
-        ? "connect-src 'self' https://*.supabase.co"
-        : "connect-src 'self' https://*.supabase.co http://127.0.0.1:54321 http://localhost:54321 ws://127.0.0.1:54321 ws://localhost:4200",
+        ? "connect-src 'self' https://*.supabase.co https://*.sentry.io"
+        : "connect-src 'self' https://*.supabase.co https://*.sentry.io http://127.0.0.1:54321 http://localhost:54321 ws://127.0.0.1:54321 ws://localhost:4200",
+      // Sentry Session Replay compresses payloads in a Web Worker loaded from a blob: URL.
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "object-src 'none'",

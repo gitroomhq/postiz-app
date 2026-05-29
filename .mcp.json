@@ -35,6 +35,9 @@
         "--header",
         "Authorization: Bearer ${TIKHUB_API_KEY}"
       ]
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/ey-if/d3-creator"
     }
   }
 }
