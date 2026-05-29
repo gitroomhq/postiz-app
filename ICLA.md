@@ -22,7 +22,7 @@ This process only serves for the transfer of economic rights. So-called moral ri
 
 ### How to use this FLA
 
-If You are an employee and have created the Contribution as part of your employment, You need to have Your employer approve this Agreement or sign the Entity version of this document. If You do not own the Copyright in Your Contribution, any other author of the Contribution should also sign this. In any event, please contact Us at nevo@postiz.com.
+If You are an employee and have created the Contribution as part of Your employment, You need to have Your employer approve this Agreement or sign the Entity version of this document. If You do not own the Copyright in Your Contribution, any other author of the Contribution should also sign this. In any event, please contact Us at nevo@postiz.com.
 
 ### Definitions
 
@@ -32,11 +32,11 @@ If You are an employee and have created the Contribution as part of your employm
 
 **"Affiliate"** means any other Legal Entity that controls, is controlled by, or under common control with that Legal Entity. For the purposes of this definition, "control" means (i) the power, direct or indirect, to cause the direction or management of such Legal Entity, whether by contract or otherwise, (ii) ownership of fifty percent (50%) or more of the outstanding shares or securities that vote to elect the management or other persons who direct such Legal Entity, or (iii) beneficial ownership of such entity.
 
-**"Contribution"** means any original work of authorship, including any original modifications or additions to an existing work of authorship, Submitted for inclusion into Material by You to Us, in which you own the Copyright.
+**"Contribution"** means any original work of authorship, including any original modifications or additions to an existing work of authorship, Submitted for inclusion into Material by You to Us, in which You own the Copyright.
 
 **"Copyright"** means all rights protecting works of authorship, including copyright, moral and neighboring rights, as appropriate, for the full term of their existence.
 
-**"Material"** means the software and/or documentation of Postiz that we make available to third parties.
+**"Material"** means the software and/or documentation of Postiz that We make available to third parties.
 
 **"Submit"** means any act by which a Contribution is transferred to Us by You by means of tangible or intangible media, including but not limited to electronic mailing lists, source code control systems, and issue tracking systems, but excluding any transfer that is conspicuously marked or otherwise designated in writing by You as "Not a Contribution."
 
@@ -56,7 +56,7 @@ Subject to the terms and conditions of this Agreement, You hereby grant to Us a 
 
 #### Moral rights
 
-Moral Rights remain unaffected to the extent they are recognized and not waivable by applicable law. Notwithstanding, You may add your name to the attribution mechanism customarily used in the Materials you Contribute to, such as the header of the source code files of Your Contribution, and We will respect this attribution when using Your Contribution.
+Moral Rights remain unaffected to the extent they are recognized and not waivable by applicable law. Notwithstanding, You may add Your name to the attribution mechanism customarily used in the Materials You Contribute to, such as the header of the source code files of Your Contribution, and We will respect this attribution when using Your Contribution.
 
 #### Copyright license back to You
 
@@ -78,19 +78,19 @@ Subject to the terms and conditions of this Agreement You hereby grant to Us and
 
 #### Revocation of patent license
 
-You reserve the right to revoke the patent license stated in Subsection "Patent license" if We make any infringement claim that is targeted at your Contribution and not asserted for a Defensive Purpose. An assertion of claims of the Patents shall be considered for a "Defensive Purpose" if the claims are asserted against an entity that has filed, maintained, threatened, or voluntarily participated in a patent infringement lawsuit against Us or any of Our licensees.
+You reserve the right to revoke the patent license stated in Subsection "Patent license" if We make any infringement claim that is targeted at Your Contribution and not asserted for a Defensive Purpose. An assertion of claims of the Patents shall be considered for a "Defensive Purpose" if the claims are asserted against an entity that has filed, maintained, threatened, or voluntarily participated in a patent infringement lawsuit against Us or any of Our licensees.
 
 ### License obligations by Us
 
 We may, but are under no obligation to, include the Contribution You Submitted to Us into the Material.
 
-We agree to (sub)license the Contribution or any Materials containing, based on or derived from your Contribution under the terms of any licenses that qualify as [Free Software](https://www.gnu.org/philosophy/free-sw.html) as defined by the Free Software Foundation and at the same time qualify as [Open Source](https://opensource.org/osd) as defined by the Open Source Initiative. For clarification, should we make available any Material under a non-free or non-open license, we must make a version of such Material available under a free and open license too.
+We agree to (sub)license the Contribution or any Materials containing, based on or derived from Your Contribution under the terms of any licenses that qualify as [Free Software](https://www.gnu.org/philosophy/free-sw.html) as defined by the Free Software Foundation and at the same time qualify as [Open Source](https://opensource.org/osd) as defined by the Open Source Initiative. For clarification, should We make available any Material under a non-free or non-open license, We must make a version of such Material available under a free and open license too.
 
 We agree to license patents owned or controlled by You only to the extent necessary to (sub)license Your Contribution(s) and the combination of Your Contribution(s) with the Material under the terms of any licenses the Free Software Foundation classifies as Free Software licenses and which are approved by the Open Source Initiative as Open Source licenses.
 
 ### Disclaimer
 
-**We acknowledge that you provide the Contribution "as is".** **More particularly, You disclaim all express or implied warranties including, without limitation, any implied warranty of satisfactory quality, fitness for a particular purpose and non-infringement. To the extent that any such warranties cannot be disclaimed, such warranty is limited in duration and extent to the minimum period and extent permitted by law.**
+**We acknowledge that You provide the Contribution "as is".** **More particularly, You disclaim all express or implied warranties including, without limitation, any implied warranty of satisfactory quality, fitness for a particular purpose and non-infringement. To the extent that any such warranties cannot be disclaimed, such warranty is limited in duration and extent to the minimum period and extent permitted by law.**
 
 ### Consequential damage waiver
 
@@ -118,4 +118,4 @@ In case of Your death, this agreement shall continue with Your heirs. In case of
 
 If any provision of this Agreement is found void and unenforceable, such provision will be replaced to the extent possible with a provision that comes closest to the meaning of the original provision and that is enforceable. The terms and conditions set forth in this Agreement shall apply notwithstanding any failure of essential purpose of this Agreement or any limited remedy to the maximum extent possible under law.
 
-You agree to notify Us of any facts or circumstances of which you become aware that would make Your representations under this Agreement inaccurate in any respect.
+You agree to notify Us of any facts or circumstances of which You become aware that would make Your representations under this Agreement inaccurate in any respect.
