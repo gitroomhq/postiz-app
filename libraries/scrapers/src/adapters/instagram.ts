@@ -276,8 +276,7 @@ function mapProfile(
 
 export const instagramAdapter: PlatformAdapter = {
   platform: 'instagram',
-  // Kept for backward compat with the type — TikHub has no Actor IDs.
-  actorId: 'tikhub:instagram/v3',
+  sourceId: 'tikhub:instagram/v3',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     const handle = extractHandle(profileUrl);
 

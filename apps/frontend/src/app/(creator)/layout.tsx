@@ -41,10 +41,22 @@ export default async function CreatorLayout({ children }: { children: ReactNode 
                 Dashboard
               </Link>
               <Link
+                href="/me/profiles"
+                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
+              >
+                Profiles
+              </Link>
+              <Link
                 href="/me/leaderboard"
                 className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
               >
                 Leaderboard
+              </Link>
+              <Link
+                href="/me/account"
+                className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors"
+              >
+                Account
               </Link>
               {auth.role === 'admin' && (
                 <Link

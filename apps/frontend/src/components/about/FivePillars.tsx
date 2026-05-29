@@ -63,7 +63,7 @@ export function FivePillars() {
   return (
     <section
       aria-labelledby="about-pillars-heading"
-      className="w-full pb-20 sm:pb-28 max-w-[1100px] mx-auto"
+      className="w-full pb-20 sm:pb-28 max-w-[1100px] mx-auto px-6 md:px-8"
     >
       <header className="mb-10 flex flex-col gap-6 border-b border-borderGlass pb-6 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-2">

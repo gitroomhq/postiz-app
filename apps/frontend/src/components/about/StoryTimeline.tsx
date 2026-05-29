@@ -44,7 +44,7 @@ export function StoryTimeline() {
   return (
     <section
       aria-labelledby="about-timeline-heading"
-      className="w-full pb-20 sm:pb-28 max-w-[1100px] mx-auto"
+      className="w-full pb-20 sm:pb-28 max-w-[1100px] mx-auto px-6 md:px-8"
     >
       <header className="mb-12 max-w-[760px]">
         <p className="text-micro uppercase text-fgSubtle tracking-[0.35em] mb-3">

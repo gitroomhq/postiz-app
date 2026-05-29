@@ -32,8 +32,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-label">
-              <Link href="/dashboard" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Public Dashboard</Link>
-              <Link href="/leaderboard" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Public Leaderboard</Link>
+              <Link href="/admin" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Dashboard</Link>
+              <Link href="/admin/profiles" className="px-3 py-1.5 rounded-md text-fgMuted hover:text-fg hover:bg-white/[0.04] transition-colors">Accounts</Link>
               <span className="hidden sm:inline-block ml-3 text-caption text-fgSubtle">{auth.email}</span>
               <SignOutButton />
             </nav>

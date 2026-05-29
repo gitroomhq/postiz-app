@@ -80,3 +80,5 @@ skills-lock.json
 reports/
 var/
 dynamicconfig/
+.vercel
+.env*

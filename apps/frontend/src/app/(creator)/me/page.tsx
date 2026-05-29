@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
+import { getCreatorMetrics } from '@gitroom/frontend/lib/creator-metrics';
+import { CreatorStats } from './creator-stats';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,49 +16,18 @@ export const metadata: Metadata = {
 export default async function CreatorMePage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
-  if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
+  // Admins manage from /admin.
+  if (auth.role === 'admin') redirect('/admin');
+  // No onboarding gate: creators land here straight away. The dashboard shows
+  // a friendly "add your first profile" prompt when they have no profiles yet.
 
-  // Pull this creator's own profiles + latest snapshots via the cookie-aware
-  // client (NOT the service-role client). RLS on the data tables is "public
-  // read for anon + authenticated" — required for the public showcase — so
-  // this query has the same effective visibility as the anon user has on
-  // /dashboard. Scoping to creator_id is then enforced at the query level.
-  //
-  // Why this matters: previously this page used the service-role client,
-  // which bypasses RLS entirely. If the app-level filter ever drifted (a
-  // bad creator_id, a forgotten `.eq()`), the page could have leaked rows
-  // for ANY creator. With the cookie-aware client, the worst-case leak is
-  // bounded by what an anon visitor already sees — i.e. no privilege
-  // escalation, just possible UI confusion.
+  // Cookie-aware client (NOT service-role). The data tables are public-read
+  // for the showcase, so the worst-case leak is bounded by what an anon
+  // visitor already sees; getCreatorMetrics narrows to this user's claimed
+  // profiles (or their creator_id as a legacy fallback) at the query level.
   const sb = await getSupabaseRoute();
   const creatorId = auth.creatorLink.creator_id;
-
-  // Step 1: pull this creator's profiles, scoped by creator_id.
-  const { data: profiles } = creatorId
-    ? await sb
-        .from('profile')
-        .select('id, platform, handle, display_name, profile_url, scrape_status')
-        .eq('creator_id', creatorId)
-    : { data: null };
-
-  // Step 2: pull snapshots only for THOSE profiles. Previously this query
-  // had no profile_id filter and just .limit(50) — which (a) returned the
-  // 50 most-recent snapshots across the entire system, leaking other
-  // creators' rows into this page's server memory, and (b) silently
-  // failed to show this creator's data once others scraped more often
-  // and pushed them out of the top-50 window. Mirror the same pattern
-  // /me/leaderboard already uses.
-  const profileIds = (profiles ?? []).map((p) => p.id);
-  const { data: latestSnapshots } = profileIds.length
-    ? await sb
-        .from('profile_snapshot')
-        .select(
-          'profile_id, followers, total_posts, total_views, total_likes, captured_at',
-        )
-        .in('profile_id', profileIds)
-        .order('captured_at', { ascending: false })
-        .limit(50)
-    : { data: null };
+  const metrics = await getCreatorMetrics(sb, { userId: auth.userId, creatorId });
 
   return (
     <div className="flex flex-col gap-10 pt-12 pb-24">
@@ -67,92 +38,26 @@ export default async function CreatorMePage() {
         </span>
         <h1 className="text-display-2 text-fg mb-4">Your creator view.</h1>
         <p className="text-body-lg text-fgMuted max-w-[600px]">
-          Signed in as <span className="text-fg">{auth.email}</span>. Only data
-          tied to your creator is shown here.
+          Signed in as <span className="text-fg">{auth.email}</span>. Live stats
+          across every profile you own or track —{' '}
+          <Link href="/me/profiles" className="text-aurora-cta underline underline-offset-4">
+            manage your URLs
+          </Link>
+          .
         </p>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <article className="glass-elevated p-5 rounded-2xl">
-          <h2 className="text-heading text-fg mb-2">Dashboard URL</h2>
-          {auth.creatorLink.dashboard_url ? (
-            <a
-              href={auth.creatorLink.dashboard_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-body text-aurora-cta underline underline-offset-4 break-all"
-            >
-              {auth.creatorLink.dashboard_url}
-            </a>
-          ) : (
-            <p className="text-body text-fgMuted">Not set.</p>
-          )}
-        </article>
-        <article className="glass-elevated p-5 rounded-2xl">
-          <h2 className="text-heading text-fg mb-2">Leaderboard URL</h2>
-          {auth.creatorLink.leaderboard_url ? (
-            <a
-              href={auth.creatorLink.leaderboard_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-body text-aurora-cta underline underline-offset-4 break-all"
-            >
-              {auth.creatorLink.leaderboard_url}
-            </a>
-          ) : (
-            <p className="text-body text-fgMuted">Not set.</p>
-          )}
-        </article>
-      </section>
-
-      <section>
-        <h2 className="text-section text-fg mb-4">Your profiles</h2>
-        {!creatorId ? (
-          <p className="text-body text-fgMuted">
-            No creator linked yet.{' '}
-            <Link href="/onboarding" className="text-aurora-cta underline underline-offset-4">
-              Finish onboarding
-            </Link>
-            .
-          </p>
-        ) : !profiles || profiles.length === 0 ? (
-          <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-            An admin hasn&apos;t added any platform profiles for your creator
-            yet. Once added, daily snapshots will appear here.
-          </div>
-        ) : (
-          <ul className="divide-y divide-borderGlass border border-borderGlass rounded-2xl overflow-hidden">
-            {profiles.map((p) => {
-              const snap = (latestSnapshots ?? []).find((s) => s.profile_id === p.id);
-              return (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-4 p-4 bg-glass-base"
-                >
-                  <div className="min-w-0">
-                    <div className="text-label text-fgMuted uppercase tracking-wide">
-                      {p.platform}
-                    </div>
-                    <div className="text-body text-fg truncate">
-                      {p.display_name ?? p.handle ?? p.profile_url}
-                    </div>
-                  </div>
-                  <div className="text-right text-caption text-fgMuted shrink-0">
-                    {snap?.followers != null ? (
-                      <div className="text-body text-fg">
-                        {Intl.NumberFormat().format(Number(snap.followers))}
-                        <span className="text-caption text-fgSubtle ml-1">followers</span>
-                      </div>
-                    ) : (
-                      <div className="text-fgSubtle">No snapshot yet</div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {!metrics.hasProfiles ? (
+        <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
+          You haven&apos;t added any profiles yet.{' '}
+          <Link href="/me/profiles" className="text-aurora-cta underline underline-offset-4">
+            Add a profile URL
+          </Link>{' '}
+          to start tracking — daily stats appear here once collected.
+        </div>
+      ) : (
+        <CreatorStats metrics={metrics} />
+      )}
     </div>
   );
 }

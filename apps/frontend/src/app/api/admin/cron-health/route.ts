@@ -1,7 +1,13 @@
 /**
- * Cron health endpoint. Returns the last N runs of both:
- *   - pg_cron 'purge-snapshots' (safety-net deletes inside Postgres)
- *   - archive_run rows (the /api/cron/archive-and-purge Vercel cron's log)
+ * Cron health endpoint. Returns the last N archive_run rows (the
+ * /api/cron/archive-and-purge Vercel cron's log).
+ *
+ * pg_cron history is NOT exposed here — cron.job_run_details lives in the
+ * cron schema and PostgREST does not surface it. Query it directly in the
+ * Supabase SQL editor:
+ *
+ *   -- For pg_cron history query via Supabase SQL editor:
+ *   select * from cron.job_run_details order by start_time desc limit 20;
  *
  * Auth: Bearer ${CRON_SECRET}. Same secret as the cron handlers themselves
  * — gates this admin endpoint behind a value only the operator should know.
@@ -23,8 +29,12 @@ export const maxDuration = 30;
 function assertAuth(request: Request): Response | null {
   const expected = process.env.CRON_SECRET;
   if (!expected) {
+    console.error('[cron] CRON_SECRET not set — cron auth will fail');
     return NextResponse.json(
-      { error: 'CRON_SECRET not configured on the server' },
+      {
+        error:
+          'CRON_SECRET not configured on the server — add it to Vercel project env vars',
+      },
       { status: 500 },
     );
   }
@@ -54,6 +64,8 @@ export async function GET(request: Request): Promise<Response> {
   const sb = getSupabaseAdmin();
 
   // archive_run rows — most recent first.
+  // For pg_cron history query via Supabase SQL editor:
+  //   select * from cron.job_run_details order by start_time desc limit 20
   const archiveRuns = await sb
     .from('archive_run')
     .select(
@@ -62,30 +74,9 @@ export async function GET(request: Request): Promise<Response> {
     .order('started_at', { ascending: false })
     .limit(limit);
 
-  // pg_cron run history. cron.job_run_details lives in the cron schema —
-  // PostgREST doesn't expose it by default, so call via a raw RPC. To keep
-  // this route self-contained without a server-side function, we just
-  // pull what we can via the storage path (the route stays useful even
-  // when pg_cron history is empty / unavailable).
-  let cronRuns: unknown[] = [];
-  let cronRunsError: string | null = null;
-  try {
-    // .rpc would need a named SQL function — defer that. For now expose the
-    // archive_run history only; the pg_cron history can be queried in SQL
-    // editor with:
-    //   select * from cron.job_run_details
-    //     where jobid = (select jobid from cron.job where jobname = 'purge-snapshots')
-    //     order by start_time desc limit 10;
-    cronRunsError = 'pg_cron.job_run_details not exposed via PostgREST — query in SQL editor';
-  } catch (err) {
-    cronRunsError = err instanceof Error ? err.message : String(err);
-  }
-
   return NextResponse.json({
     archive_runs: archiveRuns.data ?? [],
     archive_runs_error: archiveRuns.error?.message ?? null,
-    pg_cron_runs: cronRuns,
-    pg_cron_runs_error: cronRunsError,
     limit,
   });
 }

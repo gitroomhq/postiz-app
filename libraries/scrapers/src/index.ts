@@ -6,7 +6,6 @@
  */
 
 export { runScraper, SUPPORTED_PLATFORMS } from './dispatch';
-export { runActor, getApifyClient } from './apify-client';
 export {
   ScrapeError,
   ApifyTimeoutError,

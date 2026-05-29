@@ -205,7 +205,7 @@ function mapProfile(
 
 export const tiktokAdapter: PlatformAdapter = {
   platform: 'tiktok',
-  actorId: 'tikhub:tiktok/app/v3',
+  sourceId: 'tikhub:tiktok/app/v3',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     const handle = extractHandle(profileUrl);
 

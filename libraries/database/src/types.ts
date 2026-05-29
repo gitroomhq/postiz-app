@@ -85,3 +85,25 @@ export interface PostSnapshotRow {
 export type Result<T, E = string> =
   | { ok: true; value: T }
   | { ok: false; error: E };
+
+export type ClaimKind = 'owner' | 'tracker' | 'pending';
+export type ClaimedVia = 'manual' | 'auto_discovery' | 'admin_assigned';
+
+export interface ProfileClaimRow {
+  user_id: string;
+  profile_id: string;
+  claim_kind: ClaimKind;
+  claimed_via: ClaimedVia;
+  created_at: string;
+  confirmed_at: string | null;
+}
+
+/** Auto-discovery candidate returned by `findCandidatesByHandle`. */
+export interface DiscoveryCandidate {
+  profile: ProfileRow;
+  score: number;
+  /** 'high' (>=0.92) | 'review' (>=0.75). Below 0.75 are filtered out. */
+  bucket: 'high' | 'review';
+  matchedOn: 'exact' | 'folded' | 'core' | 'trigram';
+}
+

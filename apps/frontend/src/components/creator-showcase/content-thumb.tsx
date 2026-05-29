@@ -7,6 +7,7 @@ import {
   type PlatformKey,
 } from '../ui/platform-icons';
 import {
+  formatCompact,
   formatDuration,
   formatPrimaryMetric,
   PLATFORM_ASPECT,
@@ -124,14 +125,19 @@ export function ContentThumb({ post, onOpen }: ContentThumbProps) {
         </span>
       ) : null}
 
-      {/* Bottom solid scrim — metric + relative time */}
-      <div className="absolute bottom-0 inset-x-0 px-3 py-2 bg-canvas/85 border-t border-borderGlass flex items-center justify-between">
+      {/* Bottom solid scrim — headline metric + shares + relative time */}
+      <div className="absolute bottom-0 inset-x-0 px-3 py-2 bg-canvas/85 border-t border-borderGlass flex items-center justify-between gap-2">
         <span className="text-caption font-mono tabular-nums text-fg">
           {metric.value}
         </span>
-        <span className="text-micro text-fgSubtle font-mono">
-          {relativeTime(post.publishedAt)}
-        </span>
+        <div className="flex items-center gap-2 text-micro font-mono tabular-nums text-fgSubtle">
+          {post.metrics.shares > 0 && (
+            <span title="shares" aria-label={`${post.metrics.shares} shares`}>
+              ↗ {formatCompact(post.metrics.shares)}
+            </span>
+          )}
+          <span>{relativeTime(post.publishedAt)}</span>
+        </div>
       </div>
 
       {/* Caption fallback overlay — for posts WITHOUT video preview */}

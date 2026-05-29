@@ -80,7 +80,6 @@ export default async function CreatorPage({
                 src={creator.avatarUrl}
                 alt={creator.displayName}
                 className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
               />
             ) : (
               creator.displayName.charAt(0).toUpperCase()

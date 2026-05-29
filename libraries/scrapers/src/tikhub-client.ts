@@ -81,7 +81,7 @@ function looksLikeNotFound(msg: string): boolean {
     m.includes('no such user') ||
     m.includes("couldn't find") ||
     m.includes('invalid user') ||
-    m.includes('user id') && m.includes('invalid')
+    (m.includes('user id') && m.includes('invalid'))
   );
 }
 

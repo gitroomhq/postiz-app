@@ -104,6 +104,19 @@ export function validateProfileUrl(
     return { ok: false, error: 'URL must use http(s)' };
   }
 
+  // xhslink.com is RedNote's short-link redirector. The scraper extracts the
+  // user_id from xiaohongshu.com/user/profile/<id>, so a short link passes
+  // host validation but fails extraction on every cron — permanent `failed`.
+  // Reject up-front and tell the user to paste the full profile URL.
+  // (Following the redirect at validation time is out of scope.)
+  if (platform === 'rednote' && /(^|\.)xhslink\.com$/i.test(u.hostname)) {
+    return {
+      ok: false,
+      error:
+        'xhslink.com short links are not supported. Open the link in a browser and paste the full xiaohongshu.com/user/profile/<id> URL.',
+    };
+  }
+
   const pattern = PATTERNS.find((p) => p.platform === platform);
   if (!pattern) {
     return { ok: false, error: `Unknown platform: ${platform}` };
@@ -141,3 +154,26 @@ export function validateProfileUrl(
   const normalizedUrl = `https://${u.hostname.toLowerCase()}${u.pathname.replace(/\/+$/, '')}`;
   return { ok: true, platform, normalizedUrl, handle };
 }
+
+/**
+ * Fold a handle for cross-platform fuzzy matching used by Auto-Discovery.
+ *
+ * Steps:
+ *  1. lowercase
+ *  2. strip separators (. _ -) since they're cosmetic across platforms
+ *     (e.g. "j.smith" on IG vs "jsmith" on TikTok vs "j_smith" on Douyin)
+ *  3. strip trailing platform-suffix conventions ("official", "real", "tv",
+ *     "ig", "tt") creators commonly add to disambiguate alt accounts
+ *
+ * Returns the folded form. Empty input → "".
+ *
+ * Mirrors the profile_handle_folded index expression in migration
+ * 20260529000001_profile_claim.sql so SQL = TS produces the same value.
+ */
+export function normalizeHandle(handle: string | null | undefined): string {
+  if (!handle) return '';
+  const lowered = handle.toLowerCase();
+  const stripped = lowered.replace(/[._\-]+/g, '');
+  return stripped.replace(/(official|real|tv|ig|tt)$/i, '');
+}
+

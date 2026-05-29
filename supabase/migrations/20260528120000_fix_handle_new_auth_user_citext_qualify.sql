@@ -9,7 +9,7 @@
 -- as well as tables. The original migration qualified the tables but not the
 -- type cast.
 --
--- Applied live against project wmesjldkqvbzrcpitclu on 2026-05-28 via Supabase
+-- Applied live against project <project-ref> on 2026-05-28 via Supabase
 -- MCP after the production deploy's first signup attempt surfaced the error.
 
 create or replace function public.handle_new_auth_user()

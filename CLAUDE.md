@@ -12,7 +12,7 @@ Login-free social analytics. Agency tool + white-label client portal. Scraper-ba
 |---|---|
 | Frontend | Next.js App Router (React 19) + Tailwind 3 |
 | Database | Supabase Postgres + Storage |
-| Scrapers | Apify (official pre-built actors only) |
+| Scrapers | TikHub REST + BrightData datasets |
 | Hosting | Vercel (frontend + functions + cron) |
 | Scheduling | Vercel Cron — NOT Temporal |
 | Package mgr | pnpm only |
@@ -58,8 +58,9 @@ UI components live in `apps/frontend/src/components/ui/`. Check existing ones fi
 ## Scraper layer
 
 - One adapter file per platform in `libraries/scrapers/` (created Task 4).
-- Use ONLY official Apify Actors — never build custom Actors.
-- `APIFY_API_KEY` from env, never hardcoded.
+- Instagram, TikTok, RedNote, Douyin: TikHub REST API (`TIKHUB_API_KEY` from env).
+- Facebook: BrightData datasets (`BRIGHTDATA_API_KEY` from env).
+- Never hardcode API keys.
 - Daily cron loops active profiles, calls correct adapter, UPSERTs into `profile_snapshot` + `post_snapshot`.
 - Skip duplicates: `(profile_id, captured_at::date)` for profile, `(profile_id, external_post_id, captured_at::date)` for posts.
 

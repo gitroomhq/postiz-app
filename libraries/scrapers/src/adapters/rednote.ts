@@ -216,7 +216,7 @@ function unwrapInner<T>(resp: XhsInnerEnvelope<T> | null | undefined): T | null 
 
 export const rednoteAdapter: PlatformAdapter = {
   platform: 'rednote',
-  actorId: 'tikhub:xiaohongshu/web',
+  sourceId: 'tikhub:xiaohongshu/web',
   async scrape(profileUrl: string): Promise<ScrapeResult> {
     const userId = extractUserId(profileUrl);
 

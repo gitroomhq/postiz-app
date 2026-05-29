@@ -2,9 +2,9 @@
  * Normalized scraper output shape.
  *
  * Every platform adapter MUST conform to this shape regardless of what the
- * underlying Apify Actor returns. Adapters live in
+ * underlying scraper source returns. Adapters live in
  * libraries/scrapers/src/adapters/<platform>.ts and are the only place where
- * Actor-specific parsing happens.
+ * source-specific parsing happens.
  */
 
 export type Platform =
@@ -50,7 +50,7 @@ export interface ScrapeResult {
 /** Adapter contract — every platform implements this. */
 export interface PlatformAdapter {
   platform: Platform;
-  /** Apify Actor ID, e.g. 'apify/instagram-scraper' */
-  actorId: string;
+  /** Scraper source identifier, e.g. 'tikhub:instagram/v3' or 'brightdata:<dataset-id>' */
+  sourceId: string;
   scrape(profileUrl: string): Promise<ScrapeResult>;
 }

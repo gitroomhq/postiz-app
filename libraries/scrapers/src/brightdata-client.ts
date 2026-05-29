@@ -2,11 +2,11 @@
  * Central Bright Data Web Scraper API service.
  *
  * Used by the Facebook adapter (Bright Data has prebuilt FB datasets that
- * outperform what Apify exposes on profile counters). Mirrors the
- * tikhub-client.ts / apify-client.ts patterns:
+ * surface profile counters TikHub/other backends do not). Mirrors the
+ * tikhub-client.ts patterns:
  *   - API key handling (BRIGHTDATA_API_KEY env, fail-fast on missing)
  *   - error normalization (404 → not_found, 429 → throttled, 5xx → failed)
- *   - timeouts (default 5 min — same as Apify, matches cron maxDuration)
+ *   - timeouts (default 5 min — matches cron maxDuration)
  *   - polling (5s interval — most FB scrapes resolve in 30s-2min)
  *
  * Bright Data Web Scraper API flow (https://api.brightdata.com/datasets/v3):

@@ -81,6 +81,12 @@ export default async function HomePage() {
         combinedGrowth30d: liveSummary.combinedFollowersDelta30d,
       }
     : demoSummary;
+  // Prefer live % when we have a real prior baseline; fall back to the demo
+  // metric so the card still renders something pre-launch. Both are fractions
+  // (e.g. 0.103 = 10.3%) — Intl percent style multiplies by 100.
+  const combinedGrowth30dPct = liveSummary
+    ? liveSummary.combinedFollowersDelta30dPct
+    : METRICS.all.netGrowth30dPct;
 
   // Top Creators bento: live when we have ≥1 creator past the 14-day
   // sufficiency gate with positive 30d growth; else fall back to the
@@ -257,7 +263,11 @@ export default async function HomePage() {
                 </Link>
               </div>
 
-              <ul className="flex flex-col flex-1 justify-between gap-2">
+              {/* Top-aligned: rows sit together under the header. flex-1 +
+                  justify-between previously stretched the list to the card's
+                  full height, flinging a short list (e.g. 2 live creators) to
+                  the top and bottom edges. */}
+              <ul className="flex flex-col gap-1">
                 {topThree.map((creator) => {
                   const Icon = PLATFORM_ICONS[creator.primaryPlatform];
                   const isWinner = creator.rank === 1;
@@ -426,7 +436,7 @@ export default async function HomePage() {
             <StatCell
               label="30d Net Growth"
               value={`+${compactFormatter.format(summary.combinedGrowth30d)}`}
-              note={signedPercentFormatter.format(allMetrics.netGrowth30dPct) + ' vs. prior 30d'}
+              note={signedPercentFormatter.format(combinedGrowth30dPct) + ' vs. prior 30d'}
             />
           </dl>
         </GlassCard>

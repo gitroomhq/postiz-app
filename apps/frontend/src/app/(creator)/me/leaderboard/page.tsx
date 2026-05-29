@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@gitroom/frontend/lib/auth';
 import { getSupabaseRoute } from '@gitroom/frontend/lib/supabase-route';
+import { resolveCreatorProfiles } from '@gitroom/frontend/lib/creator-metrics';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,36 +24,39 @@ interface PostRow {
 export default async function CreatorMeLeaderboardPage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
-  if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
+  if (auth.role === 'admin') redirect('/admin');
+  // No onboarding gate — creators see their top posts straight away.
 
   // Cookie-aware client — same defense-in-depth reasoning as /me/page.tsx.
   // The data tables have "public read for anon + authenticated" RLS for the
   // showcase, so this client sees the same rows an anon visitor would, and
-  // the creator_id filter narrows to this user's own posts at the query
-  // level. If the filter ever broke, the leak is bounded by what's already
-  // public via /leaderboard.
+  // the profile filter narrows to this user's own posts at the query level.
+  // If the filter ever broke, the leak is bounded by what's already public
+  // via /leaderboard.
   const sb = await getSupabaseRoute();
-  const creatorId = auth.creatorLink.creator_id;
 
-  // Top posts across this creator's profiles, by views.
+  // Which profiles count as "this user's"? Source of truth is profile_claim
+  // (owner + tracker), shared with /me — NOT profile.creator_id. A tracked
+  // profile belonging to another creator still surfaces this user's view of
+  // its top posts.
+  const { profiles } = await resolveCreatorProfiles(sb, {
+    userId: auth.userId,
+    creatorId: auth.creatorLink.creator_id,
+  });
+  const ids = profiles.map((p) => p.id);
+
+  // Top posts across those profiles, by views.
   let posts: PostRow[] = [];
-  if (creatorId) {
-    const { data: profileIds } = await sb
-      .from('profile')
-      .select('id')
-      .eq('creator_id', creatorId);
-    const ids = (profileIds ?? []).map((p) => p.id);
-    if (ids.length) {
-      const { data } = await sb
-        .from('post_snapshot')
-        .select(
-          'external_post_id, caption_excerpt, views, likes, comments, posted_at, media_url',
-        )
-        .in('profile_id', ids)
-        .order('views', { ascending: false, nullsFirst: false })
-        .limit(20);
-      posts = (data as PostRow[] | null) ?? [];
-    }
+  if (ids.length) {
+    const { data } = await sb
+      .from('post_snapshot')
+      .select(
+        'external_post_id, caption_excerpt, views, likes, comments, posted_at, media_url',
+      )
+      .in('profile_id', ids)
+      .order('views', { ascending: false, nullsFirst: false })
+      .limit(20);
+    posts = (data as PostRow[] | null) ?? [];
   }
 
   return (
