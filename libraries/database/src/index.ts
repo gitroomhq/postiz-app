@@ -20,9 +20,11 @@ export { addProfile, type AddProfileInput } from './profile';
 export {
   addProfileClaim,
   decideInitialClaimKind,
+  ensureCreatorForUser,
   findCandidatesByHandle,
   findOrCreateProfile,
   type AddClaimInput,
+  type EnsureCreatorResult,
   type FindOrCreateInput,
   type FindOrCreateResult,
 } from './claim';

@@ -47,7 +47,8 @@ interface ClaimRowFromJoin {
 export default async function MyProfilesPage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
-  if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
+  if (auth.role === 'admin') redirect('/admin');
+  // No onboarding gate — anyone signed in can manage their tracked URLs here.
 
   const sb = await getSupabaseRoute();
 

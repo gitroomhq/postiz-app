@@ -24,7 +24,8 @@ interface PostRow {
 export default async function CreatorMeLeaderboardPage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
-  if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
+  if (auth.role === 'admin') redirect('/admin');
+  // No onboarding gate — creators see their top posts straight away.
 
   // Cookie-aware client — same defense-in-depth reasoning as /me/page.tsx.
   // The data tables have "public read for anon + authenticated" RLS for the

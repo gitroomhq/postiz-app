@@ -23,6 +23,7 @@ import { z } from 'zod';
 import {
   addProfileClaim,
   decideInitialClaimKind,
+  ensureCreatorForUser,
   findOrCreateProfile,
   validateProfileUrl,
   type Platform,
@@ -126,15 +127,23 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError(500, `creator_link lookup failed: ${linkRes.error.message}`);
   }
   const link = linkRes.data;
-  if (!link?.onboarding_completed || !link.creator_id) {
-    return jsonError(409, 'onboarding required before adding profiles');
+
+  // No onboarding wall: lazily provision the caller's creator identity if they
+  // don't have one yet, so anyone signed in can start tracking URLs immediately.
+  let creatorId = link?.creator_id ?? null;
+  if (!creatorId) {
+    const ensured = await ensureCreatorForUser({ user_id: user.id });
+    if (ensured.ok !== true) {
+      return jsonError(500, `could not provision creator: ${ensured.error}`);
+    }
+    creatorId = ensured.value.creator_id;
   }
 
   // 4. Find or create canonical profile.
   const foc = await findOrCreateProfile({
     platform,
     profile_url,
-    fallback_creator_id: link.creator_id,
+    fallback_creator_id: creatorId,
   });
   if (foc.ok !== true) {
     return jsonError(400, foc.error);

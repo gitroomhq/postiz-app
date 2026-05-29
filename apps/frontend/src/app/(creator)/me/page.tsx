@@ -16,9 +16,10 @@ export const metadata: Metadata = {
 export default async function CreatorMePage() {
   const auth = await getAuthContext();
   if (!auth) redirect('/login');
-  // Admins manage from /admin and never go through creator onboarding.
+  // Admins manage from /admin.
   if (auth.role === 'admin') redirect('/admin');
-  if (!auth.creatorLink?.onboarding_completed) redirect('/onboarding');
+  // No onboarding gate: creators land here straight away. The dashboard shows
+  // a friendly "add your first profile" prompt when they have no profiles yet.
 
   // Cookie-aware client (NOT service-role). The data tables are public-read
   // for the showcase, so the worst-case leak is bounded by what an anon
@@ -48,23 +49,11 @@ export default async function CreatorMePage() {
 
       {!metrics.hasProfiles ? (
         <div className="glass-subtle border border-borderGlass rounded-2xl p-6 text-body text-fgMuted">
-          {creatorId ? (
-            <>
-              You haven&apos;t claimed any profiles yet.{' '}
-              <Link href="/me/profiles" className="text-aurora-cta underline underline-offset-4">
-                Add a profile URL
-              </Link>{' '}
-              and daily stats will appear here.
-            </>
-          ) : (
-            <>
-              No creator linked yet.{' '}
-              <Link href="/onboarding" className="text-aurora-cta underline underline-offset-4">
-                Finish onboarding
-              </Link>
-              .
-            </>
-          )}
+          You haven&apos;t added any profiles yet.{' '}
+          <Link href="/me/profiles" className="text-aurora-cta underline underline-offset-4">
+            Add a profile URL
+          </Link>{' '}
+          to start tracking — daily stats appear here once collected.
         </div>
       ) : (
         <CreatorStats metrics={metrics} />

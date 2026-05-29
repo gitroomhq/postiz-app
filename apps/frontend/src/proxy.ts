@@ -62,33 +62,22 @@ export async function proxy(request: NextRequest) {
   // routes skip the lookup" shortcut no longer holds for authenticated
   // requests. Anonymous traffic — the bulk of public-page load — already
   // returned above, so this DB roundtrip is paid only by signed-in users.
+  // Only the role is needed for routing now — there is no onboarding gate.
+  // Creators self-provision on first profile-add, so a signed-in creator goes
+  // straight to /me. Anonymous traffic (the bulk of public-page load) already
+  // returned above, so this DB roundtrip is paid only by signed-in users.
   const { data: roleRow, error: roleErr } = await supabase
     .from('user_role')
     .select('role')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  // Onboarding state only matters for creator-route / auth-page routing — skip
-  // the extra query on public routes.
-  let onboarded = false;
-  let linkErr: { message: string } | null = null;
-  if (isAuthPage || isCreatorRoute) {
-    const linkRes = await supabase
-      .from('creator_link')
-      .select('onboarding_completed')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    onboarded = Boolean(linkRes.data?.onboarding_completed);
-    linkErr = linkRes.error;
-  }
-
   // Distinguish "no row" (legitimate — fresh user) from "DB/network error".
   // On a real error we fail closed: kick to /login with a generic flag rather
   // than silently treating the user as a default-role creator.
-  if (roleErr || linkErr) {
-    console.error('[proxy] role/onboarding lookup failed', {
-      roleErr: roleErr?.message,
-      linkErr: linkErr?.message,
+  if (roleErr) {
+    console.error('[proxy] role lookup failed', {
+      roleErr: roleErr.message,
       userId: user.id,
     });
     const failUrl = new URL('/login', request.url);
@@ -99,13 +88,12 @@ export async function proxy(request: NextRequest) {
 
   // Logged-in users shouldn't sit on login/signup.
   if (isAuthPage) {
-    const target = role === 'admin' ? '/admin' : onboarded ? '/me' : '/onboarding';
-    return NextResponse.redirect(new URL(target, request.url));
+    return NextResponse.redirect(new URL(role === 'admin' ? '/admin' : '/me', request.url));
   }
 
   // Confine admins to the admin surface: ANY non-admin route — public (home,
   // showcase) AND creator routes (/me, /onboarding) — bounces to /admin.
-  // Admins are managers; they never go through the creator onboarding flow.
+  // Admins are managers; they never go through the creator flow.
   // (auth pages + /api were handled above.)
   if (role === 'admin' && !isAdminRoute) {
     return NextResponse.redirect(new URL('/admin', request.url));
@@ -113,16 +101,6 @@ export async function proxy(request: NextRequest) {
 
   // Admin-only routes for non-admins.
   if (isAdminRoute && role !== 'admin') {
-    return NextResponse.redirect(new URL('/me', request.url));
-  }
-
-  // Creator routes: creators who haven't onboarded must finish that first.
-  if (isCreatorRoute && role === 'creator' && !onboarded && pathname !== '/onboarding') {
-    return NextResponse.redirect(new URL('/onboarding', request.url));
-  }
-
-  // Block /onboarding for users who've already finished it.
-  if (pathname === '/onboarding' && onboarded) {
     return NextResponse.redirect(new URL('/me', request.url));
   }
 

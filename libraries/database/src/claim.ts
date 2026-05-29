@@ -137,6 +137,82 @@ export async function findOrCreateProfile(
   return { ok: true, value: { profile: insert.data as ProfileRow, created: true } };
 }
 
+export interface EnsureCreatorResult {
+  creator_id: string;
+  /** true if a new creator row was inserted for this user. */
+  created: boolean;
+}
+
+/**
+ * Guarantee the user has a canonical `creator` row + linked creator_id, creating
+ * one on demand. This replaces the old forced-onboarding flow: a creator can
+ * paste a profile URL (or save account settings) and we lazily provision their
+ * creator identity instead of blocking on a separate onboarding wall.
+ *
+ * Idempotent: returns the existing creator_id when already linked. When a
+ * display_name is supplied it is applied (on create, and on update if non-empty).
+ * Service-role: `creator` writes are admin-only under RLS.
+ */
+export async function ensureCreatorForUser(input: {
+  user_id: string;
+  display_name?: string | null;
+}): Promise<Result<EnsureCreatorResult>> {
+  const supabase = getSupabaseAdmin();
+
+  const link = await supabase
+    .from('creator_link')
+    .select('creator_id')
+    .eq('user_id', input.user_id)
+    .maybeSingle();
+  if (link.error) {
+    return { ok: false, error: `creator_link lookup failed: ${link.error.message}` };
+  }
+
+  const trimmed = input.display_name?.trim() || null;
+
+  // Already linked — optionally refresh the display name, then return.
+  if (link.data?.creator_id) {
+    if (trimmed) {
+      const upd = await supabase
+        .from('creator')
+        .update({ display_name: trimmed })
+        .eq('id', link.data.creator_id);
+      if (upd.error) {
+        return { ok: false, error: `creator update failed: ${upd.error.message}` };
+      }
+    }
+    return { ok: true, value: { creator_id: link.data.creator_id, created: false } };
+  }
+
+  // No creator yet — create one. Default name is a neutral placeholder the
+  // user can rename from /me/account.
+  const created = await supabase
+    .from('creator')
+    .insert({ display_name: trimmed ?? 'My account' })
+    .select('id')
+    .single();
+  if (created.error || !created.data) {
+    return { ok: false, error: `creator insert failed: ${created.error?.message ?? 'no row'}` };
+  }
+
+  // Link it. Upsert (not update) so this works whether or not the signup
+  // trigger already created the creator_link row. Only these columns are
+  // touched — any existing dashboard/leaderboard URLs are preserved.
+  const linked = await supabase.from('creator_link').upsert(
+    {
+      user_id: input.user_id,
+      creator_id: created.data.id,
+      onboarding_completed: true,
+    },
+    { onConflict: 'user_id' },
+  );
+  if (linked.error) {
+    return { ok: false, error: `creator_link upsert failed: ${linked.error.message}` };
+  }
+
+  return { ok: true, value: { creator_id: created.data.id, created: true } };
+}
+
 export interface AddClaimInput {
   user_id: string;
   profile_id: string;
