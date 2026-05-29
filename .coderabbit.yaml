@@ -26,7 +26,10 @@ reviews:
   auto_assign_reviewers: false
   poem: true
   labeling_instructions: []
-  path_filters: []
+  path_filters:
+    # Minified/vendored Meta Pixel bundle — exclude from review so it isn't
+    # counted toward docstring coverage (no docstring-specific exclude exists).
+    - '!apps/frontend/public/f.js'
   path_instructions: []
   abort_on_close: true
   disable_cache: false
