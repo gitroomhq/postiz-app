@@ -22,7 +22,7 @@ D3 Creator is a scraper-based analytics platform for agencies managing multiple 
 
 - **Frontend:** Next.js App Router + React + Tailwind (Vite dev)
 - **Database:** Supabase Postgres + Storage
-- **Scrapers:** Apify (official pre-built actors only; one adapter file per platform)
+- **Scrapers:** TikHub REST (Instagram, TikTok, RedNote, Douyin) + BrightData datasets (Facebook); one adapter file per platform
 - **Hosting:** Vercel (frontend + cron + functions)
 - **Scheduling:** Vercel Cron (daily snapshots) — no Temporal
 
@@ -44,7 +44,15 @@ pnpm install
 pnpm dev
 ```
 
-Requires PNPM. `.env` must include `APIFY_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+Requires PNPM. `.env` must include `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TIKHUB_API_KEY`, `BRIGHTDATA_API_KEY`, and `CRON_SECRET`. See `.env.local-ui.example` for the full annotated list.
+
+For local UI work via the `frontend-local` launch configs (`.claude/launch.json`), copy the env template and fill it in:
+
+```
+cp .env.local-ui.example .env.local-ui
+```
+
+`.env.local-ui.example` documents every variable the frontend reads. `.env.local-ui` is gitignored.
 
 ## License
 

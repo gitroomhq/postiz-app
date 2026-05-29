@@ -85,3 +85,4 @@ var/
 dynamicconfig/
 .vercel
 .env*
+!.env.local-ui.example
