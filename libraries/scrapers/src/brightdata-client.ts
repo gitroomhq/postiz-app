@@ -25,6 +25,31 @@ import { ProfileNotFoundError, ScrapeError } from './errors';
 
 const DEFAULT_BASE = 'https://api.brightdata.com/datasets/v3';
 
+/** Per-request network timeout (trigger/progress/snapshot each). */
+const PER_REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * Parse a JSON body, mapping a non-JSON response (maintenance/HTML/proxy error
+ * page served with 200) to a ScrapeError instead of a raw SyntaxError that
+ * would bypass the status-mapping layer.
+ */
+async function parseJson<T>(
+  res: Response,
+  platform: string,
+  profileUrl: string,
+): Promise<T> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new ScrapeError(
+      'failed',
+      'Bright Data returned a non-JSON body',
+      platform,
+      profileUrl,
+    );
+  }
+}
+
 type ProgressStatus = 'running' | 'ready' | 'failed' | 'collecting' | 'building';
 
 interface ProgressResponse {
@@ -100,20 +125,32 @@ async function brightdataFetch(
   const headers: Record<string, string> = authHeaders();
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
+  // Per-request timeout so a hung TCP connection can't pin the function open
+  // until the platform kills it. This is independent of the poll-loop budget
+  // in pollProgress (which bounds total time across many progress calls).
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), PER_REQUEST_TIMEOUT_MS);
+
   let res: Response;
   try {
     res = await fetch(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: ac.signal,
     });
   } catch (err) {
+    const isAbort = err instanceof DOMException && err.name === 'AbortError';
     throw new ScrapeError(
       'failed',
-      `Bright Data fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      isAbort
+        ? `Bright Data request timed out after ${PER_REQUEST_TIMEOUT_MS}ms on ${path}`
+        : `Bright Data fetch failed: ${err instanceof Error ? err.message : String(err)}`,
       platform,
       profileUrl,
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   if (res.status === 401 || res.status === 403) {
@@ -166,7 +203,7 @@ async function brightdataFetch(
 async function triggerScrape(opts: RunDatasetOptions): Promise<string> {
   const path = `trigger?dataset_id=${encodeURIComponent(opts.datasetId)}&format=json&include_errors=true`;
   const res = await brightdataFetch('POST', path, opts.platform, opts.profileUrl, opts.inputs);
-  const body = (await res.json()) as TriggerResponse;
+  const body = await parseJson<TriggerResponse>(res, opts.platform, opts.profileUrl);
   if (!body.snapshot_id) {
     throw new ScrapeError(
       'failed',
@@ -193,7 +230,7 @@ async function pollProgress(
       opts.platform,
       opts.profileUrl,
     );
-    const body = (await res.json()) as ProgressResponse;
+    const body = await parseJson<ProgressResponse>(res, opts.platform, opts.profileUrl);
     const status = (body.status || '').toLowerCase();
 
     if (status === 'ready') return;
@@ -230,7 +267,7 @@ async function fetchSnapshot<T>(
     opts.platform,
     opts.profileUrl,
   );
-  const body = (await res.json()) as T[] | { data?: T[] };
+  const body = await parseJson<T[] | { data?: T[] }>(res, opts.platform, opts.profileUrl);
   if (Array.isArray(body)) return body;
   // Some endpoints wrap in { data: [...] } — tolerate.
   if (body && Array.isArray((body as { data?: T[] }).data)) {
