@@ -43,10 +43,11 @@ export class LoadToolsService {
   async agent() {
     const tools = await this.loadTools();
     return new Agent({
+      id: 'postiz',
       name: 'postiz',
       description: 'Agent that helps manage and schedule social media posts for users',
-      instructions: ({ runtimeContext }) => {
-        const ui: string = runtimeContext.get('ui' as never);
+      instructions: ({ requestContext }) => {
+        const ui: string = requestContext.get('ui' as never);
         return `
       Global information:
         - Date (UTC): ${dayjs().format('YYYY-MM-DD HH:mm:ss')}
@@ -85,14 +86,12 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: openai('gpt-4.1'),
+      model: openai('gpt-5.2'),
       tools,
       memory: new Memory({
         storage: pStore,
         options: {
-          threads: {
-            generateTitle: true,
-          },
+          generateTitle: true,
           workingMemory: {
             enabled: true,
             schema: AgentState,

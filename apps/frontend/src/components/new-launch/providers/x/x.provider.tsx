@@ -10,6 +10,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Input } from '@gitroom/react/form/input';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 
 const whoCanReply = [
   {
@@ -65,6 +66,17 @@ const SettingsComponent = () => {
         {...register('community')}
       />
 
+      <div className="mt-5 flex flex-col gap-[10px]">
+        <Checkbox
+          label={t('label_made_with_ai', 'Made with AI')}
+          {...register('made_with_ai')}
+        />
+        <Checkbox
+          label={t('label_paid_partnership', 'Paid partnership')}
+          {...register('paid_partnership')}
+        />
+      </div>
+
       <ThreadFinisher />
     </>
   );
@@ -76,30 +88,6 @@ export default withProvider({
   SettingsComponent: SettingsComponent,
   CustomPreviewComponent: undefined,
   dto: XDto,
-  checkValidity: async (posts, settings, additionalSettings: any) => {
-    const premium =
-      additionalSettings?.find((p: any) => p?.title === 'Verified')?.value ||
-      false;
-    if (posts?.some((p) => (p?.length ?? 0) > 4)) {
-      return 'There can be maximum 4 pictures in a post.';
-    }
-    if (
-      posts?.some(
-        (p) => p?.some((m) => (m?.path?.indexOf?.('mp4') ?? -1) > -1) && (p?.length ?? 0) > 1
-      )
-    ) {
-      return 'There can be maximum 1 video in a post.';
-    }
-    for (const load of posts?.flatMap((p) => p?.flatMap((a) => a?.path)) ?? []) {
-      if ((load?.indexOf?.('mp4') ?? -1) > -1) {
-        const isValid = await checkVideoDuration(load, premium);
-        if (!isValid) {
-          return 'Video duration must be less than or equal to 140 seconds.';
-        }
-      }
-    }
-    return true;
-  },
   maximumCharacters: (settings) => {
     if (settings?.[0]?.value) {
       return 4000;
@@ -107,25 +95,3 @@ export default withProvider({
     return 280;
   },
 });
-const checkVideoDuration = async (
-  url: string,
-  isPremium = false
-): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.src = url;
-    video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      // Check if the duration is less than or equal to 140 seconds
-      const duration = video.duration;
-      if ((!isPremium && duration <= 140) || isPremium) {
-        resolve(true); // Video duration is acceptable
-      } else {
-        resolve(false); // Video duration exceeds 140 seconds
-      }
-    };
-    video.onerror = () => {
-      reject(new Error('Failed to load video metadata.'));
-    };
-  });
-};

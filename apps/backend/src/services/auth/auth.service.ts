@@ -5,7 +5,7 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
-import { ProvidersFactory } from '@gitroom/backend/services/auth/providers/providers.factory';
+import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import dayjs from 'dayjs';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
@@ -18,7 +18,8 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _providerManager: AuthProviderManager
   ) {}
   async canRegister(provider: string) {
     if (
@@ -41,6 +42,9 @@ export class AuthService {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
         throw new Error('Email with plus sign is not allowed');
+      }
+      if (body instanceof CreateOrgUserDto) {
+        body.email = body.email.toLowerCase();
       }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
@@ -136,7 +140,7 @@ export class AuthService {
     ip: string,
     userAgent: string
   ) {
-    const providerInstance = ProvidersFactory.loadProvider(provider);
+    const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
 
     if (!providerUser) {
@@ -162,14 +166,52 @@ export class AuthService {
         password: '',
         provider,
         providerId: providerUser.id,
+        datafast_visitor_id: body.datafast_visitor_id,
       },
       ip,
       userAgent
     );
 
+    this._track('register', providerUser.email, body.datafast_visitor_id).catch(
+      (err) => {}
+    );
+
     await NewsletterService.register(providerUser.email);
 
+    try {
+      if (providerInstance?.postRegistration) {
+        await providerInstance.postRegistration(body.providerToken, create.id);
+      }
+    } catch (err) {
+      // Don't fail registration if postRegistration fails
+    }
+
     return create.users[0].user;
+  }
+
+  private async _track(
+    name: string,
+    email: string,
+    datafast_visitor_id: string
+  ) {
+    if (email && datafast_visitor_id && process.env.DATAFAST_API_KEY) {
+      try {
+        await fetch('https://datafa.st/api/v1/goals', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.DATAFAST_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            datafast_visitor_id: datafast_visitor_id,
+            name: name,
+            metadata: {
+              email,
+            },
+          }),
+        });
+      } catch (err) {}
+    }
   }
 
   async forgot(email: string) {
@@ -202,7 +244,7 @@ export class AuthService {
     return this._userService.updatePassword(user.id, body.password);
   }
 
-  async activate(code: string) {
+  async activate(code: string, tracking: string) {
     const user = AuthChecker.verifyJWT(code) as {
       id: string;
       activated: boolean;
@@ -215,6 +257,7 @@ export class AuthService {
       }
       await this._userService.activateUser(user.id);
       user.activated = true;
+      this._track('register', user.email, tracking).catch((err) => {});
       await NewsletterService.register(user.email);
       return this.jwt(user as any);
     }
@@ -224,7 +267,7 @@ export class AuthService {
 
   async resendActivationEmail(email: string) {
     const user = await this._userService.getUserByEmail(email);
-    
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -234,7 +277,7 @@ export class AuthService {
     }
 
     const jwt = await this.jwt(user);
-    
+
     await this._emailService.sendEmail(
       user.email,
       'Activate your account',
@@ -246,17 +289,13 @@ export class AuthService {
   }
 
   oauthLink(provider: string, query?: any) {
-    const providerInstance = ProvidersFactory.loadProvider(
-      provider as Provider
-    );
+    const providerInstance = this._providerManager.getProvider(provider);
     return providerInstance.generateLink(query);
   }
 
-  async checkExists(provider: string, code: string) {
-    const providerInstance = ProvidersFactory.loadProvider(
-      provider as Provider
-    );
-    const token = await providerInstance.getToken(code);
+  async checkExists(provider: string, code: string, redirectUri?: string) {
+    const providerInstance = this._providerManager.getProvider(provider);
+    const token = await providerInstance.getToken(code, redirectUri);
     const user = await providerInstance.getUser(token);
     if (!user) {
       throw new Error('Invalid user');
@@ -273,6 +312,9 @@ export class AuthService {
   }
 
   private async jwt(user: User) {
+    if (user.password) {
+      delete user.password;
+    }
     return AuthChecker.signJWT(user);
   }
 }

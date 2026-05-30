@@ -14,10 +14,12 @@ import React, {
 import { Button } from '@gitroom/react/form/button';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Media } from '@prisma/client';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import EventEmitter from 'events';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
@@ -32,6 +34,7 @@ import { ReactSortable } from 'react-sortablejs';
 import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { ThirdPartyMediaLibrary } from '@gitroom/frontend/components/third-parties/third-party.media-library';
 import { Dashboard } from '@uppy/react';
 import {
   ChevronLeftIcon,
@@ -48,6 +51,8 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
+import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useDebounce } from 'use-debounce';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -194,6 +199,7 @@ export const showMediaBox = (
   showModalEmitter.emit('show-modal', callback);
 };
 const CHUNK_SIZE = 1024 * 1024;
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
@@ -201,16 +207,30 @@ export const MediaBox: FC<{
   closeModal: () => void;
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebounce(search, 300);
   const fetch = useFetch();
   const modals = useModals();
+  const toaster = useToaster();
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
   const loadMedia = useCallback(async () => {
-    return (await fetch(`/media?page=${page + 1}`)).json();
-  }, [page]);
-  const { data, mutate, isLoading } = useSWR(`get-media-${page}`, loadMedia);
+    const params = new URLSearchParams({ page: String(page + 1) });
+    if (debouncedSearch.trim()) {
+      params.set('search', debouncedSearch.trim());
+    }
+    return (await fetch(`/media?${params.toString()}`)).json();
+  }, [page, debouncedSearch]);
+  const { data, mutate, isLoading } = useSWR(
+    `get-media-${page}-${debouncedSearch}`,
+    loadMedia
+  );
   const [selected, setSelected] = useState([]);
   const t = useT();
   const uploaderRef = useRef<any>(null);
   const mediaDirectory = useMediaDirectory();
+  const [loading, setLoading] = useState(false);
 
   const uppy = useUppyUploader({
     allowedFileTypes:
@@ -220,7 +240,6 @@ export const MediaBox: FC<{
         ? 'video/mp4'
         : 'image/*,video/mp4',
     onUploadSuccess: async (arr) => {
-      uppy.clear();
       await mutate();
       if (standalone) {
         return;
@@ -229,6 +248,8 @@ export const MediaBox: FC<{
         return [...prevSelected, ...arr];
       });
     },
+    onStart: () => setLoading(true),
+    onEnd: () => setLoading(false),
   });
 
   const addRemoveSelected = useCallback(
@@ -255,11 +276,29 @@ export const MediaBox: FC<{
     modals.closeCurrent();
   }, [selected]);
 
-  const addToUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files).slice(0, 5);
-    // @ts-ignore
-    uppy.addFiles(files);
-  }, []);
+  const addToUpload = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
+      // @ts-ignore
+      uppy.addFiles(files);
+    },
+    [toaster, t]
+  );
 
   const dragAndDrop = useCallback(
     async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
@@ -272,7 +311,7 @@ export const MediaBox: FC<{
         return;
       }
 
-      const files = [];
+      const files: File[] = [];
       // @ts-ignore
       for (const item of clipboardItems) {
         if (item.kind === 'file') {
@@ -283,11 +322,26 @@ export const MediaBox: FC<{
         }
       }
 
-      for (const file of files.slice(0, 5)) {
+      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        toaster.show(
+          t(
+            'upload_size_limit_exceeded',
+            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
+      setLoading(true);
+
+      for (const file of files) {
         uppy.addFile(file);
       }
     },
-    []
+    [toaster, t]
   );
 
   const maximize = useCallback(
@@ -298,8 +352,11 @@ export const MediaBox: FC<{
         top: 10,
         children: (
           <div className="w-full h-full p-[50px]">
-            {media.path.indexOf('mp4') > -1 ? (
-              <VideoFrame autoplay={true} url={mediaDirectory.set(media.path)} />
+            {hasExtension(media.path, 'mp4') ? (
+              <VideoFrame
+                autoplay={true}
+                url={mediaDirectory.set(media.path)}
+              />
             ) : (
               <img
                 width="100%"
@@ -340,37 +397,43 @@ export const MediaBox: FC<{
   const btn = useMemo(() => {
     return (
       <button
+        disabled={loading}
         onClick={() => uploaderRef?.current?.click()}
-        className="cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
+        className="relative cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
       >
-        <PlusIcon size={14} />
-        <div>{t('upload', 'Upload')}</div>
+        {loading ? (
+          <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
+            <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <PlusIcon size={14} />
+        )}
+        <div className={loading ? 'invisible' : undefined}>{t('upload', 'Upload')}</div>
       </button>
     );
-  }, [t]);
+  }, [t, loading]);
 
   return (
-    <DropFiles className="flex flex-col flex-1" onDrop={dragAndDrop}>
+    <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
-            'flex',
-            !isLoading && !data?.results?.length && 'hidden'
+            'flex items-center gap-[12px]',
+            !isLoading &&
+              !data?.results?.length &&
+              !debouncedSearch &&
+              'hidden'
           )}
         >
-          {!isLoading && !!data?.results?.length && (
-            <div className="flex-1 text-[14px] font-[600] whitespace-pre-line">
-              {t(
-                'select_or_upload_pictures_max_5',
-                'Select or upload pictures (maximum 5 at a time).'
-              )}
-              {'\n'}
-              {t(
-                'you_can_drag_drop_pictures',
-                'You can also drag & drop pictures.'
-              )}
-            </div>
-          )}
+          <div className="flex-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('search_media_by_name', 'Search by file name')}
+              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
+            />
+          </div>
           <input
             type="file"
             ref={uploaderRef}
@@ -378,7 +441,10 @@ export const MediaBox: FC<{
             className="hidden"
             multiple={true}
           />
-          {!isLoading && !!data?.results?.length && btn}
+          <div className="flex gap-[8px]">
+            {btn}
+            <ThirdPartyMediaLibrary onImported={() => mutate()} />
+          </div>
         </div>
         <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
@@ -416,15 +482,20 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  {t(
-                    'you_dont_have_any_media_yet',
-                    "You don't have any media yet"
-                  )}
+                  {debouncedSearch
+                    ? t(
+                        'no_media_match_search',
+                        'No media matches your search'
+                      )
+                    : t(
+                        'you_dont_have_any_media_yet',
+                        "You don't have any media yet"
+                      )}
                 </div>
                 <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
                   {t(
-                    'select_or_upload_pictures_max_5',
-                    'Select or upload pictures (maximum 5 at a time).'
+                    'select_or_upload_pictures_max_1gb',
+                    'Select or upload pictures (maximum 1 GB per upload).'
                   )}{' '}
                   {'\n'}
                   {t(
@@ -432,7 +503,10 @@ export const MediaBox: FC<{
                     'You can also drag & drop pictures.'
                   )}
                 </div>
-                <div className="forceChange">{btn}</div>
+                <div className="forceChange flex gap-[8px]">
+                  {btn}
+                  <ThirdPartyMediaLibrary onImported={() => mutate()} />
+                </div>
               </>
             )}
             {isLoading && (
@@ -452,9 +526,9 @@ export const MediaBox: FC<{
             {data?.results
               ?.filter((f: any) => {
                 if (type === 'video') {
-                  return f.path.indexOf('mp4') > -1;
+                  return hasExtension(f.path, 'mp4');
                 } else if (type === 'image') {
-                  return f.path.indexOf('mp4') === -1;
+                  return !hasExtension(f.path, 'mp4');
                 }
                 return true;
               })
@@ -476,7 +550,7 @@ export const MediaBox: FC<{
                     onClick={addRemoveSelected(media)}
                   >
                     {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (
@@ -485,6 +559,7 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
+                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
@@ -505,7 +580,7 @@ export const MediaBox: FC<{
                           </svg>
                         </div>
                       </div>
-                      {media.path.indexOf('mp4') > -1 ? (
+                      {hasExtension(media.path, 'mp4') ? (
                         <VideoFrame url={mediaDirectory.set(media.path)} />
                       ) : (
                         <img
@@ -693,8 +768,7 @@ export const MultiMediaComponent: FC<{
               handle=".dragging"
             >
               {currentMedia.map((media, index) => (
-                <Fragment key={media.id}>
-                  <div className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
                     <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
                     <div className="w-full h-full relative group">
@@ -730,7 +804,7 @@ export const MultiMediaComponent: FC<{
                       >
                         <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                       </div>
-                      {media?.path?.indexOf('mp4') > -1 ? (
+                      {hasExtension(media?.path, 'mp4') ? (
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img
@@ -745,7 +819,6 @@ export const MultiMediaComponent: FC<{
                       className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
                     />
                   </div>
-                </Fragment>
               ))}
             </ReactSortable>
           )}

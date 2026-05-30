@@ -34,48 +34,5 @@ export default withProvider({
   SettingsComponent: PinterestSettings,
   CustomPreviewComponent: PinterestPreview,
   dto: PinterestSettingsDto,
-  checkValidity: async ([firstItem, ...otherItems] = []) => {
-    const isMp4 = firstItem?.find((item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1);
-    const isPicture = firstItem?.find(
-      (item) => (item?.path?.indexOf?.('mp4') ?? -1) === -1
-    );
-    if ((firstItem?.length ?? 0) === 0) {
-      return 'Requires at least one media';
-    }
-    if (isMp4 && firstItem?.length !== 2 && !isPicture) {
-      return 'If posting a video you have to also include a cover image as second media';
-    }
-    if (isMp4 && (firstItem?.length ?? 0) > 2) {
-      return 'If posting a video you can only have two media items';
-    }
-
-    if (
-      (firstItem?.length ?? 0) > 1 &&
-      firstItem?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) == -1)
-    ) {
-      const loadAll: Array<{
-        width: number;
-        height: number;
-      }> = (await Promise.all(
-        firstItem?.map((p) => {
-          return new Promise((resolve, reject) => {
-            const url = new Image();
-            url.onload = function () {
-              // @ts-ignore
-              resolve({ width: this.width, height: this.height });
-            };
-            url.src = p?.path;
-          });
-        }) ?? []
-      )) as any;
-      const checkAllTheSameWidthHeight = loadAll?.every((p, i, arr) => {
-        return p?.width === arr?.[0]?.width && p?.height === arr?.[0]?.height;
-      });
-      if (!checkAllTheSameWidthHeight) {
-        return 'Requires all images to have the same width and height';
-      }
-    }
-    return true;
-  },
   maximumCharacters: 500,
 });

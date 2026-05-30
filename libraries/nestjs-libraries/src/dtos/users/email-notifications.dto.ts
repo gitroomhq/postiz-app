@@ -6,5 +6,8 @@ export class EmailNotificationsDto {
 
   @IsBoolean()
   sendFailureEmails: boolean;
+
+  @IsBoolean()
+  sendStreakEmails: boolean;
 }
 

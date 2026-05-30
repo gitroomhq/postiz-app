@@ -72,6 +72,9 @@ export const ChangeLanguageComponent = () => {
     setCookie(language);
     i18next.changeLanguage(language);
     modals.closeCurrent();
+    const rtlLanguages = ['he', 'ar'];
+    const dir = rtlLanguages.includes(language) ? 'rtl' : 'ltr';
+    document.documentElement.setAttribute('dir', dir);
   };
 
   // Function to get language name in its native script

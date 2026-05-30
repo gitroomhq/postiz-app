@@ -22,6 +22,34 @@ import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+
+// Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
+function slimPost(post: any) {
+  if (!post) return post;
+  const {
+    error,
+    childrenPost,
+    tags,
+    description,
+    title,
+    submittedForOrderId,
+    submittedForOrganizationId,
+    submittedForOrder,
+    submittedForOrganization,
+    lastMessageId,
+    parentPostId,
+    approvedSubmitForOrder,
+    deletedAt,
+    createdAt,
+    updatedAt,
+    payoutProblems,
+    comments,
+    errors,
+    ...rest
+  } = post;
+  return rest;
+}
 
 @Injectable()
 @Activity()
@@ -33,7 +61,8 @@ export class PostActivity {
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _subscriptionService: SubscriptionService
   ) {}
 
   @ActivityMethod()
@@ -47,7 +76,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV101', {
+        .workflow.signalWithStart('postWorkflowV105', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -78,17 +107,48 @@ export class PostActivity {
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {
-    return this._postService.updatePost(id, postId, releaseURL);
+    await this._postService.updatePost(id, postId, releaseURL);
+  }
+
+  @ActivityMethod()
+  async getPost(orgId: string, postId: string) {
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(
+        orgId
+      );
+      if (!subscription) {
+        return false;
+      }
+    }
+    const post = await this._postService.getPostById(postId, orgId);
+    if (post.deletedAt) {
+      return false;
+    }
+
+    return post;
   }
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    const getPosts = await this._postService.getPostsRecursively(postId, true, orgId);
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(
+        orgId
+      );
+      if (!subscription) {
+        return [];
+      }
+    }
+
+    const getPosts = await this._postService.getPostsRecursively(
+      postId,
+      true,
+      orgId
+    );
     if (!getPosts || getPosts.length === 0 || getPosts[0].parentPostId) {
       return [];
     }
 
-    return getPosts;
+    return getPosts.map(slimPost);
   }
 
   @ActivityMethod()
@@ -146,6 +206,16 @@ export class PostActivity {
 
   @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(
+        integration.organizationId
+      );
+
+      if (!subscription) {
+        throw new Error('No active subscription found for this organization.');
+      }
+    }
+
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -155,7 +225,7 @@ export class PostActivity {
       posts
     );
 
-    return getIntegration.post(
+    const postNow = await getIntegration.post(
       integration.internalId,
       integration.token,
       await Promise.all(
@@ -179,6 +249,23 @@ export class PostActivity {
       ),
       integration
     );
+
+    await this._temporalService.client
+      .getRawClient()
+      .workflow.start('streakWorkflow', {
+        args: [{ organizationId: integration.organizationId }],
+        workflowId: `streak_${integration.organizationId}`,
+        taskQueue: 'main',
+        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+        typedSearchAttributes: new TypedSearchAttributes([
+          {
+            key: organizationId,
+            value: integration.organizationId,
+          },
+        ]),
+      });
+
+    return postNow;
   }
 
   @ActivityMethod()
@@ -190,7 +277,7 @@ export class PostActivity {
     digest = false,
     type: NotificationType = 'success'
   ) {
-    return this._notificationService.inAppNotification(
+    await this._notificationService.inAppNotification(
       orgId,
       subject,
       message,
@@ -211,7 +298,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async changeState(id: string, state: State, err?: any, body?: any) {
-    return this._postService.changeState(id, state, err, body);
+    await this._postService.changeState(id, state, err, body);
   }
 
   @ActivityMethod()
@@ -236,7 +323,7 @@ export class PostActivity {
     );
 
     const post = await this._postService.getPostByForWebhookId(postId);
-    return Promise.all(
+    await Promise.all(
       webhooks.map(async (webhook) => {
         try {
           await fetch(webhook.url, {
@@ -273,7 +360,7 @@ export class PostActivity {
     delay: number;
     information: any;
   }) {
-    return this._integrationService.processInternalPlug(data);
+    await this._integrationService.processInternalPlug(data);
   }
 
   @ActivityMethod()
@@ -299,6 +386,35 @@ export class PostActivity {
       return refresh;
     } catch (err) {
       await this._refreshIntegrationService.setBetweenSteps(integration);
+      return false;
+    }
+  }
+
+  @ActivityMethod()
+  async refreshTokenWithCause(
+    integration: Integration,
+    cause: string
+  ): Promise<false | AuthTokenDetails> {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    try {
+      const refresh = await this._refreshIntegrationService.refresh(
+        integration,
+        cause
+      );
+      if (!refresh) {
+        return false;
+      }
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
+
+      return refresh;
+    } catch (err) {
+      await this._refreshIntegrationService.setBetweenSteps(integration, cause);
       return false;
     }
   }

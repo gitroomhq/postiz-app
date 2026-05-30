@@ -7,11 +7,20 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  "Facebook posts can be text only, or include photos or a video. If it's a story, it must have at least one attachment (photo or video), and each media is published as a separate story."
+)
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
@@ -31,7 +40,22 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
   dto = FacebookDto;
 
-  override handleErrors(body: string):
+  override async checkValidity(
+    [firstPost]: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (settings?.post_type === 'story') {
+      if (!firstPost?.length) {
+        return 'Story should have at least one media';
+      }
+    }
+    return true;
+  }
+
+  override handleErrors(
+    body: string,
+    status: number
+  ):
     | {
         type: 'refresh-token' | 'bad-body';
         value: string;
@@ -126,6 +150,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1404112') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'For security reasons, your account has limited access to the site for a few days',
+      };
+    }
+
     if (body.indexOf('Name parameter too long') > -1) {
       return {
         type: 'bad-body' as const,
@@ -145,6 +177,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Facebook service temporarily unavailable',
+      };
+    }
+
+    if (status === 401) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'An unknown error occurred, please try again later or contact support',
       };
     }
 
@@ -255,38 +295,136 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async pages(accessToken: string) {
-    const { data } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,picture.type(large)&access_token=${accessToken}`
-      )
-    ).json();
+    const seenIds = new Set<string>();
+    const allPages: any[] = [];
 
-    return data;
+    const fetchPaginated = async (startUrl: string) => {
+      let nextUrl: string | undefined = startUrl;
+      while (nextUrl) {
+        const response = await (await fetch(nextUrl)).json();
+        if (response.data) {
+          for (const page of response.data) {
+            if (!seenIds.has(page.id)) {
+              seenIds.add(page.id);
+              allPages.push(page);
+            }
+          }
+        }
+        nextUrl = response.paging?.next;
+      }
+    };
+
+    // Fetch pages the user explicitly shared during the OAuth dialog
+    await fetchPaginated(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+    );
+
+    // Also fetch pages via Business Manager API to discover pages
+    // not selected during the OAuth page selection step
+    try {
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+
+      while (bizUrl) {
+        const bizResponse = await (await fetch(bizUrl)).json();
+        if (bizResponse.data) {
+          for (const business of bizResponse.data) {
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+          }
+        }
+        bizUrl = bizResponse.paging?.next;
+      }
+    } catch {
+      // Business Manager API not available for all users
+    }
+
+    return allPages;
   }
 
   async fetchPageInformation(accessToken: string, data: { page: string }) {
     const pageId = data.page;
-    const {
-      id,
-      name,
-      access_token,
-      username,
-      picture: {
-        data: { url },
-      },
-    } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
-      )
-    ).json();
+    const fields = 'id,username,name,access_token,picture.type(large)';
 
-    return {
-      id,
-      name,
-      access_token,
-      picture: url,
-      username,
+    const searchPaginated = async (startUrl: string) => {
+      let url: string | undefined = startUrl;
+      while (url) {
+        const response = await (await fetch(url)).json();
+        if (response.data) {
+          const page = response.data.find(
+            (p: any) => String(p.id) === String(pageId)
+          );
+          if (page) {
+            return {
+              id: page.id,
+              name: page.name,
+              access_token: page.access_token,
+              picture: page.picture?.data?.url || '',
+              username: page.username,
+            };
+          }
+        }
+        url = response.paging?.next;
+      }
+      return null;
     };
+
+    // 1. Check /me/accounts
+    const fromAccounts = await searchPaginated(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=${fields}&limit=100&access_token=${accessToken}`
+    );
+    if (fromAccounts) return fromAccounts;
+
+    // 2. Check Business Manager owned_pages and client_pages
+    try {
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+
+      while (bizUrl) {
+        const bizResponse = await (await fetch(bizUrl)).json();
+        if (bizResponse.data) {
+          for (const business of bizResponse.data) {
+            try {
+              const fromOwned = await searchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=${fields}&limit=100&access_token=${accessToken}`
+              );
+              if (fromOwned) return fromOwned;
+            } catch {
+              // Continue with other businesses
+            }
+
+            try {
+              const fromClient = await searchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=${fields}&limit=100&access_token=${accessToken}`
+              );
+              if (fromClient) return fromClient;
+            } catch {
+              // Continue with other businesses
+            }
+          }
+        }
+        bizUrl = bizResponse.paging?.next;
+      }
+    } catch {
+      // Business Manager API not available for all users
+    }
+
+    throw new Error('Page not found in your accounts');
   }
 
   async post(
@@ -295,10 +433,103 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<FacebookDto>[]
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
+    const isStory = firstPost?.settings?.post_type === 'story';
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
+    if (isStory) {
+      let lastPostId = '';
+      for (const media of firstPost?.media || []) {
+        const isVideoStory = hasExtension(media.path, 'mp4');
+        if (isVideoStory) {
+          const { video_id, upload_url } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=start&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'start video story upload'
+            )
+          ).json();
+
+          await this.fetch(
+            upload_url,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `OAuth ${accessToken}`,
+                file_url: media.path,
+              },
+            },
+            'upload video story'
+          );
+
+          let videoStatus = 'in_progress';
+          while (videoStatus !== 'ready') {
+            const { status } = await (
+              await this.fetch(
+                `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,
+                undefined,
+                '',
+                0,
+                true
+              )
+            ).json();
+            videoStatus = status?.video_status || 'in_progress';
+            if (videoStatus === 'error') {
+              throw new Error('Video processing failed');
+            }
+            if (videoStatus !== 'ready') {
+              await timer(10000);
+            }
+          }
+
+          const { post_id: storyPostId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=finish&video_id=${video_id}&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'finish video story upload'
+            )
+          ).json();
+
+          lastPostId = storyPostId;
+        } else {
+          const { id: photoId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  url: media.path,
+                  published: false,
+                }),
+              },
+              'upload photo story'
+            )
+          ).json();
+
+          const { post_id: storyPostId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/photo_stories?photo_id=${photoId}&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'publish photo story'
+            )
+          ).json();
+
+          lastPostId = storyPostId;
+        }
+      }
+
+      finalId = lastPostId;
+      finalUrl = `https://www.facebook.com/stories/${lastPostId}`;
+    } else if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
       const {
         id: videoId,
         permalink_url,
@@ -504,10 +735,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           case 'post_clicks_by_type':
             // This returns an object with click types
             if (typeof value === 'object') {
-              const totalClicks = Object.values(value as Record<string, number>).reduce(
-                (sum: number, v: number) => sum + v,
-                0
-              );
+              const totalClicks = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Clicks by Type';
               total = String(totalClicks);
             }
@@ -515,10 +745,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           case 'post_reactions_by_type_total':
             // This returns an object with reaction types
             if (typeof value === 'object') {
-              const totalReactions = Object.values(value as Record<string, number>).reduce(
-                (sum: number, v: number) => sum + v,
-                0
-              );
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Reactions';
               total = String(totalReactions);
             }
@@ -541,3 +770,4 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
   }
 }
+

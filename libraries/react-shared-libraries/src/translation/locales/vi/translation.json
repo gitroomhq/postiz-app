@@ -681,5 +681,16 @@
   "delete_post_tooltip": "Xóa bài đăng",
   "drop_files_here_to_upload": "Kéo thả tệp vào đây để tải lên",
   "insert_emoji": "Chèn biểu tượng cảm xúc",
-  "write_something": "Viết gì đó …"
+  "write_something": "Viết gì đó …",
+  "click_channel_to_add": "Nhấp vào kênh để thêm",
+  "connect_your_channels": "Kết nối các kênh của bạn",
+  "connect_social_media_to_start": "Kết nối tài khoản mạng xã hội của bạn để bắt đầu lên lịch đăng bài",
+  "connected_channels": "Các kênh đã kết nối",
+  "continue": "Tiếp tục",
+  "continue_without_channels": "Tiếp tục mà không có kênh",
+  "watch_tutorial": "Xem hướng dẫn",
+  "watch_tutorial_title": "Tìm hiểu cách sử dụng Postiz",
+  "watch_tutorial_description": "Xem video ngắn này để biết cách tận dụng tối đa Postiz",
+  "back": "Quay lại",
+  "get_started": "Bắt đầu"
 }

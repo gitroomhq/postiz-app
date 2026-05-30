@@ -10,13 +10,18 @@ import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provi
 import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one'
+  'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one, if posting images, there can be maximum 5'
 )
 export class PinterestProvider
   extends SocialAbstract
@@ -39,6 +44,45 @@ export class PinterestProvider
 
   dto = PinterestSettingsDto;
 
+  override async checkValidity(
+    [firstItem]: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const isMp4 = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
+    );
+    const isPicture = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) === -1
+    );
+    if ((firstItem?.length ?? 0) === 0) {
+      return 'Requires at least one media';
+    }
+    if ((firstItem?.length ?? 0) > 5) {
+      return 'You can only have up to 5 media items';
+    }
+    if (isMp4 && firstItem?.length !== 2 && !isPicture) {
+      return 'If posting a video you have to also include a cover image as second media';
+    }
+    if (isMp4 && (firstItem?.length ?? 0) > 2) {
+      return 'If posting a video you can only have two media items';
+    }
+
+    if (
+      (firstItem?.length ?? 0) > 1 &&
+      firstItem?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)
+    ) {
+      const loadAll = await Promise.all(
+        firstItem?.map((p) => this.getImageDimensions(p?.path)) ?? []
+      );
+      const checkAllTheSameWidthHeight = loadAll?.every((p, i, arr) => {
+        return p?.width === arr?.[0]?.width && p?.height === arr?.[0]?.height;
+      });
+      if (!checkAllTheSameWidthHeight) {
+        return 'Requires all images to have the same width and height';
+      }
+    }
+    return true;
+  }
+
   editor = 'normal' as const;
 
   public override handleErrors(body: string):
@@ -47,6 +91,12 @@ export class PinterestProvider
         value: string;
       }
     | undefined {
+    if (body.indexOf('constraint: maxItems=5') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'You can upload a maximum of 5 images per post on Pinterest.',
+      };
+    }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
         type: 'bad-body' as const,
@@ -159,7 +209,7 @@ export class PinterestProvider
   @Tool({ description: 'List of boards', dataSchema: [] })
   async boards(accessToken: string) {
     const { items } = await (
-      await fetch('https://api.pinterest.com/v5/boards', {
+      await fetch('https://api.pinterest.com/v5/boards?page_size=250', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -181,11 +231,11 @@ export class PinterestProvider
     postDetails: PostDetails<PinterestSettingsDto>[]
   ): Promise<PostResponse[]> {
     let mediaId = '';
-    const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) > -1
+    const findMp4 = postDetails?.[0]?.media?.find((p) =>
+      hasExtension(p.path, 'mp4')
     );
     const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) === -1
+      (p) => !hasExtension(p.path, 'mp4')
     );
 
     if (findMp4) {
@@ -236,6 +286,15 @@ export class PinterestProvider
           )
         ).json();
 
+        if (mediafile.status === 'failed') {
+          throw new BadBody(
+            'pinterest',
+            JSON.stringify({}),
+            {} as any,
+            'The file is corrupted and cannot be uploaded'
+          );
+        }
+
         await timer(30000);
         statusCode = mediafile.status;
       }
@@ -279,7 +338,9 @@ export class PinterestProvider
               }
             : {
                 source_type: 'multiple_image_urls',
-                items: mapImages,
+                items: mapImages.map((m) => ({
+                  url: m.path,
+                })),
               },
         }),
       })
@@ -414,7 +475,9 @@ export class PinterestProvider
           result.push({
             label: 'Outbound Clicks',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today }],
+            data: [
+              { total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today },
+            ],
           });
         }
 

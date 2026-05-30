@@ -95,7 +95,7 @@ export const NewPost = () => {
           strokeLinejoin="round"
         />
       </svg>
-      <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
+      <div className="flex-1 text-start text-[14px] group-[.sidebar]:hidden">
         {t('create_new_post', 'Create Post')}
       </div>
     </button>

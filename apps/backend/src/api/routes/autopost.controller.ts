@@ -15,6 +15,7 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { OnlyURL } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
 
 @ApiTags('Autopost')
 @Controller('/autopost')
@@ -62,7 +63,7 @@ export class AutopostController {
   }
 
   @Post('/send')
-  async sendWebhook(@Query('url') url: string) {
-    return this._autopostsService.loadXML(url);
+  async sendWebhook(@Query() query: OnlyURL) {
+    return this._autopostsService.loadXML(query.url);
   }
 }

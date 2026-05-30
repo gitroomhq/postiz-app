@@ -681,5 +681,16 @@
   "delete_post_tooltip": "删除帖子",
   "drop_files_here_to_upload": "将文件拖到此处以上传",
   "insert_emoji": "插入表情",
-  "write_something": "写点什么…"
+  "write_something": "写点什么…",
+  "click_channel_to_add": "点击频道以添加",
+  "connect_your_channels": "连接你的频道",
+  "connect_social_media_to_start": "连接你的社交媒体账户以开始安排发布",
+  "connected_channels": "已连接频道",
+  "continue": "继续",
+  "continue_without_channels": "继续但不添加频道",
+  "watch_tutorial": "观看教程",
+  "watch_tutorial_title": "学习如何使用Postiz",
+  "watch_tutorial_description": "观看这个简短的视频，学习如何最大程度地利用Postiz",
+  "back": "返回",
+  "get_started": "开始使用"
 }

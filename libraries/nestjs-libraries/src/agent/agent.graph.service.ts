@@ -6,7 +6,7 @@ import {
 } from '@langchain/core/messages';
 import { END, START, StateGraph } from '@langchain/langgraph';
 import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
-import { TavilySearchResults } from '@langchain/community/tools/tavily_search';
+import { TavilySearch } from '@langchain/tavily';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import dayjs from 'dayjs';
@@ -18,7 +18,7 @@ import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
-  : [new TavilySearchResults({ maxResults: 3 })];
+  : [new TavilySearch({ maxResults: 3 })];
 const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
@@ -29,7 +29,7 @@ const model = new ChatOpenAI({
 
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'dall-e-3',
+  model: 'chatgpt-image-latest',
 });
 
 interface WorkflowChannelsState {

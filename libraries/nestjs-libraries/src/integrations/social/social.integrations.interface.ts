@@ -44,6 +44,10 @@ export interface IAuthenticator {
     accessToken: string,
     url: string
   ): Promise<{ url: string }>;
+  missing?(
+    id: string,
+    accessToken: string
+  ): Promise<{ id: string; url: string }[]>;
 }
 
 export interface AnalyticsData {
@@ -137,11 +141,19 @@ export interface SocialProvider
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
+  stripLinks?: () => boolean;
   refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any) => number;
+  checkValidity(
+    posts: Array<{ path: string; thumbnail?: string }[]>,
+    settings: any,
+    additionalSettings: any[]
+  ): Promise<string | true>;
   isWeb3?: boolean;
-  editor: 'normal' | 'markdown' | 'html';
+  isChromeExtension?: boolean;
+  extensionCookies?: { name: string; domain: string }[];
+  editor: 'none' | 'normal' | 'markdown' | 'html';
   customFields?: () => Promise<
     {
       key: string;

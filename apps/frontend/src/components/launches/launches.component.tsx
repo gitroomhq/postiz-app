@@ -2,8 +2,8 @@
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import { groupBy, orderBy } from 'lodash';
+import SafeImage from '@gitroom/react/helpers/safe.image';
+import { capitalize, groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -25,6 +25,7 @@ import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
+import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 
 export const SVGLine = () => {
   return (
@@ -247,7 +248,10 @@ export const MenuComponent: FC<
       {...(integration.refreshNeeded && {
         onClick: refreshChannel(integration),
         'data-tooltip-id': 'tooltip',
-        'data-tooltip-content': t('channel_disconnected_click_to_reconnect', 'Channel disconnected, click to reconnect.'),
+        'data-tooltip-content': t(
+          'channel_disconnected_click_to_reconnect',
+          'Channel disconnected, click to reconnect.'
+        ),
       })}
       {...(collapsed
         ? {
@@ -255,7 +259,6 @@ export const MenuComponent: FC<
             'data-tooltip-content': integration.name,
           }
         : {})}
-      key={integration.id}
       className={clsx(
         'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
@@ -286,7 +289,7 @@ export const MenuComponent: FC<
           </div>
         )}
         <ImageWithFallback
-          fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+          fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
           className="rounded-[8px] min-w-[36px] min-h-[36px]"
           alt={integration.identifier}
@@ -300,7 +303,7 @@ export const MenuComponent: FC<
             width={20}
           />
         ) : (
-          <Image
+          <SafeImage
             src={`/icons/platforms/${integration.identifier}.png`}
             className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
             alt={integration.identifier}
@@ -316,8 +319,10 @@ export const MenuComponent: FC<
         totalNonDisabledChannels === user?.totalChannels
           ? {
               'data-tooltip-id': 'tooltip',
-              'data-tooltip-content':
-                t('channel_disabled_upgrade_plan', 'This channel is disabled, please upgrade your plan to enable it.'),
+              'data-tooltip-content': t(
+                'channel_disabled_upgrade_plan',
+                'This channel is disabled, please upgrade your plan to enable it.'
+              ),
             }
           : {})}
         role="Handle"
@@ -456,7 +461,7 @@ export const LaunchesComponent = () => {
       return;
     }
     if (search.get('msg')) {
-      toast.show(search.get('msg')!, 'warning');
+      toast.show(search.get('msg')!, 'success');
       window?.opener?.postMessage(
         {
           msg: search.get('msg')!,
@@ -490,6 +495,7 @@ export const LaunchesComponent = () => {
   // @ts-ignore
   return (
     <DNDProvider>
+      <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
         <div
           className={clsx(
@@ -574,10 +580,15 @@ export const LaunchesComponent = () => {
                 />
               ))}
             </div>
-            <div className="mt-[5px] text-center">
-              {process.env.NEXT_PUBLIC_VERSION
-                ? process.env.NEXT_PUBLIC_VERSION
-                : ''}
+            <div className="mt-[5px] text-center flex flex-col">
+              {billingEnabled && user?.isLifetime && (
+                <div>{capitalize(user?.tier?.current || '')} tier</div>
+              )}
+              <div>
+                {process.env.NEXT_PUBLIC_VERSION
+                  ? process.env.NEXT_PUBLIC_VERSION
+                  : ''}
+              </div>
             </div>
           </div>
         </div>

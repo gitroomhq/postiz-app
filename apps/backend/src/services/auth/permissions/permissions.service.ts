@@ -40,7 +40,8 @@ export class PermissionsService {
     orgId: string,
     created_at: Date,
     permission: 'USER' | 'ADMIN' | 'SUPERADMIN',
-    requestedPermission: Array<[AuthorizationActions, Sections]>
+    requestedPermission: Array<[AuthorizationActions, Sections]>,
+    refreshChannelId?: string
   ) {
     const { can, build } = new AbilityBuilder<
       Ability<[AuthorizationActions, Sections]>
@@ -65,6 +66,20 @@ export class PermissionsService {
     for (const [action, section] of requestedPermission) {
       // check for the amount of channels
       if (section === Sections.CHANNEL) {
+        // Refreshing an existing channel doesn't add a new one, so skip the limit check
+        // but only if the channel actually belongs to this org
+        if (refreshChannelId) {
+          const existingIntegration =
+            await this._integrationService.getIntegrationById(
+              orgId,
+              refreshChannelId
+            );
+          if (existingIntegration) {
+            can(action, section);
+            continue;
+          }
+        }
+
         const totalChannels = (
           await this._integrationService.getIntegrationsList(orgId)
         ).filter((f) => !f.refreshNeeded).length;

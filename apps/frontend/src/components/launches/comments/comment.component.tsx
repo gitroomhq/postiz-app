@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, Fragment, useCallback, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -291,9 +291,8 @@ export const CommentComponent: FC<{
 
       <div>
         {commentsList.map((comment, index) => (
-          <>
+          <Fragment key={`comment_${index}_${comment.content}`}>
             <div
-              key={`comment_${index}_${comment.content}`}
               className={clsx(
                 `flex relative flex-col`,
                 comment?.childrenComment?.length && 'gap-[10px]'
@@ -365,7 +364,7 @@ export const CommentComponent: FC<{
                 />
               </div>
             </div>
-          </>
+          </Fragment>
         ))}
         <CommentBox type="textarea" onChange={addComment} />
       </div>

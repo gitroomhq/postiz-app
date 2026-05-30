@@ -5,6 +5,7 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
 import { IntegrationsActivity } from '@gitroom/orchestrator/activities/integrations.activity';
+import { HealthController } from '@gitroom/orchestrator/health.controller';
 
 const activities = [
   PostActivity,
@@ -17,7 +18,7 @@ const activities = [
     DatabaseModule,
     getTemporalModule(true, require.resolve('./workflows'), activities),
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [...activities],
   get exports() {
     return [...this.providers, ...this.imports];

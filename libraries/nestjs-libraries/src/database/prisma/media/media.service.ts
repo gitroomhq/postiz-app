@@ -45,19 +45,19 @@ export class MediaService {
           prompt = await this._openAi.generatePromptForPicture(prompt);
           console.log('Prompt:', prompt);
         }
-        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+        return this._openAi.generateImage(prompt);
       }
     );
 
     return generating;
   }
 
-  saveFile(org: string, fileName: string, filePath: string) {
-    return this._mediaRepository.saveFile(org, fileName, filePath);
+  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
+    return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
   }
 
-  getMedia(org: string, page: number) {
-    return this._mediaRepository.getMedia(org, page);
+  getMedia(org: string, page: number, search?: string) {
+    return this._mediaRepository.getMedia(org, page, search);
   }
 
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {

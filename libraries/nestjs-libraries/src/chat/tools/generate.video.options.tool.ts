@@ -1,7 +1,9 @@
-import { AgentToolInterface, ToolReturn } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
+import {
+  AgentToolInterface,
+} from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import { createTool } from '@mastra/core/tools';
 import { Injectable } from '@nestjs/common';
-import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
+import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import z from 'zod';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
@@ -15,6 +17,16 @@ export class GenerateVideoOptionsTool implements AgentToolInterface {
     return createTool({
       id: 'generateVideoOptions',
       description: `All the options to generate videos, some tools might require another call to generateVideoFunction`,
+      inputSchema: z.object({}),
+      mcp: {
+        annotations: {
+          title: 'List Video Generation Options',
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
       outputSchema: z.object({
         video: z.array(
           z.object({
@@ -30,9 +42,8 @@ export class GenerateVideoOptionsTool implements AgentToolInterface {
           })
         ),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
+      execute: async (inputData, context) => {
+        checkAuth(inputData, context);
         const videos = this._videoManagerService.getAllVideos();
         console.log(
           JSON.stringify(
@@ -42,7 +53,7 @@ export class GenerateVideoOptionsTool implements AgentToolInterface {
                   type: p.identifier,
                   output: 'vertical|horizontal',
                   tools: p.tools,
-                  customParams: validationMetadatasToSchemas()[p.dto.name],
+                  customParams: getValidationSchemas()[p.dto.name],
                 };
               }),
             },
@@ -50,13 +61,14 @@ export class GenerateVideoOptionsTool implements AgentToolInterface {
             2
           )
         );
+
         return {
           video: videos.map((p) => {
             return {
               type: p.identifier,
               output: 'vertical|horizontal',
               tools: p.tools,
-              customParams: validationMetadatasToSchemas()[p.dto.name],
+              customParams: getValidationSchemas()[p.dto.name],
             };
           }),
         };

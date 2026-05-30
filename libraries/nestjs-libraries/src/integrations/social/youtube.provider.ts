@@ -13,6 +13,7 @@ import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provide
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
@@ -71,17 +72,137 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return 5000;
   }
 
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if (items?.[0]?.length !== 1) {
+      return 'You need one media';
+    }
+    if ((firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) === -1) {
+      return 'Item must be a video';
+    }
+    return true;
+  }
+
   override handleErrors(body: string):
     | {
         type: 'refresh-token' | 'bad-body';
         value: string;
       }
     | undefined {
+    if (body.includes('invalidTags')) {
+      return {
+        type: 'bad-body',
+        value:
+          'The maximum allowed is 500 characters in total.',
+      };
+    }
+
     if (body.includes('invalidTitle')) {
       return {
         type: 'bad-body',
         value:
           'We have uploaded your video but we could not set the title. Title is too long.',
+      };
+    }
+
+    if (body.includes('invalidDescription')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your video description is invalid, it may contain disallowed characters such as < or >.',
+      };
+    }
+
+    if (body.includes('invalidCategoryId')) {
+      return {
+        type: 'bad-body',
+        value: 'The selected video category is invalid.',
+      };
+    }
+
+    if (body.includes('invalidPublishAt')) {
+      return {
+        type: 'bad-body',
+        value: 'The scheduled publishing time is invalid.',
+      };
+    }
+
+    if (body.includes('invalidRecordingDetails')) {
+      return {
+        type: 'bad-body',
+        value: 'The recording details for the video are invalid.',
+      };
+    }
+
+    if (body.includes('invalidVideoGameRating')) {
+      return {
+        type: 'bad-body',
+        value: 'The video game rating is invalid.',
+      };
+    }
+
+    if (body.includes('invalidFilename')) {
+      return {
+        type: 'bad-body',
+        value: 'The video file name is invalid.',
+      };
+    }
+
+    if (body.includes('defaultLanguageNotSet')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We could not set the localized video details because no default language is set.',
+      };
+    }
+
+    if (body.includes('invalidVideoMetadata')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Some of the video details are invalid, please review the title, description and tags.',
+      };
+    }
+
+    if (body.includes('mediaBodyRequired')) {
+      return {
+        type: 'bad-body',
+        value:
+          'The video file is missing or could not be read, please re-upload the video.',
+      };
+    }
+
+    if (body.includes('imageFormatUnsupported')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but the thumbnail format is not supported, please use JPEG or PNG.',
+      };
+    }
+
+    if (body.includes('imageTooTall')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but the thumbnail image is too tall.',
+      };
+    }
+
+    if (body.includes('imageTooWide')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but the thumbnail image is too wide.',
+      };
+    }
+
+    if (body.includes('rateLimitExceeded')) {
+      return {
+        type: 'bad-body',
+        value:
+          'You are sending requests too quickly, please wait a little while and try again.',
       };
     }
 
@@ -150,7 +271,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return {
       accessToken: credentials.access_token!,
       expiresIn: unixTimestamp!,
-      refreshToken: credentials.refresh_token!,
+      refreshToken: credentials.refresh_token ?? refresh_token,
       id: data.id!,
       name: data.name!,
       picture: data?.picture || '',

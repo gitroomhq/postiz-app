@@ -24,6 +24,13 @@ export class NotificationService {
     );
   }
 
+  getNotificationsPaginated(organizationId: string, page: number) {
+    return this._notificationRepository.getNotificationsPaginated(
+      organizationId,
+      page
+    );
+  }
+
   getNotifications(organizationId: string, userId: string) {
     return this._notificationRepository.getNotifications(
       organizationId,

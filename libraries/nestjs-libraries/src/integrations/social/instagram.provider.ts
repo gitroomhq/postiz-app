@@ -8,10 +8,14 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
@@ -33,11 +37,32 @@ export class InstagramProvider
     'instagram_manage_comments',
     'instagram_manage_insights',
   ];
-  override maxConcurrentJob = 200;
+  override maxConcurrentJob = 400;
   editor = 'normal' as const;
   dto = InstagramDto;
   maxLength() {
     return 2200;
+  }
+
+  override async checkValidity(
+    [firstPost]: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (!firstPost?.length) {
+      return 'Should have at least one media';
+    }
+    if (settings?.is_trial_reel) {
+      if ((firstPost?.length ?? 0) > 1) {
+        return 'Trial Reels can only have one video';
+      }
+      const hasVideo = firstPost?.some(
+        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
+      );
+      if (!hasVideo) {
+        return 'Trial Reels must be a video';
+      }
+    }
+    return true;
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -52,7 +77,10 @@ export class InstagramProvider
     };
   }
 
-  public override handleErrors(body: string):
+  public override handleErrors(
+    body: string,
+    status: number
+  ):
     | {
         type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
@@ -64,8 +92,14 @@ export class InstagramProvider
         value: 'An unknown error occurred, please try again later',
       };
     }
+    if (body.indexOf('2207081') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: "This account doesn't support Trial Reels",
+      };
+    }
 
-    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
+    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1 || body.indexOf('"error_subcode":33') > -1) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -86,13 +120,13 @@ export class InstagramProvider
     if (body.toLowerCase().indexOf('session has been invalidated') > -1) {
       return {
         type: 'refresh-token' as const,
-        value: 'Please re-authenticate your Instagram account',
+        value: 'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
       };
     }
 
     if (body.indexOf('2207050') > -1) {
       return {
-        type: 'refresh-token' as const,
+        type: 'bad-body' as const,
         value: 'Instagram user is restricted',
       };
     }
@@ -263,6 +297,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('190,') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
+      };
+    }
+
     if (body.indexOf('36001') > -1) {
       return {
         type: 'bad-body' as const,
@@ -292,14 +334,22 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('param collaborators is not allowed') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Collaborators are not allowed for carousel',
+      };
+    }
+
     return undefined;
   }
 
   async reConnect(
     id: string,
     requiredId: string,
-    accessToken: string
+    token: string
   ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
+    const [accessToken, userToken] = token.split('___');
     const findPage = (await this.pages(accessToken)).find(
       (p) => p.id === requiredId
     );
@@ -391,22 +441,75 @@ export class InstagramProvider
     };
   }
 
-  async pages(accessToken: string) {
-    const { data } = await (
-      await fetch(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&access_token=${accessToken}&limit=500`
-      )
-    ).json();
+  async pages(token: string) {
+    const [accessToken, userToken] = token.split('___');
+    const seenPageIds = new Set<string>();
+    const allFacebookPages: any[] = [];
+
+    const fetchPaginated = async (startUrl: string) => {
+      let nextUrl: string | undefined = startUrl;
+      while (nextUrl) {
+        const response = await (await fetch(nextUrl)).json();
+        if (response.data) {
+          for (const page of response.data) {
+            if (!seenPageIds.has(page.id)) {
+              seenPageIds.add(page.id);
+              allFacebookPages.push(page);
+            }
+          }
+        }
+        nextUrl = response.paging?.next;
+      }
+    };
+
+    // Fetch pages the user explicitly shared during the OAuth dialog
+    await fetchPaginated(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+    );
+
+    // Also fetch pages via Business Manager API to discover pages
+    // not selected during the OAuth page selection step
+    try {
+      let bizUrl:
+        | string
+        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+
+      while (bizUrl) {
+        const bizResponse = await (await fetch(bizUrl)).json();
+        if (bizResponse.data) {
+          for (const business of bizResponse.data) {
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+
+            try {
+              await fetchPaginated(
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+              );
+            } catch {
+              // Continue with other businesses
+            }
+          }
+        }
+        bizUrl = bizResponse.paging?.next;
+      }
+    } catch {
+      // Business Manager API not available for all users
+    }
 
     const onlyConnectedAccounts = await Promise.all(
-      data
+      allFacebookPages
         .filter((f: any) => f.instagram_business_account)
         .map(async (p: any) => {
           return {
             pageId: p.id,
             ...(await (
               await fetch(
-                `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}&limit=500`
+                `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
               )
             ).json()),
             id: p.instagram_business_account.id,
@@ -423,9 +526,10 @@ export class InstagramProvider
   }
 
   async fetchPageInformation(
-    accessToken: string,
+    token: string,
     data: { pageId: string; id: string }
   ) {
+    const [accessToken, userToken] = token.split('___');
     const { access_token, ...all } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
@@ -442,21 +546,23 @@ export class InstagramProvider
       id,
       name,
       picture: profile_picture_url,
-      access_token,
+      access_token: access_token + '___' + accessToken,
       username,
     };
   }
 
   async post(
     id: string,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
+    const isTrialReel = !!firstPost.settings.is_trial_reel;
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
@@ -464,24 +570,33 @@ export class InstagramProvider
             ? `&caption=${encodeURIComponent(firstPost.message)}`
             : ``;
         const isCarousel =
-          (firstPost?.media?.length || 0) > 1 ? `&is_carousel_item=true` : ``;
-        const mediaType =
-          m.path.indexOf('.mp4') > -1
-            ? firstPost?.media?.length === 1
-              ? isStory
-                ? `video_url=${m.path}&media_type=STORIES`
-                : `video_url=${m.path}&media_type=REELS&thumb_offset=${
-                    m?.thumbnailTimestamp || 0
-                  }`
-              : isStory
+          (firstPost?.media?.length || 0) > 1 && !isStory
+            ? `&is_carousel_item=true`
+            : ``;
+        const mediaType = hasExtension(m.path, 'mp4')
+          ? firstPost?.media?.length === 1
+            ? isStory
               ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+              : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
-            : `image_url=${m.path}`;
-        console.log('in progress1');
+            ? `video_url=${m.path}&media_type=STORIES`
+            : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+                m?.thumbnailTimestamp || 0
+              }`
+          : isStory
+          ? `image_url=${m.path}&media_type=STORIES`
+          : `image_url=${m.path}`;
+
+        const trialParams = isTrialReel
+          ? `&trial_params=${encodeURIComponent(
+              JSON.stringify({
+                graduation_strategy:
+                  firstPost.settings.graduation_strategy || 'MANUAL',
+              })
+            )}`
+          : ``;
 
         const collaborators =
           firstPost?.settings?.collaborators?.length && !isStory
@@ -490,10 +605,9 @@ export class InstagramProvider
               )}`
             : ``;
 
-        console.log(collaborators);
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -505,7 +619,7 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              `https://${type}/v20.0/${photoId}?access_token=${userToken || accessToken}&fields=status_code`,
               undefined,
               '',
               0,
@@ -521,7 +635,38 @@ export class InstagramProvider
       }) || []
     );
 
-    if (medias.length === 1) {
+    if (isStory && medias.length > 1) {
+      // Stories don't support carousels - publish each media as a separate story
+      let lastMediaId = '';
+      let lastPermalink = '';
+      for (const mediaCreationId of medias) {
+        const { id: mediaId } = await (
+          await this.fetch(
+            `https://${type}/v20.0/${id}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
+            {
+              method: 'POST',
+            }
+          )
+        ).json();
+        lastMediaId = mediaId;
+
+        const { permalink } = await (
+          await this.fetch(
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
+          )
+        ).json();
+        lastPermalink = permalink;
+      }
+
+      return [
+        {
+          id: firstPost.id,
+          postId: lastMediaId,
+          releaseURL: lastPermalink,
+          status: 'success',
+        },
+      ];
+    } else if (medias.length === 1) {
       const { id: mediaId } = await (
         await this.fetch(
           `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
@@ -533,7 +678,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
         )
       ).json();
 
@@ -563,7 +708,7 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${userToken || accessToken}`,
             undefined,
             '',
             0,
@@ -585,7 +730,7 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
         )
       ).json();
 
@@ -604,11 +749,12 @@ export class InstagramProvider
     id: string,
     postId: string,
     lastCommentId: string | undefined,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [commentPost] = postDetails;
 
     const { id: commentId } = await (
@@ -625,7 +771,7 @@ export class InstagramProvider
     // Get the permalink from the parent post
     const { permalink } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${accessToken}`
+        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${userToken || accessToken}`
       )
     ).json();
 
@@ -683,11 +829,12 @@ export class InstagramProvider
 
   async analytics(
     id: string,
-    accessToken: string,
+    token: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
-    const until = dayjs().endOf('day').unix();
+    const [accessToken, userToken] = token.split('___');
+    const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
     const { data, ...all } = await (
@@ -744,18 +891,19 @@ export class InstagramProvider
 
   async postAnalytics(
     integrationId: string,
-    accessToken: string,
+    token: string,
     postId: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
+    const [accessToken, userToken] = token.split('___');
     const today = dayjs().format('YYYY-MM-DD');
 
     try {
       // Fetch media insights from Instagram Graph API
       const { data } = await (
         await this.fetch(
-          `https://${type}/v21.0/${postId}/insights?metric=impressions,reach,engagement,saved,likes,comments,shares&access_token=${accessToken}`
+          `https://${type}/v21.0/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
         )
       ).json();
 
@@ -772,8 +920,8 @@ export class InstagramProvider
         let label = '';
 
         switch (metric.name) {
-          case 'impressions':
-            label = 'Impressions';
+          case 'views':
+            label = 'Views';
             break;
           case 'reach':
             label = 'Reach';

@@ -1,8 +1,14 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
+import {
+  APPROVED_SUBMIT_FOR_ORDER,
+  CreationMethod,
+  Post,
+  State,
+} from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -34,10 +40,11 @@ export class PostsRepository {
           refreshNeeded: false,
           inBetweenSteps: false,
           disabled: false,
+          deletedAt: null,
         },
         publishDate: {
-          gte: dayjs.utc().subtract(2, 'hour').toDate(),
-          lt: dayjs.utc().add(2, 'hour').toDate(),
+          gte: dayjs.utc().subtract(2, 'day').toDate(),
+          lt: dayjs.utc().toDate(),
         },
         state: 'QUEUE',
         deletedAt: null,
@@ -132,9 +139,6 @@ export class PostsRepository {
               {
                 organizationId: orgId,
               },
-              {
-                submittedForOrganizationId: orgId,
-              },
             ],
           },
           {
@@ -153,6 +157,10 @@ export class PostsRepository {
             ],
           },
         ],
+        integration: {
+          deletedAt: null,
+          organizationId: orgId,
+        },
         deletedAt: null,
         parentPostId: null,
         ...(query.customer
@@ -172,6 +180,7 @@ export class PostsRepository {
         state: true,
         intervalInDays: true,
         group: true,
+        creationMethod: true,
         tags: {
           select: {
             tag: true,
@@ -209,6 +218,102 @@ export class PostsRepository {
 
       return [...all, ...addMorePosts];
     }, [] as any[]);
+  }
+
+  async getPostsList(orgId: string, query: GetPostsListDto) {
+    const page = query.page || 0;
+    const limit = query.limit || 20;
+    const skip = page * limit;
+
+    const stateFilter = query.state || 'all';
+    const stateAndDate =
+      stateFilter === 'scheduled'
+        ? {
+            state: State.QUEUE,
+          }
+        : stateFilter === 'draft'
+        ? { state: State.DRAFT }
+        : stateFilter === 'published'
+        ? { state: State.PUBLISHED }
+        : {
+            state: {
+              in: [State.QUEUE, State.DRAFT, State.PUBLISHED, State.ERROR],
+            },
+          };
+
+    const orderDirection: 'asc' | 'desc' =
+      stateFilter === 'published' ? 'desc' : 'asc';
+
+    const where = {
+      AND: [
+        {
+          OR: [
+            {
+              organizationId: orgId,
+            },
+          ],
+        },
+      ],
+      ...stateAndDate,
+      publishDate: { gte: dayjs.utc().toDate() },
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+      intervalInDays: null as number | null,
+
+      integration: {
+        deletedAt: null as any,
+        organizationId: orgId,
+        ...(query.customer
+          ? {
+              customerId: query.customer,
+            }
+          : {}),
+      },
+    };
+
+    const [posts, total] = await Promise.all([
+      this._post.model.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          publishDate: orderDirection,
+        },
+        select: {
+          id: true,
+          content: true,
+          publishDate: true,
+          releaseURL: true,
+          releaseId: true,
+          state: true,
+          intervalInDays: true,
+          group: true,
+          creationMethod: true,
+          tags: {
+            select: {
+              tag: true,
+            },
+          },
+          integration: {
+            select: {
+              id: true,
+              providerIdentifier: true,
+              name: true,
+              picture: true,
+            },
+          },
+        },
+      }),
+      this._post.model.post.count({ where }),
+    ]);
+
+    return {
+      posts,
+      total,
+      page,
+      limit,
+      hasMore: skip + posts.length < total,
+    };
   }
 
   async deletePost(orgId: string, group: string) {
@@ -293,6 +398,19 @@ export class PostsRepository {
     });
   }
 
+  updateReleaseId(id: string, orgId: string, releaseId: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+        organizationId: orgId,
+        releaseId: 'missing',
+      },
+      data: {
+        releaseId: String(releaseId),
+      },
+    });
+  }
+
   async changeState(id: string, state: State, err?: any, body?: any) {
     const update = await this._post.model.post.update({
       where: {
@@ -330,7 +448,22 @@ export class PostsRepository {
     return update;
   }
 
-  async changeDate(orgId: string, id: string, date: string) {
+  getErrorsByPostIds(postIds: string[]) {
+    return this._errors.model.errors.findMany({
+      where: {
+        postId: { in: postIds },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async changeDate(
+    orgId: string,
+    id: string,
+    date: string,
+    isDraft: boolean,
+    action: 'schedule' | 'update' = 'schedule'
+  ) {
     return this._post.model.post.update({
       where: {
         organizationId: orgId,
@@ -338,6 +471,15 @@ export class PostsRepository {
       },
       data: {
         publishDate: dayjs(date).toDate(),
+        // schedule: set state to QUEUE (or DRAFT if it was a draft)
+        // update: don't change the state
+        ...(action === 'schedule'
+          ? {
+              state: isDraft ? 'DRAFT' : 'QUEUE',
+              releaseId: null,
+              releaseURL: null,
+            }
+          : {}),
       },
     });
   }
@@ -365,11 +507,12 @@ export class PostsRepository {
   }
 
   async createOrUpdatePost(
-    state: 'draft' | 'schedule' | 'now',
+    state: 'draft' | 'schedule' | 'now' | 'update',
     orgId: string,
     date: string,
     body: PostBody,
     tags: { value: string; label: string }[],
+    creationMethod: CreationMethod,
     inter?: number
   ) {
     const posts: Post[] = [];
@@ -404,7 +547,13 @@ export class PostsRepository {
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
-        state: state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
+        ...(type === 'create' ? { creationMethod } : {}),
+        ...(state === 'update'
+          ? {}
+          : {
+              state:
+                state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
+            }),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
         organization: {
@@ -658,6 +807,7 @@ export class PostsRepository {
     return this._tags.model.tags.findMany({
       where: {
         orgId,
+        deletedAt: null,
       },
     });
   }
@@ -680,6 +830,18 @@ export class PostsRepository {
       data: {
         name: body.name,
         color: body.color,
+      },
+    });
+  }
+
+  deleteTag(id: string, orgId: string) {
+    return this._tags.model.tags.update({
+      where: {
+        id,
+        orgId,
+      },
+      data: {
+        deletedAt: new Date(),
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Param, Post, Req } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -8,7 +8,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Billing')
@@ -17,8 +16,7 @@ export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
-    private _notificationService: NotificationService,
-    private _nowpayments: Nowpayments
+    private _notificationService: NotificationService
   ) {}
 
   @Get('/check/:id')
@@ -144,6 +142,43 @@ export class BillingController {
     return this._stripeService.lifetimeDeal(org.id, body.code);
   }
 
+  @Get('/charges')
+  async getCharges(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.getCharges(org.id);
+  }
+
+  @Post('/refund-charges')
+  async refundCharges(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { chargeIds: string[] }
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.refundCharges(org.id, body.chargeIds);
+  }
+
+  @Post('/cancel-subscription')
+  async cancelSubscription(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.cancelSubscription(org.id);
+  }
+
   @Post('/add-subscription')
   async addSubscription(
     @Body() body: { subscription: string },
@@ -161,8 +196,4 @@ export class BillingController {
     );
   }
 
-  @Get('/crypto')
-  async crypto(@GetOrgFromRequest() org: Organization) {
-    return this._nowpayments.createPaymentPage(org.id);
-  }
 }

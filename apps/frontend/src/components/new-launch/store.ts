@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import dayjs from 'dayjs';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { createRef, RefObject } from 'react';
-import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 interface Values {
@@ -26,7 +26,7 @@ export interface SelectedIntegrations {
 }
 
 interface StoreState {
-  editor: undefined | 'normal' | 'markdown' | 'html';
+  editor: undefined | 'none' | 'normal' | 'markdown' | 'html';
   loaded: boolean;
   date: dayjs.Dayjs;
   postComment: PostComment;
@@ -128,7 +128,7 @@ interface StoreState {
   setPostComment: (postComment: PostComment) => void;
   setActivateExitButton?: (activateExitButton: boolean) => void;
   setDummy: (dummy: boolean) => void;
-  setEditor: (editor: 'normal' | 'markdown' | 'html') => void;
+  setEditor: (editor: 'none' | 'normal' | 'markdown' | 'html') => void;
   setLoaded?: (loaded: boolean) => void;
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
@@ -613,7 +613,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     set((state) => ({
       dummy,
     })),
-  setEditor: (editor: 'normal' | 'markdown' | 'html') =>
+  setEditor: (editor: 'none' | 'normal' | 'markdown' | 'html') =>
     set((state) => ({
       editor,
     })),

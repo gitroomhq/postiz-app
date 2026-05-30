@@ -21,18 +21,15 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 
 class Empty {
   @IsOptional()
   empty: string;
 }
 
-export enum PostComment {
-  ALL,
-  POST,
-  COMMENT,
-}
+export { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
+import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 
 interface CharacterCondition {
   format: 'no-pictures' | 'with-pictures';
@@ -51,16 +48,6 @@ export const withProvider = function <T extends object>(params: {
     maximumCharacters?: number;
   }>;
   dto?: any;
-  checkValidity?: (
-    value: Array<
-      Array<{
-        path: string;
-        thumbnail?: string;
-      }>
-    >,
-    settings: T,
-    additionalSettings: any
-  ) => Promise<string | true>;
   maximumCharacters?: number | ((settings: any) => number);
 }) {
   const {
@@ -68,11 +55,10 @@ export const withProvider = function <T extends object>(params: {
     SettingsComponent,
     CustomPreviewComponent,
     dto,
-    checkValidity,
     maximumCharacters,
   } = params;
 
-  return forwardRef((props: { id: string }, ref) => {
+  const Wrapped = forwardRef((props: { id: string }, ref) => {
     const t = useT();
     const fetch = useFetch();
     const {
@@ -203,15 +189,6 @@ export const withProvider = function <T extends object>(params: {
             integration: selectedIntegration.integration,
             valid: await form.trigger(),
             err: form.formState.errors,
-            errors: checkValidity
-              ? await checkValidity(
-                  value.map((p) => p.media || []),
-                  settings,
-                  JSON.parse(
-                    selectedIntegration.integration.additionalSettings || '[]'
-                  )
-                )
-              : true,
             settings,
             values: value,
             maximumCharacters:
@@ -318,14 +295,14 @@ export const withProvider = function <T extends object>(params: {
                   {isGlobal && (
                     <div className="flex py-[20px] items-center gap-[15px]">
                       <div className="relative">
-                        <Image
+                        <SafeImage
                           alt={selectedIntegration?.integration.name!}
                           width={42}
                           height={42}
                           className="min-w-[42px] min-h-[42px] w-[42px] h-[42px] rounded-full"
                           src={selectedIntegration?.integration.picture}
                         />
-                        <Image
+                        <SafeImage
                           alt={selectedIntegration?.integration.identifier}
                           width={16}
                           height={16}
@@ -356,4 +333,30 @@ export const withProvider = function <T extends object>(params: {
       </IntegrationContext.Provider>
     );
   });
+
+  // Expose the settings configuration as static metadata so the preview /
+  // mobile settings page can render <SettingsComponent /> in isolation
+  // without pulling the launch store + DOM portals.
+  (Wrapped as any).__settings = {
+    SettingsComponent,
+    CustomPreviewComponent,
+    dto,
+    postComment,
+    maximumCharacters,
+  };
+
+  return Wrapped;
+};
+
+/** Pulls the settings metadata off a withProvider-wrapped component. */
+export const getProviderSettingsMeta = (component: unknown) => {
+  return (component as any)?.__settings as
+    | {
+        SettingsComponent: FC<{ values?: any }> | null;
+        CustomPreviewComponent?: FC<{ maximumCharacters?: number }>;
+        dto?: any;
+        postComment: PostComment;
+        maximumCharacters?: number | ((settings: any) => number);
+      }
+    | undefined;
 };

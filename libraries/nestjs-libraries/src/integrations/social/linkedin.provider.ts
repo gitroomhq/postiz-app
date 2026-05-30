@@ -8,14 +8,19 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { timer } from '@gitroom/helpers/utils/timer';
+import {
+  BadBody,
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { string } from 'yup';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -42,6 +47,32 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     return 3000;
   }
 
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    vals: any
+  ): Promise<string | true> {
+    const [firstPost, ...restPosts] = posts ?? [];
+
+    if (
+      vals?.post_as_images_carousel &&
+      ((firstPost?.length ?? 0) < 2 ||
+        firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
+    ) {
+      return 'Carousel can only be created with 2 or more images and no videos.';
+    }
+
+    if (
+      (firstPost?.length ?? 0) > 1 &&
+      firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Can have maximum 1 media when selecting a video.';
+    }
+    if (restPosts?.some((p) => (p?.length ?? 0) > 0)) {
+      return 'Comments can only contain text.';
+    }
+    return true;
+  }
+
   override handleErrors(
     body: string
   ):
@@ -51,6 +82,13 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'retry',
         value: 'Unable to obtain activity',
+      };
+    }
+
+    if (body.indexOf('resource is forbidden') > -1) {
+      return {
+        type: 'retry',
+        value: 'Resource is forbidden',
       };
     }
 
@@ -205,7 +243,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202511',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${token}`,
           },
         }
@@ -228,8 +266,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type = 'personal' as 'company' | 'personal'
   ) {
     // Determine the appropriate endpoint based on file type
-    const isVideo = fileName.indexOf('mp4') > -1;
-    const isPdf = fileName.toLowerCase().indexOf('pdf') > -1;
+    const isVideo = hasExtension(fileName, 'mp4');
+    const isPdf = hasExtension(fileName, 'pdf');
 
     let endpoint: string;
     if (isVideo) {
@@ -250,7 +288,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'Content-Type': 'application/json',
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202511',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
@@ -283,7 +321,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           method: 'PUT',
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202511',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
             ...(isVideo
               ? { 'Content-Type': 'application/octet-stream' }
@@ -302,7 +340,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (isVideo) {
-      const a = await this.fetch(
+      await this.fetch(
         'https://api.linkedin.com/rest/videos?action=finalizeUpload',
         {
           method: 'POST',
@@ -315,15 +353,91 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           }),
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202511',
+            'LinkedIn-Version': '202601',
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
         }
       );
+
+      // After finalizing, the video is processed asynchronously. We have to
+      // wait until it reaches the AVAILABLE status before attaching it to a
+      // post, otherwise LinkedIn rejects the post with a processing error.
+      await this.waitForMediaToBeReady(video, accessToken, 'videos');
+    } else if (!isPdf) {
+      // Images are also processed asynchronously and must be AVAILABLE before
+      // being attached to a post.
+      if (type === 'company') {
+        // Organization-owned images can be polled for their processing status.
+        await this.waitForMediaToBeReady(image, accessToken, 'images');
+      } else {
+        // A w_member_social (personal) token is write-only for rest/images and
+        // can't perform the GET, so polling would always be forbidden. Images
+        // are quick to process, so we just give LinkedIn a moment before
+        // attaching it to the post.
+        await timer(10000);
+      }
     }
 
     return finalOutput;
+  }
+
+  // Polls the "Get a Video"/"Get an Image" API until the media finishes
+  // processing (status === AVAILABLE).
+  // videos: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api#get-a-video
+  // images: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api#get-a-single-image
+  private async waitForMediaToBeReady(
+    urn: string,
+    accessToken: string,
+    type: 'videos' | 'images',
+    maxAttempts = 20,
+    intervalMs = 30000
+  ): Promise<void> {
+    const label = type === 'videos' ? 'video' : 'image';
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const json = await (
+        await this.fetch(
+          `https://api.linkedin.com/rest/${type}/${encodeURIComponent(urn)}`,
+          {
+            method: 'GET',
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+      ).json();
+
+      const { status, processingFailureReason } = json;
+
+      if (status === 'AVAILABLE') {
+        return;
+      }
+
+      if (status === 'PROCESSING_FAILED') {
+        throw new BadBody(
+          this.identifier,
+          JSON.stringify(json),
+          '{}',
+          `LinkedIn ${label} processing failed${
+            processingFailureReason ? `: ${processingFailureReason}` : ''
+          }`
+        );
+      }
+
+      // status is PROCESSING or WAITING_UPLOAD, keep polling.
+      await timer(intervalMs);
+    }
+
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      `Timed out waiting for LinkedIn ${label} to be ready`
+    );
   }
 
   protected fixText(text: string) {
@@ -365,71 +479,51 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<LinkedinDto>[],
     firstPost: PostDetails<LinkedinDto>
   ): Promise<PostDetails<LinkedinDto>[]> {
-    // Collect all images from all posts
-    const allImages = postDetails.flatMap(
-      (post) =>
-        post.media?.filter(
-          (media) =>
-            media.path.toLowerCase().includes('.jpg') ||
-            media.path.toLowerCase().includes('.jpeg') ||
-            media.path.toLowerCase().includes('.png')
-        ) || []
-    );
-
-    if (allImages.length === 0) {
+    if (!firstPost.media?.length) {
       return postDetails;
     }
 
-    // Convert images to buffers and get dimensions
-    const imageData = await Promise.all(
-      allImages.map(async (media) => {
-        const buffer = await readOrFetch(media.path);
-        const image = sharp(buffer, {
-          animated: lookup(media.path) === 'image/gif',
-        });
-        const metadata = await image.metadata();
-
-        return {
-          buffer,
-          width: metadata.width || 0,
-          height: metadata.height || 0,
-        };
+    // Fetch all images and get their dimensions
+    const images = await Promise.all(
+      firstPost.media.map(async (media) => {
+        const raw = await readOrFetch(media.path);
+        const image = sharp(raw, { animated: false }).toFormat('jpeg');
+        const { width, height } = await image.metadata();
+        const buffer = await image.toBuffer();
+        return { buffer, width: width || 0, height: height || 0 };
       })
     );
 
-    // Use the dimensions of the first image for the PDF page size
-    // You could also use the largest dimensions if you prefer
-    const firstImageDimensions = imageData[0];
-    const pageSize = [firstImageDimensions.width, firstImageDimensions.height];
-
-    // Convert images to PDF with exact image dimensions
-    const pdfStream = imageToPDF(
-      imageData.map((data) => data.buffer),
-      pageSize
+    // Find the largest image by area to use as the PDF page size
+    const largest = images.reduce((max, img) =>
+      img.width * img.height > max.width * max.height ? img : max
     );
 
-    // Convert stream to buffer
+    const imageBuffers = images.map((img) => img.buffer);
+
+    // Create a PDF sized to the largest image; it fills the page,
+    // smaller images are fitted and centered within the same dimensions
+    const pdfStream = imageToPDF(
+      imageBuffers,
+      [largest.width, largest.height]
+    ) as unknown as Readable;
     const pdfBuffer = await this.streamToBuffer(pdfStream);
 
-    // Create a temporary file-like object for the PDF
-    const pdfMedia = {
-      path: 'carousel.pdf',
-      buffer: pdfBuffer,
-    };
-
-    // Return modified post details with PDF instead of images
-    const modifiedFirstPost = {
-      ...firstPost,
-      media: [pdfMedia] as any[],
-    };
-
-    // Remove media from other posts since we're combining everything into one PDF
-    const modifiedRestPosts = postDetails.slice(1).map((post) => ({
-      ...post,
-      media: [] as any[],
-    }));
-
-    return [modifiedFirstPost, ...modifiedRestPosts];
+    // Replace the first post's media with the single PDF
+    const [first, ...rest] = postDetails;
+    return [
+      {
+        ...first,
+        media: [
+          {
+            type: 'image' as const,
+            path: 'carousel.pdf',
+            buffer: pdfBuffer,
+          } as any,
+        ],
+      },
+      ...rest,
+    ];
   }
 
   private async streamToBuffer(stream: Readable): Promise<Buffer> {
@@ -491,21 +585,20 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = mediaUrl.indexOf('mp4') > -1;
+    const isVideo = hasExtension(mediaUrl, 'mp4');
+    const isGif = lookup(mediaUrl) === 'image/gif';
 
-    if (isVideo) {
+    if (isVideo || isGif) {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
-    return await sharp(await readOrFetch(mediaUrl), {
-      animated: lookup(mediaUrl) === 'image/gif',
-    })
+    return await sharp(await readOrFetch(mediaUrl), { animated: false })
       .toFormat('jpeg')
       .resize({ width: 1000 })
       .toBuffer();
   }
 
-  private buildPostContent(isPdf: boolean, mediaIds: string[]) {
+  private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
     if (mediaIds.length === 0) {
       return {};
     }
@@ -514,7 +607,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       return {
         content: {
           media: {
-            ...(isPdf ? { title: 'slides.pdf' } : {}),
+            ...(isPdf ? { title: pdfTitle || 'slides' } : {}),
             id: mediaIds[0],
           },
         },
@@ -535,7 +628,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     type: 'company' | 'personal',
     message: string,
     mediaIds: string[],
-    isPdf: boolean
+    isPdf: boolean,
+    pdfTitle?: string
   ) {
     const author =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
@@ -549,7 +643,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         targetEntities: [] as string[],
         thirdPartyDistributionChannels: [] as string[],
       },
-      ...this.buildPostContent(isPdf, mediaIds),
+      ...this.buildPostContent(isPdf, mediaIds, pdfTitle),
       lifecycleState: 'PUBLISHED',
       isReshareDisabledByAuthor: false,
     };
@@ -558,23 +652,28 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   private async createMainPost(
     id: string,
     accessToken: string,
-    firstPost: PostDetails,
+    firstPost: PostDetails<LinkedinDto>,
     mediaIds: string[],
     type: 'company' | 'personal',
     isPdf: boolean
   ): Promise<string> {
+    const pdfTitle = isPdf
+      ? firstPost.settings?.carousel_name || 'slides'
+      : undefined;
+
     const postPayload = this.createLinkedInPostPayload(
       id,
       type,
       firstPost.message,
       mediaIds,
-      isPdf
+      isPdf,
+      pdfTitle
     );
 
     const response = await this.fetch(`https://api.linkedin.com/rest/posts`, {
       method: 'POST',
       headers: {
-        'LinkedIn-Version': '202511',
+        'LinkedIn-Version': '202601',
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
@@ -583,7 +682,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     });
 
     if (response.status !== 201 && response.status !== 200) {
-      throw new Error('Error posting to LinkedIn');
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        JSON.stringify(postPayload),
+        'Error posting to LinkedIn'
+      );
     }
 
     return response.headers.get('x-restli-id')!;
@@ -600,13 +704,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+      `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+        'LinkedIn-Version': '202306',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
@@ -786,7 +892,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       headers: {
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json',
-        'LinkedIn-Version': '202511',
+        'LinkedIn-Version': '202601',
         Authorization: `Bearer ${integration.token}`,
       },
     });
@@ -802,7 +908,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           headers: {
             'X-Restli-Protocol-Version': '2.0.0',
             'Content-Type': 'application/json',
-            'LinkedIn-Version': '202511',
+            'LinkedIn-Version': '202601',
             Authorization: `Bearer ${token}`,
           },
         }

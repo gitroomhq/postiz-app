@@ -1,6 +1,13 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import sharp from 'sharp';
+
+export type ValidityMedia = {
+  path: string;
+  thumbnail?: string;
+};
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
@@ -27,7 +34,9 @@ export class BadBody extends ApplicationFailure {
 }
 
 export class NotEnoughScopes {
-  constructor(public message = 'Not enough scopes') {}
+  constructor(
+    public message = 'Not enough scopes, when choosing a provider, please add all the scopes'
+  ) {}
 }
 
 function safeStringify(obj: any) {
@@ -49,11 +58,47 @@ export abstract class SocialAbstract {
   maxConcurrentJob = 1;
 
   public handleErrors(
-    body: string
+    body: string,
+    status: number
   ):
     | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
     | undefined {
     return undefined;
+  }
+
+  /**
+   * Server-side replacement for the old client-side `checkValidity`.
+   * Validates the media attached to a post (and its comments) against the
+   * provider rules. Returns `true` when valid, or an error message string.
+   *
+   * `posts` mirrors the client shape: the outer array is the main post followed
+   * by each comment, the inner array is the media items for that entry.
+   *
+   * Note: video-duration validations that used to run in the browser are not
+   * re-implemented here (no ffmpeg dependency). Image-dimension checks use sharp.
+   */
+  async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    settings: any,
+    additionalSettings: any[]
+  ): Promise<string | true> {
+    return true;
+  }
+
+  /** Reads the pixel dimensions of an image via sharp (works for http or local paths). */
+  protected async getImageDimensions(
+    path: string
+  ): Promise<{ width: number; height: number }> {
+    // Stored media paths are relative (e.g. "uploads/x.png"); resolve them to a
+    // fetchable URL the same way posts.service.updateMedia does.
+    const url =
+      path?.indexOf('http') === -1
+        ? `${process.env.FRONTEND_URL}/${path}`
+        : path;
+    const { width = 0, height = 0 } = await sharp(
+      await readOrFetch(url)
+    ).metadata();
+    return { width, height };
   }
 
   public async mention(
@@ -72,12 +117,14 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
+    let globalErr = {};
     let value: any;
     try {
       value = await func();
     } catch (err) {
-      const handle = this.handleErrors(safeStringify(err));
+      const handle = this.handleErrors(safeStringify(err), 200);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
+      globalErr = err;
     }
 
     if (value && value?.err && value?.value) {
@@ -89,7 +136,7 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
-      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
+      throw new BadBody('', safeStringify(globalErr), {} as any, value.value || '');
     }
 
     return value;
@@ -119,9 +166,11 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    const handleError = this.handleErrors(json || '{}', request.status);
+
     if (
       request.status === 429 ||
-      request.status === 500 ||
+      (request.status === 500 && !handleError) ||
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
@@ -134,8 +183,6 @@ export abstract class SocialAbstract {
         ignoreConcurrency
       );
     }
-
-    const handleError = this.handleErrors(json || '{}');
 
     if (handleError?.type === 'retry') {
       await timer(5000);
@@ -165,7 +212,7 @@ export abstract class SocialAbstract {
       identifier,
       json,
       options.body!,
-      handleError?.value || ''
+      handleError?.value || 'Unknown Error'
     );
   }
 

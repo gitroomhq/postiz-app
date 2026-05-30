@@ -23,7 +23,9 @@ export class PoliciesGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
     if (
       request.path.indexOf('/auth') > -1 ||
-      request.path.indexOf('/stripe') > -1
+      request.path.indexOf('/auth') > -1 ||
+      request.path.indexOf('/integrations/social-connect') > -1 ||
+      request.path.indexOf('/integrations/provider') > -1
     ) {
       return true;
     }
@@ -42,8 +44,10 @@ export class PoliciesGuard implements CanActivate {
     // @ts-expect-error
     const { org }: { org: Organization } = request;
 
+    const refreshChannelId = typeof request.query?.refresh === 'string' ? request.query.refresh : undefined;
+
     // @ts-ignore
-    const ability = await this._authorizationService.check(org.id, org.createdAt, org.users[0].role, policyHandlers);
+    const ability = await this._authorizationService.check(org.id, org.createdAt, org.users[0].role, policyHandlers, refreshChannelId);
 
     const item = policyHandlers.find(
       (handler) => !this.execPolicyHandler(handler, ability)

@@ -23,7 +23,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -32,7 +31,7 @@ import { capitalize } from 'lodash';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
   SettingsIcon,
   ChevronDownIcon,
@@ -42,13 +41,8 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
-
-function countCharacters(text: string, type: string): number {
-  if (type !== 'x') {
-    return text.length;
-  }
-  return weightedLength(text);
-}
+import dayjs from 'dayjs';
+import { Button } from '@gitroom/react/form/button';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -108,14 +102,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return (
         <div className="flex items-center gap-[10px]">
           <div className="relative">
-            <SettingsIcon
-              size={15}
-              className="text-white"
-            />
+            <SettingsIcon size={15} className="text-white" />
           </div>
-          <div>
-            Settings
-          </div>
+          <div>Settings</div>
         </div>
       );
     }
@@ -202,26 +191,103 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [existingData, mutate, modal]);
 
   const schedule = useCallback(
-    (type: 'draft' | 'now' | 'schedule') => async () => {
-      setLoading(true);
-      const checkAllValid = await ref.current.checkAllValid();
-      if (type !== 'draft') {
-        const notEnoughChars = checkAllValid.filter((p: any) => {
-          return p.values.some((a: any) => {
-            return (
-              countCharacters(
-                stripHtmlValidation('normal', a.content, true),
-                p?.integration?.identifier || ''
-              ) === 0 && a.media?.length === 0
-            );
+    (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
+      if (
+        (type === 'now' || type === 'schedule') &&
+        (existingData?.posts?.[0]?.state === 'PUBLISHED' ||
+          (existingData?.posts?.[0]?.state === 'QUEUE' &&
+            dayjs().isAfter(date.utc())))
+      ) {
+        const whatToDo = await new Promise((resolve) => {
+          modal.openModal({
+            title: 'What do you want to do?',
+            children: (
+              <div className="flex flex-col">
+                <div className="text-[20px] mb-[20px]">
+                  This post was already published, what do you want to do?
+                </div>
+                <div className="flex w-full gap-[10px]">
+                  <div className="flex-1 flex">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => resolve('update')}
+                    >
+                      Just update the post details
+                    </Button>
+                  </div>
+                  <div className="flex-1 flex">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => resolve('republish')}
+                    >
+                      Republish the post
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ),
           });
         });
 
+        if (whatToDo === 'update') {
+          type = 'update';
+        }
+      }
+
+      setLoading(true);
+
+      // Pull the local values to build the payload, but rely on the server
+      // (`/posts/valid`) for the actual validation — checkValidity now lives
+      // server-side so it can't be bypassed.
+      const allValues = await ref.current.getAllValues();
+
+      const integrationById = (id: string) =>
+        selectedIntegrations.find((p) => p.integration.id === id);
+
+      const group = existingData.group || makeId(10);
+
+      const posts = allValues.map((post: any) => ({
+        integration: {
+          id: post.id,
+        },
+        group,
+        settings: { ...(post.settings || {}) },
+        value: post.values.map((value: any) => ({
+          ...(value.id ? { id: value.id } : {}),
+          content: value.content,
+          delay: value.delay || 0,
+          image:
+            (value?.media || []).map(
+              ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
+                id,
+                path,
+                alt,
+                thumbnail,
+                thumbnailTimestamp,
+              })
+            ) || [],
+        })),
+      }));
+
+      if (!dummy) {
+        const checkAllValid = await (
+          await fetch('/posts/valid', {
+            method: 'POST',
+            body: JSON.stringify({ type, posts }),
+          })
+        ).json();
+
+        const focus = (id: string, where: 'fix' | 'preview') => {
+          integrationById(id)?.ref?.current?.[where]?.();
+        };
+
+        const notEnoughChars = checkAllValid.filter((p: any) => p.emptyContent);
+
         for (const item of notEnoughChars) {
           toaster.show(
-            `${capitalize(item.integration.identifier.split('-')[0])} (${
-              item.integration.name
-            }):` +
+            `${capitalize(item.identifier.split('-')[0])} (${item.name}):` +
               ' ' +
               t(
                 'post_needs_content_or_image',
@@ -230,63 +296,52 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             'warning'
           );
           setLoading(false);
-          item.preview();
+          focus(item.id, 'preview');
           return;
         }
 
-        for (const item of checkAllValid) {
-          if (item.valid === false) {
-            toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
-              }): ${t('please_fix_your_settings', 'Please fix your settings')}`,
-              'warning'
-            );
-            item.fix();
-            setLoading(false);
-            setShowSettings(true);
-            return;
+        if (type !== 'draft') {
+          for (const item of checkAllValid) {
+            if (item.valid === false) {
+              toaster.show(
+                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                  item.settingsError ||
+                  t('please_fix_your_settings', 'Please fix your settings')
+                }`,
+                'warning'
+              );
+              focus(item.id, 'fix');
+              setLoading(false);
+              setShowSettings(true);
+              return;
+            }
+
+            if (item.errors !== true) {
+              toaster.show(
+                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                  item.errors
+                }`,
+                'warning'
+              );
+              focus(item.id, 'preview');
+              setLoading(false);
+              setShowSettings(false);
+              return;
+            }
+
+            if (item.tooLong) {
+              toaster.show(
+                `${item.name} (${item.identifier}) ${t(
+                  'post_is_too_long',
+                  'post is too long, please fix it'
+                )}`,
+                'warning'
+              );
+              focus(item.id, 'preview');
+              setLoading(false);
+              return;
+            }
           }
-
-          if (item.errors !== true) {
-            toaster.show(
-              `${capitalize(item.integration.identifier.split('-')[0])} (${
-                item.integration.name
-              }): ${item.errors}`,
-              'warning'
-            );
-            item.preview();
-            setLoading(false);
-            setShowSettings(false);
-            return;
-          }
-        }
-
-        const sliceNeeded = checkAllValid.filter((p: any) => {
-          return p.values.some((a: any) => {
-            const strip = stripHtmlValidation('normal', a.content, true);
-            const weightedLength = countCharacters(
-              strip,
-              p?.integration?.identifier || ''
-            );
-            const totalCharacters =
-              weightedLength > strip.length ? weightedLength : strip.length;
-
-            return totalCharacters > (p.maximumCharacters || 1000000);
-          });
-        });
-
-        for (const item of sliceNeeded) {
-          toaster.show(
-            `${item?.integration?.name} (${item?.integration?.identifier}) ${t(
-              'post_is_too_long',
-              'post is too long, please fix it'
-            )}`,
-            'warning'
-          );
-          item.preview();
-          setLoading(false);
-          return;
         }
       }
 
@@ -299,9 +354,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           await fetch('/posts/should-shortlink', {
             method: 'POST',
             body: JSON.stringify({
-              messages: checkAllValid.flatMap((p: any) =>
-                p.values.flatMap((a: any) => a.content)
-              ),
+              messages: allValues
+                // platforms that remove links won't keep shortlinks either
+                .filter(
+                  (p: any) => !integrationById(p.id)?.integration?.stripLinks
+                )
+                .flatMap((p: any) => p.values.flatMap((a: any) => a.content)),
             }),
           })
         ).json();
@@ -323,35 +381,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
-      const group = existingData.group || makeId(10);
       const data = {
         type,
         ...(repeater ? { inter: repeater } : {}),
         tags,
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
-        posts: checkAllValid.map((post: any) => ({
-          integration: {
-            id: post.integration.id,
-          },
-          group,
-          settings: { ...(post.settings || {}) },
-          value: post.values.map((value: any) => ({
-            ...(value.id ? { id: value.id } : {}),
-            content: value.content,
-            delay: value.delay || 0,
-            image:
-              (value?.media || []).map(
-                ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
-                  id,
-                  path,
-                  alt,
-                  thumbnail,
-                  thumbnailTimestamp,
-                })
-              ) || [],
-          })),
-        })),
+        posts,
       };
 
       if (dummy) {
@@ -405,8 +441,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
         <div className="flex-1 flex">
           <div className="flex flex-col flex-1 border-e border-newBorder">
-            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
+              <CreationMethodBadge
+                creationMethod={existingData?.posts?.[0]?.creationMethod}
+                size="sm"
+              />
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
@@ -476,10 +516,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       'text-[14px] text-textColor font-[500] relative'
                     )}
                   >
-                    <div
-                      className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor"
-                    >
-                      <div id="social-settings" className="flex flex-col gap-[20px] bg-newBgColor" />
+                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                      <div
+                        id="social-settings"
+                        className="flex flex-col gap-[20px] bg-newBgColor"
+                      />
                     </div>
                   </div>
                   <style>
@@ -651,7 +692,7 @@ const Scrollable: FC<{
   scrollClasses: string;
   children: ReactNode;
 }> = ({ className, scrollClasses, children }) => {
-  const ref = useRef();
+  const ref = useRef(undefined);
   const hasScroll = useHasScroll(ref);
   return (
     <div className={clsx(className, hasScroll && scrollClasses)} ref={ref}>

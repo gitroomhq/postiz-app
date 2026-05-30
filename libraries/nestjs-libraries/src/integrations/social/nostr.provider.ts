@@ -27,12 +27,13 @@ const list = [
 const pool = new SimplePool();
 
 export class NostrProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 5; // Nostr relays typically have generous limits
+  override maxConcurrentJob = 5;
   identifier = 'nostr';
   name = 'Nostr';
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
+  toolTip = 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to'
 
   maxLength() {
     return 100000;
@@ -64,7 +65,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeId(17);
     return {
-      url: '',
+      url: state,
       codeVerifier: makeId(10),
       state,
     };

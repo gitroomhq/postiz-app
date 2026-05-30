@@ -1,10 +1,15 @@
+@use './colors.scss';
+@use './polonto.css';
+@use '@uppy/core/dist/style.css' as uppyCore;
+@use '@uppy/dashboard/dist/style.css' as uppyDashboard;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import './colors.scss';
-@import './polonto.css';
-@import '@uppy/core/dist/style.css';
-@import '@uppy/dashboard/dist/style.css';
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 body {
   background: var(--new-bgColor) !important;
@@ -492,6 +497,29 @@ div div .set-font-family {
   padding-right: 5px;
 }
 
+/* MediumTags (YouTube / Medium providers) — let the field grow and wrap
+   instead of overflowing the fixed-height row once there are many tags. */
+.medium-tags .react-tags {
+  height: auto;
+  min-height: 42px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-right: 16px;
+}
+
+.medium-tags .react-tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.medium-tags .react-tags__tag {
+  margin: 0;
+}
+
 .hideCopilot .copilotKitPopup {
   display: none !important;
 }
@@ -745,7 +773,9 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .post-now {
-  box-shadow: -33px 57px 18px 0 rgba(0, 0, 0, 0.01), -21px 36px 17px 0 rgba(0, 0, 0, 0.06), -12px 20px 14px 0 rgba(0, 0, 0, 0.20), -5px 9px 11px 0 rgba(0, 0, 0, 0.34), -1px 2px 6px 0 rgba(0, 0, 0, 0.39);
+  box-shadow: -33px 57px 18px 0 rgba(0, 0, 0, 0.01),
+    -21px 36px 17px 0 rgba(0, 0, 0, 0.06), -12px 20px 14px 0 rgba(0, 0, 0, 0.2),
+    -5px 9px 11px 0 rgba(0, 0, 0, 0.34), -1px 2px 6px 0 rgba(0, 0, 0, 0.39);
 }
 
 .uppyChange .uppy-Dashboard-inner {
@@ -780,4 +810,9 @@ html[dir='rtl'] [dir='ltr'] {
 .forceChange .changeColor {
   background: var(--new-btn-primary) !important;
   color: #fff !important;
+}
+
+.text-shadow-tags {
+  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
+    1px 1px 0 black;
 }

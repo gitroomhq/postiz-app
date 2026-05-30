@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
-import Image from 'next/image';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
 import { Select } from '@gitroom/react/form/select';
@@ -22,7 +22,7 @@ const allowedIntegrations = [
   'instagram',
   'instagram-standalone',
   'linkedin-page',
-  // 'tiktok',
+  'tiktok',
   'youtube',
   'gmb',
   'pinterest',
@@ -86,6 +86,7 @@ export const PlatformAnalytics = () => {
         'threads',
         'gmb',
         'x',
+        'tiktok',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
@@ -104,6 +105,7 @@ export const PlatformAnalytics = () => {
         'threads',
         'gmb',
         'x',
+        'tiktok',
       ].indexOf(currentIntegration.identifier) !== -1
     ) {
       arr.push({
@@ -250,7 +252,7 @@ export const PlatformAnalytics = () => {
                   width={36}
                   height={36}
                 />
-                <Image
+                <SafeImage
                   src={`/icons/platforms/${integration.identifier}.png`}
                   className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
                   alt={integration.identifier}

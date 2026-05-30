@@ -1,4 +1,5 @@
 import { TweetV2, TwitterApi } from 'twitter-api-v2';
+import { createHmac, randomBytes } from 'crypto';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -17,17 +18,24 @@ import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${
+    process.env.STRIP_LINKS_FROM_X_POSTS
+      ? 'do not add links, they will be stripped from the post'
+      : ''
+  }`
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
@@ -35,16 +43,46 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   dto = XDto;
 
-  maxLength(isTwitterPremium: boolean) {
-    return isTwitterPremium ? 4000 : 200;
+  maxLength(additionalSettings?: any) {
+    // Accepts either the parsed additionalSettings array (from validation) or a
+    // plain boolean (legacy callers). "Verified" => premium => higher limit.
+    const isTwitterPremium = Array.isArray(additionalSettings)
+      ? !!additionalSettings.find((p: any) => p?.title === 'Verified')?.value
+      : !!additionalSettings;
+    return isTwitterPremium ? 4000 : 280;
   }
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+    if (body.includes('You are not permitted to perform this action')) {
+      return {
+        type: 'bad-body',
+        value:
+          'There is a problem posting, please edit your post and check character count and media attachments',
+      };
+    }
+    if (body.includes('Service Unavailable')) {
+      return {
+        type: 'retry',
+        value: 'X is currently unavailable, please try again later',
+      };
+    }
+    if (body.includes('maximum of one cashtag')) {
+      return {
+        type: 'bad-body',
+        value: 'There can be maximum of one cashtag ($SYMBOL) per post',
+      };
+    }
+    if (body.includes('maximum of 4 items')) {
+      return {
+        type: 'bad-body',
+        value: 'There must be a maximum of 4 items per post',
+      };
+    }
     if (body.includes('Unsupported Authentication')) {
       return {
         type: 'refresh-token',
@@ -208,8 +246,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     ) {
       await timer(2000);
 
+      const plugText = stripHtmlValidation('normal', fields.post, true);
       await client.v2.tweet({
-        text: stripHtmlValidation('normal', fields.post, true),
+        text: this.stripLinks() ? removeLinks(plugText) : plugText,
         reply: { in_reply_to_tweet_id: id },
       });
       return true;
@@ -308,6 +347,54 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
   }
 
+  private signOAuth1(
+    method: string,
+    url: string,
+    accessToken: string,
+    accessSecret: string
+  ): string {
+    const pct = (s: string) =>
+      encodeURIComponent(s)
+        .replace(/!/g, '%21')
+        .replace(/\*/g, '%2A')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29');
+
+    const params: Record<string, string> = {
+      oauth_consumer_key: process.env.X_API_KEY!,
+      oauth_nonce: randomBytes(16).toString('hex'),
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+      oauth_token: accessToken,
+      oauth_version: '1.0',
+    };
+
+    const paramString = Object.keys(params)
+      .sort()
+      .map((k) => `${pct(k)}=${pct(params[k])}`)
+      .join('&');
+
+    const baseString = [
+      method.toUpperCase(),
+      pct(url.split('?')[0]),
+      pct(paramString),
+    ].join('&');
+
+    const signingKey = `${pct(process.env.X_API_SECRET!)}&${pct(accessSecret)}`;
+    params.oauth_signature = createHmac('sha1', signingKey)
+      .update(baseString)
+      .digest('base64');
+
+    return (
+      'OAuth ' +
+      Object.keys(params)
+        .sort()
+        .map((k) => `${pct(k)}="${pct(params[k])}"`)
+        .join(', ')
+    );
+  }
+
   private async uploadMedia(
     client: TwitterApi,
     postDetails: PostDetails<any>[]
@@ -319,8 +406,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             return {
               id: await this.runInConcurrent(
                 async () =>
-                  client.v1.uploadMedia(
-                    m.path.indexOf('mp4') > -1
+                  client.v2.uploadMedia(
+                    hasExtension(m.path, 'mp4')
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
                           animated: lookup(m.path) === 'image/gif',
@@ -331,7 +418,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                           .gif()
                           .toBuffer(),
                     {
-                      mimeType: lookup(m.path) || '',
+                      media_type: (lookup(m.path) || '') as any,
                     }
                   ),
                 true
@@ -366,16 +453,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         | 'mentionedUsers'
         | 'subscribers'
         | 'verified';
-    }>[]
+      made_with_ai?: boolean;
+      paid_partnership?: boolean;
+    }>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
 
     const [firstPost] = postDetails;
 
@@ -384,33 +468,51 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const media_ids = (uploadAll[firstPost.id] || []).filter((f) => f);
 
-    // @ts-ignore
-    const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          ...(!firstPost?.settings?.who_can_reply_post ||
-          firstPost?.settings?.who_can_reply_post === 'everyone'
-            ? {}
-            : {
-                reply_settings: firstPost?.settings?.who_can_reply_post,
-              }),
-          ...(firstPost?.settings?.community
-            ? {
-                community_id:
-                  firstPost?.settings?.community?.split('/').pop() || '',
-              }
-            : {}),
-          text: firstPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-        })
-    );
+    const tweetUrl = 'https://api.x.com/2/tweets';
+    const tweetBody = {
+      ...(!firstPost?.settings?.who_can_reply_post ||
+      firstPost?.settings?.who_can_reply_post === 'everyone'
+        ? {}
+        : {
+            reply_settings: firstPost?.settings?.who_can_reply_post,
+          }),
+      ...(firstPost?.settings?.community
+        ? {
+            share_with_followers: true,
+            community_id:
+              firstPost?.settings?.community?.split('/').pop() || '',
+          }
+        : {}),
+      text: this.stripLinks()
+        ? removeLinks(firstPost.message)
+        : firstPost.message,
+      ...(media_ids.length ? { media: { media_ids } } : {}),
+      made_with_ai: !!firstPost?.settings?.made_with_ai,
+      paid_partnership: !!firstPost?.settings?.paid_partnership,
+    };
+
+    const tweetResponse = await this.fetch(tweetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          tweetUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tweetBody),
+    });
+    const { data } = (await tweetResponse.json()) as {
+      data: { id: string };
+    };
 
     return [
       {
         postId: data.id,
         id: firstPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];
@@ -424,18 +526,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<{
       active_thread_finisher: boolean;
       thread_finisher: string;
+      made_with_ai?: boolean;
+      paid_partnership?: boolean;
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
-
     const [commentPost] = postDetails;
 
     // upload media for the comment
@@ -445,22 +542,39 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const replyToId = lastCommentId || postId;
 
-    // @ts-ignore
-    const { data }: { data: { id: string } } = await this.runInConcurrent(
-      async () =>
-        // @ts-ignore
-        client.v2.tweet({
-          text: commentPost.message,
-          ...(media_ids.length ? { media: { media_ids } } : {}),
-          reply: { in_reply_to_tweet_id: replyToId },
-        })
-    );
+    const tweetUrl = 'https://api.x.com/2/tweets';
+    const tweetBody = {
+      text: this.stripLinks()
+        ? removeLinks(commentPost.message)
+        : commentPost.message,
+      ...(media_ids.length ? { media: { media_ids } } : {}),
+      reply: { in_reply_to_tweet_id: replyToId },
+      made_with_ai: !!commentPost?.settings?.made_with_ai,
+      paid_partnership: !!commentPost?.settings?.paid_partnership,
+    };
+
+    const tweetResponse = await this.fetch(tweetUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          tweetUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tweetBody),
+    });
+    const { data } = (await tweetResponse.json()) as {
+      data: { id: string };
+    };
 
     return [
       {
         postId: data.id,
         id: commentPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];
@@ -510,7 +624,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
 
     const until = dayjs().endOf('day');
-    const since = dayjs().subtract(date, 'day');
+    const since = dayjs().subtract(date > 100 ? 100 : date, 'day');
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({

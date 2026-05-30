@@ -24,13 +24,25 @@ import { PublicController } from '@gitroom/backend/api/routes/public.controller'
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
+import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
+import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
+import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
+import { ApprovedAppsController } from '@gitroom/backend/api/routes/approved-apps.controller';
+import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api/routes/oauth.controller';
+import { AnnouncementsController } from '@gitroom/backend/api/routes/announcements.controller';
+import { AdminController } from '@gitroom/backend/api/routes/admin.controller';
+import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
+import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.provider';
+import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
+import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
+import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
+import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 
 const authenticatedController = [
   UsersController,
@@ -47,6 +59,11 @@ const authenticatedController = [
   AutopostController,
   SetsController,
   ThirdPartyController,
+  OAuthAppController,
+  ApprovedAppsController,
+  OAuthAuthorizedController,
+  AnnouncementsController,
+  AdminController,
 ];
 @Module({
   imports: [UploadModule],
@@ -56,6 +73,9 @@ const authenticatedController = [
     AuthController,
     PublicController,
     MonitorController,
+    EnterpriseController,
+    NoAuthIntegrationsController,
+    OAuthController,
     ...authenticatedController,
   ],
   providers: [
@@ -70,7 +90,12 @@ const authenticatedController = [
     IntegrationManager,
     TrackService,
     ShortLinkService,
-    Nowpayments,
+    AuthProviderManager,
+    GithubProvider,
+    GoogleProvider,
+    FarcasterProvider,
+    WalletProvider,
+    OauthProvider,
   ],
   get exports() {
     return [...this.imports, ...this.providers];
