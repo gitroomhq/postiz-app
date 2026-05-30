@@ -1,8 +1,8 @@
 # Fiduciary License Agreement 2.1
 
-based on the
+Based on the
 
-## Individual Contributor Exclusive License Agreement
+## Individual Contributor License Agreement (ICLA)
 
 Thank you for your interest in contributing to GitroomHQ's Postiz ("We" or "Us").
 

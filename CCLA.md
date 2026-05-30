@@ -1,8 +1,8 @@
 # Fiduciary License Agreement 2.1
 
-based on the
+Based on the
 
-## Entity Contributor Exclusive License Agreement
+## Entity Contributor License Agreement (CCLA)
 
 Thank you for your interest in contributing to GitroomHQ's Postiz ("We" or "Us").
 
