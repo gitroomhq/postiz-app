@@ -22,9 +22,19 @@ export const ChartSocial: FC<{
 }> = (props) => {
   const { data, color = 'purple' } = props;
   const [mode] = useCookie('mode', 'dark');
+
   const list = useMemo(() => {
-    return mergeDataPoints(data, 7);
+    const merged = data.length < 7 ? data : mergeDataPoints(data, 7);
+    if (merged.length === 1) {
+      return [
+        // duplicating single datapoints metrics for chart to display a line on analytics
+        merged[0],
+        merged[0],
+      ];
+    }
+    return merged;
   }, [data]);
+
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);
 
