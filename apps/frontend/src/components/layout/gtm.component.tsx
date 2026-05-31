@@ -22,12 +22,13 @@ export const TrialTracker: FC = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('onboarding') !== 'true') return;
     const key = `gtm_start_trial_${user?.id}`;
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, '1');
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     gtag('event', 'conversion', {
       send_to: `${googleAdsId}/${googleAdsTrialTracking}`,
+      transaction_id: user.id,
     });
   }, [user]);
   return null;
