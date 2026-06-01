@@ -50,12 +50,10 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
           .url()
           .describe('The public URL of the image or video to upload'),
       }),
-      outputSchema: z
-        .object({
-          id: z.string(),
-          path: z.string(),
-        })
-        .or(z.object({ errors: z.string() })),
+      outputSchema: z.object({
+        id: z.string(),
+        path: z.string(),
+      }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse(
@@ -68,13 +66,13 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
         });
 
         if (!response.ok) {
-          return { errors: 'Failed to fetch URL' };
+          throw new Error('Failed to fetch URL');
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
         const detected = await fromBuffer(buffer);
         if (!detected || !ALLOWED_MIME.has(detected.mime)) {
-          return { errors: 'Unsupported file type.' };
+          throw new Error('Unsupported file type.');
         }
 
         const getFile = await this.storage.uploadFile({
