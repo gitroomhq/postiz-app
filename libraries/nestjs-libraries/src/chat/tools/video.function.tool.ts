@@ -31,7 +31,7 @@ export class VideoFunctionTool implements AgentToolInterface {
         identifier: z.string(),
         functionName: z.string(),
       }),
-      outputSchema: z.any(),
+      outputSchema: z.object({}).passthrough(),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const videos = this._videoManagerService.getAllVideos();
