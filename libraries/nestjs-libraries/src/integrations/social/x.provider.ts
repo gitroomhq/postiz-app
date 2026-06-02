@@ -90,10 +90,25 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('You are not allowed to create a Tweet')) {
+      return {
+        type: 'bad-body',
+        value: 'You are not allowed to create a post with duplicate content',
+      }
+    }
+
     if (body.includes('usage-capped')) {
       return {
         type: 'bad-body',
         value: 'Posting failed - capped reached. Please try again later',
+      };
+    }
+
+    if (body.includes('user-suspended')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your X account has been suspended, please reconnect with another account',
       };
     }
     if (body.includes('duplicate-rules')) {

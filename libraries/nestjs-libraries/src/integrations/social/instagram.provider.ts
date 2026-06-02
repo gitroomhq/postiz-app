@@ -51,6 +51,9 @@ export class InstagramProvider
     if (!firstPost?.length) {
       return 'Should have at least one media';
     }
+    if (firstPost.length > 10) {
+      return 'Instagram carousel only supports up to 10 media attachments';
+    }
     if (settings?.is_trial_reel) {
       if ((firstPost?.length ?? 0) > 1) {
         return 'Trial Reels can only have one video';
@@ -99,7 +102,10 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1 || body.indexOf('"error_subcode":33') > -1) {
+    if (
+      body.indexOf('REVOKED_ACCESS_TOKEN') > -1 ||
+      body.indexOf('"error_subcode":33') > -1
+    ) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -120,7 +126,8 @@ export class InstagramProvider
     if (body.toLowerCase().indexOf('session has been invalidated') > -1) {
       return {
         type: 'refresh-token' as const,
-        value: 'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
+        value:
+          'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
       };
     }
 
@@ -325,6 +332,20 @@ export class InstagramProvider
         value:
           'Instagram detected that your post is spam, please try again with different content',
       };
+    }
+
+    if (body.indexOf('2207077') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Instagram Video download failed',
+      };
+    }
+
+    if (body.indexOf('too little or too many attachments') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Instagram carousel should have between 2 and 10 media attachments',
+      }
     }
 
     if (body.indexOf('2207027') > -1) {
@@ -619,7 +640,9 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${userToken || accessToken}&fields=status_code`,
+              `https://${type}/v20.0/${photoId}?access_token=${
+                userToken || accessToken
+              }&fields=status_code`,
               undefined,
               '',
               0,
@@ -652,7 +675,9 @@ export class InstagramProvider
 
         const { permalink } = await (
           await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+              userToken || accessToken
+            }`
           )
         ).json();
         lastPermalink = permalink;
@@ -678,7 +703,9 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+            userToken || accessToken
+          }`
         )
       ).json();
 
@@ -708,7 +735,9 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${userToken || accessToken}`,
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${
+              userToken || accessToken
+            }`,
             undefined,
             '',
             0,
@@ -730,7 +759,9 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${userToken || accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+            userToken || accessToken
+          }`
         )
       ).json();
 
@@ -771,7 +802,9 @@ export class InstagramProvider
     // Get the permalink from the parent post
     const { permalink } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${userToken || accessToken}`
+        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${
+          userToken || accessToken
+        }`
       )
     ).json();
 

@@ -85,7 +85,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('resource is forbidden') > -1) {
+    if (body.indexOf('resource is forbidden') > -1 || body.indexOf('Service Unavailable') > -1) {
       return {
         type: 'retry',
         value: 'Resource is forbidden',
@@ -314,8 +314,35 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const finalOutput = video || image || document;
 
     const etags = [];
-    for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
-      const upload = await this.fetch(
+    if (isVideo) {
+      // Only the Videos API uses multipart chunked uploads. Each 2MB part is
+      // PUT separately and the returned etags are passed to finalizeUpload.
+      for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
+        const upload = await this.fetch(
+          sendUrlRequest,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/octet-stream',
+            },
+            body: picture.slice(i, i + 1024 * 1024 * 2),
+          },
+          'linkedin',
+          0,
+          true
+        );
+
+        etags.push(upload.headers.get('etag'));
+      }
+    } else {
+      // Images and documents (PDF carousels) use a single-shot upload URL and
+      // must be sent as one PUT of the whole file. Chunking here would send
+      // multiple overwriting PUTs to the same URL, leaving LinkedIn with only
+      // the final chunk and corrupting anything larger than 2MB.
+      await this.fetch(
         sendUrlRequest,
         {
           method: 'PUT',
@@ -323,20 +350,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
             'X-Restli-Protocol-Version': '2.0.0',
             'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
-            ...(isVideo
-              ? { 'Content-Type': 'application/octet-stream' }
-              : isPdf
-              ? { 'Content-Type': 'application/pdf' }
-              : {}),
+            ...(isPdf ? { 'Content-Type': 'application/pdf' } : {}),
           },
-          body: picture.slice(i, i + 1024 * 1024 * 2),
+          body: picture,
         },
         'linkedin',
         0,
         true
       );
-
-      etags.push(upload.headers.get('etag'));
     }
 
     if (isVideo) {
@@ -364,7 +385,20 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       // wait until it reaches the AVAILABLE status before attaching it to a
       // post, otherwise LinkedIn rejects the post with a processing error.
       await this.waitForMediaToBeReady(video, accessToken, 'videos');
-    } else if (!isPdf) {
+    } else if (isPdf) {
+      // Documents (PDF carousels) are processed asynchronously too and must be
+      // AVAILABLE before being attached to a post, otherwise LinkedIn rejects
+      // the post or publishes a broken carousel.
+      if (type === 'company') {
+        // Organization-owned documents can be polled for their status.
+        await this.waitForMediaToBeReady(document, accessToken, 'documents');
+      } else {
+        // A w_member_social (personal) token is write-only for rest/documents
+        // and can't perform the GET, so polling would always be forbidden.
+        // Give LinkedIn a moment to finish processing before attaching it.
+        await timer(10000);
+      }
+    } else {
       // Images are also processed asynchronously and must be AVAILABLE before
       // being attached to a post.
       if (type === 'company') {
@@ -389,11 +423,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   private async waitForMediaToBeReady(
     urn: string,
     accessToken: string,
-    type: 'videos' | 'images',
+    type: 'videos' | 'images' | 'documents',
     maxAttempts = 20,
     intervalMs = 30000
   ): Promise<void> {
-    const label = type === 'videos' ? 'video' : 'image';
+    const label =
+      type === 'videos' ? 'video' : type === 'documents' ? 'document' : 'image';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       const json = await (

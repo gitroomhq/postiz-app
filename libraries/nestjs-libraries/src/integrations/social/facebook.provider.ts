@@ -69,13 +69,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('490') > -1) {
-      return {
-        type: 'refresh-token' as const,
-        value: 'Access token expired, please re-authenticate',
-      };
-    }
-
     if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
       return {
         type: 'refresh-token' as const,
@@ -128,6 +121,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('1366051') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'These photos were already posted.',
+      };
+    }
+
     if (body.indexOf('1609008') > -1) {
       return {
         type: 'bad-body' as const,
@@ -177,6 +177,26 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Facebook service temporarily unavailable',
+      };
+    }
+
+    if (body.indexOf('4854002') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Confirm your identity before you can publish as this Page. Open the Facebook app on your phone and follow the instructions',
+      };
+    }
+    if (body.indexOf('(#100) No permission to publish the video') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Facebook return: No permission to publish the video',
+      };
+    }
+    if (body.indexOf('490') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Access token expired, please re-authenticate',
       };
     }
 
@@ -770,4 +790,3 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
   }
 }
-
