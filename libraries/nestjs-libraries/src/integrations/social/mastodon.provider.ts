@@ -20,6 +20,22 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     return 500;
   }
 
+  override handleErrors(
+    body: string,
+    status: number
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.includes('Your login is currently disabled')) {
+      return {
+        type: 'refresh-token',
+        value: 'Your login is currently disabled',
+      };
+    }
+
+    return undefined;
+  }
+
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     return {
       refreshToken: '',
@@ -113,7 +129,12 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
-  async uploadFile(instanceUrl: string, fileUrl: string, accessToken: string, alt?: string) {
+  async uploadFile(
+    instanceUrl: string,
+    fileUrl: string,
+    accessToken: string,
+    alt?: string
+  ) {
     const form = new FormData();
     form.append('file', await fetch(fileUrl).then((r) => r.blob()));
     if (alt) {

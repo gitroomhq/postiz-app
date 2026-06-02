@@ -106,6 +106,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('2069019') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid file',
+      }
+    }
+
     if (body.indexOf('1404102') > -1) {
       return {
         type: 'bad-body' as const,

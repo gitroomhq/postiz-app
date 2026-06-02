@@ -97,6 +97,12 @@ export class PinterestProvider
         value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
+    if (body.indexOf('Board not found') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'The specified board was not found. Please check the board ID.',
+      }
+    }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
         type: 'bad-body' as const,
