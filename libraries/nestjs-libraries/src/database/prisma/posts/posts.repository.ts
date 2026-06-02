@@ -255,7 +255,11 @@ export class PostsRepository {
         },
       ],
       ...stateAndDate,
-      publishDate: { gte: dayjs.utc().toDate() },
+      // Published posts were already posted (publishDate in the past), so fetch
+      // all of them; everything else stays upcoming. Ordering handles the rest.
+      ...(stateFilter === 'published'
+        ? {}
+        : { publishDate: { gte: dayjs.utc().toDate() } }),
       deletedAt: null as Date | null,
       parentPostId: null as string | null,
       intervalInDays: null as number | null,
