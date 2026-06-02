@@ -87,7 +87,7 @@ export class PinterestProvider
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
@@ -96,6 +96,12 @@ export class PinterestProvider
         type: 'bad-body' as const,
         value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
+    }
+    if (body.indexOf('Unable to reach the URL') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'Pinterest was unable to reach the URL provided. Please check the link and try again.',
+      }
     }
     if (body.indexOf('Board not found') > -1) {
       return {
