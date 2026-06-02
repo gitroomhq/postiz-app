@@ -167,7 +167,7 @@ export class PublicIntegrationsController {
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,
-      rawBody.type === 'draft'
+      rawBody?.type === 'draft' || true
     );
     body.type = rawBody.type;
 
@@ -262,25 +262,39 @@ export class PublicIntegrationsController {
     return { connected: true };
   }
 
-  @Get('/integrations')
-  async listIntegration(@GetOrgFromRequest() org: Organization) {
+  @Get('/groups')
+  async listGroups(@GetOrgFromRequest() org: Organization) {
     Sentry.metrics.count('public_api-request', 1);
-    return (await this._integrationService.getIntegrationsList(org.id)).map(
-      (org) => ({
-        id: org.id,
-        name: org.name,
-        identifier: org.providerIdentifier,
-        picture: org.picture,
-        disabled: org.disabled,
-        profile: org.profile,
-        customer: org.customer
-          ? {
-              id: org.customer.id,
-              name: org.customer.name,
-            }
-          : undefined,
+    return (await this._integrationService.customers(org.id)).map(
+      (customer) => ({
+        id: customer.id,
+        name: customer.name,
       })
     );
+  }
+
+  @Get('/integrations')
+  async listIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Query('group') group?: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return (await this._integrationService.getIntegrationsList(org.id))
+      .filter((integration) => !group || integration.customer?.id === group)
+      .map((integration) => ({
+        id: integration.id,
+        name: integration.name,
+        identifier: integration.providerIdentifier,
+        picture: integration.picture,
+        disabled: integration.disabled,
+        profile: integration.profile,
+        customer: integration.customer
+          ? {
+              id: integration.customer.id,
+              name: integration.customer.name,
+            }
+          : undefined,
+      }));
   }
 
   @Get('/social/:integration')
@@ -388,6 +402,10 @@ export class PublicIntegrationsController {
       org.id,
       id
     );
+
+    if (!loadIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
 
     const verified =
       JSON.parse(loadIntegration.additionalSettings || '[]')?.find(

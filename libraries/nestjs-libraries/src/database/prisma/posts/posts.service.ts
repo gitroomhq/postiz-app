@@ -255,9 +255,9 @@ export class PostsService {
 
     const mappedValues = {
       ...body,
-      type: replaceDraft ? 'schedule' : body.type,
+      type: replaceDraft ? 'schedule' : body?.type,
       posts: await Promise.all(
-        body.posts.map(async (post) => {
+        body?.posts?.map(async (post) => {
           const integration = await this._integrationService.getIntegrationById(
             organization,
             post.integration.id
@@ -270,14 +270,14 @@ export class PostsService {
           }
 
           return {
-            type: replaceDraft ? 'schedule' : body.type,
+            type: replaceDraft ? 'schedule' : body?.type,
             ...post,
             settings: {
               ...(post.settings || ({} as any)),
               __type: integration.providerIdentifier,
             },
           };
-        })
+        }) || []
       ),
     };
 
@@ -789,7 +789,9 @@ export class PostsService {
 
         let additionalSettings: any[] = [];
         try {
-          additionalSettings = JSON.parse(integration.additionalSettings || '[]');
+          additionalSettings = JSON.parse(
+            integration.additionalSettings || '[]'
+          );
         } catch {
           additionalSettings = [];
         }
