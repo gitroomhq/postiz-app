@@ -56,6 +56,7 @@ import {
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
@@ -166,7 +167,7 @@ export class PublicIntegrationsController {
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,
-      rawBody.type === 'draft'
+      rawBody?.type === 'draft' || true
     );
     body.type = rawBody.type;
 
@@ -188,6 +189,44 @@ export class PublicIntegrationsController {
       );
     }
 
+    // Server-side validation — same rules as the dashboard, surfaced as a
+    // readable 400 (see PostValidationExceptionFilter).
+    const validation = await this._postsService.validatePosts(
+      org.id,
+      body.posts
+    );
+
+    const fail = (item: (typeof validation)[number], error: string) => {
+      throw new PostValidationException({
+        provider: item.identifier,
+        name: item.name,
+        error,
+      });
+    };
+
+    for (const item of validation) {
+      if (item.emptyContent) {
+        fail(
+          item,
+          'Your post should have at least one character or one image.'
+        );
+      }
+    }
+
+    if (body.type !== 'draft') {
+      for (const item of validation) {
+        if (!item.valid) {
+          fail(item, item.settingsError || 'Please fix your settings');
+        }
+        if (item.errors !== true) {
+          fail(item, item.errors as string);
+        }
+        if (item.tooLong) {
+          fail(item, 'post is too long, please fix it');
+        }
+      }
+    }
+
     const allowedCreationMethods = ['CLI', 'API'] as const;
     const creationMethod = allowedCreationMethods.includes(
       rawBody.creationMethod
@@ -195,7 +234,6 @@ export class PublicIntegrationsController {
       ? (rawBody.creationMethod as 'CLI' | 'API')
       : 'API';
 
-    console.log(JSON.stringify(body, null, 2));
     return this._postsService.createPost(org.id, body, creationMethod);
   }
 
@@ -224,25 +262,39 @@ export class PublicIntegrationsController {
     return { connected: true };
   }
 
-  @Get('/integrations')
-  async listIntegration(@GetOrgFromRequest() org: Organization) {
+  @Get('/groups')
+  async listGroups(@GetOrgFromRequest() org: Organization) {
     Sentry.metrics.count('public_api-request', 1);
-    return (await this._integrationService.getIntegrationsList(org.id)).map(
-      (org) => ({
-        id: org.id,
-        name: org.name,
-        identifier: org.providerIdentifier,
-        picture: org.picture,
-        disabled: org.disabled,
-        profile: org.profile,
-        customer: org.customer
-          ? {
-              id: org.customer.id,
-              name: org.customer.name,
-            }
-          : undefined,
+    return (await this._integrationService.customers(org.id)).map(
+      (customer) => ({
+        id: customer.id,
+        name: customer.name,
       })
     );
+  }
+
+  @Get('/integrations')
+  async listIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Query('group') group?: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return (await this._integrationService.getIntegrationsList(org.id))
+      .filter((integration) => !group || integration.customer?.id === group)
+      .map((integration) => ({
+        id: integration.id,
+        name: integration.name,
+        identifier: integration.providerIdentifier,
+        picture: integration.picture,
+        disabled: integration.disabled,
+        profile: integration.profile,
+        customer: integration.customer
+          ? {
+              id: integration.customer.id,
+              name: integration.customer.name,
+            }
+          : undefined,
+      }));
   }
 
   @Get('/social/:integration')
@@ -350,6 +402,10 @@ export class PublicIntegrationsController {
       org.id,
       id
     );
+
+    if (!loadIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
 
     const verified =
       JSON.parse(loadIntegration.additionalSettings || '[]')?.find(

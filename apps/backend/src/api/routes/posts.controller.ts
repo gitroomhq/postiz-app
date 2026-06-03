@@ -28,6 +28,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -167,13 +168,57 @@ export class PostsController {
     return this._postsService.getPost(org.id, id);
   }
 
+  @Post('/valid')
+  async validatePosts(
+    @GetOrgFromRequest() org: Organization,
+    @Body() rawBody: any
+  ) {
+    return this._postsService.validatePosts(org.id, rawBody?.posts || []);
+  }
+
   @Post('/')
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
   async createPost(
     @GetOrgFromRequest() org: Organization,
     @Body() rawBody: any
   ) {
-    console.log(JSON.stringify(rawBody, null, 2));
+    // Server-side validation — never trust the client to have validated.
+    const validation = await this._postsService.validatePosts(
+      org.id,
+      rawBody?.posts || []
+    );
+
+    const fail = (item: (typeof validation)[number], error: string) => {
+      throw new PostValidationException({
+        provider: item.identifier,
+        name: item.name,
+        error,
+      });
+    };
+
+    for (const item of validation) {
+      if (item.emptyContent) {
+        fail(
+          item,
+          'Your post should have at least one character or one image.'
+        );
+      }
+    }
+
+    if (rawBody?.type !== 'draft') {
+      for (const item of validation) {
+        if (!item.valid) {
+          fail(item, item.settingsError || 'Please fix your settings');
+        }
+        if (item.errors !== true) {
+          fail(item, item.errors as string);
+        }
+        if (item.tooLong) {
+          fail(item, 'post is too long, please fix it');
+        }
+      }
+    }
+
     const body = await this._postsService.mapTypeToPost(rawBody, org.id);
     return this._postsService.createPost(org.id, body, 'WEB');
   }

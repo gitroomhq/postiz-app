@@ -45,6 +45,21 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       return { type: 'refresh-token', value: 'Threads access token expired' };
     }
 
+    if (body.includes('2207051')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Error from Meta: We restrict certain activity to protect our community',
+      };
+    }
+
+    if (body.includes('The media could not be fetched from this URI')) {
+      return {
+        type: 'bad-body',
+        value:
+          "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Postiz first",
+      };
+    }
     if (body.includes('text must be at most 500 characters')) {
       return {
         type: 'bad-body',
@@ -189,8 +204,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
-    const mediaType =
-      hasExtension(media.path, 'mp4') ? 'video_url' : 'image_url';
+    const mediaType = hasExtension(media.path, 'mp4')
+      ? 'video_url'
+      : 'image_url';
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.path } : {}),

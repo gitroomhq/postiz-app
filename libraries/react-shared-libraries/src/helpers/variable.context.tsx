@@ -29,6 +29,8 @@ interface VariableContextInterface {
   transloadit: string[];
   sentryDsn: string;
   extensionId: string;
+  googleAdsId?: string;
+  googleAdsTrialTracking?: string;
 }
 const VariableContext = createContext({
   stripeClient: '',
@@ -36,6 +38,8 @@ const VariableContext = createContext({
   isGeneral: true,
   genericOauth: false,
   oauthLogoUrl: '',
+  googleAdsId: '',
+  googleAdsTrialTracking: '',
   oauthDisplayName: '',
   mcpUrl: '',
   cloudflareUrl: '',
