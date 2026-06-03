@@ -91,12 +91,12 @@ export const RepeatComponent: FC<{
     if (presetLabel) {
       return presetLabel;
     }
-    // Custom value: expressed as weeks or months
-    if (repeat % 30 === 0) {
-      return `${repeat / 30} Month(s)`;
-    }
+    // Custom value: expressed as weeks or months for better readability when possible
     if (repeat % 7 === 0) {
       return `${repeat / 7} Week(s)`;
+    }
+    if (repeat % 30 === 0) {
+      return `${repeat / 30} Month(s)`;
     }
     return `${repeat} Day(s)`;
   }, [repeat, list]);
