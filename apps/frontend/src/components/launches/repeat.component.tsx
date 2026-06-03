@@ -150,7 +150,7 @@ export const RepeatComponent: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+        <div className="z-[300] absolute start-0 bottom-[100%] w-[340px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
           {!showCustom && list.map((p) => (
             <div
               onClick={() => handleItemClick(p.value as number | null)}
@@ -160,7 +160,7 @@ export const RepeatComponent: FC<{
               {p.label}
             </div>
           ))}
-          
+
           {/* Custom Repeat Panel */}
           {showCustom && (
             <div className="flex flex-col gap-[10px]">
