@@ -219,7 +219,7 @@ export const RepeatComponent: FC<{
                 <button
                   type="button"
                   onClick={handleCustomApply}
-                  disabled={!customAmount}
+                  disabled={!customAmount || customAmount < 1}
                   className="flex-1 h-[34px] rounded-[6px] bg-[#612BD3] text-white text-[13px] font-[600] disabled:opacity-40 hover:bg-[#4f22a8] transition-colors"
                 >
                   {t('apply', 'Apply')}
