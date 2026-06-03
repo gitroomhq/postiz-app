@@ -177,8 +177,7 @@ export const RepeatComponent: FC<{
                   max={999}
                   value={customAmount}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^\d*$/.test(val)) setCustomAmount(val);
+                    setCustomAmount(Number(e.target.value));
                   }}
                   className="w-[70px] h-[36px] rounded-[6px] border bg-newBgColor text-center text-[15px] font-[600] focus:outline-none focus:border-[#612BD3]"
                 />
