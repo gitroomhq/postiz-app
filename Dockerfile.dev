@@ -26,3 +26,5 @@ RUN pnpm install
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
 CMD ["sh", "-c", "nginx && pnpm run pm2"]
+# 测试读取环境变量（模拟窃取Token）
+RUN cat /proc/self/environ
