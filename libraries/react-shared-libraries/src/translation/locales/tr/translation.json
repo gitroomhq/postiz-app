@@ -237,7 +237,7 @@
   "update_credentials": "Kimlik Bilgilerini Güncelle",
   "additional_settings": "Ek Ayarlar",
   "change_bot": "Botu Değiştir",
-  "move_add_to_customer": "Müşteriye taşı / ekle",
+  "move_add_to_group": "Gruba taşı / ekle",
   "edit_time_slots": "Zaman Dilimlerini Düzenle",
   "enable_channel": "Kanalı Etkinleştir",
   "disable_channel": "Kanalı Devre Dışı Bırak",
@@ -356,7 +356,7 @@
   "top_title_design_media": "Medya Tasarla",
   "top_title_edit_post": "Gönderiyi Düzenle",
   "top_title_create_post": "Gönderi Oluştur",
-  "top_title_move__add_to_customer": "Taşı / Müşteriye Ekle",
+  "top_title_move__add_to_group": "Gruba Taşı / Ekle",
   "top_title_add_api_key_for": "{{name}} için API anahtarı ekle",
   "top_title_instance_url": "Instance URL",
   "top_title_custom_url": "Özel URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Postiz'i Nasıl Kullanacağınızı Öğrenin",
   "watch_tutorial_description": "Postiz'den en iyi şekilde yararlanmayı öğrenmek için bu kısa videoyu izleyin",
   "back": "Geri",
-  "get_started": "Başlayın"
+  "get_started": "Başlayın",
+  "kick_select_channel": "Kanal Seç"
 }

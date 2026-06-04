@@ -8,7 +8,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 @ApiTags('Billing')
@@ -17,8 +16,7 @@ export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
-    private _notificationService: NotificationService,
-    private _nowpayments: Nowpayments
+    private _notificationService: NotificationService
   ) {}
 
   @Get('/check/:id')
@@ -198,8 +196,4 @@ export class BillingController {
     );
   }
 
-  @Get('/crypto')
-  async crypto(@GetOrgFromRequest() org: Organization) {
-    return this._nowpayments.createPaymentPage(org.id);
-  }
 }

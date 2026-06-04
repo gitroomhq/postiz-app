@@ -99,46 +99,6 @@ export default withProvider<InstagramDto>({
   SettingsComponent: InstagramCollaborators,
   CustomPreviewComponent: InstagramPreview,
   dto: InstagramDto,
-  checkValidity: async ([firstPost, ...otherPosts] = [], settings) => {
-    if (!firstPost?.length) {
-      return 'Should have at least one media';
-    }
-    if (settings?.is_trial_reel) {
-      if ((firstPost?.length ?? 0) > 1) {
-        return 'Trial Reels can only have one video';
-      }
-      const hasVideo = firstPost?.some(
-        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
-      );
-      if (!hasVideo) {
-        return 'Trial Reels must be a video';
-      }
-    }
-    const checkVideosLength = await Promise.all(
-      firstPost
-        ?.filter((f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1)
-        ?.flatMap((p) => p?.path)
-        ?.map((p) => {
-          return new Promise<number>((res) => {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.src = p;
-            video.addEventListener('loadedmetadata', () => {
-              res(video.duration);
-            });
-          });
-        }) ?? []
-    );
-    for (const video of checkVideosLength) {
-      if (video > 60 && settings?.post_type === 'story') {
-        return 'Stories should be maximum 60 seconds';
-      }
-      if (video > 180 && settings?.post_type === 'post') {
-        return 'Reel should be maximum 180 seconds';
-      }
-    }
-    return true;
-  },
   maximumCharacters: 2200,
   comments: 'no-media'
 });
