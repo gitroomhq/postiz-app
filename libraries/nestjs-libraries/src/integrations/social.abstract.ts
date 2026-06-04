@@ -147,7 +147,8 @@ export abstract class SocialAbstract {
     options: RequestInit = {},
     identifier = '',
     totalRetries = 0,
-    ignoreConcurrency = false
+    ignoreConcurrency = false,
+    message = '',
   ): Promise<Response> {
     const request = await fetch(url, options);
 
@@ -156,7 +157,7 @@ export abstract class SocialAbstract {
     }
 
     if (totalRetries > 2) {
-      throw new BadBody(identifier, '{}', options.body || '{}');
+      throw new BadBody(identifier, '{}', options.body || '{}', message);
     }
 
     let json = '{}';
@@ -180,7 +181,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 
@@ -191,7 +193,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 

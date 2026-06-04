@@ -118,6 +118,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           'You have already posted this post, please wait before posting again',
       };
     }
+    if (body.includes('Your account is not permitted to access this feature')) {
+      return {
+        type: 'bad-body',
+        value:
+          'X blocked your request',
+      };
+    }
     if (body.includes('The Tweet contains an invalid URL.')) {
       return {
         type: 'bad-body',
