@@ -334,6 +334,13 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('2207082') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'Could not upload your media',
+      }
+    }
+
     if (body.indexOf('2207077') > -1) {
       return {
         type: 'bad-body' as const,
