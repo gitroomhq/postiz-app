@@ -7,11 +7,20 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+@Rules(
+  "Facebook posts can be text only, or include photos or a video. If it's a story, it must have at least one attachment (photo or video), and each media is published as a separate story."
+)
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
@@ -24,12 +33,24 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_read_engagement',
     'read_insights',
   ];
-  override maxConcurrentJob = 100; // Facebook has reasonable rate limits
+  override maxConcurrentJob = 500; // Facebook has reasonable rate limits
   editor = 'normal' as const;
   maxLength() {
     return 63206;
   }
   dto = FacebookDto;
+
+  override async checkValidity(
+    [firstPost]: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (settings?.post_type === 'story') {
+      if (!firstPost?.length) {
+        return 'Story should have at least one media';
+      }
+    }
+    return true;
+  }
 
   override handleErrors(
     body: string,
@@ -45,13 +66,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'refresh-token' as const,
         value: 'Please re-authenticate your Facebook account',
-      };
-    }
-
-    if (body.indexOf('490') > -1) {
-      return {
-        type: 'refresh-token' as const,
-        value: 'Access token expired, please re-authenticate',
       };
     }
 
@@ -92,6 +106,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf('2069019') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Invalid file',
+      }
+    }
+
     if (body.indexOf('1404102') > -1) {
       return {
         type: 'bad-body' as const,
@@ -104,6 +125,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'refresh-token' as const,
         value: 'Page publishing authorization required, please re-authenticate',
+      };
+    }
+
+    if (body.indexOf('1366051') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'These photos were already posted.',
       };
     }
 
@@ -156,6 +184,26 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Facebook service temporarily unavailable',
+      };
+    }
+
+    if (body.indexOf('4854002') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Confirm your identity before you can publish as this Page. Open the Facebook app on your phone and follow the instructions',
+      };
+    }
+    if (body.indexOf('(#100) No permission to publish the video') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Facebook return: No permission to publish the video',
+      };
+    }
+    if (body.indexOf('490') > -1) {
+      return {
+        type: 'refresh-token' as const,
+        value: 'Access token expired, please re-authenticate',
       };
     }
 
@@ -412,10 +460,103 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails<FacebookDto>[]
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
+    const isStory = firstPost?.settings?.post_type === 'story';
 
     let finalId = '';
     let finalUrl = '';
-    if ((firstPost?.media?.[0]?.path?.indexOf('mp4') || -2) > -1) {
+    if (isStory) {
+      let lastPostId = '';
+      for (const media of firstPost?.media || []) {
+        const isVideoStory = hasExtension(media.path, 'mp4');
+        if (isVideoStory) {
+          const { video_id, upload_url } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=start&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'start video story upload'
+            )
+          ).json();
+
+          await this.fetch(
+            upload_url,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `OAuth ${accessToken}`,
+                file_url: media.path,
+              },
+            },
+            'upload video story'
+          );
+
+          let videoStatus = 'in_progress';
+          while (videoStatus !== 'ready') {
+            const { status } = await (
+              await this.fetch(
+                `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,
+                undefined,
+                '',
+                0,
+                true
+              )
+            ).json();
+            videoStatus = status?.video_status || 'in_progress';
+            if (videoStatus === 'error') {
+              throw new Error('Video processing failed');
+            }
+            if (videoStatus !== 'ready') {
+              await timer(10000);
+            }
+          }
+
+          const { post_id: storyPostId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=finish&video_id=${video_id}&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'finish video story upload'
+            )
+          ).json();
+
+          lastPostId = storyPostId;
+        } else {
+          const { id: photoId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  url: media.path,
+                  published: false,
+                }),
+              },
+              'upload photo story'
+            )
+          ).json();
+
+          const { post_id: storyPostId } = await (
+            await this.fetch(
+              `https://graph.facebook.com/v20.0/${id}/photo_stories?photo_id=${photoId}&access_token=${accessToken}`,
+              {
+                method: 'POST',
+              },
+              'publish photo story'
+            )
+          ).json();
+
+          lastPostId = storyPostId;
+        }
+      }
+
+      finalId = lastPostId;
+      finalUrl = `https://www.facebook.com/stories/${lastPostId}`;
+    } else if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
       const {
         id: videoId,
         permalink_url,
@@ -656,4 +797,3 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     }
   }
 }
-

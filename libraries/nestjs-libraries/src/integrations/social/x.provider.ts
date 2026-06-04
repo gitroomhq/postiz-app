@@ -18,17 +18,24 @@ import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
 import { uniqBy } from 'lodash';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${
+    process.env.STRIP_LINKS_FROM_X_POSTS
+      ? 'do not add links, they will be stripped from the post'
+      : ''
+  }`
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
+  stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
@@ -36,21 +43,33 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   dto = XDto;
 
-  maxLength(isTwitterPremium: boolean) {
-    return isTwitterPremium ? 4000 : 200;
+  maxLength(additionalSettings?: any) {
+    // Accepts either the parsed additionalSettings array (from validation) or a
+    // plain boolean (legacy callers). "Verified" => premium => higher limit.
+    const isTwitterPremium = Array.isArray(additionalSettings)
+      ? !!additionalSettings.find((p: any) => p?.title === 'Verified')?.value
+      : !!additionalSettings;
+    return isTwitterPremium ? 4000 : 280;
   }
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
     if (body.includes('You are not permitted to perform this action')) {
       return {
         type: 'bad-body',
-        value: 'There is a problem posting, please edit your post and check character count and media attachments',
-      }
+        value:
+          'There is a problem posting, please edit your post and check character count and media attachments',
+      };
+    }
+    if (body.includes('Service Unavailable')) {
+      return {
+        type: 'retry',
+        value: 'X is currently unavailable, please try again later',
+      };
     }
     if (body.includes('maximum of one cashtag')) {
       return {
@@ -71,10 +90,25 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('You are not allowed to create a Tweet')) {
+      return {
+        type: 'bad-body',
+        value: 'You are not allowed to create a post with duplicate content',
+      }
+    }
+
     if (body.includes('usage-capped')) {
       return {
         type: 'bad-body',
         value: 'Posting failed - capped reached. Please try again later',
+      };
+    }
+
+    if (body.includes('user-suspended')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your X account has been suspended, please reconnect with another account',
       };
     }
     if (body.includes('duplicate-rules')) {
@@ -82,6 +116,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'You have already posted this post, please wait before posting again',
+      };
+    }
+    if (body.includes('Your account is not permitted to access this feature')) {
+      return {
+        type: 'bad-body',
+        value:
+          'X blocked your request',
       };
     }
     if (body.includes('The Tweet contains an invalid URL.')) {
@@ -227,8 +268,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     ) {
       await timer(2000);
 
+      const plugText = stripHtmlValidation('normal', fields.post, true);
       await client.v2.tweet({
-        text: stripHtmlValidation('normal', fields.post, true),
+        text: this.stripLinks() ? removeLinks(plugText) : plugText,
         reply: { in_reply_to_tweet_id: id },
       });
       return true;
@@ -387,7 +429,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               id: await this.runInConcurrent(
                 async () =>
                   client.v2.uploadMedia(
-                    m.path.indexOf('mp4') > -1
+                    hasExtension(m.path, 'mp4')
                       ? Buffer.from(await readOrFetch(m.path))
                       : await sharp(await readOrFetch(m.path), {
                           animated: lookup(m.path) === 'image/gif',
@@ -435,17 +477,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         | 'verified';
       made_with_ai?: boolean;
       paid_partnership?: boolean;
-    }>[]
+    }>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
 
     const [firstPost] = postDetails;
 
@@ -469,7 +505,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
               firstPost?.settings?.community?.split('/').pop() || '',
           }
         : {}),
-      text: firstPost.message,
+      text: this.stripLinks()
+        ? removeLinks(firstPost.message)
+        : firstPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       made_with_ai: !!firstPost?.settings?.made_with_ai,
       paid_partnership: !!firstPost?.settings?.paid_partnership,
@@ -496,7 +534,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       {
         postId: data.id,
         id: firstPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];
@@ -517,14 +555,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
-
     const [commentPost] = postDetails;
 
     // upload media for the comment
@@ -536,7 +566,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const tweetUrl = 'https://api.x.com/2/tweets';
     const tweetBody = {
-      text: commentPost.message,
+      text: this.stripLinks()
+        ? removeLinks(commentPost.message)
+        : commentPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       reply: { in_reply_to_tweet_id: replyToId },
       made_with_ai: !!commentPost?.settings?.made_with_ai,
@@ -564,7 +596,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       {
         postId: data.id,
         id: commentPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];

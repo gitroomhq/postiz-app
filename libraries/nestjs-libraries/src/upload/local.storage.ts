@@ -1,10 +1,8 @@
 import { IUploadProvider } from './upload.interface';
 import { mkdirSync, unlink, writeFileSync } from 'fs';
-// @ts-ignore
-import mime from 'mime';
-import { extname } from 'path';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fromBuffer } = require('file-type');
 
@@ -26,19 +24,32 @@ export class LocalStorage implements IUploadProvider {
   constructor(private uploadDirectory: string) {}
 
   async uploadSimple(path: string) {
-    if (!(await isSafePublicHttpsUrl(path))) {
-      throw new Error('Unsafe URL');
+    const dataUrl = path.startsWith('data:') ? parseDataUrl(path) : null;
+
+    let body: Buffer;
+    if (dataUrl) {
+      body = dataUrl.buffer;
+    } else {
+      if (!(await isSafePublicHttpsUrl(path))) {
+        throw new Error('Unsafe URL');
+      }
+      const loadImage = await fetch(path, {
+        // @ts-ignore — undici option, not in lib.dom fetch types
+        dispatcher: ssrfSafeDispatcher,
+      });
+      body = Buffer.from(await loadImage.arrayBuffer());
     }
-    const loadImage = await fetch(path, {
-      // @ts-ignore — undici option, not in lib.dom fetch types
-      dispatcher: ssrfSafeDispatcher,
-    });
-    const contentType =
-      loadImage?.headers?.get('content-type') ||
-      loadImage?.headers?.get('Content-Type');
-    const findExtension = mime.getExtension(contentType) ||
-      path.split('?')[0].split('#')[0].split('.').pop() ||
-      'bin';
+
+    // Never trust the claimed mime/extension (data URL header, remote
+    // content-type, or URL path): sniff the real type from the bytes and
+    // only accept the allow-list, otherwise an attacker could write an
+    // arbitrary file (e.g. .html/.svg with embedded script) into the
+    // publicly served uploads directory on the app's own origin.
+    const detected = await fromBuffer(body);
+    if (!detected || !LOCAL_STORAGE_ALLOWED_MIME.has(detected.mime)) {
+      throw new Error('Unsupported file type.');
+    }
+    const findExtension = detected.ext;
 
     const now = new Date();
     const year = now.getFullYear();
@@ -57,7 +68,7 @@ export class LocalStorage implements IUploadProvider {
     const filePath = `${dir}/${randomName}.${findExtension}`;
     const publicPath = `${innerPath}/${randomName}.${findExtension}`;
     // Logic to save the file to the filesystem goes here
-    writeFileSync(filePath, Buffer.from(await loadImage.arrayBuffer()));
+    writeFileSync(filePath, body);
 
     return process.env.FRONTEND_URL + '/uploads' + publicPath;
   }

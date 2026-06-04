@@ -426,6 +426,21 @@ const ViewErrors = () => {
   );
 };
 
+const ViewStats = () => {
+  const t = useT();
+  const handleClick = useCallback(() => {
+    window.location.href = '/admin/stats';
+  }, []);
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-purple-700 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('view_stats', 'View Stats')}
+    </div>
+  );
+};
+
 const ImportDebugPost = () => {
   const { openModal } = useModals();
   const t = useT();
@@ -433,6 +448,7 @@ const ImportDebugPost = () => {
   const handleClick = useCallback(() => {
     openModal({
       title: t('import_debug_post', 'Import Debug Post'),
+      maxSize: 800,
       children: (close) => <ImportDebugPostModal close={close} />,
     });
   }, []);
@@ -543,6 +559,7 @@ export const Impersonate = () => {
                 <ImportDebugPost />
                 <AddAnnouncement />
                 <ViewErrors />
+                <ViewStats />
               </div>
             )}
           </div>

@@ -36,7 +36,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
       throttlers: [
         {
           ttl: 3600000,
-          limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 30,
+          limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 90,
         },
       ],
       storage: new ThrottlerStorageRedisService(ioRedis),
