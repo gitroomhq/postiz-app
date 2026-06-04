@@ -29,7 +29,7 @@ export class InstagramProvider
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
-    'instagram_basic',
+    'instagram_business_basic',
     'pages_show_list',
     'pages_read_engagement',
     'business_management',
