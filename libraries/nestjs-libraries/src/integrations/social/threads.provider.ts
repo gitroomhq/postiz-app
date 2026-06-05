@@ -53,6 +53,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('4279013')) {
+      return {
+        type: 'bad-body',
+        value:
+          'User restricted',
+      };
+    }
     if (body.includes('The media could not be fetched from this URI')) {
       return {
         type: 'bad-body',
