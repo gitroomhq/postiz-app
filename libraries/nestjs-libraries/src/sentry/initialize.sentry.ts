@@ -34,6 +34,14 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       ],
       tracesSampleRate: 1.0,
       enableLogs: true,
+      beforeSendLog: (log: any) => {
+        log.attributes = { ...(log.attributes || {}), service: appName, component: 'nestjs' };
+        return log;
+      },
+      beforeSend(event: any) {
+        event.tags = { ...(event.tags || {}), service: appName, component: 'nestjs' };
+        return event;
+      },
 
       // Profiling
       profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.45,
