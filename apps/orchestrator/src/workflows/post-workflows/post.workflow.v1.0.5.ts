@@ -15,6 +15,7 @@ import { PostResponse } from '@gitroom/nestjs-libraries/integrations/social/soci
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { TypedSearchAttributes } from '@temporalio/common';
 import { postId as postIdSearchParam } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { commentDelayToMilliseconds } from './post.workflow.delay';
 
 const proxyTaskQueue = (taskQueue: string) => {
   return proxyActivities<PostActivity>({
@@ -177,7 +178,7 @@ export async function postWorkflowV105({
           // then post the comments if any
         } else {
           if (postsList[i].delay) {
-            await sleep(60000 * Math.max(0, Number(postsList[i].delay ?? 0)));
+            await sleep(commentDelayToMilliseconds(postsList[i].delay));
           }
 
           postsResults.push(
