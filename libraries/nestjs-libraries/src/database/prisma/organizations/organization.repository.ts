@@ -181,6 +181,7 @@ export class OrganizationRepository {
           select: {
             disabled: true,
             role: true,
+            vocaccioRole: true,
           },
         },
         subscription: {

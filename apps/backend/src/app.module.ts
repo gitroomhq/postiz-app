@@ -3,6 +3,7 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
+import { VocaccioRolesGuard } from '@gitroom/backend/services/auth/permissions/vocaccio-roles.guard';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -52,6 +53,10 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
     {
       provide: APP_GUARD,
       useClass: PoliciesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: VocaccioRolesGuard,
     },
   ],
   exports: [
