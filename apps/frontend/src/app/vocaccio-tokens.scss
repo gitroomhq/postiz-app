@@ -1,0 +1,30 @@
+/* Vocaccio Design System tokens — warm editorial palette */
+:root {
+  --voc-paper: #f5f4f0;
+  --voc-paper-raised: #faf8f3;
+  --voc-ink: #201f1d;
+  --voc-ink-soft: #55536b;
+
+  --voc-champagne: #dcd0c3;
+  --voc-peach: #e89a7b;
+  --voc-rose: #cf6295;
+  --voc-violet: #7360aa;
+  --voc-blue: #2897bf;
+
+  --voc-aurora: linear-gradient(135deg, #e89a7b, #cf6295 42%, #7360aa 72%, #2897bf);
+
+  --voc-line: rgba(115, 96, 170, 0.16);
+  --voc-glass: rgba(250, 248, 243, 0.76);
+  --voc-glass-strong: rgba(250, 248, 243, 0.92);
+  --voc-white-glass: rgba(255, 255, 255, 0.56);
+
+  --voc-shadow-soft: 0 24px 70px rgba(94, 86, 154, 0.16);
+  --voc-shadow-deep: 0 24px 70px rgba(66, 92, 172, 0.26);
+
+  --voc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --voc-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --voc-radius-sm: 14px;
+  --voc-radius-md: 18px;
+  --voc-radius-lg: 24px;
+}
