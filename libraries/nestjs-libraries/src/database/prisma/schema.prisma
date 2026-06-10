@@ -43,6 +43,7 @@ model Organization {
   webhooks            Webhooks[]
   oauthApp            OAuthApp[]
   oauthAuthorizations OAuthAuthorization[]
+  clients             Client[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -99,6 +100,7 @@ model User {
   lastOnline            DateTime             @default(now())
   ip                    String?
   agent                 String?
+  mustChangePassword    Boolean              @default(false)
   comments              Comments[]
   items                 ItemUser[]
   groupBuyer            MessagesGroup[]      @relation("groupBuyer")
@@ -139,6 +141,7 @@ model UserOrganization {
   organizationId String
   disabled       Boolean      @default(false)
   role           Role         @default(USER)
+  vocaccioRole   VocaccioRole @default(VIEWER_INTERNAL)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id])
@@ -146,6 +149,7 @@ model UserOrganization {
 
   @@unique([userId, organizationId])
   @@index([disabled])
+  @@index([vocaccioRole])
 }
 
 model GitHub {
@@ -220,6 +224,7 @@ model Media {
   thumbnail          String?
   alt                String?
   thumbnailTimestamp Int?
+  projectId          String?
   organization       Organization        @relation(fields: [organizationId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]
@@ -228,6 +233,7 @@ model Media {
   @@index([name])
   @@index([organizationId])
   @@index([type])
+  @@index([projectId])
 }
 
 model SocialMediaAgency {
@@ -334,6 +340,7 @@ model Integration {
   customerId            String?
   rootInternalId        String?
   additionalSettings    String?                @default("[]")
+  projectId             String?
   exisingPlugData       ExisingPlugData[]
   customer              Customer?              @relation(fields: [customerId], references: [id])
   organization          Organization           @relation(fields: [organizationId], references: [id])
@@ -343,6 +350,7 @@ model Integration {
   posts                 Post[]
 
   @@unique([organizationId, internalId])
+  @@index([projectId])
   @@index([rootInternalId])
   @@index([organizationId])
   @@index([providerIdentifier])
@@ -413,6 +421,7 @@ model Post {
   lastMessageId              String?
   intervalInDays             Int?
   error                      String?
+  projectId                  String?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
   deletedAt                  DateTime?
@@ -443,6 +452,7 @@ model Post {
   @@index([updatedAt])
   @@index([releaseURL])
   @@index([integrationId])
+  @@index([projectId])
 }
 
 model Notifications {
@@ -967,4 +977,155 @@ model Announcement {
   description String
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
+}
+
+// ─── Vocaccio — Fase 1 ────────────────────────────────────────────────────────
+
+enum VocaccioRole {
+  OWNER
+  OPERATOR
+  EDITOR
+  VIEWER_INTERNAL
+  CLIENT_USER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ToneOfVoice {
+  FORMAL
+  CASUAL
+  INSPIRATIONAL
+  TECHNICAL
+  PLAYFUL
+  AUTHORITATIVE
+}
+
+model Client {
+  id            String              @id @default(uuid())
+  orgId         String
+  name          String
+  status        ProjectStatus       @default(ACTIVE)
+  responsibleId String?
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  deletedAt     DateTime?
+  organization  Organization        @relation(fields: [orgId], references: [id])
+  projects      Project[]
+  contacts      ClientContact[]
+  interactions  ClientInteraction[]
+
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ClientContact {
+  id       String  @id @default(uuid())
+  clientId String
+  name     String
+  role     String?
+  email    String?
+  phone    String?
+  client   Client  @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+}
+
+model ClientInteraction {
+  id        String   @id @default(uuid())
+  clientId  String
+  userId    String
+  type      String
+  summary   String
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model Project {
+  id                   String              @id @default(uuid())
+  clientId             String
+  ownerId              String
+  name                 String
+  logoMediaId          String?
+  businessArea         String?
+  socialHandles        Json?
+  slogan               String?
+  colors               Json?
+  typography           Json?
+  productsServices     String?
+  persona              Json?
+  toneOfVoice          ToneOfVoice         @default(CASUAL)
+  website              String?
+  bioLink              String?
+  cta1                 String?
+  cta2                 String?
+  cta3                 String?
+  briefing             String?
+  vocationalProfileId  String?
+  locale               String              @default("pt-BR")
+  timezone             String              @default("America/Sao_Paulo")
+  status               ProjectStatus       @default(ACTIVE)
+  contextPackCache     Json?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  deletedAt            DateTime?
+  client               Client              @relation(fields: [clientId], references: [id])
+  accessLinks          ProjectAccessLink[]
+
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ProjectAccessLink {
+  id          String            @id @default(uuid())
+  projectId   String
+  tokenHash   String            @unique
+  createdById String
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  project     Project           @relation(fields: [projectId], references: [id])
+  events      AccessLinkEvent[]
+
+  @@index([projectId])
+}
+
+model AccessLinkEvent {
+  id        String            @id @default(uuid())
+  linkId    String
+  type      String
+  ip        String?
+  metadata  Json?
+  createdAt DateTime          @default(now())
+  link      ProjectAccessLink @relation(fields: [linkId], references: [id])
+
+  @@index([linkId])
+  @@index([createdAt])
+}
+
+model InternalTask {
+  id         String   @id @default(uuid())
+  orgId      String
+  clientId   String?
+  projectId  String?
+  assigneeId String?
+  title      String
+  status     String   @default("todo")
+  dueDate    DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([assigneeId])
+  @@index([status])
 }
