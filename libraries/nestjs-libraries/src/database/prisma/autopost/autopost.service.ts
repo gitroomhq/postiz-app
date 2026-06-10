@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
 import dayjs from 'dayjs';
@@ -62,7 +62,7 @@ const dallePrompt = z.object({
 export class AutopostService {
   constructor(
     private _autopostsRepository: AutopostRepository,
-    private _temporalService: TemporalService,
+    @Optional() private _temporalService: TemporalService,
     private _integrationService: IntegrationService,
     private _postsService: PostsService
   ) {}

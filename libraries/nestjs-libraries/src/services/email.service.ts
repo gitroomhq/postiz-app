@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface';
 import { ResendProvider } from '@gitroom/nestjs-libraries/emails/resend.provider';
 import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
@@ -9,7 +9,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 @Injectable()
 export class EmailService {
   emailService: EmailInterface;
-  constructor(private _temporalService: TemporalService) {
+  constructor(@Optional() private _temporalService: TemporalService) {
     this.emailService = this.selectProvider(process.env.EMAIL_PROVIDER!);
     console.log('Email service provider:', this.emailService.name);
     for (const key of this.emailService.validateEnvKeys) {

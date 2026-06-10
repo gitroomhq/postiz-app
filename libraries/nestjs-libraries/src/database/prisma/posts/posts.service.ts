@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Optional,
   ValidationPipe,
 } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
@@ -69,7 +70,7 @@ export class PostsService {
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
-    private _temporalService: TemporalService,
+    @Optional() private _temporalService: TemporalService,
     private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 

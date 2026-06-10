@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Optional } from '@nestjs/common';
 import { Integration } from '@prisma/client';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -14,7 +14,7 @@ export class RefreshIntegrationService {
     private _integrationManager: IntegrationManager,
     @Inject(forwardRef(() => IntegrationService))
     private _integrationService: IntegrationService,
-    private _temporalService: TemporalService
+    @Optional() private _temporalService: TemporalService
   ) {}
   async refresh(integration: Integration, cause = ''): Promise<false | AuthTokenDetails> {
     const socialProvider = this._integrationManager.getSocialIntegration(
