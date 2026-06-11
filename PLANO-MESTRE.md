@@ -274,6 +274,25 @@ OAuth por rede, métricas, workers/Temporal, webhooks self-host.
 cliente/projeto, Context Pack + agentes HP, Sincronário, portal link único, CRM,
 aprendizado com revisões, automações.
 
+### 🔗 Conexões de APIs e Redes Sociais — por cliente (decisão arquitetural)
+
+O modelo multi-tenant da Vocaccio prevê múltiplas empresas (clientes) por assinatura.
+Portanto, as conexões OAuth a redes sociais (Instagram, LinkedIn, Facebook, etc.) e APIs
+de terceiros devem ser **por cliente**, não por organização/conta.
+
+**Regra:** cada `CrmClient` terá sua própria coleção de canais conectados (tabela
+`clientChannel` ou similar, FK → `client.id`). Ao criar conteúdo ou publicar, o contexto
+de qual cliente está ativo determina quais canais aparecem.
+
+**Planos:** o limite de clientes/canais simultâneos é o discriminador dos planos pagos.
+- **Starter:** até N clientes, M canais por cliente
+- **Pro/Agency:** ilimitado ou limite elevado
+
+**Impacto no Postiz:** a entidade `channel` do Postiz é por `organizationId`. Precisamos
+de uma camada de indireção: cada `CrmClient` mapeia para sua própria `organization`
+(sub-org) no Postiz, ou criamos uma tabela `clientChannel` que sobrescreve o contexto de
+publicação. Definir a abordagem técnica no início da Fase 3 (Volatis/publishing).
+
 ---
 
 ## CAMADA 9 — AUTOMAÇÕES ESTILO MANYCHAT

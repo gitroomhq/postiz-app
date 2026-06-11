@@ -19,18 +19,11 @@ export const Logo = () => {
         </linearGradient>
       </defs>
       <rect width="44" height="44" rx="11" fill="url(#voc-icon-grad)" />
-      {/*
-        Calligraphic V:
-        - left arm 9px wide at top (thicker)
-        - right arm 6px wide at top (thinner)
-        - 1.5px tip at bottom center
-      */}
       <path
-        d="M8 13 L20.5 36 L22 36 L36 13 L30 13 L21.8 31 L17 13 Z"
+        d="M7.6 13.1 L20.4 36.4 L21.7 36.4 L36.4 13.1 L30 13.1 L21.3 30.9 L16.5 13.1 Z"
         fill="white"
       />
-      {/* Dot — upper right, clearly separated from V tip */}
-      <circle cx="31" cy="9.5" r="3.2" fill="white" />
+      <circle cx="31.6" cy="9.6" r="3.4" fill="white" />
     </svg>
   );
 };

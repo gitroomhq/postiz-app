@@ -122,7 +122,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <div className="text-[24px] font-[600] flex flex-1">
                           <Title />
                         </div>
-                        <div className="flex gap-[20px] text-textItemBlur">
+                        <div className="flex items-center gap-[20px] text-textItemBlur">
                           <StreakComponent />
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <OrganizationSelector />

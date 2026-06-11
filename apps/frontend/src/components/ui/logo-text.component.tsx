@@ -18,15 +18,13 @@ export const LogoTextComponent = () => {
         </linearGradient>
       </defs>
 
-      {/* Icon 36×36 */}
+      {/* Icon 36×36 — path escalonado do favicon.svg (32→36, ×1.125) */}
       <rect width="36" height="36" rx="9" fill="url(#voc-lt-g)" />
-      {/* Calligraphic V — thick left, thin right */}
       <path
-        d="M6.5 10.5 L16.8 29.5 L18 29.5 L29.5 10.5 L24.5 10.5 L17.5 25.5 L14 10.5 Z"
+        d="M6.2 10.7 L16.7 29.8 L17.8 29.8 L29.8 10.7 L24.5 10.7 L17.4 25.3 L13.5 10.7 Z"
         fill="white"
       />
-      {/* Dot */}
-      <circle cx="26.5" cy="7.5" r="2.7" fill="white" />
+      <circle cx="25.9" cy="7.9" r="2.8" fill="white" />
 
       {/* Wordmark */}
       <text

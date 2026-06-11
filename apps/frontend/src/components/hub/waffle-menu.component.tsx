@@ -3,7 +3,17 @@
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Grid3x3, Users, Home, Settings, Lock } from 'lucide-react';
+import { Users, Home, Settings, Lock } from 'lucide-react';
+
+const WaffleDotsIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+    {[3, 9, 15].flatMap((cx) =>
+      [3, 9, 15].map((cy) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.6" fill="currentColor" />
+      ))
+    )}
+  </svg>
+);
 
 interface Module {
   id: string;
@@ -163,7 +173,7 @@ export const WaffleMenu: FC = () => {
         className="relative flex items-center justify-center w-[32px] h-[32px] rounded-[8px] hover:text-newTextColor transition-colors duration-150"
         style={{ color: open ? 'var(--voc-rose)' : undefined }}
       >
-        <Grid3x3 size={20} strokeWidth={1.8} />
+        <WaffleDotsIcon />
         {activeModule && (
           <span
             className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] rounded-full"

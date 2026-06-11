@@ -121,6 +121,25 @@ export const ChangeLanguageComponent = () => {
     </div>
   );
 };
+const GlobeIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+    <path
+      d="M12 3C12 3 9 7 9 12C9 17 12 21 12 21M12 3C12 3 15 7 15 12C15 17 12 21 12 21M3 12H21"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 export const LanguageComponent = () => {
   const modal = useModals();
   const currentLanguage = i18next.resolvedLanguage || fallbackLng;
@@ -133,24 +152,12 @@ export const LanguageComponent = () => {
     });
   };
   return (
-    <div
+    <button
       onClick={openModal}
-      className="rounded-full overflow-hidden h-[22px] w-[22px] relative cursor-pointer"
+      aria-label={t('change_language', 'Change Language')}
+      className="flex items-center justify-center w-[22px] h-[22px] cursor-pointer hover:text-newTextColor transition-colors"
     >
-      <ReactCountryFlag
-        countryCode={getCountryCodeForFlag(currentLanguage)}
-        svg
-        style={{
-          width: '22px',
-          height: '22px',
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          objectFit: 'cover',
-        }}
-        title={currentLanguage}
-      />
-    </div>
+      <GlobeIcon />
+    </button>
   );
 };
