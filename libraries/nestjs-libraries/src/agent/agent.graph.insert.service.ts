@@ -7,11 +7,21 @@ import { agentCategories } from '@gitroom/nestjs-libraries/agent/agent.categorie
 import { z } from 'zod';
 import { agentTopics } from '@gitroom/nestjs-libraries/agent/agent.topics';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import {
+  aiApiKey,
+  aiBaseURL,
+  aiDefaultHeaders,
+  textModel,
+} from '@gitroom/nestjs-libraries/openai/ai.gateway.config';
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4o-2024-08-06',
+  apiKey: aiApiKey,
+  model: textModel('gpt-4o-2024-08-06'),
   temperature: 0,
+  configuration: {
+    baseURL: aiBaseURL,
+    defaultHeaders: aiDefaultHeaders,
+  },
 });
 
 interface WorkflowChannelsState {

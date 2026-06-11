@@ -3,9 +3,28 @@ import OpenAI from 'openai';
 import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
+import {
+  aiApiKey,
+  aiBaseURL,
+  aiDefaultHeaders,
+  aiImagesBaseURL,
+  imageModel,
+  textModel,
+} from '@gitroom/nestjs-libraries/openai/ai.gateway.config';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  apiKey: aiApiKey,
+  baseURL: aiBaseURL,
+  defaultHeaders: aiDefaultHeaders,
+});
+
+// The AI Gateway compat endpoint does not serve images/generations, so image
+// calls use a separate client pointed at the Worker-backed images endpoint
+// (see ai.gateway.config.ts). Without the gateway both clients hit OpenAI.
+const openaiImages = new OpenAI({
+  apiKey: aiApiKey,
+  baseURL: aiImagesBaseURL,
+  defaultHeaders: aiDefaultHeaders,
 });
 
 const PicturePrompt = z.object({
@@ -22,9 +41,9 @@ export class OpenaiService {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.
     const generate = (
-      await openai.images.generate({
+      await openaiImages.images.generate({
         prompt,
-        model: 'chatgpt-image-latest',
+        model: imageModel(),
         size: isVertical ? '1024x1536' : '1024x1024',
       })
     ).data[0];
@@ -36,7 +55,7 @@ export class OpenaiService {
     return (
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: textModel(),
           messages: [
             {
               role: 'system',
@@ -57,7 +76,7 @@ export class OpenaiService {
     return (
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: textModel(),
           messages: [
             {
               role: 'system',
@@ -91,7 +110,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: textModel(),
         }),
         openai.chat.completions.create({
           messages: [
@@ -107,7 +126,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: textModel(),
         }),
       ])
     ).flatMap((p) => p.choices);
@@ -145,7 +164,7 @@ export class OpenaiService {
           content,
         },
       ],
-      model: 'gpt-4.1',
+      model: textModel(),
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
@@ -165,7 +184,7 @@ export class OpenaiService {
     const posts =
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: textModel(),
           messages: [
             {
               role: 'system',
@@ -198,7 +217,7 @@ export class OpenaiService {
               return (
                 (
                   await openai.chat.completions.parse({
-                    model: 'gpt-4.1',
+                    model: textModel(),
                     messages: [
                       {
                         role: 'system',
@@ -234,7 +253,7 @@ export class OpenaiService {
         const parse =
           (
             await openai.chat.completions.parse({
-              model: 'gpt-4.1',
+              model: textModel(),
               messages: [
                 {
                   role: 'system',

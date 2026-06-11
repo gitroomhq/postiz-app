@@ -21,3 +21,8 @@ dist
 .git
 .github
 reports
+/apps/orchestrator/dist
+# Cloudflare deploy tooling is not part of the app image, except the
+# container boot/backup scripts
+deploy/cloudflare
+!deploy/cloudflare/container

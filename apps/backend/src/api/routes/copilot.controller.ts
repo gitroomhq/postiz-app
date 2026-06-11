@@ -20,6 +20,13 @@ import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/s
 import { MastraAgent } from '@ag-ui/mastra';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 import { Request, Response } from 'express';
+import OpenAI from 'openai';
+import {
+  aiApiKey,
+  aiBaseURL,
+  aiDefaultHeaders,
+  textModel,
+} from '@gitroom/nestjs-libraries/openai/ai.gateway.config';
 import { RequestContext } from '@mastra/core/di';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -29,6 +36,20 @@ export type ChannelsContext = {
   organization: string;
   ui: string;
 };
+
+// Route CopilotKit's OpenAI calls through the Cloudflare AI Gateway dynamic
+// route when configured (see ai.gateway.config.ts); stock OpenAI otherwise.
+const copilotServiceAdapter = () =>
+  new OpenAIAdapter({
+    model: textModel(),
+    // @copilotkit/runtime types against its own bundled `openai` copy; the
+    // instance is API-compatible, only the nominal type differs.
+    openai: new OpenAI({
+      apiKey: aiApiKey,
+      baseURL: aiBaseURL,
+      defaultHeaders: aiDefaultHeaders,
+    }) as any,
+  });
 
 @Controller('/copilot')
 export class CopilotController {
@@ -49,9 +70,7 @@ export class CopilotController {
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
       endpoint: '/copilot/chat',
       runtime: new CopilotRuntime(),
-      serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
-      }),
+      serviceAdapter: copilotServiceAdapter(),
     });
 
     return copilotRuntimeHandler(req, res);
@@ -95,9 +114,7 @@ export class CopilotController {
       endpoint: '/copilot/agent',
       runtime,
       // properties: req.body.variables.properties,
-      serviceAdapter: new OpenAIAdapter({
-        model: 'gpt-4.1',
-      }),
+      serviceAdapter: copilotServiceAdapter(),
     });
 
     return copilotRuntimeHandler.handleRequest(req, res);

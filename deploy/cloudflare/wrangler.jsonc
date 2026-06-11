@@ -1,0 +1,73 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "postiz",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-06-10",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  // All-in-one Postiz container: nginx(:5000) -> backend(:3000) + frontend(:4200),
+  // plus in-container Postgres, Redis (cache-only) and a Temporal dev server.
+  // State is continuously backed up to R2 through the Worker (see worker/src).
+  "containers": [
+    {
+      "class_name": "PostizContainer",
+      "image": "./container/Dockerfile",
+      "image_build_context": "../..",
+      "instance_type": "standard-2",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "POSTIZ_CONTAINER",
+        "class_name": "PostizContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PostizContainer"]
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "postiz-backups"
+    }
+  ],
+
+  // Used by /__ai/v1/images/generations: the gateway compat endpoint doesn't
+  // serve images, so the Worker runs a Workers AI image model *through the
+  // gateway* (env.AI.run(..., { gateway: { id } })) — the sanctioned
+  // Worker-side pattern from ~/.claude/CLAUDE.md "Inside a Worker".
+  "ai": {
+    "binding": "AI"
+  },
+
+  // Keep-alive ping: the container must stay up for Temporal timers
+  // (scheduled posts) to fire; a cold start restores state from R2.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+
+  "vars": {
+    // Public URL of this worker; set to the real workers.dev URL (or custom
+    // domain) — baked into the container env at start.
+    "PUBLIC_URL": "https://postiz.lazee.workers.dev",
+    "CF_ACCOUNT_ID": "85d376fc54617bcb57185547f08e528b",
+    "CF_GATEWAY_ID": "x",
+    "AI_TEXT_MODEL": "dynamic/text_gen",
+    // Workers AI model used by the Worker-side images endpoint.
+    "IMAGE_MODEL": "@cf/black-forest-labs/flux-1-schnell",
+    "DISABLE_REGISTRATION": "false"
+  }
+
+  // Secrets (wrangler secret put): JWT_SECRET, CF_AIG_TOKEN, INTERNAL_SECRET
+  // Optional secrets to move state off-container later: DATABASE_URL, REDIS_URL
+}

@@ -1,7 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { Agent } from '@mastra/core/agent';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
+import {
+  aiApiKey,
+  aiBaseURL,
+  aiDefaultHeaders,
+  aiGatewayEnabled,
+  textModel,
+} from '@gitroom/nestjs-libraries/openai/ai.gateway.config';
 import { Memory } from '@mastra/memory';
+
+// AI Gateway dynamic routes only resolve via the OpenAI chat/completions
+// compat endpoint, so force the chat protocol (the default provider would use
+// the Responses API, which the gateway compat endpoint does not serve).
+const openaiProvider = createOpenAI({
+  apiKey: aiApiKey,
+  baseURL: aiBaseURL,
+  headers: aiDefaultHeaders,
+});
+const agentModel = () =>
+  aiGatewayEnabled
+    ? openaiProvider.chat(textModel())
+    : openaiProvider('gpt-5.2');
 import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
@@ -87,7 +107,7 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: openai('gpt-5.2'),
+      model: agentModel(),
       tools,
       memory: new Memory({
         storage: pStore,

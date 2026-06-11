@@ -5,7 +5,14 @@ import {
   ToolMessage,
 } from '@langchain/core/messages';
 import { END, START, StateGraph } from '@langchain/langgraph';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
+import {
+  aiApiKey,
+  aiBaseURL,
+  aiDefaultHeaders,
+  generateAiImage,
+  textModel,
+} from '@gitroom/nestjs-libraries/openai/ai.gateway.config';
 import { TavilySearch } from '@langchain/tavily';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -22,14 +29,13 @@ const tools = !process.env.TAVILY_API_KEY
 const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
+  apiKey: aiApiKey,
+  model: textModel(),
   temperature: 0.7,
-});
-
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'chatgpt-image-latest',
+  configuration: {
+    baseURL: aiBaseURL,
+    defaultHeaders: aiDefaultHeaders,
+  },
 });
 
 interface WorkflowChannelsState {
@@ -320,7 +326,7 @@ export class AgentGraphService {
 
     const newContent = await Promise.all(
       (state.content || []).map(async (p) => {
-        const image = await dalle.invoke(p.prompt!);
+        const image = (await generateAiImage(p.prompt!)) || undefined;
         return {
           ...p,
           image,

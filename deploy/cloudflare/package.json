@@ -1,0 +1,15 @@
+{
+  "name": "postiz-cloudflare-deploy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "bash ./deploy.sh"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "latest"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260601.0",
+    "wrangler": "^4"
+  }
+}
