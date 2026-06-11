@@ -173,6 +173,7 @@ export class OrganizationRepository {
           },
         },
       },
+      orderBy: { createdAt: 'asc' },
       include: {
         users: {
           where: {

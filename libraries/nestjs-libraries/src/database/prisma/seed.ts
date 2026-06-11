@@ -4,17 +4,7 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  // ─── Organization (tenant único) ─────────────────────────────────────────────
-  const org = await prisma.organization.upsert({
-    where: { id: 'vocaccio-org-seed' },
-    update: {},
-    create: {
-      id: 'vocaccio-org-seed',
-      name: 'Vocaccio | Soul 2 Soul',
-    },
-  });
-
-  // ─── OWNER ───────────────────────────────────────────────────────────────────
+  // ─── User (upsert) ────────────────────────────────────────────────────────────
   const passwordHash = await bcrypt.hash('Vocaccio@2024!', 10);
 
   const owner = await prisma.user.upsert({
@@ -32,16 +22,42 @@ async function main() {
     },
   });
 
-  await prisma.userOrganization.upsert({
-    where: { userId_organizationId: { userId: owner.id, organizationId: org.id } },
-    update: {},
-    create: {
-      userId: owner.id,
-      organizationId: org.id,
-      role: Role.ADMIN,
-      vocaccioRole: VocaccioRole.OWNER,
-    },
+  // ─── Org: use the user's existing org, or create the seed org ────────────────
+  const existingMemberships = await prisma.userOrganization.findMany({
+    where: { userId: owner.id },
+    include: { organization: true },
+    orderBy: { organization: { createdAt: 'asc' } },
   });
+
+  let org: { id: string; name: string };
+  if (existingMemberships.length > 0) {
+    org = existingMemberships[0].organization;
+    console.log(`ℹ️  Usando org existente: ${org.name} (${org.id})`);
+
+    // Ensure the owner has vocaccioRole in this org
+    await prisma.userOrganization.update({
+      where: { userId_organizationId: { userId: owner.id, organizationId: org.id } },
+      data: { vocaccioRole: VocaccioRole.OWNER },
+    });
+  } else {
+    org = await prisma.organization.upsert({
+      where: { id: 'vocaccio-org-seed' },
+      update: {},
+      create: { id: 'vocaccio-org-seed', name: 'Vocaccio | Soul 2 Soul' },
+    });
+
+    await prisma.userOrganization.upsert({
+      where: { userId_organizationId: { userId: owner.id, organizationId: org.id } },
+      update: {},
+      create: {
+        userId: owner.id,
+        organizationId: org.id,
+        role: Role.ADMIN,
+        vocaccioRole: VocaccioRole.OWNER,
+      },
+    });
+    console.log(`✅ Org criada: ${org.name} (${org.id})`);
+  }
 
   // ─── Clientes + Projetos dummy ────────────────────────────────────────────────
   const clients = [
@@ -61,9 +77,9 @@ async function main() {
         { name: 'Rafael Assistente', role: 'Assistente', email: 'rafael@camilacaeron.com.br', phone: '' },
       ],
       interactions: [
-        { type: 'call', summary: 'Onboarding inicial — alinhamento de estratégia de conteúdo para Q3.' },
-        { type: 'whatsapp', summary: 'Enviou briefing atualizado da campanha de lançamento.' },
-        { type: 'meeting', summary: 'Sprint de conteúdo: 12 posts aprovados para julho.' },
+        { type: 'CALL', summary: 'Onboarding inicial — alinhamento de estratégia de conteúdo para Q3.' },
+        { type: 'WHATSAPP', summary: 'Enviou briefing atualizado da campanha de lançamento.' },
+        { type: 'MEETING', summary: 'Sprint de conteúdo: 12 posts aprovados para julho.' },
       ],
     },
     {
@@ -82,9 +98,9 @@ async function main() {
         { name: 'Fernanda RH', role: 'Gerente de RH', email: 'fernanda@plangroup.com.br', phone: '' },
       ],
       interactions: [
-        { type: 'email', summary: 'Recebeu proposta de social media para Q4.' },
-        { type: 'meeting', summary: 'Reunião de kickoff — definidos 4 pilares de conteúdo.' },
-        { type: 'note', summary: 'Cliente prefere posts mais formais e sem uso de gírias.' },
+        { type: 'EMAIL', summary: 'Recebeu proposta de social media para Q4.' },
+        { type: 'MEETING', summary: 'Reunião de kickoff — definidos 4 pilares de conteúdo.' },
+        { type: 'NOTE', summary: 'Cliente prefere posts mais formais e sem uso de gírias.' },
       ],
     },
     {
@@ -103,9 +119,9 @@ async function main() {
         { name: 'Nanda Biolchini', role: 'Nutricionista', email: 'nanda@nandabiolchini.com', phone: '' },
       ],
       interactions: [
-        { type: 'call', summary: 'Briefing do lançamento do programa Detox 21 dias.' },
-        { type: 'whatsapp', summary: 'Aprovação dos criativos de stories da semana.' },
-        { type: 'email', summary: 'Relatório de métricas de maio — 42% crescimento no reach.' },
+        { type: 'CALL', summary: 'Briefing do lançamento do programa Detox 21 dias.' },
+        { type: 'WHATSAPP', summary: 'Aprovação dos criativos de stories da semana.' },
+        { type: 'EMAIL', summary: 'Relatório de métricas de maio — 42% crescimento no reach.' },
       ],
     },
     {
@@ -124,9 +140,9 @@ async function main() {
         { name: 'Ana Comercial', role: 'Executiva de contas', email: 'ana@plan10.com.br', phone: '' },
       ],
       interactions: [
-        { type: 'meeting', summary: 'Alinhamento do calendário editorial para o semestre.' },
-        { type: 'call', summary: 'Revisão da identidade visual — novo logo aprovado.' },
-        { type: 'note', summary: 'Prioridade: LinkedIn e cases de cliente. Instagram secundário.' },
+        { type: 'MEETING', summary: 'Alinhamento do calendário editorial para o semestre.' },
+        { type: 'CALL', summary: 'Revisão da identidade visual — novo logo aprovado.' },
+        { type: 'NOTE', summary: 'Prioridade: LinkedIn e cases de cliente. Instagram secundário.' },
       ],
     },
     {
@@ -145,9 +161,9 @@ async function main() {
         { name: 'Bia Conteúdo', role: 'Produtora de conteúdo', email: 'bia@gigantes.com.br', phone: '' },
       ],
       interactions: [
-        { type: 'call', summary: 'Planejamento da campanha do evento de setembro (500 vagas).' },
-        { type: 'meeting', summary: 'Workshop de identidade de marca — 3h de imersão.' },
-        { type: 'whatsapp', summary: 'Aprovação urgente de post sobre inscrições abertas.' },
+        { type: 'CALL', summary: 'Planejamento da campanha do evento de setembro (500 vagas).' },
+        { type: 'MEETING', summary: 'Workshop de identidade de marca — 3h de imersão.' },
+        { type: 'WHATSAPP', summary: 'Aprovação urgente de post sobre inscrições abertas.' },
       ],
     },
     {
@@ -166,32 +182,36 @@ async function main() {
         { name: 'Equipe Vocaccio', role: 'Operações', email: 'ops@vocaccio.com.br', phone: '' },
       ],
       interactions: [
-        { type: 'note', summary: 'Projeto interno — usado para demos e testes do produto.' },
-        { type: 'meeting', summary: 'Sprint de planejamento Q3 — 8 projetos de clientes em andamento.' },
-        { type: 'call', summary: 'Revisão da estratégia de conteúdo orgânico no LinkedIn.' },
+        { type: 'NOTE', summary: 'Projeto interno — usado para demos e testes do produto.' },
+        { type: 'MEETING', summary: 'Sprint de planejamento Q3 — 8 projetos de clientes em andamento.' },
+        { type: 'CALL', summary: 'Revisão da estratégia de conteúdo orgânico no LinkedIn.' },
       ],
     },
   ];
 
   for (const data of clients) {
-    const client = await prisma.client.upsert({
-      where: { id: `seed-client-${data.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}` },
-      update: {},
-      create: {
-        id: `seed-client-${data.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}`,
+    // Use name as idempotency key (find existing client in this org by name)
+    const existing = await prisma.client.findFirst({
+      where: { orgId: org.id, name: data.name, deletedAt: null },
+    });
+
+    const client = existing ?? await prisma.client.create({
+      data: {
         orgId: org.id,
         name: data.name,
-        status: ProjectStatus.ACTIVE,
+        status: 'ACTIVE',
         responsibleId: owner.id,
         notes: `Cliente seed — ${data.briefing.slice(0, 80)}`,
       },
     });
 
-    const project = await prisma.project.upsert({
-      where: { id: `seed-proj-${data.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}` },
-      update: {},
-      create: {
-        id: `seed-proj-${data.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}`,
+    if (existing) {
+      console.log(`↩  ${data.name} já existe — pulando`);
+      continue;
+    }
+
+    await prisma.project.create({
+      data: {
         clientId: client.id,
         ownerId: owner.id,
         name: data.project,
@@ -208,39 +228,23 @@ async function main() {
     });
 
     for (const c of data.contacts) {
-      const existingContact = await prisma.clientContact.findFirst({
-        where: { clientId: client.id, email: c.email || null },
+      await prisma.clientContact.create({
+        data: { clientId: client.id, name: c.name, role: c.role, email: c.email || null, phone: c.phone || null },
       });
-      if (!existingContact) {
-        await prisma.clientContact.create({
-          data: { clientId: client.id, name: c.name, role: c.role, email: c.email || null, phone: c.phone || null },
-        });
-      }
     }
 
     for (const i of data.interactions) {
-      const existingInteraction = await prisma.clientInteraction.findFirst({
-        where: { clientId: client.id, summary: i.summary },
+      await prisma.clientInteraction.create({
+        data: { clientId: client.id, userId: owner.id, type: i.type, summary: i.summary },
       });
-      if (!existingInteraction) {
-        await prisma.clientInteraction.create({
-          data: { clientId: client.id, userId: owner.id, type: i.type, summary: i.summary },
-        });
-      }
     }
 
-    // 2 tarefas por cliente
-    const taskExists = await prisma.internalTask.findFirst({
-      where: { orgId: org.id, clientId: client.id },
+    await prisma.internalTask.createMany({
+      data: [
+        { orgId: org.id, clientId: client.id, assigneeId: owner.id, title: `Planejar calendário editorial — ${data.project}`, status: 'todo' },
+        { orgId: org.id, clientId: client.id, assigneeId: owner.id, title: `Reunião de alinhamento mensal — ${data.name}`, status: 'doing' },
+      ],
     });
-    if (!taskExists) {
-      await prisma.internalTask.createMany({
-        data: [
-          { orgId: org.id, clientId: client.id, projectId: project.id, assigneeId: owner.id, title: `Planejar calendário editorial — ${data.project}`, status: 'todo' },
-          { orgId: org.id, clientId: client.id, projectId: project.id, assigneeId: owner.id, title: `Reunião de alinhamento mensal — ${data.name}`, status: 'doing' },
-        ],
-      });
-    }
 
     console.log(`✓ ${data.name}`);
   }
@@ -248,7 +252,7 @@ async function main() {
   console.log('\n✅ Seed concluído');
   console.log(`   Org: ${org.name} (${org.id})`);
   console.log(`   Owner: ${owner.email} / senha: Vocaccio@2024!`);
-  console.log(`   Clientes: ${clients.length} | Projetos: ${clients.length}`);
+  console.log(`   Clientes: ${clients.length}`);
 }
 
 main()

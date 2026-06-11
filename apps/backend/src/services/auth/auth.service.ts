@@ -90,7 +90,13 @@ export class AuthService {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      // Set showorg on login so the browser always knows the active org
+      const orgs = await this._organizationService.getOrgsByUserId(user.id);
+      const primaryOrg = orgs[0];
+      return {
+        addedOrg: primaryOrg ? { organizationId: primaryOrg.id } : false,
+        jwt: await this.jwt(user),
+      };
     }
 
     const user = await this.loginOrRegisterProvider(
