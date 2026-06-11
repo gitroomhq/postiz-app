@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProjectStatus, ToneOfVoice } from '@prisma/client';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { CreateProjectDto, UpdateProjectDto } from '@gitroom/nestjs-libraries/dtos/crm/project.dto';
 
@@ -42,7 +43,7 @@ export class ProjectRepository {
         deletedAt: null,
         client: { orgId },
         ...(clientId ? { clientId } : {}),
-        ...(status ? { status } : {}),
+        ...(status ? { status: status as ProjectStatus } : {}),
       },
       select: PROJECT_LIST_SELECT,
       orderBy: { createdAt: 'desc' },
@@ -57,7 +58,7 @@ export class ProjectRepository {
         deletedAt: null,
         client: { orgId },
         ...(clientId ? { clientId } : {}),
-        ...(status ? { status } : {}),
+        ...(status ? { status: status as ProjectStatus } : {}),
       },
     });
   }
@@ -70,16 +71,28 @@ export class ProjectRepository {
   }
 
   createProject(data: CreateProjectDto) {
+    const { clientId, ownerId, toneOfVoice, status, ...rest } = data;
     return this._project.model.project.create({
-      data,
+      data: {
+        ...rest,
+        ownerId,
+        ...(toneOfVoice ? { toneOfVoice: toneOfVoice as ToneOfVoice } : {}),
+        ...(status ? { status: status as ProjectStatus } : {}),
+        client: { connect: { id: clientId } },
+      },
       select: PROJECT_LIST_SELECT,
     });
   }
 
   updateProject(id: string, data: UpdateProjectDto) {
+    const { toneOfVoice, status, ...rest } = data;
     return this._project.model.project.update({
       where: { id },
-      data,
+      data: {
+        ...rest,
+        ...(toneOfVoice ? { toneOfVoice: toneOfVoice as ToneOfVoice } : {}),
+        ...(status ? { status: status as ProjectStatus } : {}),
+      },
       select: PROJECT_DETAIL_SELECT,
     });
   }
