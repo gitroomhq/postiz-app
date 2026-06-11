@@ -318,7 +318,7 @@ export const ClientsList: FC = () => {
                   ))}
             </tbody>
           </table>
-          {!isLoading && data?.items.length === 0 && (
+          {!isLoading && data?.items?.length === 0 && (
             <EmptyState hasFilter={hasFilter} />
           )}
         </div>
@@ -327,9 +327,9 @@ export const ClientsList: FC = () => {
         <div className="md:hidden flex flex-col gap-[10px]">
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-            : data?.items.length === 0
+            : data?.items?.length === 0
             ? <EmptyState hasFilter={hasFilter} />
-            : data?.items.map((c, i) => (
+            : data?.items?.map((c, i) => (
                 <ClientCard key={c.id} client={c} index={i} />
               ))}
         </div>
