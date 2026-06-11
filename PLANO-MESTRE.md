@@ -1,0 +1,614 @@
+# Vocaccio | Social Media HUB — Plano Mestre v6
+**Spec-Driven Development | Claude Code executor | Codex revisor**
+
+> Ecossistema Soul 2 Soul: Vocação + Marketing + Redes Sociais + Growth
+> *Resultados com autenticidade*
+
+> **v6 (2026-06-10):** versão otimizada do v5. Mudanças: specs just-in-time (não mais
+> todas antecipadas), convenção única de checkpoint (`checkpoint-faseN.md`), Camadas
+> 16/19 marcadas como concluídas com versões reais, correções da estrutura real do
+> Postiz (pnpm workspaces, portas), scheduling BullMQ no MVP / Temporal na Fase 3.
+> Nenhuma decisão da Camada 18 foi alterada.
+> Original v5: `C:\Users\felip\.claude\plans\ainda-n-o-comece-a-kind-fog.md`
+
+---
+
+## ⚠️ PROTOCOLO ANTI-ESTOURO DE TOKENS
+
+```
+1. Cada sessão começa lendo /phases/checkpoint-faseN.md mais recente (< 200 linhas)
+2. Ao final de QUALQUER sessão: gerar checkpoint compacto antes de parar
+3. Usar RTK em TODOS os comandos bash (rtk git diff, rtk pnpm install, etc.)
+4. Dumbledore usa Haiku para tarefas simples, Sonnet para criação
+5. Nunca re-ler arquivo que já foi lido na sessão
+6. Implementar em micro-tarefas de 1 arquivo por vez
+7. Prompt caching obrigatório desde a Fase 1
+8. Máximo de 1 agente Explore por sessão, nunca 3 paralelos
+```
+
+**Agente Economizador (Dumbledore):** antes de task complexa avaliar — modelo mínimo
+suficiente? contexto já em cache? algo já implementado resolve? dá pra quebrar em 2?
+
+## FLUXO DE EXECUÇÃO
+
+```
+Planejar (Codex) → Specs (Claude Code) → Implementar (Claude Code)
+→ Checkpoint (salvar) → Revisar (Codex) → Corrigir (Claude Code) → Repetir
+```
+
+---
+
+## CAMADA 0 — SPECS (just-in-time)
+
+> **v6:** specs são criadas **no início da fase que as usa**, não todas antecipadamente.
+> A árvore abaixo é o mapa de referência completo; cada fase materializa sua parte.
+
+```
+/specs/
+├── shared/        design-tokens, auth-rbac✅F1, database-schema✅F1,
+│                  agent-roster, memory-system(F4), security
+├── hub/           01-crm-admin✅F1, 02-client-project✅F1,
+│                  03-magic-dashboard(F1), 04-lp-landing(F1+)
+├── religare/      01-onboarding…05-self-consultation (F5)
+├── volatis/       01-carousel-builder…06-publishing-hub (F2-F3),
+│                  07-vitrine-netflix ⛔ RESERVADO
+├── augeo/         01-copy-lab, 02-seo-hub, 03-launches (F6)
+├── automations/   01-rules-engine (F7), 02-typebot (F8), 03-chatwoot (F8+)
+└── external-agents/  chatgpt-* (F3+)
+```
+
+---
+
+## CAMADA 1 — ARQUITETURA TÉCNICA
+
+### Pasta mãe única — `C:\dev\vocaccio` (decisão 2026-06-10)
+
+> **Workspace oficial do projeto.** Todos os chats/sessões abrem aqui. As antigas
+> pastas `Automação\vocaccio-ecosystem` (repo) e `Automação\Vocaccio-Ecossistema`
+> (assets) foram FUNDIDAS nesta única pasta e arquivadas (`_ARQUIVADO-*`).
+> Motivos: nomes quase idênticos confundiam as sessões; OneDrive sincronizando
+> node_modules causava lentidão/locks; git push é o backup do que importa.
+
+```
+C:\dev\vocaccio\               ← fork de gitroomhq/postiz-app (felipeweb7/vocaccio-ecosystem)
+├── apps/
+│   ├── frontend/              ← Next.js 16 (porta 4200) — UI Vocaccio por cima
+│   ├── backend/               ← NestJS (porta 3000)
+│   ├── orchestrator/          ← Temporal workers (Fase 3)
+│   └── extension/             ← extensão Chrome do Postiz (não usar no MVP)
+├── libraries/
+│   └── nestjs-libraries/src/database/prisma/schema.prisma  ← SCHEMA AQUI
+├── docs/referencias/          ← assets de marca, design systems, análises, prompts
+├── specs/                     ← specs just-in-time
+├── phases/                    ← checkpoints de sessão ← CRÍTICO
+├── PLANO-MESTRE.md            ← este arquivo
+└── pnpm-workspace.yaml        ← pnpm workspaces puro (SEM Turborepo, SEM NX)
+```
+
+### Scripts reais do Postiz
+
+```powershell
+pnpm --filter ./apps/frontend run dev    # só frontend (Fases 0-1)
+pnpm run dev-backend                     # frontend + backend em paralelo
+pnpm run prisma-generate                 # gerar client
+pnpm run prisma-db-push                  # aplicar schema no Supabase
+# Backend OOM no watch mode: $env:NODE_OPTIONS="--max-old-space-size=4096"
+```
+
+### Stack
+
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | Next.js 16 + TypeScript (fork usa 16.2.6) |
+| Backend | NestJS (já em Postiz) |
+| Database | PostgreSQL + Prisma + pgvector (via Supabase) |
+| Monorepo | **pnpm workspaces** (estrutura nativa do Postiz) |
+| Scheduling MVP (F1-F2) | **BullMQ + Upstash Redis** |
+| Scheduling F3+ | Temporal Cloud free tier (workers Postiz/orchestrator) |
+| Auth | NextAuth.js + argon2id |
+| Styling | Tailwind + CSS vars DS Vocaccio |
+| Animations | Framer Motion |
+| Realtime / Storage | Supabase Realtime / Supabase Storage |
+| Canvas (carrosséis) | **Konva.js** — 3 layers/stage, 1080×1350px nativo |
+| Video (carrosséis) | **Remotion** — export MP4 in-browser (skill `maestro`) |
+| Video (edição) | KyaniteLabs/mcp-video (FFmpeg, Apache 2.0) |
+| Agent Orchestration | **Ruflo** — swarm multi-agente, HNSW memory |
+| Reverse Proxy | Vercel edge (free) / Caddy só em VPS futuro |
+
+---
+
+## CAMADA 2 — AUTENTICAÇÃO E ACESSO
+
+**Tipo A — Login/senha (equipe interna):** dashboard, Hub, CRM, criação de conteúdo,
+configurações, integrações, agentes, relatórios, publicação.
+
+**Tipo B — Link único livre (cliente final, MVP):** materiais pendentes de aprovação,
+histórico, Kanban do próprio projeto, status, comentários. Nunca: admin, CRM, outros
+clientes, configurações.
+
+### Roles
+
+| Role | MVP | Acesso |
+|------|-----|--------|
+| `OWNER` | ✅ | Total |
+| `OPERATOR` | ✅ | Interno por permissão |
+| `EDITOR` | ✅ | Criação/edição de conteúdo |
+| `VIEWER_INTERNAL` | ✅ | Visualização interna |
+| `CLIENT_USER` | ❌ futuro | Login próprio, só seus projetos (schema já prevê) |
+| `GUEST_LINK` | ✅ | Link único — portal aprovação |
+| `VISITOR` | ✅ | LP pública |
+
+### Segurança do link único
+
+Token longo (UUID v4 + HMAC), hasheado no banco, revogável, rate limit IP+token,
+permissões revalidadas no backend a cada request, logs de visualização/aprovação/
+comentário/ajuste, senha curta opcional futura (OFF no MVP).
+
+### Segurança geral (obrigatório)
+
+argon2id (não bcrypt) · 2FA p/ OWNER e OPERATOR · RBAC + RLS por cliente/projeto ·
+tokens OAuth criptografados AES-256-GCM, nunca expostos ao frontend · refresh token
+rotation · rate limit login 5/15min, APIs 100/min, webhooks 20/min · CSRF · HMAC-SHA256
+em webhooks · escopos OAuth mínimos · rotação de tokens · logs de auditoria · backup
+diário (30d) · RLS entre clientes.
+
+### Admin inicial
+
+`.env` (NUNCA commitar): `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD`, `ADMIN_NAME`,
+`ADMIN_ROLE=OWNER`. Fase 1: `prisma db seed` cria OWNER; 1º login exige troca de senha.
+
+---
+
+## CAMADA 3 — CRM SIMPLIFICADO (somente admin)
+
+```
+/hub/crm/
+├── /clientes            → lista, busca, status, responsável
+├── /clientes/novo       → cadastro
+├── /clientes/[id]       → visão 360 (tabs: Projetos, Contatos, Interações,
+│                          Materiais, Métricas, Observações internas)
+├── /projetos            → todos os projetos
+├── /projetos/[id]       → cadastro completo
+└── /tarefas             → pendências internas
+```
+
+**Dummy data (seed):** Camila Caeron, PlanGroup, Nanda Biolchini, Plan10,
+Gigantes pela própria natureza, Vocaccio (interno) — cada um com 3 rascunhos,
+2 aguardando aprovação, 1 aprovado, briefing, redes fictícias, kanban, métricas
+simuladas, oráculo do dia.
+
+---
+
+## CAMADA 4 — CADASTRO GLOBAL DE CLIENTE E PROJETO
+
+Entidade central consultada pelos 3 sistemas e todos os agentes.
+
+| Campo | Uso pelos agentes |
+|-------|------------------|
+| Nome, cliente vinculado | Identificação |
+| Logo (upload) | Cedrico, Hagrid |
+| Área de atuação | Todos |
+| Redes sociais + @s | Percy, Arthur |
+| Slogan | Hagrid, Hermione |
+| Cores (primária + secundárias) | Cedrico, Flitwick |
+| Tipografia | Cedrico, Flitwick |
+| Produtos/Serviços | Hermione, Fred & George |
+| Persona (nome + dores + desejos) | Hermione, Cedrico |
+| Tom de linguagem (select) | Todos |
+| Site / Bio link | Luna, Snape / Percy |
+| CTA 1, CTA 2, CTA 3 | Hermione, Cedrico, Fred & George |
+| Briefing livre | Todos |
+| Análise vocacional vinculada (FK → Religare) | Sibila, Hagrid |
+| Owner do projeto (FK → User) | Dashboard, Sincronário |
+| Localidade + fuso horário | Sincronário, moon phases |
+
+> **Regra crítica:** todo agente recebe o Context Pack do projeto antes de qualquer
+> geração. A análise vocacional do owner tem peso nas tarefas criativas.
+
+---
+
+## CAMADA 5 — MEMÓRIA POR PROJETO
+
+| Memória | Conteúdo | Storage |
+|---------|----------|---------|
+| `brand_memory` | Marca, tom, restrições, erros passados | pgvector |
+| `content_memory` | Posts publicados, temas, aprovações | PostgreSQL + embeddings |
+| `vocational_memory` | Briefing + análise cosmológica | PostgreSQL |
+| `growth_memory` | Métricas, campanhas, SEO | PostgreSQL |
+| `agent_memory` | Decisões dos agentes, contexto anterior | pgvector |
+| `external_agent_context` | Context Pack → ChatGPT | JSON gerado |
+
+**Context Pack** (≤ 2.000 tokens, gerado ao criar/atualizar projeto): identidade,
+persona, CTAs, tom, exemplos aprovados, restrições, análise vocacional resumida.
+
+---
+
+## CAMADA 6 — APRENDIZADO COM PEDIDOS DE REVISÃO
+
+```
+Cliente pede ajuste → ReviewSignal → Dumbledore classifica (Haiku)
+→ Hagrid avalia impacto (Sonnet, se relevante)
+→ Padrão recorrente → memória compacta | Pontual → só histórico
+```
+
+| Tipo de sinal | Exemplo | Armazenamento |
+|------|---------|---------------|
+| Pontual | "Trocar essa imagem" | Histórico do conteúdo |
+| Preferência leve | "Menos formal" | Candidato à memória |
+| Regra de marca | "Nunca usar essa palavra" | brand_memory |
+| Aprendizado criativo | "Hooks diretos performam" | content_memory |
+| Restrição estratégica | "Não vender X agora" | project_memory |
+
+**Anti-sobrecarga:** não salvar todo comentário como vetor; resumo semanal/mensal;
+só padrões recorrentes; memórias com data/origem/confiança; operador aprova;
+Context Pack ≤ 2.000 tokens.
+
+---
+
+## CAMADA 7 — DEPLOYMENT (SEM VPS — STACK GRATUITA)
+
+```
+Vercel (free)        → frontend + aprovar.vocaccio.com.br (route group)
+Railway ($5/mês)     → backend NestJS
+Supabase (free)      → PostgreSQL + pgvector, Auth, Storage, Realtime, backup
+Upstash (free 10k/d) → Redis: cache + filas BullMQ
+Temporal Cloud(free) → workers F3+ (scheduling Postiz)
+Hostinger (já paga)  → apenas DNS
+```
+
+**Domínios:** vocaccio.com.br (LP) · app.vocaccio.com.br (dashboard) ·
+aprovar.vocaccio.com.br (portal) · api.vocaccio.com.br (Railway).
+
+Deploy: `git push` → CI/CD automático Vercel/Railway. `.env.production` só nos
+dashboards. Backup diário via GitHub Actions → pg_dump → Supabase Storage.
+**Migração futura (com receita):** Hostinger VPS + Caddy + Docker Compose.
+
+---
+
+## CAMADA 8 — POSTIZ COMO COCKPIT
+
+**Usar direto:** agendamento 13 redes, calendário, publicação, histórico, upload,
+OAuth por rede, métricas, workers/Temporal, webhooks self-host.
+
+**Construir por cima:** UI Vocaccio (substituir frontend), dashboard mágico, cadastro
+cliente/projeto, Context Pack + agentes HP, Sincronário, portal link único, CRM,
+aprendizado com revisões, automações.
+
+---
+
+## CAMADA 9 — AUTOMAÇÕES ESTILO MANYCHAT
+
+```
+MVP (F7):  Regras fixas + webhooks  (ex: "QUERO" → link; aprovou → Kanban+notifica;
+           publicou → métricas+notifica; prazo → alerta)
+F8:        Typebot (fluxos visuais, iframe no painel)
+F8+:       Chatwoot (inbox unificada + handoff humano + CRM)
+WhatsApp:  MVP notificações unidirecionais; futuro bidirecional Meta Cloud API oficial
+           (Evolution API só laboratório; Rich627 plugin só canal interno OWNER)
+```
+
+---
+
+## CAMADA 10 — SISTEMAS PRINCIPAIS
+
+### 10.1 HUB + DASHBOARD MÁGICO
+
+Menu 6 quadradinhos: Religare · Volatis · Augeo · Hub/Home · Clientes · Config
+(não contratados: cadeado + CTA upgrade).
+
+Widgets do dashboard por projeto: Fase da Lua · Kin do Dia (Tzolkin) · Oráculo do Dia
+(banco curado: Rumi, Jung, Lao Tzu, Alan Watts...) · Essência do Owner (arquétipo,
+kin natal, tipo HD) · Posts 30d / Alcance / Engajamento · gráfico 30/60/90d ·
+aprovações pendentes · publicações hoje · alertas.
+
+### 10.2 RELIGARE
+
+Rotas: /onboarding → /questionarios (MBTI → Chamado → Eneagrama toggle) →
+/processando → /perfil/[id] (tabs: Essência, Astral, HD, Tzolkin, Numerologia,
+MBTI, Eneagrama, Chamado) → /perfil/[id]/exportar (PDF) → /consulta (hoje, mapa,
+essencia, perguntar c/ Sibila) → /clientes → /portal/[token].
+
+**Cálculos (zero IA, zero API paga):** swisseph (mapa astral + HD gates), algoritmo
+puro (Tzolkin, numerologia), `astronomia` npm (lua), scoring local (MBTI, Chamado,
+Eneagrama). Síntese final: **Sibila** (Sonnet + cache).
+
+### 10.3 VOLATIS
+
+Rotas: /dashboard · /criar/carrossel (7 steps) · /criar/video (Lupin) ·
+/criar/identidade (Hagrid + Flitwick) · /clientes/[id]/board+assets ·
+/portal/[token]/ (feed, revisar/[id], historico, kanban, comentarios) ·
+/calendario (Sincronário drag-and-drop: mês/semana/dia, painel Kin+Lua+fuso,
+filtros) · /publicar (Postiz engine) · /vitrine ⛔ RESERVADO (flag OFF).
+
+**Portal do cliente — permissões:** ver/aprovar/pedir ajuste/comentar/histórico/
+kanban ✅ · criar post/editar briefing/integrar redes/ver outros clientes ❌.
+
+**Construtor de carrosséis — Konva.js (browser-only, sem servidor):**
+
+```
+1. Mini-briefing inline (estilo system-prompt v4)
+2. Cedrico (Sonnet+cache, INTERNO) → JSON {slides:[{headline,body,mediaSlot}],cta,legenda}
+3. Editor Konva WYSIWYG: 10 slides (Capa + 8 + CTA), stage 1080×1350 (4:5),
+   thumbnails 221×276, 3 layers/stage (background Rect | media Image | content Text)
+4. Painel esquerdo (acordeões): Template (JSON troca visual) · Autofill ·
+   Campos Globais (brand, @handle, copyright, avatar) · Texto (fonte, kerning,
+   line-height, RGBA) · Word Highlight · Mídia (10 slots, drag-to-reorder,
+   PNG/JPG/WebP/MP4) · Fundo por slide · CTA toggle · Proporção 4:5|9:16 ·
+   Histórico (autosave + restaurar, Supabase)
+5. Export: PNG canvas.toDataURL() · ZIP (JSZip) · PDF LinkedIn (jsPDF) ·
+   MP4 Remotion (skill maestro / Charlie Weasley)
+6. Preview Instagram: modal smartphone mockup, setas, dots
+```
+
+URL: `#/studio/[projectId]/[slideIndex]` (hash router compartilhável).
+
+**30 Google Fonts (via @fontsource — sem CDN):**
+
+| Categoria | Fontes |
+|-----------|--------|
+| Serif editorial | Playfair Display, Cormorant Garamond, EB Garamond, Merriweather, Libre Baskerville |
+| Condensada/impacto | Barlow Condensed, Bebas Neue, Oswald, Anton, Black Han Sans |
+| Sans moderna | Inter, Plus Jakarta Sans, Space Grotesk, DM Sans, Outfit |
+| Geométrica | Raleway, Montserrat, Nunito, Poppins, Quicksand |
+| Display especial | Abril Fatface, Righteous, Syne, Fredoka One, Clash Display |
+| Script/cursiva | Dancing Script, Pacifico, Sacramento |
+| Monospace | Space Mono, JetBrains Mono, Roboto Mono |
+
+### 10.4 AUGEO
+
+Rotas: /dashboard (KPIs) · /copy-lab (Hermione gera, McGonagall revisa) · /lp-lab ·
+/lancamentos (Fred & George — 11 tipos: Semente, Interno, Meteórico, Relâmpago,
+Perpétuo, Desafio, Imersão, CPL, Lista de espera, Comunidade, Evento ao vivo) ·
+/seo (keywords FireCrawl, on-page, AEO, GEO) · /concorrentes (Snape) ·
+/campanhas (Moody) · /relatorios (PDFs DS Vocaccio).
+
+---
+
+## CAMADA 11 — ECOSSISTEMA DE AGENTES HARRY POTTER
+
+**Dois tipos:** CLAUDE SYSTEM (interno, ops pesadas, sem UI — output vai ao portal de
+aprovação) × WEB (Next.js API route com streaming, interface no dashboard).
+
+### Agentes CLAUDE SYSTEM
+
+| # | Nome | Modelo | Função | Trigger |
+|---|------|--------|--------|---------|
+| 1 | **Dumbledore** | Sonnet (router) | Orquestrador, roteamento, token budget, Ruflo | Toda sessão |
+| 5 | **Hagrid** | Sonnet + cache | Guardião da marca — valida todo output | Pré-aprovação |
+| 7 | **Lupin** | Sonnet + mcp-video | Edição de vídeo, Reels, cortes | Demanda |
+| 8 | **Dobby** | Haiku | Transcrição (Groq), legendas burn | Pós-Lupin |
+| 12 | **Arthur Weasley** | Haiku + Composio | Integrações, Drive, webhooks | Automático |
+| 13 | **Bill Weasley** | Sonnet | Engenharia, front-end, debug | Dev interno |
+| 14 | **Charlie Weasley** | Sonnet | Remotion, MP4 carrosséis (skills maestro, hyperframes) | Export vídeo |
+| 16 | **Snape** | Sonnet + FireCrawl | Intel competitiva | Demanda |
+| 17 | **McGonagall** | Sonnet + cache | Revisão de qualidade — última camada | Pré-aprovação |
+| 18 | **Flitwick** | Sonnet + canvas-design | Direção de arte, templates Konva | Demanda |
+
+### Agentes WEB
+
+| # | Nome | Modelo | Função | Onde |
+|---|------|--------|--------|------|
+| 2 | **Sibila** | Sonnet + cache | Religare — síntese cosmológica, chat | /religare |
+| 3 | **Hermione** | Sonnet + cache | Copy Lab | /augeo/copy-lab |
+| 4 | **Cedrico** | Sonnet + cache | Carrosséis — JSON → Konva | /volatis/criar/carrossel |
+| 6 | **Fred & George** | Sonnet | Lançamentos | /augeo/lancamentos |
+| 9 | **Luna** | Sonnet + FireCrawl | SEO/AEO/GEO | /augeo/seo |
+| 10 | **Moody** | Sonnet | Tráfego/ads Meta + Google | /augeo/campanhas |
+| 11 | **Percy** | Haiku | Publisher multi-plataforma | /volatis/publicar |
+| 15 | **Ron Weasley** | Haiku | Kanban, tarefas | /hub (sidebar) |
+| 19 | **Ginny Weasley** | Sonnet | Estratégia social, timing | /volatis/dashboard |
+| 20 | **Sprout** | Haiku | Growth orgânico | /augeo/seo |
+
+### Fluxo System → Web
+
+```
+Claude System produz → Supabase Storage + registro no banco
+→ portal /volatis/portal/[token] exibe na fila
+→ Aprovar | Pedir ajuste | Comentar
+→ Aprovado: Percy agenda → Postiz publica → métricas
+→ Ajuste: ReviewSignal → Dumbledore roteia (Hagrid/Hermione/Cedrico)
+```
+
+### Roteamento Dumbledore (com Ruflo)
+
+```
+Haiku  → routing, classificação, formatting, < 200 tokens saída
+Sonnet → criação, análise, síntese, pesquisa (padrão)
+Opus   → identidade visual estratégica, síntese cosmológica profunda (raro)
+Cache  → obrigatório em system prompts > 1.000 tokens
+Ruflo  → swarm_init (paralelo) · agent_spawn (delegar) · memory_store/search (HNSW)
+```
+
+---
+
+## CAMADA 12 — AGENTES EXTERNOS (ChatGPT) E INTERNOS
+
+Cedrico opera **internamente** (Sonnet + cache + system prompt v4 em
+`volatis-content/system-prompt-maquina-carrosseis-v4.md`). ChatGPT externo =
+fallback manual + geração de imagens.
+
+**Internos:** Cedrico (JSON carrossel) · Hermione (copy) · Fred & George (cronograma)
+· Dobby (legenda+hashtags). **Externos:** Imagem (upload no slot de mídia) ·
+Reels/Legenda (insumo do Dobby). Externos recebem Context Pack completo.
+
+---
+
+## CAMADA 13 — VÍDEO (LUPIN + mcp-video)
+
+Base: KyaniteLabs/mcp-video (119 tools, Apache 2.0). Requisito: FFmpeg ✅ instalado.
+
+```
+Upload → análise cenas+silêncio → transcrição (Dobby/Groq) → sugestão 3-8 cortes
+→ operador seleciona → resize 9:16 + legenda queimada + áudio normalizado
+→ thumbnails → checkpoint obrigatório → pacote por plataforma
+```
+
+---
+
+## CAMADA 14 — LP DE VENDA + LOGIN
+
+LP pública com login no header. Assets: `Assets/logo-vocaccio-sem-fundo.png` + DS
+Vocaccio. Referências: academypass.ai + circle.so/br.
+Estrutura: Hero Orbital → Manifesto Soul 2 Soul → 3 sistemas (cards glass) →
+dashboard demo → fluxo Essência→Conteúdo→Crescimento → social proof → planos/CTA → footer.
+
+---
+
+## CAMADA 15 — SKILLS E MCPs
+
+**Skills:** maestro (Charlie+Lupin) · video-use (Lupin) · hyperframes:* (Charlie/Bill)
+· canvas-design (Flitwick) · pdf (Sibila) · docx/pptx (Hermione) · code-review (McGonagall).
+
+**MCPs:** Ruflo ✅ registrado (`claude mcp add ruflo -- cmd /c ruflo mcp start`) ·
+firecrawl-mcp-server (Snape/Luna) · mcp-seo-marketing (Luna) · KyaniteLabs/mcp-video
+(Lupin/Dobby) · Google Drive Composio (Arthur) · Postiz MCP (Percy/Arthur).
+
+**Ruflo no Vocaccio:** swarm_init (Cedrico+Flitwick paralelo; Snape+Luna paralelo;
+Fred&George+Hermione+Moody sequência) · memory_store/search HNSW complementa pgvector.
+
+---
+
+## CAMADA 16 — INSTALAÇÕES E CONTAS — ✅ CONCLUÍDO (Fase 0, 2026-06-06)
+
+### Local (verificado)
+
+| Ferramenta | Versão real | Status |
+|-----------|-------------|--------|
+| Node.js | v24.14.1 | ✅ (Postiz pede 22.x — funciona com warning; nvm-windows se necessário) |
+| pnpm | 10.6.1 | ✅ |
+| Git | 2.54.0 | ✅ |
+| FFmpeg | 8.1.1 | ✅ |
+| Ruflo | 3.10.37 + MCP conectado | ✅ |
+| Claude Code CLI | instalado | ✅ |
+| turbo global | instalado (desnecessário — Postiz não usa) | — |
+
+### Cloud (todas criadas, região São Paulo onde aplicável)
+
+| Serviço | Status | Detalhe |
+|---------|--------|---------|
+| GitHub | ✅ | fork `felipeweb7/vocaccio-ecosystem` |
+| Vercel | ✅ | conectado ao GitHub |
+| Supabase | ✅ | ref `xtjzfypktrpepwhzbvfb` · Data API ON · auto-expose OFF · auto-RLS ON |
+| Railway | ✅ | conta criada (deploy na F1+) |
+| Upstash | ✅ | `funny-snake-143891` · eviction OFF (protege filas BullMQ) |
+| Groq | ✅ | API key |
+| Firecrawl | ✅ | API key |
+| Composio | ⏳ | criar quando Arthur entrar (F3+) |
+| Temporal Cloud | ⏳ | criar na F3 |
+
+`.env` + `.env.local` preenchidos na raiz do repo (NestJS lê `.env`, Next lê `.env.local`).
+Credenciais backup: `...\OneDrive\...\Automação\sec.txt` (fora do repo — migrar para
+gerenciador de senhas). **Senha do DB tem `@` → `%40` na URL.**
+
+### Fora do escopo MVP
+
+~~Playwright p/ carrosséis~~ (canvas nativo) · ~~MinIO~~ (Supabase Storage) ·
+~~VPS~~ (stack gratuita) · ~~Docker Desktop~~ (opcional).
+
+### ✅ Risco do OneDrive RESOLVIDO (2026-06-10)
+
+Projeto movido para `C:\dev\vocaccio` (fora do OneDrive) via robocopy — 391k arquivos,
+3,29GB, sem reinstalar dependências. Pastas antigas arquivadas como `_ARQUIVADO-*` em
+`Automação\` (podem ser deletadas manualmente após confirmação de que tudo funciona).
+
+---
+
+## CAMADA 17 — FASEAMENTO (v6)
+
+Cada fase termina com: specs da fase + checklist aceite + testes mínimos + revisão
+segurança + `/phases/checkpoint-faseN.md` salvo.
+
+```
+Fase 0  — Setup + arquitetura                       ✅ CONCLUÍDA (2026-06-06)
+Fase 1  — Auth + CRM + cliente/projeto + seed + dashboard base   ← EM ANDAMENTO
+Fase 2  — Portal link único + Kanban + aprovação
+Fase 3  — Volatis/Postiz cockpit + Sincronário + publicação (+ Temporal)
+Fase 4  — Memória por projeto + aprendizado com revisões
+Fase 5  — Religare + consulta pessoal + cálculos
+Fase 6  — Augeo + lançamentos + SEO/AEO/GEO
+Fase 7  — Automações regras fixas + webhooks
+Fase 8  — Typebot + Chatwoot + WhatsApp bidirecional
+Fase 9  — Vídeo Lupin + mcp-video + Dobby
+Fase 10 — Vitrine Netflix ⛔ somente após comando explícito
+Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
+```
+
+---
+
+## CAMADA 18 — DECISÕES CONFIRMADAS (inalteradas desde v5)
+
+| Decisão | Escolha |
+|---------|---------|
+| Auth interno | ✅ Login/senha (argon2id) |
+| Auth cliente MVP | ✅ Link único livre (sem login) |
+| Auth cliente futuro | ✅ CLIENT_USER (schema preparado desde F1) |
+| Chamado Vocacional | ✅ 7-10 perguntas → 3-5 chamados ranqueados |
+| Eneagrama | ✅ Opcional com toggle (50q / 15q) |
+| Base Volatis | ✅ Fork do Postiz |
+| Agente Religare | ✅ Sibila |
+| Guardião da marca | ✅ Hagrid |
+| Carrosséis motor | ✅ Konva.js (browser-only) |
+| Carrosséis agente | ✅ Cedrico interno (Sonnet + cache + prompt v4) |
+| Carrosséis export PNG | ✅ canvas.toDataURL() — zero servidor |
+| Carrosséis export MP4 | ✅ Remotion (maestro / Charlie Weasley) |
+| Lançamentos | ✅ Fred & George |
+| Publisher | ✅ Percy |
+| Vídeo edição | ✅ Lupin + KyaniteLabs/mcp-video |
+| Hospedagem MVP | ✅ Vercel + Railway + Supabase (gratuito) |
+| Hospedagem futuro | ✅ Hostinger VPS + Docker (com receita) |
+| Domínio aprovação | ✅ aprovar.vocaccio.com.br/[token] |
+| ManyChat MVP | ✅ Regras fixas + webhooks |
+| ManyChat futuro | ✅ Typebot + Chatwoot |
+| WhatsApp produção | ✅ Meta Cloud API oficial |
+| Vitrine Netflix | ✅ Reservada, flag OFF |
+| Agentes real-time | ✅ Pós-conclusão |
+| Orquestração | ✅ Ruflo + Dumbledore |
+| Dummy data | ✅ Camila, PlanGroup, Nanda, Plan10, Gigantes, Vocaccio |
+| LP referências | ✅ academypass.ai + circle.so/br |
+
+## SPECS/ASSETS QUE EXISTEM (não recriar — agora em `docs/referencias/` no repo)
+
+**Design System (2 documentos complementares):**
+- `docs/referencias/vocaccio-design-system.md` ← **PRINCIPAL** (2026-06-10): marca,
+  essência, paleta, tipografia, fotografia, diretrizes UI/UX, tom de voz.
+  Direciona TODA a parte visual do projeto.
+- `docs/referencias/vocaccio-design-system-ui-tokens.md` ← complemento técnico:
+  tokens, botões, formulários, hero orbital, motion, checklist de implementação.
+
+**Volatis/carrosséis:**
+`docs/referencias/volatis-content/system-prompt-maquina-carrosseis-v4.md` (+ design-system,
+principios-design, banco-de-headlines, filtro-editorial, manual-de-qualidade, referencias)
+· `docs/referencias/analise-completa-maquina-de-carrosseis.txt`
+· `docs/referencias/analise-tecnica-maquina-de-carrosseis.md`
+· `docs/referencias/Exemplo-de-criador-de-carrosseis-em-browser.png`
+· `docs/referencias/Assets/` (logos + favicon Vocaccio)
+
+---
+
+## CAMADA 19 — SETUP LOCAL — ✅ CONCLUÍDO (ver checkpoint-fase0.md)
+
+Comando para retomar dev:
+```powershell
+cd C:\dev\vocaccio
+pnpm --filter ./apps/frontend run dev    # http://localhost:4200
+```
+
+## CAMADA 20 — DEPLOY VERCEL/RAILWAY (executar na F1+, guia no plano v5)
+
+Resumo: Vercel → Import repo → Root Directory `apps/frontend` → env vars → domínio
+CNAME na Hostinger. Railway → Deploy from GitHub → `apps/backend` → env vars →
+api.vocaccio.com.br. ⚠️ ADMIN_EMAIL/PASSWORD nunca na Vercel — seed local.
+
+## CAMADA 21 — PERFORMANCE (estratégia por fase)
+
+F0-2 dev speed > perf · F3: thumbnails Konva estáticos via toDataURL (só slide ativo
+com stage vivo), IntersectionObserver, @fontsource dynamic import, export em Web
+Worker, autosave debounce 2s, dynamic imports (konva, remotion, swisseph), next/image
+· F4: pgBouncer, índices (projects.clientId, content.projectId+status, pgvector
+ivfflat), sem N+1, Context Pack no Redis TTL 1h · F5+: BullMQ p/ ZIP/PDF/transcrição,
+ISR na LP · F6+: Vercel Analytics, Sentry free, alerta LCP > 3s.
+
+---
+
+**Estado atual: Fase 0 ✅ concluída · Fase 1 (Auth + CRM) em andamento.**
+Cada sessão: ler `/phases/checkpoint-faseN.md` mais recente antes de qualquer coisa.

@@ -1,0 +1,249 @@
+# Análise Completa da Máquina de Carrosséis — Brands Decoded
+
+Aqui está o documento técnico detalhado para uso no Claude Code:
+
+---
+
+## 1. STACK TECNOLÓGICO
+
+**Frontend Framework:** React (confirmado via `__reactContainer` no DOM root `#root`)
+**Build Tool:** Vite (bundle nomeado `index-CfmjtY76.js`, com chunks separados por vendor)
+**Roteamento:** Hash Router (`#/studio/[projectId]/[slideIndex]`)
+**CSS:** Tailwind CSS (classes como `flex`, `h-[100dvh]`, `bg-[#070707]`, `gap-4`, `px-6`, `border-white/5`)
+**UI Components:** HeadlessUI (detectado via `data-headlessui-focus-visible`)
+**Canvas Engine:** Konva.js (renderização de slides e thumbnails via `<canvas>`)
+**Vídeo Export:** Remotion (bundle separado `vendor-remotion-ejCAyMMu.js`)
+**Backend / Auth / DB:** Firebase (bundle `vendor-firebase-jwdMsaqY.js` + `identitytoolkit.googleapis.com` + Firestore via Cloud)
+**Analytics:** Google Tag Manager + GA4 (`G-926VJPT49D`)
+**Auth OAuth:** Google Sign-In (`accounts.google.com/gsi/client`)
+**Linguagem:** TypeScript/JavaScript (ES Modules, bundlado pelo Vite)
+
+---
+
+## 2. ARQUITETURA DO CANVAS
+
+O editor usa **Konva.js** com a seguinte estrutura de stages:
+
+- **Stage principal (editor):** 1080×1350px (proporção 4:5 / Instagram quadrado/retrato)
+- **Stages de thumbnail (painel direito):** 221×276px cada — um por slide
+- **Total de stages ativos:** 9 (1 editor + 8 thumbnails simultâneos)
+- **Cada stage tem 3 layers:**
+  - Layer 1 → Fundo (`Rect` de cor sólida ou gradiente)
+  - Layer 2 → Imagem de mídia (`Image`)
+  - Layer 3 → Textos (`Text`) e Grupos (`Group` para avatar/brand-name)
+
+**Dimensão nativa de exportação:** 1080×1350px (4:5). O modo 9:16 expande o fundo verticalmente sem reposicionar o conteúdo do canvas.
+
+---
+
+## 3. ESTRUTURA DE LAYOUT DA INTERFACE
+
+```
+┌─────────────────────────────────────────────────────┐
+│  HEADER (h-14, dark #0a0a0a, z-50)                  │
+│  [Logo BD·Máquina] [Início] [Studio] [Avatar]        │
+├──────────┬──────────────────────────┬───────────────┤
+│  PAINEL  │                          │  PAINEL       │
+│  ESQUERDO│   CANVAS CENTRAL         │  DIREITO      │
+│  (~360px)│   (Konva Stage)          │  (~260px)     │
+│  scroll  │   fundo #070707          │  "Frames"     │
+│  vertical│   WYSIWYG                │  thumbnails   │
+│          │                          │  verticais    │
+├──────────┴──────────────────────────┴───────────────┤
+│  FOOTER (toolbar de zoom + controles de playback)    │
+└─────────────────────────────────────────────────────┘
+```
+
+**Topbar (breadcrumb + ações):**
+`Projetos → [Nome do Projeto] → Carrossel → [Nome do Carrossel ▼]`
+Botões: `CRIAR NOVO` (laranja) | `Preview Instagram` | `Salvar` | `Exportar ▼`
+
+---
+
+## 4. PAINEL ESQUERDO — SEÇÕES COLAPSÁVEIS
+
+Cada seção tem header clicável com seta `▼` para toggle. Todas são acordeões independentes.
+
+### 4.1 TEMPLATE
+- Dropdown com 4 opções: `Template Brands 1`, `Template Brands 2`, `Template Brands 3`, `Template Twitter`
+- Ao trocar o template, o visual de todos os slides muda mantendo o conteúdo
+
+### 4.2 CRIADOR DE CONTEÚDO
+- Link externo **"Abrir Content Machine"** → ChatGPT Custom GPT
+- Botão **"Melhorar Headline"** → ChatGPT Custom GPT para headlines virais
+- Textarea: "Cole o texto aqui" (input livre de conteúdo do carrossel)
+- Botão **"APLICAR TEXTO"** → distribui automaticamente o texto colado pelos slides (autofill)
+
+### 4.3 CAMPOS GLOBAIS
+Campos propagados para todos os slides simultaneamente:
+- **brand-name** → `@vocacc.io` (input text, com toggle de visibilidade olho 👁)
+- **brand-name-2** → `Vocaccio` (input text, olho 👁, por padrão oculto)
+- **copyright** → `® Copyright 2026` (input text, por padrão oculto)
+- **avatar** → imagem de perfil com botão "Trocar" (upload file input)
+- Checkbox: "Usar como padrão em novos carrosséis"
+
+### 4.4 TEXTO *(aparece ao clicar em texto no canvas)*
+- Breadcrumb do texto selecionado (preview truncado)
+- **Fonte:** dropdown com todas as famílias disponíveis
+- **Alinhamento:** 4 botões (esquerda, centro, direita, justificado)
+- **Estilo:** B (Bold), I (Italic), U (Underline), S (Strikethrough)
+- **Tamanho:** input numérico + slider de range + botões `−` e `+`
+- **Espaçamento horizontal (kerning):** slider + valor em px (ex: `-2.5px`)
+- **Espaçamento vertical (line-height):** slider + valor decimal (ex: `1.05`)
+- **Cor do texto:** color picker nativo + input RGBA manual
+- Aviso: "Este texto tem token global; cores globais podem sobrescrever depois."
+
+#### Destaque de Palavra (Word Highlight)
+Cada palavra do texto aparece como botão individual. Ao clicar numa palavra:
+- Aplica cor individual à palavra
+- Aplica negrito (bold)
+- Aplica destaque/highlight (caixa colorida ao fundo da palavra)
+- Muda a fonte da palavra
+- Aplica caixa alta/baixa
+- Ferramentas no header da seção: ✓ (confirmar) □ (estilo box) 🗑 (remover) ⊘ (limpar)
+
+### 4.5 MÍDIA
+- Área de upload drag-and-drop: aceita `PNG, JPG, WebP, MP4`
+- Sistema de **slots numerados (1-10)** — grid 3×3+1 visual
+- Indicador: "5 de 9 slots" (preenchidos/total)
+- Cada slot exibe thumbnail com número, com:
+  - Clique → substitui imagem do slot
+  - Segure/arraste → reordena a posição (drag-and-drop entre slots)
+  - Botão X → remove imagem do slot
+- Slots vazios mostram "+" para adicionar
+- Checkbox: "Substituir slots preenchidos" (ao fazer upload em lote)
+- Botão "Limpar" → esvazia todos os slots
+
+### 4.6 FUNDO
+- Um color picker + input RGBA por slide (10 slides = 10 pares)
+- Nomeados "Slide 1", "Slide 2"... "Slide 10"
+- Input aceita: `white`, `rgba(0,0,0,1)`, `#000000` (formatos flexíveis)
+- Checkbox: "Usar como padrão em novos carrosséis"
+
+### 4.7 CTAs
+- Toggle switch **"Mostrar botão"** (on/off)
+- Provavelmente um botão CTA visível no slide final
+
+### 4.8 PROPORÇÃO
+- Dois botões exclusivos: **9:16** | **4:5** (ativo = laranja)
+- 9:16 expande o fundo verticalmente sem alterar posição do conteúdo
+- Aplica-se na exportação
+
+### 4.9 HISTÓRICO
+- Lista de saves automáticos com timestamp relativo ("ha 20 dias", "ha 21 dias")
+- Cada entrada tem botão **"Restaurar"** para rollback de versão
+- Persistência via Firebase (saves na nuvem)
+
+---
+
+## 5. PAINEL DIREITO — FRAMES / THUMBNAILS
+
+- Título "Frames" no topo
+- Grid de thumbnails em 2 colunas, scroll vertical
+- Slides: 01 Capa, 02 Slide 2, 03 Slide 3... 09 Slide 9, 10 CTA
+- Slide ativo tem borda destacada (laranja/branca)
+- Slide "Capa" tem botão **"Trocar"** para trocar o template da capa independentemente
+- Cada slide tem menu `⋮` (3 pontos) com ações contextuais
+- Clicar num thumbnail → navega para aquele slide no canvas central
+- URL atualiza o hash: `#/studio/[id]/[slideIndex]`
+
+---
+
+## 6. CANVAS CENTRAL (WYSIWYG)
+
+- Renderizado via **Konva.js** em `<canvas>`
+- Dimensão interna: **1080×1350px** (pixel-perfect para Instagram)
+- Fundo da área de trabalho: `#070707` (quase preto)
+- Clique em elemento de texto → seleciona e abre painel de texto no painel esquerdo
+- Seleção de texto mostra bounding box azul
+- Ícone de ponto verde (●) no canto do elemento selecionado (handle de redimensionamento ou âncora)
+- **"Visualização de Alta Fidelidade"** = modo padrão (renderiza fontes e imagens em alta res)
+
+---
+
+## 7. TOOLBAR INFERIOR (FOOTER)
+
+- Indicador de modo: `● Visualização de Alta Fidelidade`
+- **Desfazer** (Ctrl+Z) | **Refazer** (Ctrl+Y)
+- **Zoom:** botões `−` e `+` + exibição de porcentagem atual (ex: `100%`)
+- Botão `▸` (play/preview animação?)
+- Zoom atual padrão: 100%
+
+---
+
+## 8. TIPOGRAFIA DISPONÍVEL
+
+Fontes carregadas no sistema (via `document.fonts`):
+- **Custom/Brand:** `HelveticaNowDisplay-Bold`, `HelveticaNowDisplay-Medium`, `HelveticaNowDisplay` (preloadadas)
+- **Display:** `Bebas Neue`, `Oswald`, `Fixture Condensed Regular`, `Fixture Condensed SemiBold`, `Fixture SemiBold`, `Fixture Expanded Black`, `Fixture Variable`, `RBNo31`
+- **Serif:** `Playfair Display`, `Alegreya`, `Instrument Serif`, `Super Serif VF`
+- **Sans-serif:** `Inter`, `Inter var`, `Open Sans`, `Space Grotesk`, `Poppins`, `Super Sans VF`
+- **Mono:** `JetBrains Mono`, `Super Mono VF`
+- Total: ~24 famílias tipográficas
+
+---
+
+## 9. SISTEMA DE EXPORTAÇÃO
+
+Botão **"Exportar ▼"** abre dropdown com 5 opções:
+
+| Opção | Formato | Uso |
+|---|---|---|
+| Exportar tudo | PNG (ZIP) | Todos os slides em alta res |
+| Exportar slide [N] | PNG | Slide atual em alta res |
+| Exportar .zip | ZIP de PNGs | Pacote completo |
+| PDF (LinkedIn) | PDF | Formato para LinkedIn |
+| Exportar Vídeo (MP4) | MP4 | Vídeo animado via Remotion |
+
+---
+
+## 10. FLUXO DE DADOS E PERSISTÊNCIA
+
+- **Auth:** Firebase Authentication com Google OAuth
+- **DB:** Firestore (estrutura: projetos → carrosséis → slides)
+- **Storage:** Firebase Storage (imagens/mídias dos slides)
+- **Save automático** com histórico versionado (pelo menos 20+ versões salvas)
+- **URL-based navigation:** cada slide tem URL própria via hash router
+- **Estado global:** gerenciado provavelmente com Zustand ou Context API do React
+
+---
+
+## 11. FEATURES DE IA / INTEGRAÇÕES EXTERNAS
+
+- **Content Machine:** ChatGPT Custom GPT para geração de conteúdo de carrossel
+- **Headline Viral:** ChatGPT Custom GPT especializado em headlines de alto engajamento
+- **Autofill de texto:** cola texto livre e distribui automaticamente pelo template
+- Ambas as integrações abrem o ChatGPT em nova aba com o contexto do carrossel (provavelmente via URL params ou prompt pré-preenchido)
+
+---
+
+## 12. UX / UI — PADRÕES E DECISÕES DE DESIGN
+
+**Tema:** Dark mode puro (fundo `#070707`, elementos `#0a0a0a`, texto branco)
+**Cor primária:** Laranja/vermelho (#E84118 aprox.) — botões de ação, ícones de seção, sliders ativos
+**Tipografia UI:** Inter (sans-serif)
+**Padrão de interação:** Clique no canvas → painel lateral reage (context-sensitive)
+**Seções colapsáveis:** Cada painel usa acordeão com seta `▼`/`▲`
+**Visibilidade de campos:** Ícone de olho 👁 para mostrar/ocultar campos globais
+**Tokens globais:** Sistema de tokens de cor que podem sobrescrever estilos locais
+**Feedback visual:** Elementos selecionados mostram bounding box azul
+**Slots de mídia:** Numerados e com suporte a drag-and-drop para reordenação
+**Navegação breadcrumb:** `Projetos > Projeto > Carrossel > Nome` com campos editáveis inline
+**Proporção responsiva:** Canvas escala via zoom mas mantém proporção 4:5 ou 9:16 na exportação
+**Multi-slide:** 10 slides por carrossel (01 Capa + 08 Slides + 10 CTA)
+**Preview:** Botão "Preview no Instagram" para simular o feed
+
+---
+
+## 13. PONTOS TÉCNICOS CRÍTICOS PARA O CLAUDE CODE
+
+1. **Konva.js é o core do editor** — toda manipulação de canvas usa a API Konva (stages, layers, nodes)
+2. **Canvas 1080×1350px** é a dimensão nativa, thumbnails em 221×276px
+3. **3 layers por stage:** background (Rect), media (Image), content (Text + Groups)
+4. **Texto usa fontFamily literal** (ex: `"HelveticaNowDisplay-Bold"`) para renderização no canvas
+5. **Cores em RGBA** são o formato padrão internamente (`rgba(11,62,124,1)`)
+6. **Autofill** distribui texto por slides baseado em padrão de linhas (`- Texto linha 1`)
+7. **Export via Remotion** para vídeo MP4 (Remotion renderiza no servidor ou via WebWorker)
+8. **Firebase Firestore** persiste o estado do carrossel (textos, mídias, fundos, configurações)
+9. **Hash Router** significa que o estado de navegação está na URL → compartilhável
+10. **Word Highlight** é um sistema personalizado que aplica estilos inline por palavra dentro de um nó Konva Text
