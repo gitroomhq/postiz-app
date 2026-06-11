@@ -2,7 +2,7 @@
 
 import { FC, FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Globe, Briefcase, MessageSquare, Users, Pencil, Plus } from 'lucide-react';
+import { ArrowLeft, Mail, Globe, Briefcase, MessageSquare, Users, Pencil, Plus, ExternalLink } from 'lucide-react';
 import { useClient, CrmProject, CrmContact, CrmInteraction } from './use-client.hook';
 import { CrmModal } from './crm-modal.component';
 import { ClientForm } from './client-form.component';
@@ -96,43 +96,60 @@ type Tab = typeof TABS[number];
 
 // ─── Projects tab ─────────────────────────────────────────────────────────────
 
-const ProjectsTab: FC<{ projects: CrmProject[] }> = ({ projects }) => {
-  if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center py-[48px] text-center">
-        <Briefcase size={32} className="text-newTableText mb-[12px] opacity-40" />
+const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ projects, clientId }) => (
+  <div>
+    <div className="flex justify-end mb-[14px]">
+      <Link
+        href={`/hub/crm/projetos/novo?clientId=${clientId}`}
+        className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[12px] font-[800] text-white"
+        style={{ background: 'var(--voc-aurora)' }}
+      >
+        <Plus size={13} strokeWidth={2.5} /> Novo projeto
+      </Link>
+    </div>
+    {projects.length === 0 ? (
+      <div className="flex flex-col items-center py-[40px] text-center">
+        <Briefcase size={28} className="text-newTableText mb-[10px] opacity-40" />
         <p className="text-[14px] text-newTableText">Nenhum projeto ainda.</p>
       </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-[10px]">
-      {projects.map((p) => {
-        const ps = PROJECT_STATUS_MAP[p.status] ?? { label: p.status, color: '#9c9c9c' };
-        return (
-          <div key={p.id} className="flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.28)] transition-all duration-150">
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-[700] text-newTextColor leading-tight">{p.name}</p>
-              <div className="flex flex-wrap items-center gap-[10px] mt-[6px]">
-                {p.businessArea && <span className="text-[12px] text-newTableText">{p.businessArea}</span>}
-                {p.toneOfVoice && (
-                  <>
-                    <span className="text-newTableText opacity-30">·</span>
-                    <span className="text-[12px] text-newTableText">{p.toneOfVoice}</span>
-                  </>
-                )}
+    ) : (
+      <div className="flex flex-col gap-[10px]">
+        {projects.map((p) => {
+          const ps = PROJECT_STATUS_MAP[p.status] ?? { label: p.status, color: '#9c9c9c' };
+          return (
+            <div key={p.id} className="flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.28)] transition-all duration-150 group">
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-[700] text-newTextColor leading-tight">{p.name}</p>
+                <div className="flex flex-wrap items-center gap-[10px] mt-[6px]">
+                  {p.businessArea && <span className="text-[12px] text-newTableText">{p.businessArea}</span>}
+                  {p.toneOfVoice && (
+                    <>
+                      <span className="text-newTableText opacity-30">·</span>
+                      <span className="text-[12px] text-newTableText">{p.toneOfVoice}</span>
+                    </>
+                  )}
+                </div>
+                <p className="text-[11px] text-newTableText mt-[4px] opacity-60">{formatDate(p.createdAt)}</p>
               </div>
-              <p className="text-[11px] text-newTableText mt-[4px] opacity-60">{formatDate(p.createdAt)}</p>
+              <div className="flex items-center gap-[10px] flex-shrink-0">
+                <span className="text-[11px] font-[700] px-[10px] py-[3px] rounded-full" style={{ color: ps.color, background: `${ps.color}22` }}>
+                  {ps.label}
+                </span>
+                <Link
+                  href={`/hub/crm/projetos/${p.id}`}
+                  className="inline-flex items-center gap-[4px] text-[12px] font-[600] opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: 'var(--voc-violet)' }}
+                >
+                  <ExternalLink size={12} />
+                </Link>
+              </div>
             </div>
-            <span className="text-[11px] font-[700] px-[10px] py-[3px] rounded-full flex-shrink-0" style={{ color: ps.color, background: `${ps.color}22` }}>
-              {ps.label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
 
 // ─── Contacts tab ─────────────────────────────────────────────────────────────
 
@@ -472,7 +489,7 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
       </div>
 
       <div className="flex-1 max-w-[900px] w-full mx-auto px-[20px] py-[24px]">
-        {activeTab === 'Projetos'    && <ProjectsTab     projects={data.projects ?? []} />}
+        {activeTab === 'Projetos'    && <ProjectsTab     projects={data.projects ?? []} clientId={id} />}
         {activeTab === 'Contatos'    && <ContactsTab     contacts={data.contacts ?? []} onAdd={() => setShowContact(true)} />}
         {activeTab === 'Interações'  && <InteractionsTab interactions={data.interactions ?? []} onAdd={() => setShowInteraction(true)} />}
         {activeTab === 'Observações' && <NotesTab        notes={data.notes} />}
