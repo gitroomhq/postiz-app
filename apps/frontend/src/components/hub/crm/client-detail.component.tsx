@@ -307,9 +307,9 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
               {/* Counts */}
               <div className="flex flex-wrap items-center gap-[14px] mt-[10px]">
                 {[
-                  { label: 'projetos',    count: data._count.projects },
-                  { label: 'contatos',    count: data._count.contacts },
-                  { label: 'interações',  count: data._count.interactions },
+                  { label: 'projetos',    count: data._count?.projects ?? 0 },
+                  { label: 'contatos',    count: data._count?.contacts ?? 0 },
+                  { label: 'interações',  count: data._count?.interactions ?? 0 },
                 ].map(({ label, count }) => (
                   <span key={label} className="flex items-center gap-[5px] text-[12px] text-newTableText">
                     <span className="font-[800] text-newTextColor">{count}</span> {label}
@@ -335,12 +335,12 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
                 }}
               >
                 {tab}
-                {tab === 'Projetos' && data._count.projects > 0 && (
+                {tab === 'Projetos' && (data._count?.projects ?? 0) > 0 && (
                   <span
                     className="ml-[6px] inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-[10px] font-[800] text-white"
                     style={{ background: 'var(--voc-aurora)' }}
                   >
-                    {data._count.projects}
+                    {data._count?.projects}
                   </span>
                 )}
               </button>
@@ -351,9 +351,9 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
 
       {/* Tab content */}
       <div className="flex-1 max-w-[900px] w-full mx-auto px-[20px] py-[24px]">
-        {activeTab === 'Projetos'    && <ProjectsTab     projects={data.projects} />}
-        {activeTab === 'Contatos'    && <ContactsTab     contacts={data.contacts} />}
-        {activeTab === 'Interações'  && <InteractionsTab interactions={data.interactions} />}
+        {activeTab === 'Projetos'    && <ProjectsTab     projects={data.projects ?? []} />}
+        {activeTab === 'Contatos'    && <ContactsTab     contacts={data.contacts ?? []} />}
+        {activeTab === 'Interações'  && <InteractionsTab interactions={data.interactions ?? []} />}
         {activeTab === 'Observações' && <NotesTab        notes={data.notes} />}
       </div>
     </div>
