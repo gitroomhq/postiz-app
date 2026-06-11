@@ -3,7 +3,7 @@
 import { FC, FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Globe, Briefcase, MessageSquare, Users, Pencil, Plus, ExternalLink } from 'lucide-react';
-import { useClient, CrmProject, CrmContact, CrmInteraction } from './use-client.hook';
+import { useClient, CrmProject, CrmContact, CrmInteraction, ClientLoadError } from './use-client.hook';
 import { CrmModal } from './crm-modal.component';
 import { ClientForm } from './client-form.component';
 import { useCrmMutations } from './use-crm-mutations.hook';
@@ -389,23 +389,34 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
   const [showContact, setShowContact]   = useState(false);
   const [showInteraction, setShowInteraction] = useState(false);
 
-  const { data, isLoading } = useClient(id);
+  const { data, isLoading, error } = useClient(id);
   const { updateClient } = useCrmMutations();
 
   if (isLoading) return <Skeleton />;
 
-  if (!data || !data.id) {
+  if (error || !data) {
+    const loadError = error as ClientLoadError | undefined;
+    const hint =
+      loadError?.status === 0 ? 'Backend não está respondendo. Verifique se o servidor está rodando.' :
+      loadError?.status === 401 ? 'Sessão expirada — faça login novamente.' :
+      loadError?.status === 403 ? 'Sem permissão para acessar este cliente.' :
+      loadError?.status === 404 ? 'Cliente não encontrado no banco de dados.' :
+      loadError?.status === 500 ? 'Erro interno no servidor (verifique os logs do backend).' :
+      'Não foi possível carregar o cliente.';
     return (
       <div className="flex flex-col items-center justify-center py-[80px] bg-newBgColor flex-1">
-        <p className="text-[16px] text-newTableText">Cliente não encontrado.</p>
+        <p className="text-[16px] text-newTableText">{hint}</p>
+        {loadError && (
+          <p className="mt-[8px] text-[12px] font-mono text-newTableText opacity-60">
+            [{loadError.status}] {loadError.message}
+          </p>
+        )}
         <Link href="/hub/crm" className="mt-[16px] text-[13px] font-[700]" style={{ color: 'var(--voc-violet)' }}>
           ← Voltar à lista
         </Link>
       </div>
     );
   }
-
-  const d = data as any;
 
   return (
     <div className="flex flex-col flex-1 bg-newBgColor min-h-full">
@@ -431,19 +442,19 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
               </div>
 
               <div className="flex flex-wrap items-center gap-[14px] mt-[8px]">
-                {d.email && (
-                  <a href={`mailto:${d.email}`} className="flex items-center gap-[5px] text-[12px] text-newTableText hover:text-newTextColor transition-colors">
-                    <Mail size={12} /> {d.email}
+                {data.email && (
+                  <a href={`mailto:${data.email}`} className="flex items-center gap-[5px] text-[12px] text-newTableText hover:text-newTextColor transition-colors">
+                    <Mail size={12} /> {data.email}
                   </a>
                 )}
-                {d.website && (
-                  <a href={d.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-[5px] text-[12px] transition-colors" style={{ color: 'var(--voc-violet)' }}>
-                    <Globe size={12} /> {d.website}
+                {data.website && (
+                  <a href={data.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-[5px] text-[12px] transition-colors" style={{ color: 'var(--voc-violet)' }}>
+                    <Globe size={12} /> {data.website}
                   </a>
                 )}
-                {d.segment && (
+                {data.segment && (
                   <span className="flex items-center gap-[5px] text-[12px] text-newTableText">
-                    <Briefcase size={12} /> {d.segment}
+                    <Briefcase size={12} /> {data.segment}
                   </span>
                 )}
               </div>
@@ -498,7 +509,7 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
       {showEdit && (
         <CrmModal title="Editar cliente" onClose={() => setShowEdit(false)} width={560}>
           <ClientForm
-            initial={{ name: data.name, email: d.email, website: d.website, segment: d.segment, status: data.status, notes: data.notes ?? '' }}
+            initial={{ name: data.name, email: data.email ?? '', website: data.website ?? '', segment: data.segment ?? '', status: data.status, notes: data.notes ?? '' }}
             submitLabel="Salvar alterações"
             onCancel={() => setShowEdit(false)}
             onSubmit={async (formData) => {

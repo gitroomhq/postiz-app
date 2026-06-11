@@ -30,6 +30,9 @@ export interface CrmInteraction {
 export interface CrmClientDetail {
   id: string;
   name: string;
+  email: string | null;
+  website: string | null;
+  segment: string | null;
   status: string;
   notes: string | null;
   responsibleId: string | null;
@@ -41,20 +44,38 @@ export interface CrmClientDetail {
   interactions: CrmInteraction[];
 }
 
+export type ClientLoadError = { status: number; message: string };
+
 export const useClient = (id: string) => {
   const fetch = useFetch();
 
   const load = useCallback(
     async (path: string): Promise<CrmClientDetail | null> => {
-      const res = await fetch(path);
-      if (!res.ok) return null;
+      let res: Response;
+      try {
+        res = await fetch(path);
+      } catch (e) {
+        const err: ClientLoadError = { status: 0, message: 'Sem conexão com o backend' };
+        throw err;
+      }
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const b = await res.json(); msg = b?.message ?? msg; } catch (_) {}
+        const err: ClientLoadError = { status: res.status, message: msg };
+        throw err;
+      }
       const json = await res.json();
-      return json?.id ? json : null;
+      if (!json?.id) {
+        const err: ClientLoadError = { status: 200, message: 'Resposta inválida do servidor' };
+        throw err;
+      }
+      return json;
     },
     [fetch]
   );
 
-  return useSWR<CrmClientDetail>(`/hub/crm/clients/${id}`, load, {
+  return useSWR<CrmClientDetail, ClientLoadError>(`/hub/crm/clients/${id}`, load, {
     revalidateOnFocus: false,
+    shouldRetryOnError: false,
   });
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, Plus, Users, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useClients, CrmClient, PAGE_SIZE } from './use-clients.hook';
@@ -191,9 +191,20 @@ export const ClientsList: FC = () => {
 
   const { data, isLoading } = useClients({ search: activeSearch, status, page });
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleSearch = useCallback(() => {
     setPage(1);
     setActiveSearch(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPage(1);
+      setActiveSearch(search);
+    }, 350);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [search]);
 
   const clearSearch = useCallback(() => {
