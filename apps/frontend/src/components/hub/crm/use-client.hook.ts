@@ -45,9 +45,11 @@ export const useClient = (id: string) => {
   const fetch = useFetch();
 
   const load = useCallback(
-    async (path: string): Promise<CrmClientDetail> => {
+    async (path: string): Promise<CrmClientDetail | null> => {
       const res = await fetch(path);
-      return res.json();
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.id ? json : null;
     },
     [fetch]
   );

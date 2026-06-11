@@ -15,8 +15,9 @@ const GRADIENTS = [
 ];
 
 const Avatar: FC<{ name: string; size?: number }> = ({ name, size = 52 }) => {
-  const initials = name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-  const idx = name.charCodeAt(0) % GRADIENTS.length;
+  const safe = name || '?';
+  const initials = safe.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  const idx = safe.charCodeAt(0) % GRADIENTS.length;
   return (
     <div
       className="flex-shrink-0 rounded-[14px] flex items-center justify-center text-white font-[800]"
@@ -245,7 +246,7 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
 
   if (isLoading) return <Skeleton />;
 
-  if (!data) {
+  if (!data || !data.id) {
     return (
       <div className="flex flex-col items-center justify-center py-[80px] bg-newBgColor flex-1">
         <p className="text-[16px] text-newTableText">Cliente não encontrado.</p>
