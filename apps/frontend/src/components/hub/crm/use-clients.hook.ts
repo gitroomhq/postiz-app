@@ -36,7 +36,8 @@ export const useClients = (params: {
   const qs = new URLSearchParams();
   if (params.search) qs.set('search', params.search);
   if (params.status) qs.set('status', params.status);
-  if (params.page) qs.set('page', String(params.page));
+  // UI is 1-based; backend is 0-based
+  if (params.page && params.page > 1) qs.set('page', String(params.page - 1));
 
   const key = `/hub/crm/clients?${qs.toString()}`;
 
