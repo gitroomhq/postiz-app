@@ -37,7 +37,7 @@ import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/sko
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 import { MeweProvider } from '@gitroom/nestjs-libraries/integrations/social/mewe.provider';
 
-export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
+const allProviders: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
@@ -53,8 +53,6 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new DribbbleProvider(),
   new DiscordProvider(),
   new SlackProvider(),
-  new KickProvider(),
-  new TwitchProvider(),
   new MastodonProvider(),
   new BlueskyProvider(),
   new LemmyProvider(),
@@ -62,112 +60,21 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new TelegramProvider(),
   new NostrProvider(),
   new VkProvider(),
-  new MediumProvider(),
-  new DevToProvider(),
-  new HashnodeProvider(),
   new WordpressProvider(),
   new ListmonkProvider(),
+  new KickProvider(),
+  new TwitchProvider(),
   new MoltbookProvider(),
-  new WhopProvider(),
   new SkoolProvider(),
+  new WhopProvider(),
   new MeweProvider(),
-  // new MastodonCustomProvider(),
 ];
 
-@Injectable()
-export class IntegrationManager {
-  async getAllIntegrations() {
-    return {
-      social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
-      ),
-      article: [] as any[],
-    };
-  }
+const disabled = (process.env.DISABLED_PROVIDERS || '')
+  .split(',')
+  .map(p => p.trim().toLowerCase())
+  .filter(Boolean);
 
-  getAllTools(): {
-    [key: string]: {
-      description: string;
-      dataSchema: any;
-      methodName: string;
-    }[];
-  } {
-    return socialIntegrationList.reduce(
-      (all, current) => ({
-        ...all,
-        [current.identifier]:
-          Reflect.getMetadata('custom:tool', current.constructor.prototype) ||
-          [],
-      }),
-      {}
-    );
-  }
-
-  getAllRulesDescription(): {
-    [key: string]: string;
-  } {
-    return socialIntegrationList.reduce(
-      (all, current) => ({
-        ...all,
-        [current.identifier]:
-          Reflect.getMetadata(
-            'custom:rules:description',
-            current.constructor
-          ) || '',
-      }),
-      {}
-    );
-  }
-
-  getAllPlugs() {
-    return socialIntegrationList
-      .map((p) => {
-        return {
-          name: p.name,
-          identifier: p.identifier,
-          plugs: (
-            Reflect.getMetadata('custom:plug', p.constructor.prototype) || []
-          )
-            .filter((f: any) => !f.disabled)
-            .map((p: any) => ({
-              ...p,
-              fields: p.fields.map((c: any) => ({
-                ...c,
-                validation: c?.validation?.toString(),
-              })),
-            })),
-        };
-      })
-      .filter((f) => f.plugs.length);
-  }
-
-  getInternalPlugs(providerName: string) {
-    const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
-    return {
-      internalPlugs:
-        (
-          Reflect.getMetadata(
-            'custom:internal_plug',
-            p.constructor.prototype
-          ) || []
-        ).filter((f: any) => !f.disabled) || [],
-    };
-  }
-
-  getAllowedSocialsIntegrations() {
-    return socialIntegrationList.map((p) => p.identifier);
-  }
-  getSocialIntegration(integration: string): SocialProvider {
-    return socialIntegrationList.find((i) => i.identifier === integration)!;
-  }
-}
+export const socialIntegrationList = allProviders.filter(
+  p => !disabled.includes(p.identifier.toLowerCase())
+);
