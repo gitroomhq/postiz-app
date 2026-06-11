@@ -1,13 +1,12 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CrmRepository } from './crm.repository';
-import { ProjectStatus } from '@prisma/client';
-import { CreateClientDto, UpdateClientDto } from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
+import { CreateClientDto, UpdateClientDto, CreateContactDto, CreateInteractionDto } from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
 
 @Injectable()
 export class CrmService {
   constructor(private _crmRepository: CrmRepository) {}
 
-  async listClients(orgId: string, search?: string, status?: ProjectStatus, page?: string) {
+  async listClients(orgId: string, search?: string, status?: string, page?: string) {
     const pageNum = Math.max(0, parseInt(page || '0', 10) || 0);
     const [items, total] = await Promise.all([
       this._crmRepository.listClients(orgId, search, status, pageNum),
@@ -34,6 +33,16 @@ export class CrmService {
   async deleteClient(orgId: string, id: string) {
     await this._assertClientExists(orgId, id);
     return this._crmRepository.softDeleteClient(orgId, id);
+  }
+
+  async createContact(orgId: string, clientId: string, dto: CreateContactDto) {
+    await this._assertClientExists(orgId, clientId);
+    return this._crmRepository.createContact(clientId, dto);
+  }
+
+  async createInteraction(orgId: string, clientId: string, userId: string, dto: CreateInteractionDto) {
+    await this._assertClientExists(orgId, clientId);
+    return this._crmRepository.createInteraction(clientId, userId, dto);
   }
 
   private async _assertClientExists(orgId: string, id: string) {

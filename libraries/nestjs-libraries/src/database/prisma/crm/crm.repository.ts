@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { ProjectStatus } from '@prisma/client';
-import { CreateClientDto, UpdateClientDto } from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
+import { CreateClientDto, UpdateClientDto, CreateContactDto, CreateInteractionDto } from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
 
 const CLIENT_SELECT = {
   id: true,
@@ -38,9 +37,13 @@ const CLIENT_DETAIL_SELECT = {
 
 @Injectable()
 export class CrmRepository {
-  constructor(private _client: PrismaRepository<'client'>) {}
+  constructor(
+    private _client: PrismaRepository<'client'>,
+    private _contact: PrismaRepository<'clientContact'>,
+    private _interaction: PrismaRepository<'clientInteraction'>,
+  ) {}
 
-  listClients(orgId: string, search?: string, status?: ProjectStatus, page = 0) {
+  listClients(orgId: string, search?: string, status?: string, page = 0) {
     const PAGE_SIZE = 20;
     return this._client.model.client.findMany({
       where: {
@@ -56,7 +59,7 @@ export class CrmRepository {
     });
   }
 
-  countClients(orgId: string, search?: string, status?: ProjectStatus) {
+  countClients(orgId: string, search?: string, status?: string) {
     return this._client.model.client.count({
       where: {
         orgId,
@@ -101,6 +104,20 @@ export class CrmRepository {
     return this._client.model.client.findFirst({
       where: { id, orgId, deletedAt: null },
       select: { id: true },
+    });
+  }
+
+  createContact(clientId: string, data: CreateContactDto) {
+    return this._contact.model.clientContact.create({
+      data: { clientId, ...data },
+      select: { id: true, name: true, role: true, email: true, phone: true },
+    });
+  }
+
+  createInteraction(clientId: string, userId: string, data: CreateInteractionDto) {
+    return this._interaction.model.clientInteraction.create({
+      data: { clientId, userId, ...data },
+      select: { id: true, type: true, summary: true, userId: true, createdAt: true },
     });
   }
 }

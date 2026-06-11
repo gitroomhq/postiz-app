@@ -1008,7 +1008,10 @@ model Client {
   id            String              @id @default(uuid())
   orgId         String
   name          String
-  status        ProjectStatus       @default(ACTIVE)
+  email         String?
+  website       String?
+  segment       String?
+  status        String              @default("ACTIVE")
   responsibleId String?
   notes         String?
   createdAt     DateTime            @default(now())

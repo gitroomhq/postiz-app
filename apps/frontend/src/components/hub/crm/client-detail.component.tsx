@@ -1,9 +1,12 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Globe, Briefcase, MessageSquare, Users, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Mail, Globe, Briefcase, MessageSquare, Users, Pencil, Plus } from 'lucide-react';
 import { useClient, CrmProject, CrmContact, CrmInteraction } from './use-client.hook';
+import { CrmModal } from './crm-modal.component';
+import { ClientForm } from './client-form.component';
+import { useCrmMutations } from './use-crm-mutations.hook';
 
 // ─── Shared ────────────────────────────────────────────────────────────────────
 
@@ -29,10 +32,10 @@ const Avatar: FC<{ name: string; size?: number }> = ({ name, size = 52 }) => {
 };
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  ACTIVE:   { label: 'Ativo',      bg: 'rgba(50,213,131,0.16)',   color: '#32d583' },
-  INACTIVE: { label: 'Inativo',    bg: 'rgba(150,150,150,0.16)', color: '#9c9c9c' },
-  PROSPECT: { label: 'Prospecto',  bg: 'rgba(232,154,123,0.18)', color: '#e89a7b' },
-  LEAD:     { label: 'Lead',       bg: 'rgba(115,96,170,0.18)',  color: '#b69dec' },
+  ACTIVE:   { label: 'Ativo',     bg: 'rgba(50,213,131,0.16)',  color: '#32d583' },
+  INACTIVE: { label: 'Inativo',   bg: 'rgba(150,150,150,0.16)', color: '#9c9c9c' },
+  PROSPECT: { label: 'Prospecto', bg: 'rgba(232,154,123,0.18)', color: '#e89a7b' },
+  LEAD:     { label: 'Lead',      bg: 'rgba(115,96,170,0.18)',  color: '#b69dec' },
 };
 
 const StatusBadge: FC<{ status: string }> = ({ status }) => {
@@ -54,17 +57,21 @@ const PROJECT_STATUS_MAP: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: 'Cancelado', color: '#cf6295' },
 };
 
-const INTERACTION_TYPE_MAP: Record<string, { label: string; icon: FC<{ size?: number; className?: string }> }> = {
-  CALL:     { label: 'Ligação',       icon: MessageSquare },
-  EMAIL:    { label: 'E-mail',        icon: Mail },
-  MEETING:  { label: 'Reunião',       icon: Users },
-  NOTE:     { label: 'Nota',          icon: Briefcase },
-  WHATSAPP: { label: 'WhatsApp',      icon: MessageSquare },
+const INTERACTION_TYPES: Record<string, { label: string }> = {
+  CALL:     { label: 'Ligação' },
+  EMAIL:    { label: 'E-mail' },
+  MEETING:  { label: 'Reunião' },
+  NOTE:     { label: 'Nota' },
+  WHATSAPP: { label: 'WhatsApp' },
 };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+const inputCls = "w-full px-[14px] py-[10px] rounded-[10px] bg-newBgColor border border-newTableBorder text-[14px] text-newTextColor placeholder:text-newTableText outline-none focus:border-[var(--voc-violet)] transition-colors";
+const fieldCls = "flex flex-col gap-[6px]";
+const labelCls = "text-[12px] font-[700] text-newTableText uppercase tracking-[0.06em]";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -78,11 +85,6 @@ const Skeleton: FC = () => (
           <div className="h-[13px] w-[140px] rounded-full bg-newBgColor" />
         </div>
       </div>
-    </div>
-    <div className="max-w-[900px] mx-auto w-full px-[20px] py-[28px] space-y-[12px]">
-      {[80, 60, 70, 50].map((w, i) => (
-        <div key={i} className="h-[13px] rounded-full bg-newBgColorInner" style={{ width: `${w}%` }} />
-      ))}
     </div>
   </div>
 );
@@ -108,16 +110,11 @@ const ProjectsTab: FC<{ projects: CrmProject[] }> = ({ projects }) => {
       {projects.map((p) => {
         const ps = PROJECT_STATUS_MAP[p.status] ?? { label: p.status, color: '#9c9c9c' };
         return (
-          <div
-            key={p.id}
-            className="flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.28)] transition-all duration-150"
-          >
+          <div key={p.id} className="flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.28)] transition-all duration-150">
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-[700] text-newTextColor leading-tight">{p.name}</p>
               <div className="flex flex-wrap items-center gap-[10px] mt-[6px]">
-                {p.businessArea && (
-                  <span className="text-[12px] text-newTableText">{p.businessArea}</span>
-                )}
+                {p.businessArea && <span className="text-[12px] text-newTableText">{p.businessArea}</span>}
                 {p.toneOfVoice && (
                   <>
                     <span className="text-newTableText opacity-30">·</span>
@@ -139,86 +136,87 @@ const ProjectsTab: FC<{ projects: CrmProject[] }> = ({ projects }) => {
 
 // ─── Contacts tab ─────────────────────────────────────────────────────────────
 
-const ContactsTab: FC<{ contacts: CrmContact[] }> = ({ contacts }) => {
-  if (contacts.length === 0) {
-    return (
-      <div className="flex flex-col items-center py-[48px] text-center">
-        <Users size={32} className="text-newTableText mb-[12px] opacity-40" />
+const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contacts, onAdd }) => (
+  <div>
+    <div className="flex justify-end mb-[14px]">
+      <button
+        onClick={onAdd}
+        className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[12px] font-[800] text-white"
+        style={{ background: 'var(--voc-aurora)' }}
+      >
+        <Plus size={13} strokeWidth={2.5} /> Novo contato
+      </button>
+    </div>
+    {contacts.length === 0 ? (
+      <div className="flex flex-col items-center py-[40px] text-center">
+        <Users size={28} className="text-newTableText mb-[10px] opacity-40" />
         <p className="text-[14px] text-newTableText">Nenhum contato cadastrado.</p>
       </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-[10px]">
-      {contacts.map((c) => (
-        <div
-          key={c.id}
-          className="flex items-start gap-[14px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner"
-        >
-          <Avatar name={c.name} size={36} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-[700] text-newTextColor leading-tight">{c.name}</p>
-            {c.role && <p className="text-[12px] text-newTableText mt-[2px]">{c.role}</p>}
-            <div className="flex flex-wrap gap-[14px] mt-[8px]">
-              {c.email && (
-                <a
-                  href={`mailto:${c.email}`}
-                  className="flex items-center gap-[5px] text-[12px] transition-colors"
-                  style={{ color: 'var(--voc-violet)' }}
-                >
-                  <Mail size={12} /> {c.email}
-                </a>
-              )}
-              {c.phone && (
-                <span className="flex items-center gap-[5px] text-[12px] text-newTableText">
-                  {c.phone}
-                </span>
-              )}
+    ) : (
+      <div className="flex flex-col gap-[10px]">
+        {contacts.map((c) => (
+          <div key={c.id} className="flex items-start gap-[14px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+            <Avatar name={c.name} size={36} />
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-[700] text-newTextColor leading-tight">{c.name}</p>
+              {c.role && <p className="text-[12px] text-newTableText mt-[2px]">{c.role}</p>}
+              <div className="flex flex-wrap gap-[14px] mt-[8px]">
+                {c.email && (
+                  <a href={`mailto:${c.email}`} className="flex items-center gap-[5px] text-[12px] transition-colors" style={{ color: 'var(--voc-violet)' }}>
+                    <Mail size={12} /> {c.email}
+                  </a>
+                )}
+                {c.phone && <span className="text-[12px] text-newTableText">{c.phone}</span>}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
-};
+        ))}
+      </div>
+    )}
+  </div>
+);
 
 // ─── Interactions tab ─────────────────────────────────────────────────────────
 
-const InteractionsTab: FC<{ interactions: CrmInteraction[] }> = ({ interactions }) => {
-  if (interactions.length === 0) {
-    return (
-      <div className="flex flex-col items-center py-[48px] text-center">
-        <MessageSquare size={32} className="text-newTableText mb-[12px] opacity-40" />
+const InteractionsTab: FC<{ interactions: CrmInteraction[]; onAdd: () => void }> = ({ interactions, onAdd }) => (
+  <div>
+    <div className="flex justify-end mb-[14px]">
+      <button
+        onClick={onAdd}
+        className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[12px] font-[800] text-white"
+        style={{ background: 'var(--voc-aurora)' }}
+      >
+        <Plus size={13} strokeWidth={2.5} /> Nova interação
+      </button>
+    </div>
+    {interactions.length === 0 ? (
+      <div className="flex flex-col items-center py-[40px] text-center">
+        <MessageSquare size={28} className="text-newTableText mb-[10px] opacity-40" />
         <p className="text-[14px] text-newTableText">Nenhuma interação registrada.</p>
       </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-[10px]">
-      {interactions.map((inter) => {
-        const info = INTERACTION_TYPE_MAP[inter.type] ?? { label: inter.type, icon: MessageSquare };
-        const Icon = info.icon;
-        return (
-          <div key={inter.id} className="flex items-start gap-[12px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
-            <div
-              className="flex-shrink-0 w-[34px] h-[34px] rounded-[10px] flex items-center justify-center mt-[1px]"
-              style={{ background: 'var(--voc-aurora)' }}
-            >
-              <Icon size={15} className="text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-[8px]">
-                <span className="text-[12px] font-[700] text-newTableText uppercase tracking-[0.06em]">{info.label}</span>
-                <span className="text-[11px] text-newTableText opacity-60 flex-shrink-0">{formatDate(inter.createdAt)}</span>
+    ) : (
+      <div className="flex flex-col gap-[10px]">
+        {interactions.map((inter) => {
+          const info = INTERACTION_TYPES[inter.type] ?? { label: inter.type };
+          return (
+            <div key={inter.id} className="flex items-start gap-[12px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+              <div className="flex-shrink-0 w-[34px] h-[34px] rounded-[10px] flex items-center justify-center mt-[1px]" style={{ background: 'var(--voc-aurora)' }}>
+                <MessageSquare size={15} className="text-white" />
               </div>
-              <p className="text-[14px] text-newTextColor mt-[4px] leading-snug">{inter.summary}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-[8px]">
+                  <span className="text-[12px] font-[700] text-newTableText uppercase tracking-[0.06em]">{info.label}</span>
+                  <span className="text-[11px] text-newTableText opacity-60 flex-shrink-0">{formatDate(inter.createdAt)}</span>
+                </div>
+                <p className="text-[14px] text-newTextColor mt-[4px] leading-snug">{inter.summary}</p>
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
 
 // ─── Notes tab ────────────────────────────────────────────────────────────────
 
@@ -238,11 +236,144 @@ const NotesTab: FC<{ notes: string | null }> = ({ notes }) => {
   );
 };
 
+// ─── Modal Contato ─────────────────────────────────────────────────────────────
+
+const ContactModal: FC<{ clientId: string; onClose: () => void }> = ({ clientId, onClose }) => {
+  const { createContact } = useCrmMutations();
+  const [name, setName]   = useState('');
+  const [role, setRole]   = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError('Nome é obrigatório.'); return; }
+    setError(''); setLoading(true);
+    try {
+      const payload: any = { name: name.trim() };
+      if (role.trim())  payload.role  = role.trim();
+      if (email.trim()) payload.email = email.trim();
+      if (phone.trim()) payload.phone = phone.trim();
+      await createContact(clientId, payload);
+      onClose();
+    } catch (err: any) {
+      setError(err?.message ?? 'Erro inesperado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <CrmModal title="Novo contato" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
+        <div className={fieldCls}>
+          <label className={labelCls}>Nome <span style={{ color: 'var(--voc-rose)' }}>*</span></label>
+          <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do contato" />
+        </div>
+        <div className={fieldCls}>
+          <label className={labelCls}>Cargo / Função</label>
+          <input className={inputCls} value={role} onChange={(e) => setRole(e.target.value)} placeholder="Ex: CEO, Designer…" />
+        </div>
+        <div className="grid grid-cols-2 gap-[12px]">
+          <div className={fieldCls}>
+            <label className={labelCls}>E-mail</label>
+            <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@..." />
+          </div>
+          <div className={fieldCls}>
+            <label className={labelCls}>Telefone</label>
+            <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" />
+          </div>
+        </div>
+        {error && <p className="text-[13px]" style={{ color: 'var(--voc-rose)' }}>{error}</p>}
+        <div className="flex gap-[10px] pt-[4px]">
+          <button type="button" onClick={onClose} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[700] text-newTextColor border border-newTableBorder hover:bg-newBgColor transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[800] text-white disabled:opacity-60" style={{ background: 'var(--voc-aurora)' }}>
+            {loading ? 'Salvando…' : 'Adicionar'}
+          </button>
+        </div>
+      </form>
+    </CrmModal>
+  );
+};
+
+// ─── Modal Interação ───────────────────────────────────────────────────────────
+
+const INTERACTION_OPTIONS = [
+  { value: 'CALL',     label: 'Ligação' },
+  { value: 'EMAIL',    label: 'E-mail' },
+  { value: 'MEETING',  label: 'Reunião' },
+  { value: 'NOTE',     label: 'Nota interna' },
+  { value: 'WHATSAPP', label: 'WhatsApp' },
+];
+
+const InteractionModal: FC<{ clientId: string; onClose: () => void }> = ({ clientId, onClose }) => {
+  const { createInteraction } = useCrmMutations();
+  const [type, setType]       = useState('CALL');
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!summary.trim()) { setError('Descrição é obrigatória.'); return; }
+    setError(''); setLoading(true);
+    try {
+      await createInteraction(clientId, { type, summary: summary.trim() });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message ?? 'Erro inesperado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <CrmModal title="Nova interação" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
+        <div className={fieldCls}>
+          <label className={labelCls}>Tipo</label>
+          <select className={inputCls} value={type} onChange={(e) => setType(e.target.value)}>
+            {INTERACTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div className={fieldCls}>
+          <label className={labelCls}>Descrição <span style={{ color: 'var(--voc-rose)' }}>*</span></label>
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={4}
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder="O que aconteceu nessa interação?"
+          />
+        </div>
+        {error && <p className="text-[13px]" style={{ color: 'var(--voc-rose)' }}>{error}</p>}
+        <div className="flex gap-[10px] pt-[4px]">
+          <button type="button" onClick={onClose} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[700] text-newTextColor border border-newTableBorder hover:bg-newBgColor transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[800] text-white disabled:opacity-60" style={{ background: 'var(--voc-aurora)' }}>
+            {loading ? 'Salvando…' : 'Registrar'}
+          </button>
+        </div>
+      </form>
+    </CrmModal>
+  );
+};
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export const ClientDetail: FC<{ id: string }> = ({ id }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('Projetos');
+  const [activeTab, setActiveTab]       = useState<Tab>('Projetos');
+  const [showEdit, setShowEdit]         = useState(false);
+  const [showContact, setShowContact]   = useState(false);
+  const [showInteraction, setShowInteraction] = useState(false);
+
   const { data, isLoading } = useClient(id);
+  const { updateClient } = useCrmMutations();
 
   if (isLoading) return <Skeleton />;
 
@@ -257,15 +388,14 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
     );
   }
 
+  const d = data as any;
+
   return (
     <div className="flex flex-col flex-1 bg-newBgColor min-h-full">
       {/* Header */}
       <div className="bg-newBgColorInner border-b border-newTableBorder px-[20px] py-[20px]">
         <div className="max-w-[900px] mx-auto">
-          <Link
-            href="/hub/crm"
-            className="inline-flex items-center gap-[5px] text-[12px] font-[600] text-newTableText hover:text-newTextColor transition-colors mb-[16px]"
-          >
+          <Link href="/hub/crm" className="inline-flex items-center gap-[5px] text-[12px] font-[600] text-newTableText hover:text-newTextColor transition-colors mb-[16px]">
             <ArrowLeft size={13} /> Clientes
           </Link>
 
@@ -275,42 +405,37 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
               <div className="flex flex-wrap items-center gap-[10px]">
                 <h1 className="text-[24px] font-[700] text-newTextColor leading-tight">{data.name}</h1>
                 <StatusBadge status={data.status} />
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="inline-flex items-center gap-[5px] text-[12px] font-[600] text-newTableText hover:text-newTextColor transition-colors"
+                >
+                  <Pencil size={13} /> Editar
+                </button>
               </div>
 
-              {/* Meta row */}
               <div className="flex flex-wrap items-center gap-[14px] mt-[8px]">
-                {(data as any).email && (
-                  <a
-                    href={`mailto:${(data as any).email}`}
-                    className="flex items-center gap-[5px] text-[12px] text-newTableText hover:text-newTextColor transition-colors"
-                  >
-                    <Mail size={12} /> {(data as any).email}
+                {d.email && (
+                  <a href={`mailto:${d.email}`} className="flex items-center gap-[5px] text-[12px] text-newTableText hover:text-newTextColor transition-colors">
+                    <Mail size={12} /> {d.email}
                   </a>
                 )}
-                {(data as any).website && (
-                  <a
-                    href={(data as any).website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-[5px] text-[12px] transition-colors"
-                    style={{ color: 'var(--voc-violet)' }}
-                  >
-                    <Globe size={12} /> {(data as any).website}
+                {d.website && (
+                  <a href={d.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-[5px] text-[12px] transition-colors" style={{ color: 'var(--voc-violet)' }}>
+                    <Globe size={12} /> {d.website}
                   </a>
                 )}
-                {(data as any).segment && (
+                {d.segment && (
                   <span className="flex items-center gap-[5px] text-[12px] text-newTableText">
-                    <Briefcase size={12} /> {(data as any).segment}
+                    <Briefcase size={12} /> {d.segment}
                   </span>
                 )}
               </div>
 
-              {/* Counts */}
               <div className="flex flex-wrap items-center gap-[14px] mt-[10px]">
                 {[
-                  { label: 'projetos',    count: data._count?.projects ?? 0 },
-                  { label: 'contatos',    count: data._count?.contacts ?? 0 },
-                  { label: 'interações',  count: data._count?.interactions ?? 0 },
+                  { label: 'projetos',   count: data._count?.projects ?? 0 },
+                  { label: 'contatos',   count: data._count?.contacts ?? 0 },
+                  { label: 'interações', count: data._count?.interactions ?? 0 },
                 ].map(({ label, count }) => (
                   <span key={label} className="flex items-center gap-[5px] text-[12px] text-newTableText">
                     <span className="font-[800] text-newTextColor">{count}</span> {label}
@@ -323,7 +448,6 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-[2px] mt-[24px] border-b border-newTableBorder -mb-[1px]">
             {TABS.map((tab) => (
               <button
@@ -337,10 +461,7 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
               >
                 {tab}
                 {tab === 'Projetos' && (data._count?.projects ?? 0) > 0 && (
-                  <span
-                    className="ml-[6px] inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-[10px] font-[800] text-white"
-                    style={{ background: 'var(--voc-aurora)' }}
-                  >
+                  <span className="ml-[6px] inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-[10px] font-[800] text-white" style={{ background: 'var(--voc-aurora)' }}>
                     {data._count?.projects}
                   </span>
                 )}
@@ -350,13 +471,34 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
         </div>
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 max-w-[900px] w-full mx-auto px-[20px] py-[24px]">
         {activeTab === 'Projetos'    && <ProjectsTab     projects={data.projects ?? []} />}
-        {activeTab === 'Contatos'    && <ContactsTab     contacts={data.contacts ?? []} />}
-        {activeTab === 'Interações'  && <InteractionsTab interactions={data.interactions ?? []} />}
+        {activeTab === 'Contatos'    && <ContactsTab     contacts={data.contacts ?? []} onAdd={() => setShowContact(true)} />}
+        {activeTab === 'Interações'  && <InteractionsTab interactions={data.interactions ?? []} onAdd={() => setShowInteraction(true)} />}
         {activeTab === 'Observações' && <NotesTab        notes={data.notes} />}
       </div>
+
+      {showEdit && (
+        <CrmModal title="Editar cliente" onClose={() => setShowEdit(false)} width={560}>
+          <ClientForm
+            initial={{ name: data.name, email: d.email, website: d.website, segment: d.segment, status: data.status, notes: data.notes ?? '' }}
+            submitLabel="Salvar alterações"
+            onCancel={() => setShowEdit(false)}
+            onSubmit={async (formData) => {
+              await updateClient(id, formData);
+              setShowEdit(false);
+            }}
+          />
+        </CrmModal>
+      )}
+
+      {showContact && (
+        <ContactModal clientId={id} onClose={() => setShowContact(false)} />
+      )}
+
+      {showInteraction && (
+        <InteractionModal clientId={id} onClose={() => setShowInteraction(false)} />
+      )}
     </div>
   );
 };

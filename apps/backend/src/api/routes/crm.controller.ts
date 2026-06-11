@@ -1,12 +1,17 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Organization } from '@prisma/client';
-import { VocaccioRole } from '@prisma/client';
+import { Organization, User, VocaccioRole } from '@prisma/client';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { CrmService } from '@gitroom/nestjs-libraries/database/prisma/crm/crm.service';
 import { VocaccioRoles } from '@gitroom/backend/services/auth/permissions/vocaccio-roles.decorator';
-import { CreateClientDto, UpdateClientDto, ListClientsDto } from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
-import { ProjectStatus } from '@prisma/client';
+import {
+  CreateClientDto,
+  UpdateClientDto,
+  ListClientsDto,
+  CreateContactDto,
+  CreateInteractionDto,
+} from '@gitroom/nestjs-libraries/dtos/crm/client.dto';
 
 @ApiTags('CRM')
 @Controller('/hub/crm')
@@ -19,12 +24,7 @@ export class CrmController {
     @GetOrgFromRequest() org: Organization,
     @Query() query: ListClientsDto
   ) {
-    return this._crmService.listClients(
-      org.id,
-      query.search,
-      query.status as ProjectStatus | undefined,
-      query.page
-    );
+    return this._crmService.listClients(org.id, query.search, query.status, query.page);
   }
 
   @Get('/clients/:id')
@@ -62,5 +62,26 @@ export class CrmController {
     @Param('id') id: string
   ) {
     return this._crmService.deleteClient(org.id, id);
+  }
+
+  @Post('/clients/:id/contacts')
+  @VocaccioRoles(VocaccioRole.OWNER, VocaccioRole.OPERATOR, VocaccioRole.EDITOR)
+  createContact(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: CreateContactDto
+  ) {
+    return this._crmService.createContact(org.id, id, body);
+  }
+
+  @Post('/clients/:id/interactions')
+  @VocaccioRoles(VocaccioRole.OWNER, VocaccioRole.OPERATOR, VocaccioRole.EDITOR)
+  createInteraction(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string,
+    @Body() body: CreateInteractionDto
+  ) {
+    return this._crmService.createInteraction(org.id, id, user.id, body);
   }
 }
