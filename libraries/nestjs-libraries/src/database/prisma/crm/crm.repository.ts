@@ -6,6 +6,9 @@ import { CreateClientDto, UpdateClientDto } from '@gitroom/nestjs-libraries/dtos
 const CLIENT_SELECT = {
   id: true,
   name: true,
+  email: true,
+  website: true,
+  segment: true,
   status: true,
   notes: true,
   responsibleId: true,
