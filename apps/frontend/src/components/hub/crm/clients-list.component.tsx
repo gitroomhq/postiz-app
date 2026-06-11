@@ -313,7 +313,7 @@ export const ClientsList: FC = () => {
             <tbody>
               {isLoading
                 ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-                : data?.items.map((c, i) => (
+                : data?.items?.map((c, i) => (
                     <TableRow key={c.id} client={c} index={i} />
                   ))}
             </tbody>
