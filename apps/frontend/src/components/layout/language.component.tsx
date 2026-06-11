@@ -130,11 +130,11 @@ const GlobeIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
     <path
       d="M12 3C12 3 9 7 9 12C9 17 12 21 12 21M12 3C12 3 15 7 15 12C15 17 12 21 12 21M3 12H21"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
     />
   </svg>

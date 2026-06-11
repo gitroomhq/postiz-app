@@ -2,7 +2,7 @@
 
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Search, Plus, Users, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Search, Plus, Users, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { useClients, CrmClient, PAGE_SIZE } from './use-clients.hook';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ const Avatar: FC<{ name: string; index: number }> = ({ name, index }) => {
 // ─── Desktop table row ─────────────────────────────────────────────────────────
 
 const TableRow: FC<{ client: CrmClient; index: number }> = ({ client, index }) => (
-  <tr className="border-b border-newTableBorder hover:bg-newBgColor transition-colors duration-100 group">
+  <tr className="border-b border-newTableBorder hover:bg-newBgColor transition-colors duration-100 group cursor-pointer">
     <td className="px-[20px] py-[14px]">
       <div className="flex items-center gap-[12px]">
         <Avatar name={client.name} index={index} />
@@ -84,10 +84,10 @@ const TableRow: FC<{ client: CrmClient; index: number }> = ({ client, index }) =
     <td className="px-[20px] py-[14px]">
       <Link
         href={`/hub/crm/${client.id}`}
-        className="inline-flex items-center gap-[4px] text-[12px] font-[600] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-        style={{ color: 'var(--voc-violet)' }}
+        className="inline-flex items-center gap-[5px] text-[12px] font-[600] px-[10px] py-[5px] rounded-[8px] transition-all duration-150 hover:opacity-80"
+        style={{ color: 'var(--voc-violet)', background: 'rgba(115,96,170,0.10)' }}
       >
-        Ver <ExternalLink size={12} />
+        <Pencil size={11} strokeWidth={2.2} /> Ver / Editar
       </Link>
     </td>
   </tr>

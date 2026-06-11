@@ -33,7 +33,7 @@ export const AgentMediaModal: FC = () => {
       <div className="text-[14px] leading-[22px] text-newTextColor opacity-80">
         {t(
           'agent_media_different_company',
-          'UGC videos are powered by AgentMedia (agent-media.ai), a separate product with its own account and pricing — not part of your Postiz subscription.'
+          'UGC videos are powered by AgentMedia (agent-media.ai), a separate product with its own account and pricing — not part of your Vocaccio subscription.'
         )}
       </div>
 
