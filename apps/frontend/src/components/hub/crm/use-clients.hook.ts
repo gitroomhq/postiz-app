@@ -19,11 +19,12 @@ export interface CrmClient {
 }
 
 export interface ClientsPage {
-  clients: CrmClient[];
+  items: CrmClient[];
   total: number;
   page: number;
-  perPage: number;
 }
+
+export const PAGE_SIZE = 20;
 
 export const useClients = (params: {
   search?: string;

@@ -3,7 +3,7 @@
 import { FC, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Search, Plus, Users, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { useClients, CrmClient } from './use-clients.hook';
+import { useClients, CrmClient, PAGE_SIZE } from './use-clients.hook';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
@@ -207,7 +207,7 @@ export const ClientsList: FC = () => {
     setPage(1);
   }, []);
 
-  const totalPages = data ? Math.ceil(data.total / data.perPage) : 1;
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
   const hasFilter = !!activeSearch || !!status;
 
   return (
@@ -313,12 +313,12 @@ export const ClientsList: FC = () => {
             <tbody>
               {isLoading
                 ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-                : data?.clients.map((c, i) => (
+                : data?.items.map((c, i) => (
                     <TableRow key={c.id} client={c} index={i} />
                   ))}
             </tbody>
           </table>
-          {!isLoading && data?.clients.length === 0 && (
+          {!isLoading && data?.items.length === 0 && (
             <EmptyState hasFilter={hasFilter} />
           )}
         </div>
@@ -327,15 +327,15 @@ export const ClientsList: FC = () => {
         <div className="md:hidden flex flex-col gap-[10px]">
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-            : data?.clients.length === 0
+            : data?.items.length === 0
             ? <EmptyState hasFilter={hasFilter} />
-            : data?.clients.map((c, i) => (
+            : data?.items.map((c, i) => (
                 <ClientCard key={c.id} client={c} index={i} />
               ))}
         </div>
 
         {/* Pagination */}
-        {!isLoading && data && data.total > data.perPage && (
+        {!isLoading && data && data.total > PAGE_SIZE && (
           <div className="flex items-center justify-between mt-[20px]">
             <p className="text-[13px] text-newTableText">
               Página {page} de {totalPages}
