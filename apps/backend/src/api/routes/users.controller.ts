@@ -59,11 +59,20 @@ export class UsersController {
     const token = sign(
       {
         user_id: organization.id,
-        displayName: organization.name,
         email: user.email,
-        stripe_accounts: organization.paymentId,
+        ...(organization.paymentId
+          ? {
+              stripe_accounts: [
+                {
+                  label: organization.name,
+                  stripe_id: organization.paymentId,
+                },
+              ],
+            }
+          : {}),
       },
-      process.env.CHATBASE_TOKEN
+      process.env.CHATBASE_TOKEN,
+      { expiresIn: '1h' }
     );
 
     return { token };
