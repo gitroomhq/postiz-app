@@ -48,6 +48,8 @@ import { CrmRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/crm
 import { CrmService } from '@gitroom/nestjs-libraries/database/prisma/crm/crm.service';
 import { ProjectRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/project.repository';
 import { ProjectService } from '@gitroom/nestjs-libraries/database/prisma/crm/project.service';
+import { ContentRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/content.repository';
+import { ContentService } from '@gitroom/nestjs-libraries/database/prisma/crm/content.service';
 
 @Global()
 @Module({
@@ -105,6 +107,8 @@ import { ProjectService } from '@gitroom/nestjs-libraries/database/prisma/crm/pr
     CrmService,
     ProjectRepository,
     ProjectService,
+    ContentRepository,
+    ContentService,
   ],
   get exports() {
     return this.providers;

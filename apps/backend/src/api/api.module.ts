@@ -39,6 +39,8 @@ import { AnnouncementsController } from '@gitroom/backend/api/routes/announcemen
 import { AdminController } from '@gitroom/backend/api/routes/admin.controller';
 import { CrmController } from '@gitroom/backend/api/routes/crm.controller';
 import { ProjectController } from '@gitroom/backend/api/routes/project.controller';
+import { ContentController } from '@gitroom/backend/api/routes/content.controller';
+import { PortalController } from '@gitroom/backend/api/routes/portal.controller';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.provider';
 import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
@@ -68,6 +70,7 @@ const authenticatedController = [
   AdminController,
   CrmController,
   ProjectController,
+  ContentController,
 ];
 @Module({
   imports: [UploadModule],
@@ -80,6 +83,7 @@ const authenticatedController = [
     EnterpriseController,
     NoAuthIntegrationsController,
     OAuthController,
+    PortalController,
     ...authenticatedController,
   ],
   providers: [

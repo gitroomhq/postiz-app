@@ -1082,6 +1082,7 @@ model Project {
   deletedAt            DateTime?
   client               Client              @relation(fields: [clientId], references: [id])
   accessLinks          ProjectAccessLink[]
+  contentItems         ContentItem[]
 
   @@index([clientId])
   @@index([ownerId])
@@ -1131,4 +1132,59 @@ model InternalTask {
   @@index([orgId])
   @@index([assigneeId])
   @@index([status])
+}
+
+model ContentItem {
+  id          String             @id @default(uuid())
+  projectId   String
+  orgId       String
+  title       String
+  body        String?
+  mediaUrls   Json?
+  type        ContentType        @default(POST)
+  status      ContentStatus      @default(DRAFT)
+  position    Int                @default(0)
+  scheduledAt DateTime?
+  createdById String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+  project     Project            @relation(fields: [projectId], references: [id])
+  events      ContentItemEvent[]
+
+  @@index([projectId])
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ContentItemEvent {
+  id        String      @id @default(uuid())
+  itemId    String
+  type      String
+  text      String?
+  byGuest   Boolean     @default(false)
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  item      ContentItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@index([createdAt])
+}
+
+enum ContentType {
+  POST
+  CAROUSEL
+  VIDEO
+  STORY
+  REEL
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ADJUSTMENT_REQUESTED
+  PUBLISHED
+  ARCHIVED
 }
