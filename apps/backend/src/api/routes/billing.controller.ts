@@ -179,6 +179,30 @@ export class BillingController {
     return this._stripeService.cancelSubscription(org.id);
   }
 
+  @Get('/chatbase-refund/preview')
+  chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
+    return this._stripeService.chatbaseRefundPreview(org.id);
+  }
+
+  @Post('/chatbase-refund')
+  async chatbaseRefund(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    const refund = await this._stripeService.chatbaseRefund(org.id);
+
+    if (refund.refunded) {
+      await this._notificationService.sendEmail(
+        process.env.EMAIL_FROM_ADDRESS,
+        'Refund issued from Chatbase',
+        `Organization ${org.name} received a refund of ${refund.amount} ${refund.currency} and their subscription was cancelled`,
+        user.email
+      );
+    }
+
+    return refund;
+  }
+
   @Post('/add-subscription')
   async addSubscription(
     @Body() body: { subscription: string },

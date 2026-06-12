@@ -4,6 +4,7 @@ import { createContext, FC, ReactNode, useContext, useEffect } from 'react';
 interface VariableContextInterface {
   stripeClient: string;
   billingEnabled: boolean;
+  isChatBase: boolean;
   isGeneral: boolean;
   genericOauth: boolean;
   oauthLogoUrl: string;
@@ -37,6 +38,7 @@ const VariableContext = createContext({
   billingEnabled: false,
   isGeneral: true,
   genericOauth: false,
+  isChatBase: false,
   oauthLogoUrl: '',
   googleAdsId: '',
   googleAdsTrialTracking: '',
