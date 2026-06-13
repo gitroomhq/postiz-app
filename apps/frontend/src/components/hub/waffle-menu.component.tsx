@@ -107,7 +107,7 @@ const MODULES: Module[] = [
     description: 'Conteúdo & publicação',
     href: '/hub/volatis',
     icon: VolatisIcon,
-    locked: true,
+    locked: false,
   },
   {
     id: 'religare',

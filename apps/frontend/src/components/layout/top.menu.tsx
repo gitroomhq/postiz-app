@@ -52,7 +52,7 @@ export const useMenuItem = () => {
           />
         </svg>
       ),
-      path: '/launches',
+      path: '/hub/volatis',
     },
     {
       name: 'Agent',
