@@ -76,6 +76,15 @@ export class IntegrationsController {
     );
   }
 
+  @Put('/:id/crm-client')
+  async assignToCrmClient(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: { clientId: string | null }
+  ) {
+    return this._integrationService.assignToCrmClient(org.id, id, body.clientId);
+  }
+
   @Put('/:id/customer-name')
   async updateOnCustomerName(
     @GetOrgFromRequest() org: Organization,
@@ -86,11 +95,14 @@ export class IntegrationsController {
   }
 
   @Get('/list')
-  async getIntegrationList(@GetOrgFromRequest() org: Organization) {
+  async getIntegrationList(
+    @GetOrgFromRequest() org: Organization,
+    @Query('clientId') clientId?: string
+  ) {
     return {
       integrations: await Promise.all(
         (
-          await this._integrationService.getIntegrationsList(org.id)
+          await this._integrationService.getIntegrationsList(org.id, clientId)
         ).map(async (p) => {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier

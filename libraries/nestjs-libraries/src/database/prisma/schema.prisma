@@ -21,6 +21,7 @@ model Organization {
   isTrailing          Boolean              @default(false)
   shortlink           ShortLinkPreference  @default(ASK)
   autoPost            AutoPost[]
+  clients             Client[]
   Comments            Comments[]
   credits             Credits[]
   customers           Customer[]
@@ -30,6 +31,8 @@ model Organization {
   media               Media[]
   buyerOrganization   MessagesGroup[]
   notifications       Notifications[]
+  oauthApp            OAuthApp[]
+  oauthAuthorizations OAuthAuthorization[]
   plugs               Plugs[]
   post                Post[]               @relation("organization")
   submittedPost       Post[]               @relation("submittedForOrg")
@@ -41,9 +44,6 @@ model Organization {
   usedCodes           UsedCodes[]
   users               UserOrganization[]
   webhooks            Webhooks[]
-  oauthApp            OAuthApp[]
-  oauthAuthorizations OAuthAuthorization[]
-  clients             Client[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -101,20 +101,20 @@ model User {
   ip                    String?
   agent                 String?
   mustChangePassword    Boolean              @default(false)
+  sendSuccessEmails     Boolean              @default(true)
+  sendFailureEmails     Boolean              @default(true)
+  sendStreakEmails      Boolean              @default(true)
   comments              Comments[]
   items                 ItemUser[]
   groupBuyer            MessagesGroup[]      @relation("groupBuyer")
   groupSeller           MessagesGroup[]      @relation("groupSeller")
+  oauthAuthorizations   OAuthAuthorization[]
   orderBuyer            Orders[]             @relation("orderBuyer")
   orderSeller           Orders[]             @relation("orderSeller")
   payoutProblems        PayoutProblems[]
   agencies              SocialMediaAgency?
   picture               Media?               @relation(fields: [pictureId], references: [id])
   organizations         UserOrganization[]
-  sendSuccessEmails     Boolean              @default(true)
-  sendFailureEmails     Boolean              @default(true)
-  sendStreakEmails      Boolean              @default(true)
-  oauthAuthorizations   OAuthAuthorization[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -226,9 +226,9 @@ model Media {
   thumbnailTimestamp Int?
   projectId          String?
   organization       Organization        @relation(fields: [organizationId], references: [id])
+  oauthApps          OAuthApp[]
   agencies           SocialMediaAgency[]
   userPicture        User[]
-  oauthApps          OAuthApp[]
 
   @@index([name])
   @@index([organizationId])
@@ -341,7 +341,9 @@ model Integration {
   rootInternalId        String?
   additionalSettings    String?                @default("[]")
   projectId             String?
+  crmClientId           String?
   exisingPlugData       ExisingPlugData[]
+  crmClient             Client?                @relation(fields: [crmClientId], references: [id])
   customer              Customer?              @relation(fields: [customerId], references: [id])
   organization          Organization           @relation(fields: [organizationId], references: [id])
   webhooks              IntegrationsWebhooks[]
@@ -358,6 +360,7 @@ model Integration {
   @@index([createdAt])
   @@index([deletedAt])
   @@index([customerId])
+  @@index([crmClientId])
   @@index([inBetweenSteps])
   @@index([refreshNeeded])
   @@index([disabled])
@@ -723,6 +726,10 @@ model mastra_ai_spans {
   @@index([parentSpanId, startedAt(sort: Desc)], map: "public_mastra_ai_spans_parentspanid_startedat_idx")
   @@index([spanType, startedAt(sort: Desc)], map: "public_mastra_ai_spans_spantype_startedat_idx")
   @@index([traceId, startedAt(sort: Desc)], map: "public_mastra_ai_spans_traceid_startedat_idx")
+  @@index([name])
+  @@index([parentSpanId, startedAt(sort: Desc)], map: "mastra_ai_spans_parentspanid_startedat_idx")
+  @@index([spanType, startedAt(sort: Desc)], map: "mastra_ai_spans_spantype_startedat_idx")
+  @@index([traceId, startedAt(sort: Desc)], map: "mastra_ai_spans_traceid_startedat_idx")
   @@ignore
 }
 
@@ -757,6 +764,7 @@ model mastra_messages {
   createdAtZ DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([thread_id, createdAt(sort: Desc)], map: "public_mastra_messages_thread_id_createdat_idx")
+  @@index([thread_id, createdAt(sort: Desc)], map: "mastra_messages_thread_id_createdat_idx")
 }
 
 model mastra_resources {
@@ -804,6 +812,7 @@ model mastra_scorers {
   spanId               String?
 
   @@index([traceId, spanId, createdAt(sort: Desc)], map: "public_mastra_scores_trace_id_span_id_created_at_idx")
+  @@index([traceId, spanId, createdAt(sort: Desc)], map: "mastra_scores_trace_id_span_id_created_at_idx")
 }
 
 model mastra_threads {
@@ -817,6 +826,7 @@ model mastra_threads {
   updatedAtZ DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([resourceId, createdAt(sort: Desc)], map: "public_mastra_threads_resourceid_createdat_idx")
+  @@index([resourceId, createdAt(sort: Desc)], map: "mastra_threads_resourceid_createdat_idx")
 }
 
 model mastra_traces {
@@ -886,8 +896,8 @@ model OAuthAuthorization {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   oauthApp          OAuthApp     @relation(fields: [oauthAppId], references: [id])
-  user              User         @relation(fields: [userId], references: [id])
   organization      Organization @relation(fields: [organizationId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
 
   @@unique([oauthAppId, userId, organizationId])
   @@index([accessToken])
@@ -896,6 +906,183 @@ model OAuthAuthorization {
   @@index([userId])
   @@index([organizationId])
   @@index([revokedAt])
+}
+
+model Announcement {
+  id          String            @id @default(uuid())
+  title       String
+  description String
+  color       AnnouncementColor @default(INFO)
+  createdAt   DateTime          @default(now())
+}
+
+model Client {
+  id            String              @id @default(uuid())
+  orgId         String
+  name          String
+  responsibleId String?
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  deletedAt     DateTime?
+  email         String?
+  segment       String?
+  website       String?
+  status        String              @default("ACTIVE")
+  organization  Organization        @relation(fields: [orgId], references: [id])
+  contacts      ClientContact[]
+  interactions  ClientInteraction[]
+  integrations  Integration[]
+  projects      Project[]
+
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ClientContact {
+  id       String  @id @default(uuid())
+  clientId String
+  name     String
+  role     String?
+  email    String?
+  phone    String?
+  client   Client  @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+}
+
+model ClientInteraction {
+  id        String   @id @default(uuid())
+  clientId  String
+  userId    String
+  type      String
+  summary   String
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model Project {
+  id                  String              @id @default(uuid())
+  clientId            String
+  ownerId             String
+  name                String
+  logoMediaId         String?
+  businessArea        String?
+  socialHandles       Json?
+  slogan              String?
+  colors              Json?
+  typography          Json?
+  productsServices    String?
+  persona             Json?
+  toneOfVoice         ToneOfVoice         @default(CASUAL)
+  website             String?
+  bioLink             String?
+  cta1                String?
+  cta2                String?
+  cta3                String?
+  briefing            String?
+  vocationalProfileId String?
+  locale              String              @default("pt-BR")
+  timezone            String              @default("America/Sao_Paulo")
+  status              ProjectStatus       @default(ACTIVE)
+  contextPackCache    Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+  contentItems        ContentItem[]
+  client              Client              @relation(fields: [clientId], references: [id])
+  accessLinks         ProjectAccessLink[]
+
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ProjectAccessLink {
+  id          String            @id @default(uuid())
+  projectId   String
+  tokenHash   String            @unique
+  createdById String
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  events      AccessLinkEvent[]
+  project     Project           @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+}
+
+model AccessLinkEvent {
+  id        String            @id @default(uuid())
+  linkId    String
+  type      String
+  ip        String?
+  metadata  Json?
+  createdAt DateTime          @default(now())
+  link      ProjectAccessLink @relation(fields: [linkId], references: [id])
+
+  @@index([linkId])
+  @@index([createdAt])
+}
+
+model InternalTask {
+  id         String    @id @default(uuid())
+  orgId      String
+  clientId   String?
+  projectId  String?
+  assigneeId String?
+  title      String
+  status     String    @default("todo")
+  dueDate    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+model ContentItem {
+  id          String             @id @default(uuid())
+  projectId   String
+  orgId       String
+  title       String
+  body        String?
+  mediaUrls   Json?
+  type        ContentType        @default(POST)
+  status      ContentStatus      @default(DRAFT)
+  position    Int                @default(0)
+  scheduledAt DateTime?
+  createdById String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+  project     Project            @relation(fields: [projectId], references: [id])
+  events      ContentItemEvent[]
+
+  @@index([projectId])
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ContentItemEvent {
+  id        String      @id @default(uuid())
+  itemId    String
+  type      String
+  text      String?
+  byGuest   Boolean     @default(false)
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  item      ContentItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@index([createdAt])
 }
 
 enum OrderStatus {
@@ -971,16 +1158,6 @@ enum AnnouncementColor {
   ERROR
 }
 
-model Announcement {
-  id          String            @id @default(uuid())
-  title       String
-  description String
-  color       AnnouncementColor @default(INFO)
-  createdAt   DateTime          @default(now())
-}
-
-// ─── Vocaccio — Fase 1 ────────────────────────────────────────────────────────
-
 enum VocaccioRole {
   OWNER
   OPERATOR
@@ -1002,174 +1179,6 @@ enum ToneOfVoice {
   TECHNICAL
   PLAYFUL
   AUTHORITATIVE
-}
-
-model Client {
-  id            String              @id @default(uuid())
-  orgId         String
-  name          String
-  email         String?
-  website       String?
-  segment       String?
-  status        String              @default("ACTIVE")
-  responsibleId String?
-  notes         String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  deletedAt     DateTime?
-  organization  Organization        @relation(fields: [orgId], references: [id])
-  projects      Project[]
-  contacts      ClientContact[]
-  interactions  ClientInteraction[]
-
-  @@index([orgId])
-  @@index([status])
-  @@index([deletedAt])
-}
-
-model ClientContact {
-  id       String  @id @default(uuid())
-  clientId String
-  name     String
-  role     String?
-  email    String?
-  phone    String?
-  client   Client  @relation(fields: [clientId], references: [id])
-
-  @@index([clientId])
-}
-
-model ClientInteraction {
-  id        String   @id @default(uuid())
-  clientId  String
-  userId    String
-  type      String
-  summary   String
-  createdAt DateTime @default(now())
-  client    Client   @relation(fields: [clientId], references: [id])
-
-  @@index([clientId])
-  @@index([createdAt])
-}
-
-model Project {
-  id                   String              @id @default(uuid())
-  clientId             String
-  ownerId              String
-  name                 String
-  logoMediaId          String?
-  businessArea         String?
-  socialHandles        Json?
-  slogan               String?
-  colors               Json?
-  typography           Json?
-  productsServices     String?
-  persona              Json?
-  toneOfVoice          ToneOfVoice         @default(CASUAL)
-  website              String?
-  bioLink              String?
-  cta1                 String?
-  cta2                 String?
-  cta3                 String?
-  briefing             String?
-  vocationalProfileId  String?
-  locale               String              @default("pt-BR")
-  timezone             String              @default("America/Sao_Paulo")
-  status               ProjectStatus       @default(ACTIVE)
-  contextPackCache     Json?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  deletedAt            DateTime?
-  client               Client              @relation(fields: [clientId], references: [id])
-  accessLinks          ProjectAccessLink[]
-  contentItems         ContentItem[]
-
-  @@index([clientId])
-  @@index([ownerId])
-  @@index([status])
-  @@index([deletedAt])
-}
-
-model ProjectAccessLink {
-  id          String            @id @default(uuid())
-  projectId   String
-  tokenHash   String            @unique
-  createdById String
-  revokedAt   DateTime?
-  lastUsedAt  DateTime?
-  createdAt   DateTime          @default(now())
-  project     Project           @relation(fields: [projectId], references: [id])
-  events      AccessLinkEvent[]
-
-  @@index([projectId])
-}
-
-model AccessLinkEvent {
-  id        String            @id @default(uuid())
-  linkId    String
-  type      String
-  ip        String?
-  metadata  Json?
-  createdAt DateTime          @default(now())
-  link      ProjectAccessLink @relation(fields: [linkId], references: [id])
-
-  @@index([linkId])
-  @@index([createdAt])
-}
-
-model InternalTask {
-  id         String   @id @default(uuid())
-  orgId      String
-  clientId   String?
-  projectId  String?
-  assigneeId String?
-  title      String
-  status     String   @default("todo")
-  dueDate    DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([orgId])
-  @@index([assigneeId])
-  @@index([status])
-}
-
-model ContentItem {
-  id          String             @id @default(uuid())
-  projectId   String
-  orgId       String
-  title       String
-  body        String?
-  mediaUrls   Json?
-  type        ContentType        @default(POST)
-  status      ContentStatus      @default(DRAFT)
-  position    Int                @default(0)
-  scheduledAt DateTime?
-  createdById String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  deletedAt   DateTime?
-  project     Project            @relation(fields: [projectId], references: [id])
-  events      ContentItemEvent[]
-
-  @@index([projectId])
-  @@index([orgId])
-  @@index([status])
-  @@index([deletedAt])
-}
-
-model ContentItemEvent {
-  id        String      @id @default(uuid())
-  itemId    String
-  type      String
-  text      String?
-  byGuest   Boolean     @default(false)
-  metadata  Json?
-  createdAt DateTime    @default(now())
-  item      ContentItem @relation(fields: [itemId], references: [id])
-
-  @@index([itemId])
-  @@index([createdAt])
 }
 
 enum ContentType {

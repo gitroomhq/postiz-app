@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { LaunchesComponent } from '@gitroom/frontend/components/launches/launches.component';
+import { VolatisCockpit } from '@gitroom/frontend/components/hub/volatis-cockpit.component';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function VolatisPage() {
-  return <LaunchesComponent />;
+  return <VolatisCockpit />;
 }

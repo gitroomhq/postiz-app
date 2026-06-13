@@ -483,15 +483,24 @@ export class IntegrationRepository {
     });
   }
 
-  getIntegrationsList(org: string) {
+  getIntegrationsList(org: string, crmClientId?: string) {
     return this._integration.model.integration.findMany({
       where: {
         organizationId: org,
         deletedAt: null,
+        ...(crmClientId ? { crmClientId } : {}),
       },
       include: {
         customer: true,
       },
+    });
+  }
+
+  assignToCrmClient(org: string, id: string, clientId: string | null) {
+    return this._integration.model.integration.update({
+      where: { id, organizationId: org },
+      data: { crmClientId: clientId },
+      select: { id: true, crmClientId: true },
     });
   }
 

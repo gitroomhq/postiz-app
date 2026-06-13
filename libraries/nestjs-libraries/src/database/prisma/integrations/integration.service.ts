@@ -145,8 +145,12 @@ export class IntegrationService {
     return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
-  getIntegrationsList(org: string) {
-    return this._integrationRepository.getIntegrationsList(org);
+  getIntegrationsList(org: string, crmClientId?: string) {
+    return this._integrationRepository.getIntegrationsList(org, crmClientId);
+  }
+
+  assignToCrmClient(org: string, id: string, clientId: string | null) {
+    return this._integrationRepository.assignToCrmClient(org, id, clientId);
   }
 
   getIntegrationForOrder(id: string, order: string, user: string, org: string) {
