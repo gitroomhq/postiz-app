@@ -211,6 +211,7 @@ export class IntegrationsController {
     @Query('externalUrl') externalUrl: string,
     @Query('redirectUrl') redirectUrl: string,
     @Query('onboarding') onboarding: string,
+    @Query('crmClientId') crmClientId: string,
     @GetOrgFromRequest() org: Organization
   ) {
     if (
@@ -253,6 +254,9 @@ export class IntegrationsController {
 
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
+      if (crmClientId) {
+        await ioRedis.set(`crmClientId:${state}`, crmClientId, 'EX', 3600);
+      }
       await ioRedis.set(
         `external:${state}`,
         JSON.stringify(getExternalUrl),

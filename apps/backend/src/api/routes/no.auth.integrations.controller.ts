@@ -88,6 +88,11 @@ export class NoAuthIntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    const crmClientId = await ioRedis.get(`crmClientId:${body.state}`);
+    if (crmClientId) {
+      await ioRedis.del(`crmClientId:${body.state}`);
+    }
+
     const onboarding = await ioRedis.get(`onboarding:${body.state}`);
     if (onboarding) {
       await ioRedis.del(`onboarding:${body.state}`);
@@ -236,7 +241,8 @@ export class NoAuthIntegrationsController {
           ? AuthService.fixedEncryption(
               Buffer.from(body.code, 'base64').toString()
             )
-          : undefined
+          : undefined,
+        crmClientId || null
       );
 
     this._refreshIntegrationService

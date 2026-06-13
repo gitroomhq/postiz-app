@@ -229,7 +229,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    crmClientId?: string | null
   ) {
     const postTimes = timezone
       ? {
@@ -265,6 +266,7 @@ export class IntegrationRepository {
         refreshNeeded: false,
         rootInternalId: internalId,
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(crmClientId ? { crmClientId } : {}),
         additionalSettings: additionalSettings
           ? JSON.stringify(additionalSettings)
           : '[]',

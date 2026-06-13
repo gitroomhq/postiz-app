@@ -1,7 +1,8 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useContext, useMemo } from 'react';
+import { VolatisClientContext } from '@gitroom/frontend/components/hub/volatis-client-context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -24,16 +25,17 @@ const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
   const fetch = useFetch();
+  const { selectedClientId } = useContext(VolatisClientContext);
   return useCallback(async () => {
     const data = await (await fetch('/integrations')).json();
     modal.openModal({
       title: 'Add Channel',
       withCloseButton: true,
       children: (
-        <AddProviderComponent invite={!!invite} update={update} {...data} />
+        <AddProviderComponent invite={!!invite} update={update} crmClientId={selectedClientId} {...data} />
       ),
     });
-  }, []);
+  }, [selectedClientId]);
 };
 export const AddProviderButton: FC<{
   update?: () => void;
@@ -170,8 +172,9 @@ export const CustomVariables: FC<{
   identifier: string;
   gotoUrl(url: string): void;
   onboarding?: boolean;
+  crmClientId?: string | null;
 }> = (props) => {
-  const { close, gotoUrl, identifier, variables, onboarding } = props;
+  const { close, gotoUrl, identifier, variables, onboarding, crmClientId } = props;
   const fetch = useFetch();
   const modals = useModals();
   const schema = useMemo(() => {
@@ -208,11 +211,13 @@ export const CustomVariables: FC<{
   });
   const submit = useCallback(
     async (data: FieldValues) => {
+      const authParams = [
+        onboarding ? 'onboarding=true' : '',
+        crmClientId ? `crmClientId=${crmClientId}` : '',
+      ].filter(Boolean).join('&');
       const { url } = await (
         await fetch(
-          `/integrations/social/${identifier}${
-            onboarding ? '?onboarding=true' : ''
-          }`
+          `/integrations/social/${identifier}${authParams ? `?${authParams}` : ''}`
         )
       ).json();
       modals.closeAll();
@@ -222,7 +227,7 @@ export const CustomVariables: FC<{
         ).toString('base64')}${onboarding ? '&onboarding=true' : ''}`
       );
     },
-    [variables, onboarding]
+    [variables, onboarding, crmClientId]
   );
 
   const t = useT();
@@ -382,8 +387,9 @@ export const AddProviderComponent: FC<{
   update?: () => void;
   onboarding?: boolean;
   isMobile?: boolean;
+  crmClientId?: string | null;
 }> = (props) => {
-  const { update, social, article, onboarding, isMobile } = props;
+  const { update, social, article, onboarding, isMobile, crmClientId } = props;
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
@@ -410,11 +416,13 @@ export const AddProviderComponent: FC<{
           const { component: Web3Providers } = web3List.find(
             (item) => item.identifier === identifier
           )!;
+          const web3Params = [
+            onboarding ? 'onboarding=true' : '',
+            crmClientId ? `crmClientId=${crmClientId}` : '',
+          ].filter(Boolean).join('&');
           const { url } = await (
             await fetch(
-              `/integrations/social/${identifier}${
-                onboarding ? '?onboarding=true' : ''
-              }`
+              `/integrations/social/${identifier}${web3Params ? `?${web3Params}` : ''}`
             )
           ).json();
           modal.openModal({
@@ -452,6 +460,7 @@ export const AddProviderComponent: FC<{
             isMobile
               ? `redirectUrl=${encodeURIComponent('postiz://integrations')}`
               : '',
+            crmClientId ? `crmClientId=${crmClientId}` : '',
           ]
             .filter(Boolean)
             .join('&');
@@ -582,11 +591,13 @@ export const AddProviderComponent: FC<{
               );
               return;
             }
+            const extParams = [
+              onboarding ? 'onboarding=true' : '',
+              crmClientId ? `crmClientId=${crmClientId}` : '',
+            ].filter(Boolean).join('&');
             const { url } = await (
               await fetch(
-                `/integrations/social/${identifier}${
-                  onboarding ? '?onboarding=true' : ''
-                }`
+                `/integrations/social/${identifier}${extParams ? `?${extParams}` : ''}`
               )
             ).json();
             modal.closeAll();
@@ -633,6 +644,7 @@ export const AddProviderComponent: FC<{
                   gotoUrl={(url: string) => router.push(url)}
                   variables={customFields}
                   onboarding={onboarding}
+                  crmClientId={crmClientId}
                 />
               </div>
             ),
@@ -641,7 +653,7 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    [onboarding]
+    [onboarding, crmClientId]
   );
 
   const t = useT();
