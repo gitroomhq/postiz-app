@@ -10,6 +10,11 @@
 > Postiz (pnpm workspaces, portas), scheduling BullMQ no MVP / Temporal na Fase 3.
 > Nenhuma decisão da Camada 18 foi alterada.
 > Original v5: `C:\Users\felip\.claude\plans\ainda-n-o-comece-a-kind-fog.md`
+>
+> **v6.1 (2026-06-11):** Religare redesenhado — dois modos (individual + agência/terapeuta),
+> dois PDFs (Vocacional + Marca), stack HD nativa TypeScript (`openhumandesign-library` +
+> `sweph`), planos com limites definidos, dashboard dual com/sem Religare, MBTI/Eneagrama
+> movidos para pós-conclusão, astrologia prevista pós-conclusão.
 
 ---
 
@@ -111,6 +116,9 @@ pnpm run prisma-db-push                  # aplicar schema no Supabase
 | Realtime / Storage | Supabase Realtime / Supabase Storage |
 | Canvas (carrosséis) | **Konva.js** — 3 layers/stage, 1080×1350px nativo |
 | Video (carrosséis) | **Remotion** — export MP4 in-browser (skill `maestro`) |
+| Human Design / Astrologia | **`openhumandesign-library` + `sweph`** — TypeScript nativo, sem microserviço |
+| Tzolkin / Kin | Algoritmo puro TypeScript (zero dependência externa) |
+| Fase da Lua | `astronomia` npm |
 | Video (edição) | KyaniteLabs/mcp-video (FFmpeg, Apache 2.0) |
 | Agent Orchestration | **Ruflo** — swarm multi-agente, HNSW memory |
 | Reverse Proxy | Vercel edge (free) / Caddy só em VPS futuro |
@@ -315,21 +323,109 @@ WhatsApp:  MVP notificações unidirecionais; futuro bidirecional Meta Cloud API
 Menu 6 quadradinhos: Religare · Volatis · Augeo · Hub/Home · Clientes · Config
 (não contratados: cadeado + CTA upgrade).
 
-Widgets do dashboard por projeto: Fase da Lua · Kin do Dia (Tzolkin) · Oráculo do Dia
-(banco curado: Rumi, Jung, Lao Tzu, Alan Watts...) · Essência do Owner (arquétipo,
-kin natal, tipo HD) · Posts 30d / Alcance / Engajamento · gráfico 30/60/90d ·
-aprovações pendentes · publicações hoje · alertas.
+**Dashboard SEM Religare contratado:**
+Métricas sociais (posts 30d, alcance, engajamento) · aprovações pendentes ·
+publicações hoje · alertas · widget bloqueado com CTA "Conheça o Religare".
 
-### 10.2 RELIGARE
+**Dashboard COM Religare contratado:**
+Fase da Lua · Kin do Dia (Tzolkin) · Oráculo do Dia (banco curado: Rumi, Jung,
+Lao Tzu, Alan Watts...) · Essência do Owner (2 arquétipos, kin natal, tipo HD) ·
+Posts 30d / Alcance / Engajamento · gráfico 30/60/90d · aprovações pendentes ·
+publicações hoje · alertas.
 
-Rotas: /onboarding → /questionarios (MBTI → Chamado → Eneagrama toggle) →
-/processando → /perfil/[id] (tabs: Essência, Astral, HD, Tzolkin, Numerologia,
-MBTI, Eneagrama, Chamado) → /perfil/[id]/exportar (PDF) → /consulta (hoje, mapa,
-essencia, perguntar c/ Sibila) → /clientes → /portal/[token].
+### 10.2 RELIGARE — Conexão com sua Essência Vocacional
 
-**Cálculos (zero IA, zero API paga):** swisseph (mapa astral + HD gates), algoritmo
-puro (Tzolkin, numerologia), `astronomia` npm (lua), scoring local (MBTI, Chamado,
-Eneagrama). Síntese final: **Sibila** (Sonnet + cache).
+**Módulo autônomo** — pode ser contratado separadamente. Dois modos de uso coexistem:
+
+```
+MODO INDIVIDUAL  → pessoa preenche os próprios dados e obtém sua leitura
+MODO AGÊNCIA     → agência/terapeuta cria perfis para seus clientes/pacientes
+```
+
+O campo `context_type: 'agency' | 'therapy'` no workspace ajusta o vocabulário
+das telas e do PDF gerado — sem duplicar lógica ou telas.
+
+**Planos e limites:**
+
+| Plano | Perfis Religare | Clientes sociais (Volatis) | Obs |
+|-------|-----------------|---------------------------|-----|
+| Individual | 1 (próprio) | — | Só leitura pessoal |
+| Básico | 5 | 5 | Agência pequena / terapeuta solo |
+| Intermediário | ilimitado | 50 | |
+| Enterprise | ilimitado | ilimitado | |
+| Admin | ilimitado | ilimitado | Equipe Vocaccio |
+
+PDF 2 (Perfil de Marca) bloqueado no plano Básico → CTA upgrade.
+
+**Plano Terapeuta** — profissionais de saúde mental e holísticos usam o mesmo
+produto com `context_type: 'therapy'`: vocabulário clínico/holístico, "paciente"
+no lugar de "cliente", sem seção de marca/negócio.
+
+**Rotas:**
+
+```
+/religare                     → home (lista de perfis no modo agência/terapeuta,
+                                ou perfil próprio no modo individual)
+/religare/onboarding          → criar novo perfil
+/religare/onboarding/[id]/link → gerar link sem login para o próprio preencher
+/religare/perfil/[id]         → leitura completa (tabs abaixo)
+/religare/perfil/[id]/exportar → gerar PDF 1 ou PDF 2
+/religare/link/[token]        → formulário sem login para preenchimento externo
+```
+
+Tabs do perfil: **Essência** (arquétipos + vocacional) · **Tzolkin** (kin natal + kin do dia) ·
+**Human Design** (tipo, autoridade, perfil, canais, gates definidos) ·
+**Consulta** (chat com Sibila, oráculo do dia).
+
+*Tabs futuras (pós-conclusão):* Astral · Numerologia · MBTI · Eneagrama.
+
+**Cálculos — zero IA, zero API paga, zero microserviço:**
+
+| Cálculo | Lib / Estratégia |
+|---------|-----------------|
+| Human Design (tipo, autoridade, perfil, gates) | `openhumandesign-library` + `sweph` (TypeScript nativo) |
+| Tzolkin / Kin | Algoritmo puro TypeScript (~30 linhas) |
+| 2 Arquétipos Jung | Questionário + scoring local (12 arquétipos) |
+| Teste Vocacional | Questionário + scoring local (chamados ranqueados) |
+| Fase da Lua | `astronomia` npm |
+| Astrologia *(pós-conclusão)* | `sweph` — mesma lib já instalada |
+
+Síntese narrativa final: **Sibila** (Sonnet + cache) — roda UMA vez ao fechar
+o onboarding, resultado salvo no banco. Não regera a cada acesso.
+
+**Os dois PDFs — "Passaporte de Essência":**
+
+```
+PDF 1 — Perfil Vocacional  (Religare puro)
+  • 2 Arquétipos Jung
+  • Kin natal + interpretação
+  • Tipo HD, Autoridade, Perfil, Canais e Gates principais
+  • Resultado do Teste Vocacional
+  • Síntese narrativa (Sibila)
+
+PDF 2 — Perfil de Marca  (Religare + negócio — plano Intermediário+)
+  • Tudo do PDF 1
+  • Negócio: segmento, público, tom de voz, pilares de conteúdo
+  • Diretrizes de identidade visual
+  • Palavras-chave de essência para copy
+```
+
+**Uso em agentes externos (sem gastar tokens internos):**
+
+```
+Heavy users  → Projeto Claude personalizado
+               system prompt com instruções de copy/imagem autêntica
+               usuário anexa PDF 1 ou PDF 2 por sessão
+
+Light users  → GPT Custom Agent (ChatGPT)
+               instruções configuradas na plataforma
+               usuário anexa o mesmo PDF
+
+O sistema Vocaccio apenas gera e hospeda os PDFs — zero token gasto no fluxo.
+```
+
+Specs: `/specs/religare/` — criar no início da Fase 5 (ou adiantada se Religare
+for contratado antes do Volatis por algum cliente piloto).
 
 ### 10.3 VOLATIS
 
@@ -450,6 +546,14 @@ fallback manual + geração de imagens.
 · Dobby (legenda+hashtags). **Externos:** Imagem (upload no slot de mídia) ·
 Reels/Legenda (insumo do Dobby). Externos recebem Context Pack completo.
 
+**Estratégia de agentes externos com Religare:**
+O PDF gerado pelo Religare (PDF 1 ou PDF 2) é o veículo de contexto para IAs externas.
+Usuário anexa o PDF numa sessão Claude ou GPT e obtém copy/imagem dentro das
+diretrizes de essência — sem gastar tokens internos do sistema.
+
+- Heavy users → Projeto Claude (system prompt de copy + PDF anexado)
+- Light users → GPT Custom Agent (instruções + PDF anexado)
+
 ---
 
 ## CAMADA 13 — VÍDEO (LUPIN + mcp-video)
@@ -543,13 +647,15 @@ Fase 1  — Auth + CRM + cliente/projeto + seed + dashboard base   ← EM ANDAME
 Fase 2  — Portal link único + Kanban + aprovação
 Fase 3  — Volatis/Postiz cockpit + Sincronário + publicação (+ Temporal)
 Fase 4  — Memória por projeto + aprendizado com revisões
-Fase 5  — Religare + consulta pessoal + cálculos
+Fase 5  — Religare + onboarding + cálculos HD/Tzolkin/Arquétipos + PDFs + Sibila
 Fase 6  — Augeo + lançamentos + SEO/AEO/GEO
 Fase 7  — Automações regras fixas + webhooks
 Fase 8  — Typebot + Chatwoot + WhatsApp bidirecional
 Fase 9  — Vídeo Lupin + mcp-video + Dobby
 Fase 10 — Vitrine Netflix ⛔ somente após comando explícito
 Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
+Pós-conclusão — MBTI + Eneagrama no Religare ⛔ pós-conclusão
+Pós-conclusão — Astrologia natal no Religare (`sweph` já instalado) ⛔ pós-conclusão
 ```
 
 ---
@@ -562,9 +668,17 @@ Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
 | Auth cliente MVP | ✅ Link único livre (sem login) |
 | Auth cliente futuro | ✅ CLIENT_USER (schema preparado desde F1) |
 | Chamado Vocacional | ✅ 7-10 perguntas → 3-5 chamados ranqueados |
-| Eneagrama | ✅ Opcional com toggle (50q / 15q) |
+| Eneagrama | ⛔ Pós-conclusão (fora do MVP do Religare) |
+| MBTI | ⛔ Pós-conclusão (fora do MVP do Religare) |
+| Astrologia natal | ⛔ Pós-conclusão (`sweph` já instalado quando chegar) |
 | Base Volatis | ✅ Fork do Postiz |
-| Agente Religare | ✅ Sibila |
+| Agente Religare | ✅ Sibila (Sonnet + cache — roda 1x no onboarding, salva no banco) |
+| Religare modos | ✅ Individual + Agência + Terapeuta (`context_type`) |
+| Religare PDFs | ✅ PDF 1 Vocacional (todos) · PDF 2 Marca (Intermediário+) |
+| Religare HD stack | ✅ `openhumandesign-library` + `sweph` — TypeScript nativo, sem microserviço |
+| Religare limites | ✅ 1/5/ilimitado/ilimitado (individual/básico/intermediário/enterprise) |
+| Clientes sociais limites | ✅ 5/50/ilimitado (básico/intermediário/enterprise) |
+| Agentes externos | ✅ PDF anexado em Claude Project (heavy) ou GPT Agent (light) |
 | Guardião da marca | ✅ Hagrid |
 | Carrosséis motor | ✅ Konva.js (browser-only) |
 | Carrosséis agente | ✅ Cedrico interno (Sonnet + cache + prompt v4) |

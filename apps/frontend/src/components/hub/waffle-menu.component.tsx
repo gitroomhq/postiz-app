@@ -89,7 +89,7 @@ const MODULES: Module[] = [
     id: 'hub',
     label: 'Hub',
     description: 'Dashboard & visão geral',
-    href: '/launches',
+    href: '/hub',
     icon: HomeIcon,
     locked: false,
   },

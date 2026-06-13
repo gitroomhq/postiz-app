@@ -27,7 +27,10 @@ const ITEM_WITH_EVENTS_SELECT = {
 
 @Injectable()
 export class ContentRepository {
-  constructor(private _content: PrismaRepository<'contentItem'>) {}
+  constructor(
+    private _content: PrismaRepository<'contentItem'>,
+    private _event: PrismaRepository<'contentItemEvent'>,
+  ) {}
 
   listItems(projectId: string, orgId: string) {
     return this._content.model.contentItem.findMany({
@@ -84,7 +87,7 @@ export class ContentRepository {
   }
 
   addEvent(itemId: string, type: string, text: string, byGuest = false) {
-    return this._content.model.contentItemEvent.create({
+    return this._event.model.contentItemEvent.create({
       data: { itemId, type, text, byGuest },
       select: { id: true, type: true, text: true, byGuest: true, createdAt: true },
     });
