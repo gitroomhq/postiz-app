@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -592,6 +593,9 @@ export const CalendarColumn: FC<{
 }> = memo((props) => {
   const t = useT();
 
+  const firstRender = useRef(true);
+  const scrollRef = useRef(null);
+
   const { getDate, randomHour } = props;
   const [num, setNum] = useState(0);
   const user = useUser();
@@ -637,6 +641,16 @@ export const CalendarColumn: FC<{
     }
     return postList.slice(0, 3);
   }, [postList, showAll]);
+
+  useEffect(()=>{
+    if(!firstRender.current){
+      return;
+    }
+    if(scrollRef.current && list?.length > 0){
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      firstRender.current = false;
+    }
+  },[list])
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
@@ -858,8 +872,9 @@ export const CalendarColumn: FC<{
               <div className="h-full w-full bg-newSettings rounded-[10px]" />
             </div>
           )}
-          {list.map((post) => (
+          {list.map((post, index) => (
             <div
+            ref={index === 0 ? scrollRef : null}
               key={post.id}
               className={clsx(
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
