@@ -128,6 +128,7 @@ export class IntegrationsController {
             changeProfilePicture: !!findIntegration?.changeProfilePicture,
             changeNickName: !!findIntegration?.changeNickname,
             customer: p.customer,
+            crmClientId: p.crmClientId ?? null,
             additionalSettings: p.additionalSettings || '[]',
           };
         })

@@ -2,6 +2,7 @@
 
 import { VolatisClientProvider } from '@gitroom/frontend/components/hub/volatis-client-context';
 import { VolatisClientSelector } from '@gitroom/frontend/components/hub/volatis-client-selector.component';
+import { VolatisChannelManager } from '@gitroom/frontend/components/hub/volatis-channel-manager.component';
 import { LaunchesComponent } from '@gitroom/frontend/components/launches/launches.component';
 
 export const VolatisCockpit = () => {
@@ -22,6 +23,9 @@ export const VolatisCockpit = () => {
             Contexto
           </span>
           <VolatisClientSelector />
+          <div className="ml-auto">
+            <VolatisChannelManager />
+          </div>
         </div>
         <div className="flex-1 min-h-0">
           <LaunchesComponent />
