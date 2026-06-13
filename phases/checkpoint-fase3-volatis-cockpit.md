@@ -1,34 +1,36 @@
-# Checkpoint — Fase 3: Volatis Cockpit (início)
-**Data:** 2026-06-12 | **Status: INICIADO — cockpit base entregue**
+# Checkpoint — Fase 3: Volatis Cockpit
+**Data:** 2026-06-12 | **Status: EM ANDAMENTO**
 
 ## Commits desta sessão
-- `c31f1ce5` fix: hub link /launches→/hub; content repo _event injection; plano v6.1 religare
 - `2107c8d8` feat(phase3): /hub/volatis — cockpit Volatis desbloqueado no waffle menu
+- `e92a1820` feat(phase3): per-client channels — crmClientId em Integration + seletor Volatis
 
 ## Estado atual
 
-### Volatis ✅ (base)
-- Rota `/hub/volatis` criada — renderiza `LaunchesComponent` (calendário Postiz completo)
+### Volatis ✅ (cockpit base + per-client channels)
+- Rota `/hub/volatis` — cockpit com barra de contexto de cliente + calendário Postiz
 - Volatis desbloqueado no waffle menu (`locked: false`)
-- Link "Calendar" no TopMenu aponta para `/hub/volatis` (URL canônica)
-- `/launches` ainda existe e funciona (compatibilidade)
+- Link "Calendar" no TopMenu aponta para `/hub/volatis`
 
-### O que o calendário Postiz já oferece
-- Calendário semanal/mensal com drag-and-drop de posts
-- Criação de posts com editor multi-rede
-- Agendamento com fila de publicação
-- Filtros por canal/integração
-- Menu lateral com canais conectados
+### Per-client channels ✅
+- `Integration.crmClientId String?` — FK nullable para `Client` (safe migration)
+- `GET /integrations/list?clientId=xxx` — filtra canais por cliente
+- `PUT /integrations/:id/crm-client` — associa canal a cliente
+- `VolatisClientContext` — contexto React com cliente selecionado
+- `useIntegrationList` — SWR key muda com o cliente selecionado
+- `VolatisClientSelector` — dropdown de clientes CRM no topo do cockpit
 
-## Próximos passos da Fase 3
+### Pendente
+1. **UI de atribuição** — botão para associar canal existente a um cliente
+   (API já existe: `PUT /integrations/:id/crm-client`)
+2. **Fluxo OAuth por-cliente** — ao conectar nova rede, pre-selecionar o cliente ativo
+3. **Builder de carrosseis** — `/hub/volatis/criar/carrossel` com Konva.js (Cedrico) — Fase 3/4
+4. **Sincronário** — calendário Tzolkin integrado ao calendário Postiz
+5. **Métricas reais** no dashboard Hub
 
-### Pendente (a implementar nesta fase ou nas próximas)
-1. **Arquitetura per-client channels** — definir se cada `CrmClient` mapeia para
-   uma `organization` Postiz ou usa tabela `clientChannel` separada
-2. **`/hub/volatis/criar/carrossel`** — builder Konva.js (Cedrico) — Fase 3/4
-3. **Sincronário** — calendário cosmológico Tzolkin integrado ao calendário Postiz
-4. **Métricas reais no dashboard** — conectar `posts 30d / alcance / engajamento`
-   ao dado real do Postiz após canais conectados
+## Erros TypeScript pre-existentes no backend (não são nossos)
+8 erros em `agent.graph.service.ts`, `autopost.service.ts`, `media.repository.ts`,
+`emails/empty.provider.ts`, `short-linking`, `wallet.provider.ts` — todos do Postiz original.
 
 ## Como iniciar dev
 ```powershell
@@ -39,5 +41,5 @@ pnpm --filter ./apps/backend run dev
 pnpm --filter ./apps/frontend run dev
 
 # Login: admin@vocaccio.com.br / Vocaccio@2024!
-# Volatis: waffle menu → Volatis (desbloqueado) ou sidebar Calendar
+# Volatis: waffle menu → Volatis → seletor de cliente no topo
 ```
