@@ -693,5 +693,10 @@
   "watch_tutorial_description": "Mira este breve video para aprender a sacar el máximo provecho de Postiz",
   "back": "Atrás",
   "get_started": "Comenzar",
+  "end_never": "Nunca finalizar",
+  "end_after_date": "Finalizar después de una fecha",
+  "end_after_posts": "Finalizar después de un número de publicaciones",
+  "no_of_posts": "Número de publicaciones",
+  "never": "Nunca",
   "kick_select_channel": "Seleccionar canal"
 }

@@ -412,6 +412,8 @@ model Post {
   creationMethod             CreationMethod            @default(UNKNOWN)
   lastMessageId              String?
   intervalInDays             Int?
+  endRecurrenceType          EndRecurrenceType         @default(NEVER)
+  endRecurrenceAfter         String?
   error                      String?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
@@ -959,6 +961,12 @@ enum AnnouncementColor {
   INFO
   WARNING
   ERROR
+}
+
+enum EndRecurrenceType {
+  NEVER
+  POSTS
+  DATE
 }
 
 model Announcement {
