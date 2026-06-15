@@ -30,13 +30,14 @@ export class InstagramProvider
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
-    'instagram_basic',
+    'instagram_business_basic',
+    'instagram_business_manage_messages',
     'pages_show_list',
     'pages_read_engagement',
     'business_management',
-    'instagram_content_publish',
-    'instagram_manage_comments',
-    'instagram_manage_insights',
+    'instagram_business_content_publish',
+    'instagram_business_manage_comments',
+    'instagram_business_manage_insights',
   ];
   override maxConcurrentJob = 400;
   editor = 'normal' as const;
@@ -671,9 +672,14 @@ export class InstagramProvider
               )}`
             : ``;
 
+        const coverUrl =
+          m.thumbnail && !isStory && firstPost?.media?.length === 1
+            ? `&cover_url=${encodeURIComponent(m.thumbnail)}`
+            : ``;
+
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}${coverUrl}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -682,20 +688,40 @@ export class InstagramProvider
         console.log('in progress2', id);
 
         let status = 'IN_PROGRESS';
-        while (status === 'IN_PROGRESS') {
-          const { status_code } = await (
-            await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${
-                userToken || accessToken
-              }&fields=status_code`,
-              undefined,
-              '',
-              0,
-              true
-            )
-          ).json();
-          await timer(30000);
-          status = status_code;
+        const isVideo = hasExtension(m.path, 'mp4');
+        const maxWait = isVideo ? 180000 : 15000;
+        const pollInterval = isVideo ? 10000 : 5000;
+        let waited = 0;
+        while (status === 'IN_PROGRESS' && waited < maxWait) {
+          try {
+            const { status_code } = await (
+              await this.fetch(
+                `https://${type}/v20.0/${photoId}?access_token=${
+                  userToken || accessToken
+                }&fields=status_code`,
+                undefined,
+                '',
+                0,
+                true
+              )
+            ).json();
+            if (status_code === 'FINISHED') {
+              status = 'FINISHED';
+              break;
+            }
+            if (status_code === 'ERROR') {
+              console.log('Container error for', photoId);
+              break;
+            }
+            status = status_code;
+          } catch (e) {
+            console.log(
+              'Status poll error (Meta subcode 33 bug), retrying...',
+              photoId
+            );
+          }
+          await timer(pollInterval);
+          waited += pollInterval;
         }
         console.log('in progress3', id);
 
@@ -718,13 +744,23 @@ export class InstagramProvider
         ).json();
         lastMediaId = mediaId;
 
-        const { permalink } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-              userToken || accessToken
-            }`
-          )
-        ).json();
+        let permalink = '';
+        try {
+          const permResp = await (
+            await this.fetch(
+              `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+                userToken || accessToken
+              }`
+            )
+          ).json();
+          permalink = permResp.permalink || '';
+        } catch (e) {
+          console.log(
+            'Permalink fetch failed for',
+            mediaId,
+            '- non-critical, continuing'
+          );
+        }
         lastPermalink = permalink;
       }
 
@@ -746,13 +782,23 @@ export class InstagramProvider
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
+      let permalink = '';
+      try {
+        const permResp = await (
+          await this.fetch(
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+              userToken || accessToken
+            }`
+          )
+        ).json();
+        permalink = permResp.permalink || '';
+      } catch (e) {
+        console.log(
+          'Permalink fetch failed for',
+          mediaId,
+          '- non-critical, continuing'
+        );
+      }
 
       return [
         {
@@ -802,13 +848,23 @@ export class InstagramProvider
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
+      let permalink = '';
+      try {
+        const permResp = await (
+          await this.fetch(
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+              userToken || accessToken
+            }`
+          )
+        ).json();
+        permalink = permResp.permalink || '';
+      } catch (e) {
+        console.log(
+          'Permalink fetch failed for',
+          mediaId,
+          '- non-critical, continuing'
+        );
+      }
 
       return [
         {
