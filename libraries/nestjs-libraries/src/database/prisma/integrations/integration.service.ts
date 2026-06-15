@@ -113,7 +113,13 @@ export class IntegrationService {
     const uploadedPicture = picture
       ? picture?.indexOf('imagedelivery.net') > -1
         ? picture
-        : await this.storage.uploadSimple(picture)
+        : await this.storage.uploadSimple(picture).catch((err) => {
+            console.error(
+              'Avatar upload failed, continuing without avatar:',
+              err.message
+            );
+            return undefined;
+          })
       : undefined;
 
     return this._integrationRepository.createOrUpdateIntegration(
