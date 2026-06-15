@@ -12,6 +12,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -33,7 +34,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
-  toolTip = 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to'
+  toolTip =
+    'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to';
 
   maxLength() {
     return 100000;
@@ -162,9 +164,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
 
   private buildContent(post: PostDetails): string {
     const mediaContent = post.media?.map((m) => m.path).join('\n\n') || '';
-    return mediaContent
-      ? `${post.message}\n\n${mediaContent}`
-      : post.message;
+    return mediaContent ? `${post.message}\n\n${mediaContent}` : post.message;
   }
 
   async post(
@@ -195,6 +195,37 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+
+    const repostEvent = finalizeEvent(
+      {
+        kind: 6, // Repost
+        content: '',
+        tags: [
+          ['e', postId],
+          ['p', originalIntegration.internalId],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    await this.publish(integration.internalId, repostEvent);
   }
 
   async comment(
