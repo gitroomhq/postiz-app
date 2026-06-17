@@ -185,13 +185,13 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       password
     );
 
-    const eventId = await this.publish(id, textEvent);
+    await this.publish(id, textEvent);
 
     return [
       {
         id: firstPost.id,
-        postId: String(eventId),
-        releaseURL: `https://primal.net/e/${eventId}`,
+        postId: String(textEvent.id),
+        releaseURL: `https://primal.net/e/${textEvent.id}`,
         status: 'completed',
       },
     ];
@@ -208,16 +208,16 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     integration: Integration,
     originalIntegration: Integration,
     postId: string,
-    information: any
+    _information: any
   ) {
     const { password } = AuthService.verifyJWT(integration.token) as any;
 
     const repostEvent = finalizeEvent(
       {
-        kind: 6, // Repost
+        kind: 6, // NIP-18 Repost
         content: '',
         tags: [
-          ['e', postId],
+          ['e', postId, list[0]], // event-id + relay hint
           ['p', originalIntegration.internalId],
         ],
         created_at: Math.floor(Date.now() / 1000),
@@ -253,13 +253,13 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       password
     );
 
-    const eventId = await this.publish(id, textEvent);
+    await this.publish(id, textEvent);
 
     return [
       {
         id: commentPost.id,
-        postId: String(eventId),
-        releaseURL: `https://primal.net/e/${eventId}`,
+        postId: String(textEvent.id),
+        releaseURL: `https://primal.net/e/${textEvent.id}`,
         status: 'completed',
       },
     ];
