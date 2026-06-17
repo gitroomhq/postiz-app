@@ -173,6 +173,9 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const secretKey = Uint8Array.from(
+      password.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16))
+    );
     const [firstPost] = postDetails;
 
     const textEvent = finalizeEvent(
@@ -182,7 +185,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      secretKey
     );
 
     await this.publish(id, textEvent);
@@ -211,6 +214,9 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     _information: any
   ) {
     const { password } = AuthService.verifyJWT(integration.token) as any;
+    const secretKey = Uint8Array.from(
+      password.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16))
+    );
 
     const repostEvent = finalizeEvent(
       {
@@ -222,7 +228,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      secretKey
     );
 
     await this.publish(integration.internalId, repostEvent);
@@ -237,6 +243,9 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const secretKey = Uint8Array.from(
+      password.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16))
+    );
     const [commentPost] = postDetails;
     const replyToId = lastCommentId || postId;
 
@@ -250,7 +259,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      secretKey
     );
 
     await this.publish(id, textEvent);
