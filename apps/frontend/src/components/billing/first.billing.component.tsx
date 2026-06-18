@@ -9,7 +9,8 @@ import { OrganizationSelector } from '@gitroom/frontend/components/layout/organi
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
-import dynamic from 'next/dynamic';
+import EmbeddedBilling from '@gitroom/frontend/components/billing/embedded.billing';
+import ModeComponent from '@gitroom/frontend/components/layout/mode.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { capitalize } from 'lodash';
@@ -28,23 +29,6 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import useCookie from 'react-use-cookie';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
-
-const ModeComponent = dynamic(
-  () => import('@gitroom/frontend/components/layout/mode.component'),
-  {
-    ssr: false,
-  }
-);
-
-const EmbeddedBilling = dynamic(
-  () =>
-    import('@gitroom/frontend/components/billing/embedded.billing').then(
-      (mod) => mod.EmbeddedBilling
-    ),
-  {
-    ssr: false,
-  }
-);
 
 export const FirstBillingComponent = () => {
   const { stripeClient } = useVariables();

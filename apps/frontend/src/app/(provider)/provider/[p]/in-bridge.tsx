@@ -1,13 +1,7 @@
 'use client';
-import dynamic from 'next/dynamic';
 import { FC } from 'react';
-const Bridge = dynamic(
-  () =>
-    import(
-      './bridge'
-    ).then((mod) => mod.default),
-  { ssr: false }
-);
+import ProviderPreviewBridge from './bridge';
+
 export const InBridge: FC<{ provider: string }> = ({ provider }) => {
-  return <Bridge provider={provider} />;
+  return <ProviderPreviewBridge provider={provider} />;
 };
