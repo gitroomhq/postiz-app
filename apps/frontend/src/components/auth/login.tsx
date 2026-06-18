@@ -15,6 +15,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
 import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useRouter } from 'next/navigation';
 type Inputs = {
   email: string;
   password: string;
@@ -25,6 +26,7 @@ export function Login() {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
+  const router = useRouter();
   const { isGeneral, neynarClientId, billingEnabled, genericOauth } =
     useVariables();
   const resolver = useMemo(() => {
@@ -58,6 +60,9 @@ export function Login() {
         });
       }
       setLoading(false);
+    } else {
+      // Successful login - redirect to home or launches
+      router.push(isGeneral ? '/launches' : '/');
     }
   };
   return (
