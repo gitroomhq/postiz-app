@@ -694,27 +694,43 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
+    // Reach/impression metrics (page_impressions_unique, page_posts_impressions_unique,
+    // page_video_views) were deprecated by Meta on 2026-06-15 and now return an
+    // "invalid metric" error. They are replaced by the Media Views metrics, which
+    // require Graph API v23.0+:
+    //   - page_total_media_view_unique: total unique views on the page's media (reach)
+    //   - page_media_view: total media views, broken down between paid and organic
     const { data } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+
+    // page_media_view returns paid/organic breakdowns as an object; sum them to
+    // keep the single-total UI working.
+    const sumValue = (value: any): number => {
+      if (value && typeof value === 'object') {
+        return Object.values(value as Record<string, number>).reduce(
+          (sum: number, v: number) => sum + (Number(v) || 0),
+          0
+        );
+      }
+      return Number(value) || 0;
+    };
 
     return (
       data?.map((d: any) => ({
         label:
-          d.name === 'page_impressions_unique'
+          d.name === 'page_total_media_view_unique'
             ? 'Page Impressions'
             : d.name === 'page_post_engagements'
             ? 'Posts Engagement'
             : d.name === 'page_daily_follows'
             ? 'Page followers'
-            : d.name === 'page_video_views'
-            ? 'Videos views'
-            : 'Posts Impressions',
+            : 'Media views',
         percentageChange: 5,
         data: d?.values?.map((v: any) => ({
-          total: v.value,
+          total: sumValue(v.value),
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
         })),
       })) || []
@@ -730,10 +746,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const today = dayjs().format('YYYY-MM-DD');
 
     try {
-      // Fetch post insights from Facebook Graph API
+      // Fetch post insights from Facebook Graph API.
+      // post_impressions_unique was deprecated by Meta on 2026-06-15; it is replaced
+      // by post_total_media_view_unique (unique media views = reach), available on
+      // Graph API v23.0+. Engagement metrics below are unaffected.
       const { data } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
 
@@ -751,7 +770,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         let total = '';
 
         switch (metric.name) {
-          case 'post_impressions_unique':
+          case 'post_total_media_view_unique':
             label = 'Impressions';
             total = String(value);
             break;
