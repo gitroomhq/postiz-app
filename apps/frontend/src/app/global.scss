@@ -14,6 +14,27 @@
 body {
   background: var(--new-bgColor) !important;
   color: var(--new-btn-text);
+  color-scheme: light;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--new-btn-text);
+  background-color: var(--new-bgColorInner);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--new-textItemBlur);
 }
 
 body * {
@@ -58,7 +79,7 @@ body * {
 }
 
 .table1 thead {
-  @apply bg-customColor8 border-b border-b-fifth;
+  @apply bg-newBgColorInner border-b border-b-newBorder;
   height: 44px;
   font-size: 12px;
 }

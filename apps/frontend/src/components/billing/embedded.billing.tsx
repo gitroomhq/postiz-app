@@ -24,7 +24,7 @@ export const EmbeddedBilling: FC<{
 }> = ({ stripe, secret, showCoupon = false, autoApplyCoupon }) => {
   const [saveSecret, setSaveSecret] = useState(secret);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useCookie('mode', 'dark');
+  const [mode, setMode] = useCookie('mode', 'light');
 
   useEffect(() => {
     modeEmitter.on('mode', (value) => {

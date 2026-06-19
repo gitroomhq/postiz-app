@@ -21,7 +21,7 @@ export const ChartSocial: FC<{
   color?: 'purple' | 'green' | 'blue';
 }> = (props) => {
   const { data, color = 'purple' } = props;
-  const [mode] = useCookie('mode', 'dark');
+  const [mode] = useCookie('mode', 'light');
 
   const list = useMemo(() => {
     const merged = data.length < 7 ? data : mergeDataPoints(data, 7);

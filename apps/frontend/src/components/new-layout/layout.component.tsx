@@ -142,9 +142,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           <StreakComponent />
                           <div className="hidden h-[20px] w-[1px] bg-blockSeparator sm:block" />
                           <OrganizationSelector />
-                          <div className="hover:text-[#37322F]">
-                            <ModeComponent />
-                          </div>
+                          <ModeComponent />
                           <div className="hidden h-[20px] w-[1px] bg-blockSeparator sm:block" />
                           <LanguageComponent />
                           <ChromeExtensionComponent />
