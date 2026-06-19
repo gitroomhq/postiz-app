@@ -202,7 +202,6 @@ export function useUppyUploader(props: {
       props.onStart();
     });
     uppy2.on('complete', async (result) => {
-      console.log(result);
       for (const file of [...result.successful]) {
         uppy2.removeFile(file.id);
       }

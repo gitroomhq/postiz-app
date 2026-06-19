@@ -679,13 +679,12 @@ export const MultiMediaComponent: FC<{
   const user = useUser();
   const modals = useModals();
   const t = useT();
+  const [currentMedia, setCurrentMedia] = useState(value);
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
     }
   }, [value]);
-
-  const [currentMedia, setCurrentMedia] = useState(value);
   const mediaDirectory = useMediaDirectory();
   const changeMedia = useCallback(
     (
@@ -709,7 +708,7 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [currentMedia, onChange]
   );
   const showModal = useCallback(() => {
     modals.openModal({
@@ -736,7 +735,7 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [currentMedia, onChange]
   );
 
   const designMedia = useCallback(() => {
@@ -759,9 +758,10 @@ export const MultiMediaComponent: FC<{
           {!!currentMedia && (
             <ReactSortable
               list={currentMedia}
-              setList={(value) =>
-                onChange({ target: { name: 'upload', value } })
-              }
+              setList={(value) => {
+                setCurrentMedia(value);
+                onChange({ target: { name: 'upload', value } });
+              }}
               className="flex gap-[10px] sortable-container"
               animation={200}
               swap={true}
