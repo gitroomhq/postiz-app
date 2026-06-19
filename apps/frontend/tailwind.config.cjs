@@ -249,6 +249,15 @@ module.exports = {
         },
       }),
       screens: {
+        desktop: {
+          raw: '(min-width: 1200px)',
+        },
+        belowDesktop: {
+          raw: '(max-width: 1199px)',
+        },
+        mobileDrawer: {
+          raw: '(max-width: 767px)',
+        },
         mobile: {
           raw: '(max-width: 1025px)',
         },

@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, ReactNode, useCallback } from 'react';
+import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -311,13 +312,21 @@ export const useMenuItem = () => {
   };
 };
 
-export const TopMenu: FC = () => {
+export const TopMenu: FC<{
+  variant?: 'sidebar' | 'drawer';
+  onNavigate?: () => void;
+}> = ({ variant = 'sidebar', onNavigate }) => {
   const user = useUser();
   const { firstMenu, secondMenu } = useMenuItem();
   const { isGeneral, billingEnabled } = useVariables();
   return (
     <>
-      <div className="flex flex-1 flex-col minCustom:gap-[16px] blurMe">
+      <div
+        className={clsx(
+          'flex flex-1 flex-col blurMe',
+          variant === 'sidebar' ? 'minCustom:gap-[16px]' : 'gap-[6px]',
+        )}
+      >
         {
           // @ts-ignore
           user?.orgId &&
@@ -346,11 +355,20 @@ export const TopMenu: FC = () => {
                   icon={item.icon}
                   key={item.name}
                   onClick={item.onClick}
+                  onNavigate={onNavigate}
+                  variant={variant}
                 />
               ))
         }
       </div>
-      <div className="flex flex-col minCustom:gap-[20px] custom:gap-[8px] blurMe">
+      <div
+        className={clsx(
+          'flex flex-col blurMe',
+          variant === 'sidebar'
+            ? 'minCustom:gap-[20px] custom:gap-[8px]'
+            : 'gap-[6px]',
+        )}
+      >
         {secondMenu
           .filter((f) => {
             if (f.hide) {
@@ -374,6 +392,8 @@ export const TopMenu: FC = () => {
               icon={item.icon}
               key={item.name}
               onClick={item.onClick}
+              onNavigate={onNavigate}
+              variant={variant}
             />
           ))}
       </div>
