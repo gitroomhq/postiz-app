@@ -34,6 +34,12 @@
 **Agente Economizador (Dumbledore):** antes de task complexa avaliar — modelo mínimo
 suficiente? contexto já em cache? algo já implementado resolve? dá pra quebrar em 2?
 
+**Referência de qualidade visual (Dumbledore):** skill `impeccable` instalada globalmente
+(`~/.claude/skills/impeccable`) — usar como referência prioritária de boas práticas de
+front-end (hierarquia visual, acessibilidade, espaçamento, motion, anti-padrões) em toda
+tarefa de UI do Vocaccio. Flitwick audita com ela antes de fechar tela/componente;
+McGonagall inclui como critério de "pronto" ao planejar passos de front-end.
+
 ## FLUXO DE EXECUÇÃO
 
 ```
@@ -646,6 +652,7 @@ Fase 0  — Setup + arquitetura                       ✅ CONCLUÍDA (2026-06-06
 Fase 1  — Auth + CRM + cliente/projeto + seed + dashboard base   ← EM ANDAMENTO
 Fase 2  — Portal link único + Kanban + aprovação
 Fase 3  — Volatis/Postiz cockpit + Sincronário + publicação (+ Temporal)
+Fase 3.5 — Revisão geral de FE / coerência visual   ← APÓS validar o criador de carrosséis
 Fase 4  — Memória por projeto + aprendizado com revisões
 Fase 5  — Religare + onboarding + cálculos HD/Tzolkin/Arquétipos + PDFs + Sibila
 Fase 6  — Augeo + lançamentos + SEO/AEO/GEO
@@ -657,6 +664,25 @@ Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
 Pós-conclusão — MBTI + Eneagrama no Religare ⛔ pós-conclusão
 Pós-conclusão — Astrologia natal no Religare (`sweph` já instalado) ⛔ pós-conclusão
 ```
+
+---
+
+### Fase 3.5 — Revisão geral de FE / coerência visual (escopo)
+
+Disparada **após** a validação do criador de carrosséis. Objetivo: dar um ar atualizado e
+coerente às novas interfaces, eliminando a inconsistência visual antes de virar bola de neve.
+Princípio-guia (ver [[feedback-vocaccio-ui-host-theme]] na memória):
+
+- **Estrutura = Postiz dark (`--new-*`); COR/acentos = Vocaccio sempre (`--voc-*` aurora/rosa)**,
+  nunca o roxo `--new-btn-primary` do Postiz. Esquecer o Postiz como prioridade visual.
+- **Sistema de design unificado:** definir tokens de acento Vocaccio semânticos e um conjunto
+  pequeno de primitivos (botão, input, select, toggle, card, accordion, painel) reutilizados em
+  TODAS as telas novas (CRM, hub, Volatis, portal) — parar de hand-rolar componentes divergentes.
+- **Marca:** logo = símbolo aurora suave oficial (`/vocaccio-symbol.png`); favicons Vocaccio
+  (svg/png/ico) — concluído nesta sessão, validar em todas as telas.
+- **Processo:** toda mudança de UI verificada no browser (loop visual via Claude in Chrome),
+  não só typecheck.
+- Auditar telas já entregues (Fases 1–3) e padronizar contra o sistema unificado.
 
 ---
 
@@ -681,7 +707,7 @@ Pós-conclusão — Astrologia natal no Religare (`sweph` já instalado) ⛔ pó
 | Agentes externos | ✅ PDF anexado em Claude Project (heavy) ou GPT Agent (light) |
 | Guardião da marca | ✅ Hagrid |
 | Carrosséis motor | ✅ Konva.js (browser-only) |
-| Carrosséis agente | ✅ Cedrico interno (Sonnet + cache + prompt v4) |
+| Carrosséis agente | ✅ Cedrico interno (Sonnet + cache; prompt v5 = emite JSON do schema, não HTML/Playwright — ver `system-prompt-maquina-carrosseis-v5-delta.md`) |
 | Carrosséis export PNG | ✅ canvas.toDataURL() — zero servidor |
 | Carrosséis export MP4 | ✅ Remotion (maestro / Charlie Weasley) |
 | Lançamentos | ✅ Fred & George |
