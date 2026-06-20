@@ -7,6 +7,86 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .responsive-page {
+    @apply mx-auto w-full max-w-[1440px] px-[80px] py-[32px];
+
+    @screen tablet {
+      @apply px-[32px] py-[24px];
+    }
+
+    @screen mobile {
+      @apply px-[16px] py-[16px];
+    }
+  }
+
+  .responsive-surface {
+    @apply rounded-[20px] border border-newBgLineColor bg-newBgColorInner;
+  }
+
+  .responsive-scroll {
+    @apply -mx-[80px] overflow-x-auto px-[80px] scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor;
+
+    @screen tablet {
+      @apply -mx-[32px] px-[32px];
+    }
+
+    @screen mobile {
+      @apply -mx-[16px] px-[16px];
+    }
+  }
+
+  .sticky-actions {
+    @apply sticky bottom-0 z-[40] flex flex-wrap items-center justify-end gap-[12px] border-t border-newColColor bg-newBgColor px-[80px] py-[12px];
+
+    @screen tablet {
+      @apply px-[32px];
+    }
+
+    @screen mobile {
+      @apply flex-col items-stretch px-[16px] pb-[12px];
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+  }
+
+  .responsive-data {
+    @apply w-full border-collapse text-left text-[14px];
+
+    th {
+      @apply bg-newTableHeader px-[24px] py-[14px] text-[12px] font-[600] text-newTableText;
+    }
+
+    td {
+      @apply border-b border-newTableBorder px-[24px] py-[16px] text-newTableText;
+    }
+
+    @screen mobile {
+      thead {
+        @apply hidden;
+      }
+
+      tbody,
+      tr,
+      td {
+        @apply block;
+      }
+
+      tr {
+        @apply mb-[12px] rounded-[16px] border border-newTableBorder bg-newBgColorInner p-[4px];
+      }
+
+      td {
+        @apply flex items-start justify-between gap-[16px] border-0 px-[12px] py-[10px] text-right;
+      }
+
+      td::before {
+        content: attr(data-label);
+        @apply min-w-[110px] text-left text-[12px] font-[600] text-newTableText;
+      }
+    }
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
