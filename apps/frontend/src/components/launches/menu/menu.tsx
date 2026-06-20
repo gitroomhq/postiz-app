@@ -76,7 +76,10 @@ export const Menu: FC<{
     if (show && menuRef.current) {
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
       const padding = 10;
+      const nextPosition = { ...show };
+      let shouldUpdate = false;
 
       // Check if menu overflows bottom of viewport
       if (menuRect.bottom > viewportHeight - padding) {
@@ -86,8 +89,29 @@ export const Menu: FC<{
         );
         // Only update if position actually changed significantly to avoid infinite loop
         if (Math.abs(show.y - newY) > 1) {
-          setShow((prev) => (prev ? { ...prev, y: newY } : false));
+          nextPosition.y = newY;
+          shouldUpdate = true;
         }
+      }
+
+      if (menuRect.right > viewportWidth - padding) {
+        const newX = Math.max(
+          padding,
+          viewportWidth - menuRect.width - padding
+        );
+        if (Math.abs(show.x - newX) > 1) {
+          nextPosition.x = newX;
+          shouldUpdate = true;
+        }
+      }
+
+      if (show.x < padding) {
+        nextPosition.x = padding;
+        shouldUpdate = true;
+      }
+
+      if (shouldUpdate) {
+        setShow(nextPosition);
       }
     }
   }, [show]);
@@ -356,7 +380,7 @@ export const Menu: FC<{
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
           style={{ left: show.x, top: show.y }}
-          className={`fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
+          className={`fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap max-w-[calc(100vw-20px)] overflow-x-hidden`}
         >
           {canDisable && !findIntegration?.refreshNeeded && (
             <div

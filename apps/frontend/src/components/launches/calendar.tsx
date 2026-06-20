@@ -366,7 +366,45 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        <div className="md:hidden absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor flex flex-col gap-[12px]">
+          {localizedDays.map((day) => (
+            <div key={day.name} className="flex flex-col gap-[4px]">
+              <div className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col min-h-[62px] rounded-[8px] sticky top-0 z-[20]">
+                <div className="text-[14px] font-[500] text-newTableText">
+                  {day.name}
+                </div>
+                <div
+                  className={clsx(
+                    'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
+                    day.day === newDayjs().format('L') &&
+                      'text-newTableTextFocused'
+                  )}
+                >
+                  {day.day === newDayjs().format('L') && (
+                    <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
+                  )}
+                  {day.day}
+                </div>
+              </div>
+              {hours.map((hour) => (
+                <div
+                  key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                  className="grid grid-cols-[72px_minmax(0,_1fr)] gap-[4px] min-h-[70px]"
+                >
+                  <div className="p-2 text-center items-start justify-center flex text-[13px] text-newTableText">
+                    {convertTimeFormatBasedOnLocality(hour)}
+                  </div>
+                  <div className="relative">
+                    <CalendarColumn
+                      getDate={day.date.hour(hour).startOf('hour')}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
           <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
@@ -465,7 +503,28 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        <div className="md:hidden absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary flex flex-col gap-[8px]">
+          {calendarDays.map((date, index) => (
+            <div
+              key={index}
+              className={clsx(
+                'rounded-[8px] overflow-hidden',
+                date.label !== 'current-month' && 'opacity-60'
+              )}
+            >
+              <div className="h-[42px] px-[12px] bg-newTableHeader flex items-center text-[14px] font-[500]">
+                {newDayjs(date.day).format('dddd, L')}
+              </div>
+              <div className="min-h-[96px]">
+                <CalendarColumn
+                  getDate={newDayjs(date.day).endOf('day')}
+                  randomHour={true}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
