@@ -2,14 +2,24 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import * as crypto from 'crypto';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { ContentRepository } from './content.repository';
+import { ProjectRepository } from './project.repository';
 import { CreateContentItemDto, UpdateContentItemDto, AddEventDto } from '@gitroom/nestjs-libraries/dtos/crm/content.dto';
 
 @Injectable()
 export class ContentService {
+  private readonly _portalSecret: string;
+
   constructor(
     private _contentRepository: ContentRepository,
+    private _projectRepository: ProjectRepository,
     private _projectAccessLink: PrismaRepository<'projectAccessLink'>,
-  ) {}
+  ) {
+    const secret = process.env['PORTAL_SECRET'];
+    if (!secret) {
+      throw new Error('PORTAL_SECRET environment variable is required');
+    }
+    this._portalSecret = secret;
+  }
 
   listItems(projectId: string, orgId: string) {
     return this._contentRepository.listItems(projectId, orgId);
@@ -21,7 +31,9 @@ export class ContentService {
     return item;
   }
 
-  createItem(projectId: string, orgId: string, userId: string, dto: CreateContentItemDto) {
+  async createItem(projectId: string, orgId: string, userId: string, dto: CreateContentItemDto) {
+    const project = await this._projectRepository.projectBelongsToOrg(orgId, projectId);
+    if (!project) throw new NotFoundException('Project not found');
     return this._contentRepository.createItem(projectId, orgId, userId, dto);
   }
 
@@ -41,8 +53,11 @@ export class ContentService {
   }
 
   async generatePortalLink(projectId: string, orgId: string, createdById: string) {
+    const project = await this._projectRepository.projectBelongsToOrg(orgId, projectId);
+    if (!project) throw new NotFoundException('Project not found');
+
     const token = crypto.randomUUID();
-    const tokenHash = crypto.createHmac('sha256', process.env['PORTAL_SECRET'] || 'vocaccio-portal-secret')
+    const tokenHash = crypto.createHmac('sha256', this._portalSecret)
       .update(token)
       .digest('hex');
 
@@ -54,7 +69,7 @@ export class ContentService {
   }
 
   async resolvePortalToken(token: string) {
-    const tokenHash = crypto.createHmac('sha256', process.env['PORTAL_SECRET'] || 'vocaccio-portal-secret')
+    const tokenHash = crypto.createHmac('sha256', this._portalSecret)
       .update(token)
       .digest('hex');
 
@@ -82,7 +97,7 @@ export class ContentService {
   async guestComment(token: string, itemId: string, dto: AddEventDto) {
     const link = await this.resolvePortalToken(token);
     const item = await this._contentRepository.getItemByIdOnly(itemId);
-    if (!item || (item as any).projectId !== link.projectId) {
+    if (!item || item.projectId !== link.projectId) {
       throw new NotFoundException('Item not found');
     }
     return this._contentRepository.addEvent(itemId, 'GUEST_COMMENT', dto.text, true);
@@ -91,7 +106,7 @@ export class ContentService {
   async guestApprove(token: string, itemId: string) {
     const link = await this.resolvePortalToken(token);
     const item = await this._contentRepository.getItemByIdOnly(itemId);
-    if (!item || (item as any).projectId !== link.projectId) {
+    if (!item || item.projectId !== link.projectId) {
       throw new NotFoundException('Item not found');
     }
     const [updated] = await Promise.all([
@@ -104,7 +119,7 @@ export class ContentService {
   async guestRequestAdjustment(token: string, itemId: string, dto: AddEventDto) {
     const link = await this.resolvePortalToken(token);
     const item = await this._contentRepository.getItemByIdOnly(itemId);
-    if (!item || (item as any).projectId !== link.projectId) {
+    if (!item || item.projectId !== link.projectId) {
       throw new NotFoundException('Item not found');
     }
     const [updated] = await Promise.all([

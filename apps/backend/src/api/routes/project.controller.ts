@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Organization, VocaccioRole } from '@prisma/client';
+import { Organization, User, VocaccioRole } from '@prisma/client';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ProjectService } from '@gitroom/nestjs-libraries/database/prisma/crm/project.service';
 import { VocaccioRoles } from '@gitroom/backend/services/auth/permissions/vocaccio-roles.decorator';
 import { CreateProjectDto, UpdateProjectDto, ListProjectsDto } from '@gitroom/nestjs-libraries/dtos/crm/project.dto';
@@ -25,8 +26,12 @@ export class ProjectController {
 
   @Post()
   @VocaccioRoles(VocaccioRole.OWNER, VocaccioRole.OPERATOR)
-  createProject(@Body() body: CreateProjectDto) {
-    return this._projectService.createProject(body);
+  createProject(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Body() body: CreateProjectDto,
+  ) {
+    return this._projectService.createProject(org.id, user.id, body);
   }
 
   @Put(':id')

@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectRepository } from './project.repository';
+import { CrmRepository } from './crm.repository';
 import { CreateProjectDto, UpdateProjectDto } from '@gitroom/nestjs-libraries/dtos/crm/project.dto';
 
 @Injectable()
 export class ProjectService {
-  constructor(private _projectRepository: ProjectRepository) {}
+  constructor(
+    private _projectRepository: ProjectRepository,
+    private _crmRepository: CrmRepository,
+  ) {}
 
   async listProjects(orgId: string, clientId?: string, status?: string, page?: string) {
     const pageNum = Math.max(0, parseInt(page || '0', 10) || 0);
@@ -21,8 +25,10 @@ export class ProjectService {
     return project;
   }
 
-  createProject(dto: CreateProjectDto) {
-    return this._projectRepository.createProject(dto);
+  async createProject(orgId: string, ownerId: string, dto: CreateProjectDto) {
+    const client = await this._crmRepository.clientBelongsToOrg(orgId, dto.clientId);
+    if (!client) throw new NotFoundException('Client not found');
+    return this._projectRepository.createProject(ownerId, dto);
   }
 
   async updateProject(orgId: string, id: string, dto: UpdateProjectDto) {

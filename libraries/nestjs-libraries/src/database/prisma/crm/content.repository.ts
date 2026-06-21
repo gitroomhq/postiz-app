@@ -96,7 +96,7 @@ export class ContentRepository {
   getItemByIdOnly(id: string) {
     return this._content.model.contentItem.findFirst({
       where: { id, deletedAt: null },
-      select: ITEM_WITH_EVENTS_SELECT,
+      select: { ...ITEM_WITH_EVENTS_SELECT, projectId: true },
     });
   }
 

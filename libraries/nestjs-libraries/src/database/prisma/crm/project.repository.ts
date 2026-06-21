@@ -70,8 +70,8 @@ export class ProjectRepository {
     });
   }
 
-  createProject(data: CreateProjectDto) {
-    const { clientId, ownerId, toneOfVoice, status, ...rest } = data;
+  createProject(ownerId: string, data: CreateProjectDto) {
+    const { clientId, toneOfVoice, status, ...rest } = data;
     return this._project.model.project.create({
       data: {
         ...rest,

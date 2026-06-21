@@ -12,9 +12,6 @@ export class CreateProjectDto {
   @IsString()
   clientId: string;
 
-  @IsString()
-  ownerId: string;
-
   @IsOptional() @IsString() @MaxLength(100)
   businessArea?: string;
 
