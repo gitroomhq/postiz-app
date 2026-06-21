@@ -68,7 +68,7 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { DelayComponent } from '@gitroom/frontend/components/new-launch/delay.component';
 
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
+const MAX_UPLOAD_SIZE = (process.env.NEXT_PUBLIC_MAX_FILE_SIZE_MB ? Number(process.env.NEXT_PUBLIC_MAX_FILE_SIZE_MB) : 1024) * 1024 * 1024; // Default 1 GB
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -583,7 +583,7 @@ export const Editor: FC<{
         toaster.show(
           t(
             'upload_size_limit_exceeded',
-            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+            `Upload size limit exceeded. Maximum ${MAX_UPLOAD_SIZE / (1024 * 1024)} MB per upload session.`
           ),
           'warning'
         );
@@ -627,7 +627,7 @@ export const Editor: FC<{
         toaster.show(
           t(
             'upload_size_limit_exceeded',
-            'Upload size limit exceeded. Maximum 1 GB per upload session.'
+            `Upload size limit exceeded. Maximum ${MAX_UPLOAD_SIZE / (1024 * 1024)} MB per upload session.`
           ),
           'warning'
         );

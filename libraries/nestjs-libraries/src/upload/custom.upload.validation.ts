@@ -59,7 +59,8 @@ export class CustomFileValidationPipe implements PipeTransform {
     if (mimeType.startsWith('image/')) {
       return 10 * 1024 * 1024; // 10 MB
     } else if (mimeType.startsWith('video/')) {
-      return 1024 * 1024 * 1024; // 1 GB
+      const maxMb = process.env.MAX_FILE_SIZE_MB ? Number(process.env.MAX_FILE_SIZE_MB) : 1024;
+      return maxMb * 1024 * 1024; // Default 1 GB
     } else {
       throw new BadRequestException('Unsupported file type.');
     }
