@@ -4,9 +4,11 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  NotFoundException,
   Optional,
 } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
+import { CrmRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/crm.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   AnalyticsData,
@@ -39,8 +41,14 @@ export class IntegrationService {
     private _notificationService: NotificationService,
     @Inject(forwardRef(() => RefreshIntegrationService))
     private _refreshIntegrationService: RefreshIntegrationService,
-    @Optional() private _temporalService: TemporalService
+    @Optional() private _temporalService: TemporalService,
+    private _crmRepository: CrmRepository
   ) {}
+
+  async assertCrmClientBelongsToOrg(org: string, clientId: string) {
+    const exists = await this._crmRepository.clientBelongsToOrg(org, clientId);
+    if (!exists) throw new NotFoundException('CRM client not found');
+  }
 
   async changeActiveCron(orgId: string) {
     const data = await this._autopostsRepository.getAutoposts(orgId);
@@ -151,7 +159,10 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org, crmClientId);
   }
 
-  assignToCrmClient(org: string, id: string, clientId: string | null) {
+  async assignToCrmClient(org: string, id: string, clientId: string | null) {
+    if (clientId) {
+      await this.assertCrmClientBelongsToOrg(org, clientId);
+    }
     return this._integrationRepository.assignToCrmClient(org, id, clientId);
   }
 

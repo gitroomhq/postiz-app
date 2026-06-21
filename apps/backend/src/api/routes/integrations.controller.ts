@@ -255,6 +255,10 @@ export class IntegrationsController {
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
       if (crmClientId) {
+        await this._integrationService.assertCrmClientBelongsToOrg(
+          org.id,
+          crmClientId
+        );
         await ioRedis.set(`crmClientId:${state}`, crmClientId, 'EX', 3600);
       }
       await ioRedis.set(
