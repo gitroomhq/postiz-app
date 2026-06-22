@@ -12,6 +12,13 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+
+function hexToBytes(hex: string): Uint8Array {
+  const match = hex.match(/.{1,2}/g);
+  if (!match) return new Uint8Array();
+  return Uint8Array.from(match.map((byte: string) => parseInt(byte, 16)));
+}
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -182,7 +189,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      hexToBytes(password)
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -219,7 +226,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      hexToBytes(password)
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -232,5 +239,71 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  /**
+   * Auto-repost posts when they receive enough reactions (kind-7 likes).
+   */
+  @Plug({
+    identifier: 'nostr-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post receives a certain number of reactions (zaps + likes), repost it to increase engagement',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'reactionsAmount',
+        type: 'number',
+        placeholder: 'Amount of reactions',
+        description:
+          'The amount of reactions (kind-7 likes + zaps) to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { reactionsAmount: string }
+  ) {
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+    const pubkey = getPublicKey(hexToBytes(password));
+
+    const recentPosts = await pool.get(list, {
+      kinds: [1],
+      authors: [pubkey],
+      limit: 10,
+    });
+
+    if (!recentPosts?.id) return false;
+
+    const reactions = await pool.get(list, {
+      kinds: [7],
+      '#e': [recentPosts.id],
+      limit: 100,
+    });
+
+    const reactionCount = reactions?.kind === 7 ? 1 : 0;
+
+    if (reactionCount >= +fields.reactionsAmount) {
+      const repostEvent = finalizeEvent(
+        {
+          kind: 6,
+          content: JSON.stringify(recentPosts),
+          tags: [
+            ['e', recentPosts.id, '', 'mention'],
+            ['p', pubkey],
+          ],
+          created_at: Math.floor(Date.now() / 1000),
+        },
+        hexToBytes(password)
+      );
+
+      await this.publish(pubkey, repostEvent);
+      return true;
+    }
+
+    return false;
   }
 }
