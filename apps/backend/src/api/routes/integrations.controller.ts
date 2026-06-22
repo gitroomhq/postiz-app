@@ -248,7 +248,7 @@ export class IntegrationsController {
         await ioRedis.set(`onboarding:${state}`, 'true', 'EX', 3600);
       }
 
-      if (redirectUrl) {
+      if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) {
         await ioRedis.set(`redirect:${state}`, redirectUrl, 'EX', 3600);
       }
 

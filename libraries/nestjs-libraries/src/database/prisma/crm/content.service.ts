@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { ContentRepository } from './content.repository';
 import { ProjectRepository } from './project.repository';
+import { ProjectAccessLinkRepository } from './project-access-link.repository';
 import { CreateContentItemDto, UpdateContentItemDto, AddEventDto } from '@gitroom/nestjs-libraries/dtos/crm/content.dto';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class ContentService {
   constructor(
     private _contentRepository: ContentRepository,
     private _projectRepository: ProjectRepository,
-    private _projectAccessLink: PrismaRepository<'projectAccessLink'>,
+    private _projectAccessLink: ProjectAccessLinkRepository,
   ) {
     const secret = process.env['PORTAL_SECRET'];
     if (!secret) {
@@ -39,12 +39,12 @@ export class ContentService {
 
   async updateItem(projectId: string, orgId: string, id: string, dto: UpdateContentItemDto) {
     await this._assertItemExists(projectId, orgId, id);
-    return this._contentRepository.updateItem(id, dto);
+    return this._contentRepository.updateItem(id, dto, orgId);
   }
 
   async deleteItem(projectId: string, orgId: string, id: string) {
     await this._assertItemExists(projectId, orgId, id);
-    return this._contentRepository.softDeleteItem(id);
+    return this._contentRepository.softDeleteItem(id, orgId);
   }
 
   async addComment(projectId: string, orgId: string, id: string, dto: AddEventDto) {
@@ -61,9 +61,7 @@ export class ContentService {
       .update(token)
       .digest('hex');
 
-    await this._projectAccessLink.model.projectAccessLink.create({
-      data: { projectId, tokenHash, createdById },
-    });
+    await this._projectAccessLink.createLink(projectId, tokenHash, createdById);
 
     return { token };
   }
@@ -73,17 +71,11 @@ export class ContentService {
       .update(token)
       .digest('hex');
 
-    const link = await this._projectAccessLink.model.projectAccessLink.findFirst({
-      where: { tokenHash, revokedAt: null },
-      select: { id: true, projectId: true },
-    });
+    const link = await this._projectAccessLink.findByTokenHash(tokenHash);
 
     if (!link) throw new ForbiddenException('Link inválido ou expirado');
 
-    await this._projectAccessLink.model.projectAccessLink.update({
-      where: { id: link.id },
-      data: { lastUsedAt: new Date() },
-    });
+    await this._projectAccessLink.touchLastUsed(link.id);
 
     return link;
   }

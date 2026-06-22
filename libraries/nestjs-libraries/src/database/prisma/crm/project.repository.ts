@@ -84,10 +84,10 @@ export class ProjectRepository {
     });
   }
 
-  updateProject(id: string, data: UpdateProjectDto) {
+  updateProject(orgId: string, id: string, data: UpdateProjectDto) {
     const { toneOfVoice, status, ...rest } = data;
     return this._project.model.project.update({
-      where: { id },
+      where: { id, client: { orgId } },
       data: {
         ...rest,
         ...(toneOfVoice ? { toneOfVoice: toneOfVoice as ToneOfVoice } : {}),
@@ -97,9 +97,9 @@ export class ProjectRepository {
     });
   }
 
-  softDeleteProject(id: string) {
+  softDeleteProject(orgId: string, id: string) {
     return this._project.model.project.update({
-      where: { id },
+      where: { id, client: { orgId } },
       data: { deletedAt: new Date() },
       select: { id: true },
     });

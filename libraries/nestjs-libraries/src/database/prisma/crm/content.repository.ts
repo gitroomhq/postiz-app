@@ -63,9 +63,9 @@ export class ContentRepository {
     });
   }
 
-  updateItem(id: string, dto: UpdateContentItemDto) {
+  updateItem(id: string, dto: UpdateContentItemDto, orgId?: string) {
     return this._content.model.contentItem.update({
-      where: { id },
+      where: orgId ? { id, orgId } : { id },
       data: {
         ...(dto.title ? { title: dto.title } : {}),
         ...(dto.body !== undefined ? { body: dto.body } : {}),
@@ -78,9 +78,9 @@ export class ContentRepository {
     });
   }
 
-  softDeleteItem(id: string) {
+  softDeleteItem(id: string, orgId?: string) {
     return this._content.model.contentItem.update({
-      where: { id },
+      where: orgId ? { id, orgId } : { id },
       data: { deletedAt: new Date() },
       select: { id: true },
     });

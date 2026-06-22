@@ -46,10 +46,13 @@ import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
 import { CrmRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/crm.repository';
 import { CrmService } from '@gitroom/nestjs-libraries/database/prisma/crm/crm.service';
+import { ReligareRepository } from '@gitroom/nestjs-libraries/database/prisma/religare/religare.repository';
+import { ReligareService } from '@gitroom/nestjs-libraries/database/prisma/religare/religare.service';
 import { ProjectRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/project.repository';
 import { ProjectService } from '@gitroom/nestjs-libraries/database/prisma/crm/project.service';
 import { ContentRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/content.repository';
 import { ContentService } from '@gitroom/nestjs-libraries/database/prisma/crm/content.service';
+import { ProjectAccessLinkRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/project-access-link.repository';
 
 @Global()
 @Module({
@@ -105,10 +108,13 @@ import { ContentService } from '@gitroom/nestjs-libraries/database/prisma/crm/co
     AdminStatsService,
     CrmRepository,
     CrmService,
+    ReligareRepository,
+    ReligareService,
     ProjectRepository,
     ProjectService,
     ContentRepository,
     ContentService,
+    ProjectAccessLinkRepository,
   ],
   get exports() {
     return this.providers;

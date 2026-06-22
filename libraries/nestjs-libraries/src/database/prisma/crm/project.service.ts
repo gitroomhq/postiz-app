@@ -33,12 +33,12 @@ export class ProjectService {
 
   async updateProject(orgId: string, id: string, dto: UpdateProjectDto) {
     await this._assertExists(orgId, id);
-    return this._projectRepository.updateProject(id, dto);
+    return this._projectRepository.updateProject(orgId, id, dto);
   }
 
   async deleteProject(orgId: string, id: string) {
     await this._assertExists(orgId, id);
-    return this._projectRepository.softDeleteProject(id);
+    return this._projectRepository.softDeleteProject(orgId, id);
   }
 
   private async _assertExists(orgId: string, id: string) {
