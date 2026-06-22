@@ -7,11 +7,22 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { getPublicKey, nip19, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
+
+/**
+ * Convert a hex string (64-char hex private key or pubkey) to Uint8Array.
+ * Required because nostr-tools finalizeEvent/getPublicKey expect Uint8Array.
+ */
+function hexToBytes(hex: string): Uint8Array {
+  const match = hex.match(/.{1,2}/g);
+  if (!match) return new Uint8Array();
+  return Uint8Array.from(match.map((byte: string) => parseInt(byte, 16)));
+}
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -182,7 +193,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      hexToBytes(password) // #1610: finalizeEvent expects Uint8Array, not hex string
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -219,7 +230,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      hexToBytes(password) // #1610: finalizeEvent expects Uint8Array, not hex string
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -232,5 +243,153 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  /**
+   * #1603 - Nostr mention autocomplete in composer.
+   * Searches Nostr profiles using the nostr.band search API,
+   * which indexes kind-0 metadata events from public relays.
+   * Returns results in the format expected by the mention autocomplete UI.
+   */
+  override async mention(
+    token: string,
+    d: { query: string }
+  ): Promise<
+    | { id: string; label: string; image: string; doNotCache?: boolean }[]
+    | { none: true }
+  > {
+    if (!d.query || d.query.length < 2) return [];
+
+    try {
+      const response = await fetch(
+        `https://api.nostr.band/nostr?search=${encodeURIComponent(d.query)}&kind=0`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+
+      if (!response.ok) return [];
+
+      const data = await response.json() as {
+        profiles?: Array<{
+          pubkey: string;
+          content: string;
+        }>;
+      };
+
+      if (!data?.profiles?.length) return [];
+
+      return data.profiles
+        .map((profile) => {
+          let content: Record<string, string> = {};
+          try {
+            content = JSON.parse(profile.content);
+          } catch {
+            return null;
+          }
+
+          const label =
+            content.display_name ||
+            content.name ||
+            content.displayName ||
+            '';
+          const image = content.picture || '';
+
+          if (!label) return null;
+
+          return {
+            id: profile.pubkey,
+            label,
+            image,
+          };
+        })
+        .filter((p): p is { id: string; label: string; image: string } => p !== null)
+        .slice(0, 20);
+    } catch (err) {
+      console.error('Error searching Nostr profiles:', err);
+      return [];
+    }
+  }
+
+  /**
+   * #1603 - Format a Nostr mention for insertion into the post body.
+   * Uses NIP-27 style nostr:npub... references for maximum relay compatibility.
+   */
+  mentionFormat(idOrHandle: string, name: string) {
+    try {
+      const npub = nip19.npubEncode(idOrHandle);
+      return `nostr:${npub}`;
+    } catch {
+      return `@${idOrHandle.slice(0, 12)}`;
+    }
+  }
+
+  /**
+   * #1586 - Auto-repost posts when they receive enough reactions (kind-7 likes).
+   * Mirrors the X autoRepostPost plug behavior.
+   */
+  @Plug({
+    identifier: 'nostr-autoRepostPost',
+    title: 'Auto Repost Posts',
+    description:
+      'When a post receives a certain number of reactions (zaps + likes), repost it to increase engagement',
+    runEveryMilliseconds: 21600000,
+    totalRuns: 3,
+    fields: [
+      {
+        name: 'reactionsAmount',
+        type: 'number',
+        placeholder: 'Amount of reactions',
+        description:
+          'The amount of reactions (kind-7 likes + zaps) to trigger the repost',
+        validation: /^\d+$/,
+      },
+    ],
+  })
+  async autoRepostPost(
+    integration: Integration,
+    id: string,
+    fields: { reactionsAmount: string }
+  ) {
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+    const pubkey = getPublicKey(hexToBytes(password));
+
+    // Find the user's recent posts (kind 1 events authored by this pubkey)
+    const recentPosts = await pool.get(list, {
+      kinds: [1],
+      authors: [pubkey],
+      limit: 10,
+    });
+
+    if (!recentPosts?.id) return false;
+
+    // Query kind-7 reactions on this post
+    const reactions = await pool.get(list, {
+      kinds: [7],
+      '#e': [recentPosts.id],
+      limit: 100,
+    });
+
+    const reactionCount =
+      reactions?.kind === 7 ? 1 : 0;
+
+    if (reactionCount >= +fields.reactionsAmount) {
+      // Publish a kind-6 repost
+      const repostEvent = finalizeEvent(
+        {
+          kind: 6,
+          content: JSON.stringify(recentPosts),
+          tags: [
+            ['e', recentPosts.id, '', 'mention'],
+            ['p', pubkey],
+          ],
+          created_at: Math.floor(Date.now() / 1000),
+        },
+        hexToBytes(password)
+      );
+
+      await this.publish(pubkey, repostEvent);
+      return true;
+    }
+
+    return false;
   }
 }
