@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode, useCallback } from 'react';
+import Link from 'next/link';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -33,7 +34,6 @@ import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import { AnnouncementBanner } from '@gitroom/frontend/components/layout/announcement.banner';
 import { Title } from '@gitroom/frontend/components/layout/title';
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
-import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
@@ -107,12 +107,18 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div
                         id="left-menu"
                         className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
+                          'fixed h-full w-[80px] start-[12px] flex flex-1 top-0',
                           user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                         )}
                       >
-                        <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
-                          <Logo />
+                        <div className="flex flex-col h-full gap-[28px] flex-1 pt-[22px] pb-[12px]">
+                          <Link
+                            href="/hub"
+                            title="Ir para o início"
+                            className="mx-auto shrink-0 rounded-[12px] hover:opacity-80 transition-opacity"
+                          >
+                            <Logo />
+                          </Link>
                           <TopMenu />
                         </div>
                       </div>
@@ -130,7 +136,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                             <ModeComponent />
                           </div>
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <LanguageComponent />
                           <ChromeExtensionComponent />
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <AttachToFeedbackIcon />

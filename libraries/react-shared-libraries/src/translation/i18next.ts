@@ -20,9 +20,13 @@ i18next
     fallbackNS: defaultNS,
     defaultNS,
     detection: {
-      order: ['cookie', 'header'],
+      // 'header' (Accept-Language) desativado: pt fica fixo p/ todos os
+      // visitantes em vez de auto-detectar pelo navegador, ver i18n.config.ts.
+      order: ['cookie'],
     },
-    preload: runsOnServerSide ? languages : [],
+    // Só pre-carrega o idioma fixo (pt); 'en' fica em stand-by, sem custo de
+    // boot, e só seria carregado on-demand se algo chamasse changeLanguage('en').
+    preload: runsOnServerSide ? [fallbackLng] : [],
   });
 
 export default i18next;

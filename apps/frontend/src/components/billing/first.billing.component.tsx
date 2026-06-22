@@ -6,7 +6,6 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
-import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
@@ -186,8 +185,6 @@ export const FirstBillingComponent = () => {
             <div className="hover:text-newTextColor">
               <ModeComponent />
             </div>
-            <div className="w-[1px] h-[20px] bg-blockSeparator" />
-            <LanguageComponent />
             <div className="w-[1px] h-[20px] bg-blockSeparator" />
             <AttachToFeedbackIcon />
             <DeveloperIconComponent />
