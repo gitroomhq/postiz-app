@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsArray, IsBoolean, MinLength, MaxLength, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsArray, IsBoolean, MinLength, MaxLength, IsDateString, ArrayMaxSize } from 'class-validator';
 
 export const CONTENT_TYPES = ['POST', 'CAROUSEL', 'VIDEO', 'STORY', 'REEL'] as const;
 export const CONTENT_STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'ADJUSTMENT_REQUESTED', 'PUBLISHED', 'ARCHIVED'] as const;
@@ -10,7 +10,7 @@ export class CreateContentItemDto {
   @IsOptional() @IsString() @MaxLength(10000)
   body?: string;
 
-  @IsOptional() @IsArray()
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(2048, { each: true })
   mediaUrls?: string[];
 
   @IsOptional() @IsIn(CONTENT_TYPES)
@@ -27,7 +27,7 @@ export class UpdateContentItemDto {
   @IsOptional() @IsString() @MaxLength(10000)
   body?: string;
 
-  @IsOptional() @IsArray()
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(2048, { each: true })
   mediaUrls?: string[];
 
   @IsOptional() @IsIn(CONTENT_TYPES)
