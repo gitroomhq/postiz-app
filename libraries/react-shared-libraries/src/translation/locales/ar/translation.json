@@ -237,7 +237,7 @@
   "update_credentials": "تحديث بيانات الاعتماد",
   "additional_settings": "إعدادات إضافية",
   "change_bot": "تغيير الروبوت",
-  "move_add_to_customer": "نقل / إضافة إلى العميل",
+  "move_add_to_group": "نقل / إضافة إلى مجموعة",
   "edit_time_slots": "تعديل الفترات الزمنية",
   "enable_channel": "تفعيل القناة",
   "disable_channel": "تعطيل القناة",
@@ -356,7 +356,7 @@
   "top_title_design_media": "تصميم الوسائط",
   "top_title_edit_post": "تعديل المنشور",
   "top_title_create_post": "إنشاء منشور",
-  "top_title_move__add_to_customer": "نقل / إضافة إلى العميل",
+  "top_title_move__add_to_group": "نقل / إضافة إلى مجموعة",
   "top_title_add_api_key_for": "إضافة مفتاح API لـ {{name}}",
   "top_title_instance_url": "رابط النسخة",
   "top_title_custom_url": "رابط مخصص",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "تعلم كيفية استخدام Postiz",
   "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من Postiz بأفضل شكل",
   "back": "رجوع",
-  "get_started": "ابدأ"
+  "get_started": "ابدأ",
+  "kick_select_channel": "اختر القناة"
 }

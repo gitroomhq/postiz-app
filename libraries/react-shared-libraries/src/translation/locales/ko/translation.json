@@ -237,7 +237,7 @@
   "update_credentials": "자격 증명 업데이트",
   "additional_settings": "추가 설정",
   "change_bot": "봇 변경",
-  "move_add_to_customer": "고객으로 이동/추가",
+  "move_add_to_group": "그룹으로 이동 / 추가",
   "edit_time_slots": "시간대 편집",
   "enable_channel": "채널 활성화",
   "disable_channel": "채널 비활성화",
@@ -356,7 +356,7 @@
   "top_title_design_media": "미디어 디자인",
   "top_title_edit_post": "게시물 편집",
   "top_title_create_post": "게시물 만들기",
-  "top_title_move__add_to_customer": "고객에게 이동/추가",
+  "top_title_move__add_to_group": "그룹으로 이동 / 추가",
   "top_title_add_api_key_for": "{{name}}의 API 키 추가",
   "top_title_instance_url": "인스턴스 URL",
   "top_title_custom_url": "커스텀 URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Postiz 사용법 배우기",
   "watch_tutorial_description": "이 짧은 영상을 통해 Postiz를 최대한 활용하는 방법을 알아보세요",
   "back": "뒤로가기",
-  "get_started": "시작하기"
+  "get_started": "시작하기",
+  "kick_select_channel": "채널 선택"
 }

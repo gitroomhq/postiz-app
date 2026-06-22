@@ -37,6 +37,38 @@ export class UserTag {
   y?: number;
 }
 
+export class InstagramAudio {
+  @IsDefined()
+  @IsString()
+  id: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  artist?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  audio_volume?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  video_volume?: number;
+}
+
 export class InstagramDto {
   @IsIn(['post', 'story'])
   @IsDefined()
@@ -54,6 +86,11 @@ export class InstagramDto {
   @IsArray()
   @IsOptional()
   collaborators: Collaborators[];
+
+  @Type(() => InstagramAudio)
+  @ValidateNested()
+  @IsOptional()
+  audio?: InstagramAudio;
 
   @Type(() => UserTag)
   @ValidateNested({ each: true })

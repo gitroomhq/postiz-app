@@ -4,8 +4,11 @@ import {
   IsNumber,
   Min,
   Max,
+  IsIn,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+export type PostListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
 
 export class GetPostsListDto {
   @IsOptional()
@@ -24,4 +27,8 @@ export class GetPostsListDto {
   @IsOptional()
   @IsString()
   customer?: string;
+
+  @IsOptional()
+  @IsIn(['all', 'scheduled', 'draft', 'published'])
+  state?: PostListStateFilter = 'all';
 }

@@ -8,10 +8,15 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
@@ -38,6 +43,44 @@ export class InstagramProvider
   dto = InstagramDto;
   maxLength() {
     return 2200;
+  }
+
+  override async checkValidity(
+    [firstPost]: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (!firstPost?.length) {
+      return 'Should have at least one media';
+    }
+    if (firstPost.length > 10) {
+      return 'Instagram carousel only supports up to 10 media attachments';
+    }
+    if (settings?.is_trial_reel) {
+      if ((firstPost?.length ?? 0) > 1) {
+        return 'Trial Reels can only have one video';
+      }
+      const hasVideo = firstPost?.some(
+        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
+      );
+      if (!hasVideo) {
+        return 'Trial Reels must be a video';
+      }
+    }
+    if (settings?.audio?.id) {
+      if (settings?.post_type === 'story') {
+        return 'Audio can only be added to Reels, not to Stories';
+      }
+      if ((firstPost?.length ?? 0) > 1) {
+        return 'Audio can only be added to a single video Reel';
+      }
+      const hasVideo = firstPost?.some(
+        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
+      );
+      if (!hasVideo) {
+        return 'Audio can only be added to a video Reel';
+      }
+    }
+    return true;
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
@@ -74,7 +117,10 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('REVOKED_ACCESS_TOKEN') > -1) {
+    if (
+      body.indexOf('REVOKED_ACCESS_TOKEN') > -1 ||
+      body.indexOf('"error_subcode":33') > -1
+    ) {
       return {
         type: 'refresh-token' as const,
         value:
@@ -95,7 +141,8 @@ export class InstagramProvider
     if (body.toLowerCase().indexOf('session has been invalidated') > -1) {
       return {
         type: 'refresh-token' as const,
-        value: 'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
+        value:
+          'You session has been invalidated, this can usually happen from frequent posting, please re-authenticate, and wait 1-2 days before posting again',
       };
     }
 
@@ -302,6 +349,27 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('2207082') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'Could not upload your media',
+      }
+    }
+
+    if (body.indexOf('2207077') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Instagram Video download failed',
+      };
+    }
+
+    if (body.indexOf('too little or too many attachments') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Instagram carousel should have between 2 and 10 media attachments',
+      }
+    }
+
     if (body.indexOf('2207027') > -1) {
       return {
         type: 'bad-body' as const,
@@ -322,8 +390,9 @@ export class InstagramProvider
   async reConnect(
     id: string,
     requiredId: string,
-    accessToken: string
+    token: string
   ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
+    const [accessToken, userToken] = token.split('___');
     const findPage = (await this.pages(accessToken)).find(
       (p) => p.id === requiredId
     );
@@ -415,7 +484,8 @@ export class InstagramProvider
     };
   }
 
-  async pages(accessToken: string) {
+  async pages(token: string) {
+    const [accessToken, userToken] = token.split('___');
     const seenPageIds = new Set<string>();
     const allFacebookPages: any[] = [];
 
@@ -499,9 +569,10 @@ export class InstagramProvider
   }
 
   async fetchPageInformation(
-    accessToken: string,
+    token: string,
     data: { pageId: string; id: string }
   ) {
+    const [accessToken, userToken] = token.split('___');
     const { access_token, ...all } = await (
       await fetch(
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
@@ -518,18 +589,19 @@ export class InstagramProvider
       id,
       name,
       picture: profile_picture_url,
-      access_token,
+      access_token: access_token + '___' + accessToken,
       username,
     };
   }
 
   async post(
     id: string,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
@@ -546,22 +618,21 @@ export class InstagramProvider
             : ``;
         const isVideo = m.path.indexOf('.mp4') > -1;
         const isCarouselItem = (firstPost?.media?.length || 0) > 1 && !isStory;
-        const mediaType =
-          m.path.indexOf('.mp4') > -1
-            ? firstPost?.media?.length === 1
-              ? isStory
-                ? `video_url=${m.path}&media_type=STORIES`
-                : `video_url=${m.path}&media_type=REELS&thumb_offset=${
-                    m?.thumbnailTimestamp || 0
-                  }`
-              : isStory
+        const mediaType = hasExtension(m.path, 'mp4')
+          ? firstPost?.media?.length === 1
+            ? isStory
               ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+              : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                   m?.thumbnailTimestamp || 0
                 }`
             : isStory
-            ? `image_url=${m.path}&media_type=STORIES`
-            : `image_url=${m.path}`;
+            ? `video_url=${m.path}&media_type=STORIES`
+            : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+                m?.thumbnailTimestamp || 0
+              }`
+          : isStory
+          ? `image_url=${m.path}&media_type=STORIES`
+          : `image_url=${m.path}`;
 
         const trialParams = isTrialReel
           ? `&trial_params=${encodeURIComponent(
@@ -592,9 +663,32 @@ export class InstagramProvider
               )}`
             : ``;
 
+        // audio_configuration is only supported for Reels (single video, not a story)
+        // and only with Facebook Login (not Instagram Login / graph.instagram.com)
+        const audioConfiguration =
+          firstPost?.settings?.audio?.id &&
+          type === 'graph.facebook.com' &&
+          !isStory &&
+          firstPost?.media?.length === 1 &&
+          hasExtension(m.path, 'mp4')
+            ? `&audio_configuration=${encodeURIComponent(
+                JSON.stringify({
+                  audio_id: firstPost.settings.audio.id,
+                  ...(typeof firstPost.settings.audio.audio_volume !==
+                  'undefined'
+                    ? { audio_volume: +firstPost.settings.audio.audio_volume }
+                    : {}),
+                  ...(typeof firstPost.settings.audio.video_volume !==
+                  'undefined'
+                    ? { video_volume: +firstPost.settings.audio.video_volume }
+                    : {}),
+                })
+              )}`
+            : ``;
+
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${userTags}${trialParams}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${userTags}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -606,7 +700,9 @@ export class InstagramProvider
         while (status === 'IN_PROGRESS') {
           const { status_code } = await (
             await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${accessToken}&fields=status_code`,
+              `https://${type}/v20.0/${photoId}?access_token=${
+                userToken || accessToken
+              }&fields=status_code`,
               undefined,
               '',
               0,
@@ -639,7 +735,9 @@ export class InstagramProvider
 
         const { permalink } = await (
           await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+              userToken || accessToken
+            }`
           )
         ).json();
         lastPermalink = permalink;
@@ -665,7 +763,9 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+            userToken || accessToken
+          }`
         )
       ).json();
 
@@ -695,7 +795,9 @@ export class InstagramProvider
       while (status === 'IN_PROGRESS') {
         const { status_code } = await (
           await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${
+              userToken || accessToken
+            }`,
             undefined,
             '',
             0,
@@ -717,7 +819,9 @@ export class InstagramProvider
 
       const { permalink } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${accessToken}`
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
+            userToken || accessToken
+          }`
         )
       ).json();
 
@@ -736,11 +840,12 @@ export class InstagramProvider
     id: string,
     postId: string,
     lastCommentId: string | undefined,
-    accessToken: string,
+    token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
+    const [accessToken, userToken] = token.split('___');
     const [commentPost] = postDetails;
 
     const { id: commentId } = await (
@@ -757,7 +862,9 @@ export class InstagramProvider
     // Get the permalink from the parent post
     const { permalink } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${accessToken}`
+        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${
+          userToken || accessToken
+        }`
       )
     ).json();
 
@@ -815,10 +922,11 @@ export class InstagramProvider
 
   async analytics(
     id: string,
-    accessToken: string,
+    token: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
+    const [accessToken, userToken] = token.split('___');
     const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
@@ -855,10 +963,6 @@ export class InstagramProvider
             total: d.total_value.value,
             date: dayjs().format('YYYY-MM-DD'),
           },
-          {
-            total: d.total_value.value,
-            date: dayjs().add(1, 'day').format('YYYY-MM-DD'),
-          },
         ],
       }))
     );
@@ -874,13 +978,63 @@ export class InstagramProvider
     );
   }
 
+  // https://developers.facebook.com/docs/instagram-platform/content-publishing/audio-api/
+  // empty search_query returns trending audio
+  @Tool({
+    description:
+      'Search audio (music or original sounds) to attach to a Reel via the "audio" setting, an empty query returns trending audio',
+    dataSchema: [
+      {
+        key: 'q',
+        type: 'string',
+        description: 'Search query, leave empty for trending audio',
+      },
+      {
+        key: 'type',
+        type: 'string',
+        description: 'Either "music" or "original_sound", defaults to "music"',
+      },
+    ],
+  })
+  async audioSearch(
+    token: string,
+    data: { q?: string; type?: 'music' | 'original_sound' },
+    internalId?: string
+  ) {
+    const [accessToken, userToken] = token.split('___');
+    const audioType =
+      data?.type === 'original_sound' ? 'original_sound' : 'music';
+
+    const { audio } = await (
+      await this.fetch(
+        `https://graph.facebook.com/v22.0/ig_audio?audio_type=${audioType}&user_id=${internalId}${
+          data?.q ? `&search_query=${encodeURIComponent(data.q)}` : ''
+        }&access_token=${userToken || accessToken}`
+      )
+    ).json();
+
+    return (audio || []).map((audio: any) => ({
+      id: audio.audio_id,
+      title: audio.title || '',
+      artist: audio.display_artist || audio.ig_username || '',
+      image:
+        audio.cover_artwork_thumbnail_uri ||
+        audio.cover_artwork_thumbnail_url ||
+        audio.profile_picture_url ||
+        '',
+      duration: audio.duration_in_ms || 0,
+      previewUrl: audio.download_url || '',
+    }));
+  }
+
   async postAnalytics(
     integrationId: string,
-    accessToken: string,
+    token: string,
     postId: string,
     date: number,
     type = 'graph.facebook.com'
   ): Promise<AnalyticsData[]> {
+    const [accessToken, userToken] = token.split('___');
     const today = dayjs().format('YYYY-MM-DD');
 
     try {
