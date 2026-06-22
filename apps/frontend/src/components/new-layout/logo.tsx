@@ -1,19 +1,22 @@
 'use client';
 
-// Paths originais do Simbolo-Vocaccio.svg (128.25 × 143.25 viewBox)
-const SYMBOL_V = "M 69.476562 67.890625 C 66.210938 60.445312 63.078125 53.078125 60.070312 45.773438 C 57.097656 38.441406 54.625 31.992188 52.671875 26.402344 C 50.714844 20.78125 49.730469 17.050781 49.730469 15.222656 C 49.730469 11.847656 50.894531 9.050781 53.222656 6.855469 C 55.578125 4.625 58.066406 2.976562 60.667969 1.910156 L 0 1.910156 C 4.441406 3.738281 8.351562 6.546875 11.730469 10.34375 C 15.15625 14.125 17.757812 18.261719 19.550781 22.6875 L 71.609375 140.058594 L 84.128906 102.109375 C 84.128906 102.109375 80.867188 94.355469 78.265625 88.230469 C 75.648438 82.09375 72.722656 75.308594 69.457031 67.890625 Z";
-const SYMBOL_DOT = "M 108.105469 1.332031 C 102.742188 1.332031 98.1875 2.996094 94.421875 6.289062 C 90.6875 9.554688 88.832031 14.011719 88.832031 19.632812 C 88.832031 25.257812 90.6875 29.457031 94.421875 32.898438 C 98.1875 36.308594 102.757812 38.003906 108.105469 38.003906 C 113.453125 38.003906 117.847656 36.308594 121.304688 32.898438 C 124.746094 29.457031 126.476562 25.046875 126.476562 19.632812 C 126.476562 14.222656 124.746094 9.910156 121.304688 6.5 C 117.847656 3.058594 113.453125 1.332031 108.105469 1.332031 Z";
+// Paths oficiais do Simbolo-Vocaccio.svg (viewBox 128.25 × 143.25) — v + ponto.
+const SYMBOL_V =
+  'M 69.476562 67.890625 C 66.210938 60.445312 63.078125 53.078125 60.070312 45.773438 C 57.097656 38.441406 54.625 31.992188 52.671875 26.402344 C 50.714844 20.78125 49.730469 17.050781 49.730469 15.222656 C 49.730469 11.847656 50.894531 9.050781 53.222656 6.855469 C 55.578125 4.625 58.066406 2.976562 60.667969 1.910156 L 0 1.910156 C 4.441406 3.738281 8.351562 6.546875 11.730469 10.34375 C 15.15625 14.125 17.757812 18.261719 19.550781 22.6875 L 71.609375 140.058594 L 84.128906 102.109375 C 84.128906 102.109375 80.867188 94.355469 78.265625 88.230469 C 75.648438 82.09375 72.722656 75.308594 69.457031 67.890625 Z';
+const SYMBOL_DOT =
+  'M 108.105469 1.332031 C 102.742188 1.332031 98.1875 2.996094 94.421875 6.289062 C 90.6875 9.554688 88.832031 14.011719 88.832031 19.632812 C 88.832031 25.257812 90.6875 29.457031 94.421875 32.898438 C 98.1875 36.308594 102.757812 38.003906 108.105469 38.003906 C 113.453125 38.003906 117.847656 36.308594 121.304688 32.898438 C 124.746094 29.457031 126.476562 25.046875 126.476562 19.632812 C 126.476562 14.222656 124.746094 9.910156 121.304688 6.5 C 117.847656 3.058594 113.453125 1.332031 108.105469 1.332031 Z';
 
-// Escala o símbolo para caber em `size`px com `pad`px de margem em cada lado.
-// O centro do viewBox (64.1, 71.6) é alinhado ao centro do ícone.
+// Centraliza o símbolo (128.25×143.25) no ícone com `pad` de margem.
 const iconTransform = (iconSize: number, pad: number) => {
-  const s = (iconSize - 2 * pad) / 143.25; // height-constrained (143.25 > 128.25)
-  const renderedW = 128.25 * s;
-  const tx = (iconSize - renderedW) / 2;
-  const ty = pad;
-  return `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})`;
+  const s = (iconSize - 2 * pad) / 143.25;
+  const tx = (iconSize - 128.25 * s) / 2;
+  return `translate(${tx.toFixed(2)} ${pad}) scale(${s.toFixed(4)})`;
 };
 
+/**
+ * Marca Vocaccio — símbolo oficial (v + ponto) sobre aurora SUAVE (pêssego→rosa→
+ * violeta→azul com radiais), batendo com Fundo-Vocaccio.svg. Vetor crisp.
+ */
 export const Logo = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -24,15 +27,30 @@ export const Logo = () => (
     className="min-w-[44px] min-h-[44px]"
   >
     <defs>
-      <linearGradient id="voc-icon-grad" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <linearGradient id="voc-base" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stopColor="#E89A7B" />
-        <stop offset="38%" stopColor="#CF6295" />
-        <stop offset="72%" stopColor="#7360AA" />
+        <stop offset="36%" stopColor="#CF6295" />
+        <stop offset="68%" stopColor="#7360AA" />
         <stop offset="100%" stopColor="#2897BF" />
       </linearGradient>
+      <radialGradient id="voc-r1" cx="14%" cy="10%" r="70%">
+        <stop offset="0%" stopColor="#E89A7B" stopOpacity="0.9" />
+        <stop offset="60%" stopColor="#E89A7B" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="voc-r2" cx="88%" cy="14%" r="70%">
+        <stop offset="0%" stopColor="#CF6295" stopOpacity="0.85" />
+        <stop offset="60%" stopColor="#CF6295" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="voc-r3" cx="16%" cy="92%" r="75%">
+        <stop offset="0%" stopColor="#2897BF" stopOpacity="0.85" />
+        <stop offset="62%" stopColor="#2897BF" stopOpacity="0" />
+      </radialGradient>
     </defs>
-    <rect width="44" height="44" rx="11" fill="url(#voc-icon-grad)" />
-    <g transform={iconTransform(44, 8)}>
+    <rect width="44" height="44" rx="11" fill="url(#voc-base)" />
+    <rect width="44" height="44" rx="11" fill="url(#voc-r1)" />
+    <rect width="44" height="44" rx="11" fill="url(#voc-r2)" />
+    <rect width="44" height="44" rx="11" fill="url(#voc-r3)" />
+    <g transform={iconTransform(44, 11)}>
       <path d={SYMBOL_V} fill="white" />
       <path d={SYMBOL_DOT} fill="white" />
     </g>

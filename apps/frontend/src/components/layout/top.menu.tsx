@@ -19,7 +19,6 @@ interface MenuItemInterface {
 }
 
 export const useMenuItem = () => {
-  const { isGeneral } = useVariables();
   const t = useT();
   const { openModal } = useModals();
 
@@ -34,7 +33,7 @@ export const useMenuItem = () => {
 
   const firstMenu = [
     {
-      name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
+      name: 'Posts',
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -55,7 +54,7 @@ export const useMenuItem = () => {
       path: '/hub/volatis',
     },
     {
-      name: 'Agent',
+      name: 'Agente IA',
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -115,7 +114,7 @@ export const useMenuItem = () => {
       path: '/media',
     },
     {
-      name: t('plugs', 'Plugs'),
+      name: 'Automações',
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -136,7 +135,7 @@ export const useMenuItem = () => {
       path: '/plugs',
     },
     {
-      name: t('integrations', 'Integrations'),
+      name: 'Canais',
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

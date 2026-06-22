@@ -123,18 +123,18 @@ export const ChangeLanguageComponent = () => {
 };
 const GlobeIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
     <path
       d="M12 3C12 3 9 7 9 12C9 17 12 21 12 21M12 3C12 3 15 7 15 12C15 17 12 21 12 21M3 12H21"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.8"
       strokeLinecap="round"
     />
   </svg>
@@ -155,7 +155,7 @@ export const LanguageComponent = () => {
     <button
       onClick={openModal}
       aria-label={t('change_language', 'Change Language')}
-      className="flex items-center justify-center w-[22px] h-[22px] cursor-pointer hover:text-newTextColor transition-colors"
+      className="flex items-center justify-center w-[24px] h-[24px] cursor-pointer hover:text-newTextColor transition-colors"
     >
       <GlobeIcon />
     </button>
