@@ -68,3 +68,22 @@ apps/frontend/public/g.js
 
 # Vocaccio — logs locais de desenvolvimento
 backend*.log
+
+# Vocaccio — artefatos compilados que vazam para o source (regenerados do .ts)
+libraries/helpers/src/utils/religare/**/*.js
+libraries/helpers/src/utils/religare/**/*.d.ts
+libraries/nestjs-libraries/src/database/prisma/religare/**/*.js
+libraries/nestjs-libraries/src/database/prisma/religare/**/*.d.ts
+libraries/nestjs-libraries/src/dtos/religare/**/*.js
+libraries/nestjs-libraries/src/dtos/religare/**/*.d.ts
+
+# Vocaccio — uploads locais salvos em path-bug "undefined" (lixo)
+apps/backend/undefined/
+
+# Vocaccio — helper local de dev (nao versionar)
+dev.bat
+
+# Vocaccio — material do Actus Clip (projeto do Nicolas, fora do escopo deste repo)
+docs/referencias/Actus-Clip-Plano.md
+docs/referencias/actus-kit.zip
+docs/referencias/actus-kit/
