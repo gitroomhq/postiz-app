@@ -3,7 +3,10 @@ import {
   IsArray,
   IsDefined,
   IsIn,
+  IsNumber,
   IsString,
+  Max,
+  Min,
   ValidateNested,
   IsOptional,
 } from 'class-validator';
@@ -18,6 +21,20 @@ export class UserTag {
   @IsDefined()
   @IsString()
   label: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  x?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  y?: number;
 }
 
 export class InstagramDto {
@@ -42,5 +59,5 @@ export class InstagramDto {
   @ValidateNested({ each: true })
   @IsArray()
   @IsOptional()
-  user_tags: UserTag[];
+  user_tags?: UserTag[];
 }
