@@ -4,62 +4,17 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Sparkles, Clock, CheckCircle2, Lock } from 'lucide-react';
+import {
+  getTodayKin,
+  getMoonPhase,
+  KinResult,
+  MoonPhase,
+} from '@gitroom/helpers/utils/religare';
+import { ReligareEssenceWidget } from '@gitroom/frontend/components/hub/religare/religare-essence-widget.component';
+import { HubOrbitBackground } from '@gitroom/frontend/components/hub/hub-orbit-background.component';
 
-// ── Tzolkin / Kin ──────────────────────────────────────────────────────────
-
-const SEALS = [
-  'Dragão', 'Vento', 'Noite', 'Semente', 'Serpente',
-  'Transformador', 'Veado', 'Estrela', 'Lua', 'Cão',
-  'Macaco', 'Humano', 'Andarilho Celeste', 'Mago', 'Águia',
-  'Guerreiro', 'Terra', 'Espelho', 'Tempestade', 'Sol',
-];
-
-const TONES = [
-  'Magnético', 'Lunar', 'Elétrico', 'Auto-Existente', 'Radiante',
-  'Rítmico', 'Ressonante', 'Galático', 'Solar', 'Planetário',
-  'Espectral', 'Cristal', 'Cósmico',
-];
-
-const SEAL_ACCENT = [
-  '#cf6295', '#dcd0c3', '#2897bf', '#e89a7b',
-];
-
-function getTodayKin() {
-  // Anchor: 26/Jul/1987 = Kin 34 (Dreamspell)
-  const anchor = new Date('1987-07-26T00:00:00Z').getTime();
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  const days = Math.floor((today.getTime() - anchor) / 86400000);
-  const kin = ((34 - 1 + days) % 260 + 260) % 260 + 1;
-  const sealIdx = (kin - 1) % 20;
-  const toneIdx = (kin - 1) % 13;
-  return {
-    kin,
-    seal: SEALS[sealIdx],
-    tone: TONES[toneIdx],
-    accent: SEAL_ACCENT[sealIdx % 4],
-  };
-}
-
-// ── Moon phase ─────────────────────────────────────────────────────────────
-
-const MOON_PHASES = [
-  { name: 'Lua Nova',        emoji: '🌑', desc: 'Intenções e novos começos' },
-  { name: 'Lua Crescente',   emoji: '🌒', desc: 'Expansão e ação' },
-  { name: 'Quarto Crescente',emoji: '🌓', desc: 'Decisões produtivas' },
-  { name: 'Gibosa Crescente',emoji: '🌔', desc: 'Refinamento e crescimento' },
-  { name: 'Lua Cheia',       emoji: '🌕', desc: 'Culminação e revelação' },
-  { name: 'Gibosa Minguante',emoji: '🌖', desc: 'Gratidão e integração' },
-  { name: 'Quarto Minguante',emoji: '🌗', desc: 'Reflexão e liberação' },
-  { name: 'Lua Minguante',   emoji: '🌘', desc: 'Descanso e entrega' },
-];
-
-function getMoonPhase() {
-  const knownNew = new Date('2000-01-06T18:14:00Z').getTime();
-  const cycle = 29.53058867 * 86400000;
-  const elapsed = ((Date.now() - knownNew) % cycle + cycle) % cycle;
-  return MOON_PHASES[Math.floor((elapsed / cycle) * 8) % 8];
-}
+// Tzolkin/Kin and moon-phase calculations live in @gitroom/helpers/utils/religare
+// so the Hub widget and the Religare natal reading share one source of truth.
 
 // ── Oracle ─────────────────────────────────────────────────────────────────
 
@@ -125,7 +80,7 @@ const WidgetLabel = ({ children }: { children: React.ReactNode }) => (
   </span>
 );
 
-const MoonWidget = ({ moon }: { moon: typeof MOON_PHASES[0] }) => (
+const MoonWidget = ({ moon }: { moon: MoonPhase }) => (
   <Card>
     <WidgetLabel>Fase da Lua</WidgetLabel>
     <div className="flex items-center gap-[12px]">
@@ -142,7 +97,7 @@ const MoonWidget = ({ moon }: { moon: typeof MOON_PHASES[0] }) => (
   </Card>
 );
 
-const KinWidget = ({ kin }: { kin: ReturnType<typeof getTodayKin> }) => (
+const KinWidget = ({ kin }: { kin: KinResult }) => (
   <Card>
     <WidgetLabel>Kin do Dia</WidgetLabel>
     <div className="flex items-center gap-[12px]">
@@ -302,9 +257,12 @@ export const HubDashboard = () => {
 
   return (
     <div
-      className="flex-1 p-[28px] flex flex-col gap-[20px] overflow-y-auto"
+      className="relative flex-1 p-[28px] flex flex-col gap-[20px] overflow-y-auto"
       style={{ background: 'var(--voc-paper)' }}
     >
+      <HubOrbitBackground />
+
+      <div className="relative z-10 flex flex-col gap-[20px]">
       {/* Header */}
       <div className="flex flex-col gap-[4px]">
         <h1
@@ -320,6 +278,9 @@ export const HubDashboard = () => {
 
       {hasReligare ? (
         <>
+          {/* Essência do expert selecionado — sempre conectado ao Religare */}
+          <ReligareEssenceWidget />
+
           {/* Row 1 — cosmological widgets */}
           <div className="grid grid-cols-3 gap-[16px]">
             <MoonWidget moon={moon} />
@@ -357,6 +318,7 @@ export const HubDashboard = () => {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 };

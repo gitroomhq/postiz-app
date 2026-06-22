@@ -30,7 +30,7 @@ export interface ProjectDetail {
   client: { id: string; name: string };
 }
 
-export const useProject = (id: string) => {
+export const useProject = (id: string | null) => {
   const fetch = useFetch();
   const load = useCallback(async (path: string): Promise<ProjectDetail | null> => {
     const res = await fetch(path);
@@ -38,7 +38,11 @@ export const useProject = (id: string) => {
     const json = await res.json();
     return json?.id ? json : null;
   }, [fetch]);
-  return useSWR<ProjectDetail | null>(`/hub/crm/projects/${id}`, load, { revalidateOnFocus: false });
+  return useSWR<ProjectDetail | null>(
+    id ? `/hub/crm/projects/${id}` : null,
+    load,
+    { revalidateOnFocus: false }
+  );
 };
 
 export const useProjectMutations = () => {

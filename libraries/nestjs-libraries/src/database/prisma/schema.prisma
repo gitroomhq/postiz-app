@@ -20,8 +20,11 @@ model Organization {
   allowTrial          Boolean              @default(false)
   isTrailing          Boolean              @default(false)
   shortlink           ShortLinkPreference  @default(ASK)
+  religareContext     String?
   autoPost            AutoPost[]
   clients             Client[]
+  experts             Expert[]
+  religareProfiles    ReligareProfile[]
   Comments            Comments[]
   credits             Credits[]
   customers           Customer[]
@@ -934,10 +937,89 @@ model Client {
   interactions  ClientInteraction[]
   integrations  Integration[]
   projects      Project[]
+  experts       ClientExpert[]
 
   @@index([orgId])
   @@index([status])
   @@index([deletedAt])
+}
+
+/**
+ * Expert — pessoa/especialista (voz/autor) dos carrosséis. N:N com Client (marca):
+ * uma marca pode ter vários experts e um expert pode atuar em várias marcas.
+ * Guarda a VOZ/DNA (o visual fica na marca). Ligação via ClientExpert.
+ */
+model Expert {
+  id           String         @id @default(uuid())
+  orgId        String
+  name         String
+  role         String?
+  avatarUrl    String?
+  handle       String?
+  bio          String?
+  toneOfVoice  String?
+  audience     String?
+  keywords     String?
+  dna          String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+  organization Organization     @relation(fields: [orgId], references: [id])
+  clients      ClientExpert[]
+  religareProfile ReligareProfile?
+
+  @@index([orgId])
+  @@index([deletedAt])
+}
+
+/** Religare — leitura vocacional/cosmológica. 1:1 com Expert (um Religare por expert). */
+model ReligareProfile {
+  id                String        @id @default(uuid())
+  orgId             String
+  expertId          String?       @unique
+  name              String
+  birthDate         DateTime?
+  birthTime         String?
+  birthPlace        String?
+  birthLat          Float?
+  birthLng          Float?
+  birthTz           String?
+  answers           Json?
+  kinNatal          Int?
+  kinData           Json?
+  archetypePrimary  String?
+  archetypeSecondary String?
+  archetypeScores   Json?
+  vocational        Json?
+  synthesis         String?
+  astrology         Json?
+  dna               Json?
+  humanDesign       Json?
+  brandProfile      Json?
+  status            String        @default("DRAFT")
+  shareToken        String?       @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  organization      Organization  @relation(fields: [orgId], references: [id])
+  expert            Expert?       @relation(fields: [expertId], references: [id])
+
+  @@index([orgId])
+  @@index([deletedAt])
+}
+
+/** Junção N:N entre Client (marca) e Expert. */
+model ClientExpert {
+  id        String   @id @default(uuid())
+  clientId  String
+  expertId  String
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  expert    Expert   @relation(fields: [expertId], references: [id])
+
+  @@unique([clientId, expertId])
+  @@index([clientId])
+  @@index([expertId])
 }
 
 model ClientContact {

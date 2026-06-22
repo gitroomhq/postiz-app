@@ -23,6 +23,18 @@ export interface InteractionFormData {
   summary: string;
 }
 
+export interface ExpertFormData {
+  name: string;
+  role?: string;
+  avatarUrl?: string;
+  handle?: string;
+  bio?: string;
+  toneOfVoice?: string;
+  audience?: string;
+  keywords?: string;
+  dna?: string;
+}
+
 export const useCrmMutations = () => {
   const fetch = useFetch();
 
@@ -83,5 +95,74 @@ export const useCrmMutations = () => {
     [fetch]
   );
 
-  return { createClient, updateClient, createContact, createInteraction };
+  const createExpert = useCallback(
+    async (data: ExpertFormData) => {
+      const res = await fetch('/hub/crm/experts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Erro ao criar expert');
+      await mutate((key: string) => typeof key === 'string' && key.startsWith('/hub/crm/experts'));
+      return res.json();
+    },
+    [fetch]
+  );
+
+  const updateExpert = useCallback(
+    async (id: string, data: ExpertFormData) => {
+      const res = await fetch(`/hub/crm/experts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Erro ao atualizar expert');
+      await mutate((key: string) => typeof key === 'string' && key.startsWith('/hub/crm/experts'));
+      return res.json();
+    },
+    [fetch]
+  );
+
+  const deleteExpert = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/hub/crm/experts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Erro ao excluir expert');
+      await mutate((key: string) => typeof key === 'string' && key.startsWith('/hub/crm/experts'));
+      return res.json();
+    },
+    [fetch]
+  );
+
+  /** Vincula expert↔marca (N:N) — idempotente. */
+  const linkExpert = useCallback(
+    async (clientId: string, expertId: string) => {
+      const res = await fetch(`/hub/crm/clients/${clientId}/experts/${expertId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Erro ao vincular expert');
+      await mutate(`/hub/crm/clients/${clientId}/experts`);
+      return res.json();
+    },
+    [fetch]
+  );
+
+  const unlinkExpert = useCallback(
+    async (clientId: string, expertId: string) => {
+      const res = await fetch(`/hub/crm/clients/${clientId}/experts/${expertId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Erro ao desvincular expert');
+      await mutate(`/hub/crm/clients/${clientId}/experts`);
+      return res.json();
+    },
+    [fetch]
+  );
+
+  return {
+    createClient,
+    updateClient,
+    createContact,
+    createInteraction,
+    createExpert,
+    updateExpert,
+    deleteExpert,
+    linkExpert,
+    unlinkExpert,
+  };
 };

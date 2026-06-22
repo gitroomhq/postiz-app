@@ -38,6 +38,7 @@ import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api
 import { AnnouncementsController } from '@gitroom/backend/api/routes/announcements.controller';
 import { AdminController } from '@gitroom/backend/api/routes/admin.controller';
 import { CrmController } from '@gitroom/backend/api/routes/crm.controller';
+import { ReligareController } from '@gitroom/backend/api/routes/religare.controller';
 import { ProjectController } from '@gitroom/backend/api/routes/project.controller';
 import { ContentController } from '@gitroom/backend/api/routes/content.controller';
 import { PortalController } from '@gitroom/backend/api/routes/portal.controller';
@@ -69,6 +70,7 @@ const authenticatedController = [
   AnnouncementsController,
   AdminController,
   CrmController,
+  ReligareController,
   ProjectController,
   ContentController,
 ];
