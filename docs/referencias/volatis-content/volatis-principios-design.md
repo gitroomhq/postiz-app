@@ -1,9 +1,9 @@
 ---
-name: brandsdecoded-design
+name: volatis-design
 description: Princípios de design visual para carrosséis Instagram. Usar sempre que for renderizar HTML de carrossel, decidir layout, sugerir imagens, escolher tipografia, definir espaçamento ou avaliar qualidade visual de slides. Inclui regras de hierarquia visual, ritmo de leitura, uso de cor, quando usar card vs texto solto, quando sugerir imagem, e geração de paleta a partir de uma cor primária.
 ---
 
-# BrandsDecoded Design System — Skill de Design Visual
+# Volatis Design System — Skill de Design Visual
 
 Consultar esta skill ANTES de renderizar qualquer carrossel HTML. Ela define os princípios visuais que fazem um carrossel parecer profissional e não genérico.
 

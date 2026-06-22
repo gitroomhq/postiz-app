@@ -586,7 +586,7 @@ O CTA usa layout assimétrico com texto alinhado à esquerda. Não é centraliza
     </div>
     <div class="cta-footer">
       <div class="cta-footer-dot">B</div>
-      <span class="cta-footer-text">@brandsdecoded · Envio automático via DM</span>
+      <span class="cta-footer-text">@[handle] · Envio automático via DM</span>
     </div>
   </div>
   <div class="prog">...</div>

@@ -24,13 +24,10 @@ export const VolatisClientSelector = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-[8px] px-[14px] h-[36px] rounded-[10px] text-[13px] font-[600] transition-colors"
+        className="flex items-center gap-[8px] px-[14px] h-[36px] rounded-[10px] text-[13px] font-[600] border border-newBorder transition-colors text-newTextColor"
         style={{
-          background: selectedClientId
-            ? 'var(--voc-violet)'
-            : 'var(--voc-paper-raised)',
-          color: selectedClientId ? '#fff' : 'var(--voc-ink)',
-          border: '1px solid var(--voc-line)',
+          background: selectedClientId ? 'var(--voc-rose)' : 'var(--new-bgColor)',
+          color: selectedClientId ? '#fff' : undefined,
         }}
       >
         <Users size={14} />
@@ -39,19 +36,12 @@ export const VolatisClientSelector = () => {
       </button>
 
       {open && (
-        <div
-          className="absolute top-[42px] left-0 z-50 min-w-[200px] rounded-[12px] py-[6px] flex flex-col"
-          style={{
-            background: 'var(--voc-paper-raised)',
-            border: '1px solid var(--voc-line)',
-            boxShadow: 'var(--voc-shadow-soft)',
-          }}
-        >
+        <div className="absolute top-[42px] left-0 z-50 min-w-[200px] rounded-[12px] py-[6px] flex flex-col bg-newBgColorInner border border-newBorder shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
           <button
             type="button"
             onClick={() => handleSelect(null)}
-            className="px-[14px] py-[8px] text-[13px] text-left hover:bg-[rgba(115,96,170,0.08)] transition-colors"
-            style={{ color: !selectedClientId ? 'var(--voc-violet)' : 'var(--voc-ink)' }}
+            className="px-[14px] py-[8px] text-[13px] text-left hover:bg-boxHover transition-colors text-newTextColor"
+            style={{ color: !selectedClientId ? 'var(--voc-rose)' : undefined }}
           >
             Todos os clientes
           </button>
@@ -60,8 +50,8 @@ export const VolatisClientSelector = () => {
               key={c.id}
               type="button"
               onClick={() => handleSelect(c.id)}
-              className="px-[14px] py-[8px] text-[13px] text-left hover:bg-[rgba(115,96,170,0.08)] transition-colors"
-              style={{ color: selectedClientId === c.id ? 'var(--voc-violet)' : 'var(--voc-ink)' }}
+              className="px-[14px] py-[8px] text-[13px] text-left hover:bg-boxHover transition-colors text-newTextColor"
+              style={{ color: selectedClientId === c.id ? 'var(--voc-rose)' : undefined }}
             >
               {c.name}
             </button>

@@ -1,6 +1,6 @@
-# Banco dos 56 Hooks Outliers (+10k likes)
+# Banco de Hooks Outliers (+10k likes)
 
-Organizados por padrão dominante. Cada hook foi publicado pela BrandsDecoded e atingiu mais de 10.000 likes no Instagram.
+Organizados por padrão dominante. Cada hook atingiu mais de 10.000 likes no Instagram.
 
 ---
 

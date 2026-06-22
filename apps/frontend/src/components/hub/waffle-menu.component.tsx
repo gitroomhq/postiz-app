@@ -115,7 +115,7 @@ const MODULES: Module[] = [
     description: 'Análise vocacional',
     href: '/hub/religare',
     icon: ReligareIcon,
-    locked: true,
+    locked: false,
   },
   {
     id: 'augeo',

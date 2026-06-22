@@ -661,6 +661,9 @@ Fase 8  — Typebot + Chatwoot + WhatsApp bidirecional
 Fase 9  — Vídeo Lupin + mcp-video + Dobby
 Fase 10 — Vitrine Netflix ⛔ somente após comando explícito
 Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
+Fase G  — Growth Engine Vocaccio (escala p/ agências: front + back agentes) ⛔ penúltima
+Fase H  — White-Label Growth Hub (plataforma revendável: CRM vendas, inbox,
+          pagamentos, API, mobile, white-label marca-da-agência) ⛔ ÚLTIMA FASE
 Pós-conclusão — MBTI + Eneagrama no Religare ⛔ pós-conclusão
 Pós-conclusão — Astrologia natal no Religare (`sweph` já instalado) ⛔ pós-conclusão
 ```
@@ -683,6 +686,128 @@ Princípio-guia (ver [[feedback-vocaccio-ui-host-theme]] na memória):
 - **Processo:** toda mudança de UI verificada no browser (loop visual via Claude in Chrome),
   não só typecheck.
 - Auditar telas já entregues (Fases 1–3) e padronizar contra o sistema unificado.
+
+---
+
+### Fase G — Growth Engine Vocaccio (ÚLTIMA FASE — anotação/visão)
+
+> **Status:** anotação de visão para a última fase. **Não implementar agora** —
+> registrada aqui para guiar decisões de arquitetura ao longo de todas as fases
+> anteriores (não fechar portas para dados/métricas que essa fase vai consumir).
+
+**Tese.** Camada de **escala/growth focada em agências** dentro do Vocaccio HUB que
+combina **front (web browser)** com **back (operação direta com agentes no Claude)** —
+fechando o ciclo completo do ecossistema Soul 2 Soul como um fluxo contínuo:
+
+```
+ESSÊNCIA          →   FUNIL / AUTOMAÇÃO   →   RESULTADOS / MÉTRICAS   →   ESCALA / GROWTH
+(Religare)            (Volatis + Augeo +      (analytics, atribuição,     (Fase G — esta:
+ vocação, tom,         automações,             métricas por cliente/        metodologia própria
+ copy, ideias)         publicação)             campanha)                    de crescimento)
+```
+
+A Fase G não inventa um produto novo: ela **conecta e operacionaliza** o que as fases
+anteriores já produzem, transformando dados em decisões de otimização **data-driven sem
+perder a essência** (a vocação/Religare permanece o filtro de toda recomendação).
+
+**Princípios:**
+- **Metodologia própria de crescimento** da Vocaccio — inspirada em referências de
+  growth, mas autoral e ancorada na essência (não copiar playbook genérico).
+- **Riqueza de dados e métricas** via integrações (analytics de redes, atribuição de
+  funil, métricas de campanha/CAC, conversões) para decisões data-driven.
+- **Front + back combinados:** dashboards de growth no browser **+** agentes de growth
+  no back (orchestrator/Claude) executando análise, recomendação e otimização contínua.
+- **Por cliente (multi-tenant):** métricas, funis e recomendações sempre no escopo do
+  `CrmClient` ativo (coerente com a decisão de canais por cliente da Camada 8).
+- **Sem perder a essência:** toda otimização passa pelo filtro vocacional/marca
+  (Hagrid + Religare) antes de virar recomendação — growth autêntico, não vaidade.
+
+**Referências de pesquisa (inspiração — NÃO fonte de verdade; criar metodologia própria):**
+- skills/agentes de growth: `github.com/realjaymes/marketingagentskills`
+- skills de growth p/ SaaS: `github.com/ekinciio/saas-growth-marketing-skills`
+- metodologia de growth (BR): `picogrowth.com.br`
+
+> Os materiais de concorrentes anexados na origem desta anotação são **apenas
+> inspiração visual/conceitual** e **não devem ser tratados como base de informação**.
+
+**A definir quando a fase chegar:** métricas e fontes de integração; agentes de growth
+(novos papéis HP ou extensão de Ginny/Sprout/Moody); contrato front↔back; como a
+metodologia própria é versionada e aplicada por plano (provável diferencial Agency/Pro).
+
+---
+
+### Fase H — White-Label Growth Hub (ÚLTIMA FASE — anotação/visão)
+
+> **Status:** anotação de visão para a ÚLTIMA fase. **Não implementar agora** — registrada
+> aqui para guiar decisões de tenancy/branding/billing ao longo de TODAS as fases anteriores
+> (não fechar portas para o que essa fase vai consumir). Decidida em 2026-06-20.
+> Referência conceitual: helenacrm.com/white-label-para-agencias-de-marketing (apenas
+> inspiração — NÃO fonte de verdade).
+
+**Tese.** A Vocaccio deixa de ser só ferramenta da agência e vira **plataforma SaaS
+revendável**: a agência (cliente pagante) revende um Growth HUB completo aos *seus próprios
+clientes* — marketing, produtores de conteúdo, terapeutas — sob a **marca da agência**.
+A Fase G **otimiza** (data-driven growth); a Fase H **comercializa** (plataforma white-label).
+São teses distintas, por isso fases distintas.
+
+**Modelo de tenancy — 3 níveis (decisão estrutural, reservar desde já):**
+
+```
+Vocaccio (plataforma)
+  └─ Agência  (cliente pagante — assina um plano Vocaccio)
+       └─ CrmClient  (cliente da agência — AGORA é tenant: login próprio + marca da agência)
+            └─ Leads/contatos do CrmClient  (público final — CRM de vendas, inbox, broadcast)
+```
+
+- O nível `CrmClient` evolui de "registro no CRM admin" para **tenant com login próprio**
+  — encaixa no role `CLIENT_USER` já reservado na **Camada 2** desde a Fase 1.
+- Coerente com **canais por cliente** (Camada 8, `crmClientId` em `Integration`) — a mesma
+  indireção multi-tenant que já está sendo implementada agora é a fundação desta fase.
+- **Não fechar portas nas fases anteriores:** nada de branding Vocaccio hard-coded; limites
+  de plano pensados em 3 níveis (agência → nº de CrmClients → nº de leads/canais); toda
+  entidade nova com `crmClientId` no escopo.
+
+**Branding white-label — decisão confirmada (2026-06-20):**
+A marca que o cliente-do-cliente vê é a **da AGÊNCIA** (logo, cores, domínio próprio).
+Rodapé discreto **"powered by Vocaccio"**. NÃO é white-label para a agência (a agência
+sabe que é Vocaccio) — é white-label para os clientes DA agência. Provável gate de plano:
+white-label total com domínio próprio liberado em Agency/Enterprise (a definir).
+
+**Funcionalidades (mapa Helena → plano):**
+
+| Funcionalidade | Origem no plano | Esforço Fase H |
+|----------------|-----------------|----------------|
+| Central de Atendimento (inbox omnichannel) | Camada 9 / F8 (Chatwoot) | reaproveitar + white-label |
+| CRM | Camada 3 (hoje admin interno) | promover a CRM vendável por tenant |
+| Automação / Chatbot / ManyChat próprio | Camada 9 (F7 regras → F8 Typebot) | reaproveitar + white-label |
+| Agentes de IA (p/ o lead do cliente) | Camada 11 (HP, hoje internos) | novo papel: bot voltado ao público final |
+| Relatórios | Augeo /relatorios | white-label por tenant |
+| **Rastreio do Lead** (pipeline de vendas) | — NOVO | CRM de vendas (estágios, atribuição) |
+| **Disparo em Massa** (broadcast WA/email) | — NOVO | Meta Cloud API + provedor email |
+| **Pagamentos** (checkout/cobrança) | — NOVO | billing dos clientes-dos-clientes |
+| **API pública + Webhooks** | webhooks ✅ / API ✗ | developer platform (chaves, escopos, docs) |
+| **Aplicativo Mobile** | — NOVO | provável PWA antes de app nativo |
+
+**A definir quando a fase chegar:** gateway de pagamento (Stripe vs. nacional p/ PIX);
+estratégia mobile (PWA vs. React Native vs. Expo); modelo de billing em cascata (Vocaccio
+cobra a agência, agência cobra o cliente — repasse ou markup); domínios personalizados
+(CNAME por tenant + TLS automático); isolamento de dados (RLS em 3 níveis); quais agentes
+HP são expostos ao público final e com que guarda-corpos (Hagrid no loop).
+
+**⚠️ NÃO FECHAR PORTAS — impacto nas fases anteriores (revisão estrutural 2026-06-20):**
+
+Cada item abaixo é uma decisão a tomar *quando a fase chegar*, mas com a Fase H em mente
+para evitar migração dolorosa. Ordenado por risco.
+
+| Fase | Risco | O que fazer já (barato) para não travar a Fase H |
+|------|-------|--------------------------------------------------|
+| **F2 — Portal aprovação** | 🔴 alto | É EXATAMENTE a tela que o CrmClient-tenant mostrará sob a marca da agência. Branding (logo/cores/nome) deve vir de **dado** (do `Client`/`Project`), nunca constante Vocaccio. O domínio `aprovar.vocaccio.com.br/[token]` deve ser tratado como base trocável (preparar p/ CNAME por tenant no futuro), não espalhado hard-coded. |
+| **F3 — Canais por cliente** | 🔴 alto | **Estado real (auditado 2026-06-20):** `Integration.crmClientId` é hoje uma **coluna-etiqueta/filtro** sobre o `organizationId` do Postiz — o CrmClient NÃO é tenant de 1ª classe. Funciona p/ a F3, mas não constrói em direção à Fase H. **Salto da Fase H** = promover `Client` a tenant (mapear p/ sub-org Postiz ou equivalente), não estender a tag. Decidir o caminho de promoção antes de espalhar lógica que assuma "Integration pertence à org, crmClientId é só view". |
+| **F8 — Inbox/Chatbot/WhatsApp** | 🟠 médio | O "ManyChat próprio" white-label briga com **iframe** de Typebot/Chatwoot (trazem a marca deles). Decidir cedo: self-host com branding total, ou construir nativo. WhatsApp/Meta Cloud API precisa de **credencial por tenant** (cada CrmClient com seu número), não uma conta global. |
+| **F6 — Relatórios (Augeo)** | 🟠 médio | PDFs hoje saem com DS Vocaccio hard-coded. Gerar branding do relatório a partir de **dado do tenant** (mesma regra do portal). |
+| **F7 — Automações/Webhooks** | 🟡 baixo | Regras ("QUERO→link") e segredos de webhook devem ter escopo `crmClientId` desde já. É a semente da **API pública** da Fase H (chaves/escopos por tenant). |
+| **F1 — Modelo de dados** | 🟡 baixo | `CLIENT_USER` já reservado (Camada 2) ✅. `Client` hoje tem `name/email/segment/website/status/notes` — **sem branding, sem vínculo User↔Client, sem limites**. Faltam: campos de **branding no `Client`** (logo/cores/**domínio**/nome público — hoje só no `Project`), **membership User↔Client** (login do tenant) e campo nullable de **limite de leads/contatos**. **Momento natural de adicionar:** a fatia "briefing de marca no lado Volatis/CRM Client" (roadmap Religare) — o mesmo brand-data alimenta geração de conteúdo E o portal white-label. NÃO criar branding em dois lugares. |
+| **F4 — Memória / F-G — Growth** | 🟡 baixo | Garantir `crmClientId` no escopo de toda memória/métrica (RLS em 3 níveis). Métricas agregam: lead → CrmClient → agência. Apenas aditivo se o escopo já existir. |
 
 ---
 
@@ -721,6 +846,9 @@ Princípio-guia (ver [[feedback-vocaccio-ui-host-theme]] na memória):
 | WhatsApp produção | ✅ Meta Cloud API oficial |
 | Vitrine Netflix | ✅ Reservada, flag OFF |
 | Agentes real-time | ✅ Pós-conclusão |
+| White-Label Growth Hub | ✅ Fase H (ÚLTIMA) — plataforma revendável, separada da Fase G |
+| Tenancy white-label | ✅ 3 níveis: Vocaccio → Agência → CrmClient (tenant c/ login) → leads |
+| Marca white-label | ✅ Marca da AGÊNCIA + rodapé "powered by Vocaccio" (não da Vocaccio) |
 | Orquestração | ✅ Ruflo + Dumbledore |
 | Dummy data | ✅ Camila, PlanGroup, Nanda, Plan10, Gigantes, Vocaccio |
 | LP referências | ✅ academypass.ai + circle.so/br |
