@@ -2,6 +2,7 @@ import { Body, Controller, Param, Post, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { assertSafeWebhookUrl } from '@gitroom/nestjs-libraries/security/ssrf-guard';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -82,7 +83,11 @@ export class EnterpriseController {
         await ioRedis.set(`refresh:${state}`, load.refreshId, 'EX', 3600);
       }
 
-      await ioRedis.set(`webhookUrl:${state}`, load.webhookUrl, 'EX', 3600);
+      if (load.webhookUrl) {
+        await assertSafeWebhookUrl(load.webhookUrl);
+        await ioRedis.set(`webhookUrl:${state}`, load.webhookUrl, 'EX', 3600);
+      }
+
       await ioRedis.set(`redirect:${state}`, load.redirectUrl, 'EX', 3600);
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
