@@ -28,6 +28,8 @@
       "@langchain/langgraph/prebuilt": ["node_modules/@langchain/langgraph/dist/prebuilt/index.d.ts"],
       "@gitroom/backend/*": ["apps/backend/src/*"],
       "@gitroom/frontend/*": ["apps/frontend/src/*"],
+      "@gitroom/carousel-engine": ["libraries/carousel-engine/src/index.ts"],
+      "@gitroom/carousel-engine/*": ["libraries/carousel-engine/src/*"],
       "@gitroom/helpers/*": ["libraries/helpers/src/*"],
       "@gitroom/nestjs-libraries/*": ["libraries/nestjs-libraries/src/*"],
       "@gitroom/react/*": ["libraries/react-shared-libraries/src/*"],

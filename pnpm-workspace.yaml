@@ -1,3 +1,14 @@
 packages:
   - apps/*
   - libraries/*
+
+# pnpm 10 não lê mais o campo "pnpm" do package.json — estas chaves migraram p/ cá.
+onlyBuiltDependencies:
+  - bcrypt
+
+overrides:
+  next: 16.2.6
+  react: 19.2.4
+  react-dom: 19.2.4
+  '@types/react': 19.1.8
+  '@types/react-dom': 19.1.6
