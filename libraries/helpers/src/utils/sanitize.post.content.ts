@@ -12,6 +12,9 @@ const ALLOWED_TAGS = [
   'h2',
   'h3',
   'span',
+  // <mark> is injected by the launch previews to highlight text that will be
+  // cropped — keep it so sanitizing the assembled preview HTML doesn't break it.
+  'mark',
 ];
 
 const ALLOWED_ATTR = [
@@ -21,6 +24,9 @@ const ALLOWED_ATTR = [
   'class',
   'data-mention-id',
   'data-mention-label',
+  // data-tooltip-* power the "this text will be cropped" tooltip on <mark>.
+  'data-tooltip-id',
+  'data-tooltip-content',
 ];
 
 export const sanitizePostContent = (value: unknown): string => {

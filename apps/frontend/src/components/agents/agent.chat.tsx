@@ -116,14 +116,37 @@ const LoadMessages: FC<{ id: string }> = ({ id }) => {
   return null;
 };
 
+// Only allow http(s) media URLs and HTML-encode them so a crafted URL can't
+// break out of the src attribute when interpolated into dangerouslySetInnerHTML.
+const safeMediaUrl = (url: string) => {
+  const trimmed = (url || '').trim();
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return '';
+  }
+  return trimmed
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 const Message: FC<UserMessageProps> = (props) => {
   const convertContentToImagesAndVideo = useMemo(() => {
     return (props.message?.content || '')
       .replace(/Video: (http.*mp4\n)/g, (match, p1) => {
-        return `<video controls class="h-[150px] w-[150px] rounded-[8px] mb-[10px]"><source src="${p1.trim()}" type="video/mp4">Your browser does not support the video tag.</video>`;
+        const src = safeMediaUrl(p1);
+        if (!src) {
+          return '';
+        }
+        return `<video controls class="h-[150px] w-[150px] rounded-[8px] mb-[10px]"><source src="${src}" type="video/mp4">Your browser does not support the video tag.</video>`;
       })
       .replace(/Image: (http.*\n)/g, (match, p1) => {
-        return `<img src="${p1.trim()}" class="h-[150px] w-[150px] max-w-full border border-newBgColorInner" />`;
+        const src = safeMediaUrl(p1);
+        if (!src) {
+          return '';
+        }
+        return `<img src="${src}" class="h-[150px] w-[150px] max-w-full border border-newBgColorInner" />`;
       })
       .replace(/\[\-\-Media\-\-\](.*)\[\-\-Media\-\-\]/g, (match, p1) => {
         return `<div class="flex justify-center mt-[20px]">${p1}</div>`;

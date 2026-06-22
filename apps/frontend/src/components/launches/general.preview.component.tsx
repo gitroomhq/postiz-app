@@ -7,6 +7,7 @@ import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
@@ -37,11 +38,11 @@ export const GeneralPreviewComponent: FC<{
       newContent
         .slice(start, end)
         .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
-          return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+          return `<span class="font-bold font-[arial] text-[#ae8afc]">${match1}</span>`;
         }) +
       `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
       newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
-        return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+        return `<span class="font-bold font-[arial] text-[#ae8afc]">${match1}</span>`;
       }) +
       `</mark>`;
 
@@ -113,7 +114,7 @@ export const GeneralPreviewComponent: FC<{
               <div
                 className={clsx('text-wrap whitespace-pre', 'preview')}
                 dangerouslySetInnerHTML={{
-                  __html: value.text,
+                  __html: sanitizePostContent(value.text),
                 }}
               />
               {!!value?.images?.length && (

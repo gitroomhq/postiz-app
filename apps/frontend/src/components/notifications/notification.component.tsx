@@ -8,13 +8,30 @@ import dayjs from 'dayjs';
 import { useClickAway } from '@uidotdev/usehooks';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 function replaceLinks(text: string) {
   const urlRegex =
     /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
-  return text.replace(
-    urlRegex,
-    '<a class="cursor-pointer underline font-bold" target="_blank" href="$1">$1</a>'
-  );
+  let result = '';
+  let lastIndex = 0;
+  for (const match of text.matchAll(urlRegex)) {
+    const url = match[0];
+    const index = match.index ?? 0;
+    // Escape the plain text that precedes the URL before injecting it as HTML.
+    result += escapeHtml(text.slice(lastIndex, index));
+    const safeUrl = escapeHtml(url);
+    result += `<a class="cursor-pointer underline font-bold" target="_blank" rel="noopener noreferrer" href="${safeUrl}">${safeUrl}</a>`;
+    lastIndex = index + url.length;
+  }
+  result += escapeHtml(text.slice(lastIndex));
+  return result;
 }
 export const ShowNotification: FC<{
   notification: {

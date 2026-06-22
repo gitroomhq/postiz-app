@@ -20,6 +20,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFormatting } from '@gitroom/frontend/components/launches/helpers/use.formatting';
+import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 const RenderRedditComponent: FC<{
   type: string;
   images?: Array<{
@@ -37,7 +38,9 @@ const RenderRedditComponent: FC<{
     case 'self':
       return (
         <div
-          dangerouslySetInnerHTML={{ __html: firstPost?.content }}
+          dangerouslySetInnerHTML={{
+            __html: sanitizePostContent(firstPost?.content),
+          }}
           style={{
             whiteSpace: 'pre-wrap',
             fontSize: '14px',
@@ -139,7 +142,9 @@ const RedditPreview: FC = (props) => {
                         {integration?.name}
                       </div>
                       <div
-                        dangerouslySetInnerHTML={{ __html: p.text }}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizePostContent(p.text),
+                        }}
                         style={{
                           whiteSpace: 'pre-wrap',
                         }}

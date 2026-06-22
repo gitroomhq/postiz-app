@@ -2,6 +2,7 @@ import { useIntegration } from '@gitroom/frontend/components/launches/helpers/us
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
@@ -37,11 +38,11 @@ export const InstagramPreview: FC<{
       newContent
         .slice(start, end)
         .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
-          return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+          return `<span class="font-bold font-[arial] text-[#ae8afc]">${match1}</span>`;
         }) +
       `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
       newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
-        return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
+        return `<span class="font-bold font-[arial] text-[#ae8afc]">${match1}</span>`;
       }) +
       `</mark>`;
 
@@ -84,7 +85,7 @@ export const InstagramPreview: FC<{
       <div
         className="text-[14px] font-[400] whitespace-pre-line"
         dangerouslySetInnerHTML={{
-          __html: renderContent?.[0]?.text,
+          __html: sanitizePostContent(renderContent?.[0]?.text),
         }}
       />
       <div className="py-[8px] text-textColor flex text-[14px] font-[700] gap-[10.5px]">
@@ -183,7 +184,7 @@ export const InstagramPreview: FC<{
                     <div
                       className="whitespace-pre-line text-[14px] font-[400] flex-1"
                       dangerouslySetInnerHTML={{
-                        __html: value.text,
+                        __html: sanitizePostContent(value.text),
                       }}
                     />
                     <div>
