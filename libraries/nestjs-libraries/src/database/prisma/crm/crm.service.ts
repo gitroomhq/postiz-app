@@ -53,8 +53,8 @@ export class CrmService {
 
   /* ----------------------------------------------------------------- experts */
 
-  listExperts(orgId: string, search?: string) {
-    return this._crmRepository.listExperts(orgId, search);
+  listExperts(orgId: string, search?: string, skip?: number, take?: number) {
+    return this._crmRepository.listExperts(orgId, search, skip, take);
   }
 
   async getExpert(orgId: string, id: string) {

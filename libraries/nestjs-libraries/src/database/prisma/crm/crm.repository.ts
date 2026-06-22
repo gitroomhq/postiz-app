@@ -153,15 +153,17 @@ export class CrmRepository {
 
   /* ----------------------------------------------------------------- experts */
 
-  listExperts(orgId: string, search?: string) {
+  listExperts(orgId: string, search?: string, skip?: number, take?: number) {
     return this._expert.model.expert.findMany({
       where: {
         orgId,
         deletedAt: null,
         ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
       },
-      select: EXPERT_DETAIL_SELECT,
+      select: EXPERT_SELECT,
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: take ?? 100,
     });
   }
 

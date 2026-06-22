@@ -37,6 +37,7 @@ export class ContentRepository {
       where: { projectId, orgId, deletedAt: null },
       select: ITEM_SELECT,
       orderBy: [{ status: 'asc' }, { position: 'asc' }, { createdAt: 'desc' }],
+      take: 500,
     });
   }
 
