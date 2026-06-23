@@ -107,14 +107,13 @@ concorrência, Temporal). Gate: Moody (Haiku) focado no caminho de erro/reset do
 >    "aprendizado" se perde porque nada essencial estava amarrado ao login da PlanGroup, só
 >    a autenticação em si.
 
-**Atenção:** o branch `fix/voc-idor-project-content` com os 8+ commits está só no
-**worktree local** (`C:\dev\vocaccio` e/ou `.claude/worktrees/festive-chaum-40ee7d`), **sem
-push**. Se a conta nova clonar do GitHub puro, esses commits locais NÃO vêm junto — só a
-memória persiste via OneDrive/cópia da pasta `.claude`. Antes de trocar de conta, se possível
-fazer `git push` desse branch (ou copiar o `.git` local) para não perder o trabalho de
-segurança feito hoje. Se não houver tempo: pelo menos esta memória + este prompt garantem
-que o trabalho pode ser REFEITO rapidamente (os agentes sabem exatamente o que fazer), mas
-os commits em si, se não pushados nem copiados, se perdem.
+**✅ CONFIRMADO (Felipe, 2026-06-22): a MÁQUINA continua a mesma**, só o usuário/login do
+Claude vai trocar. Isso significa que o branch `fix/voc-idor-project-content` com os 12
+commits de hoje **já está fisicamente seguro** em `C:\dev\vocaccio\.git` — não depende do
+login do Claude, não precisa de push nem cópia. Ao abrir o novo usuário, **basta apontar pro
+mesmo `C:\dev\vocaccio`** (ou ao worktree `.claude/worktrees/festive-chaum-40ee7d` se ainda
+existir) e os commits estarão todos lá. Push pro GitHub NÃO foi feito (e não é necessário
+neste cenário) — branch segue só local, como manda a regra do projeto.
 
 ## Próximo passo sugerido ao retomar
 
