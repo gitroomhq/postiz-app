@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(.env)",
+      "Edit(./.env)",
+      "Edit(.env)",
+      "Bash(cat .env)",
+      "Bash(cat ./.env)",
+      "Bash(less .env)",
+      "Bash(more .env)",
+      "Bash(head .env)",
+      "Bash(tail .env)",
+      "Bash(nano .env)",
+      "Bash(vi .env)",
+      "Bash(vim .env)"
+    ]
+  }
+}
