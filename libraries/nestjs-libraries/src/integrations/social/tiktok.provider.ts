@@ -9,9 +9,11 @@ import dayjs from 'dayjs';
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -36,6 +38,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 2000;
+  }
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if ((firstItems?.length ?? 0) === 0) {
+      return 'No video / images selected';
+    }
+    if (
+      (firstItems?.length ?? 0) > 1 &&
+      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Only pictures are supported when selecting multiple items';
+    } else if (
+      firstItems?.length !== 1 &&
+      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
+    ) {
+      return 'You need one media';
+    }
+    return true;
   }
 
   override handleErrors(body: string):
@@ -146,15 +169,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value:
-          'TikTok limit the maximum of pending posts to 5, TikTok limits you for now, please check your TikTok inbox at your TikTok mobile app and try again later',
-      };
-    }
-
-    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value:
-          'Account banned from posting, please check TikTok account status',
+          'TikTok limits pending posts to 5 within any 24-hour period. Please check your TikTok inbox in the TikTok mobile app and try again after 24 hours.',
       };
     }
 
@@ -184,7 +199,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('url_ownership_unverified') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'URL ownership not verified, please verify domain ownership',
+        value: 'You have to upload the picture/video to Postiz when sending a URL',
       };
     }
 
@@ -388,7 +403,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     accessToken: string
   ): Promise<{ url: string; id: string }> {
     // eslint-disable-next-line no-constant-condition
-    while (true) {
+   let attempts = 0;
+
+    while (attempts < 60) {
+      attempts++;
+
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
@@ -432,7 +451,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       if (status === 'FAILED') {
         const handleError = this.handleErrors(JSON.stringify(post));
         throw new BadBody(
-          'titok-error-upload',
+          'tiktok-error-upload',
           JSON.stringify(post),
           Buffer.from(JSON.stringify(post)),
           handleError?.value || ''
@@ -457,10 +476,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   private buildTikTokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
-  const isPhoto =
-    (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
-
-  const method = firstPost?.settings?.content_posting_method;
+    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const method = firstPost?.settings?.content_posting_method;
 
   if (method === 'DIRECT_POST') {
     return {
@@ -527,7 +544,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       ...(isPhoto ? { description: firstPost.message } : {}),
 
-
       ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp
         ? {
             video_cover_timestamp_ms:
@@ -539,8 +555,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 }
 
   private buildTikTokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
-  const isPhoto =
-    (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+  const isPhoto = !hasExtension(
+  firstPost?.media?.[0]?.path,'mp4');
 
   if (isPhoto) {
     return {
@@ -572,11 +588,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
     console.log({
-      ...this.buildTikokPostInfoBody(firstPost),
-      ...this.buildTikokSourceInfoBody(firstPost),
+      ...this.buildTikTokPostInfoBody(firstPost),
+      ...this.buildTikTokSourceInfoBody(firstPost),
     });
     const {
       data: { publish_id },
@@ -584,7 +600,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1
+          !hasExtension(firstPost?.media?.[0]?.path, 'mp4')
         )}`,
         {
           method: 'POST',
@@ -593,8 +609,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...this.buildTikokPostInfoBody(firstPost),
-            ...this.buildTikokSourceInfoBody(firstPost),
+            ...this.buildTikTokPostInfoBody(firstPost),
+            ...this.buildTikTokSourceInfoBody(firstPost),
           }),
         }
       )

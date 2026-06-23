@@ -237,7 +237,7 @@
   "update_credentials": "Cập nhật thông tin đăng nhập",
   "additional_settings": "Cài đặt bổ sung",
   "change_bot": "Thay đổi bot",
-  "move_add_to_customer": "Chuyển / thêm vào khách hàng",
+  "move_add_to_group": "Chuyển / thêm vào nhóm",
   "edit_time_slots": "Chỉnh sửa khung giờ",
   "enable_channel": "Bật kênh",
   "disable_channel": "Tắt kênh",
@@ -356,7 +356,7 @@
   "top_title_design_media": "Thiết kế phương tiện",
   "top_title_edit_post": "Chỉnh sửa bài đăng",
   "top_title_create_post": "Tạo bài đăng",
-  "top_title_move__add_to_customer": "Chuyển / Thêm vào khách hàng",
+  "top_title_move__add_to_group": "Chuyển / Thêm vào nhóm",
   "top_title_add_api_key_for": "Thêm API key cho {{name}}",
   "top_title_instance_url": "URL phiên bản",
   "top_title_custom_url": "URL tùy chỉnh",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Tìm hiểu cách sử dụng Postiz",
   "watch_tutorial_description": "Xem video ngắn này để biết cách tận dụng tối đa Postiz",
   "back": "Quay lại",
-  "get_started": "Bắt đầu"
+  "get_started": "Bắt đầu",
+  "kick_select_channel": "Chọn kênh"
 }

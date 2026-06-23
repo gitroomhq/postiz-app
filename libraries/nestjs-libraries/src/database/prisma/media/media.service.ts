@@ -45,7 +45,7 @@ export class MediaService {
           prompt = await this._openAi.generatePromptForPicture(prompt);
           console.log('Prompt:', prompt);
         }
-        return this._openAi.generateImage(prompt, !!generatePromptFirst);
+        return this._openAi.generateImage(prompt);
       }
     );
 
