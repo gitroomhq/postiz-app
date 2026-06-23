@@ -7,17 +7,6 @@ import { MastodonCompatibleAbstract } from '@gitroom/nestjs-libraries/integratio
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Integration } from '@prisma/client';
 
-/**
- * Friendica provider — decentralized Fediverse network with
- * Mastodon-API compatibility.
- *
- * Friendica exposes the Mastodon-compatible REST API (see
- * https://wiki.friendi.ca/docs/api-mastodon), so it reuses the same
- * OAuth + media + statuses protocol as Mastodon and Pixelfed. It differs
- * only in its much larger character limit and its identity metadata.
- * As with Pixelfed, we avoid the `profile` OAuth scope (#1245) and
- * register an OAuth app per instance via `externalUrl`.
- */
 export class FriendicaProvider extends MastodonCompatibleAbstract {
   override maxConcurrentJob = 5;
   override refreshCron = true;
