@@ -241,7 +241,7 @@ checksums:
     update_credentials: 2e508a1fe962cbf32cb4d6fc2d8a5c99
     additional_settings: 20936205a75745fba2c4047375a04db3
     change_bot: aa9e45a6ecd2f36c79609d73129ef37a
-    move_add_to_customer: d7181be0326645ac72d49f46195815cf
+    move_add_to_group: 9f340142483db64cbe373e2efe69607e
     edit_time_slots: a271d356d7c65f47987e297f0828b0b2
     enable_channel: 029be8cc9f406829d05d1cc44ded5162
     disable_channel: a2d862c419b9fff01f72481499431341
@@ -360,7 +360,7 @@ checksums:
     top_title_design_media: fee3bbf1846d9e5f4a1af783b9e3fc90
     top_title_edit_post: 6bb814ad47d3dcd7f6ef51c08cfbbee9
     top_title_create_post: 06549e1cb8bbba2645f5ded68259684d
-    top_title_move__add_to_customer: a7e5cf28a1e5adfc78c98230d2a22ca3
+    top_title_move__add_to_group: 605ae76732794e7a760391b48c492da3
     top_title_add_api_key_for: 100f6b0bac1838e19b5755543746bb05
     top_title_instance_url: 743ab33cd9b20bc08286d188f20bebb0
     top_title_custom_url: f1e4e1c6a386d212abe94b937cf5e812
@@ -697,3 +697,4 @@ checksums:
     watch_tutorial_description: 25dd65235d9603f6d65d62f953791722
     back: f541015a827e37cb3b1234e56bc2aa3c
     get_started: 1d5f030c4ec9c869e647ae060518b948
+    kick_select_channel: 13fa95c439addeb6674e571e37c96b79

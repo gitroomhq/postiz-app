@@ -66,7 +66,7 @@ export const MediumTags: FC<{
     ].filter((f) => f.label);
   }, [suggestions, tagValue]);
   return (
-    <div>
+    <div className="medium-tags">
       <div className={`text-[14px] mb-[6px]`}>{label}</div>
       <ReactTags
         placeholderText={t('add_a_tag', 'Add a tag')}

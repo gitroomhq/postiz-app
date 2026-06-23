@@ -1,6 +1,13 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import sharp from 'sharp';
+
+export type ValidityMedia = {
+  path: string;
+  thumbnail?: string;
+};
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
@@ -52,11 +59,46 @@ export abstract class SocialAbstract {
 
   public handleErrors(
     body: string,
-    status: number,
+    status: number
   ):
     | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
     | undefined {
     return undefined;
+  }
+
+  /**
+   * Server-side replacement for the old client-side `checkValidity`.
+   * Validates the media attached to a post (and its comments) against the
+   * provider rules. Returns `true` when valid, or an error message string.
+   *
+   * `posts` mirrors the client shape: the outer array is the main post followed
+   * by each comment, the inner array is the media items for that entry.
+   *
+   * Note: video-duration validations that used to run in the browser are not
+   * re-implemented here (no ffmpeg dependency). Image-dimension checks use sharp.
+   */
+  async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    settings: any,
+    additionalSettings: any[]
+  ): Promise<string | true> {
+    return true;
+  }
+
+  /** Reads the pixel dimensions of an image via sharp (works for http or local paths). */
+  protected async getImageDimensions(
+    path: string
+  ): Promise<{ width: number; height: number }> {
+    // Stored media paths are relative (e.g. "uploads/x.png"); resolve them to a
+    // fetchable URL the same way posts.service.updateMedia does.
+    const url =
+      path?.indexOf('http') === -1
+        ? `${process.env.FRONTEND_URL}/${path}`
+        : path;
+    const { width = 0, height = 0 } = await sharp(
+      await readOrFetch(url)
+    ).metadata();
+    return { width, height };
   }
 
   public async mention(
@@ -75,12 +117,14 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
+    let globalErr = {};
     let value: any;
     try {
       value = await func();
     } catch (err) {
       const handle = this.handleErrors(safeStringify(err), 200);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
+      globalErr = err;
     }
 
     if (value && value?.err && value?.value) {
@@ -92,7 +136,7 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
-      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
+      throw new BadBody('', safeStringify(globalErr), {} as any, value.value || '');
     }
 
     return value;
@@ -103,7 +147,8 @@ export abstract class SocialAbstract {
     options: RequestInit = {},
     identifier = '',
     totalRetries = 0,
-    ignoreConcurrency = false
+    ignoreConcurrency = false,
+    message = '',
   ): Promise<Response> {
     const request = await fetch(url, options);
 
@@ -112,7 +157,7 @@ export abstract class SocialAbstract {
     }
 
     if (totalRetries > 2) {
-      throw new BadBody(identifier, '{}', options.body || '{}');
+      throw new BadBody(identifier, '{}', options.body || '{}', message);
     }
 
     let json = '{}';
@@ -136,7 +181,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 
@@ -147,7 +193,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 
@@ -168,7 +215,7 @@ export abstract class SocialAbstract {
       identifier,
       json,
       options.body!,
-      handleError?.value || ''
+      handleError?.value || 'Unknown Error'
     );
   }
 
