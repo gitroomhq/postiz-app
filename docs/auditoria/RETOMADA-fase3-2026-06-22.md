@@ -41,6 +41,11 @@ em ambos antes de continuar, pode ter sido mergeado/abandonado).
   ~26 call-sites de `state` OAuth em `libraries/nestjs-libraries/src/integrations/social/*.provider.ts`.
   NÃO tocar `makeId` em si (109 outros usos no repo). Modelo: Sirius/snape-backend, Sonnet
   4.6, esforço médio. Gate: Moody, Haiku.
+  **ATUALIZAÇÃO:** já existe `makeSecureState()` em `libraries/nestjs-libraries/src/services/make.is.ts`
+  (commit `2778f824`, `randomBytes(32).toString('hex')`) — **NÃO TESTADO, NÃO REVISADO, NÃO
+  INTEGRADO** nos 26 providers ainda. Origem incerta (achado solto no working tree ao
+  retomar a sessão, comitado como WIP só para não perder). Sirius deve revisar essa função
+  antes de usar e então fazer a troca nos 26 call-sites.
 - Smoke-test do chat de agentes (Mastra) — Felipe precisa subir o backend e confirmar que o
   chat funciona com o schema `mastra` novo (mudança feita no VOC-29).
 - Limpeza de leftovers gitignorados (intactos, fora do git): `apps/backend/undefined/` já
