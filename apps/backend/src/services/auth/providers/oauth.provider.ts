@@ -34,11 +34,11 @@ export class OauthProvider extends AuthProviderAbstract {
       tokenUrl: POSTIZ_OAUTH_TOKEN_URL,
       userInfoUrl: POSTIZ_OAUTH_USERINFO_URL,
       frontendUrl: FRONTEND_URL,
-      scope: POSTIZ_OAUTH_SCOPE ?? 'openid profile email',
+      scope: POSTIZ_OAUTH_SCOPE || 'openid profile email',
     };
   }
 
-  generateLink(): string {
+  generateLink(query?: any): string {
     const { authUrl, clientId, frontendUrl, scope } = this.getConfig();
     const params = new URLSearchParams({
       client_id: clientId,
