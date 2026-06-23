@@ -1,6 +1,6 @@
 'use client';
 
-import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -259,6 +259,21 @@ export const Filters = () => {
 
   const isListView = calendar.display === 'list';
 
+  const setListStateFilter = useCallback(
+    (next: ListStateFilter) => () => {
+      if (calendar.listState === next) return;
+      calendar.setListState(next);
+    },
+    [calendar]
+  );
+
+  const listStateOptions: { value: ListStateFilter; label: string }[] = [
+    { value: 'all', label: t('all', 'All') },
+    { value: 'scheduled', label: t('scheduled', 'Scheduled') },
+    { value: 'draft', label: t('draft', 'Draft') },
+    { value: 'published', label: t('published', 'Published') },
+  ];
+
   const previousPage = useCallback(() => {
     if (calendar.listPage > 0) {
       calendar.setListPage(calendar.listPage - 1);
@@ -392,6 +407,21 @@ export const Filters = () => {
                 />
               </svg>
             </div>
+          </div>
+          <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+            {listStateOptions.map((option) => (
+              <div
+                key={option.value}
+                onClick={setListStateFilter(option.value)}
+                className={clsx(
+                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-[6px]',
+                  calendar.listState === option.value &&
+                    'text-textItemFocused bg-boxFocused'
+                )}
+              >
+                {option.label}
+              </div>
+            ))}
           </div>
           <div className="flex-1" />
         </div>

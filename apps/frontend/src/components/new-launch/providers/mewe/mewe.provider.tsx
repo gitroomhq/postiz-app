@@ -38,6 +38,5 @@ export default withProvider({
   SettingsComponent: MeweComponent,
   CustomPreviewComponent: undefined,
   dto: MeweDto,
-  checkValidity: undefined,
   maximumCharacters: 63206,
 });
