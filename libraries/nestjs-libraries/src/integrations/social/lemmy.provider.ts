@@ -5,7 +5,10 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -23,6 +26,22 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     return 10000;
   }
   dto = LemmySettingsDto;
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if (
+      firstItems?.length &&
+      (firstItems?.[0]?.path?.indexOf?.('png') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('jpg') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('jpef') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('gif') ?? -1) === -1
+    ) {
+      return 'You can set only one picture for a cover';
+    }
+    return true;
+  }
 
   async customFields() {
     return [

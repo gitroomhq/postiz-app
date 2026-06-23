@@ -59,3 +59,4 @@ const useCommunity = () => {
 
 - Linting of the project can run only from the root.
 - Use only pnpm.
+- The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed

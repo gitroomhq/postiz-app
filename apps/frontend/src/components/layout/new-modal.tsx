@@ -31,6 +31,7 @@ interface OpenModalInterface {
     modal?: string;
   };
   size?: string | number;
+  maxSize?: string | number;
   height?: string | number;
   id?: string;
 }
@@ -200,10 +201,11 @@ export const Component: FC<{
                 modal.size ? '' : 'min-w-[600px]',
                 modal.fullScreen && 'h-full'
               )}
-              {...((!!modal.size || !!modal.height) && {
+              {...((!!modal.size || !!modal.height || !!modal.maxSize) && {
                 style: {
                   ...(modal.size ? { width: modal.size } : {}),
                   ...(modal.height ? { height: modal.height } : {}),
+                  ...(modal.maxSize ? { maxWidth: modal.maxSize } : {}),
                 },
               })}
               onClick={(e) => e.stopPropagation()}
