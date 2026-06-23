@@ -738,17 +738,23 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const actor =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
-    const response = await this.fetch(
-      `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
-        parentPostId
-      )}/comments`,
-      {
-        method: 'POST',
-        headers: {
-        'LinkedIn-Version': '202306',
-        'X-Restli-Protocol-Version': '2.0.0',
+  const response = await this.fetch(
+    `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
+      parentPostId
+    )}/comments`,
+    {
+      method: 'POST',
+      headers: {
         'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': '202601',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        actor,
+        object: parentPostId,
+        message: {
+          text: this.fixText(post.message),
         },
       }),
     }
