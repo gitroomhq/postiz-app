@@ -89,7 +89,9 @@ export async function proxy(request: NextRequest) {
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
   if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
-    const providers = ['google', 'settings'];
+    // Check settings before google because generic OAuth callbacks use
+    // /settings, and Google OIDC can return googleapis.com in the scope query.
+    const providers = ['settings', 'google'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex
       ? ''
