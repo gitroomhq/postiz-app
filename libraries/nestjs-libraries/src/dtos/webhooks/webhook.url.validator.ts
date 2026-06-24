@@ -40,99 +40,16 @@ export function isBlockedIPv6(ip: string): boolean {
   );
 }
 
-function parseIpv4Octets(ip: string): number[] | undefined {
-  const octets = ip.split('.').map(Number);
-  if (
-    octets.length !== 4 ||
-    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
-  ) {
-    return undefined;
-  }
-  return octets;
-}
-
-function normalizeIpv6Hextets(ip: string): string[] | undefined {
-  const normalized = ip.toLowerCase();
-  if ((normalized.match(/::/g) || []).length > 1) {
-    return undefined;
-  }
-
-  const convertIpv4Tail = (parts: string[]): string[] | undefined => {
-    const result = [...parts];
-    const last = result.at(-1);
-    if (!last?.includes('.')) {
-      return result;
-    }
-
-    const octets = parseIpv4Octets(last);
-    if (!octets) {
-      return undefined;
-    }
-
-    result.splice(
-      -1,
-      1,
-      ((octets[0] << 8) | octets[1]).toString(16),
-      ((octets[2] << 8) | octets[3]).toString(16)
-    );
-    return result;
-  };
-
-  const [headPart, tailPart] = normalized.split('::');
-  const head = convertIpv4Tail(headPart ? headPart.split(':') : []);
-  const tail = convertIpv4Tail(tailPart ? tailPart.split(':') : []);
-  if (!head || !tail) {
-    return undefined;
-  }
-
-  const missing = 8 - head.length - tail.length;
-  if ((tailPart === undefined && missing !== 0) || missing < 0) {
-    return undefined;
-  }
-
-  const hextets = [...head, ...Array(missing).fill('0'), ...tail];
-  if (hextets.length !== 8) {
-    return undefined;
-  }
-
-  return hextets.every((part) => {
-    const value = Number.parseInt(part || '0', 16);
-    return /^[0-9a-f]{0,4}$/.test(part) && value >= 0 && value <= 0xffff;
-  })
-    ? hextets
-    : undefined;
-}
-
-function getIPv4FromMappedIPv6(ip: string): string | undefined {
-  const hextets = normalizeIpv6Hextets(ip);
-  if (!hextets) {
-    return undefined;
-  }
-
-  const values = hextets.map((part) => Number.parseInt(part || '0', 16));
-  const isMapped =
-    values.slice(0, 5).every((value) => value === 0) && values[5] === 0xffff;
-
-  if (!isMapped) {
-    return undefined;
-  }
-
-  return `${values[6] >> 8}.${values[6] & 255}.${values[7] >> 8}.${
-    values[7] & 255
-  }`;
-}
-
 export function isBlockedIp(ip: string): boolean {
   const version = net.isIP(ip);
   if (version === 4) {
     return isBlockedIPv4(ip);
   }
   if (version === 6) {
-    // IPv4-mapped IPv6 can arrive in dotted form (`::ffff:127.0.0.1`) or
-    // canonical hex form (`::ffff:7f00:1`) after URL parsing / DNS lookup.
-    const mapped = getIPv4FromMappedIPv6(ip);
+    // IPv4-mapped IPv6 (::ffff:a.b.c.d) — extract and check as IPv4
+    const mapped = ip.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) {
-      return isBlockedIPv4(mapped);
+      return isBlockedIPv4(mapped[1]);
     }
     return isBlockedIPv6(ip);
   }
