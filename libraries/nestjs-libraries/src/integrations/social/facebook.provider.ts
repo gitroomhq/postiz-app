@@ -506,7 +506,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             if (videoStatus === 'error') {
               throw new Error('Video processing failed');
             }
-            if (videoStatus !== 'upload_complete' &&videoStatus !== 'ready') {
+            if (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
               await timer(10000);
             }
           }
