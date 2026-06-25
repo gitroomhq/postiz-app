@@ -57,11 +57,12 @@ export class ReligareService {
   async createProfile(
     orgId: string,
     dto: CreateReligareProfileDto,
-    tier?: SubscriptionTier | null
+    tier?: SubscriptionTier | null,
+    isSuperAdmin?: boolean
   ) {
     const count = await this._religareRepository.countProfiles(orgId);
     const limit = religareProfileLimit(tier);
-    if (count >= limit) {
+    if (!isSuperAdmin && count >= limit) {
       throw new ForbiddenException(
         `Seu plano permite até ${limit} perfil(is) Religare. Faça upgrade para criar mais.`
       );

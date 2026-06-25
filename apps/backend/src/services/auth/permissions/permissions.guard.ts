@@ -30,6 +30,15 @@ export class PoliciesGuard implements CanActivate {
       return true;
     }
 
+    // Super admins bypass plan/policy checks entirely. `request.user` is
+    // populated by AuthMiddleware from the DB-resolved user (never from the
+    // client-supplied JWT payload or body), so this cannot be forged.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    if (request.user?.isSuperAdmin === true) {
+      return true;
+    }
+
     const policyHandlers =
       this._reflector.get<AbilityPolicy[]>(
         CHECK_POLICIES_KEY,

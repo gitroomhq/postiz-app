@@ -9,8 +9,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Organization, SubscriptionTier, VocaccioRole } from '@prisma/client';
+import { Organization, SubscriptionTier, User, VocaccioRole } from '@prisma/client';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { ReligareService } from '@gitroom/nestjs-libraries/database/prisma/religare/religare.service';
 import { VocaccioRoles } from '@gitroom/backend/services/auth/permissions/vocaccio-roles.decorator';
 import {
@@ -78,12 +79,14 @@ export class ReligareController {
   @VocaccioRoles(VocaccioRole.OWNER, VocaccioRole.OPERATOR)
   createProfile(
     @GetOrgFromRequest() org: OrgWithSubscription,
-    @Body() body: CreateReligareProfileDto
+    @Body() body: CreateReligareProfileDto,
+    @GetUserFromRequest() user: User
   ) {
     return this._religareService.createProfile(
       org.id,
       body,
-      org.subscription?.subscriptionTier
+      org.subscription?.subscriptionTier,
+      user.isSuperAdmin
     );
   }
 
