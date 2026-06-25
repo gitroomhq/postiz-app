@@ -393,6 +393,14 @@ PDF 2 (Perfil de Marca) bloqueado no plano Básico → CTA upgrade.
 produto com `context_type: 'therapy'`: vocabulário clínico/holístico, "paciente"
 no lugar de "cliente", sem seção de marca/negócio.
 
+**Kin do dia no calendário de publicação (planejado 2026-06-25, pós-Tzolkin estável):**
+Depois que o Tzolkin estiver estável/operante, mostrar o Kin de cada dia direto na tela
+de calendário (`/launches`, `apps/frontend/src/components/launches/calendar.tsx` — a mesma
+view de semana/mês/dia mostrada no print do Felipe) para ajudar a decidir a melhor data de
+publicação também segundo o Tzolkin. Precisa de um **toggle de visibilidade** do Kin (ligar/
+desligar a exibição) — não forçar pra quem não usa Religare/não quer esse contexto na
+agenda. Avaliar se o toggle é por usuário (preferência salva) ou só on/off de sessão.
+
 **Rotas:**
 
 ```
