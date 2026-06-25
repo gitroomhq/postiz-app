@@ -171,6 +171,32 @@ diário (30d) · RLS entre clientes.
 `.env` (NUNCA commitar): `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD`, `ADMIN_NAME`,
 `ADMIN_ROLE=OWNER`. Fase 1: `prisma db seed` cria OWNER; 1º login exige troca de senha.
 
+### Área de Perfil do Usuário (planejado 2026-06-25, definir fase de execução)
+
+Hoje `/settings` só tem métricas/notificações/shortlink (`global.settings.tsx`) — falta uma
+área de conta pessoal coerente. Reunir, seguindo boas práticas de UX (separar "minha conta"
+de "configurações da ferramenta"):
+
+- **Troca de senha** — já existe backend (`/auth/forgot` + `/auth/forgot-return`,
+  herdado do Postiz); falta só UI de "trocar senha logado" (sem precisar do fluxo de
+  e-mail) dentro da própria área de perfil.
+- **Foto de perfil** — `User.pictureId` já existe no schema; falta upload/crop na UI.
+- **Dados pessoais** — nome, e-mail, fuso horário (`User.timezone` já existe).
+- **Gestão de plano** — upgrade/downgrade/renovação/cancelamento. Base de billing já
+  existe (`billing.controller.ts`, `main.billing.component.tsx`) — avaliar se é reuso direto
+  ou precisa de UI própria mais simples pro usuário final (vs. painel admin).
+- **Contato com suporte** — canal de abertura de ticket/dúvida (a definir: e-mail direto,
+  formulário, ou integração com ferramenta externa).
+- **isSuperAdmin** (ver `User.isSuperAdmin`, bypass de limites de plano implementado
+  2026-06-25 em `permissions.guard.ts` + `religare.service.ts`) é uma flag de plataforma,
+  setada só via banco/script — NUNCA expor na UI de perfil nem aceitar via request do
+  próprio usuário (vetor de escalação de privilégio).
+
+**Onde encaixar:** não é MVP-crítico (link único/portal do cliente final não precisa disso),
+mas é básico para qualquer usuário interno (Tipo A) usar o produto no dia a dia — sugestão:
+puxar para o final da Fase 1/início da Fase 2, junto de outros itens de polimento de conta,
+e não deixar para a última camada (CAMADA 11+) que é mais sobre agentes/automação.
+
 ---
 
 ## CAMADA 3 — CRM SIMPLIFICADO (somente admin)
