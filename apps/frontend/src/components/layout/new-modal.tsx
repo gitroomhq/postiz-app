@@ -388,7 +388,15 @@ export const areYouSure = ({
 export const DecisionEverywhere: FC = () => {
   const decision = useDecisionModal();
   useEffect(() => {
+    // Mirror ModalManagerEmitter: this component mounts in several layouts
+    // (MantineWrapper), so without removing the listener on unmount the
+    // module-level emitter accumulates stale handlers. A single areYouSure()
+    // would then open multiple stacked dialogs and a button click would only
+    // close the top one, leaving the duplicates on screen.
     decisionModalEmitter.on('open', decision.open);
+    return () => {
+      decisionModalEmitter.removeAllListeners('open');
+    };
   }, []);
   return null;
 };
