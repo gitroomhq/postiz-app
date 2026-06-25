@@ -19,16 +19,31 @@ export const LogoTextComponent = () => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>
-      <linearGradient id="voc-lt-g" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <linearGradient id="voc-lt-base" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stopColor="#E89A7B" />
-        <stop offset="38%" stopColor="#CF6295" />
-        <stop offset="72%" stopColor="#7360AA" />
+        <stop offset="36%" stopColor="#CF6295" />
+        <stop offset="68%" stopColor="#7360AA" />
         <stop offset="100%" stopColor="#2897BF" />
       </linearGradient>
+      <radialGradient id="voc-lt-r1" cx="14%" cy="10%" r="70%">
+        <stop offset="0%" stopColor="#E89A7B" stopOpacity="0.9" />
+        <stop offset="60%" stopColor="#E89A7B" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="voc-lt-r2" cx="88%" cy="14%" r="70%">
+        <stop offset="0%" stopColor="#CF6295" stopOpacity="0.85" />
+        <stop offset="60%" stopColor="#CF6295" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="voc-lt-r3" cx="16%" cy="92%" r="75%">
+        <stop offset="0%" stopColor="#2897BF" stopOpacity="0.85" />
+        <stop offset="62%" stopColor="#2897BF" stopOpacity="0" />
+      </radialGradient>
     </defs>
 
     {/* Icon 36×36 */}
-    <rect width="36" height="36" rx="9" fill="url(#voc-lt-g)" />
+    <rect width="36" height="36" rx="9" fill="url(#voc-lt-base)" />
+    <rect width="36" height="36" rx="9" fill="url(#voc-lt-r1)" />
+    <rect width="36" height="36" rx="9" fill="url(#voc-lt-r2)" />
+    <rect width="36" height="36" rx="9" fill="url(#voc-lt-r3)" />
     <g transform={iconTransform(36, 6)}>
       <path d={SYMBOL_V} fill="white" />
       <path d={SYMBOL_DOT} fill="white" />
