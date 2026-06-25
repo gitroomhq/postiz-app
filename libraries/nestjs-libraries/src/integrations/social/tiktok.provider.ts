@@ -173,14 +173,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('spam_risk_user_banned_from_posting') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value:
-          'Account banned from posting, please check TikTok account status',
-      };
-    }
-
     if (body.indexOf('spam_risk') > -1) {
       return {
         type: 'bad-body' as const,
@@ -411,7 +403,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     accessToken: string
   ): Promise<{ url: string; id: string }> {
     // eslint-disable-next-line no-constant-condition
-    while (true) {
+   let attempts = 0;
+
+    while (attempts < 60) {
+      attempts++;
+
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
@@ -455,7 +451,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       if (status === 'FAILED') {
         const handleError = this.handleErrors(JSON.stringify(post));
         throw new BadBody(
-          'titok-error-upload',
+          'tiktok-error-upload',
           JSON.stringify(post),
           Buffer.from(JSON.stringify(post)),
           handleError?.value || ''
@@ -479,87 +475,111 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
+  private buildTikTokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
     const method = firstPost?.settings?.content_posting_method;
 
-    if (method === 'DIRECT_POST') {
-      return {
-        post_info: {
-          ...(isPhoto && firstPost.settings.title
-            ? { title: firstPost.settings.title.slice(0, 90) }
-            : {}),
-          ...(!isPhoto && firstPost.message
-            ? { title: firstPost.message }
-            : {}),
-          ...(isPhoto ? { description: firstPost.message } : {}),
-          privacy_level:
-            firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-          ...(isPhoto
-            ? {}
-            : { disable_duet: !firstPost.settings.duet || false }),
-          disable_comment: !firstPost.settings.comment || false,
-          ...(isPhoto
-            ? {}
-            : { disable_stitch: !firstPost.settings.stitch || false }),
-          ...(isPhoto
-            ? {}
-            : { is_aigc: firstPost.settings.video_made_with_ai || false }),
-          brand_content_toggle:
-            firstPost.settings.brand_content_toggle || false,
-          brand_organic_toggle:
-            firstPost.settings.brand_organic_toggle || false,
-          ...(isPhoto
-            ? {
-                auto_add_music: firstPost.settings.autoAddMusic === 'yes',
-              }
-            : {}),
-        },
-      };
-    }
-
+  if (method === 'DIRECT_POST') {
     return {
       post_info: {
         ...(isPhoto && firstPost.settings.title
-          ? { title: firstPost.settings.title }
+          ? { title: firstPost.settings.title.slice(0, 90) }
           : {}),
-        ...(!isPhoto && firstPost.message ? { title: firstPost.message } : {}),
+
+        ...(!isPhoto && firstPost.message
+          ? { title: firstPost.message }
+          : {}),
+
         ...(isPhoto ? { description: firstPost.message } : {}),
-      },
-    };
-  }
 
-  private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-
-    if (isPhoto) {
-      return {
-        post_mode:
-          firstPost?.settings?.content_posting_method === 'DIRECT_POST'
-            ? 'DIRECT_POST'
-            : 'MEDIA_UPLOAD',
-        media_type: 'PHOTO',
-        source_info: {
-          source: 'PULL_FROM_URL',
-          photo_cover_index: 0,
-          photo_images: firstPost.media?.map((p) => p.path),
-        },
-      };
-    }
-
-    return {
-      source_info: {
-        source: 'PULL_FROM_URL',
-        video_url: firstPost?.media?.[0]?.path!,
-        ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+      
+        ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp
           ? {
               video_cover_timestamp_ms:
-                firstPost?.media?.[0]?.thumbnailTimestamp!,
+                firstPost.media[0].thumbnailTimestamp,
+            }
+          : {}),
+
+        privacy_level:
+          firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
+
+        ...(isPhoto
+          ? {}
+          : { disable_duet: !firstPost.settings.duet || false }),
+
+        disable_comment: !firstPost.settings.comment || false,
+
+        ...(isPhoto
+          ? {}
+          : { disable_stitch: !firstPost.settings.stitch || false }),
+
+        ...(isPhoto
+          ? {}
+          : { is_aigc: firstPost.settings.video_made_with_ai || false }),
+
+        brand_content_toggle:
+          firstPost.settings.brand_content_toggle || false,
+
+        brand_organic_toggle:
+          firstPost.settings.brand_organic_toggle || false,
+
+        ...(isPhoto
+          ? {
+              auto_add_music: firstPost.settings.autoAddMusic === 'yes',
             }
           : {}),
       },
     };
   }
+
+  return {
+    post_info: {
+      ...(isPhoto && firstPost.settings.title
+        ? { title: firstPost.settings.title }
+        : {}),
+
+      ...(!isPhoto && firstPost.message
+        ? { title: firstPost.message }
+        : {}),
+
+      ...(isPhoto ? { description: firstPost.message } : {}),
+
+      ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp
+        ? {
+            video_cover_timestamp_ms:
+              firstPost.media[0].thumbnailTimestamp,
+          }
+        : {}),
+    },
+  };
+}
+
+  private buildTikTokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
+  const isPhoto = !hasExtension(
+  firstPost?.media?.[0]?.path,'mp4');
+
+  if (isPhoto) {
+    return {
+      post_mode:
+        firstPost?.settings?.content_posting_method === 'DIRECT_POST'
+          ? 'DIRECT_POST'
+          : 'MEDIA_UPLOAD',
+      media_type: 'PHOTO',
+      source_info: {
+        source: 'PULL_FROM_URL',
+        photo_cover_index: 0,
+        photo_images: firstPost.media?.map((p) => p.path),
+      },
+    };
+  }
+
+  return {
+    source_info: {
+      source: 'PULL_FROM_URL',
+      video_url: firstPost?.media?.[0]?.path!,
+    },
+  };
+}
 
   async post(
     id: string,
@@ -571,8 +591,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
     console.log({
-      ...this.buildTikokPostInfoBody(firstPost),
-      ...this.buildTikokSourceInfoBody(firstPost),
+      ...this.buildTikTokPostInfoBody(firstPost),
+      ...this.buildTikTokSourceInfoBody(firstPost),
     });
     const {
       data: { publish_id },
@@ -589,8 +609,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...this.buildTikokPostInfoBody(firstPost),
-            ...this.buildTikokSourceInfoBody(firstPost),
+            ...this.buildTikTokPostInfoBody(firstPost),
+            ...this.buildTikTokSourceInfoBody(firstPost),
           }),
         }
       )
