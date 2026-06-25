@@ -38,7 +38,7 @@ export function ForgotReturn({ token }: { token: string }) {
         }),
       })
     ).json();
-    setState(true);
+    setLoading(false);
     if (!reset) {
       form.setError('password', {
         type: 'manual',
@@ -46,7 +46,7 @@ export function ForgotReturn({ token }: { token: string }) {
       });
       return false;
     }
-    setLoading(false);
+    setState(true);
   };
   return (
     <FormProvider {...form}>
