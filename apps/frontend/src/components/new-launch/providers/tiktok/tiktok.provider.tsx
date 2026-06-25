@@ -305,6 +305,7 @@ const TikTokSettings: FC<{
             {[
               brand_organic_toggle || brand_content_toggle ? (
                 <a
+                  key="music-usage"
                   target="_blank"
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
@@ -312,9 +313,10 @@ const TikTokSettings: FC<{
                   {t('music_usage_confirmation', 'Music Usage Confirmation')}
                 </a>
               ) : undefined,
-              brand_content_toggle ? <> {t('and', 'and')} </> : undefined,
+              brand_content_toggle ? <span key="and"> {t('and', 'and')} </span> : undefined,
               brand_content_toggle ? (
                 <a
+                  key="bc-policy"
                   target="_blank"
                   className="text-[#B69DEC] hover:underline"
                   href="https://www.tiktok.com/legal/page/global/bc-policy/en"
