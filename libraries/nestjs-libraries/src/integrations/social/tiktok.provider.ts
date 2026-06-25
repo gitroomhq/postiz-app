@@ -521,7 +521,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     return {
       post_info: {
         ...(isPhoto && firstPost.settings.title
-          ? { title: firstPost.settings.title }
+          ? { title: firstPost.settings.title.slice(0, 90) }
           : {}),
         ...(!isPhoto && firstPost.message ? { title: firstPost.message } : {}),
         ...(isPhoto ? { description: firstPost.message } : {}),
