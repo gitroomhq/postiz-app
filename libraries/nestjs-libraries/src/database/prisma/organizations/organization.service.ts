@@ -78,7 +78,7 @@ export class OrganizationService {
   }
 
   async inviteTeamMember(orgId: string, body: AddTeamMemberDto) {
-    const timeLimit = dayjs().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+    const timeLimit = dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm:ss');
     const id = makeId(5);
     const url =
       process.env.FRONTEND_URL +
@@ -87,7 +87,7 @@ export class OrganizationService {
       await this._notificationsService.sendEmail(
         body.email,
         'You have been invited to join an organization',
-        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 1 hour.`
+        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 2 days.`
       );
     }
     return { url };
