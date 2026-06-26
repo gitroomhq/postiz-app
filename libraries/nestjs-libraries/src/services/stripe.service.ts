@@ -455,7 +455,7 @@ export class StripeService {
       customer,
       return_url:
         process.env['FRONTEND_URL'] +
-        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
+        `/launches?onboarding=true&trialStart=true&check=${uniqueId}${isUtm}`,
       mode: 'subscription',
       subscription_data: {
         ...(allowTrial ? { trial_period_days: 7 } : {}),
