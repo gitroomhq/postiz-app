@@ -177,9 +177,12 @@ Hoje `/settings` só tem métricas/notificações/shortlink (`global.settings.ts
 área de conta pessoal coerente. Reunir, seguindo boas práticas de UX (separar "minha conta"
 de "configurações da ferramenta"):
 
-- **Troca de senha** — já existe backend (`/auth/forgot` + `/auth/forgot-return`,
-  herdado do Postiz); falta só UI de "trocar senha logado" (sem precisar do fluxo de
-  e-mail) dentro da própria área de perfil.
+- **Troca de senha** — **CORREÇÃO 2026-06-25**: confirmado via grep que NÃO existe nenhum
+  endpoint de "trocar senha logado" no backend (só `/auth/forgot`+`/auth/forgot-return`,
+  fluxo NÃO-autenticado por link de e-mail, herdado do Postiz). Falta backend E frontend —
+  endpoint novo (validar senha atual + nova senha + `providerName: LOCAL`) e a UI de fato.
+  Confirmado na prática: Felipe precisou de um link de reset gerado manualmente (sem SMTP
+  configurado) por não haver nenhuma forma de trocar senha estando logado.
 - **Foto de perfil** — `User.pictureId` já existe no schema; falta upload/crop na UI.
 - **Dados pessoais** — nome, e-mail, fuso horário (`User.timezone` já existe).
 - **Gestão de plano** — upgrade/downgrade/renovação/cancelamento. Base de billing já
@@ -196,6 +199,14 @@ de "configurações da ferramenta"):
 mas é básico para qualquer usuário interno (Tipo A) usar o produto no dia a dia — sugestão:
 puxar para o final da Fase 1/início da Fase 2, junto de outros itens de polimento de conta,
 e não deixar para a última camada (CAMADA 11+) que é mais sobre agentes/automação.
+
+**Reforço ao vivo (Felipe, 2026-06-25):** ao navegar `/settings` em busca de troca de senha,
+achou a tela "bem precária em nomes, design, UI/UX" — labels em inglês não traduzidas
+misturadas com PT ("Date Metrics", "Email Notifications", "Success/Failure/Streak Reminder
+Emails"), e nenhuma separação visual entre configuração de ferramenta (Webhooks, Postagem
+Automática, Conjuntos, Developers) e conta pessoal. Quando esta área for trabalhada, revisar
+TODA a navegação de `/settings` (não só adicionar a aba de perfil), incluindo tradução
+completa das labels existentes.
 
 ---
 
