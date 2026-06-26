@@ -428,6 +428,7 @@ model Post {
   intervalInDays             Int?
   error                      String?
   projectId                  String?
+  postingClaimedAt           DateTime?
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
   deletedAt                  DateTime?
@@ -459,6 +460,7 @@ model Post {
   @@index([releaseURL])
   @@index([integrationId])
   @@index([projectId])
+  @@index([postingClaimedAt])
 }
 
 model Notifications {
