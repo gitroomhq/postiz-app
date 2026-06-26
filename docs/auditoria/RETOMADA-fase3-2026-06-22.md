@@ -1,5 +1,9 @@
 # Prompt de retomada — Fase 3 da auditoria (Vocaccio)
 
+**Atualizado em 2026-06-25 — ver seção "Sessão 2026-06-25" abaixo para o estado mais recente.
+A seção original de 2026-06-22 (logo após) ficou parcialmente obsoleta: VOC-39 já foi
+concluído nessa mesma sessão de 22/06, antes da troca de conta.**
+
 Cole isto num novo chat (possivelmente em OUTRA CONTA — ver migração no fim) para continuar.
 
 ---
@@ -115,7 +119,7 @@ mesmo `C:\dev\vocaccio`** (ou ao worktree `.claude/worktrees/festive-chaum-40ee7
 existir) e os commits estarão todos lá. Push pro GitHub NÃO foi feito (e não é necessário
 neste cenário) — branch segue só local, como manda a regra do projeto.
 
-## Próximo passo sugerido ao retomar
+## Próximo passo sugerido (seção original de 22/06 — ver atualização abaixo)
 
 1. Confirmar se o branch `fix/voc-idor-project-content` (com os commits de hoje) ainda
    existe no ambiente novo. Se não existir, refazer a partir desta memória — o trabalho já
@@ -124,3 +128,74 @@ neste cenário) — branch segue só local, como manda a regra do projeto.
 3. Implementar VOC-07 com Sirius/snape-backend em Sonnet (mais simples, pode vir antes ou
    depois do VOC-43).
 4. Felipe testa o chat (Mastra) quando tiver tempo.
+
+---
+
+## Sessão 2026-06-25 — atualização (não houve troca de conta desta vez; sessão longa)
+
+**VOC-39 confirmado CONCLUÍDO** (já estava — commit `3ada6ff6`, da sessão de 22/06, antes da
+troca de conta). Não confundir com pendente.
+
+**Branch `fix/voc-idor-project-content` no mesmo worktree** (`.claude/worktrees/festive-chaum-40ee7d`),
+agora com **21 commits** desde o início da sessão de 22/06 (de `fa1771ff` até `61038479`),
+**sem push**, `git status` limpo.
+
+### Trabalho de segurança/infra desta sessão
+- VOC-39, VOC-29, baseline Religare/Volatis, limpeza de compilados — tudo da sessão de 22/06,
+  recapitulado acima, sem mudanças.
+- **VOC-43 continua só PLANEJADO** (plano completo acima, McGonagall/Opus) — **não implementado**.
+- **VOC-07 continua não-iniciado**, mas há um achado solto: `makeSecureState()` em
+  `libraries/nestjs-libraries/src/services/make.is.ts` (commit `2778f824`, `randomBytes(32)`)
+  — gerador criptográfico pronto, **NÃO testado/revisado/integrado** nos ~26 providers ainda.
+  Sirius deve revisar antes de usar.
+
+### Trabalho fora do escopo de segurança (pedido direto do Felipe)
+1. **Conta admin migrada**: `admin@vocaccio.com.br` (placeholder, nunca usado de fato) →
+   renomeada para **`felipe@vocacc.io`** (e-mail oficial real), `isSuperAdmin=true` ativado.
+   Org `Vocaccio | Soul 2 Soul` preservada (11 clients + 1 expert Religare seed).
+   `felipeweb7@gmail.com` fica reservado pra simular usuário standard, se quiser, no futuro.
+2. **`isSuperAdmin` ignora QUALQUER limite de plano** (commit `e7629eb1`): bypass aditivo em
+   `permissions.guard.ts` (cobre posts/canais/webhooks/vídeos via `@CheckPolicies`) e
+   `religare.service.ts` (limite de perfis Religare). Flag sempre lida do `User` resolvido
+   no banco — sem vetor de self-promotion (confirmado por gate).
+3. **Bug real corrigido — loop infinito de restart do backend** (`4423d702`): `tsconfig.tsbuildinfo`
+   ficava fora do `outDir`, watcher via reescrita do cache como "mudança de código" e
+   reiniciava infinitamente. Fix: `tsBuildInfoFile` movido pra dentro de `./dist/`.
+4. **Bug real corrigido — reset de senha mentia sucesso** (`d9163bda`): `forgot-return.tsx`
+   mostrava "redefinição bem-sucedida" mesmo quando o backend falhava (token expirado etc.),
+   porque `setState(true)` rodava antes de checar o resultado. Corrigido.
+5. **Achado não-corrigido (baixa prioridade)**: ao gerar tokens de reset manualmente (sem
+   SMTP configurado), usar horário local em vez de UTC fazia o token "expirar" na hora
+   (backend interpreta `expires` como UTC). Não afeta o fluxo real por e-mail (mesmo
+   processo gera e valida). Mitigação: gerar com `dayjs.utc()`. Item futuro de robustez:
+   trocar formato naive por ISO 8601 com `Z` explícito em `auth.service.ts`.
+6. **Logo da tela de login corrigido em 2 etapas**: primeiro unificou o gradiente (`b9679b1e`),
+   depois trocou pelo wordmark oficial `vocaccio-wordmark.png` otimizado via `sharp`
+   (44.693→3.648 bytes, raster mantido, sem texto duplicado) (`44f5a2e6`).
+7. **`PLANO-MESTRE.md` ganhou 3 seções novas**: Área de Perfil do Usuário (`ab226bdd`, depois
+   corrigida em `649cf8dd` — não existe backend de troca de senha autenticada, só o fluxo de
+   e-mail não-autenticado), Kin do dia no calendário `/launches` pós-Tzolkin (`ae218c0e`),
+   e feedback ao vivo sobre `/settings` estar cru (labels em inglês, sem separação conta/ferramenta).
+8. **Comando `/new-chat` criado** (`61038479`, `.claude/commands/new-chat.md`) — formaliza
+   `feedback-rotina-novo-chat` da memória como skill disparável. Neste app aparece como Skill,
+   não slash command nativo (esperado, não é erro).
+
+### ⏳ Pendente real ao retomar
+- **Felipe precisa smoke-testar o chat de agentes (Mastra)** — ainda não confirmado desde o
+  VOC-29 (schema `mastra` dedicado).
+- **Felipe precisa confirmar visualmente** o novo logo do login (`/auth/login`) — não
+  verificado em browser nesta sessão (ferramenta de browser instável/desconectando).
+- **VOC-43**: implementar com Sirius/snape-backend, **Opus 4.8**, esforço alto, usando o
+  plano já pronto acima nesta retomada.
+- **VOC-07**: revisar `makeSecureState()` (commit `2778f824`) e então trocar os ~26
+  call-sites de `makeId(6/7)` para OAuth `state`, com Sirius/snape-backend, **Sonnet 4.6**,
+  esforço médio.
+- **Área de Perfil do Usuário**: ainda não implementada (só planejada) — backend de troca
+  de senha autenticada (Sirius, Sonnet, esforço baixo) + UI completa (Flitwick, Sonnet,
+  esforço médio), quando Felipe decidir a fase.
+
+### Próximo passo sugerido (atualizado)
+Como VOC-39 já está concluído, o próximo item real de segurança é **VOC-43** (idempotência
+de posting, plano pronto) ou **VOC-07** (mais rápido/barato) — a escolha entre os dois é do
+Felipe. Antes disso, vale ele confirmar visualmente o logo e testar o chat Mastra (rápido,
+não-bloqueante para o resto).
