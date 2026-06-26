@@ -390,14 +390,63 @@ export class PostsRepository {
   }
 
   updatePost(id: string, postId: string, releaseURL: string) {
-    return this._post.model.post.update({
+    // VOC-43: guard against overwriting an already-published post (idempotency).
+    // updateMany lets us add a non-unique filter on `state`; the workflow caller
+    // does not use the return value, so dropping the single-row return is safe.
+    return this._post.model.post.updateMany({
       where: {
         id,
+        state: { not: 'PUBLISHED' },
       },
       data: {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+      },
+    });
+  }
+
+  // VOC-43: atomic claim — only one worker can flip postingClaimedAt from null.
+  // Returns the number of rows updated (0 = already claimed, 1 = claim acquired).
+  async claimPosting(id: string) {
+    const { count } = await this._post.model.post.updateMany({
+      where: {
+        id,
+        postingClaimedAt: null,
+      },
+      data: {
+        postingClaimedAt: new Date(),
+      },
+    });
+
+    return count;
+  }
+
+  // VOC-43: release a claim so a legitimate retry (e.g. after token refresh) can run again.
+  releasePostingClaim(id: string) {
+    return this._post.model.post.updateMany({
+      where: {
+        id,
+      },
+      data: {
+        postingClaimedAt: null,
+      },
+    });
+  }
+
+  // VOC-43: cleanup of orphan claims — claimed but never released and still unpublished.
+  releaseStaleClaims(olderThanMinutes: number) {
+    return this._post.model.post.updateMany({
+      where: {
+        postingClaimedAt: {
+          not: null,
+          lt: dayjs().subtract(olderThanMinutes, 'minute').toDate(),
+        },
+        releaseId: null,
+        state: { not: 'PUBLISHED' },
+      },
+      data: {
+        postingClaimedAt: null,
       },
     });
   }

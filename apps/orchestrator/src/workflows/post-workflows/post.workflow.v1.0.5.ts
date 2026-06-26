@@ -66,6 +66,7 @@ export async function postWorkflowV105({
     postComment,
     getIntegrationById,
     refreshTokenWithCause,
+    releasePostingClaim,
     internalPlugs,
     globalPlugs,
     processInternalPlug,
@@ -233,6 +234,11 @@ export async function postWorkflowV105({
           }
 
           post.integration.token = refresh.accessToken;
+          // VOC-43: release the posting claim so this legitimate retry (post-token
+          // refresh) is not blocked by the claim acquired on the previous attempt.
+          // The activity is a no-op unless IDEMPOTENT_POSTING is enabled, keeping
+          // the workflow command sequence deterministic for replay.
+          await releasePostingClaim(postsList[0].id);
           continue;
         }
 

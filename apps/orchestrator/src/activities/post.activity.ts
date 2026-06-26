@@ -10,9 +10,13 @@ import {
   NotificationType,
 } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Integration, Post, State } from '@prisma/client';
+import { ApplicationFailure } from '@temporalio/activity';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  AuthTokenDetails,
+  PostResponse,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -205,6 +209,26 @@ export class PostActivity {
   }
 
   @ActivityMethod()
+  async releaseStaleClaims(olderThanMinutes = 120) {
+    // VOC-43: cleanup of orphan posting claims (claimed but never released and
+    // still unpublished). No-op unless the feature is enabled.
+    if (process.env.IDEMPOTENT_POSTING !== 'true') {
+      return;
+    }
+    await this._postService.releaseStaleClaims(olderThanMinutes);
+  }
+
+  @ActivityMethod()
+  async releasePostingClaim(id: string) {
+    // VOC-43: no-op when the feature is off, so the workflow can call this
+    // unconditionally (deterministic command sequence) without any DB effect.
+    if (process.env.IDEMPOTENT_POSTING !== 'true') {
+      return;
+    }
+    await this._postService.releasePostingClaim(id);
+  }
+
+  @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
     if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
@@ -213,6 +237,46 @@ export class PostActivity {
 
       if (!subscription) {
         throw new Error('No active subscription found for this organization.');
+      }
+    }
+
+    // VOC-43: idempotent posting (behind feature flag). Prevents a double-post
+    // when Temporal retries an activity that already executed the real POST but
+    // crashed before the workflow could persist the result.
+    const idempotentPosting = process.env.IDEMPOTENT_POSTING === 'true';
+    if (idempotentPosting) {
+      const mainPostId = posts?.[0]?.id;
+      if (mainPostId) {
+        // Authoritative read of the current DB state for this post.
+        const current = await this._postService.getPostById(
+          mainPostId,
+          integration.organizationId
+        );
+
+        // Already posted to the social channel — short-circuit and rebuild the
+        // existing result WITHOUT reposting.
+        if (current && current.releaseId && current.releaseId !== 'missing') {
+          return [
+            {
+              id: current.id,
+              postId: current.releaseId,
+              releaseURL: current.releaseURL || '',
+              status: 'success',
+            },
+          ] as PostResponse[];
+        }
+
+        // Not yet posted — try to acquire the posting claim atomically.
+        const claimed = await this._postService.claimPosting(mainPostId);
+        if (claimed === 0) {
+          // Could not claim AND there is no releaseId: ambiguous state where the
+          // post may already be in flight. Prefer NOT posting over duplicating.
+          throw ApplicationFailure.nonRetryable(
+            'Posting already claimed for this post; refusing to repost to avoid duplicates.',
+            'posting_claim_conflict'
+          );
+        }
+        // claimed === 1 → we own the claim, proceed to the real post.
       }
     }
 
@@ -250,20 +314,26 @@ export class PostActivity {
       integration
     );
 
-    await this._temporalService.client
-      .getRawClient()
-      .workflow.start('streakWorkflow', {
-        args: [{ organizationId: integration.organizationId }],
-        workflowId: `streak_${integration.organizationId}`,
-        taskQueue: 'main',
-        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
-        typedSearchAttributes: new TypedSearchAttributes([
-          {
-            key: organizationId,
-            value: integration.organizationId,
-          },
-        ]),
-      });
+    // VOC-43: best-effort. The real post already happened above; a failure here
+    // must NOT trigger a Temporal retry of this activity (that would double-post).
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.start('streakWorkflow', {
+          args: [{ organizationId: integration.organizationId }],
+          workflowId: `streak_${integration.organizationId}`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: organizationId,
+              value: integration.organizationId,
+            },
+          ]),
+        });
+    } catch (err) {
+      console.error('Failed to start streakWorkflow (non-fatal):', err);
+    }
 
     return postNow;
   }

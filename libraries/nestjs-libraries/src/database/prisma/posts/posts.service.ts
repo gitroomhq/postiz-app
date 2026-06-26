@@ -82,6 +82,19 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
+  // VOC-43: idempotent-posting claim helpers (delegate to repository).
+  claimPosting(id: string) {
+    return this._postRepository.claimPosting(id);
+  }
+
+  releasePostingClaim(id: string) {
+    return this._postRepository.releasePostingClaim(id);
+  }
+
+  releaseStaleClaims(olderThanMinutes: number) {
+    return this._postRepository.releaseStaleClaims(olderThanMinutes);
+  }
+
   async getMissingContent(
     orgId: string,
     postId: string,
