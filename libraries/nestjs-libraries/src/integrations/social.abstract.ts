@@ -85,6 +85,13 @@ export abstract class SocialAbstract {
     return true;
   }
 
+  protected assetBoolean(value: boolean | string) {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value || false;
+  }
+
   /** Reads the pixel dimensions of an image via sharp (works for http or local paths). */
   protected async getImageDimensions(
     path: string
@@ -136,7 +143,12 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
-      throw new BadBody('', safeStringify(globalErr), {} as any, value.value || '');
+      throw new BadBody(
+        '',
+        safeStringify(globalErr),
+        {} as any,
+        value.value || ''
+      );
     }
 
     return value;
@@ -148,7 +160,7 @@ export abstract class SocialAbstract {
     identifier = '',
     totalRetries = 0,
     ignoreConcurrency = false,
-    message = '',
+    message = ''
   ): Promise<Response> {
     const request = await fetch(url, options);
 

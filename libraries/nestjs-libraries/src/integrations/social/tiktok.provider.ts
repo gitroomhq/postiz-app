@@ -480,13 +480,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  private assetBoolean(value: boolean | string) {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return value || false;
-  }
-
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
     const method = firstPost?.settings?.content_posting_method;
