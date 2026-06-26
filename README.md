@@ -87,8 +87,7 @@
 |---------|:-----------------------------------------------------------------------:|-----------------|
 | [Hostinger](https://www.hostinger.com/vps/docker/postiz?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
 | [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
-
-
+| [ChatbotX](https://chatbotx.io/?ref=postiz) | <img src="https://github.com/user-attachments/assets/0aa6b058-9a64-46d3-bc26-337abc51737d" alt="ChatbotX" width="500"/> | The ManyChat alternative that you can self-host, white-label, and resell to your clients. Bring your own OpenClaw, Hermes, or Claude agents! |
 
 # Intro
 
@@ -96,7 +95,7 @@
 - Measure your work with analytics.
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
-- At the moment there is no difference between the hosted version to the self-hosted version
+- At the moment, there is no difference between the hosted version and the self-hosted version
 - Perfect for automation (API) with platforms like N8N, Make.com, Zapier, etc.
 
 ## Tech Stack
@@ -115,9 +114,8 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 ## Sponsor Postiz
 
 We now give a few options to Sponsor Postiz:
-- Just a donation: You like what we are building, and want to buy us some coffees so we can build faster.
-- Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has almost 3m downloads and 20k views per month.
-- Main repository + Website: Get your logo on the central repository and the main website. Here are some metrics: - Website has 20k hits per month + 65 DR (strong backlink) - Repository has 20k hits per month + Almost 3m docker downloads.
+- Just a donation: You like what we are building, and want to buy us some coffee so we can build faster.
+- Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has almost 6m downloads and 20k views per month.
 
 Link: https://opencollective.com/postiz
 
@@ -127,7 +125,7 @@ Link: https://opencollective.com/postiz
 - Postiz hosted service uses official, platform-approved OAuth flows.
 - Postiz does not automate or scrape content from social media platforms.
 - Postiz does not collect, store, or proxy API keys or access tokens from users.
-- Postiz never ask users to paste API keys into our hosted product.
+- Postiz never asks users to paste API keys into our hosted product.
 - Postiz users always authenticate directly with the social platform (e.g., X, Discord, etc.), ensuring platform compliance and data privacy.
 
 ## Star History
@@ -138,11 +136,8 @@ Link: https://opencollective.com/postiz
 
 This repository's source code is available under the [AGPL-3.0 license](LICENSE).
 
-<br /><br /><br />
+<br /><br />
 
-<p align="center">
-  <a href="https://www.g2.com/products/postiz/take_survey" target="blank"><img alt="g2" src="https://github.com/user-attachments/assets/892cb74c-0b49-4589-b2f5-fbdbf7a98f66" /></a>
-</p>
 <p align="center">
   <img src="https://github.com/snyk-labs/secure-developer-sample-repo/raw/main/badge_full.svg" alt="Secure Developer Badge Full" width="150">
 </p>

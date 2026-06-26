@@ -207,7 +207,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('url_ownership_unverified') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'You have to upload the picture/video to Postiz when sending a URL',
+        value:
+          'You have to upload the picture/video to Postiz when sending a URL',
       };
     }
 
@@ -497,18 +498,26 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
           ...(isPhoto
             ? {}
-            : { disable_duet: !firstPost.settings.duet || false }),
-          disable_comment: !firstPost.settings.comment || false,
+            : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
+          disable_comment: !this.assetBoolean(firstPost.settings.comment),
           ...(isPhoto
             ? {}
-            : { disable_stitch: !firstPost.settings.stitch || false }),
+            : {
+                disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
+              }),
           ...(isPhoto
             ? {}
-            : { is_aigc: firstPost.settings.video_made_with_ai || false }),
-          brand_content_toggle:
-            firstPost.settings.brand_content_toggle || false,
-          brand_organic_toggle:
-            firstPost.settings.brand_organic_toggle || false,
+            : {
+                is_aigc: this.assetBoolean(
+                  firstPost.settings.video_made_with_ai
+                ),
+              }),
+          brand_content_toggle: this.assetBoolean(
+            firstPost.settings.brand_content_toggle
+          ),
+          brand_organic_toggle: this.assetBoolean(
+            firstPost.settings.brand_organic_toggle
+          ),
           ...(isPhoto
             ? {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',

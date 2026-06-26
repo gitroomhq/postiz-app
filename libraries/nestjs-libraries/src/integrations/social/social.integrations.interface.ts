@@ -163,6 +163,7 @@ export interface SocialProvider
       defaultValue?: string;
       validation: string;
       type: 'text' | 'password';
+      hint?: string;
     }[]
   >;
   name: string;
