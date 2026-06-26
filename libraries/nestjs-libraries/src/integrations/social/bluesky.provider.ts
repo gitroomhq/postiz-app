@@ -22,6 +22,7 @@ import {
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -229,6 +230,17 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
+
+    // Bluesky talks to a user-supplied service URL via BskyAgent (not our
+    // `this.fetch`), so the undici SSRF dispatcher can't intercept it. Validate
+    // the URL here — the connection chokepoint — so an internal/private address
+    // can never be saved as an integration. Opt-out matches the dispatcher env.
+    if (
+      process.env.DISABLE_SSRF_PROTECTION !== 'true' &&
+      !(await isSafePublicHttpsUrl(body.service))
+    ) {
+      return 'Invalid service URL: must be a public HTTPS address';
+    }
 
     try {
       const agent = new BskyAgent({

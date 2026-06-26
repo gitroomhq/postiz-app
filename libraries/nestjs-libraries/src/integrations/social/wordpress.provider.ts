@@ -13,6 +13,7 @@ import slugify from 'slugify';
 // import FormData from 'form-data';
 import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
 
 export class WordpressProvider
@@ -115,6 +116,8 @@ export class WordpressProvider
         headers: {
           Authorization: `Basic ${auth}`,
         },
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
       });
     } catch (err) {
       // DNS failure, connection refused, TLS error, site unreachable, etc.

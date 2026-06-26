@@ -2,6 +2,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
 
 export type ValidityMedia = {
@@ -162,7 +163,17 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
-    const request = await fetch(url, options);
+    // Providers fetch user-supplied URLs (WordPress domain, Mastodon/Lemmy
+    // instance, Listmonk URL, etc.). Route through the SSRF guard so those
+    // requests can't be pointed at internal/private IPs (cloud metadata,
+    // localhost services, the internal network). Opt-out via env for
+    // self-hosters on a trusted private network. A caller may still pass its
+    // own dispatcher explicitly.
+    const request = await fetch(url, {
+      ...options,
+      // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
+      dispatcher: (options as any).dispatcher ?? getSsrfSafeDispatcher(),
+    });
 
     if (request.status === 200 || request.status === 201) {
       return request;
