@@ -366,31 +366,31 @@ export const DecisionModal: FC<{
   );
 };
 
-export const decisionModalEmitter = new EventEmitter();
-
 export const areYouSure = ({
   title = 'Are you sure?',
   description = 'Are you sure you want to close this modal?' as any,
   approveLabel = 'Yes',
   cancelLabel = 'No',
+  onlyApprove = false,
 } = {}): Promise<boolean> => {
-  return new Promise<boolean>((newRes) => {
-    decisionModalEmitter.emit('open', {
+  // Open directly on the store instead of via a React-component listener,
+  // which leaked on every mount/unmount and opened duplicate dialogs.
+  return new Promise<boolean>((res) => {
+    useModalStore.getState().openModal({
       title,
-      description,
-      approveLabel,
-      cancelLabel,
-      newRes,
+      askClose: false,
+      onClose: () => res(false),
+      children: (
+        <DecisionModal
+          onlyApprove={onlyApprove}
+          resolution={res}
+          description={description}
+          approveLabel={approveLabel}
+          cancelLabel={cancelLabel}
+        />
+      ),
     });
   });
-};
-
-export const DecisionEverywhere: FC = () => {
-  const decision = useDecisionModal();
-  useEffect(() => {
-    decisionModalEmitter.on('open', decision.open);
-  }, []);
-  return null;
 };
 
 export const useDecisionModal = () => {
@@ -402,7 +402,6 @@ export const useDecisionModal = () => {
       onlyApprove = false,
       approveLabel = 'Yes',
       cancelLabel = 'No',
-      newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {
         modals.openModal({
@@ -412,7 +411,7 @@ export const useDecisionModal = () => {
           children: (
             <DecisionModal
               onlyApprove={onlyApprove}
-              resolution={(value) => (newRes ? newRes(value) : res(value))}
+              resolution={res}
               description={description}
               approveLabel={approveLabel}
               cancelLabel={cancelLabel}
