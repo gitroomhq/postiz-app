@@ -186,7 +186,11 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                   integration.disabled && 'opacity-50'
                 )}
               >
-                {integration.name}
+                {integration.display?.includes('@')
+                  ? `${integration.name} (${integration.display
+                      .split('@')
+                      .pop()})`
+                  : integration.name}
               </div>
             </div>
           ))}

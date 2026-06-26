@@ -228,12 +228,14 @@ export abstract class MastodonCompatibleAbstract extends SocialAbstract {
       throw new Error('The instance did not return a valid account.');
     }
 
+    const hostname = new URL(instanceUrl).hostname;
+    const baseHandle = personalInformation.acct || personalInformation.username;
+
     return {
       id: String(personalInformation.id),
-      name:
-        personalInformation.display_name ||
-        personalInformation.acct ||
-        personalInformation.username,
+      name: personalInformation.display_name
+        ? `${personalInformation.display_name} · ${hostname}`
+        : `${baseHandle}@${hostname}`,
       accessToken: tokenInformation.access_token,
       refreshToken:
         tokenInformation.refresh_token || existingRefreshToken || '',
@@ -243,7 +245,7 @@ export abstract class MastodonCompatibleAbstract extends SocialAbstract {
           ? Number(tokenInformation.expires_in)
           : NON_EXPIRING_TOKEN_SECONDS,
       picture: personalInformation.avatar || '',
-      username: personalInformation.username,
+      username: `${personalInformation.username}@${hostname}`,
     };
   }
 
