@@ -7,7 +7,7 @@ import {
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeId, makeSecureState } from '@gitroom/nestjs-libraries/services/make.is';
 import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dev.to.settings.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
@@ -24,7 +24,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
   dto = DevToSettingsDto;
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureState();
     return {
       url: state,
       codeVerifier: makeId(10),

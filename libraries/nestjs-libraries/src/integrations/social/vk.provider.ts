@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureState } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { createHash, randomBytes } from 'crypto';
@@ -41,7 +41,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     formData.append('refresh_token', oldRefreshToken);
     formData.append('client_id', process.env.VK_ID!);
     formData.append('device_id', device_id);
-    formData.append('state', makeId(32));
+    formData.append('state', makeSecureState());
     formData.append('scope', this.scopes.join(' '));
 
     const { access_token, refresh_token, expires_in } = await (
@@ -76,7 +76,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(32);
+    const state = makeSecureState();
     const codeVerifier = randomBytes(64).toString('base64url');
     const challenge = Buffer.from(
       createHash('sha256').update(codeVerifier).digest()

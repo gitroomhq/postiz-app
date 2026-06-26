@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeId, makeSecureState } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -43,7 +43,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureState();
 
     return {
       url: `https://slack.com/oauth/v2/authorize?client_id=${
