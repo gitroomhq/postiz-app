@@ -2,12 +2,16 @@
   "extends": "./tsconfig.json",
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"],
   "watchOptions": {
+    "watchFile": "fixedPollingInterval",
+    "watchDirectory": "fixedPollingInterval",
+    "fallbackPolling": "fixedInterval",
+    "synchronousWatchDirectory": true,
     "excludeDirectories": ["**/node_modules", "**/dist", "**/out-tsc", "**/.git"]
   },
   "compilerOptions": {
     "module": "CommonJS",
     "resolveJsonModule": true,
-    "declaration": true,
+    "declaration": false,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
