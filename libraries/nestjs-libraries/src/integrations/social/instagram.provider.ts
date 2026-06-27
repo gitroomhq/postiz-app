@@ -55,7 +55,7 @@ export class InstagramProvider
     if (firstPost.length > 10) {
       return 'Instagram carousel only supports up to 10 media attachments';
     }
-    if (settings?.is_trial_reel) {
+    if (this.assetBoolean(settings?.is_trial_reel)) {
       if ((firstPost?.length ?? 0) > 1) {
         return 'Trial Reels can only have one video';
       }
@@ -605,7 +605,7 @@ export class InstagramProvider
     const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
-    const isTrialReel = !!firstPost.settings.is_trial_reel;
+    const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =

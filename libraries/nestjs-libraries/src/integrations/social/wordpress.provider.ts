@@ -13,6 +13,7 @@ import slugify from 'slugify';
 // import FormData from 'form-data';
 import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
 
 export class WordpressProvider
@@ -83,6 +84,7 @@ export class WordpressProvider
         label: 'Password',
         validation: `/.+/`,
         type: 'password' as const,
+        hint: 'Application password, create in User->Profile',
       },
     ];
   }
@@ -97,45 +99,99 @@ export class WordpressProvider
       username: string;
       password: string;
     };
-    try {
-      const auth = Buffer.from(`${body.username}:${body.password}`).toString(
-        'base64'
-      );
-      const { id, name, avatar_urls, code } = await (
-        await fetch(`${body.domain}/wp-json/wp/v2/users/me`, {
-          headers: {
-            Authorization: `Basic ${auth}`,
-          },
-        })
-      ).json();
 
-      if (code) {
-        throw "Invalid credentials";
+    // Normalize the domain - users often paste it with surrounding whitespace
+    // or a trailing slash, which would otherwise build `https://site.com//wp-json/...`.
+    const domain = body.domain.trim().replace(/\/+$/, '');
+
+    const auth = Buffer.from(`${body.username}:${body.password}`).toString(
+      'base64'
+    );
+
+    // Direct fetch (not `this.fetch`) so we can branch on the HTTP status and
+    // return a specific message instead of throwing a generic error.
+    let response: Response;
+    try {
+      response = await fetch(`${domain}/wp-json/wp/v2/users/me`, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
+      });
+    } catch (err) {
+      // DNS failure, connection refused, TLS error, site unreachable, etc.
+      console.log(err);
+      return 'Could not reach your WordPress site. Check the Domain URL and that the site is publicly accessible.';
+    }
+
+    // A security plugin (e.g. Wordfence), a WAF, or the server config commonly
+    // strips the Authorization header or locks down the REST API. We don't try
+    // to work around that - surface a distinct, actionable message instead.
+    if (!response.ok) {
+      // Log what WordPress actually returned (REST errors carry a `code` and
+      // `message`) so failures can be diagnosed without guessing.
+      const errorBody = await response.text().catch(() => '');
+      let wpCode = '';
+      let wpMessage = '';
+      try {
+        const parsed = JSON.parse(errorBody);
+        wpCode = parsed?.code || '';
+        wpMessage = parsed?.message || '';
+      } catch (err) {
+        // Non-JSON error body (e.g. an HTML page from a security plugin).
+      }
+      console.log(
+        `WordPress auth failed for ${domain} (HTTP ${response.status})`,
+        JSON.stringify({
+          code: wpCode,
+          message: wpMessage,
+          ...(wpCode ? {} : { body: errorBody.slice(0, 500) }),
+        })
+      );
+
+      if (response.status === 401 || response.status === 403) {
+        return 'WordPress rejected the login. A security plugin or server setting may be blocking the REST API or stripping the Authorization header, or the username / Application Password is incorrect.';
       }
 
-      const biggestImage = Object.entries(avatar_urls || {}).reduce(
-        (all, current) => {
-          if (all > Number(current[0])) {
-            return all;
-          }
-          return Number(current[0]);
-        },
-        0
-      );
+      return `WordPress returned an unexpected error (HTTP ${response.status}). Make sure the REST API is enabled and Application Passwords are available.`;
+    }
 
-      return {
-        refreshToken: '',
-        expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-        accessToken: params.code,
-        id: body.domain + '_' + id,
-        name,
-        picture: avatar_urls?.[String(biggestImage)] || '',
-        username: body.username,
-      };
+    // Even on a 200, a security plugin / maintenance page can return HTML
+    // instead of JSON, which would otherwise throw on `.json()`.
+    let data: any;
+    try {
+      data = await response.json();
     } catch (err) {
       console.log(err);
+      return 'WordPress did not return a valid response. The REST API may be disabled or blocked by a security plugin.';
+    }
+
+    const { id, name, avatar_urls, code } = data || {};
+
+    if (code) {
       return 'Invalid credentials';
     }
+
+    const biggestImage = Object.entries(avatar_urls || {}).reduce(
+      (all, current) => {
+        if (all > Number(current[0])) {
+          return all;
+        }
+        return Number(current[0]);
+      },
+      0
+    );
+
+    return {
+      refreshToken: '',
+      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
+      accessToken: params.code,
+      id: body.domain + '_' + id,
+      name,
+      picture: avatar_urls?.[String(biggestImage)] || '',
+      username: body.username,
+    };
   }
 
   @Tool({
