@@ -199,3 +199,71 @@ Como VOC-39 já está concluído, o próximo item real de segurança é **VOC-43
 de posting, plano pronto) ou **VOC-07** (mais rápido/barato) — a escolha entre os dois é do
 Felipe. Antes disso, vale ele confirmar visualmente o logo e testar o chat Mastra (rápido,
 não-bloqueante para o resto).
+
+---
+
+## Sessão 2026-06-25 (parte 2) — VOC-07 e VOC-43 CONCLUÍDOS, auditoria essencialmente esgotada
+
+Felipe escolheu seguir primeiro **VOC-07**, depois **VOC-43**. Ambos concluídos nesta sessão,
+no repo PRINCIPAL `C:\dev\vocaccio` (branch `fix/voc-idor-project-content`, **sem push**,
+working tree limpo).
+
+**✅ VOC-07** — commit `3bb2995b`. `makeId()` (Math.random) → `makeSecureState()`
+(`crypto.randomBytes(32)`) no parâmetro `state` OAuth de 32 providers sociais
+(`libraries/nestjs-libraries/src/integrations/social/*.provider.ts`). `codeVerifier`/
+`postId`/`nonce` intocados (fora de escopo, continuam em `makeId`). Gate moody-revisor
+(Haiku) = sem problemas.
+
+**✅ VOC-43** — commits `fa6d8176` (migration+schema) + `b0a66078` (código). Idempotência de
+posting implementada conforme o plano da McGonagall (ver seção "Plano VOC-43" acima),
+atrás da feature flag `IDEMPOTENT_POSTING` (OFF/ausente = comportamento original idêntico).
+Mecanismo: coluna nullable `Post.postingClaimedAt` + `claimPosting`/`releasePostingClaim`/
+`releaseStaleClaims` no `PostsRepository`; curto-circuito por `releaseId` (tratando o
+sentinela `'missing'` corretamente) na activity `postSocial`; `ApplicationFailure
+.nonRetryable('posting_claim_conflict')` quando o claim falha sem releaseId; release do claim
+no catch de `refresh_token` do workflow V105 (incondicional — flag só lida na activity,
+determinismo do Temporal preservado); `streakWorkflow.start` em try/catch best-effort; job de
+limpeza `releaseStaleClaims(120)` wired no loop horário do `missingPostWorkflow`.
+- Gate moody-revisor (Haiku) = **7/7 checks críticos passaram** sem bloqueante.
+- Typecheck do orchestrator = só os 5 erros pré-existentes do baseline, zero novo.
+- **Migration ✅ APLICADA no Supabase** via `prisma migrate deploy` (autorizado por Felipe,
+  pré-checagem confirmou ausência de coluna/índice e tabela `Post` vazia — zero risco de
+  sobreposição ou perda de dado). Verificado pós-aplicação: coluna + índice criados,
+  `_prisma_migrations` = [`0_init`, `20260625_voc43_posting_claimed_at`].
+
+**⚠️ Armadilha de ambiente encontrada e documentada (ver também `project-auditoria-2026-06`):**
+um sub-agente (Agent tool) lançado durante esta sessão foi executado com o working directory
+fixado no worktree da SESSÃO (`.claude/worktrees/upbeat-ritchie-35fe93`, branch de Fase 3 não
+relacionada), não no repo principal — implementou VOC-43 corretamente mas commitou na branch
+errada. Corrigido com `git cherry-pick -x` dos 2 commits pro repo principal + `git reset
+--hard` na branch errada de volta à base + regeneração do client Prisma no repo certo (o
+sub-agente tinha gerado o client no worktree errado, mascarando erros de typecheck de
+CRM/Religare). **Lição para o futuro: ao delegar a um sub-agente, confirmar em qual diretório
+ele está operando antes de aceitar o relatório de "commitado com sucesso" como definitivo.**
+
+**Pendente de operação (Felipe, não-bloqueante, sem código):**
+1. Smoke-test em staging com `IDEMPOTENT_POSTING=true` (post normal; crash pós-post sem
+   duplicar; timeout; refresh de token postando 1x; flag OFF idêntico; avaliar `postComment`).
+2. Reiniciar o workflow singleton `missing-post-workflow` no próximo deploy (mudou a sequência
+   de comandos — precisa de replay limpo). Seguro em teste interno (sem dados reais ainda).
+3. Confirmar visualmente o logo novo do login (`/auth/login`) — segue pendente desde sessão
+   de 22/06, não verificado em browser por instabilidade da ferramenta.
+4. Smoke-test do chat de agentes (Mastra) — segue pendente desde o VOC-29 (schema `mastra`
+   dedicado).
+
+**Estado da auditoria como um todo:** com VOC-07/43 fechados, os itens **planejados e
+desbloqueados** da auditoria de 48 achados estão essencialmente esgotados. Restam só:
+VOC-20/26/27 (bloqueados — features WIP nunca commitadas: carousel-engine, Religare
+geocode/hook/profiles; revisitar se/quando Felipe comitar esse WIP) e VOC-14 (pulado por
+decisão do Felipe; reavaliar se ainda faz sentido agora que VOC-29 já deu baseline de
+migrations). Nenhum item crítico/alto-risco em aberto.
+
+**🔀 PIVÔ DE FOCO ao final desta sessão (2026-06-25):** Felipe vai abrir um novo chat para
+um **checkpoint de produto/negócio**, não mais auditoria de segurança. Ele vai trazer: (1)
+atualizações de planejamento e definições de negócio, (2) o conceito novo de **back-office e
+front-office** (ainda não definido neste repo — provavelmente uma reorganização de como
+diferentes perfis de usuário acessam o sistema; precisa ser definido do zero na próxima
+sessão, não inferir), (3) uma nova referência de design, e (4) pedido de um panorama visual
+de progresso/pendências do projeto como um todo. Este arquivo de retomada permanece válido
+para qualquer trabalho futuro de segurança, mas a sessão seguinte é sobre arquitetura de
+produto — ver `project-vocaccio` (PLANO-MESTRE.md) como ponto de partida, não esta auditoria.
