@@ -48,7 +48,16 @@ async function start() {
     },
   });
 
-  await startMcp(app);
+  // MCP (Mastra) boota toda a stack de IA — caro e uma fonte comum de
+  // crash-loop em dev. Embrulhado para nunca derrubar o backend e pulável
+  // em dev via DISABLE_MCP=true. Em produção segue ligado por padrão.
+  if (process.env.DISABLE_MCP !== 'true') {
+    try {
+      await startMcp(app);
+    } catch (e) {
+      Logger.error('MCP failed to start — continuing without it', e as any);
+    }
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -66,7 +75,11 @@ async function start() {
   app.useGlobalFilters(new PostValidationExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  loadSwagger(app);
+  // Swagger regenera o schema de todas as rotas a cada boot — pesado em dev.
+  // Pulável com DISABLE_SWAGGER=true; segue ligado por padrão (prod/docs).
+  if (process.env.DISABLE_SWAGGER !== 'true') {
+    loadSwagger(app);
+  }
 
   const port = process.env.PORT || 3000;
 
