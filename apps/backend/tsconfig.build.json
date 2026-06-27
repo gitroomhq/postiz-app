@@ -1,6 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"],
+  "watchOptions": {
+    "excludeDirectories": ["**/node_modules", "**/dist", "**/out-tsc", "**/.git"]
+  },
   "compilerOptions": {
     "module": "CommonJS",
     "resolveJsonModule": true,
