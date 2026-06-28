@@ -682,6 +682,29 @@ export const AddProviderComponent: FC<{
         >
           {social
             .filter((item) => {
+              // Mapped Out: hide unwanted networks from the Add Channel UI only.
+              // Backend/provider code & DB enums are untouched; already-connected
+              // channels keep working — this just removes new-connect options.
+              const MAPPEDOUT_HIDDEN = [
+                'kick',
+                'twitch',
+                'mastodon',
+                'mastodon-custom',
+                'lemmy',
+                'bluesky',
+                'wrapcast',
+                'nostr',
+                'vk',
+                'medium',
+                'devto',
+                'hashnode',
+                'whop',
+                'mewe',
+              ];
+              if (MAPPEDOUT_HIDDEN.includes(item.identifier)) {
+                return false;
+              }
+
               if (!props.invite) {
                 return true;
               }

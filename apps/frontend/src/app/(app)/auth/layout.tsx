@@ -25,10 +25,11 @@ export default async function AuthLayout({
       </div>
       <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
         <div className="text-center">
-          Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
-          Entrepreneurs use
+          Welcome to
           <br />
-          Postiz To Grow Their Social Presence
+          <span className="text-[42px] text-[#FC69FF]">
+            Mapped Out Social Studio
+          </span>
         </div>
         <TestimonialComponent />
       </div>
