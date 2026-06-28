@@ -5,13 +5,15 @@ import { User } from '@prisma/client';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { isEnvTrue } from '@gitroom/helpers/utils/env.bool';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 
 export const removeAuth = (res: Response) => {
+  const isNotSecured = isEnvTrue(process.env.NOT_SECURED);
   res.cookie('auth', '', {
     domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-    ...(!process.env.NOT_SECURED
+    ...(!isNotSecured
       ? {
           secure: true,
           httpOnly: true,

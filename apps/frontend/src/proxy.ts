@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { isEnvTrue } from '@gitroom/helpers/utils/env.bool';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import {
@@ -12,6 +13,7 @@ acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
+  const isNotSecured = isEnvTrue(process.env.NOT_SECURED);
   const nextUrl = request.nextUrl;
   const authCookie =
     request.cookies.get('auth') ||
@@ -66,7 +68,7 @@ export async function proxy(request: NextRequest) {
     );
     response.cookies.set('auth', '', {
       path: '/',
-      ...(!process.env.NOT_SECURED
+      ...(!isNotSecured
         ? {
             secure: true,
             httpOnly: true,
@@ -113,7 +115,7 @@ export async function proxy(request: NextRequest) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
-        ...(!process.env.NOT_SECURED
+        ...(!isNotSecured
           ? {
               path: '/',
               secure: true,
@@ -143,7 +145,7 @@ export async function proxy(request: NextRequest) {
       );
       if (id) {
         redirect.cookies.set('showorg', id, {
-          ...(!process.env.NOT_SECURED
+          ...(!isNotSecured
             ? {
                 path: '/',
                 secure: true,

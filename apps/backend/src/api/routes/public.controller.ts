@@ -18,6 +18,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { isEnvTrue } from '@gitroom/helpers/utils/env.bool';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -33,6 +34,7 @@ const pump = promisify(pipeline);
 @ApiTags('Public')
 @Controller('/public')
 export class PublicController {
+  private readonly _isNotSecured = isEnvTrue(process.env.NOT_SECURED);
   constructor(
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
@@ -98,7 +100,7 @@ export class PublicController {
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
+        ...(!this._isNotSecured
           ? {
               secure: true,
               httpOnly: true,
@@ -112,7 +114,7 @@ export class PublicController {
     if (body.fbclid && !req.cookies.fbclid) {
       res.cookie('fbclid', body.fbclid, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
+        ...(!this._isNotSecured
           ? {
               secure: true,
               httpOnly: true,
