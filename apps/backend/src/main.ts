@@ -15,6 +15,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
+import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
@@ -27,6 +28,9 @@ async function start() {
       allowedHeaders: [
         'Content-Type',
         'Authorization',
+        'auth',
+        'showorg',
+        'impersonate',
         'x-copilotkit-runtime-client-gql-version',
       ],
       exposedHeaders: [
@@ -52,13 +56,14 @@ async function start() {
     })
   );
 
-  app.use(['/copilot/*', '/posts'], (req: any, res: any, next: any) => {
+  app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
     json({ limit: '50mb' })(req, res, next);
   });
 
   app.use(cookieParser());
   app.use(compression());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
+  app.useGlobalFilters(new PostValidationExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 
   loadSwagger(app);

@@ -147,7 +147,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
             <div className="text-[13px] font-[600] text-textColor">
               {t('debug_info', 'Debug Info')}
             </div>
-            <div className="text-[12px] text-textColor/70 flex flex-col gap-[4px]">
+            <div className="text-[12px] text-textColor/70 flex flex-col gap-[4px] min-w-0 break-all">
               <div>
                 <span className="font-[500]">
                   {t('provider', 'Provider')}:
@@ -175,7 +175,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                   <span className="font-[500]">
                     {t('error_details', 'Error Details')}:
                   </span>
-                  <div className="mt-[4px] max-h-[100px] overflow-y-auto bg-newBgColor p-[8px] rounded-[4px] text-[11px] font-mono">
+                  <div className="mt-[4px] max-h-[100px] overflow-y-auto bg-newBgColor p-[8px] rounded-[4px] text-[11px] font-mono break-all whitespace-pre-wrap">
                     {parsed._debug.errors.map((err, i) => (
                       <div key={i} className="mb-[4px]">
                         [{err.platform}] {err.message}

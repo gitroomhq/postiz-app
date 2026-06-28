@@ -9,9 +9,11 @@ import dayjs from 'dayjs';
 import {
   BadBody,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
@@ -37,6 +39,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 2000;
+  }
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if ((firstItems?.length ?? 0) === 0) {
+      return 'No video / images selected';
+    }
+    if (
+      (firstItems?.length ?? 0) > 1 &&
+      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Only pictures are supported when selecting multiple items';
+    } else if (
+      firstItems?.length !== 1 &&
+      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
+    ) {
+      return 'You need one media';
+    }
+    return true;
   }
 
   override handleErrors(body: string):
@@ -147,7 +170,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value:
-          'TikTok limit the maximum of pending posts to 5, TikTok limits you for now, please check your TikTok inbox at your TikTok mobile app and try again later',
+          'TikTok limits pending posts to 5 within any 24-hour period. Please check your TikTok inbox in the TikTok mobile app and try again after 24 hours.',
       };
     }
 
@@ -185,7 +208,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('url_ownership_unverified') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'URL ownership not verified, please verify domain ownership',
+        value:
+          'You have to upload the picture/video to Postiz when sending a URL',
       };
     }
 
@@ -458,7 +482,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
     const method = firstPost?.settings?.content_posting_method;
 
     if (method === 'DIRECT_POST') {
@@ -475,18 +499,26 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
           ...(isPhoto
             ? {}
-            : { disable_duet: !firstPost.settings.duet || false }),
-          disable_comment: !firstPost.settings.comment || false,
+            : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
+          disable_comment: !this.assetBoolean(firstPost.settings.comment),
           ...(isPhoto
             ? {}
-            : { disable_stitch: !firstPost.settings.stitch || false }),
+            : {
+                disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
+              }),
           ...(isPhoto
             ? {}
-            : { is_aigc: firstPost.settings.video_made_with_ai || false }),
-          brand_content_toggle:
-            firstPost.settings.brand_content_toggle || false,
-          brand_organic_toggle:
-            firstPost.settings.brand_organic_toggle || false,
+            : {
+                is_aigc: this.assetBoolean(
+                  firstPost.settings.video_made_with_ai
+                ),
+              }),
+          brand_content_toggle: this.assetBoolean(
+            firstPost.settings.brand_content_toggle
+          ),
+          brand_organic_toggle: this.assetBoolean(
+            firstPost.settings.brand_organic_toggle
+          ),
           ...(isPhoto
             ? {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',
@@ -511,7 +543,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     firstPost: PostDetails<TikTokDto>,
     videoSize?: number
   ) {
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
     if (isPhoto) {
       return {
@@ -560,7 +592,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    const isPhoto = (firstPost?.media?.[0]?.path?.indexOf('mp4') || -1) === -1;
+    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
     let videoBuffer: Buffer | null = null;
     let sourceInfoBody: Record<string, any>;

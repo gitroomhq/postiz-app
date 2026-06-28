@@ -43,10 +43,11 @@ export class LoadToolsService {
   async agent() {
     const tools = await this.loadTools();
     return new Agent({
+      id: 'postiz',
       name: 'postiz',
       description: 'Agent that helps manage and schedule social media posts for users',
-      instructions: ({ runtimeContext }) => {
-        const ui: string = runtimeContext.get('ui' as never);
+      instructions: ({ requestContext }) => {
+        const ui: string = requestContext.get('ui' as never);
         return `
       Global information:
         - Date (UTC): ${dayjs().format('YYYY-MM-DD HH:mm:ss')}
@@ -58,7 +59,8 @@ export class LoadToolsService {
         - Generate text for posts
         - Show global analytics about socials
         - List integrations (channels)
-      
+        - List groups (customers) and filter the channels by a group
+
       - We schedule posts to different integration like facebook, instagram, etc. but to the user we don't say integrations we say channels as integration is the technical name
       - When scheduling a post, you must follow the social media rules and best practices.
       - When scheduling a post, you can pass an array for list of posts for a social media platform, But it has different behavior depending on the platform.
@@ -90,9 +92,7 @@ export class LoadToolsService {
       memory: new Memory({
         storage: pStore,
         options: {
-          threads: {
-            generateTitle: true,
-          },
+          generateTitle: true,
           workingMemory: {
             enabled: true,
             schema: AgentState,

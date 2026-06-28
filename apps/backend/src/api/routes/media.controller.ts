@@ -63,7 +63,7 @@ export class MediaController {
 
     return {
       output:
-        (isPicturePrompt ? '' : 'data:image/png;base64,') +
+        'data:image/png;base64,' +
         (await this._mediaService.generateImage(prompt, org, isPicturePrompt)),
     };
   }
@@ -129,6 +129,7 @@ export class MediaController {
 
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File,
@@ -180,9 +181,10 @@ export class MediaController {
   @Get('/')
   getMedia(
     @GetOrgFromRequest() org: Organization,
-    @Query('page') page: number
+    @Query('page') page: number,
+    @Query('search') search?: string
   ) {
-    return this._mediaService.getMedia(org.id, page);
+    return this._mediaService.getMedia(org.id, page, search);
   }
 
   @Get('/video-options')

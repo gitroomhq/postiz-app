@@ -20,6 +20,15 @@ export class GenerateImageTool implements AgentToolInterface {
                     in case the user specified a platform that requires attachment and attachment was not provided,
                     ask if they want to generate a picture of a video.
       `,
+      mcp: {
+        annotations: {
+          title: 'Generate Image',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: true,
+        },
+      },
       inputSchema: z.object({
         prompt: z.string(),
       }),
@@ -27,13 +36,11 @@ export class GenerateImageTool implements AgentToolInterface {
         id: z.string(),
         path: z.string(),
       }),
-      execute: async (args, options) => {
-        const { context, runtimeContext } = args;
-        checkAuth(args, options);
-        // @ts-ignore
-        const org = JSON.parse(runtimeContext.get('organization') as string);
+      execute: async (inputData, context) => {
+        checkAuth(inputData, context);
+        const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
         const image = await this._mediaService.generateImage(
-          context.prompt,
+          inputData.prompt,
           org
         );
 

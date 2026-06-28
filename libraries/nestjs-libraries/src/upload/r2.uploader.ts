@@ -6,12 +6,34 @@ import {
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
   PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { fromBuffer } = require('file-type');
+
+const ALLOWED_EXT_TO_MIME: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.bmp': 'image/bmp',
+  '.tif': 'image/tiff',
+  '.tiff': 'image/tiff',
+  '.mp4': 'video/mp4',
+};
+
+function normalizeExtension(filename: string): string | null {
+  const ext = path.extname(filename || '').toLowerCase();
+  return ALLOWED_EXT_TO_MIME[ext] ? ext : null;
+}
 
 const {
   CLOUDFLARE_ACCOUNT_ID,
@@ -60,16 +82,21 @@ export default async function handleR2Upload(
 export async function simpleUpload(
   data: Buffer,
   originalFilename: string,
-  contentType: string
+  _contentType: string
 ) {
-  const fileExtension = path.extname(originalFilename); // Extract extension
-  const randomFilename = generateRandomString() + fileExtension; // Append extension
+  const detected = await fromBuffer(data);
+  if (!detected || !Object.values(ALLOWED_EXT_TO_MIME).includes(detected.mime)) {
+    throw new Error('Unsupported file type.');
+  }
+  const fileExtension = `.${detected.ext}`;
+  const safeContentType = detected.mime;
+  const randomFilename = generateRandomString() + fileExtension;
 
   const params = {
     Bucket: CLOUDFLARE_BUCKETNAME,
     Key: randomFilename,
     Body: data,
-    ContentType: contentType,
+    ContentType: safeContentType,
   };
 
   const command = new PutObjectCommand({ ...params });
@@ -79,15 +106,19 @@ export async function simpleUpload(
 }
 
 export async function createMultipartUpload(req: Request, res: Response) {
-  const { file, fileHash, contentType } = req.body;
-  const fileExtension = path.extname(file.name); // Extract extension
-  const randomFilename = generateRandomString() + fileExtension; // Append extension
+  const { file, fileHash } = req.body;
+  const safeExt = normalizeExtension(file?.name || '');
+  if (!safeExt) {
+    return res.status(400).json({ message: 'Unsupported file type.' });
+  }
+  const safeContentType = ALLOWED_EXT_TO_MIME[safeExt];
+  const randomFilename = generateRandomString() + safeExt;
 
   try {
     const params = {
       Bucket: CLOUDFLARE_BUCKETNAME,
       Key: `${randomFilename}`,
-      ContentType: contentType,
+      ContentType: safeContentType,
       Metadata: {
         'x-amz-meta-file-hash': fileHash,
       },
@@ -159,13 +190,6 @@ export async function completeMultipartUpload(req: Request, res: Response) {
   const { key, uploadId, parts } = req.body;
 
   try {
-    const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
-      Key: key,
-      UploadId: uploadId,
-      MultipartUpload: { Parts: parts },
-    };
-
     const command = new CompleteMultipartUploadCommand({
       Bucket: CLOUDFLARE_BUCKETNAME,
       Key: key,
@@ -173,6 +197,40 @@ export async function completeMultipartUpload(req: Request, res: Response) {
       MultipartUpload: { Parts: parts },
     });
     const response = await R2.send(command);
+
+    const safeExt = normalizeExtension(key || '');
+    if (!safeExt) {
+      await R2.send(
+        new DeleteObjectCommand({ Bucket: CLOUDFLARE_BUCKETNAME, Key: key })
+      );
+      return res.status(400).json({ message: 'Unsupported file type.' });
+    }
+    const expectedMime = ALLOWED_EXT_TO_MIME[safeExt];
+
+    const head = await R2.send(
+      new GetObjectCommand({
+        Bucket: CLOUDFLARE_BUCKETNAME,
+        Key: key,
+        Range: 'bytes=0-4100',
+      })
+    );
+    const chunks: Buffer[] = [];
+    // @ts-ignore
+    for await (const chunk of head.Body as AsyncIterable<Buffer>) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const prefix = Buffer.concat(chunks);
+    const detected = await fromBuffer(prefix);
+
+    if (!detected || detected.mime !== expectedMime) {
+      await R2.send(
+        new DeleteObjectCommand({ Bucket: CLOUDFLARE_BUCKETNAME, Key: key })
+      );
+      return res
+        .status(400)
+        .json({ message: 'File contents do not match declared type.' });
+    }
+
     response.Location =
       process.env.CLOUDFLARE_BUCKET_URL +
       '/' +

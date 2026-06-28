@@ -1,5 +1,6 @@
-import { PostgresStore, PgVector } from '@mastra/pg';
+import { PostgresStore } from '@mastra/pg';
 
 export const pStore = new PostgresStore({
-  connectionString: process.env.DATABASE_URL,
+  id: 'postiz-store',
+  connectionString: process.env.DATABASE_URL!,
 });

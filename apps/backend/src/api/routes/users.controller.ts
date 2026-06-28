@@ -30,7 +30,10 @@ import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('User')
 @Controller('/user')
@@ -43,6 +46,38 @@ export class UsersController {
     private _userService: UsersService,
     private _trackService: TrackService
   ) {}
+
+  @Get('/chatbase-token')
+  async getChatbaseToken(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() organization: Organization
+  ) {
+    if (!process.env.CHATBASE_TOKEN) {
+      throw new HttpException('Chatbase SSO is not configured', 400);
+    }
+
+    const token = sign(
+      {
+        user_id: organization.id,
+        email: user.email,
+        ...(organization.paymentId
+          ? {
+              stripe_accounts: [
+                {
+                  label: organization.name,
+                  stripe_id: organization.paymentId,
+                },
+              ],
+            }
+          : {}),
+      },
+      process.env.CHATBASE_TOKEN,
+      { expiresIn: '1h' }
+    );
+
+    return { token };
+  }
+
   @Get('/agent-media-sso')
   async getAgentMediaSsoUrl(
     @GetUserFromRequest() user: User,
@@ -75,21 +110,32 @@ export class UsersController {
     return {
       ...user,
       orgId: organization.id,
-      // @ts-ignore
-      totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY ? 10000 : organization?.subscription?.totalChannels || pricing.FREE.channel,
-      // @ts-ignore
-      tier: organization?.subscription?.subscriptionTier || (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY
+        ? 10000
+        : // @ts-ignore
+          organization?.subscription?.totalChannels || pricing.FREE.channel,
+      tier:
+        // @ts-ignore
+        organization?.subscription?.subscriptionTier ||
+        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
       isLifetime: !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!impersonate,
-      isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY ? false : organization?.isTrailing,
+      isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY
+        ? false
+        : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
       streakSince: organization?.streakSince || null,
-      // @ts-ignore
-      publicApi: organization?.users[0]?.role === 'SUPERADMIN' || organization?.users[0]?.role === 'ADMIN' ? organization?.apiKey : '',
+      publicApi:
+        // @ts-ignore
+        organization?.users[0]?.role === 'SUPERADMIN' ||
+        // @ts-ignore
+        organization?.users[0]?.role === 'ADMIN'
+          ? organization?.apiKey
+          : '',
     };
   }
 

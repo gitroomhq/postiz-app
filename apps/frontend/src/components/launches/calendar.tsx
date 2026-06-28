@@ -51,6 +51,7 @@ import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missi
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
@@ -173,24 +174,19 @@ const usePostActions = (onMutate?: () => void) => {
   );
 
   const copyDebugJson = useCallback(
-    (post: any) => async () => {
-      try {
-        const data = await (
-          await fetch(`/posts/group/${post.group}/debug-export`)
-        ).json();
-        copy(JSON.stringify(data, null, 2));
-        toaster.show(
-          t('debug_json_copied', 'Debug JSON copied to clipboard'),
-          'success'
-        );
-      } catch {
-        toaster.show(
-          t('debug_json_copy_failed', 'Failed to copy debug data'),
-          'warning'
-        );
-      }
+    (post: any) => () => {
+      modal.openModal({
+        title: t('copy_debug_json', 'Copy Debug JSON'),
+        closeOnClickOutside: true,
+        closeOnEscape: true,
+        withCloseButton: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[500px]',
+        },
+        children: <DebugJsonModal post={post} />,
+      });
     },
-    [fetch, toaster, t]
+    [modal, t]
   );
 
   const deletePost = useCallback(
@@ -492,7 +488,15 @@ export const MonthView = () => {
 export const ListView = () => {
   const t = useT();
   const user = useUser();
-  const { integrations, loading, listPosts } = useCalendar();
+  const { integrations, loading, listPosts, listState } = useCalendar();
+  const emptyMessage =
+    listState === 'scheduled'
+      ? t('no_upcoming_posts', 'No upcoming posts scheduled')
+      : listState === 'draft'
+      ? t('no_draft_posts', 'No draft posts')
+      : listState === 'published'
+      ? t('no_published_posts', 'No published posts')
+      : t('no_posts', 'No posts');
 
   // Use shared post actions hook
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
@@ -521,9 +525,7 @@ export const ListView = () => {
   if (listPosts.length === 0) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="text-textColor text-[16px]">
-          {t('no_upcoming_posts', 'No upcoming posts scheduled')}
-        </div>
+        <div className="text-textColor text-[16px]">{emptyMessage}</div>
       </div>
     );
   }
@@ -1005,6 +1007,11 @@ const CalendarItem: FC<{
     missingRelease,
   } = props;
   const { disableXAnalytics } = useVariables();
+  const user = useUser();
+  const showCreationMethodBadge =
+    user?.impersonate &&
+    post.creationMethod &&
+    post.creationMethod !== 'UNKNOWN';
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -1042,6 +1049,14 @@ const CalendarItem: FC<{
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
         >
           !
+        </div>
+      )}
+      {showCreationMethodBadge && (
+        <div className="absolute -bottom-[4px] -right-[4px] z-10">
+          <CreationMethodBadge
+            creationMethod={post.creationMethod}
+            ringColor="var(--new-bgColor)"
+          />
         </div>
       )}
       <div
@@ -1162,6 +1177,56 @@ const CalendarItem: FC<{
     </div>
   );
 });
+const DebugJsonModal: FC<{ post: any }> = ({ post }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const { closeCurrent } = useModals();
+
+  const copyPostId = useCallback(() => {
+    copy(post.id);
+    toaster.show(
+      t('post_id_copied', 'Post ID copied to clipboard'),
+      'success'
+    );
+    closeCurrent();
+  }, [post, toaster, t, closeCurrent]);
+
+  const copyJson = useCallback(async () => {
+    try {
+      const data = await (
+        await fetch(`/posts/group/${post.group}/debug-export`)
+      ).json();
+      copy(JSON.stringify(data, null, 2));
+      toaster.show(
+        t('debug_json_copied', 'Debug JSON copied to clipboard'),
+        'success'
+      );
+      closeCurrent();
+    } catch {
+      toaster.show(
+        t('debug_json_copy_failed', 'Failed to copy debug data'),
+        'warning'
+      );
+    }
+  }, [fetch, post, toaster, t, closeCurrent]);
+
+  return (
+    <div className="flex flex-col gap-[16px] p-[16px]">
+      <div className="text-textColor text-[14px]">
+        {t('debug_choose_copy', 'Choose what you want to copy')}
+      </div>
+      <div className="flex gap-[10px]">
+        <Button onClick={copyPostId}>
+          {t('copy_post_id', 'Copy post id')}
+        </Button>
+        <Button secondary onClick={copyJson}>
+          {t('copy_debug_json', 'Copy Debug JSON')}
+        </Button>
+      </div>
+    </div>
+  );
+};
 const CopyDebug = () => {
   const t = useT();
   return (

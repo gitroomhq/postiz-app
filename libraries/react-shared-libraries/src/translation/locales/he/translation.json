@@ -237,7 +237,7 @@
   "update_credentials": "עדכן פרטי גישה",
   "additional_settings": "הגדרות נוספות",
   "change_bot": "החלף בוט",
-  "move_add_to_customer": "העבר / הוסף ללקוח",
+  "move_add_to_group": "העבר / הוסף לקבוצה",
   "edit_time_slots": "ערוך חלונות זמן",
   "enable_channel": "הפעל ערוץ",
   "disable_channel": "השבת ערוץ",
@@ -356,7 +356,7 @@
   "top_title_design_media": "עיצוב מדיה",
   "top_title_edit_post": "ערוך פוסט",
   "top_title_create_post": "צור פוסט",
-  "top_title_move__add_to_customer": "העבר / הוסף ללקוח",
+  "top_title_move__add_to_group": "העבר / הוסף לקבוצה",
   "top_title_add_api_key_for": "הוסף מפתח API עבור {{name}}",
   "top_title_instance_url": "כתובת מופע (Instance URL)",
   "top_title_custom_url": "כתובת מותאמת אישית",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "למד כיצד להשתמש ב-Postiz",
   "watch_tutorial_description": "צפה בסרטון הקצר הזה ולמד כיצד להפיק את המרב מ-Postiz",
   "back": "חזרה",
-  "get_started": "התחלה"
+  "get_started": "התחלה",
+  "kick_select_channel": "בחר ערוץ"
 }

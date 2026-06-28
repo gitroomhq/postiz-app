@@ -9,6 +9,7 @@ import {
   BadBody,
   RefreshToken,
   SocialAbstract,
+  ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import {
   BskyAgent,
@@ -21,12 +22,14 @@ import {
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import axios from 'axios';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -157,6 +160,25 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     return 300;
   }
 
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    if (
+      posts?.some(
+        (p) =>
+          p?.some((a) => (a?.path?.indexOf?.('mp4') ?? -1) > -1) &&
+          (p?.length ?? 0) > 1
+      )
+    ) {
+      return 'You can only upload one video per post.';
+    }
+
+    if (posts?.some((p) => (p?.length ?? 0) > 4)) {
+      return 'There can be maximum 4 pictures in a post.';
+    }
+    return true;
+  }
+
   async customFields() {
     return [
       {
@@ -208,6 +230,17 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
+
+    // Bluesky talks to a user-supplied service URL via BskyAgent (not our
+    // `this.fetch`), so the undici SSRF dispatcher can't intercept it. Validate
+    // the URL here — the connection chokepoint — so an internal/private address
+    // can never be saved as an integration. Opt-out matches the dispatcher env.
+    if (
+      process.env.DISABLE_SSRF_PROTECTION !== 'true' &&
+      !(await isSafePublicHttpsUrl(body.service))
+    ) {
+      return 'Invalid service URL: must be a public HTTPS address';
+    }
 
     try {
       const agent = new BskyAgent({
@@ -266,9 +299,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   ): Promise<{ embed: any; images: any[] }> {
     // Separate images and videos
     const imageMedia =
-      post.media?.filter((p) => p.path.indexOf('mp4') === -1) || [];
+      post.media?.filter((p) => !hasExtension(p.path, 'mp4')) || [];
     const videoMedia =
-      post.media?.filter((p) => p.path.indexOf('mp4') !== -1) || [];
+      post.media?.filter((p) => hasExtension(p.path, 'mp4')) || [];
 
     // Upload images
     const images = await Promise.all(

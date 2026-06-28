@@ -1,3 +1,5 @@
+import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+initializeSentry('orchestrator', true);
 import 'source-map-support/register';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';

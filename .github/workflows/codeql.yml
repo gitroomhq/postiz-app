@@ -1,5 +1,5 @@
 ---
-name: "Code Quality  Analysis"
+name: "Code Quality Analysis"
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
       - apps/**
       - '!apps/docs/**'
       - libraries/**
+  merge_group:
+
 
 jobs:
   analyze:

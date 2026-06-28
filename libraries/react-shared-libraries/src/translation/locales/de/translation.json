@@ -237,7 +237,7 @@
   "update_credentials": "Zugangsdaten aktualisieren",
   "additional_settings": "Zusätzliche Einstellungen",
   "change_bot": "Bot wechseln",
-  "move_add_to_customer": "Zu Kunde verschieben / hinzufügen",
+  "move_add_to_group": "Verschieben / Zur Gruppe hinzufügen",
   "edit_time_slots": "Zeitfenster bearbeiten",
   "enable_channel": "Kanal aktivieren",
   "disable_channel": "Kanal deaktivieren",
@@ -356,7 +356,7 @@
   "top_title_design_media": "Medien gestalten",
   "top_title_edit_post": "Beitrag bearbeiten",
   "top_title_create_post": "Beitrag erstellen",
-  "top_title_move__add_to_customer": "Zu Kunde verschieben / hinzufügen",
+  "top_title_move__add_to_group": "Verschieben / Zur Gruppe hinzufügen",
   "top_title_add_api_key_for": "API-Schlüssel für {{name}} hinzufügen",
   "top_title_instance_url": "Instanz-URL",
   "top_title_custom_url": "Benutzerdefinierte URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Lerne, wie du Postiz benutzt",
   "watch_tutorial_description": "Sieh dir dieses kurze Video an, um das Beste aus Postiz herauszuholen",
   "back": "Zurück",
-  "get_started": "Loslegen"
+  "get_started": "Loslegen",
+  "kick_select_channel": "Kanal auswählen"
 }

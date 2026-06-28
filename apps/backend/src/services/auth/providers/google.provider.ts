@@ -1,48 +1,28 @@
 import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
   AuthProvider,
   AuthProviderAbstract,
 } from '@gitroom/backend/services/auth/providers.interface';
 
-const clientAndYoutube = () => {
-  const client = new google.auth.OAuth2({
+const defaultRedirect = () =>
+  `${process.env.FRONTEND_URL}/integrations/social/youtube`;
+
+const makeClient = (redirectUri: string) =>
+  new google.auth.OAuth2({
     clientId: process.env.YOUTUBE_CLIENT_ID,
     clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
-    redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
+    redirectUri,
   });
-
-  const youtube = (newClient: OAuth2Client) =>
-    google.youtube({
-      version: 'v3',
-      auth: newClient,
-    });
-
-  const youtubeAnalytics = (newClient: OAuth2Client) =>
-    google.youtubeAnalytics({
-      version: 'v2',
-      auth: newClient,
-    });
-
-  const oauth2 = (newClient: OAuth2Client) =>
-    google.oauth2({
-      version: 'v2',
-      auth: newClient,
-    });
-
-  return { client, youtube, oauth2, youtubeAnalytics };
-};
 
 @AuthProvider({ provider: 'GOOGLE' })
 export class GoogleProvider extends AuthProviderAbstract {
-  generateLink() {
-    const state = 'login';
-    const { client } = clientAndYoutube();
-    return client.generateAuthUrl({
+  generateLink(query?: { redirect_uri?: string }) {
+    const redirectUri = query?.redirect_uri || defaultRedirect();
+    return makeClient(redirectUri).generateAuthUrl({
       access_type: 'online',
       prompt: 'consent',
-      state,
-      redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
+      state: 'login',
+      redirect_uri: redirectUri,
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
@@ -50,21 +30,22 @@ export class GoogleProvider extends AuthProviderAbstract {
     });
   }
 
-  async getToken(code: string) {
-    const { client, oauth2 } = clientAndYoutube();
+  async getToken(code: string, redirectUri?: string) {
+    const client = makeClient(redirectUri || defaultRedirect());
     const { tokens } = await client.getToken(code);
-    return tokens.access_token;
+    return tokens.access_token!;
   }
 
   async getUser(providerToken: string) {
-    const { client, oauth2 } = clientAndYoutube();
+    const client = makeClient(defaultRedirect());
     client.setCredentials({ access_token: providerToken });
-    const user = oauth2(client);
-    const { data } = await user.userinfo.get();
+    const { data } = await google
+      .oauth2({ version: 'v2', auth: client })
+      .userinfo.get();
 
     return {
       id: data.id!,
-      email: data.email,
+      email: data.email!,
     };
   }
 }

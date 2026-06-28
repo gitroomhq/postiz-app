@@ -10,7 +10,9 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
+import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
@@ -21,6 +23,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
+import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
 import {
   AuthorizationActions,
   Sections,
@@ -30,14 +33,30 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notifications/get.notifications.dto';
-import axios from 'axios';
 import { Readable } from 'stream';
-import { lookup, extension } from 'mime-types';
+import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { fromBuffer } = require('file-type');
+
+const PUBLIC_API_ALLOWED_MIME = new Set<string>([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/bmp',
+  'image/tiff',
+  'video/mp4',
+]);
 import * as Sentry from '@sentry/nestjs';
-import { socialIntegrationList, IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import {
+  socialIntegrationList,
+  IntegrationManager,
+} from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
@@ -57,6 +76,7 @@ export class PublicIntegrationsController {
 
   @Post('/upload')
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File
@@ -80,15 +100,20 @@ export class PublicIntegrationsController {
     @Body() body: UploadDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    const response = await axios.get(body.url, {
-      responseType: 'arraybuffer',
+    const response = await fetch(body.url, {
+      // @ts-ignore — undici option, not in lib.dom fetch types
+      dispatcher: ssrfSafeDispatcher,
     });
-
-    const buffer = Buffer.from(response.data);
-    const responseMime = response.headers?.['content-type']?.split(';')[0]?.trim();
-    const urlMime = lookup(body?.url?.split?.('?')?.[0]);
-    const mimetype = (urlMime || responseMime || 'image/jpeg') as string;
-    const ext = extension(mimetype) || 'jpg';
+    if (!response.ok) {
+      throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const detected = await fromBuffer(buffer);
+    if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
+      throw new HttpException({ msg: 'Unsupported file type.' }, 400);
+    }
+    const mimetype = detected.mime;
+    const ext = detected.ext;
 
     const getFile = await this.storage.uploadFile({
       buffer,
@@ -142,12 +167,74 @@ export class PublicIntegrationsController {
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,
-      rawBody.type === 'draft'
+      rawBody?.type === 'draft' || true
     );
     body.type = rawBody.type;
 
-    console.log(JSON.stringify(body, null, 2));
-    return this._postsService.createPost(org.id, body);
+    if (
+      process.env.RESTRICT_UPLOAD_DOMAINS &&
+      body.posts.some((p) =>
+        p.value.some((a) =>
+          a.image.some(
+            (i) => i.path.indexOf(process.env.RESTRICT_UPLOAD_DOMAINS) === -1
+          )
+        )
+      )
+    ) {
+      throw new HttpException(
+        {
+          msg: `All media must be uploaded through our upload API route and contain the domain: ${process.env.RESTRICT_UPLOAD_DOMAINS}`,
+        },
+        400
+      );
+    }
+
+    // Server-side validation — same rules as the dashboard, surfaced as a
+    // readable 400 (see PostValidationExceptionFilter).
+    const validation = await this._postsService.validatePosts(
+      org.id,
+      body.posts
+    );
+
+    const fail = (item: (typeof validation)[number], error: string) => {
+      throw new PostValidationException({
+        provider: item.identifier,
+        name: item.name,
+        error,
+      });
+    };
+
+    for (const item of validation) {
+      if (item.emptyContent) {
+        fail(
+          item,
+          'Your post should have at least one character or one image.'
+        );
+      }
+    }
+
+    if (body.type !== 'draft') {
+      for (const item of validation) {
+        if (!item.valid) {
+          fail(item, item.settingsError || 'Please fix your settings');
+        }
+        if (item.errors !== true) {
+          fail(item, item.errors as string);
+        }
+        if (item.tooLong) {
+          fail(item, 'post is too long, please fix it');
+        }
+      }
+    }
+
+    const allowedCreationMethods = ['CLI', 'API'] as const;
+    const creationMethod = allowedCreationMethods.includes(
+      rawBody.creationMethod
+    )
+      ? (rawBody.creationMethod as 'CLI' | 'API')
+      : 'API';
+
+    return this._postsService.createPost(org.id, body, creationMethod);
   }
 
   @Delete('/posts/:id')
@@ -175,25 +262,39 @@ export class PublicIntegrationsController {
     return { connected: true };
   }
 
-  @Get('/integrations')
-  async listIntegration(@GetOrgFromRequest() org: Organization) {
+  @Get('/groups')
+  async listGroups(@GetOrgFromRequest() org: Organization) {
     Sentry.metrics.count('public_api-request', 1);
-    return (await this._integrationService.getIntegrationsList(org.id)).map(
-      (org) => ({
-        id: org.id,
-        name: org.name,
-        identifier: org.providerIdentifier,
-        picture: org.picture,
-        disabled: org.disabled,
-        profile: org.profile,
-        customer: org.customer
-          ? {
-              id: org.customer.id,
-              name: org.customer.name,
-            }
-          : undefined,
+    return (await this._integrationService.customers(org.id)).map(
+      (customer) => ({
+        id: customer.id,
+        name: customer.name,
       })
     );
+  }
+
+  @Get('/integrations')
+  async listIntegration(
+    @GetOrgFromRequest() org: Organization,
+    @Query('group') group?: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return (await this._integrationService.getIntegrationsList(org.id))
+      .filter((integration) => !group || integration.customer?.id === group)
+      .map((integration) => ({
+        id: integration.id,
+        name: integration.name,
+        identifier: integration.providerIdentifier,
+        picture: integration.picture,
+        disabled: integration.disabled,
+        profile: integration.profile,
+        customer: integration.customer
+          ? {
+              id: integration.customer.id,
+              name: integration.customer.name,
+            }
+          : undefined,
+      }));
   }
 
   @Get('/social/:integration')
@@ -217,7 +318,9 @@ export class PublicIntegrationsController {
 
     if (integrationProvider.externalUrl) {
       throw new HttpException(
-        { msg: 'This integration requires an external URL and is not supported via the public API' },
+        {
+          msg: 'This integration requires an external URL and is not supported via the public API',
+        },
         400
       );
     }
@@ -300,6 +403,10 @@ export class PublicIntegrationsController {
       id
     );
 
+    if (!loadIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
     const verified =
       JSON.parse(loadIntegration.additionalSettings || '[]')?.find(
         (p: any) => p?.title === 'Verified'
@@ -339,6 +446,16 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/posts/:id/status')
+  async changePostStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: ChangePostStatusDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.changePostStatus(org.id, id, body.status);
   }
 
   @Put('/posts/:id/release-id')

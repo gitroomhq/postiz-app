@@ -295,7 +295,7 @@ export const Menu: FC<{
       classNames: {
         modal: 'md',
       },
-      title: t('move_add_to_customer', 'Move / Add to customer'),
+      title: t('move_add_to_group', 'Move / Add to group'),
       withCloseButton: false,
       closeOnEscape: true,
       closeOnClickOutside: true,
@@ -533,7 +533,7 @@ export const Menu: FC<{
               </svg>
             </div>
             <div className="text-[14px]">
-              {t('move_add_to_customer', 'Move / add to customer')}
+              {t('move_add_to_group', 'Move / add to group')}
             </div>
           </div>
           <div

@@ -6,8 +6,10 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
+import { number, string } from 'yup';
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
@@ -18,6 +20,22 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   maxLength() {
     return 500;
+  }
+
+  override handleErrors(
+    body: string,
+    status: number
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.includes('Your login is currently disabled')) {
+      return {
+        type: 'refresh-token',
+        value: 'Your login is currently disabled',
+      };
+    }
+
+    return undefined;
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
@@ -113,9 +131,23 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
-  async uploadFile(instanceUrl: string, fileUrl: string, accessToken: string) {
+  async uploadFile(
+    instanceUrl: string,
+    fileUrl: string,
+    accessToken: string,
+    alt?: string
+  ) {
     const form = new FormData();
-    form.append('file', await fetch(fileUrl).then((r) => r.blob()));
+    form.append(
+      'file',
+      await fetch(fileUrl, {
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
+      }).then((r) => r.blob())
+    );
+    if (alt) {
+      form.append('description', alt);
+    }
     const media = await (
       await this.fetch(`${instanceUrl}/api/v1/media`, {
         method: 'POST',
@@ -138,7 +170,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
 
     const uploadFiles = await Promise.all(
       firstPost?.media?.map((media) =>
-        this.uploadFile(url, media.path, accessToken)
+        this.uploadFile(url, media.path, accessToken, media.alt)
       ) || []
     );
 
@@ -184,7 +216,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
 
     const uploadFiles = await Promise.all(
       commentPost?.media?.map((media) =>
-        this.uploadFile(url, media.path, accessToken)
+        this.uploadFile(url, media.path, accessToken, media.alt)
       ) || []
     );
 

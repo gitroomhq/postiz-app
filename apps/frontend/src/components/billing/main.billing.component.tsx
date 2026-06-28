@@ -23,7 +23,6 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
-import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -538,7 +537,6 @@ export const MainBillingComponent: FC<{
             </div>
           ))}
       </div>
-      {!subscription?.id && <PurchaseCrypto />}
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>

@@ -237,7 +237,7 @@
   "update_credentials": "Обновить учетные данные",
   "additional_settings": "Дополнительные настройки",
   "change_bot": "Сменить бота",
-  "move_add_to_customer": "Переместить / добавить к клиенту",
+  "move_add_to_group": "Переместить / добавить в группу",
   "edit_time_slots": "Редактировать временные интервалы",
   "enable_channel": "Включить канал",
   "disable_channel": "Отключить канал",
@@ -356,7 +356,7 @@
   "top_title_design_media": "Дизайн медиа",
   "top_title_edit_post": "Редактировать пост",
   "top_title_create_post": "Создать пост",
-  "top_title_move__add_to_customer": "Переместить / Добавить к клиенту",
+  "top_title_move__add_to_group": "Переместить / добавить в группу",
   "top_title_add_api_key_for": "Добавить API-ключ для {{name}}",
   "top_title_instance_url": "URL экземпляра",
   "top_title_custom_url": "Пользовательский URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Узнайте, как пользоваться Postiz",
   "watch_tutorial_description": "Посмотрите это короткое видео, чтобы узнать, как получить максимум от Postiz",
   "back": "Назад",
-  "get_started": "Начать"
+  "get_started": "Начать",
+  "kick_select_channel": "Выберите канал"
 }

@@ -13,7 +13,7 @@ export class GithubProvider extends AuthProviderAbstract {
     )}`;
   }
 
-  async getToken(code: string): Promise<string> {
+  async getToken(code: string, _redirectUri?: string): Promise<string> {
     const { access_token } = await (
       await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',

@@ -237,7 +237,7 @@
   "update_credentials": "শংসাপত্র আপডেট করুন",
   "additional_settings": "অতিরিক্ত সেটিংস",
   "change_bot": "বট পরিবর্তন করুন",
-  "move_add_to_customer": "গ্রাহকের কাছে স্থানান্তর / যোগ করুন",
+  "move_add_to_group": "গ্রুপে সরান / যোগ করুন",
   "edit_time_slots": "সময় স্লট সম্পাদনা করুন",
   "enable_channel": "চ্যানেল সক্রিয় করুন",
   "disable_channel": "চ্যানেল নিষ্ক্রিয় করুন",
@@ -356,7 +356,7 @@
   "top_title_design_media": "মিডিয়া ডিজাইন",
   "top_title_edit_post": "পোস্ট সম্পাদনা",
   "top_title_create_post": "পোস্ট তৈরি করুন",
-  "top_title_move__add_to_customer": "গ্রাহকের কাছে স্থানান্তর/যোগ করুন",
+  "top_title_move__add_to_group": "গ্রুপে সরান / যোগ করুন",
   "top_title_add_api_key_for": "এর জন্য API কী যোগ করুন",
   "top_title_instance_url": "ইনস্ট্যান্স URL",
   "top_title_custom_url": "কাস্টম URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "Postiz ব্যবহারের উপায় শিখুন",
   "watch_tutorial_description": "Postiz সর্বোচ্চভাবে কাজে লাগাতে এই সংক্ষিপ্ত ভিডিওটি দেখুন",
   "back": "পেছনে যান",
-  "get_started": "শুরু করুন"
+  "get_started": "শুরু করুন",
+  "kick_select_channel": "চ্যানেল নির্বাচন করুন"
 }

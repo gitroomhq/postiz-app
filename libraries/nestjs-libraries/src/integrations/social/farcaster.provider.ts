@@ -6,7 +6,10 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { Integration } from '@prisma/client';
 import { FarcasterDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/farcaster.dto';
@@ -35,6 +38,19 @@ export class FarcasterProvider
     return 800;
   }
   dto = FarcasterDto;
+
+  override async checkValidity(
+    list: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    if (
+      list?.some((item) =>
+        item?.some((field) => (field?.path?.indexOf?.('mp4') ?? -1) > -1)
+      )
+    ) {
+      return 'Can only accept images';
+    }
+    return true;
+  }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
     return {

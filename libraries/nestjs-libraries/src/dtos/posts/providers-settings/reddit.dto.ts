@@ -39,6 +39,9 @@ export class RedditSettingsDtoInner {
   @IsString()
   @MinLength(2)
   @IsDefined()
+  @JSONSchema({
+    description: 'Must be any of link, self (normal post), image, video, videogif',
+  })
   type: string;
 
   @IsUrl()

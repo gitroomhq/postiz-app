@@ -25,6 +25,7 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true,
     "paths": {
+      "@langchain/langgraph/prebuilt": ["node_modules/@langchain/langgraph/dist/prebuilt/index.d.ts"],
       "@gitroom/backend/*": ["apps/backend/src/*"],
       "@gitroom/frontend/*": ["apps/frontend/src/*"],
       "@gitroom/helpers/*": ["libraries/helpers/src/*"],

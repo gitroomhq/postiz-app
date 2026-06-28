@@ -165,6 +165,7 @@ export const CustomVariables: FC<{
     defaultValue?: string;
     validation: string;
     type: 'text' | 'password';
+    hint?: string;
   }>;
   close?: () => void;
   identifier: string;
@@ -236,11 +237,31 @@ export const CustomVariables: FC<{
         >
           {variables.map((variable) => (
             <div key={variable.key}>
-              <Input
-                label={variable.label}
-                name={variable.key}
-                type={variable.type == 'text' ? 'text' : 'password'}
-              />
+              {variable.hint ? (
+                <div className="flex flex-col gap-[6px]">
+                  <div className="text-[14px] flex items-center gap-[6px]">
+                    <span>{variable.label}</span>
+                    <span
+                      data-tooltip-id="tooltip"
+                      data-tooltip-content={variable.hint}
+                      className="w-[16px] h-[16px] rounded-full border border-textColor/60 text-textColor/60 flex items-center justify-center text-[11px] leading-none cursor-help select-none"
+                    >
+                      i
+                    </span>
+                  </div>
+                  <Input
+                    label=""
+                    name={variable.key}
+                    type={variable.type == 'text' ? 'text' : 'password'}
+                  />
+                </div>
+              ) : (
+                <Input
+                  label={variable.label}
+                  name={variable.key}
+                  type={variable.type == 'text' ? 'text' : 'password'}
+                />
+              )}
             </div>
           ))}
           <div>
@@ -325,7 +346,8 @@ const ChromeExtensionWarning: FC<{
           We will store your cookies securely to facilitate the connection.
         </li>
         <li>
-          Postiz does not take responsibility for any issues arising or account termination due to the use of this method.
+          Postiz does not take responsibility for any issues arising or account
+          termination due to the use of this method.
         </li>
       </ul>
       <div className="flex gap-[10px] mt-[8px]">
@@ -371,6 +393,7 @@ export const AddProviderComponent: FC<{
       label: string;
       validation: string;
       type: 'text' | 'password';
+      hint?: string;
     }>;
   }>;
   article: Array<{
@@ -380,8 +403,9 @@ export const AddProviderComponent: FC<{
   invite: boolean;
   update?: () => void;
   onboarding?: boolean;
+  isMobile?: boolean;
 }> = (props) => {
-  const { update, social, article, onboarding } = props;
+  const { update, social, article, onboarding, isMobile } = props;
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
@@ -400,6 +424,7 @@ export const AddProviderComponent: FC<{
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
+          hint?: string;
         }>
       ) =>
       async () => {
@@ -418,26 +443,38 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
+            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <Web3Providers
-                onComplete={(code, newState) => {
-                  window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}${
-                    onboarding ? '&onboarding=true' : ''
-                  }`;
-                }}
-                nonce={url}
-              />
+              <div
+                {...(isMobile ? { className: 'h-full bg-black p-[20px]' } : {})}
+              >
+                <Web3Providers
+                  onComplete={(code, newState) => {
+                    window.location.href = `/integrations/social/${identifier}?code=${code}&state=${newState}${
+                      onboarding ? '&onboarding=true' : ''
+                    }`;
+                  }}
+                  nonce={url}
+                />
+              </div>
             ),
           });
           return;
         };
         const gotoIntegration = async (externalUrl?: string) => {
+          // Mobile WebView: reuse the existing `externalUrl` param to
+          // carry the `postiz://` deep link so the backend redirects
+          // back to the iOS/Android app after OAuth completes, instead
+          // of the default web redirect.
           const params = [
-            externalUrl ? `externalUrl=${externalUrl}` : '',
+            `externalUrl=${encodeURIComponent(externalUrl)}`,
             onboardingParam,
+            isMobile
+              ? `redirectUrl=${encodeURIComponent('postiz://integrations')}`
+              : '',
           ]
             .filter(Boolean)
             .join('&');
@@ -464,6 +501,23 @@ export const AddProviderComponent: FC<{
             );
             modal.closeAll();
             copy(url);
+            return;
+          }
+
+          if (isMobile) {
+            // In the mobile WebView the OAuth provider (Google, Facebook,
+            // etc.) typically refuses in-WebView sign-in. Post the URL
+            // out to React Native so it can open the system browser;
+            // `window.open`/`location.href` aren't reliable here because
+            // RN WebView doesn't always route them through the native
+            // navigation intercept. The backend redirects back to the
+            // app via `postiz://` once OAuth completes.
+            const rn = (window as any).ReactNativeWebView;
+            if (rn && typeof rn.postMessage === 'function') {
+              rn.postMessage(JSON.stringify({ type: 'open-external', url }));
+              return;
+            }
+            window.open(url, '_blank');
             return;
           }
 
@@ -577,6 +631,7 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
+            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
@@ -588,16 +643,21 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
+            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
-              <CustomVariables
-                identifier={identifier}
-                gotoUrl={(url: string) => router.push(url)}
-                variables={customFields}
-                onboarding={onboarding}
-              />
+              <div
+                {...(isMobile ? { className: 'h-full bg-black p-[20px]' } : {})}
+              >
+                <CustomVariables
+                  identifier={identifier}
+                  gotoUrl={(url: string) => router.push(url)}
+                  variables={customFields}
+                  onboarding={onboarding}
+                />
+              </div>
             ),
           });
           return;
@@ -614,8 +674,10 @@ export const AddProviderComponent: FC<{
       <div className="flex flex-col">
         <div
           className={clsx(
-            'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
-            onboarding ? 'grid-cols-9' : 'grid-cols-5'
+            isMobile && 'gap-[20px] flex flex-col',
+            !isMobile &&
+              'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
+            isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
           )}
         >
           {social
@@ -648,9 +710,12 @@ export const AddProviderComponent: FC<{
                       'data-tooltip-content': item.toolTip,
                     }
                   : {})}
-                className={
-                  'w-full h-[100px] text-[14px] p-[10px] rounded-[8px] bg-newTableHeader text-textColor relative justify-center items-center flex flex-col gap-[10px] cursor-pointer'
-                }
+                className={clsx(
+                  isMobile
+                    ? 'flex-row h-[72px] p-[16px]'
+                    : 'flex-col p-[10px] h-[100px] justify-center',
+                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
+                )}
               >
                 <div>
                   {item.identifier === 'youtube' ? (
@@ -666,9 +731,14 @@ export const AddProviderComponent: FC<{
                     />
                   )}
                 </div>
-                <div className="whitespace-pre-wrap text-center">
+                <div
+                  className={clsx(
+                    isMobile ? '' : 'whitespace-pre-wrap',
+                    'text-center'
+                  )}
+                >
                   {item.name}
-                  {!!item.toolTip && (
+                  {!!item.toolTip && !isMobile && (
                     <svg
                       width="15"
                       height="15"

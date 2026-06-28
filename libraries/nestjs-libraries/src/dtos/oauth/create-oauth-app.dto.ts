@@ -17,6 +17,6 @@ export class CreateOAuthAppDto {
 
   @IsString()
   @IsDefined()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   redirectUrl: string;
 }

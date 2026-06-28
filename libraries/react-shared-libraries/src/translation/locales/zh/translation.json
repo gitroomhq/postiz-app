@@ -237,7 +237,7 @@
   "update_credentials": "更新凭证",
   "additional_settings": "附加设置",
   "change_bot": "更换机器人",
-  "move_add_to_customer": "移动/添加到客户",
+  "move_add_to_group": "移动/添加到群组",
   "edit_time_slots": "编辑时间段",
   "enable_channel": "启用频道",
   "disable_channel": "禁用频道",
@@ -356,7 +356,7 @@
   "top_title_design_media": "设计媒体",
   "top_title_edit_post": "编辑帖子",
   "top_title_create_post": "创建帖子",
-  "top_title_move__add_to_customer": "移动/添加到客户",
+  "top_title_move__add_to_group": "移动/添加到群组",
   "top_title_add_api_key_for": "为{{name}}添加API密钥",
   "top_title_instance_url": "实例URL",
   "top_title_custom_url": "自定义URL",
@@ -692,5 +692,6 @@
   "watch_tutorial_title": "学习如何使用Postiz",
   "watch_tutorial_description": "观看这个简短的视频，学习如何最大程度地利用Postiz",
   "back": "返回",
-  "get_started": "开始使用"
+  "get_started": "开始使用",
+  "kick_select_channel": "选择频道"
 }

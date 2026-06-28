@@ -1,7 +1,12 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Post as PostBody } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
-import { APPROVED_SUBMIT_FOR_ORDER, Post, State } from '@prisma/client';
+import {
+  APPROVED_SUBMIT_FOR_ORDER,
+  CreationMethod,
+  Post,
+  State,
+} from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import dayjs from 'dayjs';
@@ -35,10 +40,11 @@ export class PostsRepository {
           refreshNeeded: false,
           inBetweenSteps: false,
           disabled: false,
+          deletedAt: null,
         },
         publishDate: {
-          gte: dayjs.utc().subtract(2, 'hour').toDate(),
-          lt: dayjs.utc().add(2, 'hour').toDate(),
+          gte: dayjs.utc().subtract(2, 'day').toDate(),
+          lt: dayjs.utc().toDate(),
         },
         state: 'QUEUE',
         deletedAt: null,
@@ -132,7 +138,7 @@ export class PostsRepository {
             OR: [
               {
                 organizationId: orgId,
-              }
+              },
             ],
           },
           {
@@ -153,6 +159,7 @@ export class PostsRepository {
         ],
         integration: {
           deletedAt: null,
+          organizationId: orgId,
         },
         deletedAt: null,
         parentPostId: null,
@@ -173,6 +180,7 @@ export class PostsRepository {
         state: true,
         intervalInDays: true,
         group: true,
+        creationMethod: true,
         tags: {
           select: {
             tag: true,
@@ -217,6 +225,25 @@ export class PostsRepository {
     const limit = query.limit || 20;
     const skip = page * limit;
 
+    const stateFilter = query.state || 'all';
+    const stateAndDate =
+      stateFilter === 'scheduled'
+        ? {
+            state: State.QUEUE,
+          }
+        : stateFilter === 'draft'
+        ? { state: State.DRAFT }
+        : stateFilter === 'published'
+        ? { state: State.PUBLISHED }
+        : {
+            state: {
+              in: [State.QUEUE, State.DRAFT, State.PUBLISHED, State.ERROR],
+            },
+          };
+
+    const orderDirection: 'asc' | 'desc' =
+      stateFilter === 'published' ? 'desc' : 'asc';
+
     const where = {
       AND: [
         {
@@ -226,22 +253,26 @@ export class PostsRepository {
             },
           ],
         },
-        {
-          publishDate: {
-            gte: dayjs.utc().toDate(),
-          },
-        },
       ],
+      ...stateAndDate,
+      // Published posts were already posted (publishDate in the past), so fetch
+      // all of them; everything else stays upcoming. Ordering handles the rest.
+      ...(stateFilter === 'published'
+        ? {}
+        : { publishDate: { gte: dayjs.utc().toDate() } }),
       deletedAt: null as Date | null,
       parentPostId: null as string | null,
       intervalInDays: null as number | null,
-      ...(query.customer
-        ? {
-            integration: {
+
+      integration: {
+        deletedAt: null as any,
+        organizationId: orgId,
+        ...(query.customer
+          ? {
               customerId: query.customer,
-            },
-          }
-        : {}),
+            }
+          : {}),
+      },
     };
 
     const [posts, total] = await Promise.all([
@@ -250,7 +281,7 @@ export class PostsRepository {
         skip,
         take: limit,
         orderBy: {
-          publishDate: 'asc',
+          publishDate: orderDirection,
         },
         select: {
           id: true,
@@ -259,7 +290,9 @@ export class PostsRepository {
           releaseURL: true,
           releaseId: true,
           state: true,
+          intervalInDays: true,
           group: true,
+          creationMethod: true,
           tags: {
             select: {
               tag: true,
@@ -493,6 +526,7 @@ export class PostsRepository {
     date: string,
     body: PostBody,
     tags: { value: string; label: string }[],
+    creationMethod: CreationMethod,
     inter?: number
   ) {
     const posts: Post[] = [];
@@ -527,6 +561,7 @@ export class PostsRepository {
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
+        ...(type === 'create' ? { creationMethod } : {}),
         ...(state === 'update'
           ? {}
           : {

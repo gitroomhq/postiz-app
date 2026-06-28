@@ -56,7 +56,7 @@ const AnalyticsCard: FC<{
   const colorVariants = ['purple', 'green', 'blue'] as const;
   const color = colorVariants[index % colorVariants.length];
 
-  const hasMultipleDataPoints = item.data.length > 1;
+  const hasDataPoints = item.data.length >= 1;
 
   return (
     <div className="group relative">
@@ -92,7 +92,7 @@ const AnalyticsCard: FC<{
         </div>
 
         {/* Content */}
-        {hasMultipleDataPoints ? (
+        {hasDataPoints ? (
           <>
             {/* Chart */}
             <div className="flex-1 px-[12px] py-[8px]">

@@ -48,7 +48,7 @@ export class OauthProvider extends AuthProviderAbstract {
     return `${authUrl}?${params.toString()}`;
   }
 
-  async getToken(code: string): Promise<string> {
+  async getToken(code: string, _redirectUri?: string): Promise<string> {
     const { tokenUrl, clientId, clientSecret, frontendUrl } = this.getConfig();
     const response = await fetch(`${tokenUrl}`, {
       method: 'POST',
