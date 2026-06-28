@@ -15,7 +15,7 @@ RUN addgroup --system www \
  && chown -R www:www /www /var/lib/nginx
 
 
-RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2
+RUN npm --no-update-notifier --no-fund --global install pnpm@10.6.1 pm2@7.0.1
 
 WORKDIR /app
 
