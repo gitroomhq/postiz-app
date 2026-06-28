@@ -3,7 +3,6 @@ import { getT } from '@gitroom/react/translation/get.translation.service.backend
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
-import { TestimonialComponent } from '@gitroom/frontend/components/auth/testimonial.component';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 export default async function AuthLayout({
@@ -30,8 +29,10 @@ export default async function AuthLayout({
           <span className="text-[42px] text-[#FC69FF]">
             Mapped Out Social Studio
           </span>
+          <div className="text-[18px] text-gray-400 mt-[24px]">
+            Plan, schedule &amp; publish across all your social channels.
+          </div>
         </div>
-        <TestimonialComponent />
       </div>
     </div>
   );
