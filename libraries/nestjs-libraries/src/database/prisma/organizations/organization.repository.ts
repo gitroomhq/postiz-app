@@ -338,13 +338,14 @@ export class OrganizationRepository {
             role: true,
             user: {
               select: {
+                name: true,
                 email: true,
                 id: true,
                 sendSuccessEmails: true,
                 sendFailureEmails: true,
                 sendStreakEmails: true,
+                },
               },
-            },
           },
         },
       },
