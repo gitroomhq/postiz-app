@@ -104,9 +104,9 @@ export const SettingsPopup: FC<{
       arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
     }
     if (user?.tier?.public_api && isGeneral && showLogout) {
-      arr.push({ tab: 'api', label: t('developers', 'Developers') });
+      arr.push({ tab: 'api', label: t('developers', 'API & Developers') });
     }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Connected Apps') });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);

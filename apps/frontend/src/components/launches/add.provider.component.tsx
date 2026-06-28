@@ -682,26 +682,25 @@ export const AddProviderComponent: FC<{
         >
           {social
             .filter((item) => {
-              // Mapped Out: hide unwanted networks from the Add Channel UI only.
-              // Backend/provider code & DB enums are untouched; already-connected
-              // channels keep working — this just removes new-connect options.
-              const MAPPEDOUT_HIDDEN = [
-                'kick',
-                'twitch',
-                'mastodon',
-                'mastodon-custom',
-                'lemmy',
-                'bluesky',
-                'wrapcast',
-                'nostr',
-                'vk',
-                'medium',
-                'devto',
-                'hashnode',
-                'whop',
-                'mewe',
+              // Mapped Out: ALLOWLIST — only these networks show in the Add
+              // Channel UI. UI-only; backend/provider code & DB enums untouched,
+              // and already-connected channels keep working regardless.
+              const MAPPEDOUT_ALLOWED = [
+                'instagram',
+                'instagram-standalone',
+                'facebook',
+                'tiktok',
+                'linkedin',
+                'linkedin-page',
+                'youtube',
+                'x',
+                'threads',
+                'pinterest',
+                'reddit',
+                'wordpress',
+                'telegram',
               ];
-              if (MAPPEDOUT_HIDDEN.includes(item.identifier)) {
+              if (!MAPPEDOUT_ALLOWED.includes(item.identifier)) {
                 return false;
               }
 
