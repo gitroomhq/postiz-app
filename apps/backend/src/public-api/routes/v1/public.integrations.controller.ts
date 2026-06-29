@@ -12,7 +12,10 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import {
+  CustomFileValidationPipe,
+  getMaxSize,
+} from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
@@ -107,11 +110,27 @@ export class PublicIntegrationsController {
     if (!response.ok) {
       throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
     }
+
+    // Guard against OOM: bail out before buffering the whole body into memory.
+    // Content-Length may be absent or wrong, so we re-check the real size after
+    // download too. The type isn't known yet (sniffed below), so the pre-check
+    // uses the largest allowed cap (video).
+    const maxDownloadSize = getMaxSize('video/mp4');
+    const declaredSize = Number(response.headers.get('content-length'));
+    if (declaredSize && declaredSize > maxDownloadSize) {
+      throw new HttpException({ msg: 'File is too large.' }, 400);
+    }
+
     const buffer = Buffer.from(await response.arrayBuffer());
     const detected = await fromBuffer(buffer);
     if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
       throw new HttpException({ msg: 'Unsupported file type.' }, 400);
     }
+
+    if (buffer.length > getMaxSize(detected.mime)) {
+      throw new HttpException({ msg: 'File is too large.' }, 400);
+    }
+
     const mimetype = detected.mime;
     const ext = detected.ext;
 

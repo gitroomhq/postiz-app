@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { getMaxSize } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Readable } from 'stream';
@@ -76,10 +77,29 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
             return { error: 'Failed to fetch URL' };
           }
 
+          // Guard against OOM: bail out before buffering the whole body into
+          // memory. Content-Length may be absent or wrong, so we re-check the
+          // real size after download too. The type isn't known yet (sniffed
+          // below), so the pre-check uses the largest allowed cap (video).
+          const maxDownloadSize = getMaxSize('video/mp4');
+          const declaredSize = Number(response.headers.get('content-length'));
+          if (declaredSize && declaredSize > maxDownloadSize) {
+            return {
+              error: `File is too large: ${declaredSize} bytes (max ${maxDownloadSize} bytes).`,
+            };
+          }
+
           const buffer = Buffer.from(await response.arrayBuffer());
           const detected = await fromBuffer(buffer);
           if (!detected || !ALLOWED_MIME.has(detected.mime)) {
             return { error: 'Unsupported file type.' };
+          }
+
+          const maxSize = getMaxSize(detected.mime);
+          if (buffer.length > maxSize) {
+            return {
+              error: `File is too large: ${buffer.length} bytes (max ${maxSize} bytes).`,
+            };
           }
 
           const getFile = await this.storage.uploadFile({
