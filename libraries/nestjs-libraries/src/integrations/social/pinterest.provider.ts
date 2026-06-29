@@ -288,7 +288,18 @@ export class PinterestProvider
       await axios.post(upload_url, formData);
 
       let statusCode = '';
+      let attempts = 0;
+      const maxAttempts = 60; // ~30 minutes at 30s interval
       while (statusCode !== 'succeeded') {
+        if (attempts++ >= maxAttempts) {
+          throw new BadBody(
+            'pinterest',
+            JSON.stringify({}),
+            {} as any,
+            'The file took too long to process, please try again'
+          );
+        }
+
         const mediafile = await (
           await this.fetch(
             'https://api.pinterest.com/v5/media/' + media_id,

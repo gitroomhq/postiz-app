@@ -492,7 +492,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           );
 
           let videoStatus = 'in_progress';
+          let attempts = 0;
+          const maxAttempts = 180; // ~30 minutes at 10s interval
           while (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
+            if (attempts++ >= maxAttempts) {
+              throw new Error('Video processing timed out');
+            }
+
             const { status } = await (
               await this.fetch(
                 `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,

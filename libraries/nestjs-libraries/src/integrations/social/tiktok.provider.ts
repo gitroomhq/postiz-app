@@ -414,7 +414,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<{ url: string; id: string }> {
     const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
-    for (const i of Array(10).keys()) {
+    for (const i of Array(600).keys()) {
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
@@ -466,7 +466,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         );
       }
 
-      await timer(10000);
+      await timer(20000);
     }
 
     throw new BadBody(

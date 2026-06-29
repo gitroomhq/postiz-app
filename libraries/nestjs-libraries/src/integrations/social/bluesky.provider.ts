@@ -112,7 +112,18 @@ async function uploadVideo(
   let blob: BlobRef | undefined = jobStatus.blob;
   const videoAgent = new AtpAgent({ service: 'https://video.bsky.app' });
 
+  let attempts = 0;
+  const maxAttempts = 60; // ~30 minutes at 30s interval
   while (!blob) {
+    if (attempts++ >= maxAttempts) {
+      throw new BadBody(
+        'bluesky',
+        JSON.stringify({}),
+        {} as any,
+        'Video upload timed out, job did not complete'
+      );
+    }
+
     const { data: status } = await videoAgent.app.bsky.video.getJobStatus({
       jobId: jobStatus.jobId,
     });

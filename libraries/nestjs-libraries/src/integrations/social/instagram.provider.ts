@@ -682,7 +682,13 @@ export class InstagramProvider
         console.log('in progress2', id);
 
         let status = 'IN_PROGRESS';
+        let attempts = 0;
+        const maxAttempts = 60; // ~30 minutes at 30s interval
         while (status === 'IN_PROGRESS') {
+          if (attempts++ >= maxAttempts) {
+            throw new Error('Media processing timed out');
+          }
+
           const { status_code } = await (
             await this.fetch(
               `https://${type}/v20.0/${photoId}?access_token=${
@@ -777,7 +783,13 @@ export class InstagramProvider
       ).json();
 
       let status = 'IN_PROGRESS';
+      let attempts = 0;
+      const maxAttempts = 60; // ~30 minutes at 30s interval
       while (status === 'IN_PROGRESS') {
+        if (attempts++ >= maxAttempts) {
+          throw new Error('Media processing timed out');
+        }
+
         const { status_code } = await (
           await this.fetch(
             `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${
