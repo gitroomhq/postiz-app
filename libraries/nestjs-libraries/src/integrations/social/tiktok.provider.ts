@@ -16,7 +16,6 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { Context } from '@temporalio/activity';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -34,7 +33,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'user.info.profile',
     'user.info.stats',
   ];
-  override maxConcurrentJob = 600;
   dto = TikTokDto;
   editor = 'normal' as const;
   maxLength() {
@@ -412,9 +410,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     publishId: string,
     accessToken: string
   ): Promise<{ url: string; id: string }> {
-    const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
-    while (true) {
+    for (const i of Array(10).keys()) {
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
@@ -468,6 +465,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       await timer(10000);
     }
+
+    throw new BadBody(
+      'titok-error-upload',
+      JSON.stringify({}),
+      Buffer.from(JSON.stringify({})),
+      'TikTok refused to publish your post'
+    );
   }
 
   private postingMethod(
