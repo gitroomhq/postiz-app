@@ -27,8 +27,10 @@ export const getTemporalModule = (
     isGlobal: true,
     connection: {
       address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
-      ...process.env.TEMPORAL_TLS === 'true' ? {tls: true} : {},
-      ...process.env.TEMPORAL_API_KEY ? {apiKey: process.env.TEMPORAL_API_KEY} : {},
+      ...(process.env.TEMPORAL_TLS === 'true' ? { tls: true } : {}),
+      ...(process.env.TEMPORAL_API_KEY
+        ? { apiKey: process.env.TEMPORAL_API_KEY }
+        : {}),
       namespace: process.env.TEMPORAL_NAMESPACE || 'default',
     },
     taskQueue: 'main',
@@ -51,7 +53,10 @@ export const getTemporalModule = (
               // the provider's limit. Providers whose limit is smaller than the
               // server count must be pinned via EXCLUDE_QUEUE instead.
               const concurrency = integration.maxConcurrentJob
-                ? Math.max(1, Math.floor(integration.maxConcurrentJob / divider))
+                ? Math.max(
+                    1,
+                    Math.floor(integration.maxConcurrentJob / divider)
+                  )
                 : undefined;
 
               return {
@@ -65,7 +70,11 @@ export const getTemporalModule = (
                         maxConcurrentActivityTaskExecutions: concurrency,
                       },
                     }
-                  : {}),
+                  : {
+                      workerOptions: {
+                        maxConcurrentActivityTaskExecutions: 2000,
+                      },
+                    }),
               };
             }),
         }
