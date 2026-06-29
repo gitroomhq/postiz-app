@@ -33,7 +33,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'user.info.profile',
     'user.info.stats',
   ];
-  override maxConcurrentJob = 300;
+  override maxConcurrentJob = 600;
   dto = TikTokDto;
   editor = 'normal' as const;
   maxLength() {
