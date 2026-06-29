@@ -16,6 +16,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { Context } from '@temporalio/activity';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -411,6 +412,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     publishId: string,
     accessToken: string
   ): Promise<{ url: string; id: string }> {
+    const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const post = await (
@@ -434,6 +436,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       const { status, publicaly_available_post_id } = post.data;
 
+      ctx.heartbeat(`Post Status ${JSON.stringify(post?.data || {})}`);
       if (status === 'SEND_TO_USER_INBOX') {
         return {
           url: 'https://www.tiktok.com/messages?lang=en',
