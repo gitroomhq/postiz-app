@@ -103,10 +103,17 @@ export class PublicIntegrationsController {
     @Body() body: UploadDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    const response = await fetch(body.url, {
-      // @ts-ignore — undici option, not in lib.dom fetch types
-      dispatcher: ssrfSafeDispatcher,
-    });
+    let response: globalThis.Response;
+    try {
+      response = await fetch(body.url, {
+        // @ts-ignore — undici option, not in lib.dom fetch types
+        dispatcher: ssrfSafeDispatcher,
+      });
+    } catch {
+      // Network-level failure (DNS, connection refused, SSRF block, etc.) —
+      // fetch rejects rather than returning a non-ok response.
+      throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
+    }
     if (!response.ok) {
       throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
     }
