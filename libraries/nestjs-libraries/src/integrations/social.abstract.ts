@@ -1,6 +1,6 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
-import { ApplicationFailure } from '@temporalio/activity';
+import { ApplicationFailure, Context } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
@@ -33,13 +33,18 @@ export function truncateForTemporal(value: any, max: number): string {
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
-    super(truncateForTemporal(message, MAX_FAILURE_MESSAGE), 'refresh_token', true, [
-      {
-        identifier,
-        json: truncateForTemporal(json, MAX_FAILURE_FIELD),
-        body: truncateForTemporal(body, MAX_FAILURE_FIELD),
-      },
-    ]);
+    super(
+      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
+      'refresh_token',
+      true,
+      [
+        {
+          identifier,
+          json: truncateForTemporal(json, MAX_FAILURE_FIELD),
+          body: truncateForTemporal(body, MAX_FAILURE_FIELD),
+        },
+      ]
+    );
   }
 }
 
@@ -184,12 +189,14 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
+    const ctx = Context.current();
     // Providers fetch user-supplied URLs (WordPress domain, Mastodon/Lemmy
     // instance, Listmonk URL, etc.). Route through the SSRF guard so those
     // requests can't be pointed at internal/private IPs (cloud metadata,
     // localhost services, the internal network). Opt-out via env for
     // self-hosters on a trusted private network. A caller may still pass its
     // own dispatcher explicitly.
+    ctx.heartbeat(url);
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
