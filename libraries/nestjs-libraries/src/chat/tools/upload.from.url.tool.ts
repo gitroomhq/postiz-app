@@ -34,7 +34,7 @@ export class UploadFromUrlTool implements AgentToolInterface {
       id: 'uploadFromUrlTool',
       description: `Upload a remote image or video into the media library from a public URL.
 Use this before scheduling a post when the user provides an external media URL (not already hosted on our domain),
-so the attachment passes the upload-domain validation. Returns the hosted media { id, path } to use as an attachment.`,
+so the attachment passes the upload-domain validation. Returns the hosted media { id, path } to use as an attachment, or { error } on failure.`,
       mcp: {
         annotations: {
           title: 'Upload Media From URL',
@@ -50,49 +50,63 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
           .url()
           .describe('The public URL of the image or video to upload'),
       }),
+      // Mastra validates a tool's return against this schema, so it must also
+      // allow the graceful { error } shape. Fields are optional (rather than
+      // wrapping everything in an `output` union) to keep the change minimal:
+      // the existing { id, path } success return and the new { error } return
+      // both validate without rewriting every return statement.
       outputSchema: z.object({
-        id: z.string(),
-        path: z.string(),
+        id: z.string().optional(),
+        path: z.string().optional(),
+        error: z.string().optional(),
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
-        const org = JSON.parse(
-          (context?.requestContext as any)?.get('organization') as string
-        );
+        try {
+          const org = JSON.parse(
+            (context?.requestContext as any)?.get('organization') as string
+          );
 
-        const response = await fetch(inputData.url, {
-          // @ts-ignore — undici option, not in lib.dom fetch types
-          dispatcher: ssrfSafeDispatcher,
-        });
+          const response = await fetch(inputData.url, {
+            // @ts-ignore — undici option, not in lib.dom fetch types
+            dispatcher: ssrfSafeDispatcher,
+          });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch URL');
+          if (!response.ok) {
+            return { error: 'Failed to fetch URL' };
+          }
+
+          const buffer = Buffer.from(await response.arrayBuffer());
+          const detected = await fromBuffer(buffer);
+          if (!detected || !ALLOWED_MIME.has(detected.mime)) {
+            return { error: 'Unsupported file type.' };
+          }
+
+          const getFile = await this.storage.uploadFile({
+            buffer,
+            mimetype: detected.mime,
+            size: buffer.length,
+            path: '',
+            fieldname: '',
+            destination: '',
+            stream: new Readable(),
+            filename: '',
+            originalname: `upload.${detected.ext}`,
+            encoding: '',
+          });
+
+          return await this._mediaService.saveFile(
+            org.id,
+            getFile.originalname,
+            getFile.path
+          );
+        } catch (err) {
+          return {
+            error: `Failed to upload media from URL: ${
+              err instanceof Error ? err.message : 'Unexpected error'
+            }`,
+          };
         }
-
-        const buffer = Buffer.from(await response.arrayBuffer());
-        const detected = await fromBuffer(buffer);
-        if (!detected || !ALLOWED_MIME.has(detected.mime)) {
-          throw new Error('Unsupported file type.');
-        }
-
-        const getFile = await this.storage.uploadFile({
-          buffer,
-          mimetype: detected.mime,
-          size: buffer.length,
-          path: '',
-          fieldname: '',
-          destination: '',
-          stream: new Readable(),
-          filename: '',
-          originalname: `upload.${detected.ext}`,
-          encoding: '',
-        });
-
-        return this._mediaService.saveFile(
-          org.id,
-          getFile.originalname,
-          getFile.path
-        );
       },
     });
   }
