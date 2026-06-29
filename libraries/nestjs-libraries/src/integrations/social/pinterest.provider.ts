@@ -289,7 +289,7 @@ export class PinterestProvider
 
       let statusCode = '';
       let attempts = 0;
-      const maxAttempts = 60; // ~30 minutes at 30s interval
+      const maxAttempts = 18; // ~9 minutes at 30s interval
       while (statusCode !== 'succeeded') {
         if (attempts++ >= maxAttempts) {
           throw new BadBody(

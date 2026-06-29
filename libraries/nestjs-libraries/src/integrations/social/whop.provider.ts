@@ -255,7 +255,7 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
 
         let uploadStatus = 'pending';
         let attempts = 0;
-        const maxAttempts = 360; // ~30 minutes at 5s interval
+        const maxAttempts = 108; // ~9 minutes at 5s interval
         while (uploadStatus !== 'ready') {
           if (attempts++ >= maxAttempts) {
             throw new Error('File upload timed out');

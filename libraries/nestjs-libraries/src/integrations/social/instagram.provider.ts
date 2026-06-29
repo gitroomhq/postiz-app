@@ -683,7 +683,7 @@ export class InstagramProvider
 
         let status = 'IN_PROGRESS';
         let attempts = 0;
-        const maxAttempts = 60; // ~30 minutes at 30s interval
+        const maxAttempts = 18; // ~9 minutes at 30s interval
         while (status === 'IN_PROGRESS') {
           if (attempts++ >= maxAttempts) {
             throw new Error('Media processing timed out');
@@ -784,7 +784,7 @@ export class InstagramProvider
 
       let status = 'IN_PROGRESS';
       let attempts = 0;
-      const maxAttempts = 60; // ~30 minutes at 30s interval
+      const maxAttempts = 18; // ~9 minutes at 30s interval
       while (status === 'IN_PROGRESS') {
         if (attempts++ >= maxAttempts) {
           throw new Error('Media processing timed out');

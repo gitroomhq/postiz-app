@@ -414,7 +414,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<{ url: string; id: string }> {
     const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
-    for (const i of Array(600).keys()) {
+    for (const i of Array(27).keys()) {
+      // ~9 minutes at 20s interval
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',

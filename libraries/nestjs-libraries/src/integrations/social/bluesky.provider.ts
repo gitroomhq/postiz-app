@@ -113,7 +113,7 @@ async function uploadVideo(
   const videoAgent = new AtpAgent({ service: 'https://video.bsky.app' });
 
   let attempts = 0;
-  const maxAttempts = 60; // ~30 minutes at 30s interval
+  const maxAttempts = 18; // ~9 minutes at 30s interval
   while (!blob) {
     if (attempts++ >= maxAttempts) {
       throw new BadBody(
