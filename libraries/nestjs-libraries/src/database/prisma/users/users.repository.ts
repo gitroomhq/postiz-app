@@ -64,6 +64,65 @@ export class UsersRepository {
     });
   }
 
+  // Login can use either the email or the chosen username (LOCAL provider only).
+  getUserByEmailOrUsername(identifier: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        providerName: Provider.LOCAL,
+        OR: [{ email: identifier }, { username: identifier }],
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
+      },
+    });
+  }
+
+  getUserByUsername(username: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        username,
+        providerName: Provider.LOCAL,
+      },
+    });
+  }
+
+  // Creates a standalone user WITHOUT a personal organization. Used for
+  // invite-only signups: invited managers/clients join only the workspace they
+  // were invited to, they do not get their own workspace.
+  createUserForInvite(
+    body: {
+      email: string;
+      password?: string;
+      provider: Provider;
+      providerId?: string;
+      username?: string;
+    },
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
+  ) {
+    return this._user.model.user.create({
+      data: {
+        activated: body.provider !== 'LOCAL' || !hasEmail,
+        email: body.email,
+        username: body.username || null,
+        password: body.password
+          ? AuthService.hashPassword(body.password)
+          : '',
+        providerName: body.provider,
+        providerId: body.providerId || '',
+        timezone: 0,
+        ip,
+        agent: userAgent,
+      },
+    });
+  }
+
   activateUser(id: string) {
     return this._user.model.user.update({
       where: {

@@ -87,6 +87,7 @@ export class OrganizationRepository {
                 id: true,
                 disabled: true,
                 role: true,
+                canConnectChannels: true,
                 userId: true,
               },
             },
@@ -181,6 +182,7 @@ export class OrganizationRepository {
           select: {
             disabled: true,
             role: true,
+            canConnectChannels: true,
           },
         },
         subscription: {
@@ -207,7 +209,8 @@ export class OrganizationRepository {
     userId: string,
     id: string,
     orgId: string,
-    role: 'USER' | 'ADMIN'
+    role: 'USER' | 'ADMIN' | 'CLIENT',
+    canConnectChannels?: boolean
   ) {
     const checkIfInviteExists = await this._user.model.user.findFirst({
       where: {
@@ -240,6 +243,7 @@ export class OrganizationRepository {
     const create = await this._userOrg.model.userOrganization.create({
       data: {
         role,
+        canConnectChannels: !!canConnectChannels,
         userId,
         organizationId: orgId,
       },
@@ -265,7 +269,7 @@ export class OrganizationRepository {
   ) {
     return this._organization.model.organization.create({
       data: {
-        name: body.company,
+        name: body.company || body.email,
         apiKey: AuthService.fixedEncryption(makeId(20)),
         allowTrial: true,
         isTrailing: true,
@@ -276,6 +280,7 @@ export class OrganizationRepository {
               create: {
                 activated: body.provider !== 'LOCAL' || !hasEmail,
                 email: body.email,
+                username: body.username || null,
                 password: body.password
                   ? AuthService.hashPassword(body.password)
                   : '',
@@ -336,10 +341,13 @@ export class OrganizationRepository {
         users: {
           select: {
             role: true,
+            canConnectChannels: true,
             user: {
               select: {
                 email: true,
                 id: true,
+                name: true,
+                username: true,
                 sendSuccessEmails: true,
                 sendFailureEmails: true,
                 sendStreakEmails: true,

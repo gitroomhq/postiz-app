@@ -20,12 +20,12 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const roles = [
   {
-    name: 'User',
-    value: 'USER',
+    name: 'Manager',
+    value: 'ADMIN',
   },
   {
-    name: 'Admin',
-    value: 'ADMIN',
+    name: 'Client',
+    value: 'CLIENT',
   },
 ];
 export const AddMember = () => {
@@ -39,6 +39,7 @@ export const AddMember = () => {
     values: {
       email: '',
       role: '',
+      canConnectChannels: false,
       sendEmail: true,
     },
     resolver,
@@ -48,8 +49,17 @@ export const AddMember = () => {
     control: form.control,
     name: 'sendEmail',
   });
+  const role = useWatch({
+    control: form.control,
+    name: 'role',
+  });
   const submit = useCallback(
-    async (values: { email: string; role: string; sendEmail: boolean }) => {
+    async (values: {
+      email: string;
+      role: string;
+      canConnectChannels: boolean;
+      sendEmail: boolean;
+    }) => {
       const { url } = await (
         await fetch('/settings/team', {
           method: 'POST',
@@ -83,12 +93,25 @@ export const AddMember = () => {
           )}
           <Select label="Role" name="role">
             <option value="">{t('select_role', 'Select Role')}</option>
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.name}
+            {roles.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.name}
               </option>
             ))}
           </Select>
+          {role === 'ADMIN' && (
+            <div className="flex gap-[5px]">
+              <div>
+                <Checkbox name="canConnectChannels" />
+              </div>
+              <div>
+                {t(
+                  'allow_manager_connect_channels',
+                  'Allow this manager to connect channels'
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex gap-[5px]">
             <div>
               <Checkbox name="sendEmail" />
@@ -110,16 +133,18 @@ export const TeamsComponent = () => {
   const user = useUser();
   const modals = useModals();
   const t = useT();
-  const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
-    (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
-      role === 'USER' ? 0 : role === 'ADMIN' ? 1 : 2,
+    (role: 'USER' | 'CLIENT' | 'ADMIN' | 'SUPERADMIN') =>
+      role === 'SUPERADMIN' ? 2 : role === 'ADMIN' ? 1 : 0,
     []
+  );
+  const myLevel = getLevel(
+    (user?.role as 'USER' | 'CLIENT' | 'ADMIN' | 'SUPERADMIN') || 'USER'
   );
   const loadTeam = useCallback(async () => {
     return (await (await fetch('/settings/team')).json()).users as Array<{
       id: string;
-      role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+      role: 'SUPERADMIN' | 'ADMIN' | 'USER' | 'CLIENT';
       user: {
         email: string;
         id: string;
@@ -180,10 +205,12 @@ export const TeamsComponent = () => {
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
               <div className="flex-1">
-                {p.role === 'USER'
+                {p.role === 'CLIENT'
+                  ? t('client', 'Client')
+                  : p.role === 'USER'
                   ? t('user', 'User')
                   : p.role === 'ADMIN'
-                  ? t('admin', 'Admin')
+                  ? t('manager', 'Manager')
                   : t('super_admin', 'Super Admin')}
               </div>
               {+myLevel > +getLevel(p.role) ? (

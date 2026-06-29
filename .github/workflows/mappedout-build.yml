@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - mappedout-branding
+      - phase2
 
 jobs:
   build:
@@ -32,12 +33,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Production tag (:mappedout) is ONLY published from the mappedout-branding
+      # branch. Every other branch (e.g. phase2) publishes under its own branch
+      # name as the tag, so untested work never overwrites the live image.
+      - name: Compute image tag
+        id: meta
+        run: |
+          if [ "${{ github.ref_name }}" = "mappedout-branding" ]; then
+            echo "tag=mappedout" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push (amd64)
         run: |
           docker buildx build --platform linux/amd64 \
             -f Dockerfile.dev \
-            -t ghcr.io/${{ github.repository_owner }}/postiz-app:mappedout \
-            --build-arg NEXT_PUBLIC_VERSION=mappedout \
+            -t ghcr.io/${{ github.repository_owner }}/postiz-app:${{ steps.meta.outputs.tag }} \
+            --build-arg NEXT_PUBLIC_VERSION=${{ steps.meta.outputs.tag }} \
             --push \
             --provenance=false --sbom=false \
             .

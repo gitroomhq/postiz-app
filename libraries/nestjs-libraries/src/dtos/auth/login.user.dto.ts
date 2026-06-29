@@ -1,10 +1,4 @@
-import {
-  IsDefined,
-  IsEmail,
-  IsString,
-  MinLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsDefined, IsString, MinLength, ValidateIf } from 'class-validator';
 import { Provider } from '@prisma/client';
 
 export class LoginUserDto {
@@ -23,8 +17,10 @@ export class LoginUserDto {
   @ValidateIf((o) => !o.password)
   providerToken: string;
 
-  @IsEmail()
+  // Email OR username — login resolves either.
+  @IsString()
   @IsDefined()
+  @MinLength(3)
   email: string;
 
   datafast_visitor_id: string;

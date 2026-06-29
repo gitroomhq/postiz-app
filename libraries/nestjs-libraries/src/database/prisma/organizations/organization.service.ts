@@ -40,9 +40,16 @@ export class OrganizationService {
     userId: string,
     id: string,
     orgId: string,
-    role: 'USER' | 'ADMIN'
+    role: 'USER' | 'ADMIN' | 'CLIENT',
+    canConnectChannels?: boolean
   ) {
-    return this._organizationRepository.addUserToOrg(userId, id, orgId, role);
+    return this._organizationRepository.addUserToOrg(
+      userId,
+      id,
+      orgId,
+      role,
+      canConnectChannels
+    );
   }
 
   getOrgById(id: string) {
