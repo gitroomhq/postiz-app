@@ -25,9 +25,13 @@ export class LinkedinPageProvider
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
+  // NOTE: 'openid'/'profile' are intentionally NOT requested here. Posting to a
+  // Company Page requires LinkedIn's "Community Management API" product, which
+  // cannot coexist with "Sign In with LinkedIn using OpenID Connect" on the same
+  // app. Requesting 'openid' alongside the organization scopes makes LinkedIn
+  // reject the whole flow with `unauthorized_scope_error`. We use 'r_basicprofile'
+  // + /v2/me (instead of /v2/userinfo) to fetch the connecting admin's details.
   override scopes = [
-    'openid',
-    'profile',
     'w_member_social',
     'r_basicprofile',
     'rw_organization_admin',
@@ -59,25 +63,8 @@ export class LinkedinPageProvider
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const { id, name, picture, vanityName } =
+      await this.fetchPageProfile(accessToken);
 
     return {
       id,
@@ -88,6 +75,44 @@ export class LinkedinPageProvider
       picture,
       username: vanityName,
     };
+  }
+
+  // Fetches the connecting admin's id/name/picture/vanityName from /v2/me using
+  // only the 'r_basicprofile' scope. /v2/userinfo is intentionally avoided here
+  // because it requires 'openid', which is incompatible with the Community
+  // Management API product needed to manage a Company Page.
+  private async fetchPageProfile(accessToken: string): Promise<{
+    id: string;
+    name: string;
+    picture: string | undefined;
+    vanityName: string | undefined;
+  }> {
+    const me = await (
+      await fetch(
+        'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,vanityName,profilePicture(displayImage~:playableStreams))',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+    ).json();
+
+    const name = [me.localizedFirstName, me.localizedLastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    let picture: string | undefined;
+    const elements = me?.profilePicture?.['displayImage~']?.elements;
+    if (Array.isArray(elements) && elements.length) {
+      const identifiers = elements[elements.length - 1]?.identifiers;
+      if (Array.isArray(identifiers) && identifiers.length) {
+        picture = identifiers[0]?.identifier;
+      }
+    }
+
+    return { id: me.id, name, picture, vanityName: me.vanityName };
   }
 
   override async addComment(
@@ -123,7 +148,12 @@ export class LinkedinPageProvider
   override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${
+    // 'prompt=none' is intentionally omitted: it performs silent authorization
+    // and only returns scopes the user has already consented to. On a first-time
+    // connection (or after new scopes are added) there is no prior consent, so
+    // LinkedIn returns a token missing the org scopes and the connection fails
+    // with "Not enough scopes". Forcing the consent screen fixes that.
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
@@ -233,25 +263,8 @@ export class LinkedinPageProvider
 
     this.checkScopes(this.scopes, scope);
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const { id, name, picture, vanityName } =
+      await this.fetchPageProfile(accessToken);
 
     return {
       id: id,
