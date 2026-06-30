@@ -114,6 +114,7 @@ model User {
   sendFailureEmails     Boolean              @default(true)
   sendStreakEmails      Boolean              @default(true)
   oauthAuthorizations   OAuthAuthorization[]
+  postApprovals         PostApproval[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -433,6 +434,7 @@ model Post {
   submittedForOrderId        String?
   submittedForOrganizationId String?
   approvedSubmitForOrder     APPROVED_SUBMIT_FOR_ORDER @default(NO)
+  approvalStatus             ApprovalStatus            @default(NONE)
   creationMethod             CreationMethod            @default(UNKNOWN)
   lastMessageId              String?
   intervalInDays             Int?
@@ -441,6 +443,7 @@ model Post {
   updatedAt                  DateTime                  @updatedAt
   deletedAt                  DateTime?
   comments                   Comments[]
+  approvals                  PostApproval[]
   errors                     Errors[]
   payoutProblems             PayoutProblems[]
   integration                Integration               @relation(fields: [integrationId], references: [id])
@@ -467,6 +470,23 @@ model Post {
   @@index([updatedAt])
   @@index([releaseURL])
   @@index([integrationId])
+  @@index([approvalStatus])
+}
+
+// Mapped Out (Phase 2B): append-only client approval history for a post.
+model PostApproval {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  action    String
+  comment   String?
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([postId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Notifications {
@@ -929,6 +949,14 @@ enum State {
   PUBLISHED
   ERROR
   DRAFT
+}
+
+enum ApprovalStatus {
+  NONE
+  WAITING_APPROVAL
+  APPROVED
+  NEEDS_CHANGES
+  REJECTED
 }
 
 enum SubscriptionTier {

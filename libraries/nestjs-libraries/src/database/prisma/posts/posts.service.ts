@@ -1155,6 +1155,67 @@ export class PostsService {
     return this._postRepository.getComments(postId);
   }
 
+  // --- Mapped Out client portal / approvals (Phase 2B) ----------------------
+
+  async getClientPosts(orgId: string, allowedIntegrationIds: string[]) {
+    const posts = await this._postRepository.getClientPosts(
+      orgId,
+      allowedIntegrationIds
+    );
+    return posts.map((p) => {
+      let media: Array<{ path: string }> = [];
+      try {
+        media = JSON.parse(p.image || '[]');
+      } catch (e) {
+        media = [];
+      }
+      return {
+        id: p.id,
+        content: p.content,
+        media,
+        publishDate: p.publishDate,
+        state: p.state,
+        approvalStatus: p.approvalStatus,
+        integration: p.integration,
+      };
+    });
+  }
+
+  // Confirms a post belongs to the org and to one of the channels the user may
+  // access. Returns the post (scope-check) or null.
+  async getPostIfAllowed(
+    postId: string,
+    orgId: string,
+    scope: { all: boolean; integrationIds: string[] }
+  ) {
+    const post = await this._postRepository.getPostForScopeCheck(postId);
+    if (!post || post.organizationId !== orgId) {
+      return null;
+    }
+    if (!scope.all && !scope.integrationIds.includes(post.integrationId)) {
+      return null;
+    }
+    return post;
+  }
+
+  async setApproval(
+    orgId: string,
+    userId: string,
+    postId: string,
+    action: 'APPROVED' | 'REJECTED' | 'NEEDS_CHANGES',
+    comment?: string
+  ) {
+    await this._postRepository.setApprovalStatus(postId, action);
+    if (comment) {
+      await this._postRepository.createComment(orgId, userId, postId, comment);
+    }
+    return this._postRepository.createApproval(postId, userId, action, comment);
+  }
+
+  getApprovals(postId: string) {
+    return this._postRepository.getApprovals(postId);
+  }
+
   getTags(orgId: string) {
     return this._postRepository.getTags(orgId);
   }

@@ -30,8 +30,72 @@ export class PostsRepository {
     private _comments: PrismaRepository<'comments'>,
     private _tags: PrismaRepository<'tags'>,
     private _tagsPosts: PrismaRepository<'tagsPosts'>,
-    private _errors: PrismaRepository<'errors'>
+    private _errors: PrismaRepository<'errors'>,
+    private _postApproval: PrismaRepository<'postApproval'>
   ) {}
+
+  // --- Mapped Out client portal / approvals (Phase 2B) ----------------------
+
+  getClientPosts(orgId: string, allowedIntegrationIds: string[]) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        parentPostId: null,
+        integrationId: { in: allowedIntegrationIds },
+      },
+      orderBy: { publishDate: 'asc' },
+      select: {
+        id: true,
+        content: true,
+        image: true,
+        publishDate: true,
+        state: true,
+        approvalStatus: true,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            providerIdentifier: true,
+          },
+        },
+      },
+    });
+  }
+
+  getPostForScopeCheck(postId: string) {
+    return this._post.model.post.findUnique({
+      where: { id: postId },
+      select: { id: true, organizationId: true, integrationId: true },
+    });
+  }
+
+  setApprovalStatus(postId: string, approvalStatus: any) {
+    return this._post.model.post.update({
+      where: { id: postId },
+      data: { approvalStatus },
+    });
+  }
+
+  createApproval(
+    postId: string,
+    userId: string,
+    action: string,
+    comment?: string
+  ) {
+    return this._postApproval.model.postApproval.create({
+      data: { postId, userId, action, comment: comment || null },
+    });
+  }
+
+  getApprovals(postId: string) {
+    return this._postApproval.model.postApproval.findMany({
+      where: { postId },
+      orderBy: { createdAt: 'asc' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  }
 
   searchForMissingThreeHoursPosts() {
     return this._post.model.post.findMany({
@@ -811,6 +875,9 @@ export class PostsRepository {
       },
       orderBy: {
         createdAt: 'asc',
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
       },
     });
   }

@@ -222,6 +222,12 @@ export class IntegrationService {
     );
   }
 
+  async getAllIntegrationIds(orgId: string) {
+    return (await this._integrationRepository.getIntegrationsMini(orgId)).map(
+      (i) => i.id
+    );
+  }
+
   // The raw channels/clients explicitly assigned to a member (for the edit UI).
   async getRawAssignments(userId: string, orgId: string) {
     const userOrg = await this._integrationRepository.getUserOrgWithAssignments(

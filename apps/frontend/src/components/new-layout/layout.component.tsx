@@ -42,7 +42,7 @@ import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-c
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
-import { ClientWorkspacePlaceholder } from '@gitroom/frontend/components/new-layout/client.workspace.placeholder';
+import { ClientPortal } from '@gitroom/frontend/components/new-layout/client.portal';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -70,14 +70,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   if (!user) return null;
 
-  // Clients don't get the manager UI. Their dedicated workspace ships in 2B;
-  // until then they see a branded placeholder. (Backend already locks them down.)
+  // Clients get the dedicated Client Portal (review/approve/comment), scoped to
+  // their assigned channels — never the manager UI. (Backend also locks them down.)
   if (user.role === 'CLIENT' && !user.admin) {
     return (
       <ContextWrapper user={user}>
         <MantineWrapper>
           <Toaster />
-          <ClientWorkspacePlaceholder />
+          <ClientPortal />
         </MantineWrapper>
       </ContextWrapper>
     );
