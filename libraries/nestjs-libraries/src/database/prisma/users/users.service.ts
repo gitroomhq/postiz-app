@@ -16,6 +16,34 @@ export class UsersService {
     return this._usersRepository.getUserByEmail(email);
   }
 
+  getUserByEmailOrUsername(identifier: string) {
+    return this._usersRepository.getUserByEmailOrUsername(identifier);
+  }
+
+  getUserByUsername(username: string) {
+    return this._usersRepository.getUserByUsername(username);
+  }
+
+  createUserForInvite(
+    body: {
+      email: string;
+      password?: string;
+      provider: Provider;
+      providerId?: string;
+      username?: string;
+    },
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
+  ) {
+    return this._usersRepository.createUserForInvite(
+      body,
+      hasEmail,
+      ip,
+      userAgent
+    );
+  }
+
   getUserById(id: string) {
     return this._usersRepository.getUserById(id);
   }

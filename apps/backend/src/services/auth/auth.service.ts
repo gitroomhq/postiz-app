@@ -37,7 +37,14 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?:
+      | boolean
+      | {
+          orgId: string;
+          role: 'USER' | 'ADMIN' | 'CLIENT';
+          id: string;
+          canConnectChannels?: boolean;
+        }
   ) {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
@@ -46,33 +53,66 @@ export class AuthService {
       if (body instanceof CreateOrgUserDto) {
         body.email = body.email.toLowerCase();
       }
-      const user = await this._userService.getUserByEmail(body.email);
+      // Login accepts either the email or the chosen username; registration
+      // always uses a real email.
+      const user =
+        body instanceof CreateOrgUserDto
+          ? await this._userService.getUserByEmail(body.email)
+          : await this._userService.getUserByEmailOrUsername(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
           throw new Error('Email already exists');
         }
 
-        if (!(await this.canRegister(provider))) {
+        const isInvite = !!addToOrg && typeof addToOrg !== 'boolean';
+
+        // Invite-only model: registration is allowed when it carries a valid,
+        // signed, single-use invite token — even if public registration is
+        // disabled. Without an invite, the normal canRegister gate applies, so
+        // there is never a public signup.
+        if (!isInvite && !(await this.canRegister(provider))) {
           throw new Error('Registration is disabled');
         }
 
-        const create = await this._organizationService.createOrgAndUser(
-          body,
-          ip,
-          userAgent
-        );
+        if (body.username) {
+          const existingUsername = await this._userService.getUserByUsername(
+            body.username
+          );
+          if (existingUsername) {
+            throw new Error('Username already taken');
+          }
+        }
+
+        // Invite-only model: invited managers/clients do NOT get a personal
+        // workspace — they join only the workspace they were invited to. Only
+        // the very first (non-invited) admin signup creates its own workspace.
+        const createdUser = isInvite
+          ? await this._userService.createUserForInvite(
+              body,
+              this._emailService.hasProvider(),
+              ip,
+              userAgent
+            )
+          : (
+              await this._organizationService.createOrgAndUser(
+                body,
+                ip,
+                userAgent
+              )
+            ).users[0].user;
 
         const addedOrg =
-          addToOrg && typeof addToOrg !== 'boolean'
+          isInvite && typeof addToOrg !== 'boolean'
             ? await this._organizationService.addUserToOrg(
-                create.users[0].user.id,
+                createdUser.id,
                 addToOrg.id,
                 addToOrg.orgId,
-                addToOrg.role
+                addToOrg.role,
+                addToOrg.canConnectChannels
               )
             : false;
 
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        const obj = { addedOrg, jwt: await this.jwt(createdUser) };
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
@@ -125,9 +165,10 @@ export class AuthService {
 
       return getOrg as {
         email: string;
-        role: 'USER' | 'ADMIN';
+        role: 'USER' | 'ADMIN' | 'CLIENT';
         orgId: string;
         id: string;
+        canConnectChannels?: boolean;
       };
     } catch (err) {
       return false;

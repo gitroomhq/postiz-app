@@ -18,6 +18,7 @@ import { Response, Request } from 'express';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { ClientAllowed } from '@gitroom/backend/services/auth/permissions/roles.guard';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
@@ -96,6 +97,7 @@ export class UsersController {
   }
 
   @Get('/self')
+  @ClientAllowed()
   async getSelf(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization,
@@ -140,6 +142,7 @@ export class UsersController {
   }
 
   @Get('/personal')
+  @ClientAllowed()
   async getPersonalInformation(@GetUserFromRequest() user: User) {
     return this._userService.getPersonal(user.id);
   }
@@ -184,6 +187,7 @@ export class UsersController {
   }
 
   @Post('/personal')
+  @ClientAllowed()
   async changePersonal(
     @GetUserFromRequest() user: User,
     @Body() body: UserDetailDto
@@ -192,11 +196,13 @@ export class UsersController {
   }
 
   @Get('/email-notifications')
+  @ClientAllowed()
   async getEmailNotifications(@GetUserFromRequest() user: User) {
     return this._userService.getEmailNotifications(user.id);
   }
 
   @Post('/email-notifications')
+  @ClientAllowed()
   async updateEmailNotifications(
     @GetUserFromRequest() user: User,
     @Body() body: EmailNotificationsDto
@@ -243,7 +249,8 @@ export class UsersController {
       user.id,
       getOrgFromCookie.id,
       getOrgFromCookie.orgId,
-      getOrgFromCookie.role
+      getOrgFromCookie.role,
+      getOrgFromCookie.canConnectChannels
     );
 
     response.status(200).json({
@@ -252,6 +259,7 @@ export class UsersController {
   }
 
   @Get('/organizations')
+  @ClientAllowed()
   async getOrgs(@GetUserFromRequest() user: User) {
     return (await this._orgService.getOrgsByUserId(user.id)).filter(
       (f) => !f.users[0].disabled
@@ -259,6 +267,7 @@ export class UsersController {
   }
 
   @Post('/change-org')
+  @ClientAllowed()
   changeOrg(
     @Body('id') id: string,
     @Res({ passthrough: true }) response: Response
@@ -283,6 +292,7 @@ export class UsersController {
   }
 
   @Post('/logout')
+  @ClientAllowed()
   logout(@Res({ passthrough: true }) response: Response) {
     response.header('logout', 'true');
     response.cookie('auth', '', {
@@ -328,6 +338,7 @@ export class UsersController {
   }
 
   @Post('/t')
+  @ClientAllowed()
   async trackEvent(
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,

@@ -33,11 +33,12 @@ const WalletProvider = dynamic(
 type Inputs = {
   email: string;
   password: string;
+  username: string;
   company: string;
   providerToken: string;
   provider: string;
 };
-export function Register() {
+export function Register({ hasInvite = false }: { hasInvite?: boolean }) {
   const getQuery = useSearchParams();
   const fetch = useFetch();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
@@ -63,13 +64,17 @@ export function Register() {
     }
   }, [provider, code]);
   if (!code && !provider) {
-    return <RegisterAfter token="" provider="LOCAL" />;
+    return <RegisterAfter token="" provider="LOCAL" hasInvite={hasInvite} />;
   }
   if (!show) {
     return <LoadingComponent />;
   }
   return (
-    <RegisterAfter token={code} provider={provider?.toUpperCase() || 'LOCAL'} />
+    <RegisterAfter
+      token={code}
+      provider={provider?.toUpperCase() || 'LOCAL'}
+      hasInvite={hasInvite}
+    />
   );
 }
 function getHelpfulReasonForRegistrationFailure(httpCode: number) {
@@ -84,9 +89,11 @@ function getHelpfulReasonForRegistrationFailure(httpCode: number) {
 export function RegisterAfter({
   token,
   provider,
+  hasInvite = false,
 }: {
   token: string;
   provider: string;
+  hasInvite?: boolean;
 }) {
   const t = useT();
   const { isGeneral, genericOauth, neynarClientId, billingEnabled } =
@@ -96,6 +103,10 @@ export function RegisterAfter({
   const fireEvents = useFireEvents();
   const track = useTrack();
   const [datafast_visitor_id] = useCookie('datafast_visitor_id');
+  // Invited users (accepting an /?org= invite link) join only their assigned
+  // workspace, so they don't provide a company name. The invite cookie is
+  // httpOnly, so this is detected server-side and passed in as a prop.
+  const isInvite = hasInvite;
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
   }, [token, provider]);
@@ -194,6 +205,14 @@ export function RegisterAfter({
                       placeholder={t('email_address', 'Email Address')}
                     />
                     <Input
+                      label="Username"
+                      translationKey="label_username"
+                      {...form.register('username')}
+                      autoComplete="off"
+                      type="text"
+                      placeholder={t('choose_a_username', 'Choose a username')}
+                    />
+                    <Input
                       label="Password"
                       translationKey="label_password"
                       {...form.register('password')}
@@ -203,14 +222,16 @@ export function RegisterAfter({
                     />
                   </>
                 )}
-                <Input
-                  label="Company"
-                  translationKey="label_company"
-                  {...form.register('company')}
-                  autoComplete="off"
-                  type="text"
-                  placeholder={t('label_company', 'Company')}
-                />
+                {!isInvite && (
+                  <Input
+                    label="Company"
+                    translationKey="label_company"
+                    {...form.register('company')}
+                    autoComplete="off"
+                    type="text"
+                    placeholder={t('label_company', 'Company')}
+                  />
+                )}
               </div>
               <div className={clsx('text-[12px]')}>
                 {t(

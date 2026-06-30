@@ -95,11 +95,14 @@ export function Login() {
             <div className="flex flex-col gap-[12px]">
               <div className="text-textColor">
                 <Input
-                  label="Email"
-                  translationKey="label_email"
+                  label="Email or Username"
+                  translationKey="label_email_or_username"
                   {...form.register('email')}
-                  type="email"
-                  placeholder={t('email_address', 'Email Address')}
+                  type="text"
+                  placeholder={t(
+                    'email_or_username',
+                    'Email or Username'
+                  )}
                 />
                 <Input
                   label="Password"
@@ -136,12 +139,6 @@ export function Login() {
                     {t('sign_in_1', 'Sign in')}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
-                  {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="underline cursor-pointer">
-                    {t('sign_up', 'Sign Up')}
-                  </Link>
-                </p>
                 <p className="mt-4 text-sm">
                   <Link
                     href="/auth/forgot"

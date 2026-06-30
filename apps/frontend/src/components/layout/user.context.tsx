@@ -12,7 +12,7 @@ export const UserContext = createContext<
       orgId: string;
       tier: PricingInnerInterface;
       publicApi: string;
-      role: 'USER' | 'ADMIN' | 'SUPERADMIN';
+      role: 'USER' | 'ADMIN' | 'SUPERADMIN' | 'CLIENT';
       totalChannels: number;
       isLifetime?: boolean;
       impersonate: boolean;
