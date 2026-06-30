@@ -11,6 +11,7 @@ interface AnalyticsDataItem {
   data: Array<{ total: number; date: string }>;
   average?: boolean;
   percentageChange?: number;
+  available?: boolean;
 }
 
 const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
@@ -57,6 +58,27 @@ const AnalyticsCard: FC<{
   const color = colorVariants[index % colorVariants.length];
 
   const hasDataPoints = item.data.length >= 1;
+  const notAvailable = item.available === false;
+
+  if (notAvailable) {
+    return (
+      <div className="group relative">
+        <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden">
+          <div className="flex items-center gap-[10px] px-[16px] pt-[14px] pb-[8px]">
+            <div className="w-[8px] h-[8px] rounded-full bg-newTableBorder" />
+            <span className="text-[15px] font-medium text-newTableText">
+              {item.label}
+            </span>
+          </div>
+          <div className="flex-1 flex items-center justify-center text-center py-[28px] px-[16px]">
+            <span className="text-[13px] opacity-60">
+              Not available from platform API
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group relative">

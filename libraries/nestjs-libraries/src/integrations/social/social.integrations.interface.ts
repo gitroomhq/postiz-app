@@ -53,7 +53,10 @@ export interface IAuthenticator {
 export interface AnalyticsData {
   label: string;
   data: Array<{ total: string; date: string }>;
-  percentageChange: number;
+  percentageChange?: number;
+  // Mapped Out: when false, the platform API did not return this metric, so the
+  // UI shows "Not available from platform API" instead of a fabricated value.
+  available?: boolean;
 }
 
 
