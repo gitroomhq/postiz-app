@@ -26,6 +26,7 @@ import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector
 import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
+import { InvitationMessage } from '@gitroom/frontend/components/layout/invitation.message';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
 import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
@@ -80,6 +81,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
           <ToolTip />
           <Toaster />
           <TrialTracker />
+          <InvitationMessage />
           <CheckPayment check={searchParams.get('check') || ''} mutate={mutate}>
             <ShowMediaBoxModal />
             <ShowLinkedinCompany />
