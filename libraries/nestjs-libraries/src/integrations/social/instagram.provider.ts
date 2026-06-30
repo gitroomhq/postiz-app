@@ -5,10 +5,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import {
-  computePercentageChange,
-  notAvailable,
-} from '@gitroom/nestjs-libraries/integrations/social/analytics.utils';
+import { computePercentageChange } from '@gitroom/nestjs-libraries/integrations/social/analytics.utils';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
@@ -944,114 +941,69 @@ export class InstagramProvider
     const since = dayjs().subtract(date, 'day').unix();
 
     const analytics: any[] = [];
-    const present = new Set<string>();
-
-    // 1) Daily time series — follower_count + reach (real trend computed).
-    try {
-      const { data } = await (
-        await fetch(
-          `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-        )
-      ).json();
-      for (const d of data || []) {
-        const series = (d.values || []).map((v: any) => ({
-          total: v.value,
-          date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        }));
-        analytics.push({
-          label: this.setTitle(d.name),
-          percentageChange: computePercentageChange(
-            series.map((s: any) => Number(s.total) || 0)
-          ),
-          data: series,
-        });
-        present.add(d.name);
+    const safeJson = async (url: string) => {
+      try {
+        return await (await fetch(url)).json();
+      } catch (e) {
+        return {};
       }
-    } catch (e) {
-      // metric group not available for this account — skip, do not fabricate
+    };
+
+    // All metric groups are fetched in PARALLEL so the analytics page stays fast
+    // even when some metrics aren't supported for this account. Only metrics the
+    // platform actually returns are shown — nothing is fabricated, and missing
+    // metrics are simply omitted (no "not available" noise).
+    const [series, engagement, overview, followers] = await Promise.all([
+      safeJson(
+        `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      ),
+      safeJson(
+        `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      ),
+      safeJson(
+        `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=profile_views,website_clicks,accounts_engaged,total_interactions&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+      ),
+      safeJson(
+        `https://${type}/v21.0/${id}?fields=followers_count&access_token=${accessToken}`
+      ),
+    ]);
+
+    // 1) Daily time series — real % change computed from the data.
+    for (const d of series?.data || []) {
+      const points = (d.values || []).map((v: any) => ({
+        total: v.value,
+        date: dayjs(v.end_time).format('YYYY-MM-DD'),
+      }));
+      analytics.push({
+        label: this.setTitle(d.name),
+        percentageChange: computePercentageChange(
+          points.map((s: any) => Number(s.total) || 0)
+        ),
+        data: points,
+      });
     }
 
-    // 2) Aggregate engagement totals for the period.
-    try {
-      const { data: data2 } = await (
-        await fetch(
-          `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-        )
-      ).json();
-      for (const d of data2 || []) {
-        if (d?.total_value?.value === undefined) {
-          continue;
-        }
-        analytics.push({
-          label: this.setTitle(d.name),
-          percentageChange: 0,
-          data: [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }],
-        });
-        present.add(d.name);
+    // 2) + 3) Aggregate totals (engagement + overview), only where returned.
+    for (const d of [...(engagement?.data || []), ...(overview?.data || [])]) {
+      if (d?.total_value?.value === undefined) {
+        continue;
       }
-    } catch (e) {
-      // skip
+      analytics.push({
+        label: this.setTitle(d.name),
+        percentageChange: 0,
+        data: [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }],
+      });
     }
 
-    // 3) Extra overview metrics (only some account types/permissions return these).
-    try {
-      const { data: data3 } = await (
-        await fetch(
-          `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=profile_views,website_clicks,accounts_engaged,total_interactions,impressions&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-        )
-      ).json();
-      for (const d of data3 || []) {
-        if (d?.total_value?.value === undefined) {
-          continue;
-        }
-        analytics.push({
-          label: this.setTitle(d.name),
-          percentageChange: 0,
-          data: [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }],
-        });
-        present.add(d.name);
-      }
-    } catch (e) {
-      // skip
-    }
-
-    // 4) Current follower total.
-    try {
-      const followers = await (
-        await fetch(
-          `https://${type}/v21.0/${id}?fields=followers_count&access_token=${accessToken}`
-        )
-      ).json();
-      if (followers?.followers_count !== undefined) {
-        analytics.push({
-          label: 'Followers',
-          percentageChange: 0,
-          data: [
-            {
-              total: followers.followers_count,
-              date: dayjs().format('YYYY-MM-DD'),
-            },
-          ],
-        });
-        present.add('followers_count');
-      }
-    } catch (e) {
-      // skip
-    }
-
-    // 5) Expected overview metrics the API didn't return -> "Not available".
-    const expected: Array<[string, string]> = [
-      ['followers_count', 'Followers'],
-      ['reach', 'Reach'],
-      ['impressions', 'Impressions'],
-      ['profile_views', 'Profile Visits'],
-      ['accounts_engaged', 'Accounts Engaged'],
-      ['website_clicks', 'Website Clicks'],
-    ];
-    for (const [metric, label] of expected) {
-      if (!present.has(metric)) {
-        analytics.push(notAvailable(label));
-      }
+    // 4) Current follower total, when available.
+    if (followers?.followers_count !== undefined) {
+      analytics.push({
+        label: 'Followers',
+        percentageChange: 0,
+        data: [
+          { total: followers.followers_count, date: dayjs().format('YYYY-MM-DD') },
+        ],
+      });
     }
 
     return analytics;
