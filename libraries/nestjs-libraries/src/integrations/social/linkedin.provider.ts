@@ -627,9 +627,16 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
+    // Always downscale to stay under LinkedIn's 36,152,320-pixel cap: fit within
+    // a 6000x6000 box (max 36,000,000 px for any aspect ratio) while preserving
+    // the aspect ratio and never enlarging smaller images (downscale-only).
+    // NOTE: this guard is required for self-hosted instances running with
+    // DISABLE_IMAGE_COMPRESSION=true, where the frontend no longer shrinks
+    // uploads and full-size images reach LinkedIn directly. Do not remove it on
+    // the assumption that the frontend compression already caps dimensions.
     return await sharp(await readOrFetch(mediaUrl), { animated: false })
+      .resize({ width: 6000, height: 6000, fit: 'inside', withoutEnlargement: true })
       .toFormat('jpeg')
-      .resize({ width: 1000 })
       .toBuffer();
   }
 
