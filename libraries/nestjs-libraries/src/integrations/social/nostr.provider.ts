@@ -8,6 +8,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { decode as nip19Decode } from 'nostr-tools/nip19';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -35,7 +36,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   scopes = [] as string[];
   editor = 'normal' as const;
   toolTip =
-    'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to';
+    'Enter your Nostr private key in HEX format (64 hex chars) or nsec format (nsec1...). You can export it from apps like iris.to or Damus.';
 
   maxLength() {
     return 100000;
@@ -139,9 +140,18 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     try {
       const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
+      let privateKeyHex: string = body.password.trim();
+      // Support both nsec (bech32) and hex private keys
+      if (privateKeyHex.startsWith('nsec1')) {
+        const decoded = nip19Decode(privateKeyHex);
+        if (decoded.type === 'nsec') {
+          privateKeyHex = Buffer.from(decoded.data as Uint8Array).toString('hex');
+        }
+      }
+
       const pubkey = getPublicKey(
         Uint8Array.from(
-          body.password.match(/.{1,2}/g).map((byte: any) => parseInt(byte, 16))
+          privateKeyHex.match(/.{1,2}/g)!.map((byte: any) => parseInt(byte, 16))
         )
       );
 
@@ -150,7 +160,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       return {
         id: pubkey,
         name: user.display_name || user.displayName || user.name || 'No Name',
-        accessToken: AuthService.signJWT({ password: body.password }),
+        accessToken: AuthService.signJWT({ password: privateKeyHex }),
         refreshToken: '',
         expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
         picture: user?.picture || '',
