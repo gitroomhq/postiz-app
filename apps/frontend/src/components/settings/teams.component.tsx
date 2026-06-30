@@ -3,7 +3,7 @@
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -28,6 +28,121 @@ const roles = [
     value: 'CLIENT',
   },
 ];
+// Mapped Out (Phase 2B): pick which clients and/or channels a member can access.
+// Options are scoped on the backend to what the inviter can see.
+export const AssignmentSelector = (props: {
+  integrationIds: string[];
+  customerIds: string[];
+  onChange: (v: { integrationIds: string[]; customerIds: string[] }) => void;
+}) => {
+  const fetch = useFetch();
+  const t = useT();
+  const { integrationIds, customerIds, onChange } = props;
+
+  const { data: channels } = useSWR('assign-channels', async () => {
+    return (
+      (await (await fetch('/integrations/list')).json()).integrations || []
+    ) as Array<{
+      id: string;
+      name: string;
+      picture: string;
+      customer?: { id: string; name: string } | null;
+    }>;
+  });
+  const { data: clients } = useSWR('assign-clients', async () => {
+    return (await (await fetch('/integrations/customers')).json()) as Array<{
+      id: string;
+      name: string;
+    }>;
+  });
+
+  const toggle = useCallback(
+    (key: 'integrationIds' | 'customerIds', id: string) => {
+      const current = key === 'integrationIds' ? integrationIds : customerIds;
+      const next = current.includes(id)
+        ? current.filter((x) => x !== id)
+        : [...current, id];
+      onChange({
+        integrationIds,
+        customerIds,
+        [key]: next,
+      });
+    },
+    [integrationIds, customerIds, onChange]
+  );
+
+  return (
+    <div className="flex flex-col gap-[12px] border border-fifth rounded-[8px] p-[12px]">
+      <div className="text-[14px] font-[600]">
+        {t('what_can_they_access', 'What can they access?')}
+      </div>
+      <div className="text-[12px] text-customColor18">
+        {t(
+          'assignment_help',
+          'Pick whole clients and/or individual channels. Leave empty to grant no access.'
+        )}
+      </div>
+
+      {!!(clients && clients.length) && (
+        <div className="flex flex-col gap-[6px]">
+          <div className="text-[12px] uppercase opacity-70">
+            {t('clients', 'Clients')}
+          </div>
+          {clients.map((c) => (
+            <label
+              key={c.id}
+              className="flex items-center gap-[8px] cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={customerIds.includes(c.id)}
+                onChange={() => toggle('customerIds', c.id)}
+              />
+              <span>{c.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-[6px]">
+        <div className="text-[12px] uppercase opacity-70">
+          {t('channels', 'Channels')}
+        </div>
+        {(channels || []).map((ch) => (
+          <label
+            key={ch.id}
+            className="flex items-center gap-[8px] cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={integrationIds.includes(ch.id)}
+              onChange={() => toggle('integrationIds', ch.id)}
+            />
+            {ch.picture && (
+              <img
+                src={ch.picture}
+                alt={ch.name}
+                className="w-[20px] h-[20px] rounded-full"
+              />
+            )}
+            <span>{ch.name}</span>
+            {ch.customer?.name && (
+              <span className="text-[11px] opacity-60">
+                ({ch.customer.name})
+              </span>
+            )}
+          </label>
+        ))}
+        {!channels?.length && (
+          <div className="text-[12px] opacity-60">
+            {t('no_channels_yet', 'No channels connected yet.')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const AddMember = () => {
   const modals = useModals();
   const fetch = useFetch();
@@ -40,6 +155,8 @@ export const AddMember = () => {
       email: '',
       role: '',
       canConnectChannels: false,
+      integrationIds: [] as string[],
+      customerIds: [] as string[],
       sendEmail: true,
     },
     resolver,
@@ -53,11 +170,21 @@ export const AddMember = () => {
     control: form.control,
     name: 'role',
   });
+  const integrationIds = useWatch({
+    control: form.control,
+    name: 'integrationIds',
+  });
+  const customerIds = useWatch({
+    control: form.control,
+    name: 'customerIds',
+  });
   const submit = useCallback(
     async (values: {
       email: string;
       role: string;
       canConnectChannels: boolean;
+      integrationIds: string[];
+      customerIds: string[];
       sendEmail: boolean;
     }) => {
       const { url } = await (
@@ -112,6 +239,16 @@ export const AddMember = () => {
               </div>
             </div>
           )}
+          {!!role && (
+            <AssignmentSelector
+              integrationIds={integrationIds}
+              customerIds={customerIds}
+              onChange={(v) => {
+                form.setValue('integrationIds', v.integrationIds);
+                form.setValue('customerIds', v.customerIds);
+              }}
+            />
+          )}
           <div className="flex gap-[5px]">
             <div>
               <Checkbox name="sendEmail" />
@@ -128,6 +265,51 @@ export const AddMember = () => {
     </FormProvider>
   );
 };
+// Mapped Out (Phase 2B): edit which channels/clients an existing member sees.
+export const EditAssignments = ({ userId }: { userId: string }) => {
+  const fetch = useFetch();
+  const modals = useModals();
+  const toast = useToaster();
+  const t = useT();
+  const [integrationIds, setIntegrationIds] = useState<string[]>([]);
+  const [customerIds, setCustomerIds] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const data = await (
+        await fetch(`/settings/team/${userId}/assignments`)
+      ).json();
+      setIntegrationIds(data.integrationIds || []);
+      setCustomerIds(data.customerIds || []);
+      setLoaded(true);
+    })();
+  }, [userId]);
+  const save = useCallback(async () => {
+    await fetch(`/settings/team/${userId}/assignments`, {
+      method: 'POST',
+      body: JSON.stringify({ integrationIds, customerIds }),
+    });
+    modals.closeAll();
+    toast.show(t('access_updated', 'Access updated'));
+  }, [userId, integrationIds, customerIds]);
+  if (!loaded) {
+    return <div className="p-[16px]">{t('loading', 'Loading...')}</div>;
+  }
+  return (
+    <div className="p-[16px] flex flex-col gap-[12px]">
+      <AssignmentSelector
+        integrationIds={integrationIds}
+        customerIds={customerIds}
+        onChange={(v) => {
+          setIntegrationIds(v.integrationIds);
+          setCustomerIds(v.customerIds);
+        }}
+      />
+      <Button onClick={save}>{t('save', 'Save')}</Button>
+    </div>
+  );
+};
+
 export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -161,6 +343,19 @@ export const TeamsComponent = () => {
       children: <AddMember />,
     });
   }, [t]);
+  const editAccess = useCallback(
+    (userId: string) => () => {
+      modals.openModal({
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        title: t('edit_access', 'Edit access'),
+        withCloseButton: true,
+        children: <EditAssignments userId={userId} />,
+      });
+    },
+    [t]
+  );
   const { data, mutate } = useSWR('/api/teams', loadTeam, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -214,7 +409,18 @@ export const TeamsComponent = () => {
                   : t('super_admin', 'Super Admin')}
               </div>
               {+myLevel > +getLevel(p.role) ? (
-                <div className="flex-1 flex justify-end">
+                <div className="flex-1 flex justify-end gap-[8px]">
+                  {(p.role === 'ADMIN' || p.role === 'CLIENT') && (
+                    <Button
+                      className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
+                      onClick={editAccess(p.user.id)}
+                      secondary={true}
+                    >
+                      <div className="flex justify-center items-center px-[4px]">
+                        {t('edit_access', 'Edit access')}
+                      </div>
+                    </Button>
+                  )}
                   <Button
                     className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
                     onClick={remove(p)}

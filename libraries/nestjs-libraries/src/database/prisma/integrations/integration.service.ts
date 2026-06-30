@@ -148,6 +148,140 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org);
   }
 
+  // --- Mapped Out channel/client scoping (Phase 2B) -------------------------
+  // Returns which channels/clients a user may see in a workspace.
+  // { all: true } => Super Admin / workspace owner: everything.
+  // Otherwise integrationIds/customerIds are the explicit allow-list.
+  async getScope(
+    user: { id: string; isSuperAdmin?: boolean },
+    orgId: string
+  ): Promise<{ all: boolean; integrationIds: string[]; customerIds: string[] }> {
+    if (user?.isSuperAdmin) {
+      return { all: true, integrationIds: [], customerIds: [] };
+    }
+    const userOrg = await this._integrationRepository.getUserOrgWithAssignments(
+      user.id,
+      orgId
+    );
+    if (!userOrg) {
+      return { all: false, integrationIds: [], customerIds: [] };
+    }
+    // The workspace owner (org-level SUPERADMIN) sees everything.
+    if (userOrg.role === 'SUPERADMIN') {
+      return { all: true, integrationIds: [], customerIds: [] };
+    }
+
+    const assignedCustomerIds = Array.from(
+      new Set(
+        userOrg.assignments
+          .filter((a) => a.customerId)
+          .map((a) => a.customerId as string)
+      )
+    );
+    const assignedIntegrationIds = new Set(
+      userOrg.assignments
+        .filter((a) => a.integrationId)
+        .map((a) => a.integrationId as string)
+    );
+    const assignedCustomerSet = new Set(assignedCustomerIds);
+
+    const allIntegrations =
+      await this._integrationRepository.getIntegrationsMini(orgId);
+
+    const integrationIds: string[] = [];
+    const customerIds = new Set<string>(assignedCustomerIds);
+    for (const integration of allIntegrations) {
+      const byChannel = assignedIntegrationIds.has(integration.id);
+      const byCustomer =
+        !!integration.customerId &&
+        assignedCustomerSet.has(integration.customerId);
+      if (byChannel || byCustomer) {
+        integrationIds.push(integration.id);
+        if (byChannel && integration.customerId) {
+          customerIds.add(integration.customerId);
+        }
+      }
+    }
+
+    return {
+      all: false,
+      integrationIds,
+      customerIds: Array.from(customerIds),
+    };
+  }
+
+  setAssignmentsByUserOrg(
+    userOrganizationId: string,
+    integrationIds: string[],
+    customerIds: string[]
+  ) {
+    return this._integrationRepository.setAssignmentsByUserOrg(
+      userOrganizationId,
+      integrationIds,
+      customerIds
+    );
+  }
+
+  // The raw channels/clients explicitly assigned to a member (for the edit UI).
+  async getRawAssignments(userId: string, orgId: string) {
+    const userOrg = await this._integrationRepository.getUserOrgWithAssignments(
+      userId,
+      orgId
+    );
+    if (!userOrg) {
+      return { integrationIds: [], customerIds: [] };
+    }
+    return {
+      integrationIds: userOrg.assignments
+        .filter((a) => a.integrationId)
+        .map((a) => a.integrationId as string),
+      customerIds: userOrg.assignments
+        .filter((a) => a.customerId)
+        .map((a) => a.customerId as string),
+    };
+  }
+
+  // Restrict requested assignments to what the acting user is allowed to see,
+  // so a Manager can never grant access to channels/clients outside their scope.
+  async filterAssignmentsToScope(
+    user: { id: string; isSuperAdmin?: boolean },
+    orgId: string,
+    integrationIds: string[] = [],
+    customerIds: string[] = []
+  ) {
+    const scope = await this.getScope(user, orgId);
+    if (scope.all) {
+      return { integrationIds, customerIds };
+    }
+    const allowedInt = new Set(scope.integrationIds);
+    const allowedCust = new Set(scope.customerIds);
+    return {
+      integrationIds: integrationIds.filter((id) => allowedInt.has(id)),
+      customerIds: customerIds.filter((id) => allowedCust.has(id)),
+    };
+  }
+
+  async setAssignmentsForUser(
+    userId: string,
+    orgId: string,
+    integrationIds: string[],
+    customerIds: string[]
+  ) {
+    const userOrg = await this._integrationRepository.getUserOrgWithAssignments(
+      userId,
+      orgId
+    );
+    if (!userOrg) {
+      return false;
+    }
+    await this._integrationRepository.setAssignmentsByUserOrg(
+      userOrg.id,
+      integrationIds,
+      customerIds
+    );
+    return true;
+  }
+
   getIntegrationForOrder(id: string, order: string, user: string, org: string) {
     return this._integrationRepository.getIntegrationForOrder(
       id,

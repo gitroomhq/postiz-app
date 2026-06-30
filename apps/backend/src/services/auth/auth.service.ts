@@ -44,6 +44,8 @@ export class AuthService {
           role: 'USER' | 'ADMIN' | 'CLIENT';
           id: string;
           canConnectChannels?: boolean;
+          integrationIds?: string[];
+          customerIds?: string[];
         }
   ) {
     if (provider === Provider.LOCAL) {
@@ -108,7 +110,9 @@ export class AuthService {
                 addToOrg.id,
                 addToOrg.orgId,
                 addToOrg.role,
-                addToOrg.canConnectChannels
+                addToOrg.canConnectChannels,
+                addToOrg.integrationIds,
+                addToOrg.customerIds
               )
             : false;
 
@@ -169,6 +173,8 @@ export class AuthService {
         orgId: string;
         id: string;
         canConnectChannels?: boolean;
+        integrationIds?: string[];
+        customerIds?: string[];
       };
     } catch (err) {
       return false;

@@ -10,7 +10,8 @@ export class OrganizationRepository {
   constructor(
     private _organization: PrismaRepository<'organization'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
-    private _user: PrismaRepository<'user'>
+    private _user: PrismaRepository<'user'>,
+    private _userAssignment: PrismaRepository<'userAssignment'>
   ) {}
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
@@ -210,7 +211,9 @@ export class OrganizationRepository {
     id: string,
     orgId: string,
     role: 'USER' | 'ADMIN' | 'CLIENT',
-    canConnectChannels?: boolean
+    canConnectChannels?: boolean,
+    integrationIds?: string[],
+    customerIds?: string[]
   ) {
     const checkIfInviteExists = await this._user.model.user.findFirst({
       where: {
@@ -248,6 +251,23 @@ export class OrganizationRepository {
         organizationId: orgId,
       },
     });
+
+    // Mapped Out (Phase 2B): apply the channel/client access chosen at invite.
+    const assignmentData = [
+      ...(integrationIds || []).map((integrationId) => ({
+        userOrganizationId: create.id,
+        integrationId,
+      })),
+      ...(customerIds || []).map((customerId) => ({
+        userOrganizationId: create.id,
+        customerId,
+      })),
+    ];
+    if (assignmentData.length) {
+      await this._userAssignment.model.userAssignment.createMany({
+        data: assignmentData,
+      });
+    }
 
     await this._user.model.user.update({
       where: {

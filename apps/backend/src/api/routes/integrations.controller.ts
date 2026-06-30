@@ -59,8 +59,17 @@ export class IntegrationsController {
   }
 
   @Get('/customers')
-  getCustomers(@GetOrgFromRequest() org: Organization) {
-    return this._integrationService.customers(org.id);
+  async getCustomers(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User
+  ) {
+    const customers = await this._integrationService.customers(org.id);
+    const scope = await this._integrationService.getScope(user, org.id);
+    if (scope.all) {
+      return customers;
+    }
+    const allowed = new Set(scope.customerIds);
+    return customers.filter((c) => allowed.has(c.id));
   }
 
   @Put('/:id/group')
@@ -86,12 +95,21 @@ export class IntegrationsController {
   }
 
   @Get('/list')
-  async getIntegrationList(@GetOrgFromRequest() org: Organization) {
+  async getIntegrationList(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User
+  ) {
+    const scope = await this._integrationService.getScope(user, org.id);
+    let integrationsList = await this._integrationService.getIntegrationsList(
+      org.id
+    );
+    if (!scope.all) {
+      const allowed = new Set(scope.integrationIds);
+      integrationsList = integrationsList.filter((p) => allowed.has(p.id));
+    }
     return {
       integrations: await Promise.all(
-        (
-          await this._integrationService.getIntegrationsList(org.id)
-        ).map(async (p) => {
+        integrationsList.map(async (p) => {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );

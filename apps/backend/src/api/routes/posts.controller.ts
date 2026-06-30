@@ -11,6 +11,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
@@ -36,7 +37,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _integrationService: IntegrationService
   ) {}
 
   @Get('/:id/statistics')
@@ -112,9 +114,15 @@ export class PostsController {
   @Get('/')
   async getPosts(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Query() query: GetPostsDto
   ) {
-    return this._postsService.getPostsMinified(org.id, query);
+    const scope = await this._integrationService.getScope(user, org.id);
+    return this._postsService.getPostsMinified(
+      org.id,
+      query,
+      scope.all ? null : scope.integrationIds
+    );
   }
 
   @Get('/find-slot')

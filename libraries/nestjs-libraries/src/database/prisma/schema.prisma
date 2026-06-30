@@ -143,12 +143,31 @@ model UserOrganization {
   role               Role         @default(USER)
   canConnectChannels Boolean      @default(false)
   createdAt          DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
+  updatedAt          DateTime     @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  user               User         @relation(fields: [userId], references: [id])
+  assignments        UserAssignment[]
 
   @@unique([userId, organizationId])
   @@index([disabled])
+}
+
+// Mapped Out (Phase 2B): which channels/clients a Manager or Client may access
+// within a workspace. Each row grants access to ONE channel (integrationId) or
+// ONE whole client (customerId). Super Admins ignore these and see everything.
+model UserAssignment {
+  id                 String           @id @default(uuid())
+  userOrganizationId String
+  integrationId      String?
+  customerId         String?
+  createdAt          DateTime         @default(now())
+  userOrganization   UserOrganization @relation(fields: [userOrganizationId], references: [id], onDelete: Cascade)
+  integration        Integration?     @relation(fields: [integrationId], references: [id])
+  customer           Customer?        @relation(fields: [customerId], references: [id])
+
+  @@index([userOrganizationId])
+  @@index([integrationId])
+  @@index([customerId])
 }
 
 model GitHub {
@@ -302,14 +321,15 @@ model Subscription {
 }
 
 model Customer {
-  id           String        @id @default(uuid())
+  id           String           @id @default(uuid())
   name         String
   orgId        String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   deletedAt    DateTime?
-  organization Organization  @relation(fields: [orgId], references: [id])
+  organization Organization     @relation(fields: [orgId], references: [id])
   integrations Integration[]
+  assignments  UserAssignment[]
 
   @@unique([orgId, name, deletedAt])
 }
@@ -344,6 +364,7 @@ model Integration {
   orderItems            OrderItems[]
   plugs                 Plugs[]
   posts                 Post[]
+  assignments           UserAssignment[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])

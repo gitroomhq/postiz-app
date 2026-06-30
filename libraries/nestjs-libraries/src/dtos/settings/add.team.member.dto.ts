@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsDefined,
   IsEmail,
@@ -25,6 +26,18 @@ export class AddTeamMemberDto {
   @IsOptional()
   @IsBoolean()
   canConnectChannels?: boolean;
+
+  // Mapped Out (Phase 2B): the specific channels and/or clients this member may
+  // access. Empty = no access (must be assigned). Super Admins ignore these.
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  integrationIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  customerIds?: string[];
 
   @IsDefined()
   @IsBoolean()

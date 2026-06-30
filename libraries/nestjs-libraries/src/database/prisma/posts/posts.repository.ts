@@ -126,7 +126,11 @@ export class PostsRepository {
     });
   }
 
-  async getPosts(orgId: string, query: GetPostsDto) {
+  async getPosts(
+    orgId: string,
+    query: GetPostsDto,
+    allowedIntegrationIds?: string[] | null
+  ) {
     // Use the provided start and end dates directly
     const startDate = dayjs.utc(query.startDate).toDate();
     const endDate = dayjs.utc(query.endDate).toDate();
@@ -163,6 +167,10 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        // Mapped Out (Phase 2B): restrict to the channels this user may see.
+        ...(allowedIntegrationIds
+          ? { integrationId: { in: allowedIntegrationIds } }
+          : {}),
         ...(query.customer
           ? {
               integration: {

@@ -16,8 +16,53 @@ export class IntegrationRepository {
     private _plugs: PrismaRepository<'plugs'>,
     private _exisingPlugData: PrismaRepository<'exisingPlugData'>,
     private _customers: PrismaRepository<'customer'>,
-    private _mentions: PrismaRepository<'mentions'>
+    private _mentions: PrismaRepository<'mentions'>,
+    private _userOrg: PrismaRepository<'userOrganization'>,
+    private _userAssignment: PrismaRepository<'userAssignment'>
   ) {}
+
+  // --- Mapped Out channel/client assignments (Phase 2B) ---------------------
+
+  getUserOrgWithAssignments(userId: string, orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: { userId, organizationId: orgId },
+      select: {
+        id: true,
+        role: true,
+        assignments: { select: { integrationId: true, customerId: true } },
+      },
+    });
+  }
+
+  getIntegrationsMini(orgId: string) {
+    return this._integration.model.integration.findMany({
+      where: { organizationId: orgId, deletedAt: null },
+      select: { id: true, customerId: true },
+    });
+  }
+
+  async setAssignmentsByUserOrg(
+    userOrganizationId: string,
+    integrationIds: string[],
+    customerIds: string[]
+  ) {
+    await this._userAssignment.model.userAssignment.deleteMany({
+      where: { userOrganizationId },
+    });
+    const data = [
+      ...(integrationIds || []).map((integrationId) => ({
+        userOrganizationId,
+        integrationId,
+      })),
+      ...(customerIds || []).map((customerId) => ({
+        userOrganizationId,
+        customerId,
+      })),
+    ];
+    if (data.length) {
+      await this._userAssignment.model.userAssignment.createMany({ data });
+    }
+  }
 
   getMentions(platform: string, q: string) {
     return this._mentions.model.mentions.findMany({

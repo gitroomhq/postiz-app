@@ -250,7 +250,9 @@ export class UsersController {
       getOrgFromCookie.id,
       getOrgFromCookie.orgId,
       getOrgFromCookie.role,
-      getOrgFromCookie.canConnectChannels
+      getOrgFromCookie.canConnectChannels,
+      getOrgFromCookie.integrationIds,
+      getOrgFromCookie.customerIds
     );
 
     response.status(200).json({

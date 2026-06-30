@@ -329,9 +329,17 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
-  async getPostsMinified(orgId: string, query: GetPostsDto) {
+  async getPostsMinified(
+    orgId: string,
+    query: GetPostsDto,
+    allowedIntegrationIds?: string[] | null
+  ) {
     return minifyPosts({
-      posts: await this._postRepository.getPosts(orgId, query),
+      posts: await this._postRepository.getPosts(
+        orgId,
+        query,
+        allowedIntegrationIds
+      ),
     });
   }
 
