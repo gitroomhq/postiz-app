@@ -693,5 +693,10 @@
   "watch_tutorial_description": "Sieh dir dieses kurze Video an, um das Beste aus Postiz herauszuholen",
   "back": "Zurück",
   "get_started": "Loslegen",
+  "end_never": "Niemals enden",
+  "end_after_date": "Enden am",
+  "end_after_posts": "Enden nach Beiträgen",
+  "no_of_posts": "Anzahl der Beiträge",
+  "never": "Niemals",
   "kick_select_channel": "Kanal auswählen"
 }

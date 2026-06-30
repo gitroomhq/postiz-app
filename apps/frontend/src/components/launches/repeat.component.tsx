@@ -6,7 +6,10 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import clsx from 'clsx';
-import { RepeatIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
+import {
+  RepeatIcon,
+  DropdownArrowIcon,
+} from '@gitroom/frontend/components/ui/icons';
 const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
@@ -77,7 +80,8 @@ export const RepeatComponent: FC<{
       ref={ref}
       className={clsx(
         'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-[#612BD3]' : 'border-newTextColor/10',
+        repeat ? 'bg-[#612BD3]' : '',
+        isOpen ? 'border-[#612BD3]' : 'border-newTextColor/10'
       )}
     >
       <div
@@ -89,7 +93,10 @@ export const RepeatComponent: FC<{
         </div>
         <div className="cursor-pointer">
           {repeat
-            ? `${t('repeat_post_every_label', 'Repeat Post Every')} ${everyLabel}`
+            ? `${t(
+                'repeat_post_every_label',
+                'Repeat Post Every'
+              )} ${everyLabel}`
             : t('repeat_post_every', 'Repeat Post Every...')}
         </div>
         <div className="cursor-pointer">

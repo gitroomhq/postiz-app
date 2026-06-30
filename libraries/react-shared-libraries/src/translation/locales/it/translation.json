@@ -693,5 +693,10 @@
   "watch_tutorial_description": "Guarda questo breve video per imparare a sfruttare al meglio Postiz",
   "back": "Indietro",
   "get_started": "Inizia",
+  "end_never": "Mai",
+  "end_after_date": "Dopo una data",
+  "end_after_posts": "Dopo un numero di post",
+  "no_of_posts": "Numero di post",
+  "never": "Mai",
   "kick_select_channel": "Seleziona canale"
 }

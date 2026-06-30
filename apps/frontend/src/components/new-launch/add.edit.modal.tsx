@@ -9,6 +9,8 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { isNumber } from 'lodash';
+import { EndRecurrenceType } from '@prisma/client';
 
 export interface AddEditModalProps {
   dummy?: boolean;
@@ -118,6 +120,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     setTags,
     setEditor,
     setRepeater,
+    setEndRecurrenceType,
+    setEndRecurrenceAfter,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -129,13 +133,22 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       setTags: state.setTags,
       setEditor: state.setEditor,
       setRepeater: state.setRepeater,
+      setEndRecurrenceType: state.setEndRecurrenceType,
+      setEndRecurrenceAfter: state.setEndRecurrenceAfter,
     }))
   );
 
   useEffect(() => {
     if (existingData.integration) {
       if (existingData?.posts?.[0]?.intervalInDays) {
-        setRepeater(existingData.posts[0].intervalInDays);
+        const existingPost = existingData.posts[0];
+        setRepeater(existingPost.intervalInDays);
+        setEndRecurrenceAfter(
+          isNumber(existingPost.endRecurrenceAfter)
+            ? existingPost.endRecurrenceAfter
+            : Number(existingPost.endRecurrenceAfter)
+        );
+        setEndRecurrenceType(existingData.posts[0].endRecurrenceType);
       }
       setTags(
         // @ts-ignore
@@ -217,9 +230,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
 
   return (
     <>
-      <style>
-        {`#support-discord {display: none !important;}`}
-      </style>
+      <style>{`#support-discord {display: none !important;}`}</style>
       <ManageModal {...props} />
     </>
   );
