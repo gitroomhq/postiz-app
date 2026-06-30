@@ -17,6 +17,10 @@ import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
+import { ItalicText } from '@gitroom/frontend/components/new-launch/italic.text';
+import { CodeText } from '@gitroom/frontend/components/new-launch/code.text';
+import { StrikeText } from '@gitroom/frontend/components/new-launch/strike.text';
+import { BlockquoteText } from '@gitroom/frontend/components/new-launch/blockquote.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import {
@@ -45,6 +49,10 @@ import Bold from '@tiptap/extension-bold';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
+import Italic from '@tiptap/extension-italic';
+import Code from '@tiptap/extension-code';
+import Strike from '@tiptap/extension-strike';
+import Blockquote from '@tiptap/extension-blockquote';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
@@ -788,8 +796,22 @@ export const Editor: FC<{
                             editor={editorRef?.current?.editor}
                             currentValue={props.value!}
                           />
+                          <ItalicText editor={editorRef?.current?.editor} />
+                          <StrikeText editor={editorRef?.current?.editor} />
+                          <BlockquoteText editor={editorRef?.current?.editor} />
+                          <CodeText editor={editorRef?.current?.editor} />
                         </>
                       )}
+                      {/* link insertion may not work on all providers e.g insta, x, facebook */}
+                      {(editorType === 'html' || editorType === 'markdown') &&
+                        identifier === 'telegram' && (
+                          <>
+                            <AComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                          </>
+                        )}
                       {(editorType === 'markdown' || editorType === 'html') &&
                         identifier !== 'telegram' && (
                           <>
@@ -911,6 +933,10 @@ export const OnlyEditor = forwardRef<
       Text,
       Underline,
       Bold,
+      Italic,
+      Code,
+      Strike,
+      Blockquote,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
       BulletList,
@@ -921,7 +947,7 @@ export const OnlyEditor = forwardRef<
       }),
       ...(editorType === 'html' || editorType === 'markdown'
         ? [
-            Link.configure({
+            Link.extend({ inclusive: false }).configure({
               openOnClick: false,
               autolink: true,
               defaultProtocol: 'https',
