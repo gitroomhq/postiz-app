@@ -233,4 +233,13 @@ export class InstagramStandaloneProvider
       'graph.instagram.com'
     );
   }
+
+  async topPosts(id: string, accessToken: string, date: number) {
+    return instagramProvider.topPosts(
+      id,
+      accessToken,
+      date,
+      'graph.instagram.com'
+    );
+  }
 }

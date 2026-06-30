@@ -228,6 +228,36 @@ export class IntegrationService {
     );
   }
 
+  // Mapped Out: recent media with per-post insights (Top Posts), cached 15m.
+  async getTopPosts(org: Organization, integration: string, date: string) {
+    const getIntegration = await this.getIntegrationById(org.id, integration);
+    if (!getIntegration || getIntegration.type !== 'social') {
+      return [];
+    }
+    const provider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+    if (!provider.topPosts) {
+      return [];
+    }
+    const cacheKey = `topposts:v1:${org.id}:${integration}:${date}`;
+    const cached = await ioRedis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    try {
+      const posts = await provider.topPosts(
+        getIntegration.internalId,
+        getIntegration.token,
+        +date
+      );
+      await ioRedis.set(cacheKey, JSON.stringify(posts), 'EX', 900);
+      return posts;
+    } catch (e) {
+      return [];
+    }
+  }
+
   // The raw channels/clients explicitly assigned to a member (for the edit UI).
   async getRawAssignments(userId: string, orgId: string) {
     const userOrg = await this._integrationRepository.getUserOrgWithAssignments(

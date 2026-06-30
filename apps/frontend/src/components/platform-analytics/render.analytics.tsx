@@ -189,6 +189,96 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   );
 };
 
+type TopPost = {
+  id: string;
+  caption: string;
+  mediaType: string;
+  thumbnail: string | null;
+  permalink: string;
+  timestamp: string;
+  metrics: Record<string, number>;
+};
+
+const METRIC_ORDER: Array<[string, string]> = [
+  ['reach', 'Reach'],
+  ['views', 'Views'],
+  ['likes', 'Likes'],
+  ['comments', 'Comments'],
+  ['shares', 'Shares'],
+  ['saved', 'Saves'],
+];
+
+const TopPosts: FC<{ integration: Integration; date: number }> = ({
+  integration,
+  date,
+}) => {
+  const fetch = useFetch();
+  const t = useT();
+  const { data, isLoading } = useSWR(
+    `/analytics-posts-${integration?.id}-${date}`,
+    async () => {
+      const res = await (
+        await fetch(`/analytics/${integration.id}/posts?date=${date}`)
+      ).json();
+      return ((res?.posts || []) as TopPost[]).filter(
+        (p) => Object.keys(p.metrics || {}).length > 0
+      );
+    },
+    { revalidateOnFocus: false, revalidateIfStale: false }
+  );
+
+  if (isLoading || !data?.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-[24px]">
+      <h3 className="text-[18px] font-[600] mb-[12px]">
+        {t('top_posts', 'Top Posts')}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+        {data.slice(0, 9).map((post) => (
+          <a
+            key={post.id}
+            href={post.permalink}
+            target="_blank"
+            rel="noreferrer"
+            className="bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden hover:border-[#612bd3]/50 transition-all flex flex-col"
+          >
+            {post.thumbnail && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.thumbnail}
+                alt=""
+                className="w-full h-[180px] object-cover bg-black/20"
+              />
+            )}
+            <div className="p-[12px] flex flex-col gap-[8px] flex-1">
+              {!!post.caption && (
+                <div className="text-[13px] opacity-80 line-clamp-2">
+                  {post.caption}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-x-[14px] gap-y-[4px] mt-auto pt-[6px]">
+                {METRIC_ORDER.filter(([k]) => post.metrics[k] !== undefined).map(
+                  ([k, label]) => (
+                    <div key={k} className="text-[12px]">
+                      <span className="opacity-60">{label}: </span>
+                      <span className="font-[600]">
+                        {new Intl.NumberFormat().format(post.metrics[k])}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const RenderAnalytics: FC<{
   integration: Integration;
   date: number;
@@ -259,18 +349,21 @@ export const RenderAnalytics: FC<{
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-      {data?.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration as any)} />
-      )}
-      {data?.map((item: AnalyticsDataItem, index: number) => (
-        <AnalyticsCard
-          key={`analytics-${index}`}
-          item={item}
-          total={totals[index]}
-          index={index}
-        />
-      ))}
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+        {data?.length === 0 && (
+          <EmptyState onRefresh={refreshChannel(integration as any)} />
+        )}
+        {data?.map((item: AnalyticsDataItem, index: number) => (
+          <AnalyticsCard
+            key={`analytics-${index}`}
+            item={item}
+            total={totals[index]}
+            index={index}
+          />
+        ))}
+      </div>
+      <TopPosts integration={integration} date={date} />
     </div>
   );
 };

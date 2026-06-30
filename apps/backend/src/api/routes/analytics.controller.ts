@@ -35,6 +35,20 @@ export class AnalyticsController {
     return this._integrationService.checkAnalytics(org, integration, date);
   }
 
+  @Get('/:integration/posts')
+  async getTopPosts(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('integration') integration: string,
+    @Query('date') date: string
+  ) {
+    const scope = await this._integrationService.getScope(user, org.id);
+    if (!scope.all && !scope.integrationIds.includes(integration)) {
+      throw new ForbiddenException();
+    }
+    return { posts: await this._integrationService.getTopPosts(org, integration, date) };
+  }
+
   @Get('/post/:postId')
   async getPostAnalytics(
     @GetOrgFromRequest() org: Organization,

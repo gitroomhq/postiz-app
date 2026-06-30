@@ -1009,6 +1009,64 @@ export class InstagramProvider
     return analytics;
   }
 
+  // Mapped Out: recent media with per-post insights, for the "Top Posts"
+  // dashboard section. Works on both graph.facebook.com and graph.instagram.com
+  // (standalone). Only metrics the platform returns are included.
+  async topPosts(
+    id: string,
+    token: string,
+    date: number,
+    type = 'graph.facebook.com'
+  ): Promise<any[]> {
+    const [accessToken] = token.split('___');
+    const safeJson = async (url: string) => {
+      try {
+        return await (await fetch(url)).json();
+      } catch (e) {
+        return {};
+      }
+    };
+
+    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    const media = await safeJson(
+      `https://${type}/v21.0/${id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=50&access_token=${accessToken}`
+    );
+    const items = (media?.data || []).filter((m: any) =>
+      dayjs(m.timestamp).isAfter(dayjs(since))
+    );
+
+    const withInsights = await Promise.all(
+      items.map(async (m: any) => {
+        const ins = await safeJson(
+          `https://${type}/v21.0/${m.id}/insights?metric=reach,likes,comments,saved,shares,views&access_token=${accessToken}`
+        );
+        const metrics: Record<string, number> = {};
+        for (const d of ins?.data || []) {
+          const value = d?.values?.[0]?.value ?? d?.total_value?.value;
+          if (value !== undefined) {
+            metrics[d.name] = Number(value) || 0;
+          }
+        }
+        return {
+          id: m.id,
+          caption: m.caption || '',
+          mediaType: m.media_type,
+          thumbnail: m.thumbnail_url || m.media_url || null,
+          permalink: m.permalink,
+          timestamp: m.timestamp,
+          metrics,
+        };
+      })
+    );
+
+    // Rank by reach, then likes — only what the platform actually returned.
+    return withInsights.sort(
+      (a, b) =>
+        (b.metrics.reach || b.metrics.likes || 0) -
+        (a.metrics.reach || a.metrics.likes || 0)
+    );
+  }
+
   music(accessToken: string, data: { q: string }) {
     return this.fetch(
       `https://graph.facebook.com/v20.0/music/search?q=${encodeURIComponent(

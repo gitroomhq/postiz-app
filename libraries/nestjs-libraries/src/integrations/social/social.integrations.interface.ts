@@ -34,6 +34,12 @@ export interface IAuthenticator {
     postId: string,
     fromDate: number,
   ): Promise<AnalyticsData[]>;
+  // Mapped Out: recent media with per-post insights for the Top Posts section.
+  topPosts?(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<any[]>;
   changeNickname?(
     id: string,
     accessToken: string,
