@@ -134,14 +134,6 @@ export class BillingController {
     return this._stripeService.prorate(org.id, body);
   }
 
-  @Post('/lifetime')
-  async lifetime(
-    @GetOrgFromRequest() org: Organization,
-    @Body() body: { code: string }
-  ) {
-    return this._stripeService.lifetimeDeal(org.id, body.code);
-  }
-
   @Get('/charges')
   async getCharges(
     @GetUserFromRequest() user: User,

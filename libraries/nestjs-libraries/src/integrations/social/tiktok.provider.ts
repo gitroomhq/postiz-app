@@ -16,6 +16,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { Context } from '@temporalio/activity';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -33,7 +34,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     'user.info.profile',
     'user.info.stats',
   ];
-  override maxConcurrentJob = 300;
+  override maxConcurrentJob = 10000;
   dto = TikTokDto;
   editor = 'normal' as const;
   maxLength() {
@@ -207,7 +208,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('url_ownership_unverified') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'You have to upload the picture/video to Postiz when sending a URL',
+        value:
+          'You have to upload the picture/video to Postiz when sending a URL',
       };
     }
 
@@ -410,8 +412,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     publishId: string,
     accessToken: string
   ): Promise<{ url: string; id: string }> {
+    const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
-    while (true) {
+    for (const i of Array(27).keys()) {
+      // ~9 minutes at 20s interval
       const post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
@@ -433,6 +437,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       const { status, publicaly_available_post_id } = post.data;
 
+      ctx.heartbeat(`Post Status ${JSON.stringify(post?.data || {})}`);
       if (status === 'SEND_TO_USER_INBOX') {
         return {
           url: 'https://www.tiktok.com/messages?lang=en',
@@ -462,8 +467,15 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         );
       }
 
-      await timer(10000);
+      await timer(20000);
     }
+
+    throw new BadBody(
+      'titok-error-upload',
+      JSON.stringify({}),
+      Buffer.from(JSON.stringify({})),
+      'TikTok refused to publish your post'
+    );
   }
 
   private postingMethod(
@@ -497,18 +509,26 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
           ...(isPhoto
             ? {}
-            : { disable_duet: !firstPost.settings.duet || false }),
-          disable_comment: !firstPost.settings.comment || false,
+            : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
+          disable_comment: !this.assetBoolean(firstPost.settings.comment),
           ...(isPhoto
             ? {}
-            : { disable_stitch: !firstPost.settings.stitch || false }),
+            : {
+                disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
+              }),
           ...(isPhoto
             ? {}
-            : { is_aigc: firstPost.settings.video_made_with_ai || false }),
-          brand_content_toggle:
-            firstPost.settings.brand_content_toggle || false,
-          brand_organic_toggle:
-            firstPost.settings.brand_organic_toggle || false,
+            : {
+                is_aigc: this.assetBoolean(
+                  firstPost.settings.video_made_with_ai
+                ),
+              }),
+          brand_content_toggle: this.assetBoolean(
+            firstPost.settings.brand_content_toggle
+          ),
+          brand_organic_toggle: this.assetBoolean(
+            firstPost.settings.brand_organic_toggle
+          ),
           ...(isPhoto
             ? {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',

@@ -40,7 +40,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'w_organization_social',
     'r_organization_social',
   ];
-  override maxConcurrentJob = 2; // LinkedIn has professional posting limits
+  override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
   maxLength() {
@@ -54,7 +54,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const [firstPost, ...restPosts] = posts ?? [];
 
     if (
-      vals?.post_as_images_carousel &&
+      this.assetBoolean(vals?.post_as_images_carousel) &&
       ((firstPost?.length ?? 0) < 2 ||
         firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
     ) {
@@ -623,14 +623,31 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const isVideo = hasExtension(mediaUrl, 'mp4');
     const isGif = lookup(mediaUrl) === 'image/gif';
 
+    // GIFs and videos pass through untouched (sharp would break animation).
     if (isVideo || isGif) {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
-    return await sharp(await readOrFetch(mediaUrl), { animated: false })
-      .toFormat('jpeg')
-      .resize({ width: 1000 })
-      .toBuffer();
+    const mime = lookup(mediaUrl);
+    // PNG and JPEG (covers both .jpg and .jpeg) keep their original format;
+    // anything else (webp, tiff, ...) is converted to jpeg for compatibility.
+    const keepFormat = mime === 'image/png' || mime === 'image/jpeg';
+
+    // Always downscale to stay under LinkedIn's 36,152,320-pixel cap: fit within
+    // a 6000x6000 box (max 36,000,000 px for any aspect ratio) while preserving
+    // the aspect ratio and never enlarging smaller images (downscale-only).
+    // NOTE: this guard is required for self-hosted instances running with
+    // DISABLE_IMAGE_COMPRESSION=true, where the frontend no longer shrinks
+    // uploads and full-size images reach LinkedIn directly. Do not remove it on
+    // the assumption that the frontend compression already caps dimensions.
+    const pipeline = sharp(await readOrFetch(mediaUrl), { animated: false }).resize({
+      width: 6000,
+      height: 6000,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+
+    return await (keepFormat ? pipeline : pipeline.toFormat('jpeg')).toBuffer();
   }
 
   private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
@@ -792,7 +809,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
 
     // Check if we should convert images to PDF carousel
-    if (firstPost.settings?.post_as_images_carousel) {
+    if (this.assetBoolean(firstPost.settings?.post_as_images_carousel)) {
       processedPostDetails = await this.convertImagesToPdfCarousel(
         postDetails,
         firstPost
@@ -821,7 +838,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       processedFirstPost,
       mainPostMediaIds,
       type,
-      !!firstPost.settings?.post_as_images_carousel
+      this.assetBoolean(firstPost.settings?.post_as_images_carousel)
     );
 
     // Return response for main post only
