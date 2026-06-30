@@ -11,6 +11,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { Integration } from '@prisma/client';
 
 // @ts-ignore
@@ -232,5 +233,38 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+
+    // NIP-18 repost (kind 6) signed by the reposting account's key: the `e` tag
+    // references the reposted note, the `p` tag references its author's pubkey.
+    const repostEvent = finalizeEvent(
+      {
+        kind: 6,
+        content: '',
+        tags: [
+          ['e', postId],
+          ['p', originalIntegration.internalId],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    await this.publish(integration.internalId, repostEvent);
   }
 }
