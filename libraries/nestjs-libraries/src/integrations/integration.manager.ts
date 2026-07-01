@@ -27,6 +27,7 @@ import { TelegramProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nostr.provider';
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
+import { GhostProvider } from '@gitroom/nestjs-libraries/integrations/social/ghost.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
 import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
 import { KickProvider } from '@gitroom/nestjs-libraries/integrations/social/kick.provider';
@@ -66,6 +67,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new DevToProvider(),
   new HashnodeProvider(),
   new WordpressProvider(),
+  new GhostProvider(),
   new ListmonkProvider(),
   new MoltbookProvider(),
   new WhopProvider(),
@@ -87,7 +89,9 @@ export class IntegrationManager {
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
+          ...(p.extensionCookies
+            ? { extensionCookies: p.extensionCookies }
+            : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),
