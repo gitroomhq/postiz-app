@@ -207,15 +207,17 @@ export abstract class SocialAbstract {
       return request;
     }
 
-    if (totalRetries > 2) {
-      throw new BadBody(identifier, '{}', options.body || '{}', message);
-    }
-
     let json = '{}';
     try {
       json = await request.text();
     } catch (err) {
       json = '{}';
+    }
+
+    if (totalRetries > 2) {
+      // Include the platform's actual response body so the failure is
+      // diagnosable, instead of an empty '{}'.
+      throw new BadBody(identifier, json, options.body || '{}', message);
     }
 
     const handleError = this.handleErrors(json || '{}', request.status);
