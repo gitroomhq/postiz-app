@@ -103,9 +103,11 @@ export class OrganizationRepository {
     });
   }
 
-  getImpersonateUser(name: string) {
+  getImpersonateUser(name: string, excludeUserId?: string) {
     return this._userOrg.model.userOrganization.findMany({
       where: {
+        // Never let an admin impersonate (or switch to) themselves.
+        ...(excludeUserId ? { userId: { not: excludeUserId } } : {}),
         OR: [
           {
             organizationId: {
