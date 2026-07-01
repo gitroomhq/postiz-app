@@ -14,6 +14,7 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { createReadStream, statSync } from 'fs';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { Context } from '@temporalio/activity';
@@ -549,9 +550,207 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
+  // ---------------------------------------------------------------------------
+  // OLD PULL_FROM_URL IMPLEMENTATION (kept for when the TikTok PULL bug is fixed)
+  // ---------------------------------------------------------------------------
+  // private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
+  //   const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+  //
+  //   if (isPhoto) {
+  //     return {
+  //       post_mode:
+  //         firstPost?.settings?.content_posting_method === 'DIRECT_POST'
+  //           ? 'DIRECT_POST'
+  //           : 'MEDIA_UPLOAD',
+  //       media_type: 'PHOTO',
+  //       source_info: {
+  //         source: 'PULL_FROM_URL',
+  //         photo_cover_index: 0,
+  //         photo_images: firstPost.media?.map((p) => p.path),
+  //       },
+  //     };
+  //   }
+  //
+  //   return {
+  //     source_info: {
+  //       source: 'PULL_FROM_URL',
+  //       video_url: firstPost?.media?.[0]?.path!,
+  //       ...(firstPost?.media?.[0]?.thumbnailTimestamp!
+  //         ? {
+  //             video_cover_timestamp_ms:
+  //               firstPost?.media?.[0]?.thumbnailTimestamp!,
+  //           }
+  //         : {}),
+  //     },
+  //   };
+  // }
+  //
+  // async post(
+  //   id: string,
+  //   accessToken: string,
+  //   postDetails: PostDetails<TikTokDto>[],
+  //   integration: Integration
+  // ): Promise<PostResponse[]> {
+  //   const [firstPost] = postDetails;
+  //   const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+  //
+  //   console.log({
+  //     ...this.buildTikokPostInfoBody(firstPost),
+  //     ...this.buildTikokSourceInfoBody(firstPost),
+  //   });
+  //   const {
+  //     data: { publish_id },
+  //   } = await (
+  //     await this.fetch(
+  //       `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
+  //         firstPost.settings.content_posting_method,
+  //         !hasExtension(firstPost?.media?.[0]?.path, 'mp4')
+  //       )}`,
+  //       {
+  //         method: 'POST',
+  //         headers: {
+  //           'Content-Type': 'application/json; charset=UTF-8',
+  //           Authorization: `Bearer ${accessToken}`,
+  //         },
+  //         body: JSON.stringify({
+  //           ...this.buildTikokPostInfoBody(firstPost),
+  //           ...this.buildTikokSourceInfoBody(firstPost),
+  //         }),
+  //       }
+  //     )
+  //   ).json();
+  //
+  //   const { url, id: videoId } = await this.uploadedVideoSuccess(
+  //     integration.profile!,
+  //     publish_id,
+  //     accessToken
+  //   );
+  //
+  //   return [
+  //     {
+  //       id: firstPost.id,
+  //       releaseURL: url,
+  //       postId: String(videoId),
+  //       status: 'success',
+  //     },
+  //   ];
+  // }
+
+  // ---------------------------------------------------------------------------
+  // NEW FILE_UPLOAD IMPLEMENTATION (no PULL_FROM_URL for videos)
+  // ---------------------------------------------------------------------------
+  // TikTok video chunk constraints: a chunk must be between 5MB and 64MB.
+  // When the whole file fits in a single chunk (<= 64MB) we upload it in one
+  // request; otherwise we split it into 10MB chunks (the final chunk carries
+  // the remainder, which TikTok allows to exceed chunk_size).
+  private static readonly TIKTOK_MAX_SINGLE_CHUNK = 64 * 1024 * 1024;
+  private static readonly TIKTOK_CHUNK_SIZE = 10 * 1024 * 1024;
+
+  private tiktokChunkPlan(videoSize: number) {
+    if (videoSize <= TiktokProvider.TIKTOK_MAX_SINGLE_CHUNK) {
+      return { chunkSize: videoSize, totalChunkCount: 1 };
+    }
+
+    const chunkSize = TiktokProvider.TIKTOK_CHUNK_SIZE;
+    return {
+      chunkSize,
+      totalChunkCount: Math.floor(videoSize / chunkSize),
+    };
+  }
+
+  // Resolves the total byte size of the media without loading it into memory:
+  // a HEAD request for remote URLs, statSync for local files.
+  private async tiktokMediaSize(path: string): Promise<number> {
+    if (path.indexOf('http') === 0) {
+      const head = await fetch(path, { method: 'HEAD' });
+      const length = head.headers.get('content-length');
+      if (!length) {
+        throw new BadBody(
+          'tiktok-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          'Could not determine the video size for TikTok upload'
+        );
+      }
+      return Number(length);
+    }
+
+    return statSync(path).size;
+  }
+
+  // Returns a streaming body for the [start, end] byte range of the media so we
+  // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
+  // read stream for local files.
+  private async tiktokChunkStream(path: string, start: number, end: number) {
+    if (path.indexOf('http') === 0) {
+      const response = await fetch(path, {
+        headers: { Range: `bytes=${start}-${end}` },
+      });
+      return response.body;
+    }
+
+    return createReadStream(path, { start, end });
+  }
+
+  // Streams the video bytes to the upload_url returned by the init call.
+  // We use the global fetch (not this.fetch) because chunked uploads answer
+  // with 206 (Partial Content), which this.fetch would treat as an error.
+  private async uploadTikTokVideoBytes(
+    uploadUrl: string,
+    path: string,
+    videoSize: number,
+    contentType: string
+  ) {
+    const ctx = Context.current();
+    const { chunkSize, totalChunkCount } = this.tiktokChunkPlan(videoSize);
+
+    for (let i = 0; i < totalChunkCount; i++) {
+      const start = i * chunkSize;
+      const end =
+        i === totalChunkCount - 1 ? videoSize - 1 : start + chunkSize - 1;
+      const contentLength = end - start + 1;
+
+      ctx.heartbeat(`Uploading chunk ${i + 1}/${totalChunkCount}`);
+
+      const body = await this.tiktokChunkStream(path, start, end);
+
+      const upload = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': String(contentLength),
+          'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+        },
+        body,
+        // Required by undici when streaming a request body.
+        duplex: 'half',
+      } as any);
+
+      if (
+        upload.status !== 200 &&
+        upload.status !== 201 &&
+        upload.status !== 206
+      ) {
+        const text = await upload.text().catch(() => '{}');
+        const handleError = this.handleErrors(text);
+        throw new BadBody(
+          'tiktok-error-upload',
+          text,
+          Buffer.from(text),
+          handleError?.value || 'Failed to upload the video to TikTok'
+        );
+      }
+    }
+  }
+
+  private buildTikokSourceInfoBody(
+    firstPost: PostDetails<TikTokDto>,
+    videoSize?: number
+  ) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
+    // TikTok photo posts only support PULL_FROM_URL, there is no FILE_UPLOAD
+    // path for photos, so this branch keeps pulling from the URL.
     if (isPhoto) {
       return {
         post_mode:
@@ -567,16 +766,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    const { chunkSize, totalChunkCount } = this.tiktokChunkPlan(videoSize || 0);
+
     return {
       source_info: {
-        source: 'PULL_FROM_URL',
-        video_url: firstPost?.media?.[0]?.path!,
-        ...(firstPost?.media?.[0]?.thumbnailTimestamp!
-          ? {
-              video_cover_timestamp_ms:
-                firstPost?.media?.[0]?.thumbnailTimestamp!,
-            }
-          : {}),
+        source: 'FILE_UPLOAD',
+        video_size: videoSize,
+        chunk_size: chunkSize,
+        total_chunk_count: totalChunkCount,
       },
     };
   }
@@ -589,18 +786,22 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const videoPath = firstPost?.media?.[0]?.path!;
 
-    console.log({
-      ...this.buildTikokPostInfoBody(firstPost),
-      ...this.buildTikokSourceInfoBody(firstPost),
-    });
+    // For videos we only need the total size up front (HEAD / statSync) so we
+    // can init the upload; the bytes themselves are streamed later, never fully
+    // loaded into memory.
+    const videoSize = isPhoto
+      ? undefined
+      : await this.tiktokMediaSize(videoPath);
+
     const {
-      data: { publish_id },
+      data: { publish_id, upload_url },
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
           firstPost.settings.content_posting_method,
-          !hasExtension(firstPost?.media?.[0]?.path, 'mp4')
+          isPhoto
         )}`,
         {
           method: 'POST',
@@ -610,11 +811,21 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           },
           body: JSON.stringify({
             ...this.buildTikokPostInfoBody(firstPost),
-            ...this.buildTikokSourceInfoBody(firstPost),
+            ...this.buildTikokSourceInfoBody(firstPost, videoSize),
           }),
         }
       )
     ).json();
+
+    // Videos: stream the bytes to the upload_url returned by the init call.
+    if (!isPhoto && upload_url && videoSize) {
+      await this.uploadTikTokVideoBytes(
+        upload_url,
+        videoPath,
+        videoSize,
+        'video/mp4'
+      );
+    }
 
     const { url, id: videoId } = await this.uploadedVideoSuccess(
       integration.profile!,
