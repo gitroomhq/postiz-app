@@ -96,6 +96,12 @@ export class BillingController {
 
   @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
+    // Admin-granted/never-subscribed orgs have no real `cus_...` customer, so
+    // there is no Stripe billing portal to open (the UI hides the button; this
+    // guards the endpoint against a "No such customer" Stripe error).
+    if (!org.paymentId?.startsWith('cus_')) {
+      throw new HttpException('No Stripe customer for this organization', 400);
+    }
     const customer = await this._stripeService.getCustomerByOrganizationId(
       org.id
     );
@@ -116,6 +122,13 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
+    // An admin-granted subscription has no Stripe subscription to cancel (its
+    // paymentId is the user id, not a `cus_...` customer). The UI hides the
+    // self-service cancel button for these; removal is an admin-only action.
+    if (!org.paymentId?.startsWith('cus_')) {
+      throw new HttpException('No Stripe subscription to cancel', 400);
+    }
+
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
       'Subscription Cancelled',
@@ -166,6 +179,15 @@ export class BillingController {
   ) {
     if (!user.isSuperAdmin) {
       throw new HttpException('Unauthorized', 400);
+    }
+
+    // Admin-granted subscriptions have no Stripe subscription to cancel; the
+    // admin panel hides this and offers "Remove Subscription" instead.
+    if (!org.paymentId?.startsWith('cus_')) {
+      throw new HttpException(
+        'Admin-granted subscription; use remove-subscription instead',
+        400
+      );
     }
 
     return this._stripeService.cancelSubscription(org.id);

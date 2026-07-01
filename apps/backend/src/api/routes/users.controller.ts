@@ -128,6 +128,11 @@ export class UsersController {
         ? false
         : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
+      // A real Stripe customer has a `cus_...` paymentId. Admin-granted
+      // subscriptions store the user id there instead, and never-subscribed
+      // orgs have none, so gate billing-portal UI on this to avoid calling
+      // Stripe with a non-existent customer ("No such customer").
+      hasStripeCustomer: !!organization?.paymentId?.startsWith('cus_'),
       streakSince: organization?.streakSince || null,
       publicApi:
         // @ts-ignore
