@@ -4,10 +4,63 @@ import { Provider } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class UsersRepository {
   constructor(private _user: PrismaRepository<'user'>) {}
+
+  async switchUserCredentials(currentUserId: string, targetUserId: string) {
+    const current = await this._user.model.user.findUnique({
+      where: { id: currentUserId },
+    });
+    const target = await this._user.model.user.findUnique({
+      where: { id: targetUserId },
+    });
+
+    if (!current || !target) {
+      throw new Error('User not found');
+    }
+
+    const currentCredentials = {
+      email: current.email,
+      password: current.password,
+      providerName: current.providerName,
+      providerId: current.providerId,
+      account: current.account,
+      connectedAccount: current.connectedAccount,
+      activated: current.activated,
+    };
+    const targetCredentials = {
+      email: target.email,
+      password: target.password,
+      providerName: target.providerName,
+      providerId: target.providerId,
+      account: target.account,
+      connectedAccount: target.connectedAccount,
+      activated: target.activated,
+    };
+
+    // (email, providerName) is unique and checked per-statement, so park the
+    // current user on a throwaway email first, then fill each freed slot
+    await this._user.model.user.update({
+      where: { id: current.id },
+      data: { email: `switch-${makeId(10)}-${current.email}` },
+    });
+    await this._user.model.user.update({
+      where: { id: target.id },
+      data: currentCredentials,
+    });
+    await this._user.model.user.update({
+      where: { id: current.id },
+      data: targetCredentials,
+    });
+
+    return {
+      kept: { id: current.id, email: targetCredentials.email },
+      switched: { id: target.id, email: currentCredentials.email },
+    };
+  }
 
   getImpersonateUser(name: string) {
     return this._user.model.user.findMany({
