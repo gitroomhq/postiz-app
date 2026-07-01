@@ -189,14 +189,24 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
-    const ctx = Context.current();
+    // `this.fetch` is called both inside Temporal activities (posting flow) and
+    // from plain HTTP requests (OAuth connect via `authenticate`, analytics
+    // endpoints, token refresh, etc.). `Context.current()` throws "Activity
+    // context not initialized" when there is no activity, so guard it — otherwise
+    // every non-activity caller fails before the request is even made.
+    let ctx: ReturnType<typeof Context.current> | undefined;
+    try {
+      ctx = Context.current();
+    } catch {
+      ctx = undefined;
+    }
     // Providers fetch user-supplied URLs (WordPress domain, Mastodon/Lemmy
     // instance, Listmonk URL, etc.). Route through the SSRF guard so those
     // requests can't be pointed at internal/private IPs (cloud metadata,
     // localhost services, the internal network). Opt-out via env for
     // self-hosters on a trusted private network. A caller may still pass its
     // own dispatcher explicitly.
-    ctx.heartbeat(url);
+    ctx?.heartbeat(url);
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
