@@ -17,7 +17,6 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { createReadStream, statSync } from 'fs';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { Context } from '@temporalio/activity';
 
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
@@ -413,7 +412,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     publishId: string,
     accessToken: string
   ): Promise<{ url: string; id: string }> {
-    const ctx = Context.current();
     // eslint-disable-next-line no-constant-condition
     for (const i of Array(27).keys()) {
       // ~9 minutes at 20s interval
@@ -438,7 +436,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       const { status, publicaly_available_post_id } = post.data;
 
-      ctx.heartbeat(`Post Status ${JSON.stringify(post?.data || {})}`);
       if (status === 'SEND_TO_USER_INBOX') {
         return {
           url: 'https://www.tiktok.com/messages?lang=en',
@@ -701,7 +698,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     videoSize: number,
     contentType: string
   ) {
-    const ctx = Context.current();
     const { chunkSize, totalChunkCount } = this.tiktokChunkPlan(videoSize);
 
     for (let i = 0; i < totalChunkCount; i++) {
@@ -709,8 +705,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       const end =
         i === totalChunkCount - 1 ? videoSize - 1 : start + chunkSize - 1;
       const contentLength = end - start + 1;
-
-      ctx.heartbeat(`Uploading chunk ${i + 1}/${totalChunkCount}`);
 
       const body = await this.tiktokChunkStream(path, start, end);
 
