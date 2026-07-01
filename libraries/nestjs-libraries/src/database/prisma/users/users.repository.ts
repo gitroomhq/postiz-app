@@ -1,13 +1,78 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import {
+  PrismaRepository,
+  PrismaTransaction,
+} from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Provider } from '@prisma/client';
+import { Provider, User } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+
+const pickCredentials = ({
+  email,
+  password,
+  providerName,
+  providerId,
+  account,
+  connectedAccount,
+  activated,
+}: User) => ({
+  email,
+  password,
+  providerName,
+  providerId,
+  account,
+  connectedAccount,
+  activated,
+});
 
 @Injectable()
 export class UsersRepository {
-  constructor(private _user: PrismaRepository<'user'>) {}
+  constructor(
+    private _user: PrismaRepository<'user'>,
+    private _transaction: PrismaTransaction
+  ) {}
+
+  switchUserCredentials(currentUserId: string, targetUserId: string) {
+    return this._transaction.model.$transaction(async (tx) => {
+      // deterministic lock order so concurrent switches sharing a user
+      // serialize instead of deadlocking
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id IN (${currentUserId}, ${targetUserId}) ORDER BY id FOR UPDATE`;
+
+      const current = await tx.user.findUnique({
+        where: { id: currentUserId },
+      });
+      const target = await tx.user.findUnique({ where: { id: targetUserId } });
+
+      if (!current || !target) {
+        throw new Error('User not found');
+      }
+
+      const currentCredentials = pickCredentials(current);
+      const targetCredentials = pickCredentials(target);
+
+      // (email, providerName) is unique and checked per-statement, so park the
+      // current user on a throwaway email first, then fill each freed slot
+      await tx.user.update({
+        where: { id: current.id },
+        data: { email: `switch-${makeId(10)}-${current.email}` },
+      });
+      await tx.user.update({
+        where: { id: target.id },
+        data: currentCredentials,
+      });
+      await tx.user.update({
+        where: { id: current.id },
+        data: targetCredentials,
+      });
+
+      return {
+        kept: { id: current.id, email: targetCredentials.email },
+        switched: { id: target.id, email: currentCredentials.email },
+      };
+    });
+  }
 
   getImpersonateUser(name: string) {
     return this._user.model.user.findMany({
