@@ -40,6 +40,7 @@ const useCharges = () => {
 const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   const fetch = useFetch();
   const t = useT();
+  const user = useUser();
   const { data: charges, mutate } = useCharges();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [refunding, setRefunding] = useState(false);
@@ -225,13 +226,15 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
           {t('refund_selected', 'Refund Selected')}
           {selected.size > 0 && ` (${selected.size})`}
         </Button>
-        <Button
-          onClick={handleCancel}
-          loading={cancelling}
-          className="!bg-red-700 rounded-[4px]"
-        >
-          {t('cancel_subscription', 'Cancel Subscription')}
-        </Button>
+        {!(user as any)?.adminGrantedSubscription && (
+          <Button
+            onClick={handleCancel}
+            loading={cancelling}
+            className="!bg-red-700 rounded-[4px]"
+          >
+            {t('cancel_subscription', 'Cancel Subscription')}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -302,6 +305,39 @@ export const Subscription = () => {
           </option>
         ))}
     </Select>
+  );
+};
+
+// Shown only for admin-granted subscriptions (see `adminGrantedSubscription` on
+// /self). Removing downgrades the account to FREE without touching Stripe, so a
+// real paid subscription can never be removed here.
+const RemoveSubscription = () => {
+  const fetch = useFetch();
+  const t = useT();
+  const remove = useCallback(async () => {
+    if (
+      !(await deleteDialog(
+        t(
+          'remove_admin_subscription_confirm',
+          'Remove this admin-granted subscription? The account will return to the FREE plan.'
+        ),
+        t('yes_remove', 'Yes, remove'),
+        t('remove_subscription_title', 'Remove Subscription?'),
+        t('no_cancel', 'No, cancel')
+      ))
+    ) {
+      return;
+    }
+    await fetch('/billing/remove-subscription', { method: 'POST' });
+    window.location.reload();
+  }, []);
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-red-700 text-white cursor-pointer whitespace-nowrap"
+      onClick={remove}
+    >
+      {t('remove_subscription', 'Remove Subscription')}
+    </div>
   );
 };
 const colorOptions = [
@@ -540,6 +576,9 @@ export const Impersonate = () => {
                   </div>
                 </div>
                 {user?.tier?.current === 'FREE' && <Subscription />}
+                {(user as any)?.adminGrantedSubscription && (
+                  <RemoveSubscription />
+                )}
                 {billingEnabled && <ManageBilling />}
               </div>
             ) : (

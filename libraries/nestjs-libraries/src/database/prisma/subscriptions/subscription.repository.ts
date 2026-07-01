@@ -109,6 +109,17 @@ export class SubscriptionRepository {
     });
   }
 
+  clearCustomerId(organizationId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: organizationId,
+      },
+      data: {
+        paymentId: null,
+      },
+    });
+  }
+
   async getSubscriptionByOrgId(orgId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
