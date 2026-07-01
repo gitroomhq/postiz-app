@@ -3,21 +3,28 @@ import {
   PostDetails,
   PostResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
+import { MastodonCompatibleAbstract } from '@gitroom/nestjs-libraries/integrations/social/mastodon-compatible.abstract';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Integration } from '@prisma/client';
 
-export class MastodonCustomProvider extends MastodonProvider {
-  override identifier = 'mastodon-custom';
-  override name = 'M. Instance';
-  override maxConcurrentJob = 5; // Custom Mastodon instances typically have generous limits
-  override editor = 'normal' as const;
+export class FriendicaProvider extends MastodonCompatibleAbstract {
+  override maxConcurrentJob = 5;
+  override refreshCron = true;
+  identifier = 'friendica';
+  name = 'Friendica';
+  isBetweenSteps = false;
+  scopes = ['read', 'write'];
+  editor = 'normal' as const;
+
+  maxLength() {
+    return 200000;
+  }
 
   async externalUrl(url: string) {
     return this.registerApplication(url);
   }
 
-  override async generateAuthUrl(external?: ClientInformation) {
+  async generateAuthUrl(external?: ClientInformation) {
     const state = makeId(6);
     const url = this.generateUrlDynamic(
       external?.instanceUrl!,
@@ -32,7 +39,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     };
   }
 
-  override async authenticate(
+  async authenticate(
     params: {
       code: string;
       codeVerifier: string;
@@ -48,7 +55,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     );
   }
 
-  override async post(
+  async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
@@ -58,7 +65,7 @@ export class MastodonCustomProvider extends MastodonProvider {
     return this.dynamicPost(id, accessToken, instanceUrl, postDetails);
   }
 
-  override async comment(
+  async comment(
     id: string,
     postId: string,
     lastCommentId: string | undefined,

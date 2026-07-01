@@ -19,6 +19,8 @@ import { ThreadsProvider } from '@gitroom/nestjs-libraries/integrations/social/t
 import { DiscordProvider } from '@gitroom/nestjs-libraries/integrations/social/discord.provider';
 import { SlackProvider } from '@gitroom/nestjs-libraries/integrations/social/slack.provider';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
+import { PixelfedProvider } from '@gitroom/nestjs-libraries/integrations/social/pixelfed.provider';
+import { FriendicaProvider } from '@gitroom/nestjs-libraries/integrations/social/friendica.provider';
 import { BlueskyProvider } from '@gitroom/nestjs-libraries/integrations/social/bluesky.provider';
 import { LemmyProvider } from '@gitroom/nestjs-libraries/integrations/social/lemmy.provider';
 import { InstagramStandaloneProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.standalone.provider';
@@ -56,6 +58,8 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new KickProvider(),
   new TwitchProvider(),
   new MastodonProvider(),
+  new PixelfedProvider(),
+  new FriendicaProvider(),
   new BlueskyProvider(),
   new LemmyProvider(),
   new FarcasterProvider(),
@@ -87,7 +91,9 @@ export class IntegrationManager {
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
+          ...(p.extensionCookies
+            ? { extensionCookies: p.extensionCookies }
+            : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),

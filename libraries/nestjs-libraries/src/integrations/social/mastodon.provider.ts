@@ -1,17 +1,16 @@
 import {
-  AuthTokenDetails,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
-import dayjs from 'dayjs';
+import { MastodonCompatibleAbstract } from '@gitroom/nestjs-libraries/integrations/social/mastodon-compatible.abstract';
 import { Integration } from '@prisma/client';
-import { number, string } from 'yup';
 
-export class MastodonProvider extends SocialAbstract implements SocialProvider {
+export class MastodonProvider
+  extends MastodonCompatibleAbstract
+  implements SocialProvider
+{
   override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
   identifier = 'mastodon';
   name = 'Mastodon';
@@ -22,99 +21,17 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     return 500;
   }
 
-  override handleErrors(
-    body: string,
-    status: number
-  ):
-    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
-    | undefined {
-    if (body.includes('Your login is currently disabled')) {
-      return {
-        type: 'refresh-token',
-        value: 'Your login is currently disabled',
-      };
-    }
-
-    return undefined;
-  }
-
-  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    return {
-      refreshToken: '',
-      expiresIn: 0,
-      accessToken: '',
-      id: '',
-      name: '',
-      picture: '',
-      username: '',
-    };
-  }
-  protected generateUrlDynamic(
-    customUrl: string,
-    state: string,
-    clientId: string,
-    url: string
-  ) {
-    return `${customUrl}/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(
-      `${url}/integrations/social/mastodon`
-    )}&scope=${this.scopes.join('+')}&state=${state}`;
-  }
-
   async generateAuthUrl() {
     const state = makeId(6);
     const url = this.generateUrlDynamic(
       process.env.MASTODON_URL || 'https://mastodon.social',
       state,
-      process.env.MASTODON_CLIENT_ID!,
-      process.env.FRONTEND_URL!
+      process.env.MASTODON_CLIENT_ID!
     );
     return {
       url,
       codeVerifier: makeId(10),
       state,
-    };
-  }
-
-  protected async dynamicAuthenticate(
-    clientId: string,
-    clientSecret: string,
-    url: string,
-    code: string
-  ) {
-    const form = new FormData();
-    form.append('client_id', clientId);
-    form.append('client_secret', clientSecret);
-    form.append('code', code);
-    form.append('grant_type', 'authorization_code');
-    form.append(
-      'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/mastodon`
-    );
-    form.append('scope', this.scopes.join(' '));
-
-    const tokenInformation = await (
-      await this.fetch(`${url}/oauth/token`, {
-        method: 'POST',
-        body: form,
-      })
-    ).json();
-
-    const personalInformation = await (
-      await this.fetch(`${url}/api/v1/accounts/verify_credentials`, {
-        headers: {
-          Authorization: `Bearer ${tokenInformation.access_token}`,
-        },
-      })
-    ).json();
-
-    return {
-      id: personalInformation.id,
-      name: personalInformation.display_name || personalInformation.acct,
-      accessToken: tokenInformation.access_token,
-      refreshToken: 'null',
-      expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: personalInformation?.avatar || '',
-      username: personalInformation.username,
     };
   }
 
@@ -129,125 +46,6 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       process.env.MASTODON_URL || 'https://mastodon.social',
       params.code
     );
-  }
-
-  async uploadFile(
-    instanceUrl: string,
-    fileUrl: string,
-    accessToken: string,
-    alt?: string
-  ) {
-    const form = new FormData();
-    form.append(
-      'file',
-      await fetch(fileUrl, {
-        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
-        dispatcher: getSsrfSafeDispatcher(),
-      }).then((r) => r.blob())
-    );
-    if (alt) {
-      form.append('description', alt);
-    }
-    const media = await (
-      await this.fetch(`${instanceUrl}/api/v1/media`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form,
-      })
-    ).json();
-    return media.id;
-  }
-
-  async dynamicPost(
-    id: string,
-    accessToken: string,
-    url: string,
-    postDetails: PostDetails[]
-  ): Promise<PostResponse[]> {
-    const [firstPost] = postDetails;
-
-    const uploadFiles = await Promise.all(
-      firstPost?.media?.map((media) =>
-        this.uploadFile(url, media.path, accessToken, media.alt)
-      ) || []
-    );
-
-    const form = new FormData();
-    form.append('status', firstPost.message);
-    form.append('visibility', 'public');
-    if (uploadFiles.length) {
-      for (const file of uploadFiles) {
-        form.append('media_ids[]', file);
-      }
-    }
-
-    const post = await (
-      await this.fetch(`${url}/api/v1/statuses`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form,
-      })
-    ).json();
-
-    return [
-      {
-        id: firstPost.id,
-        postId: post.id,
-        releaseURL: `${url}/statuses/${post.id}`,
-        status: 'completed',
-      },
-    ];
-  }
-
-  async dynamicComment(
-    id: string,
-    postId: string,
-    lastCommentId: string | undefined,
-    accessToken: string,
-    url: string,
-    postDetails: PostDetails[]
-  ): Promise<PostResponse[]> {
-    const [commentPost] = postDetails;
-    const replyToId = lastCommentId || postId;
-
-    const uploadFiles = await Promise.all(
-      commentPost?.media?.map((media) =>
-        this.uploadFile(url, media.path, accessToken, media.alt)
-      ) || []
-    );
-
-    const form = new FormData();
-    form.append('status', commentPost.message);
-    form.append('visibility', 'public');
-    form.append('in_reply_to_id', replyToId);
-    if (uploadFiles.length) {
-      for (const file of uploadFiles) {
-        form.append('media_ids[]', file);
-      }
-    }
-
-    const post = await (
-      await this.fetch(`${url}/api/v1/statuses`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form,
-      })
-    ).json();
-
-    return [
-      {
-        id: commentPost.id,
-        postId: post.id,
-        releaseURL: `${url}/statuses/${post.id}`,
-        status: 'completed',
-      },
-    ];
   }
 
   async post(
