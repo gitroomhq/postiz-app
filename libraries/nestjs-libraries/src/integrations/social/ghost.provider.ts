@@ -196,16 +196,20 @@ export class GhostProvider extends SocialAbstract implements SocialProvider {
       })
     ).json()) as GhostPostResponse;
 
-    const createdPost = response.posts?.[0];
+    const [createdPost] = Array.isArray(response.posts) ? response.posts : [];
+
+    if (!createdPost?.id) {
+      throw new Error('Ghost post creation did not return a post id.');
+    }
 
     return [
       {
         id: post.id,
         status: 'completed',
-        postId: createdPost?.id || '',
+        postId: createdPost.id,
         releaseURL:
           createdPost?.url ||
-          `${credentials.siteUrl}/ghost/#/editor/post/${createdPost?.id || ''}`,
+          `${credentials.siteUrl}/ghost/#/editor/post/${createdPost.id}`,
       },
     ];
   }
