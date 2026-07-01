@@ -18,6 +18,7 @@ import { Organization } from '@prisma/client';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
+import handleS3Upload from '@gitroom/nestjs-libraries/upload/s3.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -158,7 +159,8 @@ export class MediaController {
     @Res() res: Response,
     @Param('endpoint') endpoint: string
   ) {
-    const upload = await handleR2Upload(endpoint, req, res);
+    const storageProvider = process.env.STORAGE_PROVIDER || 'local';
+    const upload = await (storageProvider === 's3' ? handleS3Upload : handleR2Upload)(endpoint, req, res);
     if (endpoint !== 'complete-multipart-upload') {
       return upload;
     }

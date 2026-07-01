@@ -3,6 +3,7 @@
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
+    "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "noImplicitOverride": true,

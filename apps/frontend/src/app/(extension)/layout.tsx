@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <VariableContextComponent
           language="en"
           storageProvider={
-            process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
+            process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare' | 's3'
           }
           stripeClient=""
           environment={process.env.NODE_ENV!}
@@ -41,7 +41,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
           oauthDisplayName={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME!}
           uploadDirectory={process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY!}
-          cloudflareUrl={process.env.CLOUDFLARE_BUCKET_URL || ''}
+          cloudflareUrl={
+            process.env.STORAGE_PROVIDER === 's3'
+              ? process.env.S3_BUCKET_URL || ''
+              : process.env.STORAGE_PROVIDER === 'cloudflare'
+              ? process.env.CLOUDFLARE_BUCKET_URL || ''
+              : ''
+          }
           mainUrl={process.env.MAIN_URL || ''}
           mcpUrl={process.env.MCP_URL}
           dub={false}
