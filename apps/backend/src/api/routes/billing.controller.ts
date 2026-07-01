@@ -193,6 +193,18 @@ export class BillingController {
     return this._stripeService.cancelSubscription(org.id);
   }
 
+  @Post('/remove-subscription')
+  async removeSubscription(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.removeAdminGrantedSubscription(org.id);
+  }
+
   @Get('/chatbase-refund/preview')
   chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
     return this._stripeService.chatbaseRefundPreview(org.id);
