@@ -122,6 +122,12 @@ export class PinterestProvider
           'When uploading a video, you must add also an image to be used as a cover image.',
       };
     }
+    if (body.indexOf('only get data from the last 90 days') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'Pinterest analytics are only available for the last 90 days.',
+      };
+    }
 
     return undefined;
   }
@@ -391,7 +397,12 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    // Pinterest analytics only cover the last 90 days; clamp so a longer
+    // requested period doesn't fail with "You can only get data from the last
+    // 90 days" (89 for a UTC-boundary safety margin).
+    const since = dayjs()
+      .subtract(Math.min(date, 89), 'day')
+      .format('YYYY-MM-DD');
 
     const {
       all: { daily_metrics },
@@ -456,8 +467,11 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-    // Use a very long date range (2 years) to capture lifetime metrics for older posts
-    const since = dayjs().subtract(2, 'year').format('YYYY-MM-DD');
+    // Pinterest only serves pin analytics for the last 90 days; an older
+    // start_date fails with "You can only get data from the last 90 days".
+    // Use 89 to stay safely inside the window (Pinterest evaluates it in UTC,
+    // so exactly 90 can trip an off-by-one when the server's local date is ahead).
+    const since = dayjs().subtract(89, 'day').format('YYYY-MM-DD');
 
     try {
       // Fetch pin analytics from Pinterest API
