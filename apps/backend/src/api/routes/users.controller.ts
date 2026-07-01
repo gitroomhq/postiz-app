@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpException,
+  Logger,
   Post,
   Query,
   Req,
@@ -16,6 +17,8 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { Response, Request } from 'express';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
+import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
@@ -44,8 +47,11 @@ export class UsersController {
     private _authService: AuthService,
     private _orgService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _notificationService: NotificationService
   ) {}
+
+  private readonly _logger = new Logger(UsersController.name);
 
   @Get('/chatbase-token')
   async getChatbaseToken(
@@ -193,6 +199,155 @@ export class UsersController {
     if (process.env.NOT_SECURED) {
       response.header('impersonate', id);
     }
+  }
+
+  @Post('/switch')
+  async switchUser(
+    @GetUserFromRequest() user: User,
+    @Body('id') id: string,
+    @Req() req: Request
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    if (!id || id === user.id) {
+      throw new HttpException('Invalid user to switch to', 400);
+    }
+
+    // `user` is the impersonated account; `id` is the account whose login it is
+    // being swapped with. The swap keeps both user ids (and therefore their
+    // organizations, subscriptions, channels and media) in place and only
+    // trades the login credentials, so each login now reaches the other's data.
+    const oldEmail = user.email;
+    const { kept, switched } = await this._userService.switchUser(user.id, id);
+
+    // Audit: `user` is the impersonated account, so read the real admin id from
+    // the underlying auth token.
+    const adminId = this.getRequestUserId(req);
+    this._logger.log(
+      `User login switch performed${
+        adminId ? ` by admin ${adminId}` : ''
+      }: account ${kept.id} login ${oldEmail} -> ${kept.email}; account ${
+        switched.id
+      } login ${kept.email} -> ${switched.email}`
+    );
+
+    // Mirror the swap onto Stripe: each org's customer now belongs to whoever
+    // logs in with the owner's new email.
+    await this.syncStripeCustomersEmail([kept, switched]);
+
+    // If a login ended up on a never-verified email, it must be re-verified, so
+    // send it a fresh activation link. Failures must not fail the request.
+    await Promise.all(
+      [kept, switched].map(async (account) => {
+        if (account.activated) {
+          return;
+        }
+        try {
+          await this._authService.resendActivationEmail(account.email);
+        } catch (err) {
+          this._logger.error(
+            `Failed to send activation email to ${account.email}`,
+            err
+          );
+        }
+      })
+    );
+
+    // Let both accounts know their login changed. The swap is already
+    // committed, so a notification failure must not fail the request.
+    try {
+      await Promise.all([
+        this.notifyUserOfSwitch(kept.id, kept.email),
+        this.notifyUserOfSwitch(switched.id, switched.email),
+      ]);
+    } catch (err) {
+      this._logger.error('Failed to notify users after login switch', err);
+    }
+
+    return { success: true };
+  }
+
+  private getRequestUserId(req: Request): string | null {
+    try {
+      const auth = (req.headers.auth as string) || req.cookies?.auth;
+      const payload = AuthChecker.verifyJWT(auth) as { id?: string } | null;
+      return payload?.id || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async notifyUserOfSwitch(userId: string, email: string) {
+    const subject = 'Your Postiz login was changed';
+    const message =
+      `An administrator changed the login for your Postiz account. ` +
+      `You can now sign in using ${email}. ` +
+      `Your subscription and plan were not changed by this switch — if you ` +
+      `intended to cancel a subscription, please do that separately from your ` +
+      `billing settings.`;
+
+    const organizations = await this._orgService.getOrgsByUserId(userId);
+    await Promise.all(
+      organizations.map(async (org) => {
+        // In-app notifications are organization-scoped, so posting to a shared
+        // organization would show "your login changed" to co-members who were
+        // not part of the switch. Only post where this user is the sole member;
+        // the email below reaches the switched login specifically in every case.
+        const team = await this._orgService.getTeam(org.id);
+        if ((team?.users?.length || 0) > 1) {
+          return;
+        }
+        await this._notificationService.inAppNotification(
+          org.id,
+          subject,
+          message,
+          false,
+          false,
+          'info'
+        );
+      })
+    );
+
+    if (this._notificationService.hasEmailProvider()) {
+      await this._notificationService.sendEmail(email, subject, message);
+    }
+  }
+
+  private async syncStripeCustomersEmail(
+    accounts: { id: string; email: string }[]
+  ) {
+    // Map each real Stripe customer to the login email it should now carry.
+    // Two guards for multi-user organizations:
+    // - Owner-only: only the org owner's (SUPERADMIN) login drives its billing
+    //   email, so a non-owner member's switch never rewrites a shared org's
+    //   receipts address.
+    // - Dedupe: each customer is updated once even when both switched accounts
+    //   own the same organization (the first account processed wins), avoiding
+    //   two concurrent, racing updates to the same customer.
+    // Only real Stripe customers are touched — admin-granted subscriptions store
+    // the user id in `paymentId` (not a `cus_...` id), so calling Stripe for
+    // them only produces failed requests.
+    const emailByCustomer = new Map<string, string>();
+    for (const account of accounts) {
+      const organizations = await this._orgService.getOrgsByUserId(account.id);
+      for (const org of organizations) {
+        const role = org.users?.[0]?.role;
+        if (
+          role === 'SUPERADMIN' &&
+          org.paymentId?.startsWith('cus_') &&
+          !emailByCustomer.has(org.paymentId)
+        ) {
+          emailByCustomer.set(org.paymentId, account.email);
+        }
+      }
+    }
+    await Promise.all(
+      [...emailByCustomer].map(([customerId, email]) =>
+        this._stripeService.updateCustomerEmail(customerId, email)
+      )
+    );
   }
 
   @Post('/personal')

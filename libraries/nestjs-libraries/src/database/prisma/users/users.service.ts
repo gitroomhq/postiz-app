@@ -28,6 +28,13 @@ export class UsersService {
     return this._usersRepository.getUserByProvider(providerId, provider);
   }
 
+  switchUser(currentUserId: string, targetUserId: string) {
+    return this._usersRepository.switchUserCredentials(
+      currentUserId,
+      targetUserId
+    );
+  }
+
   activateUser(id: string) {
     return this._usersRepository.activateUser(id);
   }

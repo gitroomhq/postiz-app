@@ -159,6 +159,17 @@ export class StripeService {
     );
   }
 
+  async updateCustomerEmail(customerId: string, email: string) {
+    if (!process.env.STRIPE_PUBLISHABLE_KEY || !customerId) {
+      return;
+    }
+    try {
+      await stripe.customers.update(customerId, {
+        email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
+      });
+    } catch (err) {}
+  }
+
   async createOrGetCustomer(organization: Organization) {
     if (organization.paymentId) {
       return organization.paymentId;

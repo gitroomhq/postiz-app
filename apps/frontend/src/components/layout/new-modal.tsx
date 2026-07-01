@@ -341,7 +341,7 @@ export const DecisionModal: FC<{
   const { closeCurrent } = useModals();
   return (
     <div className="flex flex-col">
-      <div>{description}</div>
+      <div className="max-w-[600px]">{description}</div>
       <div className="flex gap-[12px] mt-[16px]">
         <Button
           onClick={() => {
@@ -373,6 +373,7 @@ export const areYouSure = ({
   description = 'Are you sure you want to close this modal?' as any,
   approveLabel = 'Yes',
   cancelLabel = 'No',
+  onlyApprove = false,
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -380,6 +381,7 @@ export const areYouSure = ({
       description,
       approveLabel,
       cancelLabel,
+      onlyApprove,
       newRes,
     });
   });
