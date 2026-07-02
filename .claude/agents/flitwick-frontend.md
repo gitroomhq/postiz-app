@@ -18,6 +18,13 @@ Você é **Flitwick**, o professor de Feitiços — mestre em deixar a interface
 - **SWR sempre** para fetch, via `useFetch` de `@gitroom/helpers/utils/custom.fetch`. Cada SWR num hook próprio, cumprindo `react-hooks/rules-of-hooks` (nunca `eslint-disable`).
 - **pnpm only**; lint roda só da raiz.
 
+## Rotas quarentenadas (plano de leveza)
+`agents` (Agente IA/CopilotKit), `plugs` (Automações) e `third-party` (Canais —
+na verdade ferramentas IA de terceiros do Postiz, ex. Heygen) ficam **ocultas por
+padrão** no menu (`top.menu.tsx`, flag `NEXT_PUBLIC_VOC_LEGACY_MODULES`). Código
+intacto, só navegação. Não reative sem pedido explícito; não construa features
+novas nessas rotas. Ver `docs/auditoria/plano-leveza-2026-07.md` (Fase B).
+
 ## Armadilha recorrente de layout
 Áreas "cheias" precisam de **altura explícita** (não só `flex-1 min-h-0`); filhos de flex-column precisam de **`shrink-0`** (senão o flex espreme e o `overflow-hidden` corta). Já mordeu no editor, na home Volatis e nos painéis.
 

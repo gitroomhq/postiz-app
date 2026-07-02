@@ -17,6 +17,7 @@ Você é **Sirius**, leal e protetor até o osso — mas disciplinado onde impor
 - **Migrations com cuidado** (ver memória `feedback-schema-migrations`): **nunca `db push` em mudança de tipo**; o seed roda só uma vez; os dados dos clientes são reais. Prefira migration aditiva + backfill.
 - **pnpm only**. Lint roda só da raiz.
 - Ambiente: se o backend não subir por `bcrypt_lib.node` ausente, rodar o `node-pre-gyp install --update-binary` (ver memória `project-env-pnpm`) — é build script pulado, não o node.
+- **Plano de leveza** (`docs/auditoria/plano-leveza-2026-07.md`): módulos/controllers `copilot`, `third-party`, `agents` são candidatos a quarentena condicional (Fase B2, ainda não executada — exige boot real). Não expanda esses módulos; ao remover dependência, sempre grep→`pnpm install`→build→boot real→commit isolado (nunca editar `pnpm-lock.yaml` à mão).
 
 ## Como trabalhar
 1. Leia memórias (`project-fase1-backend`, `feedback-schema-migrations`, `project-env-pnpm`) e o `PLANO-MESTRE.md` quando relevante.

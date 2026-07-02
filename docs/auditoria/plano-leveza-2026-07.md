@@ -54,15 +54,27 @@ Desligar por configuração, **sem deletar código**:
 
 ## Fase C — Poda de dependências em ondas *(esforço: moderado · risco: médio-controlado · maior ganho de peso)*
 Só após Fase B estável. Uma onda por sessão, commit isolado, seguindo o princípio 2.
-| Onda | Candidatos | Condição |
-|---|---|---|
-| C1 | `@copilotkit/*`, `mastra`, `@mastra/*`, `@langchain/*`, `@ag-ui/mastra`, `openai`? | rotas `agents` quarentenadas (B1/B2) e nenhum import restante. `openai` só se nada mais usar |
-| C2 | `polotno` (+ `polonto.css`), `@uppy/transloadit`, `transloadit` | confirmar que o editor Konva próprio cobre tudo e storage não usa Transloadit |
-| C3 | Web3/nicho: `@solana/*`, `viem`, `bs58`, `tweetnacl`, `nostr-tools`, `@neynar/*`, `@postiz/wallets` | **apenas se** os providers web3/Farcaster/Nostr/Telegram estiverem fora da lista B3 — senão adiar p/ v2.0 |
-| C4 | Pinar o que sobrar de IA/volátil (VOC-41) | manifest + lockfile |
 
-**Ganhos esperados:** install e cold-start mais rápidos, menos RAM no dev, superfície supply-chain menor, `pnpm-lock` mais estável.
-**Modelo:** Sonnet médio; greps preparatórios com Haiku. **Reversão:** revert do commit da onda (lockfile volta junto).
+**⚠️ Auditoria grep-verificada 2026-07-02 (Sonnet, sem execução — ver "restrição de ambiente"
+abaixo): a suposição original de C1 estava ERRADA.** Não editei `package.json`/`pnpm-lock.yaml`.
+
+| Onda | Candidatos originais | Veredito real (grep exaustivo em `apps/*` + `libraries/*`) |
+|---|---|---|
+| C1 | `@copilotkit/*`, `mastra`, `@mastra/*`, `@langchain/*`, `@ag-ui/mastra`, `openai` | **NÃO seguro remover a maioria.** `@copilotkit/react-core`/`react-textarea` estão no **editor de posts principal** (`new-launch/editor.tsx` via `useCopilotAction`/`useCopilotReadable`) e no **autopost** (`CopilotTextarea`) — features ativas, não confinadas a `/agents`. `@langchain/*` (langgraph/core/openai) alimenta a **geração de conteúdo por IA do autopost** (`autopost.service.ts` — o mesmo arquivo mexido na Fase D/VOC-45). `openai` (pacote) é usado em `openai.service.ts`, consumido por `posts.service.ts`, `media.service.ts`, vídeos e Heygen — **core, não remover**. **Realmente confinados** à feature quarentenada: `mastra`/`@mastra/*` (só em `libraries/nestjs-libraries/src/chat/*` + `copilot.controller.ts`) e `@ag-ui/mastra` (só em `copilot.controller.ts`) — mas só ficam seguros de remover **depois** da Fase B2 (quarentenar/deletar o `copilot.controller.ts` e o módulo `chat/` no backend, com boot real). **Achado extra:** `apps/backend/src/services/auth/auth.middleware.ts:9` importa `MastraService` e nunca usa — import morto num arquivo de segurança sensível; não toquei (exige boot real pra validar), registrar pra limpeza pontual futura. |
+| C2 | `polotno` (+ `polonto.css`), `@uppy/transloadit`, `transloadit` | **`polotno`/`Polonto` está em uso na Media Library** (`media.component.tsx`, dynamic import — edição de imagem inline), rota **não quarentenada**. Remover exige decisão de produto: essa edição inline é redundante com o editor Konva do Volatis, ou é uma feature própria que os usuários usam? **Não é call de engenharia, é call do Felipe.** `@uppy/transloadit`/`transloadit` usados em `images.slides.ts` (vídeo) e `uppy.upload.ts` (helper compartilhado de upload) — infra genérica, não confinada; confirmar se o storage provider ativo em produção realmente usa Transloadit antes de tocar. |
+| C3 | Web3/nicho: `@solana/*`, `viem`, `bs58`, `tweetnacl`, `nostr-tools`, `@neynar/*`, `@postiz/wallets` | Confirmado: usados em auth por wallet (Solana) e providers sociais Farcaster/Nostr — não confinados a rota quarentenada. **Só um `SELECT provider, count(*) FROM "Integration"...` em produção (B3) resolve** se algum tenant usa esses canais. Sem essa query, C3 fica **adiado pra v2.0** como já previsto. |
+| C4 | Pinar o que sobrar de IA/volátil (VOC-41) | Não aplicável ainda — nada de C1-C3 foi removido nesta rodada. |
+
+**Restrição de ambiente que forçou este escopo:** este worktree não tem `node_modules`
+(sem `pnpm install`/build/boot possível aqui). Mesmo os poucos itens realmente seguros
+(mastra/`@ag-ui/mastra`, condicionados à Fase B2) exigem editar `package.json` E
+regenerar `pnpm-lock.yaml` via `pnpm install` E validar build+boot — nenhuma dessas
+três coisas é segura de fazer sem ambiente completo. **Decisão tomada: zero edição de
+dependências nesta sessão; esta tabela é o ponto de partida pronto pra próxima sessão
+com boot real** (a partir de `C:\dev\vocaccio`, não de um worktree).
+
+**Ganhos esperados (quando executado):** install e cold-start mais rápidos, menos RAM no dev, superfície supply-chain menor, `pnpm-lock` mais estável.
+**Modelo:** Sonnet médio pro grep/execução; Opus se a decisão de produto do C2 (Polotno vs Konva) precisar de arbitragem. **Reversão:** revert do commit da onda (lockfile volta junto).
 
 ## Fase D — Estabilidade barata *(esforço: leve · itens já mapeados na auditoria — executar, não re-analisar)*
 - **VOC-45/46:** ✅ **FEITO 2026-07-02.** `AutopostActivity.autoPost` reporta pro Sentry antes de re-lançar; workflow loga via `log.error` (determinístico, `@temporalio/workflow`) em vez de engolir o erro; `backoffCoefficient: 1→2` no autopost e no `post.workflow.v1.0.5.ts` ativo (v1.0.1-v1.0.4 propositalmente não tocados — frozen p/ workflows em voo).
@@ -74,12 +86,61 @@ Só após Fase B estável. Uma onda por sessão, commit isolado, seguindo o prin
 
 **Modelo:** Sonnet baixo/médio; Haiku nos triviais.
 
-## Fase E — Desengessar convenções e time (DX) *(esforço: leve)*
-- Atualizar `CLAUDE.md` do projeto: remover instruções obsoletas do Postiz, registrar o mapa de quarentena e o princípio "grep→build→boot" (este doc como fonte).
-- Agentes: `snape-backend` e `moody-revisor` ganham a regra "não reintroduzir import de dependência podada / módulo quarentenado"; `flitwick-frontend` ganha a lista de rotas quarentenadas.
-- Scripts `voc:*` documentados no README interno.
+## Fase E — Desengessar convenções e time (DX) *(esforço: leve)* — ✅ FEITO 2026-07-02
+- `CLAUDE.md` do projeto: corrigido "This project is Postiz" → Vocaccio (fork, com o que foi adicionado); corrigido "Vite ReactJS" → Next.js/App Router (estava errado); adicionado aviso sobre `extension`/`sdk`/`commands` não serem produto; adicionado o princípio grep→`pnpm install`→build→boot→commit isolado + link pro plano.
+- `moody-revisor`/README dos agentes: regra de quarentena/poda já tinha sido adicionada na Fase 0/B.
+- `sirius-backend`: ganhou nota sobre módulos candidatos a quarentena condicional (`copilot`/`third-party`/`agents`) + a mesma regra de poda de dependência.
+- `flitwick-frontend`: ganhou a lista de rotas quarentenadas (`agents`/`plugs`/`third-party`) e instrução de não reativar/expandir sem pedido.
+- **Pulado de propósito:** scripts `voc:*` no README raiz — o README raiz é o material de marketing herdado do Postiz (stars/sponsors), não o lugar certo, e não havia necessidade real de scripts novos (`dev-backend` já cobre o caso de uso da Fase A).
 
 **Modelo:** Haiku.
+
+---
+
+## Goal prompt — execução autônoma Fases C+E (2026-07-02, Felipe foi dormir)
+
+**Contexto para quem retomar (se a sessão cair):** Fases 0/A/B/D já commitadas e
+prontas (ver commits `chore(fase-a)`, `chore(fase-b)`, `chore(fase-d)` na branch
+`claude/magical-allen-1f35af`). Felipe autorizou concluir C e E sozinho, trocando
+modelo/esforço se preciso, sem parar até terminar, e **commitar + dar push ao final**.
+
+**Restrição de ambiente descoberta em campo:** este worktree NÃO tem `node_modules`
+(`test -d node_modules` → não existe) — não dá pra rodar `pnpm install`/build/boot
+aqui. Isso invalida a execução "cega" da Fase C tal como descrita (grep→build→boot
+no mesmo commit): **não é seguro editar `package.json` removendo dependências sem
+poder rodar `pnpm install` pra regenerar o `pnpm-lock.yaml`** — ficaria dessincronizado
+e quebraria qualquer CI com `--frozen-lockfile`.
+
+**Decisão mais segura (tomada, não perguntar de novo):** Fase C vira uma **auditoria
+grep-verificada e documentada** (não uma remoção de fato) nesta sessão. A remoção real
+de dependências fica marcada como pronta-pra-executar a partir do checkout principal
+(`C:\dev\vocaccio`), onde há `pnpm`/DB/boot real. Fase E é executada por completo
+(não depende de build).
+
+**Modelo recomendado para as duas fases, do início ao fim, sem necessidade de troca:**
+Sonnet, esforço médio. Justificativa: nenhuma decisão arquitetural (isso seria Opus);
+mas greps precisam ser exaustivos e cuidadosos (não é trivial o bastante pra Haiku
+sozinho) — usos indiretos, imports dinâmicos, string-based provider loading, etc.
+
+**Passo a passo:**
+1. Fase E completa: `CLAUDE.md` do projeto (remover instruções obsoletas do Postiz
+   puro, linkar este plano, documentar mapa de quarentena B1 e o princípio
+   grep→build→boot); confirmar que os agentes (README + moody-revisor) já têm a regra
+   de não reintroduzir deps podadas (já feito na Fase 0/B — só conferir, não duplicar).
+2. Fase C como auditoria: para cada onda (C1 copilotkit/mastra/langchain/ag-ui, C2
+   polotno/uppy-transloadit, C3 web3/nicho), grep exaustivo de imports em
+   `apps/*/src`, `libraries/*/src` (não só frontend) — path por path, contando
+   ocorrências reais de import/require, não só menção em texto. Documentar no plano:
+   o que tem zero uso confirmado (pronto pra remover na próxima sessão com boot real)
+   vs o que ainda é usado (não mexer). NÃO editar `package.json`/`pnpm-lock.yaml`.
+3. Rodar `moody-revisor` no diff antes de commitar (mesmo sendo só docs, é barato e
+   é a convenção do time).
+4. Commit com mensagem clara distinguindo "Fase E: feito" de "Fase C: auditoria
+   pronta, execução real pendente de ambiente com boot".
+5. `git push` da branch `claude/magical-allen-1f35af` (Felipe já autorizou push
+   nesta sessão, incluindo o fast-forward de `main` feito mais cedo).
+6. Se travar em algo que exige decisão de produto/arquitetura (não deveria, dado o
+   escopo), parar e deixar registrado — não adivinhar.
 
 ---
 
