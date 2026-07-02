@@ -20,9 +20,7 @@ import TwitchProvider from '@gitroom/frontend/components/new-launch/providers/tw
 import MastodonProvider from '@gitroom/frontend/components/new-launch/providers/mastodon/mastodon.provider';
 import BlueskyProvider from '@gitroom/frontend/components/new-launch/providers/bluesky/bluesky.provider';
 import LemmyProvider from '@gitroom/frontend/components/new-launch/providers/lemmy/lemmy.provider';
-import WarpcastProvider from '@gitroom/frontend/components/new-launch/providers/warpcast/warpcast.provider';
 import TelegramProvider from '@gitroom/frontend/components/new-launch/providers/telegram/telegram.provider';
-import NostrProvider from '@gitroom/frontend/components/new-launch/providers/nostr/nostr.provider';
 import VkProvider from '@gitroom/frontend/components/new-launch/providers/vk/vk.provider';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -130,16 +128,8 @@ export const Providers = [
     component: LemmyProvider,
   },
   {
-    identifier: 'wrapcast',
-    component: WarpcastProvider,
-  },
-  {
     identifier: 'telegram',
     component: TelegramProvider,
-  },
-  {
-    identifier: 'nostr',
-    component: NostrProvider,
   },
   {
     identifier: 'vk',
