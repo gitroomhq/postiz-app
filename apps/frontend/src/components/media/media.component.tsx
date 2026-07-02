@@ -56,6 +56,13 @@ import { useDebounce } from 'use-debounce';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
+// On hold (docs/auditoria/plano-leveza-2026-07.md, Fase C): editor de imagem
+// Polotno é feature básica demais pro peso que carrega. Desabilitado até
+// encontrarmos (ou não) uma alternativa mais leve. Como já é dynamic import,
+// mantendo os gatilhos ocultos o chunk nunca é baixado por ninguém.
+// Reativar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
+const MEDIA_EDITOR_ENABLED =
+  process.env.NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED === 'true';
 const showModalEmitter = new EventEmitter();
 export const Pagination: FC<{
   current: number;
@@ -740,7 +747,7 @@ export const MultiMediaComponent: FC<{
   );
 
   const designMedia = useCallback(() => {
-    if (!!user?.tier?.ai && !dummy) {
+    if (MEDIA_EDITOR_ENABLED && !!user?.tier?.ai && !dummy) {
       modals.openModal({
         askClose: false,
         title: t('design_media', 'Design Media'),
@@ -839,19 +846,21 @@ export const MultiMediaComponent: FC<{
                   </div>
                 </div>
               </div>
-              <div
-                onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-              >
-                <div className="flex gap-[5px] items-center">
-                  <div>
-                    <DesignMediaIcon />
-                  </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
-                    {t('design_media', 'Design Media')}
+              {MEDIA_EDITOR_ENABLED && (
+                <div
+                  onClick={designMedia}
+                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                >
+                  <div className="flex gap-[5px] items-center">
+                    <div>
+                      <DesignMediaIcon />
+                    </div>
+                    <div className="text-[10px] font-[600] iconBreak:hidden block">
+                      {t('design_media', 'Design Media')}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <ThirdPartyMedia allData={allData} onChange={changeMedia} />
 
@@ -922,6 +931,7 @@ export const MediaComponent: FC<{
   const mediaDirectory = useMediaDirectory();
 
   const showDesignModal = useCallback(() => {
+    if (!MEDIA_EDITOR_ENABLED) return;
     modals.openModal({
       title: t('media_editor', 'Media Editor'),
       askClose: false,
@@ -985,9 +995,11 @@ export const MediaComponent: FC<{
       )}
       <div className="flex gap-[5px]">
         <Button onClick={showModal}>{t('select', 'Select')}</Button>
-        <Button onClick={showDesignModal} className="!bg-customColor45">
-          {t('editor', 'Editor')}
-        </Button>
+        {MEDIA_EDITOR_ENABLED && (
+          <Button onClick={showDesignModal} className="!bg-customColor45">
+            {t('editor', 'Editor')}
+          </Button>
+        )}
         <Button secondary={true} onClick={clearMedia}>
           {t('clear', 'Clear')}
         </Button>
