@@ -68,7 +68,7 @@ const AnalyticsCard: FC<{
           rounded-[12px]
           overflow-hidden
           transition-all duration-200
-          hover:border-[#612bd3]/50
+          hover:border-[var(--new-btn-primary)]/50
         `}
       >
         {/* Header */}
@@ -77,7 +77,7 @@ const AnalyticsCard: FC<{
             <div
               className={`
                 w-[8px] h-[8px] rounded-full
-                ${color === 'purple' ? 'bg-[#612bd3]' : ''}
+                ${color === 'purple' ? 'bg-[var(--new-btn-primary)]' : ''}
                 ${color === 'green' ? 'bg-[#32d583]' : ''}
                 ${color === 'blue' ? 'bg-[#1d9bf0]' : ''}
               `}
@@ -126,7 +126,7 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
 
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-[48px] px-[24px] bg-newTableHeader border border-newTableBorder rounded-[12px]">
-      <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[#612bd3]/10 flex items-center justify-center">
+      <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[var(--new-btn-primary)]/10 flex items-center justify-center">
         <svg
           width="24"
           height="24"
@@ -134,7 +134,7 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-[#612bd3]"
+          className="text-[var(--new-btn-primary)]"
         >
           <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           <path d="M12 8v4l2 2" />
@@ -148,7 +148,7 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       </p>
       <button
         onClick={onRefresh}
-        className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-white bg-[#612bd3] hover:bg-[#5023b8] rounded-[8px] transition-colors"
+        className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-white bg-[var(--new-btn-primary)] hover:bg-[var(--new-btn-primary)] rounded-[8px] transition-colors"
       >
         <svg
           width="16"

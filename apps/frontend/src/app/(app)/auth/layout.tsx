@@ -25,7 +25,7 @@ export default async function AuthLayout({
       </div>
       <div className="text-[36px] flex-1 pt-[88px] hidden lg:flex flex-col items-center">
         <div className="text-center">
-          Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
+          Over <span className="text-[42px] text-[var(--new-table-text-focused)]">20,000+</span>{' '}
           Entrepreneurs use
           <br />
           Vocaccio To Grow Their Social Presence

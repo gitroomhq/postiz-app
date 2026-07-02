@@ -81,8 +81,8 @@ export default function OAuthAuthorizePage() {
     return (
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[var(--new-btn-primary)] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[var(--new-table-text-focused)] rounded-full blur-[120px]" />
         </div>
         <div className="relative z-10 text-center">
           <div className="flex justify-center mb-[24px]">
@@ -92,7 +92,7 @@ export default function OAuthAuthorizePage() {
             Please wait...
           </div>
           <div className="mt-[32px] flex justify-center">
-            <div className="w-[48px] h-[48px] border-[3px] border-[#612BD3] border-t-transparent rounded-full animate-spin" />
+            <div className="w-[48px] h-[48px] border-[3px] border-[var(--new-btn-primary)] border-t-transparent rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -103,8 +103,8 @@ export default function OAuthAuthorizePage() {
     return (
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[var(--new-btn-primary)] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[var(--new-table-text-focused)] rounded-full blur-[120px]" />
         </div>
         <div className="relative z-10 text-center">
           <div className="flex justify-center mb-[24px]">
@@ -141,8 +141,8 @@ export default function OAuthAuthorizePage() {
   return (
     <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[var(--new-btn-primary)] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[var(--new-table-text-focused)] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-[500px] mx-auto px-[20px]">
@@ -189,7 +189,7 @@ export default function OAuthAuthorizePage() {
             <button
               onClick={() => handleAction('approve')}
               disabled={submitting}
-              className="flex-1 bg-[#612BD3] hover:bg-[#7B3FF2] disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
+              className="flex-1 bg-[var(--new-btn-primary)] hover:bg-[var(--new-btn-primary)] disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
             >
               Authorize
             </button>
