@@ -23,7 +23,6 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
-import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
@@ -53,14 +52,15 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
-const Polonto = dynamic(
-  () => import('@gitroom/frontend/components/launches/polonto')
-);
+import { MiniImageEditorLoader } from '@gitroom/frontend/components/media/mini-image-editor-loader.component';
 // On hold (docs/auditoria/plano-leveza-2026-07.md, Fase C): editor de imagem
 // Polotno é feature básica demais pro peso que carrega. Desabilitado até
 // encontrarmos (ou não) uma alternativa mais leve. Como já é dynamic import,
 // mantendo os gatilhos ocultos o chunk nunca é baixado por ninguém.
-// Reativar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
+// Substituído (em teste) pelo MiniImageEditorLoader (Konva, docs/auditoria/
+// plano-leveza-2026-07.md Fase C onda C2) atrás da mesma flag — se cobrir o
+// caso de uso real, remove-se o Polotno de vez; se não, volta pra <Polonto>.
+// Reativar/testar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
 const MEDIA_EDITOR_ENABLED =
   process.env.NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED === 'true';
 const showModalEmitter = new EventEmitter();
@@ -753,7 +753,7 @@ export const MultiMediaComponent: FC<{
         title: t('design_media', 'Design Media'),
         size: '80%',
         children: (close) => (
-          <Polonto setMedia={changeMedia} closeModal={close} />
+          <MiniImageEditorLoader setMedia={changeMedia} closeModal={close} />
         ),
       });
     }
@@ -940,7 +940,7 @@ export const MediaComponent: FC<{
       size: 'calc(100% - 80px)',
       height: 'calc(100% - 80px)',
       children: (close) => (
-        <Polonto
+        <MiniImageEditorLoader
           width={width}
           height={height}
           setMedia={changeMedia}

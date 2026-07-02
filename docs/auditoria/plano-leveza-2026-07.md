@@ -36,7 +36,7 @@ A branch `fix/voc-idor-project-content` (Fase 1 da auditoria: VOC-01, 02, 04, 06
 |---|---|---|
 | A1 | Script `dev:voc` = só backend+frontend (o `dev-backend` já existe; padronizar como default do dia a dia) | extension/orchestrator só quando necessário |
 | A2 | `build` padrão sem `extension`/`sdk`/`commands` | já é quase isso; garantir e documentar |
-| A3 | `NODE_OPTIONS=--max-old-space-size=4096` no tsc/CI | corrige o "sai 0 falsamente" (gotcha da auditoria) |
+| A3 | `NODE_OPTIONS=--max-old-space-size=4096` no tsc/CI | corrige o "sai 0 falsamente" (gotcha da auditoria). **Correção 2026-07-03:** só tinha sido aplicado no `build` do `apps/backend`; `pnpm install` real (feito nesta sessão, node_modules agora existe no worktree) revelou que o **orchestrator OOMava do mesmo jeito** — corrigido em `apps/orchestrator/package.json` também. Validado com build real (não só tsc) nos dois: exit 0. |
 | A4 | Alinhar `volta.node` ↔ `engines` (VOC-40); placeholder óbvio no `.env.example` (VOC-42); apagar `apps/backend/undefined/` | higiene |
 
 **Modelo:** Haiku. **Reversão:** revert de config.
@@ -73,15 +73,37 @@ já tem o padrão pronto), em vez de instalar outra lib do npm (proibido pelo
 `CLAUDE.md` do projeto: "Never install frontend components from npmjs"). `<canvas>`
 nativo puro fica como plano B se o protótipo em Konva não convencer.
 
-**Próximo passo concreto (ainda não feito):** protótipo isolado de "editor mínimo"
-em Konva — Stage único com uma imagem, crop (retângulo arrastável) + rotate + reset,
-sem depender do carousel-engine (só reaproveitar o padrão/API do Konva já usado lá).
-Se cobrir o que o Polotno fazia (ou o suficiente pro caso de uso real), substitui o
-`<Polonto>` nos 2 gatilhos já quarentenados em `media.component.tsx` e a dependência
-`polotno` sai do `package.json` (Fase C real, com boot). Se não convencer, mantém o
-Polotno on hold (ou reabilita) e reavalia depois. **Modelo recomendado:** Sonnet
-médio (é implementação de feature nova, não decisão arquitetural); `flitwick-frontend`
-é o agente certo (já conhece Konva/Volatis) — iterar no browser, não só typecheck.
+**✅ FEITO 2026-07-03 (protótipo implementado e já ligado, atrás da flag):**
+- `apps/frontend/src/components/media/mini-image-editor.component.tsx` — Stage único,
+  upload de imagem, crop (`Rect` + `Transformer` do Konva, arrastável/redimensionável),
+  rotate 90° (via canvas offscreen — mais simples que combinar rotação+crop no Konva),
+  export por `canvas.toBlob` → `POST /media/upload-simple` → `setMedia`/`closeModal`
+  (mesma interface do Polonto). Escopo **deliberadamente menor** que o Polotno: o
+  Polotno abre um canvas em branco tipo mini-Canva (texto, formas, painel de IA);
+  isso cobre só "editar uma foto" (upload+crop+rotate), que é o caso de uso "básico"
+  que motivou a quarentena.
+- `mini-image-editor-loader.component.tsx` — wrapper `next/dynamic({ssr:false})`,
+  mesmo padrão do `carousel-editor-loader.component.tsx` (Konva toca `window`/canvas).
+- `media.component.tsx`: os 2 gatilhos que abriam `<Polonto>` agora abrem
+  `<MiniImageEditorLoader>`, **ainda atrás da mesma flag** `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED`
+  (default off) — ninguém é afetado até alguém ligar a flag pra testar.
+- **Validado nesta sessão** (rodei `pnpm install` real no worktree, ~7min via store
+  hardlink — destravou build/typecheck real sem precisar de `.env`/DB): `tsc --noEmit`
+  E `nest build` real limpos (exit 0) em backend/orchestrator/frontend, incluindo os 2
+  arquivos novos. **Não validado ainda:** teste visual no browser (upload real, arrastar
+  o crop, ver o resultado) — precisa de `.env`/DB, que não existe neste worktree.
+- **Bug corrigido nesta rodada** (achado pelo Moody): rotação não resetava o crop —
+  como a imagem troca largura/altura ao girar 90°, o retângulo antigo ficava
+  desalinhado. Corrigido: `onRotate` agora zera o `crop` pra forçar `resetCrop` na
+  imagem nova.
+
+**Passo que só o Felipe consegue fazer:** testar de verdade no browser, com
+`NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true` no `.env` local, a partir de
+`C:\dev\vocaccio` (não deste worktree). Ver passo-a-passo na seção seguinte.
+Se cobrir o caso de uso real, próximo passo é remover `polotno`/`polonto.css`
+do `package.json` de vez (Fase C real, com boot). Se não convencer, é só reverter
+o commit desta troca (`<MiniImageEditorLoader>` → `<Polonto>` de volta) ou religar
+a flag pra usar o Polotno enquanto se decide outra coisa.
 
 **Restrição de ambiente que forçou este escopo:** este worktree não tem `node_modules`
 (sem `pnpm install`/build/boot possível aqui). Mesmo os poucos itens realmente seguros
@@ -112,6 +134,51 @@ com boot real** (a partir de `C:\dev\vocaccio`, não de um worktree).
 - **Pulado de propósito:** scripts `voc:*` no README raiz — o README raiz é o material de marketing herdado do Postiz (stars/sponsors), não o lugar certo, e não havia necessidade real de scripts novos (`dev-backend` já cobre o caso de uso da Fase A).
 
 **Modelo:** Haiku.
+
+---
+
+## Passo-a-passo do Felipe — o que só você consegue fazer (2026-07-03)
+
+Tudo que dava pra executar sem acesso a produção/`.env` já foi feito e validado
+(build real, não só typecheck). O que sobra depende de coisas que só existem no
+seu ambiente/acesso:
+
+**1. Testar o editor Konva de imagem (mini-image-editor) visualmente**
+   - A partir de `C:\dev\vocaccio` (não deste worktree — lá tem `.env`/DB reais).
+   - `git pull` a branch `claude/magical-allen-1f35af` (ou merge pra sua branch de trabalho).
+   - No `.env`, adicionar `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true`.
+   - `pnpm run dev-backend` (backend+frontend).
+   - Na Media Library, clicar em "Design Media" (toolbar) ou "Editor" (num campo de
+     mídia de formulário) — deve abrir o editor novo (upload → crop arrastável →
+     girar 90° → "Use this media").
+   - **O que checar:** upload funciona, arrastar/redimensionar o retângulo de crop é
+     fluido, rotação não quebra o crop (bug que corrigi — confirmar visualmente),
+     resultado final sobe certo pro `/media/upload-simple` e aparece na galeria.
+   - Se aprovar: me avisa que decido remover `polotno` do `package.json` de vez
+     (Fase C real). Se não aprovar (ou achar limitado demais): me diz o que faltou —
+     dá pra evoluir o protótipo ou desistir e reabilitar o Polotno (é só reverter
+     o commit da troca, ou desligar a flag).
+
+**2. Rodar a query SQL de providers em produção (B3 — necessária pra Fase C real)**
+   - Só você tem acesso ao banco de produção.
+   - `SELECT provider, count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY provider ORDER BY 2 DESC;`
+   - Isso diz quais dos 36 providers sociais realmente têm uso — decide se dá pra
+     podar as deps web3/Farcaster/Nostr (C3) ou se ficam.
+
+**3. Mergear esta branch em `main` (quando estiver satisfeito)**
+   - `main` já está atualizado com a Fase 0 (segurança). Esta branch
+     (`claude/magical-allen-1f35af`) tem as Fases A-E em cima — decida se quer PR
+     com review ou fast-forward direto, como fizemos com a Fase 0.
+
+**4. Aplicar a migration VOC-34 em produção**
+   - `libraries/nestjs-libraries/src/database/prisma/migrations/20260702_voc34_contentitem_kanban_index/`
+     foi escrita à mão (sem `prisma migrate dev` real, sem DB neste worktree).
+     Rodar `pnpm run prisma-migrate-deploy` (ou o fluxo de migration que vocês usam
+     em produção) pra aplicar de fato — é aditiva (`CREATE INDEX`), baixo risco.
+
+**5. Decisão futura sobre Fase B2 (quarentenar controllers do NestJS)**
+   - Ainda não fiz — precisa de boot real contra DB (não só build, que já validei).
+   Se quiser que eu prossiga a partir de `C:\dev\vocaccio` numa próxima sessão, é só pedir.
 
 ---
 

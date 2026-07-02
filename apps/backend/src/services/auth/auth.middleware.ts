@@ -6,7 +6,6 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
-import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
