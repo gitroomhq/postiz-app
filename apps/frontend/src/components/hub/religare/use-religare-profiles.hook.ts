@@ -53,14 +53,29 @@ interface ProfilesResponse {
   page: number;
 }
 
-/** Todos os perfis Religare da organização. */
+/**
+ * Todos os perfis Religare da organização. O backend pagina em 20 por página
+ * (VOC-27) — este hook percorre as páginas até completar `total`, para que a
+ * UI continue recebendo a lista completa sem precisar de controle de página.
+ */
 export const useReligareProfiles = () => {
   const fetch = useFetch();
 
   const load = useCallback(
     async (path: string) => {
-      const res = await (await fetch(path)).json();
-      return (res.items ?? []) as ReligareProfileListItem[];
+      const items: ReligareProfileListItem[] = [];
+      let page = 0;
+      let total = Infinity;
+      while (items.length < total) {
+        const res = (await (
+          await fetch(`${path}?page=${page}`)
+        ).json()) as ProfilesResponse;
+        items.push(...(res.items ?? []));
+        total = res.total ?? items.length;
+        if (!res.items?.length) break;
+        page += 1;
+      }
+      return items;
     },
     [fetch]
   );

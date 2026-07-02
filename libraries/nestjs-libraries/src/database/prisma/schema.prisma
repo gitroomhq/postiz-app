@@ -989,6 +989,7 @@ model ContentItem {
   @@index([orgId])
   @@index([status])
   @@index([deletedAt])
+  @@index([projectId, status, position])
 }
 
 model ContentItemEvent {

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Activity, ActivityMethod } from 'nestjs-temporal-core';
+import * as Sentry from '@sentry/nestjs';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import {
   NotificationService,
@@ -22,6 +23,11 @@ export class AutopostActivity {
 
   @ActivityMethod()
   async autoPost(id: string) {
-    return this._autoPostService.startAutopost(id)
+    try {
+      return await this._autoPostService.startAutopost(id);
+    } catch (err) {
+      Sentry.captureException(err, { tags: { autopostId: id } });
+      throw err;
+    }
   }
 }

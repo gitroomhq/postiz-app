@@ -25,10 +25,17 @@ export function useCarouselExport(
 ) {
   const slug = (doc.title || 'carrossel').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
 
-  const captureAll = useCallback((): string[] => {
-    return thumbRefs.current
-      .filter((s): s is Konva.Stage => !!s)
-      .map((stage) => slideToDataUrl(stage, STAGE_WIDTH));
+  // Cede a thread entre slides (VOC-20): toDataURL por slide já é pesado o
+  // bastante pra travar a UI em carrosséis de 9-12 slides; um `await` de tick
+  // entre cada captura deixa o browser respirar (repintar, responder input).
+  const captureAll = useCallback(async (): Promise<string[]> => {
+    const stages = thumbRefs.current.filter((s): s is Konva.Stage => !!s);
+    const dataUrls: string[] = [];
+    for (const stage of stages) {
+      dataUrls.push(slideToDataUrl(stage, STAGE_WIDTH));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    return dataUrls;
   }, [thumbRefs]);
 
   const exportPng = useCallback(
@@ -41,7 +48,7 @@ export function useCarouselExport(
   );
 
   const exportZip = useCallback(async () => {
-    const dataUrls = captureAll();
+    const dataUrls = await captureAll();
     const blob = await slidesToZip(
       dataUrls.map((dataUrl, i) => ({ name: slideFileName(i), dataUrl }))
     );
@@ -49,7 +56,7 @@ export function useCarouselExport(
   }, [captureAll, slug]);
 
   const exportPdf = useCallback(async () => {
-    const dataUrls = captureAll();
+    const dataUrls = await captureAll();
     const blob = await slidesToPdf(dataUrls, {
       width: STAGE_WIDTH,
       height: stageHeight(doc.aspectRatio),

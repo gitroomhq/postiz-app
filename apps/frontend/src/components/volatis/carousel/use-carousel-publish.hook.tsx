@@ -29,7 +29,10 @@ interface UploadedMedia {
   path: string;
 }
 
-export function useCarouselPublish(captureAll: () => string[], doc: Carousel) {
+export function useCarouselPublish(
+  captureAll: () => Promise<string[]>,
+  doc: Carousel
+) {
   const modal = useModals();
   const fetch = useFetch();
   const toaster = useToaster();
@@ -37,7 +40,7 @@ export function useCarouselPublish(captureAll: () => string[], doc: Carousel) {
 
   const publish = useCallback(
     async (mode: 'now' | 'schedule') => {
-      const dataUrls = captureAll();
+      const dataUrls = await captureAll();
       if (!dataUrls.length || publishing) return;
       setPublishing(true);
       try {
@@ -56,17 +59,18 @@ export function useCarouselPublish(captureAll: () => string[], doc: Carousel) {
           return;
         }
 
-        // 2. sobe cada slide como mídia do Postiz
+        // 2. sobe cada slide como mídia do Postiz (em paralelo, ordem preservada)
         const slug = (doc.title || 'carrossel').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-        const images: UploadedMedia[] = [];
-        for (let i = 0; i < dataUrls.length; i++) {
-          const formData = new FormData();
-          formData.append('file', dataUrlToBlob(dataUrls[i]), `${slug}-${slideFileName(i)}`);
-          const data = await (
-            await fetch('/media/upload-simple', { method: 'POST', body: formData })
-          ).json();
-          images.push({ id: data.id, path: data.path });
-        }
+        const images: UploadedMedia[] = await Promise.all(
+          dataUrls.map(async (dataUrl, i) => {
+            const formData = new FormData();
+            formData.append('file', dataUrlToBlob(dataUrl), `${slug}-${slideFileName(i)}`);
+            const data = await (
+              await fetch('/media/upload-simple', { method: 'POST', body: formData })
+            ).json();
+            return { id: data.id, path: data.path };
+          })
+        );
 
         // 3. data sugerida: próximo slot livre p/ agendar, agora p/ postar
         const date =

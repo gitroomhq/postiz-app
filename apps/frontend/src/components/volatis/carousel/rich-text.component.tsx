@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useRef } from 'react';
+import { Fragment, useMemo, useRef } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import type { RichTextRun, TextNode } from '@gitroom/carousel-engine';
 import { makeAxisLockBound } from './drag.util';
@@ -179,8 +179,8 @@ export const RichText = ({
   onDragEnd,
 }: RichTextProps) => {
   const startRef = useRef<{ x: number; y: number } | null>(null);
+  const { tokens, height } = useMemo(() => layoutRuns(node), [node]);
   if (node.visible === false) return null;
-  const { tokens, height } = layoutRuns(node);
   const lineH = node.fontSize * node.lineHeight;
   const pad = node.fontSize * 0.12;
   const interactive = !!(onSelect || onToggleWord);

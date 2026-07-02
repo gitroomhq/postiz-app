@@ -65,11 +65,12 @@ Só após Fase B estável. Uma onda por sessão, commit isolado, seguindo o prin
 **Modelo:** Sonnet médio; greps preparatórios com Haiku. **Reversão:** revert do commit da onda (lockfile volta junto).
 
 ## Fase D — Estabilidade barata *(esforço: leve · itens já mapeados na auditoria — executar, não re-analisar)*
-- **VOC-45/46:** logar erros do autopost no Sentry + `backoffCoefficient: 2` (falhas hoje são invisíveis).
-- **VOC-34:** índice composto do kanban (`db push` aditivo seguro).
-- **VOC-11/12/27:** paginação em `listExperts`, kanban e hook Religare.
-- **VOC-38/22/21:** lazy-load `chart.js`/`jspdf`; memo `layoutRuns`; upload de slides em paralelo.
-- **VOC-20:** export de carrossel fora da main thread + progresso (o item mais sentido pelo usuário).
+- **VOC-45/46:** ✅ **FEITO 2026-07-02.** `AutopostActivity.autoPost` reporta pro Sentry antes de re-lançar; workflow loga via `log.error` (determinístico, `@temporalio/workflow`) em vez de engolir o erro; `backoffCoefficient: 1→2` no autopost e no `post.workflow.v1.0.5.ts` ativo (v1.0.1-v1.0.4 propositalmente não tocados — frozen p/ workflows em voo).
+- **VOC-34:** ✅ **FEITO.** `@@index([projectId, status, position])` em `ContentItem` + migration manual `20260702_voc34_contentitem_kanban_index` (worktree sem DB pra rodar `prisma migrate dev`; SQL escrito seguindo a convenção de nome do Prisma — conferir ao aplicar).
+- **VOC-11/12/27:** VOC-11/12 (listExperts/kanban) já vieram prontos da Fase 0 (branch de segurança mergeada). VOC-27 ✅ **FEITO**: `use-religare-profiles.hook.ts` agora pagina internamente até completar `total`.
+- **VOC-38/22/21:** ✅ **FEITO.** `chart.tsx`/`chart-social.tsx` com `import type` + dynamic import de `chart.js/auto` dentro do `useEffect`; `religare-pdf-export.ts` carregado sob demanda no clique (não mudei o módulo em si, só o import no componente consumidor); `layoutRuns` em `useMemo` (cuidado: movido pra ANTES do early-return existente, senão quebra rules-of-hooks); upload de slides em `Promise.all`.
+- **VOC-20:** ✅ **FEITO (versão leve).** `captureAll()` agora cede a thread (`await setTimeout 0`) entre cada slide capturado; `dataUrlToBytes` trocou o loop manual por `Uint8Array.from`. **Não fiz** a versão completa (Worker/OffscreenCanvas + barra de progresso) — fica pro v2.0 se o ganho de UX justificar.
+- **Achado do Moody (não é regressão, é pré-existente):** `exportZip`/`exportPdf` já eram `async` antes desta fase e o menu (`PublishExportMenu` em `carousel-editor.component.tsx`) já fazia fire-and-forget (`run()` fecha o menu sem aguardar a Promise, sem loading state). Comportamento inalterado por esta fase — mas vale um item futuro: `onZip`/`onPdf` tipados `() => Promise<void>` + spinner no menu enquanto exporta.
 
 **Modelo:** Sonnet baixo/médio; Haiku nos triviais.
 

@@ -18,7 +18,8 @@ import { useReligareProfile } from './use-religare-profile.hook';
 import { useReligareMutations } from './use-religare-mutations.hook';
 import { AstrologyTab, ReadingTab } from './religare-astrology-tab.component';
 import { HumanDesignTab } from './religare-human-design-tab.component';
-import { buildMarcaPdf, buildVocacionalPdf, downloadPdf } from './religare-pdf-export';
+// jsPDF só entra no bundle quando o usuário realmente exporta (VOC-38).
+const loadPdfExport = () => import('./religare-pdf-export');
 import {
   ARCHETYPE_INFO,
   dnaToExportJson,
@@ -68,6 +69,7 @@ const ExportMenu: FC<{ profile: ReligareProfileDetail }> = ({ profile }) => {
       locked: false,
       onClick: () =>
         run('vocacional', async () => {
+          const { buildVocacionalPdf, downloadPdf } = await loadPdfExport();
           const pdf = await buildVocacionalPdf(profile, profile.dna!);
           downloadPdf(pdf, `religare-vocacional-${slug}.pdf`);
         }),
@@ -79,6 +81,7 @@ const ExportMenu: FC<{ profile: ReligareProfileDetail }> = ({ profile }) => {
       locked: !marcaUnlocked,
       onClick: () =>
         run('marca', async () => {
+          const { buildMarcaPdf, downloadPdf } = await loadPdfExport();
           const pdf = await buildMarcaPdf(profile, profile.dna!);
           downloadPdf(pdf, `religare-marca-${slug}.pdf`);
         }),

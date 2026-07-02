@@ -22,7 +22,7 @@ const proxyTaskQueue = (taskQueue: string) => {
     taskQueue,
     retry: {
       maximumAttempts: 3,
-      backoffCoefficient: 1,
+      backoffCoefficient: 2,
       initialInterval: '2 minutes',
     },
   });
