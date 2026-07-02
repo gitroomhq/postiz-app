@@ -18,6 +18,12 @@ interface MenuItemInterface {
   onClick?: () => void;
 }
 
+// Fase B (quarentena) — docs/auditoria/plano-leveza-2026-07.md: rotas Postiz
+// herdadas não usadas pelo produto Vocaccio ficam ocultas por padrão.
+// Reativar setando NEXT_PUBLIC_VOC_LEGACY_MODULES=true no .env.
+const LEGACY_MODULES_HIDDEN =
+  process.env.NEXT_PUBLIC_VOC_LEGACY_MODULES !== 'true';
+
 export const useMenuItem = () => {
   const t = useT();
   const { openModal } = useModals();
@@ -70,6 +76,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/agents',
+      hide: LEGACY_MODULES_HIDDEN,
     },
     {
       name: t('analytics', 'Analytics'),
@@ -133,6 +140,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/plugs',
+      hide: LEGACY_MODULES_HIDDEN,
     },
     {
       name: 'Canais',
@@ -154,6 +162,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/third-party',
+      hide: LEGACY_MODULES_HIDDEN,
     },
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 

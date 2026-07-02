@@ -45,9 +45,9 @@ A branch `fix/voc-idor-project-content` (Fase 1 da auditoria: VOC-01, 02, 04, 06
 Desligar por configuração, **sem deletar código**:
 | # | Tarefa | Como |
 |---|---|---|
-| B1 | Ocultar rotas `agents`, `plugs`, `third-party` do menu/navegação | flag env `VOC_LEGACY_MODULES=false` ou remoção das entradas do menu (frontend só) |
-| B2 | Registrar condicionalmente no NestJS os controllers correspondentes (`copilot`, `third-party`, `signature`?) | módulo condicional por env; **boot real obrigatório** após |
-| B3 | Inventário de providers realmente conectados em produção (query nas Integrations) → lista `VOC_ENABLED_PROVIDERS` | só inventário + doc nesta fase; poda de providers é v2.0 |
+| B1 | ✅ **FEITO 2026-07-02.** Ocultar rotas `agents`, `plugs`, `third-party` do menu | `top.menu.tsx`: flag `NEXT_PUBLIC_VOC_LEGACY_MODULES` (default oculto), reaproveitando o campo `hide` que o filtro do menu já suportava. Reversível via env, sem tocar código de rota. |
+| B2 | Registrar condicionalmente no NestJS os controllers correspondentes (`copilot`, `third-party`, `signature`?) | módulo condicional por env; **boot real obrigatório** após — **adiado**: este worktree não tem `node_modules`/DB para validar boot (só o checkout principal `C:\dev\vocaccio` roda dev server real). Fazer na próxima sessão a partir de lá. |
+| B3 | Inventário de providers sociais implementados (36, `libraries/nestjs-libraries/src/integrations/social/`) — falta cruzar com uso real em produção | Rodar em prod (não neste worktree): `SELECT provider, count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY provider ORDER BY 2 DESC;` → definir `VOC_ENABLED_PROVIDERS`. Poda de providers é v2.0. |
 | B4 | Billing **fica** (decisão P-04 da Edwiges: tiers Postiz = verdade) | não tocar |
 
 **Modelo:** Sonnet médio (B2 exige cuidado com injeção de dependências do Nest). **Verificação:** boot + login + agendar post + CRM + Religare + Volatis. **Reversão:** flag de volta.
