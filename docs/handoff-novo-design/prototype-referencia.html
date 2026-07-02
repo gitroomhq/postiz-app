@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocaccio System Design - Unified Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Cores Core - "Caminho do Meio" (Equilíbrio entre a vibração e a paleta original) */
+      --voc-peach: #F29676;
+      --voc-rose: #DF548E;
+      --voc-violet: #7C5EE1;
+      --voc-blue: #23A6D6;
+      
+      /* Gradientes Aurora */
+      --voc-aurora: linear-gradient(135deg, var(--voc-peach) 0%, var(--voc-rose) 35%, var(--voc-violet) 70%, var(--voc-blue) 100%);
+      
+      /* Gradiente de Texto */
+      --text-gradient: linear-gradient(90deg, var(--voc-violet) 0%, var(--voc-rose) 50%, var(--voc-peach) 100%);
+
+      /* Tema Dark */
+      --bg-app: #090614; 
+      --bg-surface: rgba(22, 18, 33, 0.25);
+      --bg-surface-hover: rgba(35, 28, 51, 0.4);
+      --bg-surface-elevated: rgba(35, 28, 51, 0.5);
+      --text-primary: #FFFFFF;
+      --text-secondary: #A39DB3;
+      --text-tertiary: #7D7692;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(124, 94, 225, 0.4); 
+      
+      /* Efeito Glass / Sombras Premium */
+      --glass-glare: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 100%);
+      --shadow-glass: 
+        0 8px 16px -4px rgba(0, 0, 0, 0.2),
+        0 24px 48px -12px rgba(124, 94, 225, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      
+      --shadow-button: 
+        0 12px 32px -8px rgba(223, 84, 142, 0.5),
+        0 4px 12px -2px rgba(124, 94, 225, 0.3);
+
+      /* Glows de Fundo */
+      --glow-1: radial-gradient(circle at 15% 10%, rgba(124, 94, 225, 0.4), transparent 45vw);
+      --glow-2: radial-gradient(circle at 85% 90%, rgba(35, 166, 214, 0.3), transparent 45vw);
+      --glow-3: radial-gradient(circle at 50% 50%, rgba(242, 150, 118, 0.25), transparent 55vw);
+
+      /* Tipografia e Raios */
+      --font-ui: 'Manrope', sans-serif;
+      --font-serif: 'Cormorant Garamond', serif;
+      --radius-sm: 12px;
+      --radius-md: 24px;
+      --radius-lg: 32px;
+      --radius-pill: 999px;
+    }
+
+    [data-theme="light"] {
+      --bg-app: #FAFAFA;
+      --bg-surface: rgba(255, 255, 255, 0.65);
+      --bg-surface-hover: rgba(255, 255, 255, 0.9);
+      --bg-surface-elevated: rgba(255, 255, 255, 0.85);
+      --text-primary: #0F0A1A;
+      --text-secondary: #575266;
+      --text-tertiary: #847F99;
+      --border-soft: rgba(124, 94, 225, 0.15);
+      --border-highlight: rgba(124, 94, 225, 0.5);
+      
+      --glass-glare: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%);
+      --shadow-glass: 
+        0 8px 16px -4px rgba(124, 94, 225, 0.05),
+        0 24px 48px -12px rgba(124, 94, 225, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+      --glow-1: radial-gradient(circle at 15% 10%, rgba(124, 94, 225, 0.25), transparent 45vw);
+      --glow-2: radial-gradient(circle at 85% 90%, rgba(242, 150, 118, 0.3), transparent 45vw);
+      --glow-3: radial-gradient(circle at 50% 50%, rgba(223, 84, 142, 0.2), transparent 55vw);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: var(--font-ui);
+      color: var(--text-primary);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-app);
+      transition: background-color 0.4s ease, color 0.4s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Overlay de Noise / Grain */
+    .noise-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0; /* Controlado via toggle */
+      mix-blend-mode: overlay;
+      transition: opacity 0.3s;
+    }
+    [data-theme="light"] .noise-grain {
+      mix-blend-mode: multiply;
+    }
+    body.show-grain .noise-grain {
+      opacity: 0.06;
+    }
+    [data-theme="light"] body.show-grain .noise-grain {
+      opacity: 0.04;
+    }
+
+    .ambient-glows {
+      position: fixed;
+      inset: -10vw;
+      z-index: -2;
+      pointer-events: none;
+    }
+    
+    .glow { position: absolute; inset: 0; }
+
+    .glow-1 { background-image: var(--glow-1); animation: float1 18s infinite alternate ease-in-out; }
+    .glow-2 { background-image: var(--glow-2); animation: float2 25s infinite alternate ease-in-out; }
+    .glow-3 { background-image: var(--glow-3); animation: float3 15s infinite alternate ease-in-out; }
+
+    @keyframes float1 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(4vw, 6vh) scale(1.05); }
+    }
+    @keyframes float2 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-6vw, -4vh) scale(1.1); }
+    }
+    @keyframes float3 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(3vw, -3vh) scale(1.05); }
+    }
+
+    /* EFEITO ORBITAL (Extraído do Pack) */
+    .orbital-field {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: max(1120px, 116vw);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.8;
+      transition: opacity 0.5s;
+    }
+    [data-theme="light"] .orbital-field {
+      display: none; /* Orbital effect is restricted to dark mode only */
+    }
+
+    .orbital-field::before,
+    .orbital-field::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      animation: vocaccio-orbit-spin 120s linear infinite;
+    }
+
+    /* Concentric orbital tracks. */
+    .orbital-field::before {
+      background:
+        radial-gradient(circle, transparent 0 39%, rgba(255, 255, 255, 0.11) 39.08% 39.18%, transparent 39.28%),
+        radial-gradient(circle, transparent 0 52%, rgba(88, 175, 222, 0.25) 52.08% 52.22%, transparent 52.32%),
+        radial-gradient(circle, transparent 0 65%, rgba(255, 255, 255, 0.1) 65.08% 65.18%, transparent 65.28%);
+      opacity: 0.78;
+    }
+
+    /* Small luminous points that travel with the orbital field. (Positions mathematically aligned to tracks) */
+    .orbital-field::after {
+      background:
+        radial-gradient(circle at 85.4% 59.8%, rgba(255, 255, 255, 0.94) 0 0.24%, rgba(88, 175, 222, 0.72) 0.48%, transparent 1.32%),
+        radial-gradient(circle at 6.9% 34%, rgba(255, 255, 255, 0.64) 0 0.18%, rgba(255, 255, 255, 0.24) 0.4%, transparent 1.05%),
+        radial-gradient(circle at 64% 26.1%, rgba(255, 255, 255, 0.82) 0 0.2%, rgba(207, 98, 149, 0.58) 0.44%, transparent 1.14%);
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.42));
+      opacity: 0.9;
+    }
+
+    @keyframes vocaccio-orbit-spin {
+      to { transform: rotate(360deg); }
+    }
+
+
+    /* Utilitário Glass Aprimorado */
+    .glass-panel {
+      background-color: var(--bg-surface);
+      background-image: var(--glass-glare);
+      backdrop-filter: blur(48px);
+      -webkit-backdrop-filter: blur(48px);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-glass);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      border-right: 1px solid var(--border-soft);
+      position: relative;
+      z-index: 10;
+    }
+    .logo {
+      font-family: var(--font-serif); font-size: 34px; font-weight: 700;
+      letter-spacing: -0.02em; padding-left: 12px;
+    }
+    .logo span {
+      background: var(--text-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;
+    }
+    .nav-section-title {
+      font-size: 11px; font-weight: 800; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-left: 12px;
+    }
+    .nav-menu { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 16px; padding: 12px 18px;
+      border-radius: var(--radius-sm); color: var(--text-secondary); text-decoration: none;
+      font-weight: 700; font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+    }
+    .nav-item:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+    .nav-item.active {
+      color: var(--text-primary); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    [data-theme="light"] .nav-item.active { background: rgba(124, 94, 225, 0.08); border-color: rgba(124, 94, 225, 0.15); }
+    .nav-icon { width: 20px; height: 20px; fill: currentColor; opacity: 0.8; transition: all 0.3s; }
+    .nav-item.active .nav-icon { opacity: 1; fill: url(#icon-gradient); }
+
+    /* MAIN CONTENT */
+    .main-content {
+      flex: 1; padding: 56px 72px; overflow-y: auto; position: relative; z-index: 1;
+    }
+    .view-section {
+      display: none; flex-direction: column; gap: 56px; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.4s ease forwards;
+    }
+    .view-section.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .header-section h1 { font-size: 44px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.04em; line-height: 1.1; }
+    .text-glow { background: var(--text-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-right: 8px; }
+    .header-section p { color: var(--text-secondary); font-size: 17px; line-height: 1.6; font-weight: 500; max-width: 600px; }
+
+    /* VIEW 1: OVERVIEW */
+    .dose-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+    .dose-card {
+      padding: 28px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);
+      display: flex; flex-direction: column; gap: 16px; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+      position: relative; overflow: hidden;
+      background-color: var(--bg-surface); background-image: var(--glass-glare);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    }
+    .dose-card:hover { transform: translateY(-4px); border-color: var(--card-color); box-shadow: 0 12px 32px -8px rgba(0,0,0,0.3); }
+    .dose-card.d { --card-color: var(--voc-peach); --card-bg: rgba(242, 150, 118, 0.08); }
+    .dose-card.o { --card-color: var(--voc-rose); --card-bg: rgba(223, 84, 142, 0.08); }
+    .dose-card.s { --card-color: var(--voc-violet); --card-bg: rgba(124, 94, 225, 0.08); }
+    .dose-card.e { --card-color: var(--voc-blue); --card-bg: rgba(35, 166, 214, 0.08); }
+    [data-theme="light"] .dose-card { --card-bg: rgba(0, 0, 0, 0.03); }
+    [data-theme="light"] .dose-card.d { --card-bg: rgba(242, 150, 118, 0.1); }
+    [data-theme="light"] .dose-card.o { --card-bg: rgba(223, 84, 142, 0.1); }
+    [data-theme="light"] .dose-card.s { --card-bg: rgba(124, 94, 225, 0.1); }
+    [data-theme="light"] .dose-card.e { --card-bg: rgba(35, 166, 214, 0.1); }
+    .dose-card::before { content: ''; position: absolute; inset: 0; background: var(--card-bg); z-index: -1; transition: opacity 0.3s; }
+    .dose-card:hover::before { opacity: 1.5; }
+    .dose-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .dose-letter { font-size: 32px; font-weight: 800; color: var(--card-color); line-height: 1; }
+    .dose-icon {
+      width: 40px; height: 40px; border-radius: 12px; background: var(--card-color); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .dose-icon svg { width: 20px; height: 20px; fill: #fff; }
+    .dose-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+    .dose-subtitle { font-size: 11px; font-weight: 800; color: var(--card-color); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+    .dose-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.5; font-weight: 500;}
+
+    .content-split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; }
+    .form-card { padding: 40px; border-radius: var(--radius-lg); max-width: 500px;}
+    .form-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 32px; letter-spacing: -0.02em; }
+    .form-group { margin-bottom: 24px; position: relative; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
+    .form-group input {
+      width: 100%; padding: 16px 20px; border: 1px solid var(--border-soft); border-radius: var(--radius-pill);
+      background: rgba(0,0,0,0.25); color: var(--text-primary); font-family: var(--font-ui);
+      font-size: 15px; font-weight: 600; outline: none; transition: all 0.3s; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);
+    }
+    [data-theme="light"] .form-group input { background: rgba(255,255,255,0.7); box-shadow: inset 0 2px 4px rgba(0,0,0,0.03); }
+    .form-group input:focus { border-color: var(--border-highlight); background: var(--bg-app); box-shadow: 0 0 0 4px rgba(124, 94, 225, 0.2); }
+
+    .btn-primary {
+      background: var(--voc-aurora); color: white; border: none; border-radius: var(--radius-pill);
+      padding: 16px 32px; font-weight: 800; font-size: 16px; font-family: var(--font-ui); cursor: pointer; width: 100%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-button);
+      position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; gap: 10px;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0; background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+      transform: translateX(-100%) skewX(-15deg); transition: transform 0.6s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -4px rgba(223, 84, 142, 0.7), 0 8px 16px -2px rgba(124, 94, 225, 0.5); }
+    .btn-primary:hover::after { transform: translateX(100%) skewX(-15deg); }
+
+    /* VIEW 2: SAAS DIAGRAMMING */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; }
+    .feature-item { display: flex; gap: 16px; align-items: flex-start; }
+    .feature-icon-wrapper {
+      flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: center; color: var(--voc-peach);
+    }
+    [data-theme="light"] .feature-icon-wrapper { background: rgba(255,255,255,0.5); }
+    .feature-content h4 { font-size: 16px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .feature-content p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; font-weight: 500;}
+    .badge-tag {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px;
+      border-radius: var(--radius-pill); border: 1px solid var(--border-soft); color: var(--text-primary); font-weight: 800;
+    }
+
+    .pricing-card {
+      background-color: var(--bg-surface-elevated); background-image: var(--glass-glare); border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-glass); max-width: 440px; position: relative;
+      backdrop-filter: blur(48px); -webkit-backdrop-filter: blur(48px);
+    }
+    .pricing-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--voc-aurora); }
+    .pricing-body { padding: 40px; }
+    .pricing-tier { font-size: 15px; font-weight: 800; color: var(--voc-peach); margin-bottom: 8px; }
+    .pricing-price { font-size: 44px; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 16px; display: flex; align-items: baseline; gap: 8px; }
+    .pricing-price span { font-size: 16px; color: var(--text-secondary); font-weight: 600; }
+    .pricing-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; font-weight: 500;}
+    .btn-secondary {
+      background: transparent; color: var(--text-primary); border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm); padding: 14px 24px; font-weight: 700; font-size: 15px; width: 100%;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.05); }
+
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+    .feature-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--text-primary); font-weight: 600; }
+    .feature-list svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--voc-violet); margin-top: 2px; }
+
+    .inner-card {
+      margin-top: 32px; padding: 24px; border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border-soft);
+    }
+    [data-theme="light"] .inner-card { background: rgba(255,255,255,0.4); border-color: rgba(0,0,0,0.05); }
+    .inner-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .badge-gradient { background: var(--voc-aurora); color: white; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
+    .inner-card-title { font-size: 15px; font-weight: 700; }
+
+    /* Theme & Noise Switchers Flutuantes */
+    .controls-wrapper {
+      position: fixed; top: 24px; right: 32px; display: flex; flex-direction: column; gap: 12px; z-index: 100;
+    }
+    .switch-wrapper {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 10px 20px; border-radius: var(--radius-pill); cursor: pointer;
+    }
+    .switch-wrapper span { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; width: 44px; text-align: center;}
+    .switch { position: relative; width: 44px; height: 24px; pointer-events: none; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 20px; transition: .3s; border: 1px solid var(--border-soft);}
+    [data-theme="light"] .slider { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.1);}
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px;
+      background: var(--text-primary); border-radius: 50%; transition: .3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider { background: var(--text-gradient); border-color: transparent;}
+    input:checked + .slider:before { transform: translateX(20px); background: white; }
+
+  </style>
+</head>
+<body>
+
+  <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+    <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C5EE1" />
+      <stop offset="50%" stop-color="#DF548E" />
+      <stop offset="100%" stop-color="#F29676" />
+    </linearGradient>
+  </svg>
+
+  <div class="noise-grain"></div>
+
+  <div class="ambient-glows">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+  </div>
+
+  <div class="orbital-field"></div>
+
+  <!-- Sidebar (Glass) -->
+  <aside class="sidebar glass-panel">
+    <div class="logo">Vocaccio<span>.</span></div>
+    
+    <div>
+      <div class="nav-section-title">Navegação Principal</div>
+      <nav class="nav-menu">
+        <a class="nav-item active" onclick="switchView('view-overview', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          Visão Geral (Vivid)
+        </a>
+        <a class="nav-item" onclick="switchView('view-saas', this)">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          SaaS & Serviços
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- VIEW 1: OVERVIEW VIVID -->
+    <section id="view-overview" class="view-section active">
+      <div class="header-section">
+        <h1>Crie comunidades tão engajantes quanto <span class="text-glow">seu conteúdo.</span></h1>
+        <p>Aumente a retenção e impulsione resultados integrando gamificação e inteligência artificial à sua estratégia. Interface focada em conversão visual e emoção.</p>
+      </div>
+
+      <div class="dose-grid">
+        <div class="dose-card d">
+          <div class="dose-header">
+            <span class="dose-letter">D</span>
+            <div class="dose-icon"><svg viewBox="0 0 24 24"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.16-.28L11.5 2h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg></div>
+          </div>
+          <div>
+            <div class="dose-title">Dopamina</div>
+            <div class="dose-subtitle">Motivação</div>
+            <div class="dose-desc">Sistema de recompensas, conquistas e badges que ativam o foco e a vontade de agir.</div>
+          </div>
+        </div>
+        
+        <div class="dose-card o">
+          <div class="dose-header">
+            <span class="dose-letter">O</span>
+            <div class="dose-icon"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+          </div>
+          <div>
+            <div class="dose-title">Oxitocina</div>
+            <div class="dose-subtitle">Comunidade</div>
+            <div class="dose-desc">Desafios em equipe e celebrações coletivas para fortalecer laços e o senso de pertencimento.</div>
+          </div>
+        </div>
+
+        <div class="dose-card s">
+          <div class="dose-header">
+            <span class="dose-letter">S</span>
+            <div class="dose-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg></div>
+          </div>
+          <div>
+            <div class="dose-title">Serotonina</div>
+            <div class="dose-subtitle">Reconhecimento</div>
+            <div class="dose-desc">Rankings visuais e validação pública para elevar o status e a autoestima dos membros.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-split">
+        <div class="glass-panel form-card">
+          <h2>Acesse seu espaço</h2>
+          <div class="form-group">
+            <label>Endereço de E-mail</label>
+            <input type="email" placeholder="lider@vocaccio.com" />
+          </div>
+          <div class="form-group">
+            <label>Senha de Acesso</label>
+            <input type="password" placeholder="••••••••" />
+          </div>
+          <button class="btn-primary">
+            Continuar para o Dashboard
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: SAAS DIAGRAMMING -->
+    <section id="view-saas" class="view-section">
+      <div class="header-section">
+        <h1>Recursos e <span class="text-glow">Ferramentas.</span></h1>
+        <p>Configuração, integrações e planos desenhados com diagramação SaaS focado na organização lógica da plataforma.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="feature-icon-wrapper">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </div>
+          <div class="feature-content">
+            <h4>Copiloto de IA <span class="badge-tag">New</span></h4>
+            <p>Gerencie sua comunidade conversando. Resuma threads, modere e crie conteúdo em segundos usando nossa IA.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon-wrapper">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <div class="feature-content">
+            <h4>Automação Nativa</h4>
+            <p>Conecte páginas de captura perfeitamente integradas ao ambiente da comunidade e otimize jornadas inteiras.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-body">
+          <div class="pricing-tier">Vocaccio Plus</div>
+          <div class="pricing-price">Sob consulta</div>
+          <p class="pricing-desc">Cresça seu negócio com Agentes de IA, um parceiro estratégico e aplicativos dedicados.</p>
+          
+          <button class="btn-secondary">Assista à demo</button>
+
+          <ul class="feature-list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Suporte técnico prioritário (24/7)
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Onboarding 100% personalizado
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Gerente de sucesso dedicado
+            </li>
+          </ul>
+
+          <div class="inner-card">
+            <div class="inner-card-header">
+              <span class="badge-gradient">Opcional</span>
+              <span class="inner-card-title">App personalizado:</span>
+            </div>
+            <ul class="feature-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Venda dentro do aplicativo (In-App)
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Equipe de lançamento
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Controles Flutuantes -->
+  <div class="controls-wrapper">
+    <!-- Theme Switcher -->
+    <div class="switch-wrapper glass-panel" id="theme-toggle-btn">
+      <span>Luz</span>
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle" checked>
+        <span class="slider"></span>
+      </label>
+      <span>Dark</span>
+    </div>
+
+    <!-- Noise Switcher -->
+    <div class="switch-wrapper glass-panel" id="noise-toggle-btn">
+      <span>Clean</span>
+      <label class="switch">
+        <input type="checkbox" id="noise-toggle">
+        <span class="slider"></span>
+      </label>
+      <span>Grain</span>
+    </div>
+  </div>
+
+  <script>
+    // Gerenciamento de Temas
+    const root = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    
+    root.setAttribute('data-theme', 'dark');
+    
+    themeToggleBtn.addEventListener('click', (e) => {
+      if(e.target === themeToggle) return;
+      themeToggle.checked = !themeToggle.checked;
+      updateTheme();
+    });
+    themeToggle.addEventListener('change', updateTheme);
+
+    function updateTheme() {
+      if (themeToggle.checked) {
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.setAttribute('data-theme', 'light');
+      }
+    }
+
+    // Gerenciamento do Noise (Grain)
+    const noiseToggle = document.getElementById('noise-toggle');
+    const noiseToggleBtn = document.getElementById('noise-toggle-btn');
+    
+    noiseToggleBtn.addEventListener('click', (e) => {
+      if(e.target === noiseToggle) return;
+      noiseToggle.checked = !noiseToggle.checked;
+      updateNoise();
+    });
+    noiseToggle.addEventListener('change', updateNoise);
+
+    function updateNoise() {
+      if (noiseToggle.checked) {
+        document.body.classList.add('show-grain');
+      } else {
+        document.body.classList.remove('show-grain');
+      }
+    }
+
+    // Gerenciamento de Views (Navegação via Sidebar)
+    function switchView(viewId, element) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      document.getElementById(viewId).classList.add('active');
+    }
+  </script>
+
+</body>
+</html>
