@@ -65,14 +65,23 @@ abaixo): a suposição original de C1 estava ERRADA.** Não editei `package.json
 | C3 | Web3/nicho: `@solana/*`, `viem`, `bs58`, `tweetnacl`, `nostr-tools`, `@neynar/*`, `@postiz/wallets` | Confirmado: usados em auth por wallet (Solana) e providers sociais Farcaster/Nostr — não confinados a rota quarentenada. **Só um `SELECT provider, count(*) FROM "Integration"...` em produção (B3) resolve** se algum tenant usa esses canais. Sem essa query, C3 fica **adiado pra v2.0** como já previsto. |
 | C4 | Pinar o que sobrar de IA/volátil (VOC-41) | Não aplicável ainda — nada de C1-C3 foi removido nesta rodada. |
 
-**Candidato a alternativa leve pro Polotno (avaliar antes do fim do desenvolvimento):**
-reaproveitar o **Konva** que o Volatis já usa (`libraries/carousel-engine` +
+**Alternativa leve pro Polotno — decisão do Felipe 2026-07-02: testar Konva.**
+Reaproveitar o **Konva** que o Volatis já usa (`libraries/carousel-engine` +
 `components/volatis/carousel`) pra um editor mínimo de recorte/rotação/ajuste básico
 de uma imagem — zero dependência nova (Konva já está pago em peso de bundle, e o time
 já tem o padrão pronto), em vez de instalar outra lib do npm (proibido pelo
-`CLAUDE.md` do projeto: "Never install frontend components from npmjs"). Alternativa
-mais pobre mas ainda mais leve: `<canvas>` nativo + crop/rotate feitos à mão, sem
-nenhuma lib. Ambas ficam pra quando/se decidirem que vale reconstruir a feature.
+`CLAUDE.md` do projeto: "Never install frontend components from npmjs"). `<canvas>`
+nativo puro fica como plano B se o protótipo em Konva não convencer.
+
+**Próximo passo concreto (ainda não feito):** protótipo isolado de "editor mínimo"
+em Konva — Stage único com uma imagem, crop (retângulo arrastável) + rotate + reset,
+sem depender do carousel-engine (só reaproveitar o padrão/API do Konva já usado lá).
+Se cobrir o que o Polotno fazia (ou o suficiente pro caso de uso real), substitui o
+`<Polonto>` nos 2 gatilhos já quarentenados em `media.component.tsx` e a dependência
+`polotno` sai do `package.json` (Fase C real, com boot). Se não convencer, mantém o
+Polotno on hold (ou reabilita) e reavalia depois. **Modelo recomendado:** Sonnet
+médio (é implementação de feature nova, não decisão arquitetural); `flitwick-frontend`
+é o agente certo (já conhece Konva/Volatis) — iterar no browser, não só typecheck.
 
 **Restrição de ambiente que forçou este escopo:** este worktree não tem `node_modules`
 (sem `pnpm install`/build/boot possível aqui). Mesmo os poucos itens realmente seguros
