@@ -51,7 +51,7 @@
   "login_register_to_add_comments": "登录/注册以添加评论",
   "status": "状态：",
   "there_are_not_plugs_matching_your_channels": "没有与您的频道匹配的插件",
-  "you_have_to_add_x_or_linkedin_or_threads": "你需要添加：X或LinkedIn或Threads",
+  "you_have_to_add_x_linkedin_page_threads_or_bluesky": "你必须添加：X、LinkedIn 页面、Threads 或 Bluesky",
   "go_to_the_calendar_to_add_channels": "前往日历添加频道",
   "channels": "频道",
   "activate": "激活",
