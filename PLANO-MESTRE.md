@@ -40,6 +40,15 @@ front-end (hierarquia visual, acessibilidade, espaçamento, motion, anti-padrõe
 tarefa de UI do Vocaccio. Flitwick audita com ela antes de fechar tela/componente;
 McGonagall inclui como critério de "pronto" ao planejar passos de front-end.
 
+**Growth & conteúdo (Dumbledore):** agente nativo **Fred e Jorge** (`weasley-growth`, Sonnet)
+consolida growth + produção de conteúdo do back-office (Ateliê Virtual) **até o Ruflo entrar
+(fim da Fase 4)** — antecipa nativamente o roster conceitual Ruflo (Hermione/copy, Ginny/social,
+Cedrico/carrossel, Charlie/vídeo, Fred&George/lançamentos). Empunha skills globais instaladas em
+`~/.claude/skills/`: `last30days` (trend research multi-plataforma, funciona só com web grátis) +
+marketing curado (`product-marketing`, `copywriting`, `cro`, `launch`, `seo-audit`, `social`,
+`community-marketing`). Dumbledore o convoca proativamente em tarefa de conteúdo/growth/tendência/
+lançamento/SEO (ver `.claude/agents/README.md`).
+
 ## FLUXO DE EXECUÇÃO
 
 ```

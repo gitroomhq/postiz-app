@@ -251,3 +251,10 @@ sozinho) — usos indiretos, imports dinâmicos, string-based provider loading, 
 | v2.0 | Opus 4.8 (planejar com `mcgonagall-planner` antes de cada item) | alto |
 
 **Ordem recomendada:** 0 → A → B → D → C → E. (D antes de C porque estabilidade visível vale mais que peso, e C exige B estável.)
+
+---
+
+## Nota — skills globais de growth/conteúdo (2026-07-02)
+Foram instaladas **globalmente** em `~/.claude/skills/` (fora do repo) skills de dev-tooling para o back-office de conteúdo/growth: `last30days` (trend research) + conjunto de marketing curado (`product-marketing`, `copywriting`, `cro`, `launch`, `seo-audit`, `social`, `community-marketing`), empunhadas pelo agente **Fred e Jorge** (`weasley-growth`). **Não são deps de runtime do produto** — não entram no `package.json`/build/boot e **não devem ser confundidas com o peso herdado do Postiz** nem podadas por engano.
+
+Avaliadas e **rejeitadas** por contradizer a leveza: **GrapeRoot/Codex-CLI-Compact** e **Understand-Anything** (servidor MCP + Python+Node + knowledge-graph por projeto, portas 8080-8099 — peso incompatível com o laptop 8GB e o Griphook) e **caveman** (comprime a saída ao usuário em fala telegráfica; o RTK já corta token de comando). Reavaliar GrapeRoot **só** se o repo crescer a ponto de o contexto nativo não dar conta.
