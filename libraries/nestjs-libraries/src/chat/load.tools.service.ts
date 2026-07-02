@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Agent } from '@mastra/core/agent';
 import { openai } from '@ai-sdk/openai';
 import { Memory } from '@mastra/memory';
-import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
+import { getPStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
 import { toolList } from '@gitroom/nestjs-libraries/chat/tools/tool.list';
@@ -90,7 +90,7 @@ export class LoadToolsService {
       model: openai('gpt-5.2'),
       tools,
       memory: new Memory({
-        storage: pStore,
+        storage: getPStore(),
         options: {
           generateTitle: true,
           workingMemory: {

@@ -18,7 +18,6 @@ import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/perm
 import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
-import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
@@ -48,11 +47,15 @@ async function start() {
     },
   });
 
-  // MCP (Mastra) boota toda a stack de IA — caro e uma fonte comum de
-  // crash-loop em dev. Embrulhado para nunca derrubar o backend e pulável
-  // em dev via DISABLE_MCP=true. Em produção segue ligado por padrão.
-  if (process.env.DISABLE_MCP !== 'true') {
+  // Mastra/MCP adormecida (docs/auditoria/plano-leveza-2026-07.md, Fase C1):
+  // reativar pos-MVP setando MASTRA_ENABLED=true. Import dinamico para o
+  // backend nao pagar nem o custo de carregar o modulo (@mastra/mcp +
+  // OAuth middleware) quando adormecida — default OFF.
+  if (process.env.MASTRA_ENABLED === 'true') {
     try {
+      const { startMcp } = await import(
+        '@gitroom/nestjs-libraries/chat/start.mcp'
+      );
       await startMcp(app);
     } catch (e) {
       Logger.error('MCP failed to start — continuing without it', e as any);
