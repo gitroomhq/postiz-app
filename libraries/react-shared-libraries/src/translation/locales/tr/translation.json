@@ -51,7 +51,7 @@
   "login_register_to_add_comments": "Yorum eklemek için Giriş Yap / Kayıt Ol",
   "status": "Durum:",
   "there_are_not_plugs_matching_your_channels": "Kanallarınızla eşleşen eklenti yok",
-  "you_have_to_add_x_or_linkedin_or_threads": "Şunlardan birini eklemelisiniz: X veya LinkedIn veya Threads",
+  "you_have_to_add_x_linkedin_page_threads_or_bluesky": "Şunları eklemeniz gerekiyor: X, LinkedIn Sayfası, Threads veya Bluesky",
   "go_to_the_calendar_to_add_channels": "Kanalları eklemek için takvime gidin",
   "channels": "Kanallar",
   "activate": "Aktifleştir",

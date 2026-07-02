@@ -51,7 +51,7 @@
   "login_register_to_add_comments": "コメントを追加するにはログイン／登録してください",
   "status": "ステータス：",
   "there_are_not_plugs_matching_your_channels": "あなたのチャンネルに一致するプラグはありません",
-  "you_have_to_add_x_or_linkedin_or_threads": "XまたはLinkedInまたはThreadsを追加する必要があります",
+  "you_have_to_add_x_linkedin_page_threads_or_bluesky": "X、LinkedInページ、Threads、またはBlueskyを追加する必要があります",
   "go_to_the_calendar_to_add_channels": "チャンネルを追加するにはカレンダーに移動してください",
   "channels": "チャンネル",
   "activate": "有効化",

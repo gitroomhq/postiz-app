@@ -51,7 +51,7 @@
   "login_register_to_add_comments": "댓글을 추가하려면 로그인/회원가입하세요",
   "status": "상태:",
   "there_are_not_plugs_matching_your_channels": "채널에 맞는 플러그가 없습니다",
-  "you_have_to_add_x_or_linkedin_or_threads": "X 또는 LinkedIn 또는 Threads를 추가해야 합니다",
+  "you_have_to_add_x_linkedin_page_threads_or_bluesky": "다음을 추가해야 합니다: X, LinkedIn 페이지, Threads 또는 Bluesky",
   "go_to_the_calendar_to_add_channels": "채널을 추가하려면 캘린더로 이동하세요",
   "channels": "채널",
   "activate": "활성화",
