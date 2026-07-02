@@ -1,5 +1,5 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import { Role, ShortLinkPreference, SubscriptionTier, VocaccioRole } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -274,6 +274,12 @@ export class OrganizationRepository {
         users: {
           create: {
             role: Role.SUPERADMIN,
+            // Quem se registra e cria a org e o dono dela no RBAC Vocaccio --
+            // sem isso, ficava preso em VIEWER_INTERNAL (default do schema) e
+            // nao conseguia usar CRM/Atelie/Religare/Volatis (todos exigem
+            // OWNER/OPERATOR via VocaccioRolesGuard). Achado testando
+            // registro real 2026-07-03: toda conta nova ficava bloqueada.
+            vocaccioRole: VocaccioRole.OWNER,
             user: {
               create: {
                 activated: body.provider !== 'LOCAL' || !hasEmail,

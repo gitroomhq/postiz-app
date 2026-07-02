@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev-backend",
+      "name": "backend",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "dev-backend"],
-      "port": 4200
+      "runtimeArgs": ["--filter", "./apps/backend", "run", "dev"],
+      "port": 3000
     },
     {
       "name": "dev-frontend",

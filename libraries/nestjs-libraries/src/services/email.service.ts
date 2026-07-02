@@ -41,6 +41,18 @@ export class EmailService {
     addTo: 'top' | 'bottom',
     replyTo?: string
   ) {
+    // Temporal e opcional (@Optional() no construtor) -- sem TEMPORAL_ADDRESS
+    // configurado, _temporalService fica undefined. Sem essa guarda, todo
+    // fluxo que chama sendEmail (ex.: registro de usuario) quebrava com
+    // "Cannot read properties of undefined (reading 'client')" antes mesmo
+    // de checar se ha provider de e-mail configurado.
+    if (!this._temporalService?.client) {
+      console.log(
+        'Temporal nao configurado (TEMPORAL_ADDRESS ausente) -- pulando envio assincrono de e-mail.'
+      );
+      return;
+    }
+
     return this._temporalService.client
       .getRawClient()
       ?.workflow.signalWithStart('sendEmailWorkflow', {
