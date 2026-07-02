@@ -41,6 +41,7 @@ import { CrmController } from '@gitroom/backend/api/routes/crm.controller';
 import { ReligareController } from '@gitroom/backend/api/routes/religare.controller';
 import { ProjectController } from '@gitroom/backend/api/routes/project.controller';
 import { ContentController } from '@gitroom/backend/api/routes/content.controller';
+import { AtelieController } from '@gitroom/backend/api/routes/atelie.controller';
 import { PortalController } from '@gitroom/backend/api/routes/portal.controller';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.provider';
@@ -71,6 +72,7 @@ const authenticatedController = [
   ReligareController,
   ProjectController,
   ContentController,
+  AtelieController,
 ];
 @Module({
   imports: [UploadModule],

@@ -916,6 +916,7 @@ model Project {
   contentItems        ContentItem[]
   client              Client              @relation(fields: [clientId], references: [id])
   accessLinks         ProjectAccessLink[]
+  serviceRequests     ServiceRequest[]
 
   @@index([clientId])
   @@index([ownerId])
@@ -1003,6 +1004,72 @@ model ContentItemEvent {
   item      ContentItem @relation(fields: [itemId], references: [id])
 
   @@index([itemId])
+  @@index([createdAt])
+}
+
+/**
+ * Ateliê Virtual — AT-2. Catálogo de serviços (back-office/front-office/Nicolas).
+ * Ver docs/atelie/plano-atelie-virtual.md.
+ */
+model ServiceOffering {
+  id             String                  @id @default(uuid())
+  slug           String                  @unique
+  name           String
+  category       ServiceOfferingCategory
+  deliveryMode   ServiceDeliveryMode     @default(BACKOFFICE)
+  briefingSchema Json?
+  optionsSchema  Json?
+  active         Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  requests       ServiceRequest[]
+
+  @@index([active])
+}
+
+/**
+ * Ateliê Virtual — AT-2. Fila de pedidos lida pelo cockpit interno (/atelie/fila).
+ * contextPackComplete/hasReligareProfile são calculados na criação (ver ServiceRequestService)
+ * para o cockpit sinalizar lacunas de autenticidade antes de produzir o entregável.
+ */
+model ServiceRequest {
+  id                  String                @id @default(uuid())
+  projectId           String
+  orgId               String
+  offeringId          String
+  createdById         String
+  briefing            Json
+  scopeLevel          ServiceScopeLevel     @default(PADRAO)
+  status              ServiceRequestStatus  @default(SOLICITADO)
+  priceRange          String?
+  leadTimeRange       String?
+  contextPackComplete Boolean               @default(false)
+  hasReligareProfile  Boolean               @default(false)
+  deliverableUrl      String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  project             Project               @relation(fields: [projectId], references: [id])
+  offering            ServiceOffering       @relation(fields: [offeringId], references: [id])
+  events              ServiceRequestEvent[]
+
+  @@index([projectId])
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([orgId, status])
+}
+
+model ServiceRequestEvent {
+  id        String         @id @default(uuid())
+  requestId String
+  type      String
+  text      String?
+  metadata  Json?
+  createdAt DateTime       @default(now())
+  request   ServiceRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId])
   @@index([createdAt])
 }
 
@@ -1117,4 +1184,34 @@ enum ContentStatus {
   ADJUSTMENT_REQUESTED
   PUBLISHED
   ARCHIVED
+}
+
+enum ServiceOfferingCategory {
+  PRESENCA_DIGITAL
+  ESTRATEGIA
+  CONTEUDO
+  INTELIGENCIA
+  AUDIOVISUAL
+}
+
+enum ServiceDeliveryMode {
+  BACKOFFICE
+  FRONTOFFICE
+  NICOLAS
+}
+
+enum ServiceScopeLevel {
+  SIMPLES
+  PADRAO
+  ROBUSTO
+}
+
+enum ServiceRequestStatus {
+  SOLICITADO
+  CONFIRMADO
+  EM_PRODUCAO
+  EM_REVISAO
+  ENTREGUE
+  APROVADO
+  ARQUIVADO
 }

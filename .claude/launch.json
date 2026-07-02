@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "dev-backend"],
       "port": 4200
+    },
+    {
+      "name": "dev-frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "./apps/frontend", "run", "dev"],
+      "port": 4200
     }
   ]
 }

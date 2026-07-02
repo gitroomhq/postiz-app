@@ -31,6 +31,7 @@
     "dev:docker": "docker compose -f ./docker-compose.dev.yaml up -d",
     "commands:build:development": "pnpm --filter ./apps/commands run build",
     "prisma-seed": "pnpm dlx tsx libraries/nestjs-libraries/src/database/prisma/seed.ts",
+    "prisma-seed-atelie": "pnpm dlx tsx libraries/nestjs-libraries/src/database/prisma/seed-atelie-offerings.ts",
     "prisma-generate": "pnpm dlx prisma@6.5.0 generate --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
     "prisma-migrate-deploy": "pnpm dlx prisma@6.5.0 migrate deploy --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",
     "prisma-migrate": "pnpm dlx prisma@6.5.0 migrate dev --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma",

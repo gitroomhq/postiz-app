@@ -87,3 +87,9 @@ dev.bat
 docs/referencias/Actus-Clip-Plano.md
 docs/referencias/actus-kit.zip
 docs/referencias/actus-kit/
+
+# Vocaccio — Ateliê Virtual: pedidos/entregas contêm dados reais de clientes, não versionar
+docs/atelie/pedidos/*
+docs/atelie/entregas/*
+!docs/atelie/pedidos/.gitkeep
+!docs/atelie/entregas/.gitkeep

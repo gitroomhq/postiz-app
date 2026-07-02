@@ -2,6 +2,9 @@
 
 import { FC, useState } from 'react';
 import { ProjectDetail, SocialHandles, Persona } from './use-project.hook';
+import { Input, Textarea } from '@gitroom/frontend/components/ui/input.component';
+import { Select } from '@gitroom/frontend/components/ui/select.component';
+import { Button } from '@gitroom/frontend/components/ui/button.component';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -33,7 +36,6 @@ const SOCIAL_NETWORKS = [
 
 // ─── UI primitives ────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-[14px] py-[10px] rounded-[10px] bg-newBgColor border border-newTableBorder text-[14px] text-newTextColor placeholder:text-newTableText outline-none focus:border-[var(--voc-violet)] transition-colors";
 const labelCls = "text-[12px] font-[700] text-newTableText uppercase tracking-[0.06em]";
 
 const Field: FC<{ label: string; required?: boolean; children: React.ReactNode; hint?: string }> = ({ label, required, children, hint }) => (
@@ -65,14 +67,14 @@ const TagsInput: FC<{ value: string[]; onChange: (v: string[]) => void; placehol
   return (
     <div className="flex flex-col gap-[8px]">
       <div className="flex gap-[6px]">
-        <input
-          className={`${inputCls} flex-1`}
+        <Input
+          className="flex-1"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
           placeholder={placeholder}
         />
-        <button type="button" onClick={add} className="px-[14px] py-[10px] rounded-[10px] text-[13px] font-[700] text-white" style={{ background: 'var(--voc-violet)' }}>+</button>
+        <Button type="button" onClick={add} style={{ background: 'var(--voc-violet)' }}>+</Button>
       </div>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-[6px]">
@@ -185,26 +187,24 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
       {/* 1. Identidade */}
       <Section title="1 · Identidade">
         <Field label="Nome do projeto" required>
-          <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Marca Pessoal Camila" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Marca Pessoal Camila" />
         </Field>
         <div className="grid grid-cols-2 gap-[12px]">
           <Field label="Cliente" required>
-            <select className={inputCls} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <Select value={clientId} onChange={(e) => setClientId(e.target.value)}>
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </Field>
           <Field label="Status">
-            <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
-              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            <Select value={status} onChange={(e) => setStatus(e.target.value)} options={STATUS_OPTIONS} />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-[12px]">
           <Field label="Área de atuação">
-            <input className={inputCls} value={businessArea} onChange={(e) => setBusinessArea(e.target.value)} placeholder="Ex: Saúde, Moda…" />
+            <Input value={businessArea} onChange={(e) => setBusinessArea(e.target.value)} placeholder="Ex: Saúde, Moda…" />
           </Field>
           <Field label="Slogan">
-            <input className={inputCls} value={slogan} onChange={(e) => setSlogan(e.target.value)} placeholder="Frase de posicionamento" />
+            <Input value={slogan} onChange={(e) => setSlogan(e.target.value)} placeholder="Frase de posicionamento" />
           </Field>
         </div>
       </Section>
@@ -213,10 +213,10 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
       <Section title="2 · Presença Digital">
         <div className="grid grid-cols-2 gap-[12px]">
           <Field label="Site">
-            <input className={inputCls} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." />
+            <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." />
           </Field>
           <Field label="Bio Link">
-            <input className={inputCls} value={bioLink} onChange={(e) => setBioLink(e.target.value)} placeholder="https://..." />
+            <Input value={bioLink} onChange={(e) => setBioLink(e.target.value)} placeholder="https://..." />
           </Field>
         </div>
         <Field label="Redes sociais" hint="@ ou URL de cada rede">
@@ -224,8 +224,7 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
             {SOCIAL_NETWORKS.map(({ key, label }) => (
               <div key={key} className="flex items-center gap-[8px]">
                 <span className="text-[12px] text-newTableText w-[80px] flex-shrink-0">{label}</span>
-                <input
-                  className={inputCls}
+                <Input
                   value={(socialHandles as any)[key] ?? ''}
                   onChange={(e) => setSocialHandles({ ...socialHandles, [key]: e.target.value })}
                   placeholder="@handle"
@@ -239,22 +238,20 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
       {/* 3. Estratégia */}
       <Section title="3 · Estratégia">
         <Field label="Produtos e serviços">
-          <textarea className={`${inputCls} resize-none`} rows={3} value={productsServices} onChange={(e) => setProductsServices(e.target.value)} placeholder="O que o cliente oferece?" />
+          <Textarea rows={3} value={productsServices} onChange={(e) => setProductsServices(e.target.value)} placeholder="O que o cliente oferece?" />
         </Field>
         <div className="grid grid-cols-2 gap-[12px]">
           <Field label="Tom de voz">
-            <select className={inputCls} value={toneOfVoice} onChange={(e) => setToneOfVoice(e.target.value)}>
-              {TONE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            <Select value={toneOfVoice} onChange={(e) => setToneOfVoice(e.target.value)} options={TONE_OPTIONS} />
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-[10px]">
-          <Field label="CTA 1"><input className={inputCls} value={cta1} onChange={(e) => setCta1(e.target.value)} placeholder="Ex: Agende uma consulta" /></Field>
-          <Field label="CTA 2"><input className={inputCls} value={cta2} onChange={(e) => setCta2(e.target.value)} placeholder="Ex: Acesse o programa" /></Field>
-          <Field label="CTA 3"><input className={inputCls} value={cta3} onChange={(e) => setCta3(e.target.value)} placeholder="Ex: Siga no Instagram" /></Field>
+          <Field label="CTA 1"><Input value={cta1} onChange={(e) => setCta1(e.target.value)} placeholder="Ex: Agende uma consulta" /></Field>
+          <Field label="CTA 2"><Input value={cta2} onChange={(e) => setCta2(e.target.value)} placeholder="Ex: Acesse o programa" /></Field>
+          <Field label="CTA 3"><Input value={cta3} onChange={(e) => setCta3(e.target.value)} placeholder="Ex: Siga no Instagram" /></Field>
         </div>
         <Field label="Persona — Nome">
-          <input className={inputCls} value={personaName} onChange={(e) => setPersonaName(e.target.value)} placeholder="Ex: Juliana, 35 anos, empresária" />
+          <Input value={personaName} onChange={(e) => setPersonaName(e.target.value)} placeholder="Ex: Juliana, 35 anos, empresária" />
         </Field>
         <Field label="Persona — Dores" hint="Enter para adicionar">
           <TagsInput value={pains} onChange={setPains} placeholder="Ex: Não sabe como se posicionar…" />
@@ -263,7 +260,7 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
           <TagsInput value={desires} onChange={setDesires} placeholder="Ex: Ter autoridade na área…" />
         </Field>
         <Field label="Briefing livre">
-          <textarea className={`${inputCls} resize-none`} rows={5} value={briefing} onChange={(e) => setBriefing(e.target.value)} placeholder="Contexto, história, diferenciais, restrições…" />
+          <Textarea rows={5} value={briefing} onChange={(e) => setBriefing(e.target.value)} placeholder="Contexto, história, diferenciais, restrições…" />
         </Field>
       </Section>
 
@@ -271,13 +268,13 @@ export const ProjectForm: FC<Props> = ({ initial = {}, clients, currentUserId, o
 
       <div className="flex gap-[10px]">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="flex-1 py-[12px] rounded-[12px] text-[13px] font-[700] text-newTextColor border border-newTableBorder hover:bg-newBgColor transition-colors">
+          <Button type="button" onClick={onCancel} variant="outline" className="flex-1 py-[12px] rounded-[12px] text-[13px]">
             Cancelar
-          </button>
+          </Button>
         )}
-        <button type="submit" disabled={loading} className="flex-1 py-[12px] rounded-[12px] text-[13px] font-[800] text-white disabled:opacity-60" style={{ background: 'var(--voc-aurora)' }}>
+        <Button type="submit" disabled={loading} className="flex-1 py-[12px] rounded-[12px] text-[13px] font-[800]">
           {loading ? 'Salvando…' : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );

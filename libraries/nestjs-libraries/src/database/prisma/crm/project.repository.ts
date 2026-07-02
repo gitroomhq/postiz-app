@@ -111,4 +111,29 @@ export class ProjectRepository {
       select: { id: true },
     });
   }
+
+  /**
+   * Ateliê Virtual (AT-2): snapshot mínimo pra calcular contextPackComplete/
+   * hasReligareProfile na criação de um ServiceRequest. Ver ServiceRequestService.
+   */
+  getContextPackSnapshot(orgId: string, id: string) {
+    return this._project.model.project.findFirst({
+      where: { id, deletedAt: null, client: { orgId } },
+      select: {
+        id: true,
+        businessArea: true,
+        colors: true,
+        typography: true,
+        persona: true,
+        cta1: true,
+        client: {
+          select: {
+            experts: {
+              select: { expert: { select: { religareProfile: { select: { id: true } } } } },
+            },
+          },
+        },
+      },
+    });
+  }
 }

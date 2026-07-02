@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, Link2, CheckCircle2, AlertCircle, Clock, Archive, Send, FileText } from 'lucide-react';
 import { useContentItems, useContentMutations, ContentItem } from './use-content.hook';
+import { Button } from '@gitroom/frontend/components/ui/button.component';
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Rascunho',
@@ -64,13 +65,14 @@ function ItemCard({ item, onStatusChange, onSendForApproval }: {
           {STATUS_LABELS[item.status]}
         </span>
         {item.status === 'DRAFT' && (
-          <button
+          <Button
             onClick={() => onSendForApproval(item.id)}
-            className="text-[10px] font-[700] px-[8px] py-[3px] rounded-full transition-colors"
+            variant="ghost"
+            className="text-[10px] font-[700] px-[8px] py-[3px] rounded-full"
             style={{ background: 'rgba(207,98,149,0.12)', color: 'var(--voc-rose)' }}
           >
             Enviar para aprovação
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -100,20 +102,23 @@ function NewItemForm({ onAdd, onCancel }: { onAdd: (title: string, body: string)
         style={{ color: 'var(--voc-ink-soft)' }}
       />
       <div className="flex gap-[8px] mt-[10px]">
-        <button
+        <Button
           onClick={() => { if (title.trim()) onAdd(title.trim(), body.trim()); }}
-          className="text-[11px] font-[700] px-[12px] py-[5px] rounded-full"
+          size="sm"
+          className="text-[11px] font-[700] px-[12px] py-[5px]"
           style={{ background: 'var(--voc-violet)', color: '#fff' }}
         >
           Adicionar
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onCancel}
-          className="text-[11px] font-[600] px-[12px] py-[5px] rounded-full"
+          variant="ghost"
+          size="sm"
+          className="text-[11px] font-[600] px-[12px] py-[5px]"
           style={{ background: 'var(--voc-line)', color: 'var(--voc-ink-soft)' }}
         >
           Cancelar
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -182,23 +187,27 @@ export function ContentKanban({ projectId, orgBaseUrl }: Props) {
           {portalUrl ? (
             <>
               <span className="text-[11px] max-w-[240px] truncate" style={{ color: 'var(--voc-ink-soft)' }}>{portalUrl}</span>
-              <button
+              <Button
                 onClick={handleCopyLink}
-                className="text-[11px] font-[700] px-[12px] py-[5px] rounded-full flex items-center gap-[5px]"
+                variant="ghost"
+                size="sm"
+                className="text-[11px] font-[700] px-[12px] py-[5px]"
                 style={{ background: 'rgba(40,151,191,0.12)', color: 'var(--voc-blue)' }}
               >
                 <Link2 size={12} /> Copiar
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               onClick={handleGenerateLink}
               disabled={generatingLink}
-              className="text-[11px] font-[700] px-[12px] py-[5px] rounded-full flex items-center gap-[5px] disabled:opacity-50"
+              variant="ghost"
+              size="sm"
+              className="text-[11px] font-[700] px-[12px] py-[5px] disabled:opacity-50"
               style={{ background: 'rgba(40,151,191,0.12)', color: 'var(--voc-blue)' }}
             >
               <Link2 size={12} /> {generatingLink ? 'Gerando…' : 'Gerar link de aprovação'}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -235,13 +244,15 @@ export function ContentKanban({ projectId, orgBaseUrl }: Props) {
                   addingIn === 'DRAFT' ? (
                     <NewItemForm onAdd={handleAdd} onCancel={() => setAddingIn(null)} />
                   ) : (
-                    <button
+                    <Button
                       onClick={() => setAddingIn('DRAFT')}
-                      className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[8px] text-[12px] font-[600] transition-colors"
+                      variant="ghost"
+                      radius="md"
+                      className="w-full !rounded-[8px] py-[10px] text-[12px] font-[600]"
                       style={{ color: 'var(--voc-ink-soft)', border: '1px dashed var(--voc-line)' }}
                     >
                       <Plus size={14} /> Novo item
-                    </button>
+                    </Button>
                   )
                 )}
               </div>

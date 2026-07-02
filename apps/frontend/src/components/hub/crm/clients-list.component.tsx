@@ -4,27 +4,7 @@ import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, Plus, Users, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { useClients, CrmClient, PAGE_SIZE } from './use-clients.hook';
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  ACTIVE: { label: 'Ativo', bg: 'rgba(50, 213, 131, 0.16)', color: '#32d583' },
-  INACTIVE: { label: 'Inativo', bg: 'rgba(150, 150, 150, 0.16)', color: '#9c9c9c' },
-  PROSPECT: { label: 'Prospecto', bg: 'rgba(232, 154, 123, 0.18)', color: '#e89a7b' },
-  LEAD: { label: 'Lead', bg: 'rgba(115, 96, 170, 0.18)', color: '#b69dec' },
-};
-
-const StatusBadge: FC<{ status: string }> = ({ status }) => {
-  const s = STATUS_MAP[status] ?? { label: status, bg: 'rgba(200,200,200,0.16)', color: '#9c9c9c' };
-  return (
-    <span
-      className="inline-flex items-center px-[10px] py-[3px] rounded-full text-[11px] font-[700]"
-      style={{ background: s.bg, color: s.color }}
-    >
-      {s.label}
-    </span>
-  );
-};
+import { ClientStatusBadge } from '@gitroom/frontend/components/ui/badge.component';
 
 // ─── Avatar initials ───────────────────────────────────────────────────────────
 
@@ -72,7 +52,7 @@ const TableRow: FC<{ client: CrmClient; index: number }> = ({ client, index }) =
       <span className="text-[13px] text-newTableText">{client.segment ?? '—'}</span>
     </td>
     <td className="px-[20px] py-[14px]">
-      <StatusBadge status={client.status} />
+      <ClientStatusBadge status={client.status} />
     </td>
     <td className="px-[20px] py-[14px]">
       <div className="flex items-center gap-[8px] text-[13px] text-newTableText">
@@ -107,7 +87,7 @@ const ClientCard: FC<{ client: CrmClient; index: number }> = ({ client, index })
           <p className="text-[14px] font-[700] text-newTextColor truncate leading-tight mt-[1px]">
             {client.name}
           </p>
-          <StatusBadge status={client.status} />
+          <ClientStatusBadge status={client.status} />
         </div>
         {client.segment && (
           <p className="text-[12px] text-newTableText mt-[3px]">{client.segment}</p>
@@ -250,6 +230,7 @@ export const ClientsList: FC = () => {
                 boxShadow: '0 8px 24px rgba(115, 96, 170, 0.28)',
               }}
             >
+              {/* Link mantido (navegação real), estilo idêntico ao Button variant="primary" */}
               <Plus size={16} strokeWidth={2.5} />
               <span className="mobile:hidden">Novo cliente</span>
               <span className="hidden mobile:inline">Novo</span>
@@ -351,6 +332,7 @@ export const ClientsList: FC = () => {
               Página {page} de {totalPages}
             </p>
             <div className="flex gap-[8px]">
+              {/* Não usa o primitivo Button: raio 10px (não pill) é uma família visual própria da paginação, distinta do CTA. */}
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}

@@ -53,6 +53,9 @@ import { ProjectService } from '@gitroom/nestjs-libraries/database/prisma/crm/pr
 import { ContentRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/content.repository';
 import { ContentService } from '@gitroom/nestjs-libraries/database/prisma/crm/content.service';
 import { ProjectAccessLinkRepository } from '@gitroom/nestjs-libraries/database/prisma/crm/project-access-link.repository';
+import { ServiceOfferingRepository } from '@gitroom/nestjs-libraries/database/prisma/atelie/service-offering.repository';
+import { ServiceRequestRepository } from '@gitroom/nestjs-libraries/database/prisma/atelie/service-request.repository';
+import { ServiceRequestService } from '@gitroom/nestjs-libraries/database/prisma/atelie/service-request.service';
 
 @Global()
 @Module({
@@ -115,6 +118,9 @@ import { ProjectAccessLinkRepository } from '@gitroom/nestjs-libraries/database/
     ContentRepository,
     ContentService,
     ProjectAccessLinkRepository,
+    ServiceOfferingRepository,
+    ServiceRequestRepository,
+    ServiceRequestService,
   ],
   get exports() {
     return this.providers;

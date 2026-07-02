@@ -7,6 +7,11 @@ import { useClient, CrmProject, CrmContact, CrmInteraction, ClientLoadError } fr
 import { CrmModal } from './crm-modal.component';
 import { ClientForm } from './client-form.component';
 import { useCrmMutations } from './use-crm-mutations.hook';
+import { Button } from '@gitroom/frontend/components/ui/button.component';
+import { Card } from '@gitroom/frontend/components/ui/card.component';
+import { Badge, ClientStatusBadge } from '@gitroom/frontend/components/ui/badge.component';
+import { Field, Input, Textarea } from '@gitroom/frontend/components/ui/input.component';
+import { Select } from '@gitroom/frontend/components/ui/select.component';
 
 // ─── Shared ────────────────────────────────────────────────────────────────────
 
@@ -31,25 +36,6 @@ const Avatar: FC<{ name: string; size?: number }> = ({ name, size = 52 }) => {
   );
 };
 
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  ACTIVE:   { label: 'Ativo',     bg: 'rgba(50,213,131,0.16)',  color: '#32d583' },
-  INACTIVE: { label: 'Inativo',   bg: 'rgba(150,150,150,0.16)', color: '#9c9c9c' },
-  PROSPECT: { label: 'Prospecto', bg: 'rgba(232,154,123,0.18)', color: '#e89a7b' },
-  LEAD:     { label: 'Lead',      bg: 'rgba(115,96,170,0.18)',  color: '#b69dec' },
-};
-
-const StatusBadge: FC<{ status: string }> = ({ status }) => {
-  const s = STATUS_MAP[status] ?? { label: status, bg: 'rgba(200,200,200,0.16)', color: '#9c9c9c' };
-  return (
-    <span
-      className="inline-flex items-center px-[10px] py-[3px] rounded-full text-[11px] font-[700]"
-      style={{ background: s.bg, color: s.color }}
-    >
-      {s.label}
-    </span>
-  );
-};
-
 const PROJECT_STATUS_MAP: Record<string, { label: string; color: string }> = {
   ACTIVE:    { label: 'Ativo',     color: '#32d583' },
   PAUSED:    { label: 'Pausado',   color: '#e89a7b' },
@@ -68,10 +54,6 @@ const INTERACTION_TYPES: Record<string, { label: string }> = {
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
-const inputCls = "w-full px-[14px] py-[10px] rounded-[10px] bg-newBgColor border border-newTableBorder text-[14px] text-newTextColor placeholder:text-newTableText outline-none focus:border-[var(--voc-violet)] transition-colors";
-const fieldCls = "flex flex-col gap-[6px]";
-const labelCls = "text-[12px] font-[700] text-newTableText uppercase tracking-[0.06em]";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -117,7 +99,7 @@ const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ project
         {projects.map((p) => {
           const ps = PROJECT_STATUS_MAP[p.status] ?? { label: p.status, color: '#9c9c9c' };
           return (
-            <div key={p.id} className="voc-glass-card flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] hover:border-[var(--voc-border-highlight)] transition-all duration-150 group">
+            <Card key={p.id} className="flex items-start justify-between gap-[16px] hover:border-[var(--voc-border-highlight)] transition-all duration-150 group">
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-[700] text-newTextColor leading-tight">{p.name}</p>
                 <div className="flex flex-wrap items-center gap-[10px] mt-[6px]">
@@ -132,9 +114,9 @@ const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ project
                 <p className="text-[11px] text-newTableText mt-[4px] opacity-60">{formatDate(p.createdAt)}</p>
               </div>
               <div className="flex items-center gap-[10px] flex-shrink-0">
-                <span className="text-[11px] font-[700] px-[10px] py-[3px] rounded-full" style={{ color: ps.color, background: `${ps.color}22` }}>
+                <Badge bg={`${ps.color}22`} color={ps.color}>
                   {ps.label}
-                </span>
+                </Badge>
                 <Link
                   href={`/hub/crm/projetos/${p.id}`}
                   className="inline-flex items-center gap-[4px] text-[12px] font-[600] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -143,7 +125,7 @@ const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ project
                   <ExternalLink size={12} />
                 </Link>
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -156,13 +138,9 @@ const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ project
 const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contacts, onAdd }) => (
   <div>
     <div className="flex justify-end mb-[14px]">
-      <button
-        onClick={onAdd}
-        className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[12px] font-[800] text-white"
-        style={{ background: 'var(--voc-aurora)' }}
-      >
+      <Button variant="primary" size="sm" onClick={onAdd} className="px-[14px] py-[8px] text-[12px]">
         <Plus size={13} strokeWidth={2.5} /> Novo contato
-      </button>
+      </Button>
     </div>
     {contacts.length === 0 ? (
       <div className="flex flex-col items-center py-[40px] text-center">
@@ -172,7 +150,7 @@ const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contac
     ) : (
       <div className="flex flex-col gap-[10px]">
         {contacts.map((c) => (
-          <div key={c.id} className="voc-glass-card flex items-start gap-[14px] px-[18px] py-[16px] rounded-[14px]">
+          <Card key={c.id} className="flex items-start gap-[14px]">
             <Avatar name={c.name} size={36} />
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-[700] text-newTextColor leading-tight">{c.name}</p>
@@ -186,7 +164,7 @@ const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contac
                 {c.phone && <span className="text-[12px] text-newTableText">{c.phone}</span>}
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     )}
@@ -198,13 +176,9 @@ const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contac
 const InteractionsTab: FC<{ interactions: CrmInteraction[]; onAdd: () => void }> = ({ interactions, onAdd }) => (
   <div>
     <div className="flex justify-end mb-[14px]">
-      <button
-        onClick={onAdd}
-        className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[12px] font-[800] text-white"
-        style={{ background: 'var(--voc-aurora)' }}
-      >
+      <Button variant="primary" size="sm" onClick={onAdd} className="px-[14px] py-[8px] text-[12px]">
         <Plus size={13} strokeWidth={2.5} /> Nova interação
-      </button>
+      </Button>
     </div>
     {interactions.length === 0 ? (
       <div className="flex flex-col items-center py-[40px] text-center">
@@ -216,7 +190,7 @@ const InteractionsTab: FC<{ interactions: CrmInteraction[]; onAdd: () => void }>
         {interactions.map((inter) => {
           const info = INTERACTION_TYPES[inter.type] ?? { label: inter.type };
           return (
-            <div key={inter.id} className="voc-glass-card flex items-start gap-[12px] px-[18px] py-[16px] rounded-[14px]">
+            <Card key={inter.id} className="flex items-start gap-[12px]">
               <div className="flex-shrink-0 w-[34px] h-[34px] rounded-[10px] flex items-center justify-center mt-[1px]" style={{ background: 'var(--voc-aurora)' }}>
                 <MessageSquare size={15} className="text-white" />
               </div>
@@ -227,7 +201,7 @@ const InteractionsTab: FC<{ interactions: CrmInteraction[]; onAdd: () => void }>
                 </div>
                 <p className="text-[14px] text-newTextColor mt-[4px] leading-snug">{inter.summary}</p>
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -247,9 +221,9 @@ const NotesTab: FC<{ notes: string | null }> = ({ notes }) => {
     );
   }
   return (
-    <div className="voc-glass-card px-[18px] py-[18px] rounded-[14px]">
+    <Card className="px-[18px] py-[18px]">
       <p className="text-[14px] text-newTextColor leading-relaxed whitespace-pre-wrap">{notes}</p>
-    </div>
+    </Card>
   );
 };
 
@@ -285,32 +259,28 @@ const ContactModal: FC<{ clientId: string; onClose: () => void }> = ({ clientId,
   return (
     <CrmModal title="Novo contato" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
-        <div className={fieldCls}>
-          <label className={labelCls}>Nome <span style={{ color: 'var(--voc-rose)' }}>*</span></label>
-          <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do contato" />
-        </div>
-        <div className={fieldCls}>
-          <label className={labelCls}>Cargo / Função</label>
-          <input className={inputCls} value={role} onChange={(e) => setRole(e.target.value)} placeholder="Ex: CEO, Designer…" />
-        </div>
+        <Field label="Nome" required>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do contato" />
+        </Field>
+        <Field label="Cargo / Função">
+          <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Ex: CEO, Designer…" />
+        </Field>
         <div className="grid grid-cols-2 gap-[12px]">
-          <div className={fieldCls}>
-            <label className={labelCls}>E-mail</label>
-            <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@..." />
-          </div>
-          <div className={fieldCls}>
-            <label className={labelCls}>Telefone</label>
-            <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" />
-          </div>
+          <Field label="E-mail">
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@..." />
+          </Field>
+          <Field label="Telefone">
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" />
+          </Field>
         </div>
         {error && <p className="text-[13px]" style={{ color: 'var(--voc-rose)' }}>{error}</p>}
         <div className="flex gap-[10px] pt-[4px]">
-          <button type="button" onClick={onClose} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[700] text-newTextColor border border-newTableBorder hover:bg-newBgColor transition-colors">
+          <Button type="button" variant="outline" radius="md" onClick={onClose} className="flex-1 py-[11px] text-[13px]">
             Cancelar
-          </button>
-          <button type="submit" disabled={loading} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[800] text-white disabled:opacity-60" style={{ background: 'var(--voc-aurora)' }}>
+          </Button>
+          <Button type="submit" variant="primary" radius="md" disabled={loading} className="flex-1 py-[11px] text-[13px] font-[800]">
             {loading ? 'Salvando…' : 'Adicionar'}
-          </button>
+          </Button>
         </div>
       </form>
     </CrmModal>
@@ -351,30 +321,27 @@ const InteractionModal: FC<{ clientId: string; onClose: () => void }> = ({ clien
   return (
     <CrmModal title="Nova interação" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
-        <div className={fieldCls}>
-          <label className={labelCls}>Tipo</label>
-          <select className={inputCls} value={type} onChange={(e) => setType(e.target.value)}>
+        <Field label="Tipo">
+          <Select value={type} onChange={(e) => setType(e.target.value)}>
             {INTERACTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
-        <div className={fieldCls}>
-          <label className={labelCls}>Descrição <span style={{ color: 'var(--voc-rose)' }}>*</span></label>
-          <textarea
-            className={`${inputCls} resize-none`}
+          </Select>
+        </Field>
+        <Field label="Descrição" required>
+          <Textarea
             rows={4}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             placeholder="O que aconteceu nessa interação?"
           />
-        </div>
+        </Field>
         {error && <p className="text-[13px]" style={{ color: 'var(--voc-rose)' }}>{error}</p>}
         <div className="flex gap-[10px] pt-[4px]">
-          <button type="button" onClick={onClose} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[700] text-newTextColor border border-newTableBorder hover:bg-newBgColor transition-colors">
+          <Button type="button" variant="outline" radius="md" onClick={onClose} className="flex-1 py-[11px] text-[13px]">
             Cancelar
-          </button>
-          <button type="submit" disabled={loading} className="flex-1 py-[11px] rounded-[12px] text-[13px] font-[800] text-white disabled:opacity-60" style={{ background: 'var(--voc-aurora)' }}>
+          </Button>
+          <Button type="submit" variant="primary" radius="md" disabled={loading} className="flex-1 py-[11px] text-[13px] font-[800]">
             {loading ? 'Salvando…' : 'Registrar'}
-          </button>
+          </Button>
         </div>
       </form>
     </CrmModal>
@@ -432,13 +399,15 @@ export const ClientDetail: FC<{ id: string }> = ({ id }) => {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-[10px]">
                 <h1 className="text-[24px] font-[700] text-newTextColor leading-tight">{data.name}</h1>
-                <StatusBadge status={data.status} />
-                <button
+                <ClientStatusBadge status={data.status} />
+                <Button
+                  variant="ghost"
+                  radius="md"
                   onClick={() => setShowEdit(true)}
-                  className="inline-flex items-center gap-[5px] text-[12px] font-[600] text-newTableText hover:text-newTextColor transition-colors"
+                  className="px-0 py-0 text-[12px] font-[600]"
                 >
                   <Pencil size={13} /> Editar
-                </button>
+                </Button>
               </div>
 
               <div className="flex flex-wrap items-center gap-[14px] mt-[8px]">
