@@ -61,6 +61,14 @@ Toda resposta termina indicando o **modelo recomendado** para o próximo passo (
    Opus para arquitetura/decisão.
 4. **Não super-delegar**: tarefa pequena e local o Dumbledore faz inline; sub-agente custa um cold start.
 
+## Plano de leveza (2026-07)
+O emagrecimento do núcleo Postiz segue `docs/auditoria/plano-leveza-2026-07.md`
+(fases 0→A→B→D→C→E; v2.0 pós-lançamento). Regras para TODOS os agentes:
+- **Quarentena antes de deleção**; poda de dependência = grep de imports → build
+  completo → **boot real do backend (curl)** → commit isolado.
+- Não reintroduzir deps podadas nem rotas quarentenadas (`agents`, `plugs`, `third-party`).
+- Motores de cálculo do Religare são do **Codex** (Edwiges) — não tocar.
+
 ## Ruflo (swarm MCP multi-modelo) — adiado de propósito
 O Ruflo (`project-ruflo`) é um meta-harness que dispara swarms roteando entre vários provedores.
 Tende a queimar tokens rápido e ainda não foi verificado neste projeto. **Decisão (2026-06-17):
