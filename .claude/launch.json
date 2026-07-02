@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev-backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev-backend"],
+      "port": 4200
+    }
+  ]
+}
