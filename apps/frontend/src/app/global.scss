@@ -817,3 +817,75 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+/* Phase B.1 — glass card unificado (System Design Vocaccio "Caminho do Meio").
+   Usa os tokens --voc-bg-surface/--voc-border-soft/--voc-shadow-glass (Phase A,
+   já .dark/.light aware) em vez de bg-newBgColorInner + border-newTableBorder. */
+.voc-glass-card {
+  background-color: var(--voc-bg-surface);
+  background-image: var(--voc-glass-glare);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--voc-border-soft);
+  box-shadow: var(--voc-shadow-glass);
+}
+
+/* Phase B.2 — Ambient Glows: a Regra do Vidro com Luz exige um glow real atrás de
+   todo .voc-glass-card, senão o blur não tem nada para borrar. Fixo, atrás de tudo,
+   drift muito lento (15-25s) — nunca rápido, nunca chamativo. */
+.voc-ambient-glows {
+  position: fixed;
+  inset: -10vw;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.voc-glow {
+  position: absolute;
+  inset: 0;
+}
+
+.voc-glow-1 { background-image: var(--voc-glow-1); animation: voc-float-1 18s ease-in-out infinite alternate; }
+.voc-glow-2 { background-image: var(--voc-glow-2); animation: voc-float-2 25s ease-in-out infinite alternate; }
+.voc-glow-3 { background-image: var(--voc-glow-3); animation: voc-float-3 21s ease-in-out infinite alternate; }
+
+@keyframes voc-float-1 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(4vw, 6vh) scale(1.06); }
+}
+@keyframes voc-float-2 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-6vw, -4vh) scale(1.1); }
+}
+@keyframes voc-float-3 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(3vw, -3vh) scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voc-glow-1, .voc-glow-2, .voc-glow-3 {
+    animation: none;
+  }
+}
+
+/* Sidebar e topbar do shell logado: vidro em vez de superfície sólida, para que o
+   glow de fundo apareça através delas (a estrutura herdada do Postiz era opaca). */
+.voc-glass-shell {
+  background-color: var(--voc-bg-surface);
+  background-image: var(--voc-glass-glare);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--voc-border-soft);
+}
+
+/* Toggle de validação visual — esconde a barra de admin (roxo Postiz) sem remover a função.
+   #left-menu reserva pt-[60px] quando user.admin é true (espaço da barra); como o toggle só
+   esconde visualmente (a flag admin continua true), zera esse padding junto para não deixar
+   o rail da sidebar flutuando mais baixo que o topbar. */
+body.voc-hide-admin .voc-admin-bar {
+  display: none;
+}
+body.voc-hide-admin #left-menu {
+  padding-top: 0 !important;
+}

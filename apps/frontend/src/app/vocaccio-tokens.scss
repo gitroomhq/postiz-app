@@ -1,4 +1,5 @@
-/* Vocaccio Design System tokens — warm editorial palette */
+/* Vocaccio Design System tokens — "Caminho do Meio" (SaaS Premium + Aura Mágica) */
+/* Fonte: docs/handoff-novo-design/vocaccio-system-design-final.md (validado 2026-06) */
 :root {
   --voc-paper: #f5f4f0;
   --voc-paper-raised: #faf8f3;
@@ -6,12 +7,13 @@
   --voc-ink-soft: #55536b;
 
   --voc-champagne: #dcd0c3;
-  --voc-peach: #e89a7b;
-  --voc-rose: #cf6295;
-  --voc-violet: #7360aa;
-  --voc-blue: #2897bf;
+  --voc-peach: #f29676;
+  --voc-rose: #df548e;
+  --voc-violet: #7c5ee1;
+  --voc-blue: #23a6d6;
 
-  --voc-aurora: linear-gradient(135deg, #e89a7b, #cf6295 42%, #7360aa 72%, #2897bf);
+  --voc-aurora: linear-gradient(135deg, var(--voc-peach) 0%, var(--voc-rose) 35%, var(--voc-violet) 70%, var(--voc-blue) 100%);
+  --voc-text-gradient: linear-gradient(90deg, var(--voc-violet) 0%, var(--voc-rose) 50%, var(--voc-peach) 100%);
 
   --voc-line: rgba(115, 96, 170, 0.16);
   --voc-glass: rgba(250, 248, 243, 0.76);
@@ -27,4 +29,54 @@
   --voc-radius-sm: 14px;
   --voc-radius-md: 18px;
   --voc-radius-lg: 24px;
+  --voc-radius-pill: 999px;
+}
+
+/*
+ * Tokens novos do System Design unificado (Fase B). Reaproveitam o toggle de tema
+ * já existente em mode.component.tsx (document.body.classList 'dark' / 'light'),
+ * na mesma convenção de colors.scss — não introduzem um mecanismo de tema novo.
+ */
+:root {
+  .dark {
+    --voc-bg-app: #090614;
+    --voc-bg-surface: rgba(22, 18, 33, 0.25);
+    --voc-bg-surface-hover: rgba(35, 28, 51, 0.4);
+    --voc-bg-surface-elevated: rgba(35, 28, 33, 0.5);
+    --voc-text-primary: #ffffff;
+    --voc-text-secondary: #a39db3;
+    --voc-text-tertiary: #7d7692;
+    --voc-border-soft: rgba(255, 255, 255, 0.08);
+    --voc-border-highlight: rgba(124, 94, 225, 0.4);
+
+    --voc-glass-glare: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+    --voc-shadow-glass: 0 8px 16px -4px rgba(0, 0, 0, 0.2), 0 24px 48px -12px rgba(124, 94, 225, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    --voc-shadow-button: 0 12px 32px -8px rgba(223, 84, 142, 0.5), 0 4px 12px -2px rgba(124, 94, 225, 0.3);
+
+    --voc-glow-1: radial-gradient(circle at 15% 10%, rgba(124, 94, 225, 0.4), transparent 45vw);
+    --voc-glow-2: radial-gradient(circle at 85% 90%, rgba(35, 166, 214, 0.3), transparent 45vw);
+    --voc-glow-3: radial-gradient(circle at 50% 50%, rgba(242, 150, 118, 0.25), transparent 55vw);
+  }
+
+  .light {
+    --voc-bg-app: #fafafa;
+    --voc-bg-surface: rgba(255, 255, 255, 0.65);
+    --voc-bg-surface-hover: rgba(255, 255, 255, 0.9);
+    --voc-bg-surface-elevated: rgba(255, 255, 255, 0.85);
+    --voc-text-primary: #0f0a1a;
+    --voc-text-secondary: #575266;
+    --voc-text-tertiary: #847f99;
+    --voc-border-soft: rgba(124, 94, 225, 0.15);
+    --voc-border-highlight: rgba(124, 94, 225, 0.5);
+
+    --voc-glass-glare: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 100%);
+    --voc-shadow-glass: 0 8px 16px -4px rgba(124, 94, 225, 0.05), 0 24px 48px -12px rgba(124, 94, 225, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --voc-shadow-button: 0 12px 32px -8px rgba(223, 84, 142, 0.5), 0 4px 12px -2px rgba(124, 94, 225, 0.3);
+
+    --voc-glow-1: radial-gradient(circle at 15% 10%, rgba(124, 94, 225, 0.25), transparent 45vw);
+    --voc-glow-2: radial-gradient(circle at 85% 90%, rgba(242, 150, 118, 0.3), transparent 45vw);
+    --voc-glow-3: radial-gradient(circle at 50% 50%, rgba(223, 84, 142, 0.2), transparent 55vw);
+  }
 }

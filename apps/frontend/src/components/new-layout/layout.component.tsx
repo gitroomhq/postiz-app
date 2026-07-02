@@ -3,9 +3,16 @@
 import React, { ReactNode, useCallback } from 'react';
 import Link from 'next/link';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { AmbientGlows } from '@gitroom/frontend/components/layout/ambient-glows.component';
+import { Manrope } from 'next/font/google';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
+  {
+    ssr: false,
+  }
+);
+const AdminBarToggle = dynamic(
+  () => import('@gitroom/frontend/components/layout/admin-bar-toggle.component'),
   {
     ssr: false,
   }
@@ -44,9 +51,9 @@ import { FirstBillingComponent } from '@gitroom/frontend/components/billing/firs
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { WaffleMenu } from '@gitroom/frontend/components/hub/waffle-menu.component';
 
-const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500', '700'],
-  style: ['normal', 'italic'],
+const jakartaSans = Manrope({
+  weight: ['400', '500', '600', '700', '800'],
+  style: ['normal'],
   subsets: ['latin'],
 });
 
@@ -95,7 +102,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 jakartaSans.className
               )}
             >
-              <div>{user?.admin ? <Impersonate /> : <div />}</div>
+              <AmbientGlows />
+              <div className="voc-admin-bar">{user?.admin ? <Impersonate /> : <div />}</div>
               {user.tier === 'FREE' && isGeneral && billingEnabled ? (
                 <FirstBillingComponent />
               ) : (
@@ -103,7 +111,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <div className="flex-1 flex gap-[8px]">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                    <div className="voc-glass-shell flex flex-col w-[80px] rounded-[12px]">
                       <div
                         id="left-menu"
                         className={clsx(
@@ -124,7 +132,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       </div>
                     </div>
                     <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
+                      <div className="voc-glass-shell flex h-[80px] px-[20px] items-center">
                         <div className="text-[24px] font-[600] flex flex-1">
                           <Title />
                         </div>
@@ -132,6 +140,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           <StreakComponent />
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <OrganizationSelector />
+                          {user?.admin && (
+                            <>
+                              <AdminBarToggle />
+                              <div className="w-[1px] h-[20px] bg-blockSeparator" />
+                            </>
+                          )}
                           <div className="hover:text-newTextColor">
                             <ModeComponent />
                           </div>

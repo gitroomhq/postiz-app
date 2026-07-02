@@ -98,8 +98,7 @@ const TableRow: FC<{ client: CrmClient; index: number }> = ({ client, index }) =
 const ClientCard: FC<{ client: CrmClient; index: number }> = ({ client, index }) => (
   <Link
     href={`/hub/crm/${client.id}`}
-    className="block p-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.32)] transition-all duration-200 active:scale-[0.98]"
-    style={{ boxShadow: undefined }}
+    className="voc-glass-card block p-[16px] rounded-[14px] hover:border-[var(--voc-border-highlight)] transition-all duration-200 active:scale-[0.98]"
   >
     <div className="flex items-start gap-[12px]">
       <Avatar name={client.name} index={index} />
@@ -170,7 +169,7 @@ const SkeletonRow: FC = () => (
 );
 
 const SkeletonCard: FC = () => (
-  <div className="p-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+  <div className="voc-glass-card p-[16px] rounded-[14px]">
     <div className="flex gap-[12px]">
       <div className="w-[36px] h-[36px] rounded-[10px] animate-pulse bg-newBgColor flex-shrink-0" />
       <div className="flex-1 space-y-[8px]">
@@ -310,7 +309,7 @@ export const ClientsList: FC = () => {
       {/* Content */}
       <div className="flex-1 max-w-[1200px] w-full mx-auto px-[20px] py-[20px]">
         {/* Desktop table */}
-        <div className="hidden md:block bg-newBgColorInner rounded-[14px] border border-newTableBorder overflow-hidden">
+        <div className="voc-glass-card hidden md:block rounded-[14px] overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="text-[11px] font-[800] uppercase tracking-[0.06em] text-newTableText border-b border-newTableBorder bg-newTableHeader">

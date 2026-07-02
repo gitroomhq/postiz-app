@@ -24,8 +24,8 @@ export const CrmModal: FC<Props> = ({ title, onClose, children, width = 480 }) =
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full bg-newBgColorInner rounded-[20px] border border-newTableBorder flex flex-col"
-        style={{ maxWidth: width, boxShadow: 'var(--voc-shadow-deep)', maxHeight: '90vh', overflowY: 'auto' }}
+        className="voc-glass-card w-full rounded-[20px] flex flex-col"
+        style={{ maxWidth: width, maxHeight: '90vh', overflowY: 'auto' }}
       >
         <div className="flex items-center justify-between px-[24px] py-[20px] border-b border-newTableBorder flex-shrink-0">
           <h2 className="text-[16px] font-[700] text-newTextColor">{title}</h2>

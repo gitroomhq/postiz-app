@@ -117,7 +117,7 @@ const ProjectsTab: FC<{ projects: CrmProject[]; clientId: string }> = ({ project
         {projects.map((p) => {
           const ps = PROJECT_STATUS_MAP[p.status] ?? { label: p.status, color: '#9c9c9c' };
           return (
-            <div key={p.id} className="flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner hover:border-[rgba(115,96,170,0.28)] transition-all duration-150 group">
+            <div key={p.id} className="voc-glass-card flex items-start justify-between gap-[16px] px-[18px] py-[16px] rounded-[14px] hover:border-[var(--voc-border-highlight)] transition-all duration-150 group">
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-[700] text-newTextColor leading-tight">{p.name}</p>
                 <div className="flex flex-wrap items-center gap-[10px] mt-[6px]">
@@ -172,7 +172,7 @@ const ContactsTab: FC<{ contacts: CrmContact[]; onAdd: () => void }> = ({ contac
     ) : (
       <div className="flex flex-col gap-[10px]">
         {contacts.map((c) => (
-          <div key={c.id} className="flex items-start gap-[14px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+          <div key={c.id} className="voc-glass-card flex items-start gap-[14px] px-[18px] py-[16px] rounded-[14px]">
             <Avatar name={c.name} size={36} />
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-[700] text-newTextColor leading-tight">{c.name}</p>
@@ -216,7 +216,7 @@ const InteractionsTab: FC<{ interactions: CrmInteraction[]; onAdd: () => void }>
         {interactions.map((inter) => {
           const info = INTERACTION_TYPES[inter.type] ?? { label: inter.type };
           return (
-            <div key={inter.id} className="flex items-start gap-[12px] px-[18px] py-[16px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+            <div key={inter.id} className="voc-glass-card flex items-start gap-[12px] px-[18px] py-[16px] rounded-[14px]">
               <div className="flex-shrink-0 w-[34px] h-[34px] rounded-[10px] flex items-center justify-center mt-[1px]" style={{ background: 'var(--voc-aurora)' }}>
                 <MessageSquare size={15} className="text-white" />
               </div>
@@ -247,7 +247,7 @@ const NotesTab: FC<{ notes: string | null }> = ({ notes }) => {
     );
   }
   return (
-    <div className="px-[18px] py-[18px] rounded-[14px] border border-newTableBorder bg-newBgColorInner">
+    <div className="voc-glass-card px-[18px] py-[18px] rounded-[14px]">
       <p className="text-[14px] text-newTextColor leading-relaxed whitespace-pre-wrap">{notes}</p>
     </div>
   );
