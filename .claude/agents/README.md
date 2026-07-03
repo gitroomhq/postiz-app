@@ -8,6 +8,8 @@ Os sub-agentes abaixo são especialistas chamados via a ferramenta **Agent** (Ta
 O Dumbledore inicia as respostas de tarefa com UMA linha mostrando os agentes ativos, ex.:
 `Time atual: 🧙‍♂️ Dumbledore | 🕵️ Severus | 🔒 Griphook`
 Legenda: 🧙‍♂️ Dumbledore · ♨️ Sirius · 🎨 Flitwick · 📐 McGonagall · 🧿 Moody · 🕵️ Severus · 🔒 Griphook · 🧨 Fred&Jorge · 🔦 Filch · 🛖 Hagrid.
+**Convenção do Filch**: toda chamada de atenção dele no chat começa com 🔦, mesmo dentro de uma
+resposta do Dumbledore — reconhecimento imediato de quem está falando.
 Só quando for barato (uma linha); listar só quem foi realmente acionado. Pular em respostas triviais.
 
 ## Regra global: economia + anti-gambiarra (Griphook + Severus + Dumbledore)
