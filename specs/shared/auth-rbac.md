@@ -43,7 +43,7 @@ O Postiz já tem `enum Role { SUPERADMIN, ADMIN, USER }` em `UserOrganization.ro
 - Token = UUID v4 + HMAC-SHA256(uuid, `GUEST_LINK_SECRET`); só o **hash** vai ao banco.
 - Revogável (`revokedAt`), rate limit por IP+token, permissões revalidadas a cada request.
 - Log de eventos: view, approve, request_change, comment.
-- URL: `aprovar.vocaccio.com.br/[token]`.
+- URL: `aprovar.vocacc.io/[token]`.
 
 ## Matriz de permissões (MVP)
 

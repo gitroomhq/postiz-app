@@ -35,7 +35,7 @@ fundação dela. Enquanto mexemos em tenancy nesta fase, evitar 2 decisões cara
 
 1. **Branding por dado, não constante.** Em qualquer tela que um CrmClient possa ver (o
    **portal de aprovação** da F2 é o caso óbvio), logo/cores/nome vêm do `Client`/`Project`,
-   nunca Vocaccio hard-coded. Domínio `aprovar.vocaccio.com.br` = base trocável (futuro CNAME
+   nunca Vocaccio hard-coded. Domínio `aprovar.vocacc.io` = base trocável (futuro CNAME
    por tenant), não espalhado no código.
 2. **Limites de plano em cascata.** Modelo atual: agência → N CrmClients → M canais. Deixar
    um campo nullable reservado de **limite de leads/contatos** por CrmClient evita migração
@@ -59,6 +59,6 @@ pnpm --filter ./apps/backend run dev
 # Terminal 2 — Frontend (porta 4200)
 pnpm --filter ./apps/frontend run dev
 
-# Login: admin@vocaccio.com.br / Vocaccio@2024!
+# Login: admin@vocacc.io / Vocaccio@2024!
 # Volatis: waffle menu → Volatis → seletor de cliente no topo
 ```

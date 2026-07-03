@@ -5,13 +5,14 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ─── User (upsert) ────────────────────────────────────────────────────────────
-  const passwordHash = await bcrypt.hash('Vocaccio@2024!', 10);
+  // Senha provisória de dev local (só aplicada na criação) — trocar antes de qualquer deploy de produção.
+  const passwordHash = await bcrypt.hash('Voc@cc102030!', 10);
 
   const owner = await prisma.user.upsert({
-    where: { email_providerName: { email: 'admin@vocaccio.com.br', providerName: Provider.LOCAL } },
+    where: { email_providerName: { email: 'admin@vocacc.io', providerName: Provider.LOCAL } },
     update: {},
     create: {
-      email: 'admin@vocaccio.com.br',
+      email: 'admin@vocacc.io',
       password: passwordHash,
       providerName: Provider.LOCAL,
       name: 'Admin',
@@ -251,7 +252,7 @@ async function main() {
 
   console.log('\n✅ Seed concluído');
   console.log(`   Org: ${org.name} (${org.id})`);
-  console.log(`   Owner: ${owner.email} / senha: Vocaccio@2024!`);
+  console.log(`   Owner: ${owner.email} / senha: Voc@cc102030!`);
   console.log(`   Clientes: ${clients.length}`);
 }
 

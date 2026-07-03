@@ -40,7 +40,7 @@ projeto `C--dev-vocaccio`. **Abrir todas as sessões futuras em `C:\dev\vocaccio
 1. ✅ `seed.ts` criado em `libraries/nestjs-libraries/src/database/prisma/seed.ts`
 2. ✅ Script `prisma-seed` no `package.json` raiz (`pnpm dlx tsx ...`)
 3. ✅ Seed rodado: 1 Org + 1 OWNER + 6 Clients + 6 Projects + 12 Contacts + 18 Interactions + 12 InternalTasks
-   - Owner: `admin@vocaccio.com.br` / `Vocaccio@2024!` (mustChangePassword=true)
+   - Owner: `admin@vocacc.io` / `Vocaccio@2024!` (mustChangePassword=true)
    - Org ID: `vocaccio-org-seed`
 4. ✅ commit `feat(seed): add Vocaccio Phase 1 seed`
 
@@ -69,7 +69,7 @@ getClients() { ... }
 
 ## Próxima sessão
 1. **Subir backend + testar rotas** (`pnpm run dev-backend` + curl/Postman)
-   - Login com `admin@vocaccio.com.br` / `Vocaccio@2024!` → obter JWT
+   - Login com `admin@vocacc.io` / `Vocaccio@2024!` → obter JWT
    - Testar `GET /hub/crm/clients` retorna os 6 clientes do seed
 2. **Frontend** — route group `apps/frontend/src/app/(vocaccio)/hub/crm/`:
    - `page.tsx` → lista de clientes (tabela + busca + filtro de status)

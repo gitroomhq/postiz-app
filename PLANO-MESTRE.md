@@ -308,7 +308,7 @@ Context Pack ≤ 2.000 tokens.
 ## CAMADA 7 — DEPLOYMENT (SEM VPS — STACK GRATUITA)
 
 ```
-Vercel (free)        → frontend + aprovar.vocaccio.com.br (route group)
+Vercel (free)        → frontend + aprovar.vocacc.io (route group)
 Railway ($5/mês)     → backend NestJS
 Supabase (free)      → PostgreSQL + pgvector, Auth, Storage, Realtime, backup
 Upstash (free 10k/d) → Redis: cache + filas BullMQ
@@ -316,8 +316,8 @@ Temporal Cloud(free) → workers F3+ (scheduling Postiz)
 Hostinger (já paga)  → apenas DNS
 ```
 
-**Domínios:** vocaccio.com.br (LP) · app.vocaccio.com.br (dashboard) ·
-aprovar.vocaccio.com.br (portal) · api.vocaccio.com.br (Railway).
+**Domínios:** vocacc.io (LP) · app.vocacc.io (dashboard) ·
+aprovar.vocacc.io (portal) · api.vocacc.io (Railway).
 
 Deploy: `git push` → CI/CD automático Vercel/Railway. `.env.production` só nos
 dashboards. Backup diário via GitHub Actions → pg_dump → Supabase Storage.
@@ -855,7 +855,7 @@ para evitar migração dolorosa. Ordenado por risco.
 
 | Fase | Risco | O que fazer já (barato) para não travar a Fase H |
 |------|-------|--------------------------------------------------|
-| **F2 — Portal aprovação** | 🔴 alto | É EXATAMENTE a tela que o CrmClient-tenant mostrará sob a marca da agência. Branding (logo/cores/nome) deve vir de **dado** (do `Client`/`Project`), nunca constante Vocaccio. O domínio `aprovar.vocaccio.com.br/[token]` deve ser tratado como base trocável (preparar p/ CNAME por tenant no futuro), não espalhado hard-coded. |
+| **F2 — Portal aprovação** | 🔴 alto | É EXATAMENTE a tela que o CrmClient-tenant mostrará sob a marca da agência. Branding (logo/cores/nome) deve vir de **dado** (do `Client`/`Project`), nunca constante Vocaccio. O domínio `aprovar.vocacc.io/[token]` deve ser tratado como base trocável (preparar p/ CNAME por tenant no futuro), não espalhado hard-coded. |
 | **F3 — Canais por cliente** | 🔴 alto | **Estado real (auditado 2026-06-20):** `Integration.crmClientId` é hoje uma **coluna-etiqueta/filtro** sobre o `organizationId` do Postiz — o CrmClient NÃO é tenant de 1ª classe. Funciona p/ a F3, mas não constrói em direção à Fase H. **Salto da Fase H** = promover `Client` a tenant (mapear p/ sub-org Postiz ou equivalente), não estender a tag. Decidir o caminho de promoção antes de espalhar lógica que assuma "Integration pertence à org, crmClientId é só view". |
 | **F8 — Inbox/Chatbot/WhatsApp** | 🟠 médio | O "ManyChat próprio" white-label briga com **iframe** de Typebot/Chatwoot (trazem a marca deles). Decidir cedo: self-host com branding total, ou construir nativo. WhatsApp/Meta Cloud API precisa de **credencial por tenant** (cada CrmClient com seu número), não uma conta global. |
 | **F6 — Relatórios (Augeo)** | 🟠 médio | PDFs hoje saem com DS Vocaccio hard-coded. Gerar branding do relatório a partir de **dado do tenant** (mesma regra do portal). |
@@ -894,7 +894,7 @@ para evitar migração dolorosa. Ordenado por risco.
 | Vídeo edição | ✅ Lupin + KyaniteLabs/mcp-video |
 | Hospedagem MVP | ✅ Vercel + Railway + Supabase (gratuito) |
 | Hospedagem futuro | ✅ Hostinger VPS + Docker (com receita) |
-| Domínio aprovação | ✅ aprovar.vocaccio.com.br/[token] |
+| Domínio aprovação | ✅ aprovar.vocacc.io/[token] |
 | ManyChat MVP | ✅ Regras fixas + webhooks |
 | ManyChat futuro | ✅ Typebot + Chatwoot |
 | WhatsApp produção | ✅ Meta Cloud API oficial |
@@ -969,7 +969,7 @@ pnpm --filter ./apps/frontend run dev    # http://localhost:4200
 
 Resumo: Vercel → Import repo → Root Directory `apps/frontend` → env vars → domínio
 CNAME na Hostinger. Railway → Deploy from GitHub → `apps/backend` → env vars →
-api.vocaccio.com.br. ⚠️ ADMIN_EMAIL/PASSWORD nunca na Vercel — seed local.
+api.vocacc.io. ⚠️ ADMIN_EMAIL/PASSWORD nunca na Vercel — seed local.
 
 ## CAMADA 21 — PERFORMANCE (estratégia por fase)
 

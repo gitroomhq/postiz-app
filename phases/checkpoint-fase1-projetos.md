@@ -43,7 +43,7 @@ pnpm --filter ./apps/backend run dev
 # Terminal 2 — Frontend (porta 4200)
 pnpm --filter ./apps/frontend run dev
 
-# Login: admin@vocaccio.com.br / Vocaccio@2024!
+# Login: admin@vocacc.io / Vocaccio@2024!
 # Se clientes sumidos (só na 1ª vez após reset de schema):
 pnpm run prisma-seed
 ```

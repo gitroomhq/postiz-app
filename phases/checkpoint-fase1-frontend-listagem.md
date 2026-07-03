@@ -2,7 +2,7 @@
 **Data:** 2026-06-11 | **Status: APROVADA — pronto para detalhe**
 
 ## Resultado do teste visual
-- Login funcionando com `admin@vocaccio.com.br` / `Vocaccio@2024!`
+- Login funcionando com `admin@vocacc.io` / `Vocaccio@2024!`
 - Waffle menu (ícone grid) no header abre overlay com 6 módulos
 - Rota `/hub/crm` carrega com design Vocaccio (eyebrow rose, aurora nos pills)
 - 6 clientes do seed carregados na tabela ✅
@@ -23,7 +23,7 @@ pnpm --filter ./apps/backend run dev
 # Terminal 2 — Frontend (porta 4200)  
 pnpm --filter ./apps/frontend run dev
 
-# Login: admin@vocaccio.com.br / Vocaccio@2024!
+# Login: admin@vocacc.io / Vocaccio@2024!
 ```
 
 ## Arquivos criados/modificados
