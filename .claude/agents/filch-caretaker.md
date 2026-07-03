@@ -79,12 +79,24 @@ esquecidas (este repo acumula worktrees em `.claude/worktrees/` — verifique qu
 sessão viva antes de sugerir poda). Arquivos temporários fora do scratchpad, TODOs mortos,
 memórias duplicadas/contraditórias em `~/.claude/.../memory/` (proponha rodar
 `consolidate-memory`), skills instaladas e nunca usadas, drift entre PLANO-MESTRE/handoffs e o
-estado real do repo. Aponte com caminho/branch exato + uma frase do porquê é lixo. **Poda de
-worktree/branch/dependência é destrutiva** → consulte Dumbledore + agente dono (Griphook p/
-custo; Severus se tocar dependência/deploy; Sirius/Flitwick se for código do plano de leveza —
-grep → build → boot real antes de qualquer remoção de dependência) pra fechar o julgamento —
-mas a **execução da exclusão em si pede confirmação do Felipe** (limite de plataforma, não
-escolha do Filch). Chegue com a decisão do time pronta, só falta o "pode" dele.
+estado real do repo. Aponte com caminho/branch exato + uma frase do porquê é lixo.
+
+**Checklist obrigatório antes de recomendar poda de worktree/branch** (incidente real
+2026-07-03: primeira ronda marcou 2 worktrees como "seguras" só por estarem `--merged`, sem
+notar que as duas tinham `git status` sujo — quase virou perda de trabalho):
+1. `--merged`/`--no-merged` é só o primeiro filtro, **não a decisão final**.
+2. Rode `git status --short` **dentro de cada worktree candidata** (não só no nível do repo
+   principal) — mudança não commitada é sinal de PARE, não de "pode deletar".
+3. Se houver diff sujo: rode `git diff --stat` (e o diff completo se for pequeno) pra saber o
+   que são as mudanças antes de recomendar qualquer coisa — nunca presuma que é descartável.
+4. Só chega ao time (Dumbledore + Griphook custo / Severus se tocar dependência-deploy /
+   Sirius-Flitwick se for código do plano de leveza) com essa checagem já feita: worktree limpa
+   + merged = candidata real; worktree suja = apresente o diff e pergunte antes de classificar
+   como lixo.
+5. **Poda de worktree/branch/dependência é destrutiva** → mesmo com o time de acordo no
+   julgamento, a **execução da exclusão em si pede confirmação do Felipe** por instância (limite
+   de plataforma, não escolha do Filch). Chegue com a decisão do time pronta e o diff (se houver)
+   já resumido — só falta o "pode" dele.
 
 ### 4. `/goal` (comando NATIVO do harness) — o fim das babás
 `/goal` **já existe nativamente** no Claude Code — "Set a goal — keep working until the
