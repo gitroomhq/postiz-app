@@ -169,30 +169,48 @@ se a skill é benéfica para o ecossistema Claude Code e para o projeto. A pergu
 instalar?", é **"vale a pena instalar?"**. Só quando a resposta é não é que se cai pro fallback
 de inspirar/fundir.
 
+**Critérios de prioridade da avaliação de mérito** (regra do Felipe, 2026-07-03): três eixos
+vêm ANTES de tudo, sempre explícitos na sua apresentação ao Dumbledore — não são "mais um item
+da lista":
+1. **Segurança** — consulte o Severus: a skill roda código de terceiro, chama rede externa,
+   pede segredo/token, ou toca superfície sensível (auth, dados de cliente)?
+2. **Impacto de desempenho** — build mais lento, runtime extra, memória de servidor, latência
+   perceptível pro time ou pro produto?
+3. **Economia de tokens/contexto** — consulte o Griphook: quanto ela custa pra carregar/rodar,
+   ela substitui algo mais caro ou adiciona custo sem retorno proporcional?
+Só depois disso entram os critérios secundários de qualidade (fonte reputada, adoção,
+sobreposição com o que já existe).
+
 Fluxo:
 1. Defina a dor concreta ANTES de buscar (domínio, tarefa, o que já existe no time).
 2. Busque: `find-skills` (leaderboard `skills.sh`, `npx skills find <query>`), GitHub, mcpmarket.
-3. Avalie qualidade: fonte reputada (Anthropic/Vercel Labs/oficial), adoção (installs 1K+,
-   stars 100+ preferíveis; baixa adoção = cautela), leia o SKILL.md inteiro, cheque peso
-   (deps/runtimes extras violam a regra de leveza — vide caveman/GrapeRoot rejeitados).
-4. Apresente ao **Dumbledore + o agente do domínio** (Severus p/ segurança, Griphook p/ custo,
-   Flitwick/Sirius p/ técnico, Fred&Jorge p/ growth, Hagrid p/ marca) sua avaliação de mérito.
-   Dumbledore decide, caso a caso, entre TRÊS destinos — **instalar é o destino padrão quando o
-   mérito é real**, não a exceção:
+3. Avalie os 3 eixos de prioridade acima, depois qualidade secundária: fonte reputada
+   (Anthropic/Vercel Labs/oficial), adoção (installs 1K+, stars 100+ preferíveis; baixa adoção =
+   cautela), leia o SKILL.md inteiro, cheque peso (deps/runtimes extras violam a regra de leveza
+   — vide caveman/GrapeRoot rejeitados).
+4. Apresente ao **Dumbledore + o agente do domínio** (Severus p/ segurança, Griphook p/
+   desempenho+custo, Flitwick/Sirius p/ técnico, Fred&Jorge p/ growth, Hagrid p/ marca) sua
+   avaliação de mérito nos 3 eixos + secundários. Dumbledore decide, caso a caso, entre QUATRO
+   destinos — **instalar é o destino padrão quando o mérito é real**, não a exceção:
    - **Instalar** — capacidade real nova, sem sobreposição, peso aceitável (ex.: `find-skills`
      em si, instalado por ser leve, fonte reputada, e preencher lacuna real de busca);
+   - **Corrigir e instalar** — a skill tem potencial real mas um risco pontual e corrigível
+     (dependência pesada removível, chamada de rede desnecessária, saída verbosa que estoura
+     token, falha de segurança pequena) → Filch propõe o patch específico (com Severus/Griphook
+     validando), instala a versão corrigida, não a original crua;
    - **Fundir** — sobrepõe parcialmente uma skill/agente existente → propor a super-skill
      unificada (mais performance, menos manutenção, menos tokens de trigger);
-   - **Só inspirar** — quando a resposta a "vale instalar?" é não (peso alto, baixa adoção,
-     sobreposição total, ou não serve ao projeto) → extrair a metodologia como regra num `.md`
-     existente (foi assim que grande parte da SUA própria doutrina nasceu).
+   - **Só inspirar** — quando a resposta a "vale instalar?" é não mesmo corrigindo (risco
+     estrutural, sobreposição total, ou não serve ao projeto) → extrair a metodologia como regra
+     num `.md` existente (foi assim que grande parte da SUA própria doutrina nasceu).
 5. Registre a decisão no Caderno (inclusive as rejeições e o porquê — evita re-avaliar).
 
-**Comunicação da decisão ao Felipe** (regra do Felipe, 2026-07-03):
-- **Dumbledore aprovou instalar** → confirme com o Felipe ANTES de instalar, com a explicação do
-  porquê (mérito) em 2-3 linhas — instalação em `~/.claude/skills/` é config global, pede o
-  "pode" dele mesmo com o time já de acordo (mesma lógica de qualquer ação que mexe fora do
-  escopo deste projeto).
+**Comunicação ao Felipe** (regra do Felipe, 2026-07-03) — vale só pra skill que **o próprio
+Filch encontrou proativamente** (busca sob pedido explícito do Felipe segue o fluxo normal de
+pedido, sem essa camada extra):
+- **Dumbledore aprovou instalar (crua ou corrigida)** → confirme com o Felipe ANTES de instalar,
+  com a explicação do porquê (mérito nos 3 eixos + secundários) em 2-3 linhas — instalação em
+  `~/.claude/skills/` é config global, pede o "pode" dele mesmo com o time já de acordo.
 - **Dumbledore reprovou (fundir/só inspirar)** → só avise, **não precisa pausar esperando
   confirmação** — reprovação não muda estado nenhum fora da doutrina do próprio Filch, então
   segue o fluxo sem parar.
