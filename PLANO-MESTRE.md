@@ -907,6 +907,37 @@ para evitar migração dolorosa. Ordenado por risco.
 | Dummy data | ✅ Camila, PlanGroup, Nanda, Plan10, Gigantes, Vocaccio |
 | LP referências | ✅ academypass.ai + circle.so/br |
 
+---
+
+## Visão Exploratória: Bot de WhatsApp para Atendimento de Agência (Estudo 2026-07)
+
+**Status:** Estudo exploratório (Gemini), não validado — a ser expandido e aprimorado com o Felipe. Arquivo: `docs/whatsapp_integration_plan.md`.
+
+**Escopo:** Um agente de WhatsApp que atua como **gestor de projetos + atendimento de agência**, conectado ao Vocaccio via QR Code (sem Meta Cloud API oficial nesta fase). Capacidades:
+- Atualizar Kanban quando cliente envia aprovações/feedback via grupo.
+- Fazer bridge de atendimento (cliente ↔ agência ↔ Vocaccio).
+- Solicitar aprovações do cliente e recolher respostas.
+- Transcrição de áudio (feedbacks de clientes).
+
+**Rotas técnicas mapeadas no estudo:**
+
+1. **Plugins nativos para Claude Code** — rodam no CLI, QR Code no terminal. Exemplos: `rich627/whatsapp-claude-plugin` (transcrição nativa + permission relay local), `crisandrews/claude-whatsapp` (isolamento de contexto por projeto, debouncing). **Recomendado para MVP validação local.**
+
+2. **Servidores MCP independentes** — desacoplam do CLI. Exemplos: `whatsapp-mcp-ts` (TypeScript puro, se encaixa na stack Vocaccio), `lharries/whatsapp-mcp` (5k+ stars, Go + Python, SQLite, histórico retroativo).
+
+3. **Rota VPS + Webhook (24/7)** — produção contínua. Recomendação do estudo: **validar localmente (rotas 1–2) antes de subir infraestrutura**. APIs não oficiais (Z-API, Evolution API) não justificam o custo nesta fase.
+
+**Protocolo de segurança** (contra banimentos Meta):
+- Isole o número para uso interno/grupo com clientes (allowlist).
+- Configure delay humano (debouncing) — consolide mensagens curtas.
+- Aquecimento do chip (10–15 dias em um celular real antes de automação).
+
+**Alinhamento com fases:** Encaixe previsto na Fase 2+ (após Kanban estar estruturado). Antecipa automação de atendimento que era prevista apenas para F7–F8. Decisão futura: começar com plugin nativo (rota 1) em paralelo com a Fase 2, ou esperar estabilidade do Kanban?
+
+**Próximos passos:** (1) validar o estudo com o Felipe, (2) mapear fluxo concreto Vocaccio ↔ WhatsApp (tabela de eventos/ações), (3) prototipo local (plugin Rich627 ou whatsapp-mcp-ts), (4) testes de segurança com chip aquecido.
+
+---
+
 ## SPECS/ASSETS QUE EXISTEM (não recriar — agora em `docs/referencias/` no repo)
 
 **Design System (2 documentos complementares):**
