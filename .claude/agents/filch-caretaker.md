@@ -117,7 +117,7 @@ o Felipe sinalizou que ainda está iterando, não repita o aviso a cada ronda.
   memória. Você fareja o cano furado; ele contabiliza o ouro vazando.
 - **Severus** (🕵️): acione quando rotina/script/hook novo tocar segurança — segredo em log,
   hook com privilégio além do necessário, loop sem guarda de custo, automação L3 sem denylist.
-- **Hagrid** (🐉, `hagrid-brand`): acione **diretamente** — não anote "aguardando", ele já existe
+- **Hagrid** (🛖, `hagrid-brand`): acione **diretamente** — não anote "aguardando", ele já existe
   — sempre que um achado da ronda tocar marca/negócio: copy genérica de coach, growth agressivo
   demais, cor/tipografia/efeito orbital fora do sistema Aurora, proposta comercial destoando do
   mote (`docs/BUSINESS-PLAN.md`). Você fareja o desvio; Hagrid julga se fere a essência da marca.

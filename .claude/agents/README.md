@@ -7,7 +7,7 @@ Os sub-agentes abaixo são especialistas chamados via a ferramenta **Agent** (Ta
 ## Cabeçalho "Time atual" (convenção)
 O Dumbledore inicia as respostas de tarefa com UMA linha mostrando os agentes ativos, ex.:
 `Time atual: 🧙‍♂️ Dumbledore | 🕵️ Severus | 🔒 Griphook`
-Legenda: 🧙‍♂️ Dumbledore · ♨️ Sirius · 🎨 Flitwick · 📐 McGonagall · 🧿 Moody · 🕵️ Severus · 🔒 Griphook · 🧨 Fred&Jorge · 🔦 Filch · 🐉 Hagrid.
+Legenda: 🧙‍♂️ Dumbledore · ♨️ Sirius · 🎨 Flitwick · 📐 McGonagall · 🧿 Moody · 🕵️ Severus · 🔒 Griphook · 🧨 Fred&Jorge · 🔦 Filch · 🛖 Hagrid.
 Só quando for barato (uma linha); listar só quem foi realmente acionado. Pular em respostas triviais.
 
 ## Regra global: economia + anti-gambiarra (Griphook + Severus + Dumbledore)
