@@ -2,6 +2,34 @@
 
 **Escrito:** 2026-07-03, fim de sessão longa (integração AT-2, fixes críticos de RBAC/registro, remoção Farcaster/Nostr, adormecimento Mastra, sweep de roxo Postiz). Ver `docs/atelie/plano-atelie-virtual.md` e `docs/auditoria/plano-leveza-2026-07.md` para o histórico completo dessa sessão.
 
+## Atualização 2026-07-03 (sessão seguinte) — Frente A FECHADA, Frente B substancialmente concluída
+
+**Frente A resolvida** — o gap real era um bug concreto, não falta de conexão: `listItemsByProject`
+(`libraries/nestjs-libraries/src/database/prisma/crm/content.repository.ts`) só retornava itens
+`PENDING_APPROVAL`/`ADJUSTMENT_REQUESTED`, então o item **sumia da tela do cliente assim que ele
+aprovava** (em vez de mover pra "Outros itens", como o componente já esperava). Corrigido pra
+`notIn: ['DRAFT', 'ARCHIVED']`. Validado ponta a ponta de verdade no browser (login real, gerar
+link, aprovar, item reaparece em "Outros itens" com "Aprovado ✓"). Commit `d02325e7`.
+
+**Frente B**: paleta antiga hardcoded (`#cf6295`/`#7360aa`/`#e89a7b`/`#2897bf`/`#7b6cf6`) sincronizada
+com os tokens `--voc-rose/violet/peach/blue/ink` (`vocaccio-tokens.scss`) no portal e no Volatis
+(Konva mantém hex literal onde não lê CSS custom properties). `Toggle`/`Accordion`/`Panel` não
+foram criados — nenhum consumidor concreto pediu ainda.
+
+**Achado fora do escopo original, corrigido**: domínio placeholder `@vocaccio.com.br` (errado —
+domínio real é `vocacc.io`) tinha voltado a aparecer no `seed.ts` e em docs de planejamento
+(`PLANO-MESTRE.md`, `specs/shared/auth-rbac.md`, checkpoints de Fase 1/3) mesmo depois de uma
+varredura anterior. Corrigido pra `admin@vocacc.io` (senha provisória de dev local, ver seed.ts —
+trocar antes de prod). Commit `422336ce`.
+
+**Ambiente**: rodar boot real num worktree exige copiar `.env` de `C:\dev\vocaccio\.env` (worktrees
+não herdam) e rodar `pnpm install` local (store compartilhado, é rápido). Servidores de dev
+(backend:3000, frontend:4200) ficaram rodando ao fim da sessão pra inspeção manual do Felipe.
+
+**Ainda não testado nesta sessão**: fluxo "Solicitar ajuste" e "Comentar" no portal (só "Aprovar"
+foi validado ponta a ponta) — mesma rota de código (`ContentService`), risco baixo, mas não
+confirmado.
+
 ## Duas frentes combinadas pra próxima sessão
 
 ### A — Fechar Fase 2 (rota `/portal/[token]` → na verdade `/aprovar/[token]`)
