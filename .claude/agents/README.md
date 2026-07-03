@@ -78,13 +78,16 @@ O Dumbledore **convoca o Filch por padrão** ao fim de fases/missões longas, e 
 - **agente ou skill fora da linha** — escopo violado, convenção do `CLAUDE.md` ignorada, resposta sem
   recomendação de modelo+esforço no fim;
 - **memória duplicada/obsoleta** em `~/.claude/.../memory/`;
-- **pedido de instalação de skill nova** — o Filch pode pesquisar, mas a decisão de instalar/fundir/só-
-  inspirar é sempre auditada em conjunto com Dumbledore + o agente mais indicado ao domínio.
+- **necessidade de skill nova** — o Filch **busca sozinho**, sem pedir licença pra procurar
+  (usa a skill `find-skills`, instalada 2026-07-03); a decisão de instalar/fundir/só-inspirar é
+  do **Dumbledore**, ponderando o mérito real pro ecossistema Claude Code e pro projeto —
+  instalar é o destino padrão quando o mérito é real, "só inspirar" é o fallback, não a regra.
 
 **Filch também é sentinela de fim de sessão**: propõe `/new-chat` quando percebe sinal de sessão
 cara (compactação próxima, frente encerrada, repetição de algo já resolvido nesta sessão) — sem
 insistir se ignorado. Também é **sentinela de commit**: percebe trabalho concluído sem commit
-(diff parado, "terminei" sem `git commit`) e avisa — nunca commita sozinho.
+(diff parado, "terminei" sem `git commit`) e, aprovado pelo time, **commita ele mesmo** — só
+ações destrutivas (push, exclusão) continuam pedindo confirmação do Felipe por instância.
 
 ## Protocolo de marca/negócio (Hagrid) — regra global
 O Dumbledore **convoca o Hagrid** sempre que copy/growth/UI/proposta comercial tocar mote, tom de
@@ -101,15 +104,22 @@ Dumbledore ou Griphook. Ele mantém o **Caderno do Zelador** (`docs/zelador/CADE
 agrupados por causa-raiz (teste de recorrência — 1 incidente = observação, ≥3 = cluster maduro que
 vira proposta de regra/hook/automação, validada contra o histórico). Automações propostas seguem
 maturidade **L1 relatório → L2 assistido → L3 autônomo** — L3 só allowlisted, com guarda de custo e
-denylist, auditado por Severus+Griphook. Nada persiste sem aprovação (máx. 5 decisões por ronda).
+denylist, auditado por Severus+Griphook. Nada persiste sem aprovação de **Dumbledore + agente
+dono do domínio** — não do Felipe (máx. 5 decisões por ronda); execução não-destrutiva (editar
+`.md`, commit local) Filch faz direto uma vez aprovado, execução destrutiva (poda, push) sempre
+pede confirmação explícita do Felipe por instância (limite de plataforma).
 
-Doutrina do Filch (metodologias estudadas e incorporadas ao agente — nada instalado como skill/MCP):
-`melodykoh/learning-loop-skill` (watch-list por causa-raiz, quality gates, roteamento de aprendizado,
-portão de verificação humano), `rebelytics/one-skill-to-rule-them-all` (observação contínua de sessões
-→ refino dos próprios agentes/skills, inclusive auto-observação), `cobusgreyling/loop-engineering`
-(maturidade L1/L2/L3, guarda de custo, padrões de ronda/limpeza, "o alavancador é o sistema que
-prompta"), `vercel-labs/skills` find-skills + padrão skill-lookup-installer do mcpmarket (protocolo de
-busca→avaliação→conselho de auditoria→instalar/fundir/só-inspirar).
+Doutrina do Filch (metodologias estudadas e incorporadas ao agente): `melodykoh/learning-loop-skill`
+(watch-list por causa-raiz, quality gates, roteamento de aprendizado, portão de verificação —
+**não instalado**, virou regra), `rebelytics/one-skill-to-rule-them-all` (observação contínua de
+sessões → refino dos próprios agentes/skills, inclusive auto-observação — **não instalado**),
+`cobusgreyling/loop-engineering` (maturidade L1/L2/L3, guarda de custo, "o alavancador é o sistema
+que prompta" — **não instalado**). `vercel-labs/skills` **`find-skills` FOI instalado**
+(`~/.claude/skills/find-skills/`, 2026-07-03 — mérito real: fonte reputada, leve, preenche a
+lacuna de busca do Filch) — é a ferramenta primária dele pra achar skill nova; instalação de
+qualquer skill encontrada segue decisão de mérito do Dumbledore (instalar é o padrão quando o
+mérito é real, "só inspirar" é o fallback). Padrão skill-lookup-installer do mcpmarket ficou de
+fora — a página deu 429 (rate limit) e o conteúdo nunca foi lido de verdade.
 
 ## Como o Dumbledore orquestra (princípios — inspirados no Ruflo)
 1. **Delegação paralela**: tarefas independentes (ex. front + back da mesma feature) vão para
