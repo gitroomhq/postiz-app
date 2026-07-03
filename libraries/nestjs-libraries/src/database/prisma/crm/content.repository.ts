@@ -106,7 +106,9 @@ export class ContentRepository {
       where: {
         projectId,
         deletedAt: null,
-        status: { in: ['PENDING_APPROVAL', 'ADJUSTMENT_REQUESTED'] },
+        // DRAFT/ARCHIVED são internos — o portal do cliente só vê itens já
+        // enviados para aprovação e o que aconteceu depois (aprovado/publicado).
+        status: { notIn: ['DRAFT', 'ARCHIVED'] },
       },
       select: ITEM_WITH_EVENTS_SELECT,
       orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],

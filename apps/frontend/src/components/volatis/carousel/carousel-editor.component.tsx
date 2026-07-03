@@ -484,7 +484,7 @@ export const CarouselEditor = ({ carouselId, crmClientId = null }: EditorProps) 
                                 : slot.kind === 'dark'
                                 ? '#1a1a1a'
                                 : slot.kind === 'grad'
-                                ? 'linear-gradient(135deg,#cf6295,#7b6cf6)'
+                                ? 'linear-gradient(135deg,var(--voc-rose),var(--voc-violet))'
                                 : '#f0ede8',
                             border: '1px solid rgba(255,255,255,0.12)',
                           }}
@@ -541,7 +541,7 @@ export const CarouselEditor = ({ carouselId, crmClientId = null }: EditorProps) 
                                   : slot.kind === 'dark'
                                   ? '#1a1a1a'
                                   : slot.kind === 'grad'
-                                  ? 'linear-gradient(135deg,#cf6295,#7b6cf6)'
+                                  ? 'linear-gradient(135deg,var(--voc-rose),var(--voc-violet))'
                                   : '#f0ede8',
                               border: '1px solid rgba(255,255,255,0.12)',
                             }}
@@ -1086,7 +1086,7 @@ export const CarouselEditor = ({ carouselId, crmClientId = null }: EditorProps) 
                           background: hasImage
                             ? `url(${s.background.imageUrl}) center/cover`
                             : s.background.kind === 'grad'
-                            ? 'linear-gradient(135deg,var(--voc-rose),#7b6cf6)'
+                            ? 'linear-gradient(135deg,var(--voc-rose),var(--voc-violet))'
                             : s.background.kind === 'dark'
                             ? (s.background.color ?? doc.brand.bgDark)
                             : (s.background.color ?? doc.brand.bgLight),

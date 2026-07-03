@@ -13,7 +13,8 @@ import { makeAxisLockBound } from './drag.util';
  * `runIndex`/`segIndex` para que clicar a palavra no editor edite o run certo.
  */
 
-const VOC_ROSE = '#cf6295';
+/** Konva não lê CSS custom properties — mantém literal, sincronizado com --voc-rose (vocaccio-tokens.scss). */
+const VOC_ROSE = '#df548e';
 
 interface Token {
   text: string;

@@ -81,7 +81,7 @@ export const TemplateSelectModal = ({ onSelect, onClose }: TemplateSelectModalPr
                           : slot.kind === 'dark'
                           ? '#1a1a1a'
                           : slot.kind === 'grad'
-                          ? 'linear-gradient(135deg,#cf6295,#7b6cf6)'
+                          ? 'linear-gradient(135deg,var(--voc-rose),var(--voc-violet))'
                           : '#f0ede8',
                       border: '1px solid rgba(255,255,255,0.12)',
                     }}
