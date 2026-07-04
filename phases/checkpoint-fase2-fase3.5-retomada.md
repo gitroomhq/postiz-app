@@ -64,6 +64,30 @@ confirmado.
 5. `Toggle`/`Accordion`/`Panel` só se algum componente concreto pedir.
 6. Rodar `moody-revisor` no diff antes de cada commit (convenção do time).
 
+## Novidade (2026-07-03, sessão paralela): Filch + Hagrid instalados no time
+
+Sessão separada (branch `claude/agitated-williams-e8829c`, commits até `3c5bb282`) integrou dois
+agentes novos em `.claude/agents/` (local + `~/.claude/agents/` global) — ver memória
+`project-agentes-dev-hp` (Rodadas 2-7) pro histórico completo:
+
+- **🔦 Filch** (`filch-caretaker`, Sonnet) — zelador do ecossistema: mantém o Caderno do Zelador
+  (`docs/zelador/CADERNO.md`, hoje só no repo principal `C:\dev\vocaccio`, não neste worktree),
+  caça entulho (worktree/branch esquecida, commit pendente), propõe `/goal` nativo e `/new-chat`
+  quando a sessão fica cara, busca skill nova sozinho (skill `find-skills` já instalada). Toda
+  chamada de atenção dele no chat começa com 🔦. Autonomia de decisão é do time (Dumbledore +
+  agente dono), mas exclusão/push sempre pedem confirmação explícita do Felipe por instância.
+- **🛖 Hagrid** (`hagrid-brand`, Sonnet) — guardião da marca/negócio, valida copy/UI/growth contra
+  `docs/BUSINESS-PLAN.md` (mote, tom de voz, arquétipos, sistema visual Aurora). Relevante pra
+  frente B (coerência visual) — pode validar se os primitivos/paleta usados no Volatis/portal
+  seguem o sistema visual oficial, não só se estão livres de roxo Postiz.
+
+**Achado que pode interessar direto a esta frente:** na primeira ronda de teste, o Filch achou a
+worktree `C:\dev\vocaccio\.claude\worktrees\interesting-hypatia-fc900b` com mudanças **não
+commitadas** em `portal-approval.component.tsx`, `carousel-editor.component.tsx`,
+`rich-text.component.tsx` e `template-select.component.tsx` — exatamente os arquivos das frentes
+A e B deste checkpoint. Pode ser WIP de uma sessão anterior desta mesma frente que nunca foi
+commitado. **Vale checar esse worktree antes de recomeçar do zero** — pode economizar trabalho.
+
 ## Pendências conhecidas de fora do escopo (não mexer sem pedido)
 - `addUserToOrg()` (convite de usuário existente) tem o mesmo bug de RBAC corrigido no registro (`vocaccioRole` ausente) — decisão de produto pendente sobre role default de convite.
 - `createMaxUser()` (fluxo white-label) mesmo bug, não investigado a fundo.
