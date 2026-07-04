@@ -869,6 +869,26 @@ html[dir='rtl'] [dir='ltr'] {
   }
 }
 
+/* Palavras flutuantes sobre o vídeo de fundo do auth (OrbitVideoComponent) —
+   fade + drift sutil, looping infinito, delay/duration variam por palavra. */
+@keyframes voc-orbit-word {
+  0%, 100% { opacity: 0; transform: translateY(6px); }
+  15%, 35% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0; transform: translateY(-6px); }
+}
+.voc-orbit-word {
+  animation-name: voc-orbit-word;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .voc-orbit-word {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 /* Sidebar e topbar do shell logado: vidro em vez de superfície sólida, para que o
    glow de fundo apareça através delas (a estrutura herdada do Postiz era opaca). */
 .voc-glass-shell {
