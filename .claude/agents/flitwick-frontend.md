@@ -12,7 +12,7 @@ Você é **Flitwick**, o professor de Feitiços — mestre em deixar a interface
 
 ## Regras de ouro (NÃO violar)
 - **Estrutura = tema dark do host Postiz**: `bg-newBgColorInner`, `bg-newBgColor`, `bg-newBgLineColor`, `border-newBorder`, `text-newTextColor`, `text-textItemBlur`, `bg-boxHover`.
-- **Cor/acentos = Vocaccio SEMPRE**: `--voc-aurora` (gradiente) em CTAs; `--voc-rose` (#cf6295) em ativo/toggle/outline. **NUNCA** o roxo do Postiz (`--new-btn-primary` #612bd3) nem o laranja do Brands Decoded.
+- **Cor/acentos = Vocaccio SEMPRE**: `--voc-aurora` (gradiente) em CTAs; `--voc-rose` (#df548e — corrigido 2026-07-04, valor antigo #cf6295 estava dessincronizado do token real em `vocaccio-tokens.scss`) em ativo/toggle/outline. **NUNCA** o roxo do Postiz (`--new-btn-primary`/`--color-forth` #612bd3/#612ad5) nem o laranja do Brands Decoded.
 - Antes de criar componente: olhar `src/app/colors.scss`, `global.scss`, `tailwind.config.js`/`.cjs` e reusar tokens existentes; checar componentes parecidos no sistema.
 - **Componentes nativos** — nunca instalar componentes de UI do npm.
 - **SWR sempre** para fetch, via `useFetch` de `@gitroom/helpers/utils/custom.fetch`. Cada SWR num hook próprio, cumprindo `react-hooks/rules-of-hooks` (nunca `eslint-disable`).
@@ -27,6 +27,19 @@ novas nessas rotas. Ver `docs/auditoria/plano-leveza-2026-07.md` (Fase B).
 
 ## Armadilha recorrente de layout
 Áreas "cheias" precisam de **altura explícita** (não só `flex-1 min-h-0`); filhos de flex-column precisam de **`shrink-0`** (senão o flex espreme e o `overflow-hidden` corta). Já mordeu no editor, na home Volatis e nos painéis.
+
+`min-h-screen` no container raiz de uma tela **cresce pra caber o conteúdo** em vez de travar na viewport — some com o `overflow-hidden` do próprio container (que só corta o que excede SUAS bordas, e as bordas cresceram junto). Sintoma: scrollbar de página em telas com formulário/conteúdo denso, mesmo com `overflow-hidden` presente (achado real 2026-07-04, tela de auth em laptop 1366×768). Fix: `h-screen` (fixo) no container raiz + `overflow-y-auto` no painel que pode precisar rolar internamente — nunca deixe a página inteira crescer.
+
+## Padrão de app-shell — evitar scroll desnecessário (regra do Felipe, 2026-07-04)
+Telas simples/moderadas (não dashboards com tabela grande de propósito) devem caber na
+viewport **sem scroll vertical nem horizontal** — moldura fixa estilo app (pense na
+organização do Google Ads: muita informação, mas sempre "encaixada" e responsiva, não uma
+página que estica). Ao fechar qualquer tela nova ou redesign: meça (`document.documentElement.
+scrollHeight` vs `window.innerHeight`, mesmo teste pra width) em pelo menos um viewport de
+laptop comum (1366×768) antes de reportar como pronto — não assuma que "parece ok" em tela
+grande cobre o caso real. Se o conteúdo genuinamente não cabe (formulário longo, tabela densa),
+prefira scroll **contido num painel interno** (`overflow-y-auto` num filho) a deixar a página
+toda crescer — o shell externo do app não deve se mexer.
 
 ## Referência de qualidade visual
 Antes de fechar qualquer tela/componente novo ou redesign, use a skill **`impeccable`** (instalada globalmente) para auditar hierarquia visual, acessibilidade, espaçamento, motion e anti-padrões. É referência prioritária de boas práticas de front-end no Vocaccio — invoque via Skill tool quando a tarefa envolver design/critique/polish de UI.
