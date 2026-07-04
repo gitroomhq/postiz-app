@@ -922,7 +922,14 @@ html[dir='rtl'] [dir='ltr'] {
    estreitas) porque aqui precisa segurar legibilidade de grade/texto denso por cima. */
 .voc-content-shell {
   background-color: rgba(9, 6, 20, 0.2);
-  background-image: var(--voc-glass-glare);
+  /* backdrop-filter sozinho não estava revelando o glow ambiente (position: fixed +
+     z-index negativo — combinação que o Chromium às vezes não sampleia direito pra
+     backdrop-filter). Em vez de depender disso, embutimos uma versão suave da mesma
+     aurora direto no fundo do painel — funciona sempre, sem depender de composição. */
+  background-image: var(--voc-glass-glare),
+    radial-gradient(circle at 12% 6%, rgba(124, 94, 225, 0.16), transparent 40vw),
+    radial-gradient(circle at 92% 96%, rgba(35, 166, 214, 0.14), transparent 40vw),
+    radial-gradient(circle at 50% 50%, rgba(242, 150, 118, 0.1), transparent 50vw);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
   border: 1px solid var(--voc-border-soft);
