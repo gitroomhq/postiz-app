@@ -32,7 +32,7 @@ export interface IAuthenticator {
     integrationId: string,
     accessToken: string,
     postId: string,
-    fromDate: number,
+    fromDate: number
   ): Promise<AnalyticsData[]>;
   changeNickname?(
     id: string,
@@ -55,7 +55,6 @@ export interface AnalyticsData {
   data: Array<{ total: string; date: string }>;
   percentageChange: number;
 }
-
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -127,6 +126,45 @@ export type MediaContent = {
   thumbnailTimestamp?: number;
 };
 
+export type SocialEditor = 'none' | 'normal' | 'markdown' | 'html';
+
+export type ProviderToolMetadata = {
+  description: string;
+  dataSchema: any;
+  methodName: string;
+};
+
+export type SocialProviderCapabilities = {
+  scheduling: boolean;
+  comments: boolean;
+  mentions: boolean;
+  accountAnalytics: boolean;
+  postAnalytics: boolean;
+  missingContent: boolean;
+  profilePicture: boolean;
+  nickname: boolean;
+  customFields: boolean;
+  externalUrl: boolean;
+  web3: boolean;
+  chromeExtension: boolean;
+  oneTimeToken: boolean;
+  refreshCron: boolean;
+  refreshWait: boolean;
+  stripLinks: boolean;
+  convertToJPEG: boolean;
+  editor: SocialEditor;
+  maxConcurrentJob: number;
+  tools: string[];
+};
+
+export type SocialProviderRequirements = {
+  rules: string;
+  maxLength: number;
+  settings: any;
+  tools: ProviderToolMetadata[];
+  capabilities: SocialProviderCapabilities;
+};
+
 export type FetchPageInformationResult = {
   id: string;
   name: string;
@@ -153,7 +191,7 @@ export interface SocialProvider
   isWeb3?: boolean;
   isChromeExtension?: boolean;
   extensionCookies?: { name: string; domain: string }[];
-  editor: 'none' | 'normal' | 'markdown' | 'html';
+  editor: SocialEditor;
   customFields?: () => Promise<
     {
       key: string;

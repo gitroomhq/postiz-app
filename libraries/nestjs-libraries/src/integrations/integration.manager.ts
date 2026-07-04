@@ -2,7 +2,13 @@ import 'reflect-metadata';
 
 import { Injectable } from '@nestjs/common';
 import { XProvider } from '@gitroom/nestjs-libraries/integrations/social/x.provider';
-import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  ProviderToolMetadata,
+  SocialProvider,
+  SocialProviderCapabilities,
+  SocialProviderRequirements,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { buildProviderCapabilities } from '@gitroom/nestjs-libraries/integrations/provider.capabilities';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { RedditProvider } from '@gitroom/nestjs-libraries/integrations/social/reddit.provider';
 import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/social/dev.to.provider';
@@ -36,6 +42,7 @@ import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 import { MeweProvider } from '@gitroom/nestjs-libraries/integrations/social/mewe.provider';
+import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
@@ -77,6 +84,8 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
 @Injectable()
 export class IntegrationManager {
   async getAllIntegrations() {
+    const tools = this.getAllTools();
+
     return {
       social: await Promise.all(
         socialIntegrationList.map(async (p) => ({
@@ -87,7 +96,10 @@ export class IntegrationManager {
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
+          capabilities: buildProviderCapabilities(p, tools[p.identifier] || []),
+          ...(p.extensionCookies
+            ? { extensionCookies: p.extensionCookies }
+            : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),
@@ -96,11 +108,7 @@ export class IntegrationManager {
   }
 
   getAllTools(): {
-    [key: string]: {
-      description: string;
-      dataSchema: any;
-      methodName: string;
-    }[];
+    [key: string]: ProviderToolMetadata[];
   } {
     return socialIntegrationList.reduce(
       (all, current) => ({
@@ -110,6 +118,50 @@ export class IntegrationManager {
           [],
       }),
       {}
+    );
+  }
+
+  getIntegrationRequirements(
+    providerIdentifier: string,
+    additionalSettings?: any
+  ): SocialProviderRequirements | undefined {
+    const integration = socialIntegrationList.find(
+      (p) => p.identifier === providerIdentifier
+    );
+
+    if (!integration) {
+      return undefined;
+    }
+
+    const tools = this.getAllTools()[integration.identifier] || [];
+    const rules = this.getAllRulesDescription()[integration.identifier] || '';
+    const schemas = !integration.dto
+      ? false
+      : getValidationSchemas()[integration.dto.name];
+
+    return {
+      rules,
+      maxLength: integration.maxLength(additionalSettings),
+      settings: !schemas ? 'No additional settings required' : schemas,
+      tools,
+      capabilities: buildProviderCapabilities(integration, tools),
+    };
+  }
+
+  getIntegrationCapabilities(
+    providerIdentifier: string
+  ): SocialProviderCapabilities | undefined {
+    const integration = socialIntegrationList.find(
+      (p) => p.identifier === providerIdentifier
+    );
+
+    if (!integration) {
+      return undefined;
+    }
+
+    return buildProviderCapabilities(
+      integration,
+      this.getAllTools()[integration.identifier] || []
     );
   }
 

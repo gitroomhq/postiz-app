@@ -107,6 +107,9 @@ export class IntegrationsController {
             inBetweenSteps: p.inBetweenSteps,
             refreshNeeded: p.refreshNeeded,
             isCustomFields: !!findIntegration.customFields,
+            capabilities: this._integrationManager.getIntegrationCapabilities(
+              p.providerIdentifier
+            ),
             ...(findIntegration.customFields
               ? { customFields: await findIntegration.customFields() }
               : {}),

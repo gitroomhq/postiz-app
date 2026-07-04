@@ -6,7 +6,6 @@ import {
   IntegrationManager,
   socialIntegrationList,
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 
 @Injectable()
@@ -79,34 +78,51 @@ export class IntegrationValidationTool implements AgentToolInterface {
             .describe(
               "Sometimes settings require some id, tags and stuff, if you don't have, trigger the `triggerTool` function from the tools list [output:callable-tools]"
             ),
+          capabilities: z
+            .object({
+              scheduling: z.boolean(),
+              comments: z.boolean(),
+              mentions: z.boolean(),
+              accountAnalytics: z.boolean(),
+              postAnalytics: z.boolean(),
+              missingContent: z.boolean(),
+              profilePicture: z.boolean(),
+              nickname: z.boolean(),
+              customFields: z.boolean(),
+              externalUrl: z.boolean(),
+              web3: z.boolean(),
+              chromeExtension: z.boolean(),
+              oneTimeToken: z.boolean(),
+              refreshCron: z.boolean(),
+              refreshWait: z.boolean(),
+              stripLinks: z.boolean(),
+              convertToJPEG: z.boolean(),
+              editor: z.enum(['none', 'normal', 'markdown', 'html']),
+              maxConcurrentJob: z.number(),
+              tools: z.array(z.string()),
+            })
+            .optional()
+            .describe(
+              'Derived provider capabilities for generic scheduling and integration flows'
+            ),
         }),
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
-        const integration = socialIntegrationList.find(
-          (p) => p.identifier === inputData.platform
-        )!;
+        const requirements =
+          this._integrationManager.getIntegrationRequirements(
+            inputData.platform,
+            inputData.isPremium
+          );
 
-        if (!integration) {
+        if (!requirements) {
           return {
             output: { rules: '', maxLength: 0, settings: {}, tools: [] },
           };
         }
 
-        const maxLength = integration.maxLength(inputData.isPremium);
-        const schemas = !integration.dto
-          ? false
-          : getValidationSchemas()[integration.dto.name];
-        const tools = this._integrationManager.getAllTools();
-        const rules = this._integrationManager.getAllRulesDescription();
-
         return {
-          output: {
-            rules: rules[integration.identifier],
-            maxLength,
-            settings: !schemas ? 'No additional settings required' : schemas,
-            tools: tools[integration.identifier],
-          },
+          output: requirements,
         };
       },
     });

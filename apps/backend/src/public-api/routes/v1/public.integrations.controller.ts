@@ -56,7 +56,6 @@ import {
   socialIntegrationList,
   IntegrationManager,
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
@@ -438,30 +437,19 @@ export class PublicIntegrationsController {
         (p: any) => p?.title === 'Verified'
       )?.value || false;
 
-    const integration = socialIntegrationList.find(
-      (p) => p.identifier === loadIntegration.providerIdentifier
-    )!;
+    const requirements = this._integrationManager.getIntegrationRequirements(
+      loadIntegration.providerIdentifier,
+      verified
+    );
 
-    if (!integration) {
+    if (!requirements) {
       return {
         output: { rules: '', maxLength: 0, settings: {}, tools: [] as any[] },
       };
     }
 
-    const maxLength = integration.maxLength(verified);
-    const schemas = !integration.dto
-      ? false
-      : getValidationSchemas()[integration.dto.name];
-    const tools = this._integrationManager.getAllTools();
-    const rules = this._integrationManager.getAllRulesDescription();
-
     return {
-      output: {
-        rules: rules[integration.identifier],
-        maxLength,
-        settings: !schemas ? 'No additional settings required' : schemas,
-        tools: tools[integration.identifier],
-      },
+      output: requirements,
     };
   }
 
