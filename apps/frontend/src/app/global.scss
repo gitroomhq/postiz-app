@@ -872,9 +872,9 @@ html[dir='rtl'] [dir='ltr'] {
 /* Palavras flutuantes sobre o vídeo de fundo do auth (OrbitVideoComponent) —
    fade + drift sutil, looping infinito, delay/duration variam por palavra. */
 @keyframes voc-orbit-word {
-  0%, 100% { opacity: 0; transform: translateY(6px); }
-  15%, 35% { opacity: 1; transform: translateY(0); }
-  50% { opacity: 0; transform: translateY(-6px); }
+  0%, 100% { opacity: 0; transform: translateY(10px); }
+  30%, 55% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 0; transform: translateY(-10px); }
 }
 .voc-orbit-word {
   animation-name: voc-orbit-word;

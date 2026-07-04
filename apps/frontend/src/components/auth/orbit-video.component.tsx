@@ -7,7 +7,23 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
  * — substitui o TestimonialComponent (depoimentos reais do Postiz) na tela de
  * auth. As palavras ficam em componente/tradução, não gravadas no vídeo, pra
  * não travar tradução futura (ver docs/handoff-novo-design/vocaccio-system-design-final.md).
+ *
+ * Separado em dois componentes: o vídeo (OrbitVideoBackdrop) fica atrás de
+ * TODA a tela — inclusive mobile, onde o card de login é translúcido por
+ * cima dele — e as palavras (OrbitVideoWords) só aparecem no desktop
+ * (espaço lateral dedicado; no mobile ficariam ilegíveis/poluídas).
  */
+
+export const OrbitVideoBackdrop = () => (
+  <video
+    className="absolute inset-0 h-full w-full object-cover opacity-70"
+    src="/auth/vocaccio-orbit-bg.mp4"
+    autoPlay
+    loop
+    muted
+    playsInline
+  />
+);
 
 interface FloatingWord {
   key: string;
@@ -19,36 +35,24 @@ interface FloatingWord {
 }
 
 const WORDS: FloatingWord[] = [
-  { key: 'orbit_word_authenticity', fallback: 'Autenticidade', top: '12%', left: '10%', delay: '0s', duration: '9s' },
-  { key: 'orbit_word_insights', fallback: 'Insights', top: '22%', left: '68%', delay: '1.2s', duration: '10s' },
-  { key: 'orbit_word_presence', fallback: 'Presença', top: '78%', left: '14%', delay: '2.4s', duration: '8.5s' },
-  { key: 'orbit_word_community', fallback: 'Comunidade', top: '85%', left: '58%', delay: '3.6s', duration: '9.5s' },
-  { key: 'orbit_word_growth', fallback: 'Growth', top: '8%', left: '42%', delay: '4.8s', duration: '8s' },
-  { key: 'orbit_word_crm', fallback: 'CRM', top: '48%', left: '6%', delay: '6s', duration: '9s' },
-  { key: 'orbit_word_automation', fallback: 'Automação', top: '55%', left: '74%', delay: '0.6s', duration: '10.5s' },
-  { key: 'orbit_word_engagement', fallback: 'Engajamento', top: '35%', left: '20%', delay: '1.8s', duration: '9s' },
-  { key: 'orbit_word_soul2soul', fallback: 'Soul 2 Soul', top: '65%', left: '38%', delay: '3s', duration: '11s' },
-  { key: 'orbit_word_self_knowledge', fallback: 'Autoconhecimento', top: '18%', left: '80%', delay: '4.2s', duration: '10s' },
-  { key: 'orbit_word_strategy', fallback: 'Estratégia', top: '40%', left: '52%', delay: '5.4s', duration: '9.5s' },
+  { key: 'orbit_word_authenticity', fallback: 'Autenticidade', top: '12%', left: '10%', delay: '0s', duration: '20s' },
+  { key: 'orbit_word_insights', fallback: 'Insights', top: '22%', left: '68%', delay: '2.5s', duration: '22s' },
+  { key: 'orbit_word_presence', fallback: 'Presença', top: '78%', left: '14%', delay: '5s', duration: '19s' },
+  { key: 'orbit_word_community', fallback: 'Comunidade', top: '85%', left: '58%', delay: '7.5s', duration: '21s' },
+  { key: 'orbit_word_growth', fallback: 'Growth', top: '8%', left: '42%', delay: '10s', duration: '18s' },
+  { key: 'orbit_word_crm', fallback: 'CRM', top: '48%', left: '6%', delay: '12.5s', duration: '20s' },
+  { key: 'orbit_word_automation', fallback: 'Automação', top: '55%', left: '74%', delay: '1.3s', duration: '23s' },
+  { key: 'orbit_word_engagement', fallback: 'Engajamento', top: '35%', left: '20%', delay: '3.8s', duration: '20s' },
+  { key: 'orbit_word_soul2soul', fallback: 'Soul 2 Soul', top: '65%', left: '38%', delay: '6.3s', duration: '24s' },
+  { key: 'orbit_word_self_knowledge', fallback: 'Autoconhecimento', top: '18%', left: '80%', delay: '8.8s', duration: '22s' },
+  { key: 'orbit_word_strategy', fallback: 'Estratégia', top: '40%', left: '52%', delay: '11.3s', duration: '21s' },
 ];
 
-export const OrbitVideoComponent = () => {
+export const OrbitVideoWords = () => {
   const t = useT();
 
   return (
-    <div className="relative flex-1 w-full my-[30px] max-w-[850px] overflow-hidden rounded-[var(--voc-radius-lg)]">
-      <video
-        className="absolute inset-0 h-full w-full object-cover opacity-80"
-        src="/auth/vocaccio-orbit-bg.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(circle at 50% 50%, transparent 40%, var(--voc-bg-app) 95%)' }}
-      />
+    <div className="relative flex-1 w-full my-[30px] max-w-[850px]">
       {WORDS.map((word) => (
         <span
           key={word.key}
