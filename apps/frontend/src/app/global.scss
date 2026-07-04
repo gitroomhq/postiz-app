@@ -921,7 +921,7 @@ html[dir='rtl'] [dir='ltr'] {
    topbar ao lado. Mais escuro/opaco que .voc-glass-shell (que é pensado pra barras
    estreitas) porque aqui precisa segurar legibilidade de grade/texto denso por cima. */
 .voc-content-shell {
-  background-color: rgba(9, 6, 20, 0.5);
+  background-color: rgba(9, 6, 20, 0.32);
   background-image: var(--voc-glass-glare);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
