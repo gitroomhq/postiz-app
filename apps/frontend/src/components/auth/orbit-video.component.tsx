@@ -35,17 +35,17 @@ interface FloatingWord {
 }
 
 const WORDS: FloatingWord[] = [
-  { key: 'orbit_word_authenticity', fallback: 'Autenticidade', top: '12%', left: '10%', delay: '0s', duration: '20s' },
-  { key: 'orbit_word_insights', fallback: 'Insights', top: '22%', left: '68%', delay: '2.5s', duration: '22s' },
-  { key: 'orbit_word_presence', fallback: 'Presença', top: '78%', left: '14%', delay: '5s', duration: '19s' },
-  { key: 'orbit_word_community', fallback: 'Comunidade', top: '85%', left: '58%', delay: '7.5s', duration: '21s' },
-  { key: 'orbit_word_growth', fallback: 'Growth', top: '8%', left: '42%', delay: '10s', duration: '18s' },
-  { key: 'orbit_word_crm', fallback: 'CRM', top: '48%', left: '6%', delay: '12.5s', duration: '20s' },
-  { key: 'orbit_word_automation', fallback: 'Automação', top: '55%', left: '74%', delay: '1.3s', duration: '23s' },
-  { key: 'orbit_word_engagement', fallback: 'Engajamento', top: '35%', left: '20%', delay: '3.8s', duration: '20s' },
-  { key: 'orbit_word_soul2soul', fallback: 'Soul 2 Soul', top: '65%', left: '38%', delay: '6.3s', duration: '24s' },
-  { key: 'orbit_word_self_knowledge', fallback: 'Autoconhecimento', top: '18%', left: '80%', delay: '8.8s', duration: '22s' },
-  { key: 'orbit_word_strategy', fallback: 'Estratégia', top: '40%', left: '52%', delay: '11.3s', duration: '21s' },
+  { key: 'orbit_word_authenticity', fallback: 'Autenticidade', top: '12%', left: '10%', delay: '0s', duration: '26s' },
+  { key: 'orbit_word_insights', fallback: 'Insights', top: '22%', left: '68%', delay: '2.4s', duration: '27s' },
+  { key: 'orbit_word_presence', fallback: 'Presença', top: '78%', left: '14%', delay: '4.8s', duration: '25s' },
+  { key: 'orbit_word_community', fallback: 'Comunidade', top: '85%', left: '58%', delay: '7.2s', duration: '28s' },
+  { key: 'orbit_word_growth', fallback: 'Growth', top: '8%', left: '42%', delay: '9.6s', duration: '24s' },
+  { key: 'orbit_word_crm', fallback: 'CRM', top: '48%', left: '6%', delay: '12s', duration: '26s' },
+  { key: 'orbit_word_automation', fallback: 'Automação', top: '55%', left: '74%', delay: '14.4s', duration: '29s' },
+  { key: 'orbit_word_engagement', fallback: 'Engajamento', top: '35%', left: '20%', delay: '16.8s', duration: '25s' },
+  { key: 'orbit_word_soul2soul', fallback: 'Soul 2 Soul', top: '65%', left: '38%', delay: '19.2s', duration: '30s' },
+  { key: 'orbit_word_self_knowledge', fallback: 'Autoconhecimento', top: '18%', left: '80%', delay: '21.6s', duration: '27s' },
+  { key: 'orbit_word_strategy', fallback: 'Estratégia', top: '40%', left: '52%', delay: '24s', duration: '26s' },
 ];
 
 export const OrbitVideoWords = () => {

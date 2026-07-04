@@ -61,11 +61,11 @@ export function Login() {
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[800] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[26px] font-[800] -tracking-[0.8px] text-start cursor-pointer">
               {t('sign_in', 'Sign In')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px] text-[var(--voc-text-secondary)]">
+          <div className="text-[12px] mt-[16px] mb-[8px] text-[var(--voc-text-secondary)]">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -78,7 +78,7 @@ export function Login() {
                 <GoogleProvider />
               </div>
             )}
-            <div className="h-[20px] mb-[24px] mt-[24px] relative">
+            <div className="h-[16px] mb-[12px] mt-[12px] relative">
               <div className="absolute w-full h-[1px] bg-[var(--voc-border-soft)] top-[50%] -translate-y-[50%]" />
               <div
                 className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
@@ -88,8 +88,8 @@ export function Login() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-[16px]">
-              <div className="flex flex-col gap-[12px]">
+            <div className="flex flex-col gap-[10px]">
+              <div className="flex flex-col gap-[8px]">
                 <AuthInput
                   label={t('email_address', 'Email Address')}
                   name="email"
@@ -120,13 +120,13 @@ export function Login() {
                   </Link>
                 </div>
               )}
-              <div className="text-center mt-2">
+              <div className="text-center mt-[4px]">
                 <div className="w-full flex">
                   <AuthButton type="submit" loading={loading}>
                     {t('sign_in_1', 'Sign in')}
                   </AuthButton>
                 </div>
-                <p className="mt-4 text-sm text-[var(--voc-text-secondary)]">
+                <p className="mt-[10px] text-[12px] text-[var(--voc-text-secondary)]">
                   {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
                   <Link
                     href="/auth"
@@ -134,8 +134,7 @@ export function Login() {
                   >
                     {t('sign_up', 'Sign Up')}
                   </Link>
-                </p>
-                <p className="mt-4 text-sm">
+                  &nbsp;·&nbsp;
                   <Link
                     href="/auth/forgot"
                     className="text-[var(--voc-text-secondary)] underline hover:text-[var(--voc-text-primary)] cursor-pointer"

@@ -830,6 +830,22 @@ html[dir='rtl'] [dir='ltr'] {
   box-shadow: var(--voc-shadow-glass);
 }
 
+/* Card de login/registro sobre o vídeo de fundo (OrbitVideoBackdrop) — precisa de mais
+   opacidade que o .voc-glass-card padrão pra não atrapalhar a leitura, mas menos no
+   mobile (onde ocupa a tela quase toda) pra deixar a galáxia aparecer por trás. */
+.voc-auth-card {
+  background-color: rgba(9, 6, 20, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+@media (min-width: 1024px) {
+  .voc-auth-card {
+    background-color: rgba(9, 6, 20, 0.62);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+  }
+}
+
 /* Phase B.2 — Ambient Glows: a Regra do Vidro com Luz exige um glow real atrás de
    todo .voc-glass-card, senão o blur não tem nada para borrar. Fixo, atrás de tudo,
    drift muito lento (15-25s) — nunca rápido, nunca chamativo. */
@@ -872,9 +888,10 @@ html[dir='rtl'] [dir='ltr'] {
 /* Palavras flutuantes sobre o vídeo de fundo do auth (OrbitVideoComponent) —
    fade + drift sutil, looping infinito, delay/duration variam por palavra. */
 @keyframes voc-orbit-word {
-  0%, 100% { opacity: 0; transform: translateY(10px); }
-  30%, 55% { opacity: 1; transform: translateY(0); }
-  80% { opacity: 0; transform: translateY(-10px); }
+  0%, 100% { opacity: 0; filter: blur(10px); }
+  14% { opacity: 1; filter: blur(0); }
+  24% { opacity: 1; filter: blur(0); }
+  36% { opacity: 0; filter: blur(10px); }
 }
 .voc-orbit-word {
   animation-name: voc-orbit-word;

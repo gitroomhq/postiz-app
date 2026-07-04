@@ -21,9 +21,9 @@ export default async function AuthLayout({
       {/*<style>{`html, body {overflow-x: hidden;}`}</style>*/}
       <ReturnUrlComponent />
 
-      {/* Vídeo de fundo em toda a tela (mobile inclusive) — o card de login é
-          translúcido (voc-glass-card) por cima, então a galáxia aparece através dele. */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Vídeo de fundo — mobile: full-bleed atrás de tudo (card translúcido por cima).
+          Desktop (lg+): contido no espaço à direita do card, como no design original. */}
+      <div className="absolute inset-0 lg:left-[612px] overflow-hidden lg:rounded-[var(--voc-radius-lg)]">
         <OrbitVideoBackdrop />
         <div
           className="absolute inset-0"
@@ -38,24 +38,28 @@ export default async function AuthLayout({
         <div className="voc-glow voc-glow-3" />
       </div>
 
-      <div className="voc-glass-card relative z-[1] flex flex-1 flex-col overflow-y-auto rounded-[var(--voc-radius-lg)] p-[12px] py-[40px] px-[20px] lg:w-[600px] lg:flex-none">
-        <div className="mx-auto flex w-full max-w-[440px] flex-col justify-center gap-[20px] my-auto">
+      <div
+        className="voc-glass-card voc-auth-card relative z-[1] flex flex-1 flex-col overflow-y-auto rounded-[var(--voc-radius-lg)] p-[12px] py-[24px] px-[20px] lg:w-[600px] lg:flex-none"
+      >
+        <div className="mx-auto flex w-full max-w-[440px] flex-col justify-center gap-[14px] my-auto">
           <LogoTextComponent />
           <div className="flex">{children}</div>
         </div>
       </div>
-      <div className="relative z-[1] hidden flex-1 flex-col items-center pt-[88px] text-[36px] lg:flex">
-        <div className="text-center font-[800] tracking-[-0.02em]">
-          Over{' '}
-          <span
-            className="bg-[image:var(--voc-text-gradient)] bg-clip-text text-transparent"
-            style={{ WebkitTextFillColor: 'transparent' }}
-          >
-            20,000+
-          </span>{' '}
-          Entrepreneurs use
-          <br />
-          Vocaccio To Grow Their Social Presence
+      <div className="relative z-[1] hidden flex-1 flex-col items-center pt-[64px] lg:flex">
+        <div className="text-center max-w-[520px] px-[24px]">
+          <h2 className="text-[30px] font-[800] tracking-[-0.02em]">
+            <span
+              className="bg-[image:var(--voc-text-gradient)] bg-clip-text text-transparent"
+              style={{ WebkitTextFillColor: 'transparent' }}
+            >
+              Um Universo
+            </span>{' '}
+            de possibilidades
+          </h2>
+          <p className="mt-[10px] text-[14px] leading-relaxed text-[var(--voc-text-secondary)]">
+            Um HUB que simplifica a vida de Creators que querem crescer no Digital sem esforço e sem perder a essência.
+          </p>
         </div>
         <OrbitVideoWords />
       </div>
