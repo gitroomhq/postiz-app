@@ -43,9 +43,9 @@ export const AuthButton: FC<
   }
 > = ({ children, loading, className, disabled, ...props }) => {
   const ref = useRef<HTMLButtonElement | null>(null);
-  const [height, setHeight] = useState(52);
+  const [height, setHeight] = useState(44);
   useEffect(() => {
-    setHeight(ref.current?.offsetHeight || 52);
+    setHeight(ref.current?.offsetHeight || 44);
   }, []);
   return (
     <button
@@ -55,8 +55,8 @@ export const AuthButton: FC<
       disabled={disabled || loading}
       className={clsx(
         'group relative flex w-full items-center justify-center overflow-hidden',
-        'rounded-[var(--voc-radius-pill)] px-[24px] py-[16px]',
-        'text-[15px] font-[800] text-white transition-all duration-300',
+        'rounded-[var(--voc-radius-pill)] px-[24px] py-[12px]',
+        'text-[14px] font-[800] text-white transition-all duration-300',
         (disabled || loading) && 'pointer-events-none opacity-60',
         className
       )}
@@ -93,18 +93,13 @@ export const AuthInput: FC<
   const fieldError =
     error ?? (form?.formState?.errors?.[name]?.message as string | undefined);
   return (
-    <div className="flex flex-col gap-[8px]">
-      <label
-        htmlFor={name}
-        className="text-[13px] font-[700] text-[var(--voc-text-secondary)]"
-      >
-        {label}
-      </label>
+    <div className="flex flex-col gap-[4px]">
       <input
         id={name}
+        aria-label={label}
         className={clsx(
-          'h-[52px] w-full rounded-[var(--voc-radius-pill)] px-[20px]',
-          'bg-black/25 text-[15px] font-[600] text-[var(--voc-text-primary)] outline-none',
+          'h-[42px] w-full rounded-[var(--voc-radius-pill)] px-[18px]',
+          'bg-black/25 text-[13px] font-[600] text-[var(--voc-text-primary)] outline-none',
           'border border-[var(--voc-border-soft)] transition-all duration-300',
           'placeholder:text-[var(--voc-text-tertiary)]',
           'focus:border-[var(--voc-border-highlight)] focus:bg-[var(--voc-bg-app)] focus:shadow-[0_0_0_4px_rgba(124,94,225,0.2)]',
@@ -114,10 +109,8 @@ export const AuthInput: FC<
         {...(form ? form.register(name) : {})}
         {...rest}
       />
-      {!removeError && (
-        <div className="min-h-[16px] text-[12px] text-[var(--voc-peach)]">
-          {fieldError || null}
-        </div>
+      {!removeError && fieldError && (
+        <div className="text-[11px] text-[var(--voc-peach)]">{fieldError}</div>
       )}
     </div>
   );
