@@ -258,3 +258,42 @@ sozinho) — usos indiretos, imports dinâmicos, string-based provider loading, 
 Foram instaladas **globalmente** em `~/.claude/skills/` (fora do repo) skills de dev-tooling para o back-office de conteúdo/growth: `last30days` (trend research) + conjunto de marketing curado (`product-marketing`, `copywriting`, `cro`, `launch`, `seo-audit`, `social`, `community-marketing`), empunhadas pelo agente **Fred e Jorge** (`weasley-growth`). **Não são deps de runtime do produto** — não entram no `package.json`/build/boot e **não devem ser confundidas com o peso herdado do Postiz** nem podadas por engano.
 
 Avaliadas e **rejeitadas** por contradizer a leveza: **GrapeRoot/Codex-CLI-Compact** e **Understand-Anything** (servidor MCP + Python+Node + knowledge-graph por projeto, portas 8080-8099 — peso incompatível com o laptop 8GB e o Griphook) e **caveman** (comprime a saída ao usuário em fala telegráfica; o RTK já corta token de comando). Reavaliar GrapeRoot **só** se o repo crescer a ponto de o contexto nativo não dar conta.
+
+---
+
+## Fase F — Automações de tooling do Claude Code (hooks + MCP + skill) — ✅ FEITO 2026-07-04
+
+Auditoria feita pelo McGonagall (planner) sobre risco já mapeado (VOC-29 — `db push`
+em prod) e sobre o hábito documentado em `feedback-verificar-backend-pos-mudanca`
+(memória) de esquecer o boot real após tocar schema. Sem deps novas de runtime,
+sem MCP pesado.
+
+- **`.claude/hooks/pre-bash-guardian.js`** (PreToolUse, matcher `Bash`) — pede
+  confirmação (`ask`) quando o comando contém `prisma ... db push` (nunca em
+  mudança de tipo de coluna) ou `pnpm lint/tsc` sem `NODE_OPTIONS=--max-old-space-size=4096`
+  (gotcha de OOM/exit-0-falso da Fase A3).
+- **`.claude/hooks/post-edit-boot-sentinel.js`** (PostToolUse, matcher
+  `Edit|Write|MultiEdit`) — depois de editar `schema.prisma`, uma migration
+  `.sql` ou `tsconfig*.json`, injeta lembrete de rodar boot real (`pnpm run
+  dev-backend`) + curl antes de considerar a tarefa pronta.
+- Ambos registrados em `.claude/settings.json`. Testados via stdin JSON manual
+  antes do commit (ver histórico de sessão) — sem servidor rodando, então não
+  dava pra disparar via preview.
+- **Skill `migration-safety`** (`.claude/skills/migration-safety/SKILL.md`) —
+  checklist de mudança de schema (classificar aditiva vs. destrutiva, nunca
+  `db push` em prod, migration versionada, `prisma-generate`, boot real, seed
+  não é idempotente).
+- **MCP `postgres-readonly`** (`.mcp.json`, raiz) — usa
+  `@modelcontextprotocol/server-postgres` via `npx`, connection string lida de
+  `DATABASE_URL_READONLY` (env var, nunca hardcoded — placeholder adicionado em
+  `.env.example`). Aprovado pelo Felipe 2026-07-04 **porque o projeto está em
+  alpha test sem dados reais de cliente ainda** — reavaliar escopo/role de
+  banco quando entrarem clientes reais (a role tem que ser genuinamente
+  `SELECT`-only no Postgres, isso é responsabilidade de quem cria a credencial,
+  não do MCP). Preencher `DATABASE_URL_READONLY` localmente (fora do git).
+
+**Não implementado (decisão consciente):** MCP GitHub — `gh` CLI já cobre o
+caso de uso, revisitar só se aparecer necessidade real; skill `rbac-tenant-review`
+— seria redundante com Severus + `security-reviewer` global por enquanto.
+
+**Modelo:** Sonnet, esforço médio (scripting trivial + wiring).

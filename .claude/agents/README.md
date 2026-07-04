@@ -134,11 +134,25 @@ fora — a página deu 429 (rate limit) e o conteúdo nunca foi lido de verdade.
 
 ## Plano de leveza (2026-07)
 O emagrecimento do núcleo Postiz segue `docs/auditoria/plano-leveza-2026-07.md`
-(fases 0→A→B→D→C→E; v2.0 pós-lançamento). Regras para TODOS os agentes:
+(fases 0→A→B→D→C→E→**F**; v2.0 pós-lançamento). Regras para TODOS os agentes:
 - **Quarentena antes de deleção**; poda de dependência = grep de imports → build
   completo → **boot real do backend (curl)** → commit isolado.
 - Não reintroduzir deps podadas nem rotas quarentenadas (`agents`, `plugs`, `third-party`).
 - Motores de cálculo do Religare são do **Codex** (Edwiges) — não tocar.
+
+## Tooling do Claude Code neste repo (Fase F, 2026-07-04)
+- **Hooks** (`.claude/settings.json`): `pre-bash-guardian.js` pede confirmação
+  antes de `prisma db push` ou `lint/tsc` sem `NODE_OPTIONS` (OOM conhecido);
+  `post-edit-boot-sentinel.js` lembra de subir o backend real + curl após
+  editar `schema.prisma`/migration/`tsconfig`.
+- **Skill `migration-safety`** (`.claude/skills/`): checklist obrigatório antes
+  de mudar `schema.prisma` — invocar sempre que Sirius tocar schema.
+- **MCP `postgres-readonly`** (`.mcp.json`): consulta read-only ao Postgres via
+  `DATABASE_URL_READONLY` (env, nunca commitado). Aprovado só porque o projeto
+  está em **alpha test sem dados reais de cliente** — reavaliar escopo da
+  credencial quando entrarem clientes reais.
+- Detalhe completo e o que foi conscientemente **não** implementado (MCP
+  GitHub, skill de RBAC) está na Fase F de `docs/auditoria/plano-leveza-2026-07.md`.
 
 ## Ruflo (swarm MCP multi-modelo) — adiado de propósito
 O Ruflo (`project-ruflo`) é um meta-harness que dispara swarms roteando entre vários provedores.
