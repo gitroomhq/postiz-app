@@ -41,6 +41,11 @@ grande cobre o caso real. Se o conteúdo genuinamente não cabe (formulário lon
 prefira scroll **contido num painel interno** (`overflow-y-auto` num filho) a deixar a página
 toda crescer — o shell externo do app não deve se mexer.
 
+**Piso de legibilidade**: ao reduzir fonte/espaçamento pra caber sem scroll, nunca passe de
+`text-[11px]` pra texto de apoio/legenda nem de `text-[13px]` pra texto de input/corpo — abaixo
+disso vira ilegível antes de resolver o scroll. Se ainda não couber no piso mínimo, a resposta é
+scroll contido (acima), não fonte menor que isso.
+
 ## Referência de qualidade visual
 Antes de fechar qualquer tela/componente novo ou redesign, use a skill **`impeccable`** (instalada globalmente) para auditar hierarquia visual, acessibilidade, espaçamento, motion e anti-padrões. É referência prioritária de boas práticas de front-end no Vocaccio — invoque via Skill tool quando a tarefa envolver design/critique/polish de UI.
 
