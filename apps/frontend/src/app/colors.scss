@@ -102,7 +102,7 @@
     --color-secondary: #090b13;
     --color-text: #ffffff;
     --color-third: #080b13;
-    --color-forth: #612ad5;
+    --color-forth: var(--voc-violet);
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
     --color-seventh: #7236f1;
@@ -172,7 +172,7 @@
     --color-secondary: #fff;
     --color-text: #000;
     --color-third: white;
-    --color-forth: #612ad5;
+    --color-forth: var(--voc-violet);
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
     --color-seventh: #7236f1;

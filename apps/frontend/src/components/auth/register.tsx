@@ -3,8 +3,7 @@
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
-import { Button } from '@gitroom/react/form/button';
-import { Input } from '@gitroom/react/form/input';
+import { AuthButton, AuthInput } from '@gitroom/frontend/components/auth/auth-ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -139,11 +138,11 @@ export function RegisterAfter({
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[40px] font-[800] -tracking-[0.8px] text-start cursor-pointer">
               {t('sign_up', 'Sign Up')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">
+          <div className="text-[14px] mt-[32px] mb-[12px] text-[var(--voc-text-secondary)]">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -161,45 +160,44 @@ export function RegisterAfter({
               ))}
             {!isAfterProvider && (
               <div className="h-[20px] mb-[24px] mt-[24px] relative">
-                <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
+                <div className="absolute w-full h-[1px] bg-[var(--voc-border-soft)] top-[50%] -translate-y-[50%]" />
                 <div
                   className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
                 >
-                  <div className="px-[16px]">{t('or', 'or')}</div>
+                  <div className="px-[16px] bg-[var(--voc-bg-app)] text-[var(--voc-text-tertiary)] text-[12px] font-[700] uppercase tracking-[0.05em]">
+                    {t('or', 'or')}
+                  </div>
                 </div>
               </div>
             )}
-            <div className="flex flex-col gap-[12px]">
-              <div className="text-textColor">
+            <div className="flex flex-col gap-[16px]">
+              <div className="flex flex-col gap-[12px]">
                 {!isAfterProvider && (
                   <>
-                    <Input
-                      label="Email"
-                      translationKey="label_email"
-                      {...form.register('email')}
+                    <AuthInput
+                      label={t('email_address', 'Email Address')}
+                      name="email"
                       type="email"
                       placeholder={t('email_address', 'Email Address')}
                     />
-                    <Input
-                      label="Password"
-                      translationKey="label_password"
-                      {...form.register('password')}
+                    <AuthInput
+                      label={t('label_password', 'Password')}
+                      name="password"
                       autoComplete="off"
                       type="password"
                       placeholder={t('label_password', 'Password')}
                     />
                   </>
                 )}
-                <Input
-                  label="Company"
-                  translationKey="label_company"
-                  {...form.register('company')}
+                <AuthInput
+                  label={t('label_company', 'Company')}
+                  name="company"
                   autoComplete="off"
                   type="text"
                   placeholder={t('label_company', 'Company')}
                 />
               </div>
-              <div className={clsx('text-[12px]')}>
+              <div className={clsx('text-[12px] text-[var(--voc-text-tertiary)]')}>
                 {t(
                   'by_registering_you_agree_to_our',
                   'By registering you agree to our'
@@ -207,7 +205,7 @@ export function RegisterAfter({
                 &nbsp;
                 <a
                   href={`https://postiz.com/terms`}
-                  className="underline hover:font-bold"
+                  className="underline hover:text-[var(--voc-text-primary)]"
                   rel="nofollow"
                 >
                   {t('terms_of_service', 'Terms of Service')}
@@ -217,28 +215,24 @@ export function RegisterAfter({
                 <a
                   href={`https://postiz.com/privacy`}
                   rel="nofollow"
-                  className="underline hover:font-bold"
+                  className="underline hover:text-[var(--voc-text-primary)]"
                 >
                   {t('privacy_policy', 'Privacy Policy')}
                 </a>
                 &nbsp;
               </div>
-              <div className="text-center mt-6">
+              <div className="text-center mt-2">
                 <div className="w-full flex">
-                  <Button
-                    type="submit"
-                    className="flex-1 rounded-[10px] !h-[52px]"
-                    loading={loading}
-                  >
+                  <AuthButton type="submit" loading={loading}>
                     {t('create_account', 'Create Account')}
-                  </Button>
+                  </AuthButton>
                 </div>
-                <p className="mt-4 text-sm">
+                <p className="mt-4 text-sm text-[var(--voc-text-secondary)]">
                   {t('already_have_an_account', 'Already Have An Account?')}
                   &nbsp;
                   <Link
                     href="/auth/login"
-                    className="underline  cursor-pointer"
+                    className="text-[var(--voc-text-primary)] underline cursor-pointer"
                   >
                     {t('sign_in', 'Sign In')}
                   </Link>
