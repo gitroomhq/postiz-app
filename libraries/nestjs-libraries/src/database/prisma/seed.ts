@@ -179,8 +179,8 @@ async function main() {
       cta1: 'Agendar demonstração',
       cta2: 'Ver funcionalidades',
       contacts: [
-        { name: 'Felipe', role: 'Fundador', email: 'felipe@vocaccio.com.br', phone: '(11) 94444-0006' },
-        { name: 'Equipe Vocaccio', role: 'Operações', email: 'ops@vocaccio.com.br', phone: '' },
+        { name: 'Felipe', role: 'Fundador', email: 'felipe@vocacc.io', phone: '(11) 94444-0006' },
+        { name: 'Equipe Vocaccio', role: 'Operações', email: 'ops@vocacc.io', phone: '' },
       ],
       interactions: [
         { type: 'NOTE', summary: 'Projeto interno — usado para demos e testes do produto.' },

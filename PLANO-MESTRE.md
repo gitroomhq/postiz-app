@@ -15,6 +15,13 @@
 > dois PDFs (Vocacional + Marca), stack HD nativa TypeScript (`openhumandesign-library` +
 > `sweph`), planos com limites definidos, dashboard dual com/sem Religare, MBTI/Eneagrama
 > movidos para pós-conclusão, astrologia prevista pós-conclusão.
+>
+> **v6.2 (2026-07-03) — reconciliação com o estado real (commits + memória):** faseamento
+> (Camada 17) corrigido para refletir progresso real (Fases 0-1 concluídas, Fase 2 ~90%,
+> Fase 3 ~65%, Fase 3.5 em andamento, Religare com Fatias 1-6 implementadas e cálculos
+> validados contra fonte externa). Nova **Camada 10.5 — Ateliê Virtual (Back-office)**,
+> que existia na memória mas nunca tinha sido escrita neste arquivo. Nenhuma decisão da
+> Camada 18 foi alterada — só status atualizado.
 
 ---
 
@@ -308,20 +315,28 @@ Context Pack ≤ 2.000 tokens.
 ## CAMADA 7 — DEPLOYMENT (SEM VPS — STACK GRATUITA)
 
 ```
-Vercel (free)        → frontend + aprovar.vocacc.io (route group)
+Vercel (free)        → ecossistema Vocaccio (Hub/app dinâmico) + aprovar.vocacc.io (route group)
 Railway ($5/mês)     → backend NestJS
 Supabase (free)      → PostgreSQL + pgvector, Auth, Storage, Realtime, backup
 Upstash (free 10k/d) → Redis: cache + filas BullMQ
 Temporal Cloud(free) → workers F3+ (scheduling Postiz)
-Hostinger (já paga)  → apenas DNS
+Hostinger (já paga)  → DNS + hospedagem estática (raiz vocacc.io)
 ```
 
-**Domínios:** vocacc.io (LP) · app.vocacc.io (dashboard) ·
-aprovar.vocacc.io (portal) · api.vocacc.io (Railway).
+**Domínio oficial:** `vocacc.io`. **Regra de split (2026-07-03):**
+- **Hostinger** (plano já pago, hospedagem compartilhada — não só DNS): `vocacc.io` (raiz) — LPs,
+  home do **Estúdio Criativo**, jogo **The Mister**. Só conteúdo **estático** (HTML/CSS/JS puro ou
+  export estático); sem SSR/Node — a hospedagem compartilhada não roda servidor. Se algo aqui
+  precisar de backend, chama a API do Railway via fetch — não hospeda lógica própria.
+- **Vercel** (free): `hub.vocacc.io` — ecossistema Vocaccio (Hub, CRM, Ateliê, Volatis, dashboard
+  dinâmico Next.js/SSR) · `aprovar.vocacc.io` (portal de aprovação, route group do mesmo app).
+- **Railway**: `api.vocacc.io` (backend).
 
-Deploy: `git push` → CI/CD automático Vercel/Railway. `.env.production` só nos
-dashboards. Backup diário via GitHub Actions → pg_dump → Supabase Storage.
-**Migração futura (com receita):** Hostinger VPS + Caddy + Docker Compose.
+Deploy Vercel/Railway: `git push` → CI/CD automático. Deploy Hostinger (estático): upload
+FTP/cPanel (menos automático — considerar GitHub Actions → FTP se o conteúdo mudar com frequência).
+`.env.production` só nos dashboards. Backup diário via GitHub Actions → pg_dump → Supabase Storage.
+**Migração futura (com receita):** Hostinger VPS + Caddy + Docker Compose (substitui o estático por
+infra própria, se necessário).
 
 ---
 
@@ -348,10 +363,13 @@ de qual cliente está ativo determina quais canais aparecem.
 - **Starter:** até N clientes, M canais por cliente
 - **Pro/Agency:** ilimitado ou limite elevado
 
-**Impacto no Postiz:** a entidade `channel` do Postiz é por `organizationId`. Precisamos
-de uma camada de indireção: cada `CrmClient` mapeia para sua própria `organization`
-(sub-org) no Postiz, ou criamos uma tabela `clientChannel` que sobrescreve o contexto de
-publicação. Definir a abordagem técnica no início da Fase 3 (Volatis/publishing).
+**Impacto no Postiz:** a entidade `channel` do Postiz é por `organizationId`. **Resolvido na
+Fase 3 (commit `e92a1820`):** `Integration.crmClientId String?` nullable FK → `Client`,
+funcionando hoje como filtro/etiqueta sobre a `organization` do Postiz — **não é tenant de
+1ª classe ainda**. Suficiente para a Fase 3, mas o salto da Fase H (Camada 17, tabela
+"NÃO FECHAR PORTAS") é promover `Client` a tenant de verdade (sub-org própria ou
+equivalente), não só estender a etiqueta — decidir o caminho de promoção antes de espalhar
+lógica que assuma "Integration pertence à org, crmClientId é só view".
 
 ---
 
@@ -386,6 +404,19 @@ Posts 30d / Alcance / Engajamento · gráfico 30/60/90d · aprovações pendente
 publicações hoje · alertas.
 
 ### 10.2 RELIGARE — Conexão com sua Essência Vocacional
+
+> **Status real (2026-07-03):** muito além de "planejado". Fatias 1-6 implementadas em
+> `libraries/helpers/src/utils/religare/` (Tzolkin, lua, arquétipos, vocacional, astrologia
+> via `circular-natal-horoscope-js`, Human Design escrito à mão com tabelas do Rave Mandala,
+> motor de DNA/síntese por convergência de temas) + rotas/telas em `/hub/religare` (home,
+> onboarding, perfil com tabs Essência/Astrologia/HD/Tzolkin, export PDF/Markdown/JSON) +
+> feed Religare→Volatis (DNA do Expert entra no briefing do carrossel). Astrologia e Human
+> Design **validados por Felipe contra fonte externa** (astrolink.com.br, 10 planetas +
+> Ascendente + MC a centésimos de grau) — 2 bugs reais de cálculo encontrados e corrigidos
+> nesse processo. Sibila hoje é um **template determinístico** (zero IA), não uma síntese
+> gerada por LLM — isso ainda está por vir. Pendente: PDF final revisado visualmente,
+> Numerologia, bodygraph visual, e reconciliar tiers de plano (`religare-limits.ts`) com os
+> nomes desta camada. Detalhe completo na memória `project-religare`.
 
 **Módulo autônomo** — pode ser contratado separadamente. Dois modos de uso coexistem:
 
@@ -489,6 +520,17 @@ for contratado antes do Volatis por algum cliente piloto).
 
 ### 10.3 VOLATIS
 
+> **Status real (2026-07-03):** cockpit (`/hub/volatis`) e canais por cliente
+> (`Integration.crmClientId`) implementados e funcionais. Construtor de carrosséis
+> (Konva.js, `libraries/carousel-engine/`) muito além do MVP: editor completo, galeria por
+> cliente, undo/redo, templates dinâmicos por funil, integração com "Postar/Agendar" no
+> calendário, e feed automático do DNA Religare/briefing de marca no export para o GPT
+> externo (Cedrico). Cedrico roda **fora do app** (GPT customizado — colar texto pareado),
+> não como agente interno com API paga, por decisão de custo. Pendente: Sincronário
+> (calendário com Kin do dia), auditoria dos primitivos de UI da Fase 3.5, validação
+> ponta-a-ponta do fluxo Cedrico real (só testado com texto de exemplo). Detalhe completo
+> na memória `project-fase3-volatis`.
+
 Rotas: /dashboard · /criar/carrossel (7 steps) · /criar/video (Lupin) ·
 /criar/identidade (Hagrid + Flitwick) · /clientes/[id]/board+assets ·
 /portal/[token]/ (feed, revisar/[id], historico, kanban, comentarios) ·
@@ -536,6 +578,69 @@ Rotas: /dashboard (KPIs) · /copy-lab (Hermione gera, McGonagall revisa) · /lp-
 Perpétuo, Desafio, Imersão, CPL, Lista de espera, Comunidade, Evento ao vivo) ·
 /seo (keywords FireCrawl, on-page, AEO, GEO) · /concorrentes (Snape) ·
 /campanhas (Moody) · /relatorios (PDFs DS Vocaccio).
+
+> **Status real (2026-07-03): NÃO iniciado.** Sem schema, sem controller/service, sem
+> telas — só ícone reservado no menu waffle. Aguarda Fase 6.
+
+---
+
+## CAMADA 10.5 — ATELIÊ VIRTUAL (BACK-OFFICE)
+
+> Decisão de modelo de negócios (Felipe, 2026-07-02): a Vocaccio se divide em duas frentes
+> explícitas. **Front-office** = o app, tudo o que está nas Camadas 1-10 (autonomia do
+> usuário). **Back-office / Ateliê Virtual** = entregáveis robustos operados por agentes no
+> Claude Code (Felipe, depois Nicolas, depois agências): sites, landing pages, planos de
+> comunicação/marketing/growth, funis, roteiros, tutoriais, análises profundas. Nome oficial
+> **"Ateliê Virtual"** (não "Agência Virtual" — dilui o posicionamento anti-agência-genérica
+> do manifesto). Plano completo: `docs/atelie/plano-atelie-virtual.md`.
+
+**Regra de triagem:** repetitivo e padronizável → front-office (Volatis/Augeo já cobrem
+carrossel, copy curta, agendamento). Profundo, único, exige julgamento humano → Ateliê.
+Serviços do Ateliê que virarem padronizáveis descem para o front-office com o tempo.
+
+**Taxonomia de serviços (v0):** site institucional, landing page, plano de
+comunicação/marketing, plano de growth/negócios, funil de automação, roteiro/script,
+tutorial/documentação, análise de redes/concorrência — todos entregues pelo back-office.
+Vídeo é do Nicolas (não desenvolver aqui, só reservar contrato de integração). Carrossel/
+copy curta/agendamento já são front-office.
+
+**Fluxo:** usuário abre "Ateliê Virtual" na sidebar → escolhe serviço → preenche briefing
+guiado → escolhe escopo (simples/padrão/robusto, faixas de preço/prazo sempre com
+confirmação humana, nunca cálculo fechado) → confirma → `ServiceRequest` cai numa fila →
+operador lê a fila no cockpit local, consome Context Pack + Religare do cliente, produz o
+entregável com as skills existentes, valida aderência à marca (checklist "Hagrid" manual),
+entrega → aparece no portal de aprovação existente (Camada 10.3/Fase 2), mesmo fluxo do
+Volatis.
+
+**Faseamento (paralelo — não bloqueia F1-F6):**
+
+```
+AT-0  — Taxonomia + contrato de dados                     ✅ CONCLUÍDA (2026-07-02)
+AT-1  — Fluxo manual: skill `.claude/skills/atelie/` +
+        8 templates de briefing, sem tabela/tela           ✅ CONCLUÍDA (2026-07-02)
+AT-2  — ServiceRequest real (schema + migration) + cockpit
+        `/atelie/fila` (RBAC OWNER/OPERATOR, sem link no
+        menu público)                                       ✅ INTEGRADA E VALIDADA
+        (2026-07-03, commits ff806f66+db33dbe9) — migration aplicada em produção,
+        fluxo completo testado via curl (registro→projeto→ServiceRequest→fila→status).
+        Falta só: validação visual no browser (pixel/CSS).
+AT-3  — Aba "Ateliê Virtual" pública no front-office
+        (catálogo, briefing guiado, preço/prazo)             ⏸️ EM ESPERA até Fase 3.5
+        (coerência visual) estabilizar — evita construir a 1ª tela pública em cima
+        de design ainda fragmentado
+```
+
+**Achado crítico da validação AT-2 (commit `db33dbe9`):** 2 bugs herdados do Postiz
+bloqueavam **todo cadastro novo de usuário** (não só o Ateliê) — `sendEmail()` quebrava sem
+`TEMPORAL_ADDRESS` configurado, e `createOrgAndUser()` nunca setava `vocaccioRole` do dono
+(ficava `VIEWER_INTERNAL`, travado). Corrigidos nesta mesma sessão. Achado não-corrigido:
+`addUserToOrg()` (convite de usuário existente) tem o mesmo problema de `vocaccioRole`
+ausente — decisão de produto pendente sobre role default de convite.
+
+**Regras:** back-office DEVE consumir Context Pack + Religare/cosmologia + briefing da marca
+para autenticidade (Hagrid valida) · `crmClientId` desde o dia 1 em `ServiceRequest` (mesma
+regra de tenancy da Fase H, Camada 17) · nenhum branding hard-coded no catálogo (revenda
+white-label futura) · vídeo é do Nicolas, não desenvolver aqui.
 
 ---
 
@@ -701,23 +806,35 @@ Projeto movido para `C:\dev\vocaccio` (fora do OneDrive) via robocopy — 391k a
 Cada fase termina com: specs da fase + checklist aceite + testes mínimos + revisão
 segurança + `/phases/checkpoint-faseN.md` salvo.
 
+> **Status real por fase (2026-07-03) — ver detalhe/evidência em cada Camada 10.x acima e
+> nas memórias `project-vocaccio`/`project-fase3-volatis`/`project-religare`/
+> `project-frentes-front-back-office`. AT-0..AT-3 (Ateliê Virtual, Camada 10.5) correm em
+> paralelo, sem bloquear F1-F6.**
+
 ```
 Fase 0  — Setup + arquitetura                       ✅ CONCLUÍDA (2026-06-06)
-Fase 1  — Auth + CRM + cliente/projeto + seed + dashboard base   ← EM ANDAMENTO
-Fase 2  — Portal link único + Kanban + aprovação
-Fase 3  — Volatis/Postiz cockpit + Sincronário + publicação (+ Temporal)
-Fase 3.5 — Revisão geral de FE / coerência visual   ← APÓS validar o criador de carrosséis
-Fase 4  — Memória por projeto + aprendizado com revisões
+Fase 1  — Auth + CRM + cliente/projeto + seed + dashboard base   ✅ CONCLUÍDA
+Fase 2  — Portal link único + Kanban + aprovação      ~90% (rota /aprovar/[token] existe e
+          parece conectada; falta validar ponta-a-ponta no browser)
+Fase 3  — Volatis/Postiz cockpit + Sincronário + publicação (+ Temporal)   ~65% (cockpit +
+          canais por cliente + carrosséis muito além do MVP; falta Sincronário)
+Fase 3.5 — Revisão geral de FE / coerência visual    EM ANDAMENTO (5 primitivos prontos,
+          CRM refatorado, roxo Postiz removido do repo inteiro; falta auditar Volatis/portal)
+Fase 4  — Memória por projeto + aprendizado com revisões               não iniciada
 Fase 5  — Religare + onboarding + cálculos HD/Tzolkin/Arquétipos + PDFs + Sibila
-Fase 6  — Augeo + lançamentos + SEO/AEO/GEO
-Fase 7  — Automações regras fixas + webhooks
-Fase 8  — Typebot + Chatwoot + WhatsApp bidirecional
-Fase 9  — Vídeo Lupin + mcp-video + Dobby
+          Fatias 1-6 IMPLEMENTADAS (cálculos validados contra fonte externa); Sibila ainda
+          é template determinístico, não síntese por LLM; falta validação visual final
+Fase 6  — Augeo + lançamentos + SEO/AEO/GEO                            não iniciada
+Fase 7  — Automações regras fixas + webhooks                           não iniciada
+Fase 8  — Typebot + Chatwoot + WhatsApp bidirecional                   não iniciada
+Fase 9  — Vídeo Lupin + mcp-video + Dobby                              não iniciada
 Fase 10 — Vitrine Netflix ⛔ somente após comando explícito
 Fase ∞  — Interface agentes em tempo real ⛔ pós-conclusão
 Fase G  — Growth Engine Vocaccio (escala p/ agências: front + back agentes) ⛔ penúltima
 Fase H  — White-Label Growth Hub (plataforma revendável: CRM vendas, inbox,
           pagamentos, API, mobile, white-label marca-da-agência) ⛔ ÚLTIMA FASE
+AT-0..AT-3 — Ateliê Virtual (back-office), ver Camada 10.5             AT-0/AT-1/AT-2 ✅,
+          AT-3 em espera até Fase 3.5 fechar
 Pós-conclusão — MBTI + Eneagrama no Religare ⛔ pós-conclusão
 Pós-conclusão — Astrologia natal no Religare (`sweph` já instalado) ⛔ pós-conclusão
 ```
@@ -901,6 +1018,7 @@ para evitar migração dolorosa. Ordenado por risco.
 | Vitrine Netflix | ✅ Reservada, flag OFF |
 | Agentes real-time | ✅ Pós-conclusão |
 | White-Label Growth Hub | ✅ Fase H (ÚLTIMA) — plataforma revendável, separada da Fase G |
+| Ateliê Virtual (back-office) | ✅ Camada 10.5 — frente paralela desde 2026-07-02, AT-0/1/2 concluídos |
 | Tenancy white-label | ✅ 3 níveis: Vocaccio → Agência → CrmClient (tenant c/ login) → leads |
 | Marca white-label | ✅ Marca da AGÊNCIA + rodapé "powered by Vocaccio" (não da Vocaccio) |
 | Orquestração | ✅ Ruflo + Dumbledore |
@@ -968,8 +1086,9 @@ pnpm --filter ./apps/frontend run dev    # http://localhost:4200
 ## CAMADA 20 — DEPLOY VERCEL/RAILWAY (executar na F1+, guia no plano v5)
 
 Resumo: Vercel → Import repo → Root Directory `apps/frontend` → env vars → domínio
-CNAME na Hostinger. Railway → Deploy from GitHub → `apps/backend` → env vars →
-api.vocacc.io. ⚠️ ADMIN_EMAIL/PASSWORD nunca na Vercel — seed local.
+CNAME na Hostinger (domínio oficial `vocacc.io`, ecossistema em `hub.vocacc.io`). Railway →
+Deploy from GitHub → `apps/backend` → env vars → api.vocacc.io. ⚠️ ADMIN_EMAIL/PASSWORD nunca
+na Vercel — seed local.
 
 ## CAMADA 21 — PERFORMANCE (estratégia por fase)
 
@@ -982,5 +1101,9 @@ ISR na LP · F6+: Vercel Analytics, Sentry free, alerta LCP > 3s.
 
 ---
 
-**Estado atual: Fase 0 ✅ concluída · Fase 1 (Auth + CRM) em andamento.**
-Cada sessão: ler `/phases/checkpoint-faseN.md` mais recente antes de qualquer coisa.
+**Estado atual (2026-07-03): Fases 0-1 ✅ concluídas · Fase 2 ~90% (validar portal no
+browser) · Fase 3 ~65% (falta Sincronário) · Fase 3.5 em andamento (auditar Volatis/portal
+nos primitivos novos) · Religare (Fase 5) com Fatias 1-6 implementadas, adiantada em paralelo
+· Ateliê Virtual AT-0/AT-1/AT-2 concluídos, AT-3 em espera até Fase 3.5 fechar.**
+Cada sessão: ler `/phases/checkpoint-faseN.md` mais recente antes de qualquer coisa —
+o mais recente é `phases/checkpoint-fase2-fase3.5-retomada.md`.
