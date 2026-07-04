@@ -486,7 +486,7 @@ export const LaunchesComponent = () => {
   }, []);
   if (isLoading || reload) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-transparent p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -505,7 +505,7 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-transparent p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
@@ -592,7 +592,7 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-transparent flex-1 flex-col flex p-[20px] gap-[12px]">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />
