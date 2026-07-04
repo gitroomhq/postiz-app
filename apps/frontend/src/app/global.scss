@@ -916,6 +916,21 @@ html[dir='rtl'] [dir='ltr'] {
   border: 1px solid var(--voc-border-soft);
 }
 
+/* Painel de conteúdo principal (calendário/posts/etc, dentro do shell logado) — antes
+   `bg-newBgLineColor` (cinza chapado herdado do Postiz), destoando do glass da sidebar/
+   topbar ao lado. Mais escuro/opaco que .voc-glass-shell (que é pensado pra barras
+   estreitas) porque aqui precisa segurar legibilidade de grade/texto denso por cima. */
+.voc-content-shell {
+  background-color: rgba(9, 6, 20, 0.5);
+  background-image: var(--voc-glass-glare);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--voc-border-soft);
+}
+:root .light .voc-content-shell {
+  background-color: rgba(255, 255, 255, 0.55);
+}
+
 /* Toggle de validação visual — esconde a barra de admin (roxo Postiz) sem remover a função.
    #left-menu reserva pt-[60px] quando user.admin é true (espaço da barra); como o toggle só
    esconde visualmente (a flag admin continua true), zera esse padding junto para não deixar

@@ -28,22 +28,22 @@ export const Logo = () => (
   >
     <defs>
       <linearGradient id="voc-base" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#E89A7B" />
-        <stop offset="36%" stopColor="#CF6295" />
-        <stop offset="68%" stopColor="#7360AA" />
-        <stop offset="100%" stopColor="#2897BF" />
+        <stop offset="0%" stopColor="#F29676" />
+        <stop offset="36%" stopColor="#DF548E" />
+        <stop offset="68%" stopColor="#7C5EE1" />
+        <stop offset="100%" stopColor="#23A6D6" />
       </linearGradient>
       <radialGradient id="voc-r1" cx="14%" cy="10%" r="70%">
-        <stop offset="0%" stopColor="#E89A7B" stopOpacity="0.9" />
-        <stop offset="60%" stopColor="#E89A7B" stopOpacity="0" />
+        <stop offset="0%" stopColor="#F29676" stopOpacity="0.9" />
+        <stop offset="60%" stopColor="#F29676" stopOpacity="0" />
       </radialGradient>
       <radialGradient id="voc-r2" cx="88%" cy="14%" r="70%">
-        <stop offset="0%" stopColor="#CF6295" stopOpacity="0.85" />
-        <stop offset="60%" stopColor="#CF6295" stopOpacity="0" />
+        <stop offset="0%" stopColor="#DF548E" stopOpacity="0.85" />
+        <stop offset="60%" stopColor="#DF548E" stopOpacity="0" />
       </radialGradient>
       <radialGradient id="voc-r3" cx="16%" cy="92%" r="75%">
-        <stop offset="0%" stopColor="#2897BF" stopOpacity="0.85" />
-        <stop offset="62%" stopColor="#2897BF" stopOpacity="0" />
+        <stop offset="0%" stopColor="#23A6D6" stopOpacity="0.85" />
+        <stop offset="62%" stopColor="#23A6D6" stopOpacity="0" />
       </radialGradient>
     </defs>
     <rect width="44" height="44" rx="11" fill="url(#voc-base)" />

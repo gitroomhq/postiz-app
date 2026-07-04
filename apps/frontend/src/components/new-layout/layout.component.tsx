@@ -115,7 +115,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div
                         id="left-menu"
                         className={clsx(
-                          'fixed h-full w-[80px] start-[12px] flex flex-1 top-0',
+                          'fixed h-[calc(100%-24px)] w-[80px] start-[12px] flex flex-1 top-[12px]',
                           user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                         )}
                       >
@@ -131,7 +131,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
+                    <div className="voc-content-shell flex-1 rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
                       <div className="voc-glass-shell flex h-[80px] px-[20px] items-center">
                         <div className="text-[24px] font-[600] flex flex-1">
                           <Title />
