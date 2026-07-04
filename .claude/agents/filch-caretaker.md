@@ -81,6 +81,31 @@ memórias duplicadas/contraditórias em `~/.claude/.../memory/` (proponha rodar
 `consolidate-memory`), skills instaladas e nunca usadas, drift entre PLANO-MESTRE/handoffs e o
 estado real do repo. Aponte com caminho/branch exato + uma frase do porquê é lixo.
 
+**Checklist explícito de ronda padrão (regra do Felipe, 2026-07-04 — a ronda de calibração
+deixou passar a regressão do domínio `vocaccio.com.br` porque ninguém pediu essa checagem
+especificamente):** toda ronda "completa" (não uma varredura pontual pedida) cobre por padrão,
+sem precisar que o Dumbledore peça um por um:
+1. **Branches/worktrees soltas** (já coberto acima) — inclua também branches remotas (`git
+   branch -r`) sem worktree local, candidatas a ficar esquecidas no GitHub.
+2. **Conflitos**: branches divergentes de `main` que vão gerar conflito de merge real (não só
+   `--no-merged`) — rode um `git merge --no-commit --no-ff <branch>` de teste (ou `git diff
+   main...<branch>` nos arquivos que ambos tocaram) e desfaça (`git merge --abort`) antes de
+   reportar; aponte os arquivos conflitantes, não só "vai conflitar".
+3. **Commits pendentes** (já coberto na seção 6.5).
+4. **PLANO-MESTRE.md desatualizado**: confira a data/seção "Estado atual" no fim do arquivo
+   contra o commit mais recente e o handoff mais recente em `phases/` — se a fase mudou de
+   status e o Plano não foi atualizado, é achado, não é opcional esperar alguém notar.
+5. **Memórias desatualizadas** (não é só duplicata/contradição — é fato que mudou e a memória
+   não acompanhou): para memórias que citam arquivo/função/domínio/e-mail específico, confira se
+   ainda existe/bate com o código atual (grep rápido). Domínio errado, nome de conta, path de
+   arquivo renomeado/removido são o padrão mais comum de regressão observado aqui.
+6. **Edwiges desatualizada**: se a sessão tocou Religare/cálculo/schema compartilhado com o
+   Codex, confira `C:\dev\edwiges` — documento de coordenação sem atualização recente vs. commits
+   novos no motor Religare é sinal de drift entre os dois lados.
+7. **Cabeçalho/rodapé do chat**: confira se a convenção "Time atual: [emojis]" (regra do Felipe,
+   ver `~/.claude/.../memory/feedback-time-atual-header.md`) está sendo seguida nas respostas de
+   tarefa desta sessão — se não, cobre o Dumbledore por isso na seção de disciplina do time.
+
 **Checklist obrigatório antes de recomendar poda de worktree/branch** (incidente real
 2026-07-03: primeira ronda marcou 2 worktrees como "seguras" só por estarem `--merged`, sem
 notar que as duas tinham `git status` sujo — quase virou perda de trabalho):
