@@ -121,10 +121,22 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
             getFile.path
           );
         } catch (err) {
+          // undici's fetch rejects with a generic TypeError('fetch failed')
+          // and hides the real reason (DNS, TLS, SSRF block, ...) in
+          // err.cause, so surface it for the agent. Error.cause isn't in the
+          // es2020 lib typings this repo compiles against, hence the cast.
+          const cause =
+            err instanceof Error
+              ? (err as Error & { cause?: unknown }).cause
+              : undefined;
+          const causeText =
+            cause instanceof Error && cause.message
+              ? ` (${cause.message})`
+              : '';
           return {
             error: `Failed to upload media from URL: ${
               err instanceof Error ? err.message : 'Unexpected error'
-            }`,
+            }${causeText}`,
           };
         }
       },
