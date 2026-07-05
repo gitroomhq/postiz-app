@@ -639,10 +639,10 @@ html[dir='rtl'] [dir='ltr'] {
 .repeated-strip {
   background: repeating-linear-gradient(
     135deg,
-    var(--new-bgColorInner),
-    var(--new-bgColorInner) 4px,
-    var(--new-big-strips) 4px,
-    var(--new-big-strips) 8px
+    rgba(0, 0, 0, 0.18),
+    rgba(0, 0, 0, 0.18) 4px,
+    rgba(0, 0, 0, 0.06) 4px,
+    rgba(0, 0, 0, 0.06) 8px
   );
 }
 
@@ -921,7 +921,11 @@ html[dir='rtl'] [dir='ltr'] {
    topbar ao lado. Mais escuro/opaco que .voc-glass-shell (que é pensado pra barras
    estreitas) porque aqui precisa segurar legibilidade de grade/texto denso por cima. */
 .voc-content-shell {
-  background-color: rgba(9, 6, 20, 0.2);
+  /* Precisa ficar mais escuro que .voc-glass-shell (sidebar/topbar, ~0.25) — é onde fica
+     a grade/texto denso do calendário, então prioriza legibilidade sobre transparência
+     máxima. Achado 2026-07-04: só parecia "sem efeito" antes porque bg-newBgColorInner
+     (opaco, ver launches.component.tsx) pintava por cima e mascarava qualquer valor aqui. */
+  background-color: rgba(9, 6, 20, 0.58);
   /* backdrop-filter sozinho não estava revelando o glow ambiente (position: fixed +
      z-index negativo — combinação que o Chromium às vezes não sampleia direito pra
      backdrop-filter). Em vez de depender disso, embutimos uma versão suave da mesma
