@@ -649,6 +649,7 @@
   "please_fix_your_settings": "请修正您的设置",
   "shortlink_urls_question": "您想要对网址进行短链处理吗？这样可以统计点击次数。",
   "yes_shortlink_it": "是的，短链处理！",
+  "no_original_urls": "不，保留原始网址！",
   "added_successfully": "添加成功",
   "updated_successfully": "更新成功",
   "create_post_title": "创建帖子",

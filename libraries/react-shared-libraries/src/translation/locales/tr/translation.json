@@ -649,6 +649,7 @@
   "please_fix_your_settings": "Lütfen ayarlarınızı düzeltin",
   "shortlink_urls_question": "URL'leri kısaltmak ister misiniz? Bu, tıklamalar üzerinde istatistik almanızı sağlar.",
   "yes_shortlink_it": "Evet, kısalt!",
+  "no_original_urls": "Hayır, orijinal URL'leri koru!",
   "added_successfully": "Başarıyla eklendi",
   "updated_successfully": "Başarıyla güncellendi",
   "create_post_title": "Gönderi Oluştur",

@@ -651,6 +651,7 @@
   "please_fix_your_settings": "Please fix your settings",
   "shortlink_urls_question": "Do you want to shortlink the URLs? it will let you get statistics over clicks",
   "yes_shortlink_it": "Yes, shortlink it!",
+  "no_original_urls": "No, original URLs",
   "added_successfully": "Added successfully",
   "updated_successfully": "Updated successfully",
   "create_post_title": "Create Post",

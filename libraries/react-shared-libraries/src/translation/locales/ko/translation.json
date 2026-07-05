@@ -649,6 +649,7 @@
   "please_fix_your_settings": "설정을 수정해 주세요",
   "shortlink_urls_question": "URL을 단축하시겠습니까? 클릭 통계를 확인할 수 있습니다.",
   "yes_shortlink_it": "네, 단축하세요!",
+  "no_original_urls": "아니요, 원래 URL을 유지하세요!",
   "added_successfully": "성공적으로 추가되었습니다",
   "updated_successfully": "성공적으로 업데이트되었습니다",
   "create_post_title": "게시물 작성",

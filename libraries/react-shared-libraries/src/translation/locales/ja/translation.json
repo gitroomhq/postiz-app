@@ -649,6 +649,7 @@
   "please_fix_your_settings": "設定を修正してください",
   "shortlink_urls_question": "URLを短縮リンクにしますか？クリック数の統計を取得できます。",
   "yes_shortlink_it": "はい、短縮リンクにします！",
+  "no_original_urls": "いいえ、元のURLのままにします",
   "added_successfully": "追加に成功しました",
   "updated_successfully": "更新に成功しました",
   "create_post_title": "投稿を作成",
