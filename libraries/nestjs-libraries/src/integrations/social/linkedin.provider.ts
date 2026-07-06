@@ -803,6 +803,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails<LinkedinDto>[],
     integration: Integration,
+    progress?: (response: PostResponse) => Promise<unknown> | unknown,
     type = 'personal' as 'company' | 'personal'
   ): Promise<PostResponse[]> {
     let processedPostDetails = postDetails;
