@@ -569,7 +569,6 @@
   "total_forks": "Total Forks",
   "continue_with": "Continue With",
   "email_address": "Email Address",
-  "label_company": "Company",
   "email_already_exists": "Email already exists",
   "google": "Google",
   "farcaster": "Farcaster",
@@ -601,7 +600,6 @@
   "add_provider_title": "Add Provider",
   "profile_updated": "Profile updated",
   "sets": "Sets",
-  "email_address": "Email Address",
   "invitation_link_sent": "Invitation link sent",
   "send_invitation_link": "Send Invitation Link",
   "copy_link": "Copy Link",
@@ -695,5 +693,12 @@
   "watch_tutorial_description": "Watch this short video to learn how to get the most out of Postiz",
   "back": "Back",
   "get_started": "Get Started",
-  "kick_select_channel": "Select Channel"
+  "kick_select_channel": "Select Channel",
+  "before_you_continue": "Before you continue",
+  "facebook_guidance_intro": "You will be redirected to Facebook to authorize Postiz.",
+  "facebook_guidance_instagram_page": "Select the Facebook page your Instagram business account is connected to — granting a different page will not work.",
+  "facebook_guidance_facebook_page": "Select the Facebook page(s) you want to post to.",
+  "facebook_guidance_edit_settings": "If you connected before, Facebook may reuse your previous selection. Click 'Edit settings' on the Facebook screen to change it.",
+  "could_not_connect_channel": "Could not connect the channel, please try again",
+  "back_to_postiz": "Back to Postiz"
 }

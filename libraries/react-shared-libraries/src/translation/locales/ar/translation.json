@@ -693,5 +693,12 @@
   "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من Postiz بأفضل شكل",
   "back": "رجوع",
   "get_started": "ابدأ",
-  "kick_select_channel": "اختر القناة"
+  "kick_select_channel": "اختر القناة",
+  "before_you_continue": "قبل المتابعة",
+  "facebook_guidance_intro": "سيتم توجيهك إلى فيسبوك للسماح لـ Postiz بالوصول.",
+  "facebook_guidance_instagram_page": "اختر صفحة الفيسبوك المرتبطة بحساب الإنستغرام التجاري الخاص بك — اختيار صفحة أخرى لن يعمل.",
+  "facebook_guidance_facebook_page": "اختر صفحة (صفحات) الفيسبوك التي تريد النشر عليها.",
+  "facebook_guidance_edit_settings": "إذا سبق لك الاتصال، فقد يعيد فيسبوك استخدام اختيارك السابق. انقر على 'تعديل الإعدادات' في شاشة فيسبوك لتغييره.",
+  "could_not_connect_channel": "تعذر توصيل القناة، حاول مرة أخرى",
+  "back_to_postiz": "العودة إلى Postiz"
 }

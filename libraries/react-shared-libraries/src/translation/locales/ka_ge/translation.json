@@ -503,5 +503,13 @@
     "label_who_can_reply_to_this_post": "ვის შეუძლია პასუხის გაცემა ამ პოსტზე?",
     "delete_integration": "ინტეგრაციის წაშლა",
     "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის",
-    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?"
+    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?",
+    "before_you_continue": "სანამ გააგრძელებთ",
+    "continue": "გაგრძელება",
+    "facebook_guidance_intro": "Postiz-ის ავტორიზაციისთვის გადამისამართდებით Facebook-ზე.",
+    "facebook_guidance_instagram_page": "აირჩიეთ Facebook გვერდი, რომელზეც თქვენი Instagram ბიზნეს ანგარიშია მიბმული — სხვა გვერდის არჩევა არ იმუშავებს.",
+    "facebook_guidance_facebook_page": "აირჩიეთ Facebook გვერდ(ებ)ი, სადაც გსურთ პოსტვა.",
+    "facebook_guidance_edit_settings": "თუ ადრე უკვე დაკავშირებულხართ, Facebook-მა შესაძლოა თქვენი წინა არჩევანი გამოიყენოს. შესაცვლელად Facebook-ის ეკრანზე დააჭირეთ 'პარამეტრების რედაქტირებას'.",
+    "could_not_connect_channel": "არხის დაკავშირება ვერ მოხერხდა, სცადეთ ხელახლა",
+    "back_to_postiz": "Postiz-ზე დაბრუნება"
 }

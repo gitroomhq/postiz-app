@@ -693,5 +693,12 @@
   "watch_tutorial_description": "Посмотрите это короткое видео, чтобы узнать, как получить максимум от Postiz",
   "back": "Назад",
   "get_started": "Начать",
-  "kick_select_channel": "Выберите канал"
+  "kick_select_channel": "Выберите канал",
+  "before_you_continue": "Прежде чем продолжить",
+  "facebook_guidance_intro": "Вы будете перенаправлены в Facebook, чтобы авторизовать Postiz.",
+  "facebook_guidance_instagram_page": "Выберите страницу Facebook, к которой подключён ваш бизнес-аккаунт Instagram — выбор другой страницы не сработает.",
+  "facebook_guidance_facebook_page": "Выберите страницу(ы) Facebook, на которых вы хотите публиковать.",
+  "facebook_guidance_edit_settings": "Если вы уже подключались ранее, Facebook может использовать ваш прежний выбор. Нажмите 'Изменить настройки' на экране Facebook, чтобы изменить его.",
+  "could_not_connect_channel": "Не удалось подключить канал, попробуйте ещё раз",
+  "back_to_postiz": "Вернуться в Postiz"
 }

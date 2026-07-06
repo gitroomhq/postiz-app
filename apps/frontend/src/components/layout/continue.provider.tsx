@@ -8,6 +8,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Null: FC<{
   onSave: (data: any) => Promise<void>;
   existingId: string[];
@@ -71,13 +73,32 @@ const ModalContent: FC<{
   integrations: string[];
 }> = ({ continueId, added, provider: Provider, closeModal, integrations }) => {
   const fetch = useFetch();
+  const toaster = useToaster();
+  const t = useT();
 
   const onSave = useCallback(
     async (data: any) => {
-      await fetch(`/integrations/provider/${continueId}/connect`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `/integrations/provider/${continueId}/connect`,
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      );
+      if (!response.ok) {
+        const { message } = await response
+          .json()
+          .catch(() => ({ message: '' }));
+        toaster.show(
+          message ||
+            t(
+              'could_not_connect_channel',
+              'Could not connect the channel, please try again'
+            ),
+          'warning'
+        );
+        return;
+      }
       closeModal();
     },
     [continueId, closeModal]

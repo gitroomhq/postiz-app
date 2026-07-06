@@ -22,6 +22,9 @@ export interface ContinueProviderProps {
   existingId: string[];
   initialData?: any[];
   isSaving?: boolean;
+  // When provided, the empty state shows a "Back to Postiz" button — used
+  // by the full-page OAuth landing flow, which has no dialog to close.
+  onBack?: () => void;
 }
 
 export interface EmptyStateMessage {
@@ -59,7 +62,7 @@ export function withContinueProvider<TItem, TSelection>(
   } = config;
 
   return function ContinueProviderComponent(props: ContinueProviderProps) {
-    const { onSave, existingId, initialData, isSaving } = props;
+    const { onSave, existingId, initialData, isSaving, onBack } = props;
     const call = useCustomProviderFunction();
     const t = useT();
     const [selection, setSelection] = useState<TSelection | null>(null);
@@ -119,6 +122,13 @@ export function withContinueProvider<TItem, TSelection>(
               )}
             </span>
           ))}
+          {!!onBack && (
+            <div className="mt-[24px]">
+              <Button type="button" onClick={onBack}>
+                {t('back_to_postiz', 'Back to Postiz')}
+              </Button>
+            </div>
+          )}
         </div>
       );
     }

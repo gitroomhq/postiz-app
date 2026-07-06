@@ -193,7 +193,7 @@ export class IntegrationService {
     await this._notificationService.inAppNotification(
       orgId,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
-      `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
+      `Could not refresh your ${integration.providerIdentifier} channel ${err}. No posts can be published to this channel until you reconnect it: go to ${process.env.FRONTEND_URL}/launches, click 'Add Channel' and select the same account — this replaces the broken connection and keeps all your scheduled posts. There is no need to delete the channel.`,
       true,
       false,
       'info'

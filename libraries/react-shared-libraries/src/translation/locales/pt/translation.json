@@ -693,5 +693,12 @@
   "watch_tutorial_description": "Assista a este vídeo curto para aprender a tirar o máximo proveito do Postiz",
   "back": "Voltar",
   "get_started": "Começar",
-  "kick_select_channel": "Selecionar canal"
+  "kick_select_channel": "Selecionar canal",
+  "before_you_continue": "Antes de continuar",
+  "facebook_guidance_intro": "Você será redirecionado ao Facebook para autorizar o Postiz.",
+  "facebook_guidance_instagram_page": "Selecione a página do Facebook à qual sua conta business do Instagram está conectada — selecionar outra página não funcionará.",
+  "facebook_guidance_facebook_page": "Selecione a(s) página(s) do Facebook em que deseja publicar.",
+  "facebook_guidance_edit_settings": "Se você já se conectou antes, o Facebook pode reutilizar sua seleção anterior. Clique em 'Editar configurações' na tela do Facebook para alterá-la.",
+  "could_not_connect_channel": "Não foi possível conectar o canal, tente novamente",
+  "back_to_postiz": "Voltar ao Postiz"
 }

@@ -1,6 +1,10 @@
 'use client';
 
-import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  AddProviderButton,
+  FacebookPageGuidance,
+} from '@gitroom/frontend/components/launches/add.provider.component';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
@@ -358,6 +362,7 @@ export const LaunchesComponent = () => {
   const toast = useToaster();
   const fireEvents = useFireEvents();
   const t = useT();
+  const modal = useModals();
   const [reload, setReload] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const [mode] = useCookie('mode', 'dark');
@@ -431,6 +436,33 @@ export const LaunchesComponent = () => {
   }, []);
   const continueIntegration = useCallback(
     (integration: any) => async () => {
+      // For Facebook/Instagram, finishing a half-connected channel in-app
+      // only works when the Facebook grant is correct — and when it isn't,
+      // the picker is a dead end. Start over through the OAuth flow
+      // instead, same as "Add Channel" (the connect upserts the same
+      // channel, so nothing is lost).
+      if (
+        integration.identifier === 'instagram' ||
+        integration.identifier === 'facebook'
+      ) {
+        modal.openModal({
+          title: t('before_you_continue', 'Before you continue'),
+          withCloseButton: true,
+          children: (
+            <FacebookPageGuidance
+              identifier={integration.identifier}
+              onConfirm={async () => {
+                const { url } = await (
+                  await fetch(`/integrations/social/${integration.identifier}`)
+                ).json();
+                window.location.href = url;
+              }}
+            />
+          ),
+        });
+        return;
+      }
+
       router.push(
         `/launches?added=${integration.identifier}&continue=${integration.id}`
       );
@@ -444,15 +476,38 @@ export const LaunchesComponent = () => {
         }
       ) =>
       async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-            {
-              method: 'GET',
-            }
-          )
-        ).json();
-        window.location.href = url;
+        const gotoRefresh = async () => {
+          const { url } = await (
+            await fetch(
+              `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+              {
+                method: 'GET',
+              }
+            )
+          ).json();
+          window.location.href = url;
+        };
+
+        // Same guidance as the "Add Channel" path — reconnecting goes
+        // through the identical Facebook screens.
+        if (
+          integration.identifier === 'instagram' ||
+          integration.identifier === 'facebook'
+        ) {
+          modal.openModal({
+            title: t('before_you_continue', 'Before you continue'),
+            withCloseButton: true,
+            children: (
+              <FacebookPageGuidance
+                identifier={integration.identifier}
+                onConfirm={() => gotoRefresh()}
+              />
+            ),
+          });
+          return;
+        }
+
+        await gotoRefresh();
       },
     []
   );

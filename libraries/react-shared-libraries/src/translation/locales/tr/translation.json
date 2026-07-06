@@ -693,5 +693,12 @@
   "watch_tutorial_description": "Postiz'den en iyi şekilde yararlanmayı öğrenmek için bu kısa videoyu izleyin",
   "back": "Geri",
   "get_started": "Başlayın",
-  "kick_select_channel": "Kanal Seç"
+  "kick_select_channel": "Kanal Seç",
+  "before_you_continue": "Devam etmeden önce",
+  "facebook_guidance_intro": "Postiz'i yetkilendirmek için Facebook'a yönlendirileceksiniz.",
+  "facebook_guidance_instagram_page": "Instagram işletme hesabınızın bağlı olduğu Facebook sayfasını seçin — farklı bir sayfa seçmek işe yaramaz.",
+  "facebook_guidance_facebook_page": "Paylaşım yapmak istediğiniz Facebook sayfalarını seçin.",
+  "facebook_guidance_edit_settings": "Daha önce bağlandıysanız, Facebook önceki seçiminizi yeniden kullanabilir. Değiştirmek için Facebook ekranında 'Ayarları düzenle'ye tıklayın.",
+  "could_not_connect_channel": "Kanal bağlanamadı, lütfen tekrar deneyin",
+  "back_to_postiz": "Postiz'e geri dön"
 }

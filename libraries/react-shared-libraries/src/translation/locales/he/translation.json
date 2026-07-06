@@ -693,5 +693,12 @@
   "watch_tutorial_description": "צפה בסרטון הקצר הזה ולמד כיצד להפיק את המרב מ-Postiz",
   "back": "חזרה",
   "get_started": "התחלה",
-  "kick_select_channel": "בחר ערוץ"
+  "kick_select_channel": "בחר ערוץ",
+  "before_you_continue": "לפני שממשיכים",
+  "facebook_guidance_intro": "תועבר לפייסבוק כדי לאשר ל-Postiz גישה.",
+  "facebook_guidance_instagram_page": "בחר את דף הפייסבוק שאליו מחובר חשבון האינסטגרם העסקי שלך — בחירת דף אחר לא תעבוד.",
+  "facebook_guidance_facebook_page": "בחר את דף/דפי הפייסבוק שאליהם ברצונך לפרסם.",
+  "facebook_guidance_edit_settings": "אם כבר התחברת בעבר, פייסבוק עשויה להשתמש בבחירה הקודמת שלך. לחץ על 'עריכת ההגדרות' במסך של פייסבוק כדי לשנות אותה.",
+  "could_not_connect_channel": "לא ניתן היה לחבר את הערוץ, נסה שוב",
+  "back_to_postiz": "חזרה ל-Postiz"
 }

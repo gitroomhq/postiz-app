@@ -376,6 +376,62 @@ const ChromeExtensionWarning: FC<{
   );
 };
 
+export const FacebookPageGuidance: FC<{
+  identifier: string;
+  onConfirm: () => void;
+}> = ({ identifier, onConfirm }) => {
+  const modals = useModals();
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-[16px] pt-[8px]">
+      <p className="text-[14px] text-textColor/80">
+        {t(
+          'facebook_guidance_intro',
+          'You will be redirected to Facebook to authorize Postiz.'
+        )}
+      </p>
+      <ul className="flex flex-col gap-[8px] list-disc ps-[20px] text-[14px] text-textColor/80">
+        <li>
+          {identifier === 'instagram'
+            ? t(
+                'facebook_guidance_instagram_page',
+                'Select the Facebook page your Instagram business account is connected to — granting a different page will not work.'
+              )
+            : t(
+                'facebook_guidance_facebook_page',
+                'Select the Facebook page(s) you want to post to.'
+              )}
+        </li>
+        <li>
+          {t(
+            'facebook_guidance_edit_settings',
+            "If you connected before, Facebook may reuse your previous selection. Click 'Edit settings' on the Facebook screen to change it."
+          )}
+        </li>
+      </ul>
+      <div className="flex gap-[10px] mt-[8px]">
+        <Button
+          type="button"
+          className="flex-1"
+          onClick={() => {
+            modals.closeCurrent();
+            onConfirm();
+          }}
+        >
+          {t('continue', 'Continue')}
+        </Button>
+        <Button
+          type="button"
+          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          onClick={() => modals.closeCurrent()}
+        >
+          {t('cancel', 'Cancel')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
@@ -658,6 +714,22 @@ export const AddProviderComponent: FC<{
                   onboarding={onboarding}
                 />
               </div>
+            ),
+          });
+          return;
+        }
+        if (
+          !invite &&
+          (identifier === 'instagram' || identifier === 'facebook')
+        ) {
+          modal.openModal({
+            title: t('before_you_continue', 'Before you continue'),
+            withCloseButton: true,
+            children: (
+              <FacebookPageGuidance
+                identifier={identifier}
+                onConfirm={() => gotoIntegration()}
+              />
             ),
           });
           return;

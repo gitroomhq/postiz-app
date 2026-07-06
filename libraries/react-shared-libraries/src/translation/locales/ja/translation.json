@@ -693,5 +693,12 @@
   "watch_tutorial_description": "この短い動画を見て、Postizを最大限に活用する方法を学びましょう",
   "back": "戻る",
   "get_started": "開始",
-  "kick_select_channel": "チャンネルを選択"
+  "kick_select_channel": "チャンネルを選択",
+  "before_you_continue": "続行する前に",
+  "facebook_guidance_intro": "Postizを承認するためにFacebookへリダイレクトされます。",
+  "facebook_guidance_instagram_page": "Instagramビジネスアカウントが接続されているFacebookページを選択してください — 別のページを選択しても機能しません。",
+  "facebook_guidance_facebook_page": "投稿したいFacebookページを選択してください。",
+  "facebook_guidance_edit_settings": "以前に接続したことがある場合、Facebookは前回の選択を再利用することがあります。変更するにはFacebookの画面で「設定を編集」をクリックしてください。",
+  "could_not_connect_channel": "チャンネルを接続できませんでした。もう一度お試しください",
+  "back_to_postiz": "Postizに戻る"
 }

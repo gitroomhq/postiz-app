@@ -79,6 +79,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (/"code":\s*190\b/.test(body)) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'The Facebook access token is invalid, please reconnect the channel',
+      };
+    }
+
     if (body.indexOf('1366046') > -1) {
       return {
         type: 'bad-body' as const,
@@ -243,6 +251,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           `${process.env.FRONTEND_URL}/integrations/social/facebook`
         )}` +
         `&state=${state}` +
+        // Re-prompt permissions/assets the user previously declined —
+        // without this Facebook silently returns the same reduced grant on
+        // every reconnect, so a bad grant can never be repaired from our UI.
+        // Note: it does NOT skip the "Reconnect / Edit settings" screen when
+        // the existing grant is intact; changing the page selection still
+        // requires the user to click "Edit settings" there.
+        `&auth_type=rerequest` +
         `&scope=${this.scopes.join(',')}`,
       codeVerifier: makeId(10),
       state,
@@ -383,7 +398,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // Business Manager API not available for all users
     }
 
-    return allPages;
+    // Pages without an access_token were never granted to the app in the
+    // OAuth dialog (e.g. only discovered through Business Manager).
+    // Publishing through them is impossible, so don't offer them.
+    return allPages.filter((p: any) => p.access_token);
   }
 
   async fetchPageInformation(accessToken: string, data: { page: string }) {

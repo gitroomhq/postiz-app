@@ -693,5 +693,12 @@
   "watch_tutorial_description": "观看这个简短的视频，学习如何最大程度地利用Postiz",
   "back": "返回",
   "get_started": "开始使用",
-  "kick_select_channel": "选择频道"
+  "kick_select_channel": "选择频道",
+  "before_you_continue": "在继续之前",
+  "facebook_guidance_intro": "您将被重定向到 Facebook 以授权 Postiz。",
+  "facebook_guidance_instagram_page": "请选择与您的 Instagram 商业账号关联的 Facebook 主页 — 选择其他主页将无法使用。",
+  "facebook_guidance_facebook_page": "请选择您要发布内容的 Facebook 主页。",
+  "facebook_guidance_edit_settings": "如果您之前连接过，Facebook 可能会沿用您之前的选择。请在 Facebook 页面上点击「编辑设置」进行更改。",
+  "could_not_connect_channel": "无法连接频道，请重试",
+  "back_to_postiz": "返回 Postiz"
 }

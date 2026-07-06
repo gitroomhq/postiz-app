@@ -693,5 +693,12 @@
   "watch_tutorial_description": "Postiz সর্বোচ্চভাবে কাজে লাগাতে এই সংক্ষিপ্ত ভিডিওটি দেখুন",
   "back": "পেছনে যান",
   "get_started": "শুরু করুন",
-  "kick_select_channel": "চ্যানেল নির্বাচন করুন"
+  "kick_select_channel": "চ্যানেল নির্বাচন করুন",
+  "before_you_continue": "চালিয়ে যাওয়ার আগে",
+  "facebook_guidance_intro": "Postiz-কে অনুমোদন দিতে আপনাকে Facebook-এ পাঠানো হবে।",
+  "facebook_guidance_instagram_page": "আপনার Instagram বিজনেস অ্যাকাউন্ট যে Facebook পেজের সাথে যুক্ত সেটি নির্বাচন করুন — অন্য পেজ নির্বাচন করলে কাজ করবে না।",
+  "facebook_guidance_facebook_page": "আপনি যে Facebook পেজে পোস্ট করতে চান সেটি নির্বাচন করুন।",
+  "facebook_guidance_edit_settings": "আপনি আগে সংযুক্ত হয়ে থাকলে, Facebook আপনার আগের নির্বাচন পুনরায় ব্যবহার করতে পারে। পরিবর্তন করতে Facebook স্ক্রিনে 'সেটিংস সম্পাদনা করুন'-এ ক্লিক করুন।",
+  "could_not_connect_channel": "চ্যানেল সংযুক্ত করা যায়নি, আবার চেষ্টা করুন",
+  "back_to_postiz": "Postiz-এ ফিরে যান"
 }

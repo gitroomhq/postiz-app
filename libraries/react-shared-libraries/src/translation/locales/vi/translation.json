@@ -693,5 +693,12 @@
   "watch_tutorial_description": "Xem video ngắn này để biết cách tận dụng tối đa Postiz",
   "back": "Quay lại",
   "get_started": "Bắt đầu",
-  "kick_select_channel": "Chọn kênh"
+  "kick_select_channel": "Chọn kênh",
+  "before_you_continue": "Trước khi tiếp tục",
+  "facebook_guidance_intro": "Bạn sẽ được chuyển hướng đến Facebook để cấp quyền cho Postiz.",
+  "facebook_guidance_instagram_page": "Hãy chọn trang Facebook được liên kết với tài khoản Instagram business của bạn — chọn trang khác sẽ không hoạt động.",
+  "facebook_guidance_facebook_page": "Hãy chọn (các) trang Facebook bạn muốn đăng bài.",
+  "facebook_guidance_edit_settings": "Nếu bạn đã kết nối trước đây, Facebook có thể sử dụng lại lựa chọn cũ của bạn. Nhấp vào 'Chỉnh sửa cài đặt' trên màn hình Facebook để thay đổi.",
+  "could_not_connect_channel": "Không thể kết nối kênh, vui lòng thử lại",
+  "back_to_postiz": "Quay lại Postiz"
 }
