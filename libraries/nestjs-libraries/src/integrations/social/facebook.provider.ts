@@ -116,7 +116,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Invalid file',
-      }
+      };
     }
 
     if (body.indexOf('1404102') > -1) {
@@ -771,9 +771,10 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       'from{name,id}',
       'created_time',
       'like_count',
+      'is_hidden',
       'comment_count',
       'permalink_url',
-      'comments.limit(25){id,message,from{name,id},created_time,like_count,comment_count,permalink_url}',
+      'comments.limit(25){id,message,from{name,id},created_time,like_count,is_hidden,comment_count,permalink_url}',
     ].join(',');
     const params = new URLSearchParams({
       access_token: accessToken,
@@ -799,6 +800,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       username: comment.from?.name,
       timestamp: comment.created_time,
       likeCount: Number(comment.like_count || 0),
+      hidden: comment.is_hidden ?? comment.hidden,
       replies: (comment.comments?.data || []).map(normalize),
     });
 
@@ -806,6 +808,31 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       comments: (response.data || []).map(normalize),
       next: response.paging?.next ? response.paging?.cursors?.after : undefined,
     };
+  }
+
+  async replyToComment(
+    _id: string,
+    _postId: string,
+    commentId: string,
+    accessToken: string,
+    message: string,
+    _integration: Integration
+  ): Promise<{ id: string }> {
+    const data = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${commentId}/comments?access_token=${accessToken}&fields=id`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        },
+        'reply to comment'
+      )
+    ).json();
+
+    return { id: String(data.id) };
   }
 
   async fetchCommentPosts(

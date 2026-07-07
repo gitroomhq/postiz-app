@@ -210,6 +210,23 @@ export class IntegrationsController {
     };
   }
 
+  @Post('/comments/:id/posts/:postId/replies')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  replyToComment(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Param('postId') postId: string,
+    @Body() body: { message: string; parentCommentId: string }
+  ) {
+    return this._integrationService.replyToComment(
+      org.id,
+      id,
+      postId,
+      body?.parentCommentId,
+      body?.message
+    );
+  }
+
   @Get('/:id')
   getSingleIntegration(
     @Param('id') id: string,

@@ -32,7 +32,7 @@ export interface IAuthenticator {
     integrationId: string,
     accessToken: string,
     postId: string,
-    fromDate: number,
+    fromDate: number
   ): Promise<AnalyticsData[]>;
   changeNickname?(
     id: string,
@@ -137,6 +137,15 @@ export interface ISocialMediaIntegration {
     integration: Integration,
     cursor?: string
   ): Promise<SocialCommentsPage>;
+
+  replyToComment?(
+    id: string,
+    postId: string,
+    commentId: string,
+    accessToken: string,
+    message: string,
+    integration: Integration
+  ): Promise<{ id: string }>;
 
   fetchCommentPosts?(
     id: string,

@@ -356,7 +356,7 @@ export class InstagramProvider
       return {
         type: 'retry' as const,
         value: 'Could not upload your media',
-      }
+      };
     }
 
     if (body.indexOf('2207077') > -1) {
@@ -369,8 +369,9 @@ export class InstagramProvider
     if (body.indexOf('too little or too many attachments') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Instagram carousel should have between 2 and 10 media attachments',
-      }
+        value:
+          'Instagram carousel should have between 2 and 10 media attachments',
+      };
     }
 
     if (body.indexOf('2207027') > -1) {
@@ -930,6 +931,31 @@ export class InstagramProvider
     };
   }
 
+  async replyToComment(
+    _id: string,
+    _postId: string,
+    commentId: string,
+    token: string,
+    message: string,
+    _integration: Integration,
+    type = 'graph.facebook.com'
+  ): Promise<{ id: string }> {
+    const [accessToken] = token.split('___');
+    const data = await (
+      await this.fetch(
+        `https://${type}/v20.0/${commentId}/replies?message=${encodeURIComponent(
+          message
+        )}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        },
+        'reply to comment'
+      )
+    ).json();
+
+    return { id: String(data.id) };
+  }
+
   async fetchCommentPosts(
     id: string,
     token: string,
@@ -942,8 +968,7 @@ export class InstagramProvider
     const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const params = new URLSearchParams({
       access_token: accessToken,
-      fields:
-        'id,caption,media_type,permalink,timestamp,comments_count',
+      fields: 'id,caption,media_type,permalink,timestamp,comments_count',
       limit: String(safeLimit),
     });
     if (cursor) {

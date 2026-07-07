@@ -1,13 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import {
-  type UIEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { type UIEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
@@ -105,10 +99,35 @@ const shouldLoadMore = (element: HTMLElement) =>
 const CommentThread = ({
   comment,
   depth = 0,
+  onReply,
 }: {
   comment: SocialComment;
   depth?: number;
+  onReply: (parentCommentId: string, message: string) => Promise<void>;
 }) => {
+  const t = useT();
+  const [message, setMessage] = useState('');
+  const [replying, setReplying] = useState(false);
+  const [error, setError] = useState('');
+  const trimmedMessage = message.trim();
+
+  const submitReply = async () => {
+    if (!trimmedMessage || replying) {
+      return;
+    }
+
+    setReplying(true);
+    setError('');
+    try {
+      await onReply(comment.id, trimmedMessage);
+      setMessage('');
+    } catch {
+      setError(t('could_not_send_reply', 'Could not send reply'));
+    } finally {
+      setReplying(false);
+    }
+  };
+
   return (
     <div
       className={clsx(
@@ -146,10 +165,39 @@ const CommentThread = ({
           )}
         </div>
       </div>
+      {depth === 0 && !comment.hidden && (
+        <div className="mt-[12px] flex flex-col gap-[8px]">
+          <textarea
+            value={message}
+            onChange={(event) => {
+              setMessage(event.target.value);
+              setError('');
+            }}
+            placeholder={t('write_a_reply', 'Write a reply')}
+            className="min-h-[68px] resize-y rounded-[8px] border border-tableBorder bg-newBgColorInner p-[10px] text-[14px] outline-none"
+          />
+          <div className="flex items-center justify-between gap-[10px]">
+            <div className="text-[12px] text-red-300">{error}</div>
+            <Button
+              onClick={submitReply}
+              loading={replying}
+              disabled={!trimmedMessage || replying}
+              className="h-[34px] rounded-[6px] px-[14px] text-[13px]"
+            >
+              {t('reply', 'Reply')}
+            </Button>
+          </div>
+        </div>
+      )}
       {!!comment.replies?.length && (
         <div className="mt-[10px] flex flex-col gap-[10px]">
           {comment.replies.map((reply) => (
-            <CommentThread key={reply.id} comment={reply} depth={depth + 1} />
+            <CommentThread
+              key={reply.id}
+              comment={reply}
+              depth={depth + 1}
+              onReply={onReply}
+            />
           ))}
         </div>
       )}
@@ -175,8 +223,9 @@ export const SocialComments = () => {
 
   const loadIntegrations = useCallback(async () => {
     const response = await (await fetch('/integrations/list')).json();
-    return (response.integrations || []).filter((integration: IntegrationItem) =>
-      allowedIntegrations.includes(integration.identifier)
+    return (response.integrations || []).filter(
+      (integration: IntegrationItem) =>
+        allowedIntegrations.includes(integration.identifier)
     );
   }, [fetch]);
 
@@ -235,7 +284,9 @@ export const SocialComments = () => {
     error: postsError,
     isLoading: postsLoading,
   } = useSWR<PostsResponse>(
-    currentIntegration ? `social-comments-posts-${currentIntegration.id}` : null,
+    currentIntegration
+      ? `social-comments-posts-${currentIntegration.id}`
+      : null,
     loadPosts,
     {
       revalidateOnFocus: false,
@@ -249,10 +300,7 @@ export const SocialComments = () => {
   }, [postsData]);
 
   const currentPost = useMemo(() => {
-    return (
-      posts.find((post) => post.id === selectedPostId) ||
-      posts[0]
-    );
+    return posts.find((post) => post.id === selectedPostId) || posts[0];
   }, [posts, selectedPostId]);
 
   useEffect(() => {
@@ -277,6 +325,7 @@ export const SocialComments = () => {
     data: commentsData,
     error: commentsError,
     isLoading: commentsLoading,
+    mutate: mutateComments,
   } = useSWR<CommentsResponse>(
     currentIntegration && currentPost
       ? `social-comments-${currentIntegration.id}-${currentPost.id}`
@@ -343,7 +392,9 @@ export const SocialComments = () => {
         const ids = new Set(current.map((comment) => comment.id));
         return [
           ...current,
-          ...(response.comments || []).filter((comment) => !ids.has(comment.id)),
+          ...(response.comments || []).filter(
+            (comment) => !ids.has(comment.id)
+          ),
         ];
       });
       setNextCommentCursor(response.next);
@@ -374,6 +425,29 @@ export const SocialComments = () => {
       }
     },
     [loadMoreComments]
+  );
+
+  const replyToComment = useCallback(
+    async (parentCommentId: string, message: string) => {
+      if (!currentIntegration || !currentPost) {
+        throw new Error('Missing selected post');
+      }
+
+      const response = await fetch(
+        `/integrations/comments/${currentIntegration.id}/posts/${currentPost.id}/replies`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ parentCommentId, message }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Could not send reply');
+      }
+
+      await mutateComments();
+    },
+    [currentIntegration?.id, currentPost?.id, fetch, mutateComments]
   );
 
   if (integrationsLoading) {
@@ -501,9 +575,7 @@ export const SocialComments = () => {
                 {currentIntegration?.name}
               </div>
             </div>
-            <div className="text-[13px] text-textColor/60">
-              {posts.length}
-            </div>
+            <div className="text-[13px] text-textColor/60">{posts.length}</div>
           </div>
           {postsLoading && (
             <div className="flex flex-1 items-center justify-center">
@@ -517,10 +589,7 @@ export const SocialComments = () => {
           )}
           {!postsLoading && !postsError && !posts.length && (
             <div className="rounded-[8px] bg-third p-[14px] text-[14px] text-textColor/70">
-              {t(
-                'no_meta_posts_with_comments',
-                'No Meta posts found yet.'
-              )}
+              {t('no_meta_posts_with_comments', 'No Meta posts found yet.')}
             </div>
           )}
           <div
@@ -538,7 +607,8 @@ export const SocialComments = () => {
                 )}
               >
                 <div className="line-clamp-3 break-words text-[14px] leading-[20px]">
-                  {shortText(post.content) || t('untitled_post', 'Untitled post')}
+                  {shortText(post.content) ||
+                    t('untitled_post', 'Untitled post')}
                 </div>
                 <div className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[12px] text-textColor/60">
                   <span>{formatDate(post.publishDate)}</span>
@@ -612,7 +682,11 @@ export const SocialComments = () => {
             className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-y-auto"
           >
             {comments.map((comment) => (
-              <CommentThread key={comment.id} comment={comment} />
+              <CommentThread
+                key={comment.id}
+                comment={comment}
+                onReply={replyToComment}
+              />
             ))}
             {loadingMoreComments && (
               <div className="flex justify-center py-[12px]">
