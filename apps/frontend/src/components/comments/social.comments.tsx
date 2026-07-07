@@ -189,9 +189,13 @@ const CommentThread = ({
             type="button"
             onClick={toggleHide}
             disabled={hiding}
-            className="text-[12px] text-textColor/60 hover:text-textColor disabled:opacity-50"
+            className="whitespace-nowrap rounded-[6px] border border-tableBorder bg-newBgColorInner px-[10px] py-[5px] text-[12px] font-[500] text-textColor hover:bg-boxHover disabled:opacity-50"
           >
-            {comment.hidden ? t('unhide', 'Unhide') : t('hide', 'Hide')}
+            {hiding
+              ? t('working', 'Working...')
+              : comment.hidden
+              ? t('unhide', 'Unhide')
+              : t('hide', 'Hide')}
           </button>
           {!!hideError && (
             <div className="text-[11px] text-red-300">{hideError}</div>
