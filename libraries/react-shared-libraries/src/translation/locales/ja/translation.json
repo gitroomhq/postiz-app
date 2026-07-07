@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "投稿したいFacebookページを選択してください。",
   "facebook_guidance_edit_settings": "以前に接続したことがある場合、Facebookは前回の選択を再利用することがあります。変更するにはFacebookの画面で「設定を編集」をクリックしてください。",
   "could_not_connect_channel": "チャンネルを接続できませんでした。もう一度お試しください",
-  "back_to_postiz": "Postizに戻る"
+  "back_to_postiz": "Postizに戻る",
+  "facebook_guidance_shared_grant": "ページの選択は、接続中のチャンネルだけでなく、Postizのすべての Facebook・Instagram チャンネルに適用されます。他のチャンネルが使用しているページはチェックしたままにしてください。外すとそのチャンネルは動作しなくなります。"
 }

@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "Select the Facebook page(s) you want to post to.",
   "facebook_guidance_edit_settings": "If you connected before, Facebook may reuse your previous selection. Click 'Edit settings' on the Facebook screen to change it.",
   "could_not_connect_channel": "Could not connect the channel, please try again",
-  "back_to_postiz": "Back to Postiz"
+  "back_to_postiz": "Back to Postiz",
+  "facebook_guidance_shared_grant": "Your page selection applies to all your Facebook and Instagram channels in Postiz, not only the one you are connecting — keep the pages used by your other channels checked, or those channels will stop working."
 }

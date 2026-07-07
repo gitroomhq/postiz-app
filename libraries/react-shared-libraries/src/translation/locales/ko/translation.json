@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "게시할 Facebook 페이지를 선택하세요.",
   "facebook_guidance_edit_settings": "이전에 연결한 적이 있다면 Facebook이 이전 선택을 재사용할 수 있습니다. 변경하려면 Facebook 화면에서 '설정 수정'을 클릭하세요.",
   "could_not_connect_channel": "채널을 연결할 수 없습니다. 다시 시도해 주세요",
-  "back_to_postiz": "Postiz로 돌아가기"
+  "back_to_postiz": "Postiz로 돌아가기",
+  "facebook_guidance_shared_grant": "페이지 선택은 지금 연결 중인 채널뿐 아니라 Postiz의 모든 Facebook·Instagram 채널에 적용됩니다. 다른 채널이 사용하는 페이지는 체크된 상태로 유지하세요. 해제하면 해당 채널이 작동을 멈춥니다."
 }

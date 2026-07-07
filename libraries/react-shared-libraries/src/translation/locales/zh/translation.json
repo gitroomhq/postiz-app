@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "请选择您要发布内容的 Facebook 主页。",
   "facebook_guidance_edit_settings": "如果您之前连接过，Facebook 可能会沿用您之前的选择。请在 Facebook 页面上点击「编辑设置」进行更改。",
   "could_not_connect_channel": "无法连接频道，请重试",
-  "back_to_postiz": "返回 Postiz"
+  "back_to_postiz": "返回 Postiz",
+  "facebook_guidance_shared_grant": "页面选择适用于您在 Postiz 中的所有 Facebook 和 Instagram 频道，而不仅是当前连接的频道 — 请保持勾选其他频道所使用的主页，否则这些频道将停止工作。"
 }

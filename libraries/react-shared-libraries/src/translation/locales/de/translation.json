@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "Wähle die Facebook-Seite(n) aus, auf denen du posten möchtest.",
   "facebook_guidance_edit_settings": "Wenn du dich schon einmal verbunden hast, verwendet Facebook möglicherweise deine vorherige Auswahl. Klicke im Facebook-Fenster auf 'Einstellungen bearbeiten', um sie zu ändern.",
   "could_not_connect_channel": "Der Kanal konnte nicht verbunden werden, bitte versuche es erneut",
-  "back_to_postiz": "Zurück zu Postiz"
+  "back_to_postiz": "Zurück zu Postiz",
+  "facebook_guidance_shared_grant": "Deine Seitenauswahl gilt für alle deine Facebook- und Instagram-Kanäle in Postiz, nicht nur für den, den du gerade verbindest — lasse die Seiten deiner anderen Kanäle angehakt, sonst funktionieren diese Kanäle nicht mehr."
 }

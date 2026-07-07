@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "Sélectionnez la ou les pages Facebook sur lesquelles vous souhaitez publier.",
   "facebook_guidance_edit_settings": "Si vous vous êtes déjà connecté, Facebook peut réutiliser votre sélection précédente. Cliquez sur 'Modifier les paramètres' sur l'écran Facebook pour la changer.",
   "could_not_connect_channel": "Impossible de connecter le canal, veuillez réessayer",
-  "back_to_postiz": "Retour à Postiz"
+  "back_to_postiz": "Retour à Postiz",
+  "facebook_guidance_shared_grant": "Votre sélection de pages s'applique à tous vos canaux Facebook et Instagram dans Postiz, pas seulement à celui que vous connectez — laissez cochées les pages utilisées par vos autres canaux, sinon ces canaux cesseront de fonctionner."
 }

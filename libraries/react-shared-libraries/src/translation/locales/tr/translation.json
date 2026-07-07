@@ -700,5 +700,6 @@
   "facebook_guidance_facebook_page": "Paylaşım yapmak istediğiniz Facebook sayfalarını seçin.",
   "facebook_guidance_edit_settings": "Daha önce bağlandıysanız, Facebook önceki seçiminizi yeniden kullanabilir. Değiştirmek için Facebook ekranında 'Ayarları düzenle'ye tıklayın.",
   "could_not_connect_channel": "Kanal bağlanamadı, lütfen tekrar deneyin",
-  "back_to_postiz": "Postiz'e geri dön"
+  "back_to_postiz": "Postiz'e geri dön",
+  "facebook_guidance_shared_grant": "Sayfa seçiminiz yalnızca şu an bağladığınız kanal için değil, Postiz'deki tüm Facebook ve Instagram kanallarınız için geçerlidir — diğer kanallarınızın kullandığı sayfaları işaretli bırakın, aksi halde o kanallar çalışmayı durdurur."
 }

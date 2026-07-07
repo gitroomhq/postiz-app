@@ -404,6 +404,12 @@ export const FacebookPageGuidance: FC<{
         </li>
         <li>
           {t(
+            'facebook_guidance_shared_grant',
+            'Your page selection applies to all your Facebook and Instagram channels in Postiz, not only the one you are connecting — keep the pages used by your other channels checked, or those channels will stop working.'
+          )}
+        </li>
+        <li>
+          {t(
             'facebook_guidance_edit_settings',
             "If you connected before, Facebook may reuse your previous selection. Click 'Edit settings' on the Facebook screen to change it."
           )}
