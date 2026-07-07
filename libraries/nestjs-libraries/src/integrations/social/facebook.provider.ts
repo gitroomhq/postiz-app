@@ -3,6 +3,8 @@ import {
   AuthTokenDetails,
   PostDetails,
   PostResponse,
+  SocialComment,
+  SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -753,6 +755,56 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         status: 'success',
       },
     ];
+  }
+
+  async fetchComments(
+    id: string,
+    accessToken: string,
+    postId: string,
+    integration: Integration,
+    cursor?: string
+  ): Promise<SocialCommentsPage> {
+    const fields = [
+      'id',
+      'message',
+      'from{name,id}',
+      'created_time',
+      'like_count',
+      'comment_count',
+      'permalink_url',
+      'comments.limit(25){id,message,from{name,id},created_time,like_count,comment_count,permalink_url}',
+    ].join(',');
+    const params = new URLSearchParams({
+      access_token: accessToken,
+      fields,
+      limit: '100',
+    });
+
+    if (cursor) {
+      params.set('after', cursor);
+    }
+
+    const response = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${postId}/comments?${params.toString()}`,
+        {},
+        'fetch comments'
+      )
+    ).json();
+
+    const normalize = (comment: any): SocialComment => ({
+      id: String(comment.id),
+      text: comment.message || '',
+      username: comment.from?.name,
+      timestamp: comment.created_time,
+      likeCount: Number(comment.like_count || 0),
+      replies: (comment.comments?.data || []).map(normalize),
+    });
+
+    return {
+      comments: (response.data || []).map(normalize),
+      next: response.paging?.next ? response.paging?.cursors?.after : undefined,
+    };
   }
 
   async analytics(

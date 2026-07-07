@@ -341,6 +341,32 @@ export class PostsService {
     );
   }
 
+  getPublishedPostsForComments(
+    orgId: string,
+    integrationId: string,
+    page: number,
+    limit: number
+  ) {
+    return this._postRepository.getPublishedPostsForComments(
+      orgId,
+      integrationId,
+      page,
+      limit
+    );
+  }
+
+  getPublishedPostForComments(
+    orgId: string,
+    integrationId: string,
+    postId: string
+  ) {
+    return this._postRepository.getPublishedPostForComments(
+      orgId,
+      integrationId,
+      postId
+    );
+  }
+
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
     try {
       let imageUpdateNeeded = false;

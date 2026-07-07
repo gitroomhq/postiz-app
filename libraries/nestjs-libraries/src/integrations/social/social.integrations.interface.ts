@@ -56,6 +56,20 @@ export interface AnalyticsData {
   percentageChange: number;
 }
 
+export type SocialComment = {
+  id: string;
+  text: string;
+  username?: string;
+  timestamp?: string;
+  likeCount?: number;
+  hidden?: boolean;
+  replies?: SocialComment[];
+};
+
+export type SocialCommentsPage = {
+  comments: SocialComment[];
+  next?: string;
+};
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -97,6 +111,14 @@ export interface ISocialMediaIntegration {
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
+
+  fetchComments?(
+    id: string,
+    accessToken: string,
+    postId: string,
+    integration: Integration,
+    cursor?: string
+  ): Promise<SocialCommentsPage>;
 }
 
 export type PostResponse = {

@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -173,6 +175,51 @@ export class IntegrationsController {
       : { name: '' };
 
     return this._integrationService.updateNameAndUrl(id, name, url);
+  }
+
+  @Get('/comments/:id/posts')
+  getCommentPosts(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    return this._postService.getPublishedPostsForComments(
+      org.id,
+      id,
+      Number(page || 0),
+      Number(limit || 20)
+    );
+  }
+
+  @Get('/comments/:id/posts/:postId')
+  async getPostComments(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Param('postId') postId: string,
+    @Query('after') after?: string
+  ) {
+    const post = await this._postService.getPublishedPostForComments(
+      org.id,
+      id,
+      postId
+    );
+
+    if (!post?.releaseId) {
+      throw new HttpException('Invalid post', HttpStatus.NOT_FOUND);
+    }
+
+    const comments = await this._integrationService.fetchPostComments(
+      org.id,
+      id,
+      post.releaseId,
+      after
+    );
+
+    return {
+      post,
+      ...comments,
+    };
   }
 
   @Get('/:id')

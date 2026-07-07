@@ -9,6 +9,7 @@ import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   AnalyticsData,
+  SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration, Organization } from '@prisma/client';
@@ -402,6 +403,76 @@ export class IntegrationService {
     }
 
     return [];
+  }
+
+  async fetchPostComments(
+    orgId: string,
+    integration: string,
+    postId: string,
+    cursor?: string,
+    forceRefresh = false
+  ): Promise<SocialCommentsPage> {
+    const getIntegration = await this.getIntegrationById(orgId, integration);
+
+    if (!getIntegration) {
+      throw new HttpException('Invalid integration', HttpStatus.NOT_FOUND);
+    }
+
+    if (getIntegration.type !== 'social') {
+      throw new HttpException(
+        'Comments are only available for social integrations',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!integrationProvider.fetchComments) {
+      throw new HttpException(
+        'Comments are not supported for this integration',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      getIntegration.refreshNeeded ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration,
+        'fetch comments'
+      );
+      if (!data || !data.accessToken) {
+        throw new HttpException(
+          'Integration needs to be reconnected',
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+
+      getIntegration.token = data.accessToken;
+
+      if (integrationProvider.refreshWait) {
+        await timer(10000);
+      }
+    }
+
+    try {
+      return await integrationProvider.fetchComments(
+        getIntegration.internalId,
+        getIntegration.token,
+        postId,
+        getIntegration,
+        cursor
+      );
+    } catch (e) {
+      if (e instanceof RefreshToken && !forceRefresh) {
+        return this.fetchPostComments(orgId, integration, postId, cursor, true);
+      }
+      throw e;
+    }
   }
 
   customers(orgId: string) {

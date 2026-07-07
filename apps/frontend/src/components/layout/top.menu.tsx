@@ -94,6 +94,34 @@ export const useMenuItem = () => {
       path: '/analytics',
     },
     {
+      name: t('comments', 'Comments'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="21"
+          height="21"
+          viewBox="0 0 21 21"
+          fill="none"
+        >
+          <path
+            d="M6.25 16.25H5.7C4.5799 16.25 4.01984 16.25 3.59202 16.032C3.21569 15.8403 2.90973 15.5343 2.71799 15.158C2.5 14.7302 2.5 14.1701 2.5 13.05V6.7C2.5 5.5799 2.5 5.01984 2.71799 4.59202C2.90973 4.21569 3.21569 3.90973 3.59202 3.71799C4.01984 3.5 4.5799 3.5 5.7 3.5H15.3C16.4201 3.5 16.9802 3.5 17.408 3.71799C17.7843 3.90973 18.0903 4.21569 18.282 4.59202C18.5 5.01984 18.5 5.5799 18.5 6.7V13.05C18.5 14.1701 18.5 14.7302 18.282 15.158C18.0903 15.5343 17.7843 15.8403 17.408 16.032C16.9802 16.25 16.4201 16.25 15.3 16.25H10.875L6.25 18.5V16.25Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M6.75 8.25H14.25M6.75 11.25H11.75"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/comments',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg

@@ -320,6 +320,124 @@ export class PostsRepository {
     };
   }
 
+  async getPublishedPostsForComments(
+    orgId: string,
+    integrationId: string,
+    page = 0,
+    limit = 20
+  ) {
+    const safePage = Math.max(Number(page) || 0, 0);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const skip = safePage * safeLimit;
+    const where = {
+      organizationId: orgId,
+      integrationId,
+      state: State.PUBLISHED,
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+      intervalInDays: null as number | null,
+      releaseId: {
+        not: null as string | null,
+      },
+      NOT: {
+        releaseId: 'missing',
+      },
+      integration: {
+        organizationId: orgId,
+        deletedAt: null as Date | null,
+        disabled: false,
+        providerIdentifier: {
+          in: ['facebook', 'instagram', 'instagram-standalone'],
+        },
+      },
+    };
+
+    const select = {
+      id: true,
+      content: true,
+      publishDate: true,
+      releaseURL: true,
+      releaseId: true,
+      state: true,
+      integration: {
+        select: {
+          id: true,
+          providerIdentifier: true,
+          name: true,
+          picture: true,
+        },
+      },
+    };
+
+    const [posts, total] = await Promise.all([
+      this._post.model.post.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: {
+          publishDate: 'desc',
+        },
+        select,
+      }),
+      this._post.model.post.count({ where }),
+    ]);
+
+    return {
+      posts,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      hasMore: skip + posts.length < total,
+    };
+  }
+
+  getPublishedPostForComments(
+    orgId: string,
+    integrationId: string,
+    postId: string
+  ) {
+    return this._post.model.post.findFirst({
+      where: {
+        id: postId,
+        organizationId: orgId,
+        integrationId,
+        state: State.PUBLISHED,
+        deletedAt: null,
+        parentPostId: null,
+        releaseId: {
+          not: null,
+        },
+        NOT: {
+          releaseId: 'missing',
+        },
+        integration: {
+          organizationId: orgId,
+          deletedAt: null,
+          disabled: false,
+          providerIdentifier: {
+            in: ['facebook', 'instagram', 'instagram-standalone'],
+          },
+        },
+      },
+      select: {
+        id: true,
+        content: true,
+        publishDate: true,
+        releaseURL: true,
+        releaseId: true,
+        state: true,
+        integration: {
+          select: {
+            id: true,
+            providerIdentifier: true,
+            name: true,
+            picture: true,
+          },
+        },
+      },
+    });
+  }
+
   async deletePost(orgId: string, group: string) {
     await this._post.model.post.updateMany({
       where: {
