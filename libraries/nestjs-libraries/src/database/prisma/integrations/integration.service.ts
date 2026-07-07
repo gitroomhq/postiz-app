@@ -9,6 +9,7 @@ import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   AnalyticsData,
+  SocialCommentPostsPage,
   SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -403,6 +404,74 @@ export class IntegrationService {
     }
 
     return [];
+  }
+
+  async fetchCommentPosts(
+    orgId: string,
+    integration: string,
+    limit = 100,
+    forceRefresh = false
+  ): Promise<SocialCommentPostsPage> {
+    const getIntegration = await this.getIntegrationById(orgId, integration);
+
+    if (!getIntegration) {
+      throw new HttpException('Invalid integration', HttpStatus.NOT_FOUND);
+    }
+
+    if (getIntegration.type !== 'social') {
+      throw new HttpException(
+        'Comments are only available for social integrations',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!integrationProvider.fetchCommentPosts) {
+      throw new HttpException(
+        'Comments are not supported for this integration',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      getIntegration.refreshNeeded ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration,
+        'fetch comment posts'
+      );
+      if (!data || !data.accessToken) {
+        throw new HttpException(
+          'Integration needs to be reconnected',
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+
+      getIntegration.token = data.accessToken;
+
+      if (integrationProvider.refreshWait) {
+        await timer(10000);
+      }
+    }
+
+    try {
+      return await integrationProvider.fetchCommentPosts(
+        getIntegration.internalId,
+        getIntegration.token,
+        getIntegration,
+        limit
+      );
+    } catch (e) {
+      if (e instanceof RefreshToken && !forceRefresh) {
+        return this.fetchCommentPosts(orgId, integration, limit, true);
+      }
+      throw e;
+    }
   }
 
   async fetchPostComments(

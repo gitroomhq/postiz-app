@@ -2,6 +2,7 @@ import {
   AuthTokenDetails,
   PostDetails,
   PostResponse,
+  SocialCommentPostsPage,
   SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -224,6 +225,21 @@ export class InstagramStandaloneProvider
       postId,
       integration,
       cursor,
+      'graph.instagram.com'
+    );
+  }
+
+  async fetchCommentPosts(
+    id: string,
+    accessToken: string,
+    integration: Integration,
+    limit?: number
+  ): Promise<SocialCommentPostsPage> {
+    return instagramProvider.fetchCommentPosts(
+      id,
+      accessToken,
+      integration,
+      limit,
       'graph.instagram.com'
     );
   }

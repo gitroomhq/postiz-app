@@ -4,6 +4,7 @@ import {
   PostDetails,
   PostResponse,
   SocialComment,
+  SocialCommentPostsPage,
   SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -804,6 +805,44 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     return {
       comments: (response.data || []).map(normalize),
       next: response.paging?.next ? response.paging?.cursors?.after : undefined,
+    };
+  }
+
+  async fetchCommentPosts(
+    id: string,
+    accessToken: string,
+    integration: Integration,
+    limit = 100
+  ): Promise<SocialCommentPostsPage> {
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const params = new URLSearchParams({
+      access_token: accessToken,
+      fields:
+        'id,message,story,created_time,permalink_url,comments.limit(0).summary(true)',
+      limit: String(safeLimit),
+    });
+    const response = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${id}/posts?${params.toString()}`,
+        {},
+        'fetch comment posts'
+      )
+    ).json();
+    const posts = (response.data || []).map((post: any) => ({
+      id: String(post.id),
+      releaseId: String(post.id),
+      releaseURL: post.permalink_url,
+      content: post.message || post.story || 'Facebook post',
+      publishDate: post.created_time,
+      commentCount: Number(post.comments?.summary?.total_count || 0),
+    }));
+
+    return {
+      posts,
+      total: posts.length,
+      page: 0,
+      limit: safeLimit,
+      hasMore: false,
     };
   }
 

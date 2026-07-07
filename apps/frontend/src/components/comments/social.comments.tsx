@@ -32,7 +32,8 @@ type CommentPost = {
   publishDate: string;
   releaseURL?: string;
   releaseId?: string;
-  integration: {
+  commentCount?: number;
+  integration?: {
     id: string;
     providerIdentifier: string;
     name: string;
@@ -151,7 +152,6 @@ export const SocialComments = () => {
   const t = useT();
   const router = useRouter();
   const [currentIntegrationId, setCurrentIntegrationId] = useState('');
-  const [postPage, setPostPage] = useState(0);
   const [selectedPostId, setSelectedPostId] = useState('');
   const [comments, setComments] = useState<SocialComment[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
@@ -196,34 +196,31 @@ export const SocialComments = () => {
   }, [currentIntegrationId, sortedIntegrations]);
 
   useEffect(() => {
-    setPostPage(0);
     setSelectedPostId('');
   }, [currentIntegration?.id]);
 
   const loadPosts = useCallback(async () => {
     if (!currentIntegration) {
-      return { posts: [], total: 0, page: 0, limit: 20, hasMore: false };
+      return { posts: [], total: 0, page: 0, limit: 100, hasMore: false };
     }
 
     return (await (
       await fetch(
-        `/integrations/comments/${currentIntegration.id}/posts?page=${postPage}&limit=20`
+        `/integrations/comments/${currentIntegration.id}/posts?limit=100`
       )
     ).json()) as PostsResponse;
-  }, [currentIntegration?.id, fetch, postPage]);
+  }, [currentIntegration?.id, fetch]);
 
   const {
     data: postsData,
     error: postsError,
     isLoading: postsLoading,
   } = useSWR<PostsResponse>(
-    currentIntegration
-      ? `social-comments-posts-${currentIntegration.id}-${postPage}`
-      : null,
+    currentIntegration ? `social-comments-posts-${currentIntegration.id}` : null,
     loadPosts,
     {
       revalidateOnFocus: false,
-      fallbackData: { posts: [], total: 0, page: 0, limit: 20, hasMore: false },
+      fallbackData: { posts: [], total: 0, page: 0, limit: 100, hasMore: false },
     }
   );
 
@@ -435,8 +432,8 @@ export const SocialComments = () => {
           {!postsLoading && !postsError && !postsData?.posts.length && (
             <div className="rounded-[8px] bg-third p-[14px] text-[14px] text-textColor/70">
               {t(
-                'no_published_posts_with_comments',
-                'No published posts with platform IDs yet.'
+                'no_meta_posts_with_comments',
+                'No Meta posts found yet.'
               )}
             </div>
           )}
@@ -456,6 +453,9 @@ export const SocialComments = () => {
                 </div>
                 <div className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[12px] text-textColor/60">
                   <span>{formatDate(post.publishDate)}</span>
+                  {typeof post.commentCount === 'number' && (
+                    <span>{post.commentCount} comments</span>
+                  )}
                   {!!post.releaseURL && (
                     <a
                       href={post.releaseURL}
@@ -470,27 +470,6 @@ export const SocialComments = () => {
                 </div>
               </button>
             ))}
-          </div>
-          <div className="mt-[14px] flex items-center justify-between gap-[10px]">
-            <Button
-              secondary
-              disabled={postPage === 0}
-              onClick={() => setPostPage((page) => Math.max(page - 1, 0))}
-              className="px-[12px]"
-            >
-              {t('previous', 'Previous')}
-            </Button>
-            <div className="text-[12px] text-textColor/60">
-              {t('page', 'Page')} {postPage + 1}
-            </div>
-            <Button
-              secondary
-              disabled={!postsData?.hasMore}
-              onClick={() => setPostPage((page) => page + 1)}
-              className="px-[12px]"
-            >
-              {t('next', 'Next')}
-            </Button>
           </div>
         </div>
         <div className="flex min-h-0 flex-col rounded-[8px] border border-tableBorder bg-newBgColor p-[16px]">

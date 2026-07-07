@@ -4,6 +4,7 @@ import {
   PostDetails,
   PostResponse,
   SocialComment,
+  SocialCommentPostsPage,
   SocialCommentsPage,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -926,6 +927,46 @@ export class InstagramProvider
     return {
       comments: (response.data || []).map(normalize),
       next: response.paging?.next ? response.paging?.cursors?.after : undefined,
+    };
+  }
+
+  async fetchCommentPosts(
+    id: string,
+    token: string,
+    integration: Integration,
+    limit = 100,
+    type = 'graph.facebook.com'
+  ): Promise<SocialCommentPostsPage> {
+    const [accessToken] = token.split('___');
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const params = new URLSearchParams({
+      access_token: accessToken,
+      fields:
+        'id,caption,media_type,permalink,timestamp,comments_count',
+      limit: String(safeLimit),
+    });
+    const response = await (
+      await this.fetch(
+        `https://${type}/v20.0/${id}/media?${params.toString()}`,
+        {},
+        'fetch comment posts'
+      )
+    ).json();
+    const posts = (response.data || []).map((post: any) => ({
+      id: String(post.id),
+      releaseId: String(post.id),
+      releaseURL: post.permalink,
+      content: post.caption || `${post.media_type || 'Instagram'} post`,
+      publishDate: post.timestamp,
+      commentCount: Number(post.comments_count || 0),
+    }));
+
+    return {
+      posts,
+      total: posts.length,
+      page: 0,
+      limit: safeLimit,
+      hasMore: false,
     };
   }
 

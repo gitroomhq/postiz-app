@@ -71,6 +71,23 @@ export type SocialCommentsPage = {
   next?: string;
 };
 
+export type SocialCommentPost = {
+  id: string;
+  content: string;
+  publishDate: string;
+  releaseId: string;
+  releaseURL?: string;
+  commentCount?: number;
+};
+
+export type SocialCommentPostsPage = {
+  posts: SocialCommentPost[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
 export type GenerateAuthUrlResponse = {
   url: string;
   codeVerifier: string;
@@ -119,6 +136,13 @@ export interface ISocialMediaIntegration {
     integration: Integration,
     cursor?: string
   ): Promise<SocialCommentsPage>;
+
+  fetchCommentPosts?(
+    id: string,
+    accessToken: string,
+    integration: Integration,
+    limit?: number
+  ): Promise<SocialCommentPostsPage>;
 }
 
 export type PostResponse = {
