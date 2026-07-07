@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpException,
   Param,
   Post,
@@ -29,6 +30,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { IdempotencyService } from '@gitroom/nestjs-libraries/database/prisma/idempotency/idempotency.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -36,7 +38,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _idempotencyService: IdempotencyService
   ) {}
 
   @Get('/:id/statistics')
@@ -180,8 +183,25 @@ export class PostsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
   async createPost(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Headers('idempotency-key') idempotencyKey: string,
     @Body() rawBody: any
   ) {
+    if (!idempotencyKey) {
+      return this.processCreatePost(org, rawBody);
+    }
+
+    return this._idempotencyService.run({
+      organizationId: org.id,
+      userId: user?.id,
+      endpoint: 'POST /posts',
+      key: idempotencyKey,
+      body: rawBody,
+      handler: () => this.processCreatePost(org, rawBody),
+    });
+  }
+
+  private async processCreatePost(org: Organization, rawBody: any) {
     // Server-side validation — never trust the client to have validated.
     const validation = await this._postsService.validatePosts(
       org.id,

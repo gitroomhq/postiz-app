@@ -8,7 +8,12 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export type PostListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
+export type PostListStateFilter =
+  | 'all'
+  | 'scheduled'
+  | 'draft'
+  | 'published'
+  | 'failed';
 
 export class GetPostsListDto {
   @IsOptional()
@@ -29,6 +34,6 @@ export class GetPostsListDto {
   customer?: string;
 
   @IsOptional()
-  @IsIn(['all', 'scheduled', 'draft', 'published'])
+  @IsIn(['all', 'scheduled', 'draft', 'published', 'failed'])
   state?: PostListStateFilter = 'all';
 }

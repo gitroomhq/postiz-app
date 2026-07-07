@@ -44,6 +44,10 @@ import { ErrorsRepository } from '@gitroom/nestjs-libraries/database/prisma/erro
 import { ErrorsService } from '@gitroom/nestjs-libraries/database/prisma/errors/errors.service';
 import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.repository';
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { IdempotencyRepository } from '@gitroom/nestjs-libraries/database/prisma/idempotency/idempotency.repository';
+import { IdempotencyService } from '@gitroom/nestjs-libraries/database/prisma/idempotency/idempotency.service';
+import { MobileDeviceRepository } from '@gitroom/nestjs-libraries/database/prisma/mobile-devices/mobile-device.repository';
+import { MobilePushService } from '@gitroom/nestjs-libraries/database/prisma/mobile-devices/mobile-push.service';
 
 @Global()
 @Module({
@@ -97,6 +101,10 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
     ErrorsService,
     AdminStatsRepository,
     AdminStatsService,
+    IdempotencyRepository,
+    IdempotencyService,
+    MobileDeviceRepository,
+    MobilePushService,
   ],
   get exports() {
     return this.providers;

@@ -322,6 +322,9 @@
   "pnpm": {
     "overrides": {
       "next": "16.2.6",
+      "postiz-mobile>react": "19.2.3",
+      "postiz-mobile>react-dom": "19.2.3",
+      "postiz-mobile>@types/react": "19.2.17",
       "react": "19.2.4",
       "react-dom": "19.2.4",
       "@types/react": "19.1.8",

@@ -21,15 +21,18 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
-import { Provider } from '@prisma/client';
+import { Provider, User } from '@prisma/client';
 import * as Sentry from '@sentry/nestjs';
+import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
   constructor(
     private _authService: AuthService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Get('/can-register')
@@ -174,6 +177,66 @@ export class AuthController {
       });
     } catch (e: any) {
       response.status(400).send(e.message);
+    }
+  }
+
+  @Post('/mobile/login')
+  async mobileLogin(
+    @Req() req: Request,
+    @Body() body: LoginUserDto,
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string
+  ) {
+    try {
+      const getOrgFromCookie = this._authService.getOrgFromCookie(
+        req?.cookies?.org
+      );
+
+      const { jwt, addedOrg } = await this._authService.routeAuth(
+        body.provider || Provider.LOCAL,
+        body,
+        ip,
+        userAgent,
+        getOrgFromCookie
+      );
+
+      const user = AuthChecker.verifyJWT(jwt) as User;
+      const organizations = (
+        await this._organizationService.getOrgsByUserId(user.id)
+      ).filter((organization) => !organization.users[0].disabled);
+      const selectedOrganization =
+        typeof addedOrg !== 'boolean' && addedOrg?.organizationId
+          ? organizations.find(
+              (organization) => organization.id === addedOrg.organizationId
+            ) || organizations[0]
+          : organizations[0];
+
+      if (!selectedOrganization) {
+        return {
+          login: false,
+          message: 'No organization found for this account.',
+        };
+      }
+
+      return {
+        login: true,
+        token: jwt,
+        organizationId: selectedOrganization.id,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+        organization: {
+          id: selectedOrganization.id,
+          name: selectedOrganization.name,
+        },
+      };
+    } catch (e: any) {
+      return {
+        login: false,
+        activationRequired: e.message === 'User is not activated',
+        message: e.message,
+      };
     }
   }
 

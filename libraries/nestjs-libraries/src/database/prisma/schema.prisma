@@ -968,3 +968,26 @@ model Announcement {
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
 }
+
+enum IdempotencyKeyStatus {
+  PROCESSING
+  COMPLETED
+}
+
+model IdempotencyKey {
+  id             String               @id @default(uuid())
+  organizationId String
+  userId         String?
+  key            String
+  endpoint       String
+  requestHash    String
+  response       String?
+  status         IdempotencyKeyStatus @default(PROCESSING)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  expiresAt      DateTime
+
+  @@unique([organizationId, key, endpoint])
+  @@index([organizationId])
+  @@index([expiresAt])
+}
