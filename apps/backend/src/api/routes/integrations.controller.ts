@@ -227,6 +227,23 @@ export class IntegrationsController {
     );
   }
 
+  @Post('/comments/:id/posts/:postId/hide')
+  @CheckPolicies([AuthorizationActions.Create, Sections.CHANNEL])
+  hideComment(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Param('postId') postId: string,
+    @Body() body: { commentId: string; hidden: boolean }
+  ) {
+    return this._integrationService.hideComment(
+      org.id,
+      id,
+      postId,
+      body?.commentId,
+      !!body?.hidden
+    );
+  }
+
   @Get('/:id')
   getSingleIntegration(
     @Param('id') id: string,

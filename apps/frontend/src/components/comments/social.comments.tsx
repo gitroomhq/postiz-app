@@ -100,15 +100,19 @@ const CommentThread = ({
   comment,
   depth = 0,
   onReply,
+  onHide,
 }: {
   comment: SocialComment;
   depth?: number;
   onReply: (parentCommentId: string, message: string) => Promise<void>;
+  onHide: (commentId: string, hidden: boolean) => Promise<void>;
 }) => {
   const t = useT();
   const [message, setMessage] = useState('');
   const [replying, setReplying] = useState(false);
+  const [hiding, setHiding] = useState(false);
   const [error, setError] = useState('');
+  const [hideError, setHideError] = useState('');
   const trimmedMessage = message.trim();
 
   const submitReply = async () => {
@@ -125,6 +129,22 @@ const CommentThread = ({
       setError(t('could_not_send_reply', 'Could not send reply'));
     } finally {
       setReplying(false);
+    }
+  };
+
+  const toggleHide = async () => {
+    if (hiding) {
+      return;
+    }
+
+    setHiding(true);
+    setHideError('');
+    try {
+      await onHide(comment.id, !comment.hidden);
+    } catch {
+      setHideError(t('could_not_update_comment', 'Could not update comment'));
+    } finally {
+      setHiding(false);
     }
   };
 
@@ -164,6 +184,19 @@ const CommentThread = ({
             </div>
           )}
         </div>
+        <div className="flex shrink-0 flex-col items-end gap-[4px]">
+          <button
+            type="button"
+            onClick={toggleHide}
+            disabled={hiding}
+            className="text-[12px] text-textColor/60 hover:text-textColor disabled:opacity-50"
+          >
+            {comment.hidden ? t('unhide', 'Unhide') : t('hide', 'Hide')}
+          </button>
+          {!!hideError && (
+            <div className="text-[11px] text-red-300">{hideError}</div>
+          )}
+        </div>
       </div>
       {depth === 0 && !comment.hidden && (
         <div className="mt-[12px] flex flex-col gap-[8px]">
@@ -197,6 +230,7 @@ const CommentThread = ({
               comment={reply}
               depth={depth + 1}
               onReply={onReply}
+              onHide={onHide}
             />
           ))}
         </div>
@@ -450,6 +484,29 @@ export const SocialComments = () => {
     [currentIntegration?.id, currentPost?.id, fetch, mutateComments]
   );
 
+  const hideComment = useCallback(
+    async (commentId: string, hidden: boolean) => {
+      if (!currentIntegration || !currentPost) {
+        throw new Error('Missing selected post');
+      }
+
+      const response = await fetch(
+        `/integrations/comments/${currentIntegration.id}/posts/${currentPost.id}/hide`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ commentId, hidden }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Could not update comment');
+      }
+
+      await mutateComments();
+    },
+    [currentIntegration?.id, currentPost?.id, fetch, mutateComments]
+  );
+
   if (integrationsLoading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-newBgColorInner p-[20px]">
@@ -686,6 +743,7 @@ export const SocialComments = () => {
                 key={comment.id}
                 comment={comment}
                 onReply={replyToComment}
+                onHide={hideComment}
               />
             ))}
             {loadingMoreComments && (

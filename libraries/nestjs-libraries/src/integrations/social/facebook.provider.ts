@@ -835,6 +835,31 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     return { id: String(data.id) };
   }
 
+  async hideComment(
+    _id: string,
+    _postId: string,
+    commentId: string,
+    accessToken: string,
+    hidden: boolean,
+    _integration: Integration
+  ): Promise<{ id: string; hidden: boolean }> {
+    await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${commentId}?access_token=${accessToken}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_hidden: hidden }),
+        },
+        'hide comment'
+      )
+    ).json();
+
+    return { id: String(commentId), hidden };
+  }
+
   async fetchCommentPosts(
     id: string,
     accessToken: string,

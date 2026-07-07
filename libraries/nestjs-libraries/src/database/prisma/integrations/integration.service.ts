@@ -670,6 +670,92 @@ export class IntegrationService {
     }
   }
 
+  async hideComment(
+    orgId: string,
+    integration: string,
+    postId: string,
+    commentId: string,
+    hidden: boolean,
+    forceRefresh = false
+  ): Promise<{ id: string; hidden: boolean }> {
+    const cleanCommentId =
+      typeof commentId === 'string' ? commentId.trim() : '';
+
+    if (!cleanCommentId) {
+      throw new HttpException('Comment id is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const getIntegration = await this.getIntegrationById(orgId, integration);
+
+    if (!getIntegration) {
+      throw new HttpException('Invalid integration', HttpStatus.NOT_FOUND);
+    }
+
+    if (getIntegration.type !== 'social') {
+      throw new HttpException(
+        'Comments are only available for social integrations',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      getIntegration.providerIdentifier
+    );
+
+    if (!integrationProvider.hideComment) {
+      throw new HttpException(
+        'Hiding comments is not supported for this integration',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      getIntegration.refreshNeeded ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration,
+        'hide comment'
+      );
+      if (!data || !data.accessToken) {
+        throw new HttpException(
+          'Integration needs to be reconnected',
+          HttpStatus.UNAUTHORIZED
+        );
+      }
+
+      getIntegration.token = data.accessToken;
+
+      if (integrationProvider.refreshWait) {
+        await timer(10000);
+      }
+    }
+
+    try {
+      return await integrationProvider.hideComment(
+        getIntegration.internalId,
+        postId,
+        cleanCommentId,
+        getIntegration.token,
+        hidden,
+        getIntegration
+      );
+    } catch (e) {
+      if (e instanceof RefreshToken && !forceRefresh) {
+        return this.hideComment(
+          orgId,
+          integration,
+          postId,
+          cleanCommentId,
+          hidden,
+          true
+        );
+      }
+      throw e;
+    }
+  }
+
   customers(orgId: string) {
     return this._integrationRepository.customers(orgId);
   }

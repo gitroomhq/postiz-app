@@ -147,6 +147,15 @@ export interface ISocialMediaIntegration {
     integration: Integration
   ): Promise<{ id: string }>;
 
+  hideComment?(
+    id: string,
+    postId: string,
+    commentId: string,
+    accessToken: string,
+    hidden: boolean,
+    integration: Integration
+  ): Promise<{ id: string; hidden: boolean }>;
+
   fetchCommentPosts?(
     id: string,
     accessToken: string,

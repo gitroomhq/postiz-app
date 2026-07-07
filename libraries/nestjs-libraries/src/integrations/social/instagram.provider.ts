@@ -956,6 +956,29 @@ export class InstagramProvider
     return { id: String(data.id) };
   }
 
+  async hideComment(
+    _id: string,
+    _postId: string,
+    commentId: string,
+    token: string,
+    hidden: boolean,
+    _integration: Integration,
+    type = 'graph.facebook.com'
+  ): Promise<{ id: string; hidden: boolean }> {
+    const [accessToken] = token.split('___');
+    await (
+      await this.fetch(
+        `https://${type}/v20.0/${commentId}?hide=${hidden}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        },
+        'hide comment'
+      )
+    ).json();
+
+    return { id: String(commentId), hidden };
+  }
+
   async fetchCommentPosts(
     id: string,
     token: string,

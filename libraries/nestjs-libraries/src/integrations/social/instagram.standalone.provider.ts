@@ -248,6 +248,25 @@ export class InstagramStandaloneProvider
     );
   }
 
+  async hideComment(
+    id: string,
+    postId: string,
+    commentId: string,
+    accessToken: string,
+    hidden: boolean,
+    integration: Integration
+  ): Promise<{ id: string; hidden: boolean }> {
+    return instagramProvider.hideComment(
+      id,
+      postId,
+      commentId,
+      accessToken,
+      hidden,
+      integration,
+      'graph.instagram.com'
+    );
+  }
+
   async fetchCommentPosts(
     id: string,
     accessToken: string,
