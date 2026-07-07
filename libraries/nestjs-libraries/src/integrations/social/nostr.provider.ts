@@ -12,6 +12,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -185,16 +186,47 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       password
     );
 
-    const eventId = await this.publish(id, textEvent);
+    await this.publish(id, textEvent);
 
     return [
       {
         id: firstPost.id,
-        postId: String(eventId),
-        releaseURL: `https://primal.net/e/${eventId}`,
+        postId: String(textEvent.id),
+        releaseURL: `https://primal.net/e/${textEvent.id}`,
         status: 'completed',
       },
     ];
+  }
+
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add Nostr accounts to repost your post',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    _information: any
+  ) {
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+
+    const repostEvent = finalizeEvent(
+      {
+        kind: 6, // NIP-18 Repost
+        content: '',
+        tags: [
+          ['e', postId, list[0]], // event-id + relay hint
+          ['p', originalIntegration.internalId],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    await this.publish(integration.internalId, repostEvent);
   }
 
   async comment(
@@ -222,13 +254,13 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       password
     );
 
-    const eventId = await this.publish(id, textEvent);
+    await this.publish(id, textEvent);
 
     return [
       {
         id: commentPost.id,
-        postId: String(eventId),
-        releaseURL: `https://primal.net/e/${eventId}`,
+        postId: String(textEvent.id),
+        releaseURL: `https://primal.net/e/${textEvent.id}`,
         status: 'completed',
       },
     ];
