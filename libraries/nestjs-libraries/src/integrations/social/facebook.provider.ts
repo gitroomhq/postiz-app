@@ -812,15 +812,19 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     id: string,
     accessToken: string,
     integration: Integration,
-    limit = 100
+    limit = 25,
+    cursor?: string
   ): Promise<SocialCommentPostsPage> {
-    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const params = new URLSearchParams({
       access_token: accessToken,
       fields:
         'id,message,story,created_time,permalink_url,comments.limit(0).summary(true)',
       limit: String(safeLimit),
     });
+    if (cursor) {
+      params.set('after', cursor);
+    }
     const response = await (
       await this.fetch(
         `https://graph.facebook.com/v20.0/${id}/posts?${params.toString()}`,
@@ -842,7 +846,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       total: posts.length,
       page: 0,
       limit: safeLimit,
-      hasMore: false,
+      hasMore: !!response.paging?.next,
+      next: response.paging?.next ? response.paging?.cursors?.after : undefined,
     };
   }
 

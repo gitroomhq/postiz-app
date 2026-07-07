@@ -233,13 +233,15 @@ export class InstagramStandaloneProvider
     id: string,
     accessToken: string,
     integration: Integration,
-    limit?: number
+    limit?: number,
+    cursor?: string
   ): Promise<SocialCommentPostsPage> {
     return instagramProvider.fetchCommentPosts(
       id,
       accessToken,
       integration,
       limit,
+      cursor,
       'graph.instagram.com'
     );
   }

@@ -934,17 +934,21 @@ export class InstagramProvider
     id: string,
     token: string,
     integration: Integration,
-    limit = 100,
+    limit = 25,
+    cursor?: string,
     type = 'graph.facebook.com'
   ): Promise<SocialCommentPostsPage> {
     const [accessToken] = token.split('___');
-    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 100);
+    const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const params = new URLSearchParams({
       access_token: accessToken,
       fields:
         'id,caption,media_type,permalink,timestamp,comments_count',
       limit: String(safeLimit),
     });
+    if (cursor) {
+      params.set('after', cursor);
+    }
     const response = await (
       await this.fetch(
         `https://${type}/v20.0/${id}/media?${params.toString()}`,
@@ -966,7 +970,8 @@ export class InstagramProvider
       total: posts.length,
       page: 0,
       limit: safeLimit,
-      hasMore: false,
+      hasMore: !!response.paging?.next,
+      next: response.paging?.next ? response.paging?.cursors?.after : undefined,
     };
   }
 

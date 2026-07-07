@@ -1,7 +1,13 @@
 'use client';
 
 import useSWR from 'swr';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type UIEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
@@ -47,6 +53,7 @@ type PostsResponse = {
   page: number;
   limit: number;
   hasMore: boolean;
+  next?: string;
 };
 
 type SocialComment = {
@@ -91,6 +98,9 @@ const formatDate = (value?: string) => {
     timeStyle: 'short',
   }).format(date);
 };
+
+const shouldLoadMore = (element: HTMLElement) =>
+  element.scrollHeight - element.scrollTop - element.clientHeight < 160;
 
 const CommentThread = ({
   comment,
@@ -153,9 +163,14 @@ export const SocialComments = () => {
   const router = useRouter();
   const [currentIntegrationId, setCurrentIntegrationId] = useState('');
   const [selectedPostId, setSelectedPostId] = useState('');
+  const [posts, setPosts] = useState<CommentPost[]>([]);
+  const [nextPostCursor, setNextPostCursor] = useState<string | undefined>();
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
   const [comments, setComments] = useState<SocialComment[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | undefined>();
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCommentCursor, setNextCommentCursor] = useState<
+    string | undefined
+  >();
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
 
   const loadIntegrations = useCallback(async () => {
@@ -197,16 +212,20 @@ export const SocialComments = () => {
 
   useEffect(() => {
     setSelectedPostId('');
+    setPosts([]);
+    setNextPostCursor(undefined);
+    setComments([]);
+    setNextCommentCursor(undefined);
   }, [currentIntegration?.id]);
 
   const loadPosts = useCallback(async () => {
     if (!currentIntegration) {
-      return { posts: [], total: 0, page: 0, limit: 100, hasMore: false };
+      return { posts: [], total: 0, page: 0, limit: 25, hasMore: false };
     }
 
     return (await (
       await fetch(
-        `/integrations/comments/${currentIntegration.id}/posts?limit=100`
+        `/integrations/comments/${currentIntegration.id}/posts?limit=25`
       )
     ).json()) as PostsResponse;
   }, [currentIntegration?.id, fetch]);
@@ -220,16 +239,21 @@ export const SocialComments = () => {
     loadPosts,
     {
       revalidateOnFocus: false,
-      fallbackData: { posts: [], total: 0, page: 0, limit: 100, hasMore: false },
+      fallbackData: { posts: [], total: 0, page: 0, limit: 25, hasMore: false },
     }
   );
 
+  useEffect(() => {
+    setPosts(postsData?.posts || []);
+    setNextPostCursor(postsData?.next);
+  }, [postsData]);
+
   const currentPost = useMemo(() => {
     return (
-      postsData?.posts.find((post) => post.id === selectedPostId) ||
-      postsData?.posts[0]
+      posts.find((post) => post.id === selectedPostId) ||
+      posts[0]
     );
-  }, [postsData?.posts, selectedPostId]);
+  }, [posts, selectedPostId]);
 
   useEffect(() => {
     if (currentPost && currentPost.id !== selectedPostId) {
@@ -266,29 +290,91 @@ export const SocialComments = () => {
 
   useEffect(() => {
     setComments(commentsData?.comments || []);
-    setNextCursor(commentsData?.next);
+    setNextCommentCursor(commentsData?.next);
   }, [commentsData]);
 
-  const loadMoreComments = useCallback(async () => {
-    if (!currentIntegration || !currentPost || !nextCursor) {
+  const loadMorePosts = useCallback(async () => {
+    if (!currentIntegration || !nextPostCursor || loadingMorePosts) {
       return;
     }
 
-    setLoadingMore(true);
+    setLoadingMorePosts(true);
+    try {
+      const response = (await (
+        await fetch(
+          `/integrations/comments/${
+            currentIntegration.id
+          }/posts?limit=25&after=${encodeURIComponent(nextPostCursor)}`
+        )
+      ).json()) as PostsResponse;
+      setPosts((current) => {
+        const ids = new Set(current.map((post) => post.id));
+        return [
+          ...current,
+          ...(response.posts || []).filter((post) => !ids.has(post.id)),
+        ];
+      });
+      setNextPostCursor(response.next);
+    } finally {
+      setLoadingMorePosts(false);
+    }
+  }, [currentIntegration?.id, fetch, loadingMorePosts, nextPostCursor]);
+
+  const loadMoreComments = useCallback(async () => {
+    if (
+      !currentIntegration ||
+      !currentPost ||
+      !nextCommentCursor ||
+      loadingMoreComments
+    ) {
+      return;
+    }
+
+    setLoadingMoreComments(true);
     try {
       const response = (await (
         await fetch(
           `/integrations/comments/${currentIntegration.id}/posts/${
             currentPost.id
-          }?after=${encodeURIComponent(nextCursor)}`
+          }?after=${encodeURIComponent(nextCommentCursor)}`
         )
       ).json()) as CommentsResponse;
-      setComments((current) => [...current, ...(response.comments || [])]);
-      setNextCursor(response.next);
+      setComments((current) => {
+        const ids = new Set(current.map((comment) => comment.id));
+        return [
+          ...current,
+          ...(response.comments || []).filter((comment) => !ids.has(comment.id)),
+        ];
+      });
+      setNextCommentCursor(response.next);
     } finally {
-      setLoadingMore(false);
+      setLoadingMoreComments(false);
     }
-  }, [currentIntegration?.id, currentPost?.id, fetch, nextCursor]);
+  }, [
+    currentIntegration?.id,
+    currentPost?.id,
+    fetch,
+    loadingMoreComments,
+    nextCommentCursor,
+  ]);
+
+  const handlePostsScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      if (shouldLoadMore(event.currentTarget)) {
+        loadMorePosts();
+      }
+    },
+    [loadMorePosts]
+  );
+
+  const handleCommentsScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      if (shouldLoadMore(event.currentTarget)) {
+        loadMoreComments();
+      }
+    },
+    [loadMoreComments]
+  );
 
   if (integrationsLoading) {
     return (
@@ -416,7 +502,7 @@ export const SocialComments = () => {
               </div>
             </div>
             <div className="text-[13px] text-textColor/60">
-              {postsData?.total || 0}
+              {posts.length}
             </div>
           </div>
           {postsLoading && (
@@ -429,7 +515,7 @@ export const SocialComments = () => {
               {t('could_not_load_posts', 'Could not load posts')}
             </div>
           )}
-          {!postsLoading && !postsError && !postsData?.posts.length && (
+          {!postsLoading && !postsError && !posts.length && (
             <div className="rounded-[8px] bg-third p-[14px] text-[14px] text-textColor/70">
               {t(
                 'no_meta_posts_with_comments',
@@ -437,8 +523,11 @@ export const SocialComments = () => {
               )}
             </div>
           )}
-          <div className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto">
-            {postsData?.posts.map((post) => (
+          <div
+            onScroll={handlePostsScroll}
+            className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto"
+          >
+            {posts.map((post) => (
               <button
                 key={post.id}
                 type="button"
@@ -470,6 +559,11 @@ export const SocialComments = () => {
                 </div>
               </button>
             ))}
+            {loadingMorePosts && (
+              <div className="flex justify-center py-[12px]">
+                <LoadingComponent />
+              </div>
+            )}
           </div>
         </div>
         <div className="flex min-h-0 flex-col rounded-[8px] border border-tableBorder bg-newBgColor p-[16px]">
@@ -513,18 +607,22 @@ export const SocialComments = () => {
                 {t('no_comments_yet', 'No comments yet.')}
               </div>
             )}
-          <div className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-y-auto">
+          <div
+            onScroll={handleCommentsScroll}
+            className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-y-auto"
+          >
             {comments.map((comment) => (
               <CommentThread key={comment.id} comment={comment} />
             ))}
+            {loadingMoreComments && (
+              <div className="flex justify-center py-[12px]">
+                <LoadingComponent />
+              </div>
+            )}
+            {!!nextCommentCursor && !loadingMoreComments && (
+              <div className="h-[1px]" />
+            )}
           </div>
-          {!!nextCursor && (
-            <div className="mt-[14px] flex justify-center">
-              <Button loading={loadingMore} onClick={loadMoreComments}>
-                {t('load_more_comments', 'Load more comments')}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
     </>

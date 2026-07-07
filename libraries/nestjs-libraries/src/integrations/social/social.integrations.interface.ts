@@ -86,6 +86,7 @@ export type SocialCommentPostsPage = {
   page: number;
   limit: number;
   hasMore: boolean;
+  next?: string;
 };
 
 export type GenerateAuthUrlResponse = {
@@ -141,7 +142,8 @@ export interface ISocialMediaIntegration {
     id: string,
     accessToken: string,
     integration: Integration,
-    limit?: number
+    limit?: number,
+    cursor?: string
   ): Promise<SocialCommentPostsPage>;
 }
 

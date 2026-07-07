@@ -179,12 +179,14 @@ export class IntegrationsController {
   getCommentPosts(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
+    @Query('after') after?: string
   ) {
     return this._integrationService.fetchCommentPosts(
       org.id,
       id,
-      Number(limit || 100)
+      Number(limit || 25),
+      after
     );
   }
 

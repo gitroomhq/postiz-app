@@ -409,7 +409,8 @@ export class IntegrationService {
   async fetchCommentPosts(
     orgId: string,
     integration: string,
-    limit = 100,
+    limit = 25,
+    cursor?: string,
     forceRefresh = false
   ): Promise<SocialCommentPostsPage> {
     const getIntegration = await this.getIntegrationById(orgId, integration);
@@ -464,11 +465,12 @@ export class IntegrationService {
         getIntegration.internalId,
         getIntegration.token,
         getIntegration,
-        limit
+        limit,
+        cursor
       );
     } catch (e) {
       if (e instanceof RefreshToken && !forceRefresh) {
-        return this.fetchCommentPosts(orgId, integration, limit, true);
+        return this.fetchCommentPosts(orgId, integration, limit, cursor, true);
       }
       throw e;
     }
