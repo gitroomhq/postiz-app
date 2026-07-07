@@ -81,8 +81,12 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
-  getPostReleaseId(id: string) {
-    return this._postRepository.getPostReleaseId(id);
+  getPostPublishState(id: string) {
+    return this._postRepository.getPostPublishState(id);
+  }
+
+  setPostInFlight(id: string, inFlightId: string) {
+    return this._postRepository.setPostInFlight(id, inFlightId);
   }
 
   async getMissingContent(

@@ -407,11 +407,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private async uploadedVideoSuccess(
+  // Observes an in-flight publish to its terminal state. FAILED comes back as
+  // a discriminated result (nothing was published — the caller decides whether
+  // to re-init or surface the error); poll-exhaustion throws, and token /
+  // network errors from this.fetch propagate untouched.
+  private async pollPublishStatus(
     id: string,
     publishId: string,
     accessToken: string
-  ): Promise<{ url: string; id: string }> {
+  ): Promise<
+    | { status: 'complete'; url: string; id: string }
+    | { status: 'failed'; response: any }
+  > {
     // eslint-disable-next-line no-constant-condition
     for (const i of Array(27).keys()) {
       // ~9 minutes at 20s interval
@@ -438,6 +445,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       if (status === 'SEND_TO_USER_INBOX') {
         return {
+          status: 'complete',
           url: 'https://www.tiktok.com/messages?lang=en',
           id: 'missing',
         };
@@ -445,6 +453,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       if (status === 'PUBLISH_COMPLETE') {
         return {
+          status: 'complete',
           url: !publicaly_available_post_id
             ? `https://www.tiktok.com/@${id}`
             : `https://www.tiktok.com/@${id}/video/` +
@@ -456,13 +465,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       if (status === 'FAILED') {
-        const handleError = this.handleErrors(JSON.stringify(post));
-        throw new BadBody(
-          'titok-error-upload',
-          JSON.stringify(post),
-          Buffer.from(JSON.stringify(post)),
-          handleError?.value || ''
-        );
+        return { status: 'failed', response: post };
       }
 
       await timer(20000);
@@ -474,6 +477,26 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       Buffer.from(JSON.stringify({})),
       'TikTok refused to publish your post'
     );
+  }
+
+  private async uploadedVideoSuccess(
+    id: string,
+    publishId: string,
+    accessToken: string
+  ): Promise<{ url: string; id: string }> {
+    const result = await this.pollPublishStatus(id, publishId, accessToken);
+
+    if (result.status === 'failed') {
+      const handleError = this.handleErrors(JSON.stringify(result.response));
+      throw new BadBody(
+        'titok-error-upload',
+        JSON.stringify(result.response),
+        Buffer.from(JSON.stringify(result.response)),
+        handleError?.value || ''
+      );
+    }
+
+    return { url: result.url, id: result.id };
   }
 
   private postingMethod(
@@ -776,9 +799,43 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     id: string,
     accessToken: string,
     postDetails: PostDetails<TikTokDto>[],
-    integration: Integration
+    integration: Integration,
+    progress?: (response: PostResponse) => Promise<unknown> | unknown
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
+
+    // A previous attempt already initiated this publish (init + bytes) but
+    // died before observing the outcome. TikTok completes the publish
+    // server-side, so a fresh init would create a duplicate — resume
+    // observing the in-flight publish instead. FAILED means nothing was
+    // published, so we fall through to a fresh init below; token / network
+    // errors propagate so the next attempt resumes again.
+    if (firstPost?.inFlight) {
+      const resumed = await this.pollPublishStatus(
+        integration.profile!,
+        firstPost.inFlight,
+        accessToken
+      );
+
+      if (resumed.status === 'complete') {
+        await progress?.({
+          id: firstPost.id,
+          postId: String(resumed.id),
+          releaseURL: resumed.url,
+          status: 'success',
+        });
+
+        return [
+          {
+            id: firstPost.id,
+            releaseURL: resumed.url,
+            postId: String(resumed.id),
+            status: 'success',
+          },
+        ];
+      }
+    }
+
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
     const videoPath = firstPost?.media?.[0]?.path!;
 
@@ -811,6 +868,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
+    // The publish boundary: from here on TikTok owns the publish and a retry
+    // must resume observing it, not init again. Reported before the byte
+    // upload on purpose — a crash mid-upload leaves TikTok waiting for bytes,
+    // and the resume path's poll ends in FAILED → clean re-init.
+    await progress?.({
+      id: firstPost.id,
+      postId: publish_id,
+      releaseURL: '',
+      status: 'in-progress',
+    });
+
     // Videos: stream the bytes to the upload_url returned by the init call.
     if (!isPhoto && upload_url && videoSize) {
       await this.uploadTikTokVideoBytes(
@@ -826,6 +894,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       publish_id,
       accessToken
     );
+
+    await progress?.({
+      id: firstPost.id,
+      postId: String(videoId),
+      releaseURL: url,
+      status: 'success',
+    });
 
     return [
       {

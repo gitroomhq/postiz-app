@@ -404,6 +404,8 @@ model Post {
   parentPostId               String?
   releaseId                  String?
   releaseURL                 String?
+  inFlightId                 String?
+  inFlightAt                 DateTime?
   settings                   String?
   image                      String?
   submittedForOrderId        String?

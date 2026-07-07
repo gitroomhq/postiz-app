@@ -398,11 +398,13 @@ export class PostsRepository {
         state: 'PUBLISHED',
         releaseURL,
         releaseId: postId,
+        inFlightId: null,
+        inFlightAt: null,
       },
     });
   }
 
-  getPostReleaseId(id: string) {
+  getPostPublishState(id: string) {
     return this._post.model.post.findUnique({
       where: {
         id,
@@ -410,6 +412,20 @@ export class PostsRepository {
       select: {
         releaseId: true,
         releaseURL: true,
+        inFlightId: true,
+        inFlightAt: true,
+      },
+    });
+  }
+
+  setPostInFlight(id: string, inFlightId: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        inFlightId,
+        inFlightAt: new Date(),
       },
     });
   }
@@ -437,6 +453,9 @@ export class PostsRepository {
         ...(err
           ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
           : {}),
+        // A terminal error ends the current publish attempt — drop the
+        // in-flight marker so it can't leak into a later repeat cycle.
+        ...(state === 'ERROR' ? { inFlightId: null, inFlightAt: null } : {}),
       },
       include: {
         integration: {

@@ -227,8 +227,11 @@ export class PostActivity {
     // workflow loaded before running this activity means the current cycle
     // hasn't published yet (repeatable posts re-run with the same post id).
     const [firstPost] = posts;
+    let inFlight: string | undefined;
     if (firstPost) {
-      const current = await this._postService.getPostReleaseId(firstPost.id);
+      const current = await this._postService.getPostPublishState(
+        firstPost.id
+      );
       if (current?.releaseId && current.releaseId !== firstPost.releaseId) {
         return [
           {
@@ -238,6 +241,20 @@ export class PostActivity {
             status: 'success',
           },
         ];
+      }
+
+      // A previous attempt initiated a publish but died before observing its
+      // outcome — pass the provider publish id along so the provider can
+      // resume polling it instead of publishing again. The freshness window
+      // guards repeatable posts: a marker left over from an earlier cycle
+      // (polling never exceeds ~9 minutes) must not suppress a real publish.
+      if (
+        current?.inFlightId &&
+        current.inFlightAt &&
+        new Date(current.inFlightAt).getTime() >
+          Date.now() - 2 * 60 * 60 * 1000
+      ) {
+        inFlight = current.inFlightId;
       }
     }
 
@@ -250,7 +267,7 @@ export class PostActivity {
       integration.internalId,
       integration.token,
       await Promise.all(
-        (newPosts || []).map(async (p) => ({
+        (newPosts || []).map(async (p, index) => ({
           id: p.id,
           message: stripHtmlValidation(
             getIntegration.editor,
@@ -266,10 +283,22 @@ export class PostActivity {
             JSON.parse(p.image || '[]'),
             getIntegration?.convertToJPEG || false
           ),
+          ...(index === 0 && inFlight ? { inFlight } : {}),
         }))
       ),
       integration,
       async (response) => {
+        if (response.status === 'in-progress') {
+          // The publish is initiated but not confirmed — record it only as
+          // a resume hint for a possible retry; the post is not published
+          // yet, so it must not be marked PUBLISHED.
+          await this._postService.setPostInFlight(
+            response.id,
+            response.postId
+          );
+          return;
+        }
+
         // Persist the remote id the moment the platform confirms the
         // publish, so a crash or retry after this point cannot publish a
         // duplicate.

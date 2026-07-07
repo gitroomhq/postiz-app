@@ -90,6 +90,10 @@ export interface ISocialMediaIntegration {
     // Called the moment the platform confirms a publish, so the caller can
     // persist the remote id before any later step can fail — a retry after
     // a post-publish failure must not publish a duplicate.
+    // A provider may also report an *unconfirmed* publish with
+    // status 'in-progress' (postId = the provider's in-flight publish id):
+    // the publish has been initiated but may still fail, so the caller must
+    // only record it as a resume hint, never as a completed publish.
     progress?: (response: PostResponse) => Promise<unknown> | unknown
   ): Promise<PostResponse[]>; // Schedules a new post
 
@@ -116,6 +120,11 @@ export type PostDetails<T = any> = {
   settings: T;
   media?: MediaContent[];
   poll?: PollDetails;
+  // The provider publish id of a publish that is already in flight for this
+  // post (from a previous attempt that died mid-poll). When set, a provider
+  // that supports it should resume observing that publish instead of
+  // initiating a new one.
+  inFlight?: string;
 };
 
 export type PollDetails = {
