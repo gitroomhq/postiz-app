@@ -25,17 +25,22 @@ aws ecr get-login-password --region $AWS_REGION | \
   docker login --username AWS --password-stdin \
   ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-echo "Building Postiz image..."
-docker build \
-  --platform linux/amd64 \
+echo "Building + pushing multi-arch Postiz image (linux/amd64, linux/arm64)..."
+# The EKS cluster has both arm64 (Graviton) and amd64 nodes and the postiz
+# deployment has no arch pinning, so pods can land on either. A single-arch
+# image fails to pull on the other arch ("no match for platform in manifest").
+# Build a multi-arch manifest list with buildx and push in one step.
+# --provenance/--sbom disabled so the manifest list stays clean (no
+# unknown/unknown attestation entries that older containerd chokes on).
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --provenance=false \
+  --sbom=false \
   --build-arg NEXT_PUBLIC_VERSION="${TAG}" \
   -t ${REPOSITORY_URI}:${TAG} \
   -t ${REPOSITORY_URI}:latest \
-  -f Dockerfile.dev .
-
-echo "Pushing to ECR..."
-docker push ${REPOSITORY_URI}:${TAG}
-docker push ${REPOSITORY_URI}:latest
+  -f Dockerfile.dev \
+  --push .
 
 echo "Updating Kubernetes deployment..."
 aws eks update-kubeconfig --name ai-cart-auto-cluster --region $AWS_REGION
