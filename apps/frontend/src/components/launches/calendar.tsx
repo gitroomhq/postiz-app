@@ -114,6 +114,21 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+
+      // The group rotates on every edit - if the post was edited elsewhere
+      // (another tab, the agent) this calendar entry is stale.
+      if (!data?.posts?.length) {
+        toaster.show(
+          t(
+            'post_changed_elsewhere',
+            'This post was changed or deleted, refreshing the calendar'
+          ),
+          'warning'
+        );
+        mutate();
+        return;
+      }
+
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
@@ -170,7 +185,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [integrations, fetch, modal, mutate]
+    [integrations, fetch, modal, mutate, toaster, t]
   );
 
   const copyDebugJson = useCallback(

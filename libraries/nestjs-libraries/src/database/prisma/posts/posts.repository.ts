@@ -320,6 +320,83 @@ export class PostsRepository {
     };
   }
 
+  // Used by the agent (chat / MCP) tools: the posts a user can still act on,
+  // with their settings, so the agent can identify and update them.
+  async getAgentPostsList(
+    orgId: string,
+    filter: {
+      integrationId?: string;
+      platform?: string;
+      state?: 'scheduled' | 'draft';
+      page?: number;
+    }
+  ) {
+    const limit = 20;
+    const page = filter.page || 0;
+    const skip = page * limit;
+
+    const now = dayjs.utc().toDate();
+    // Only upcoming posts: both drafts and scheduled ("QUEUE") are limited to a
+    // publish date still in the future. Past drafts (often forgotten) are left
+    // out so this tool never surfaces stale clutter. Default = both states.
+    const stateFilter =
+      filter.state === 'draft'
+        ? { state: State.DRAFT }
+        : filter.state === 'scheduled'
+        ? { state: State.QUEUE }
+        : { state: { in: [State.DRAFT, State.QUEUE] } };
+
+    const where = {
+      organizationId: orgId,
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+      intervalInDays: null as number | null,
+      publishDate: { gte: now },
+      ...stateFilter,
+      integration: {
+        deletedAt: null as any,
+        organizationId: orgId,
+        ...(filter.integrationId ? { id: filter.integrationId } : {}),
+        ...(filter.platform ? { providerIdentifier: filter.platform } : {}),
+      },
+    };
+
+    const [posts, total] = await Promise.all([
+      this._post.model.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          publishDate: 'asc',
+        },
+        select: {
+          id: true,
+          content: true,
+          publishDate: true,
+          state: true,
+          group: true,
+          settings: true,
+          integration: {
+            select: {
+              id: true,
+              providerIdentifier: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      this._post.model.post.count({ where }),
+    ]);
+
+    return {
+      posts,
+      total,
+      page,
+      limit,
+      hasMore: skip + posts.length < total,
+    };
+  }
+
   async deletePost(orgId: string, group: string) {
     await this._post.model.post.updateMany({
       where: {
@@ -517,10 +594,15 @@ export class PostsRepository {
     body: PostBody,
     tags: { value: string; label: string }[],
     creationMethod: CreationMethod,
-    inter?: number
+    inter?: number,
+    // Keep the existing group instead of rotating it, so open clients
+    // (calendar) holding the group stay valid. Used by out-of-band updates
+    // (agent / MCP); the dashboard keeps the rotate-and-sweep behavior.
+    keepGroup = false
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
+    const group = keepGroup && body.group ? body.group : uuid;
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -548,7 +630,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         delay: value.delay || 0,
-        group: uuid,
+        group,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
@@ -639,11 +721,29 @@ export class PostsRepository {
         )?.id!
       : undefined;
 
-    if (body.group) {
+    if (body.group && !keepGroup) {
       await this._post.model.post.updateMany({
         where: {
           group: body.group,
           deletedAt: null,
+        },
+        data: {
+          parentPostId: null,
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    // Same sweep of rows dropped from the group (removed comments), but by id
+    // since the updated rows still carry the old group value.
+    if (body.group && keepGroup) {
+      await this._post.model.post.updateMany({
+        where: {
+          group: body.group,
+          deletedAt: null,
+          id: {
+            notIn: posts.map((p) => p.id),
+          },
         },
         data: {
           parentPostId: null,

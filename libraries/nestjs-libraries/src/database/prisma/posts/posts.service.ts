@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   ValidationPipe,
 } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
@@ -341,6 +342,18 @@ export class PostsService {
     );
   }
 
+  async getAgentPostsList(
+    orgId: string,
+    filter: {
+      integrationId?: string;
+      platform?: string;
+      state?: 'scheduled' | 'draft';
+      page?: number;
+    }
+  ) {
+    return this._postRepository.getAgentPostsList(orgId, filter);
+  }
+
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
     try {
       let imageUpdateNeeded = false;
@@ -490,6 +503,14 @@ export class PostsService {
   async getPostsByGroup(orgId: string, group: string) {
     const convertToJPEG = false;
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
+
+    // The group rotates on every edit, so a stale client (calendar open while
+    // the post was edited elsewhere, e.g. by the agent) can ask for a group
+    // that no longer has posts.
+    if (!loadAll.length) {
+      throw new NotFoundException('Post not found');
+    }
+
     const posts = this.arrangePostsByGroup(loadAll, undefined);
 
     return {
@@ -876,7 +897,8 @@ export class PostsService {
   async createPost(
     orgId: string,
     body: CreatePostDto,
-    creationMethod: CreationMethod
+    creationMethod: CreationMethod,
+    keepGroup = false
   ): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -907,7 +929,8 @@ export class PostsService {
         post,
         body.tags,
         creationMethod,
-        body.inter
+        body.inter,
+        keepGroup
       );
 
       if (!posts?.length) {
