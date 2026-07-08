@@ -319,10 +319,11 @@ export class TiktokBusinessProvider
           business_id: id,
           video_id: postId,
           comment_id: commentId,
+          status: 'ALL',
           max_count: 50,
         },
       }
-    ).catch(() => ({ comments: [] }));
+    );
 
     return (data?.comments || []).map((c: any) => this.normalizeComment(c));
   }
@@ -350,7 +351,17 @@ export class TiktokBusinessProvider
       }
     );
 
-    return { id: String(data?.comment_id ?? '') };
+    const replyId = data?.comment_id ?? data?.reply_id ?? data?.id;
+    if (!replyId) {
+      throw new BadBody(
+        'tiktok-business',
+        JSON.stringify(data || {}),
+        Buffer.from(JSON.stringify(data || {})),
+        'TikTok Business reply response is missing a comment id'
+      );
+    }
+
+    return { id: String(replyId) };
   }
 
   async hideComment(

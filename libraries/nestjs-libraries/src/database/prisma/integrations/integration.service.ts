@@ -596,6 +596,18 @@ export class IntegrationService {
       );
     }
 
+    const maxLength = Number(integrationProvider.maxLength?.());
+    if (
+      Number.isFinite(maxLength) &&
+      maxLength > 0 &&
+      cleanMessage.length > maxLength
+    ) {
+      throw new HttpException(
+        `Message must be ${maxLength} characters or less`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     if (
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       getIntegration.refreshNeeded ||
