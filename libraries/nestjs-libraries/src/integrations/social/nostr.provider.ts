@@ -7,7 +7,13 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import {
+  getPublicKey,
+  Relay,
+  finalizeEvent,
+  SimplePool,
+  nip19,
+} from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -23,6 +29,9 @@ const list = [
   'wss://temp.iris.to',
   'wss://vault.iris.to',
 ];
+
+// Relays that support NIP-50 profile search
+const searchList = ['wss://relay.nostr.band', 'wss://search.nos.today'];
 
 const pool = new SimplePool();
 
@@ -167,6 +176,32 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       : post.message;
   }
 
+  // NIP-27: every "nostr:npub1..." reference in the content should also be
+  // tagged with a "p" tag so mentioned users get notified by their clients.
+  private mentionedPubkeysTags(
+    content: string,
+    exclude: string[] = []
+  ): string[][] {
+    const seen = new Set<string>(exclude);
+    const tags: string[][] = [];
+
+    for (const [, npub] of content.matchAll(/nostr:(npub1[a-z0-9]+)/g)) {
+      try {
+        const decoded = nip19.decode(npub);
+        if (decoded.type !== 'npub' || seen.has(decoded.data)) {
+          continue;
+        }
+
+        seen.add(decoded.data);
+        tags.push(['p', decoded.data]);
+      } catch (err) {
+        /**empty**/
+      }
+    }
+
+    return tags;
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -175,11 +210,12 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     const { password } = AuthService.verifyJWT(accessToken) as any;
     const [firstPost] = postDetails;
 
+    const content = this.buildContent(firstPost);
     const textEvent = finalizeEvent(
       {
         kind: 1, // Text note
-        content: this.buildContent(firstPost),
-        tags: [],
+        content,
+        tags: this.mentionedPubkeysTags(content),
         created_at: Math.floor(Date.now() / 1000),
       },
       password
@@ -209,13 +245,15 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     const [commentPost] = postDetails;
     const replyToId = lastCommentId || postId;
 
+    const content = this.buildContent(commentPost);
     const textEvent = finalizeEvent(
       {
         kind: 1, // Text note
-        content: this.buildContent(commentPost),
+        content,
         tags: [
           ['e', replyToId, '', 'reply'],
           ['p', id],
+          ...this.mentionedPubkeysTags(content, [id]),
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
@@ -232,5 +270,62 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  override async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    try {
+      // NIP-50 profile search (kind 0 metadata events)
+      const events = await pool.querySync(
+        searchList,
+        { kinds: [0], search: d.query, limit: 30 },
+        { maxWait: 3000 }
+      );
+
+      const latestByAuthor = new Map<string, (typeof events)[number]>();
+      for (const event of events || []) {
+        const current = latestByAuthor.get(event.pubkey);
+        if (!current || event.created_at > current.created_at) {
+          latestByAuthor.set(event.pubkey, event);
+        }
+      }
+
+      const users: { id: string; label: string; image: string }[] = [];
+      for (const event of latestByAuthor.values()) {
+        let content: any = {};
+        try {
+          content = JSON.parse(event.content || '{}');
+        } catch {
+          continue;
+        }
+
+        const name =
+          content.display_name || content.displayName || content.name;
+        if (!name) {
+          continue;
+        }
+
+        users.push({
+          id: nip19.npubEncode(event.pubkey),
+          label: String(name),
+          image: content.picture || '',
+        });
+      }
+
+      return users.slice(0, 10);
+    } catch (err) {
+      console.log(err);
+    }
+
+    return [];
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    // NIP-27 inline mention, resolved by Nostr clients to the profile
+    return `nostr:${idOrHandle}`;
   }
 }
