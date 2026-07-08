@@ -16,6 +16,38 @@ import {
 const validUrlExtension = new ValidUrlExtension();
 const validUrlPath = new ValidUrlPath();
 
+// Settings the agent tends to guess when the schema gives it no guidance —
+// fill them explicitly so an omitted key never lands on a surprising value
+// (e.g. TikTok UPLOAD sends the post to the user's app inbox instead of
+// publishing it).
+export const PROVIDER_SETTINGS_DEFAULTS: Record<string, Record<string, any>> =
+  {
+    tiktok: { content_posting_method: 'DIRECT_POST' },
+  };
+
+export const buildSettings = (
+  providerIdentifier: string,
+  settings: { key: string; value: any }[],
+  base: AllProvidersSettings
+): AllProvidersSettings => {
+  const merged = settings.reduce(
+    (acc: AllProvidersSettings, s: { key: string; value: any }) => ({
+      ...acc,
+      [s.key]: s.value,
+    }),
+    base
+  );
+
+  const defaults = PROVIDER_SETTINGS_DEFAULTS[providerIdentifier] || {};
+  for (const [key, value] of Object.entries(defaults)) {
+    if ((merged as any)[key] === undefined || (merged as any)[key] === '') {
+      (merged as any)[key] = value;
+    }
+  }
+
+  return merged;
+};
+
 // Same URL validation as MediaDto (valid.url.path) - each attachment must
 // point to an allowed upload domain and a supported file extension.
 const attachmentUrl = z
@@ -147,11 +179,9 @@ If the tools return errors, you would need to rerun it with the right parameters
 
           // Same server-side validation as the dashboard / public API
           // (settings DTO + media checkValidity + empty / too-long content).
-          const settings = platform.settings.reduce(
-            (acc: AllProvidersSettings, s: { key: string; value: any }) => ({
-              ...acc,
-              [s.key]: s.value,
-            }),
+          const settings = buildSettings(
+            integrations[platform.integrationId]?.providerIdentifier || '',
+            platform.settings,
             {} as AllProvidersSettings
           );
 
@@ -216,11 +246,9 @@ If the tools return errors, you would need to rerun it with the right parameters
               {
                 integration,
                 group: makeId(10),
-                settings: post.settings.reduce(
-                  (acc: AllProvidersSettings, s: { key: string; value: any }) => ({
-                    ...acc,
-                    [s.key]: s.value,
-                  }),
+                settings: buildSettings(
+                  integration.providerIdentifier,
+                  post.settings,
                   {
                     __type: integration.providerIdentifier,
                   } as AllProvidersSettings

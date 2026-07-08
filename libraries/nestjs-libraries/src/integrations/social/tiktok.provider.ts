@@ -19,7 +19,9 @@ import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 @Rules(
-  'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
+  'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment. ' +
+    'For the "content_posting_method" setting always use "DIRECT_POST" unless the user explicitly asks to review or edit the post inside the TikTok app before publishing. ' +
+    '"UPLOAD" does NOT publish the post: it only sends it to the user\'s TikTok app inbox, where they must manually complete it within 24 hours or it is discarded.'
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
