@@ -192,13 +192,14 @@ export class TiktokBusinessProvider
         'TikTok Business',
       accessToken,
       refreshToken: data.refresh_token || '',
-      // Trust the response expiry when present; otherwise treat as effectively
-      // non-expiring so the refresh machinery never force-disconnects a token
-      // that has no refresh_token to renew with — real 401s still trigger a
-      // reconnect via the RefreshToken path in call(). ponytail: [VERIFY] model.
+      // The tt_user creator token is valid ~24h with a 1-year refresh token
+      // (confirmed via TikTok's official SDK AuthenticationApi docs), so trust
+      // the response expiry and otherwise default to 23h — the daily refresh
+      // uses the stored refresh token, and a real 401 still forces a refresh
+      // via the RefreshToken path in call().
       expiresIn: data.expires_in
         ? Number(data.expires_in)
-        : dayjs().add(100, 'years').unix() - dayjs().unix(),
+        : dayjs().add(23, 'hours').unix() - dayjs().unix(),
       picture: profile.profile_image || '',
       username: profile.username || data.username || '',
     };
