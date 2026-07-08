@@ -620,31 +620,13 @@ export class IntegrationService {
     }
 
     try {
-      let cursor: string | undefined;
-      let parentComment: SocialCommentsPage['comments'][number] | undefined;
-
-      do {
-        const commentsPage = await integrationProvider.fetchComments(
-          getIntegration.internalId,
-          getIntegration.token,
-          postId,
-          getIntegration,
-          cursor
-        );
-
-        parentComment = commentsPage.comments.find(
-          (comment) => comment.id === cleanParentCommentId
-        );
-        cursor = commentsPage.next;
-      } while (!parentComment && cursor);
-
-      if (!parentComment || parentComment.hidden) {
-        throw new HttpException(
-          'Parent comment is not available',
-          HttpStatus.BAD_REQUEST
-        );
-      }
-
+      // Reply directly and let the platform validate the parent when the reply
+      // is posted. The previous pre-scan paged through every comment (and, for
+      // providers that fetch nested replies per comment, fired an extra request
+      // per comment) only to re-check existence/hidden state that the platform
+      // enforces anyway — and its top-level-only lookup could never resolve a
+      // nested reply's id, so replying to a reply always failed. On failure the
+      // provider surfaces the platform error (RefreshToken retried below).
       const reply = await integrationProvider.replyToComment(
         getIntegration.internalId,
         postId,

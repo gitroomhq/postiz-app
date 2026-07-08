@@ -72,6 +72,15 @@ export const ContinueIntegration: FC<{
       };
     }
 
+    // TikTok API for Business returns the code back as `auth_code`, not `code`.
+    if (provider === 'tiktok-business') {
+      return {
+        state: searchParams.state || '',
+        code: searchParams.auth_code || '',
+        refresh: searchParams.refresh || '',
+      };
+    }
+
     if (provider === 'vk') {
       return {
         ...searchParams,

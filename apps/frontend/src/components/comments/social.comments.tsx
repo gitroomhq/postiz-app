@@ -14,7 +14,12 @@ import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 
-const allowedIntegrations = ['facebook', 'instagram', 'instagram-standalone'];
+const allowedIntegrations = [
+  'facebook',
+  'instagram',
+  'instagram-standalone',
+  'tiktok-business',
+];
 
 type IntegrationItem = {
   id: string;
