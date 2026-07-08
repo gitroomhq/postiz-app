@@ -33,6 +33,7 @@ type CommentPost = {
   releaseURL?: string;
   releaseId?: string;
   commentCount?: number;
+  likeCount?: number;
   integration?: {
     id: string;
     providerIdentifier: string;
@@ -673,6 +674,9 @@ export const SocialComments = () => {
                 </div>
                 <div className="mt-[10px] flex flex-wrap items-center gap-[8px] text-[12px] text-textColor/60">
                   <span>{formatDate(post.publishDate)}</span>
+                  {typeof post.likeCount === 'number' && (
+                    <span>{post.likeCount} likes</span>
+                  )}
                   {typeof post.commentCount === 'number' && (
                     <span>{post.commentCount} comments</span>
                   )}

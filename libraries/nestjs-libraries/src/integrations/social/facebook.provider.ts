@@ -871,7 +871,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const params = new URLSearchParams({
       access_token: accessToken,
       fields:
-        'id,message,story,created_time,permalink_url,comments.limit(0).summary(true)',
+        'id,message,story,created_time,permalink_url,comments.limit(0).summary(true),likes.limit(0).summary(true)',
       limit: String(safeLimit),
     });
     if (cursor) {
@@ -891,6 +891,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       content: post.message || post.story || 'Facebook post',
       publishDate: post.created_time,
       commentCount: Number(post.comments?.summary?.total_count || 0),
+      likeCount: Number(post.likes?.summary?.total_count || 0),
     }));
 
     return {

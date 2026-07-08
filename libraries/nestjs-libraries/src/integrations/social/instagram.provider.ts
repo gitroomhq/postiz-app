@@ -991,7 +991,8 @@ export class InstagramProvider
     const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
     const params = new URLSearchParams({
       access_token: accessToken,
-      fields: 'id,caption,media_type,permalink,timestamp,comments_count',
+      fields:
+        'id,caption,media_type,permalink,timestamp,comments_count,like_count',
       limit: String(safeLimit),
     });
     if (cursor) {
@@ -1011,6 +1012,7 @@ export class InstagramProvider
       content: post.caption || `${post.media_type || 'Instagram'} post`,
       publishDate: post.timestamp,
       commentCount: Number(post.comments_count || 0),
+      likeCount: Number(post.like_count || 0),
     }));
 
     return {

@@ -78,6 +78,7 @@ export type SocialCommentPost = {
   releaseId: string;
   releaseURL?: string;
   commentCount?: number;
+  likeCount?: number;
 };
 
 export type SocialCommentPostsPage = {
