@@ -46,8 +46,7 @@ export class MastodonCustomProvider extends MastodonProvider {
       external?.instanceUrl!,
       state,
       external?.client_id!,
-      process.env.FRONTEND_URL!,
-      refresh
+      process.env.FRONTEND_URL!
     );
 
     return {

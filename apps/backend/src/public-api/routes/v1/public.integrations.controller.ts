@@ -167,7 +167,7 @@ export class PublicIntegrationsController {
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,
-      rawBody?.type === 'draft' || true
+      rawBody?.type === 'draft'
     );
     body.type = rawBody.type;
 
