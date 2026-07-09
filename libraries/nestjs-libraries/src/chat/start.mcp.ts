@@ -2,7 +2,6 @@ import { INestApplication } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 import { MCPServer } from '@mastra/mcp';
-import { randomUUID } from 'crypto';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
@@ -119,9 +118,7 @@ export const startMcp = async (app: INestApplication) => {
         url: url,
         httpPath: url.pathname,
         options: {
-          sessionIdGenerator: () => {
-            return randomUUID();
-          },
+          serverless: true,
           enableJsonResponse: true,
         },
         req,
@@ -171,9 +168,7 @@ export const startMcp = async (app: INestApplication) => {
         url,
         httpPath: url.pathname,
         options: {
-          sessionIdGenerator: () => {
-            return randomUUID();
-          },
+          serverless: true,
           enableJsonResponse: true,
         },
         req,
@@ -216,9 +211,7 @@ export const startMcp = async (app: INestApplication) => {
           url,
           httpPath: url.pathname,
           options: {
-            sessionIdGenerator: () => {
-              return randomUUID();
-            },
+            serverless: true,
             enableJsonResponse: true,
           },
           req,
