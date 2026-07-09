@@ -29,6 +29,7 @@ import { SignatureController } from '@gitroom/backend/api/routes/signature.contr
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
+import { ThirdPartySettingsController } from '@gitroom/backend/api/routes/third-party-settings.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
 import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
@@ -48,6 +49,13 @@ import { GithubProvider } from '@gitroom/backend/services/auth/providers/github.
 import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 
+// Rotas Postiz herdadas ja ocultas do menu (top.menu.tsx: agents/plugs/third-party)
+// por NEXT_PUBLIC_VOC_LEGACY_MODULES. ThirdPartySettingsController so serve essa
+// pagina (catalogo/conectar/remover integracao) — as rotas core do third-party,
+// usadas incondicionalmente pela Media Library, ficam em ThirdPartyController e
+// nao entram nesse gate (docs/auditoria/plano-leveza-2026-07.md, linha B2).
+const legacyModulesEnabled = process.env.NEXT_PUBLIC_VOC_LEGACY_MODULES === 'true';
+
 const authenticatedController = [
   UsersController,
   AnalyticsController,
@@ -63,6 +71,7 @@ const authenticatedController = [
   AutopostController,
   SetsController,
   ThirdPartyController,
+  ...(legacyModulesEnabled ? [ThirdPartySettingsController] : []),
   OAuthAppController,
   ApprovedAppsController,
   OAuthAuthorizedController,
