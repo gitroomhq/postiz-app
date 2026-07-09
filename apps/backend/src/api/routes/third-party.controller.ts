@@ -5,7 +5,6 @@ import {
   HttpException,
   Param,
   Post,
-  Delete,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ThirdPartyManager } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.manager';
@@ -16,6 +15,12 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ImportMediaDto } from '@gitroom/nestjs-libraries/dtos/third-party/import-media.dto';
 
+// As rotas de "gerenciar integracao" (listar catalogo, conectar, remover)
+// vivem em ThirdPartySettingsController (registrado condicionalmente, mesmo
+// espirito da flag NEXT_PUBLIC_VOC_LEGACY_MODULES que ja oculta a pagina
+// /third-party do menu). Este controller so mantem as rotas core, usadas
+// incondicionalmente pela Media Library (docs/auditoria/plano-leveza-2026-07.md,
+// linha B2 do plano de leveza).
 @ApiTags('Third Party')
 @Controller('/third-party')
 export class ThirdPartyController {
@@ -25,11 +30,6 @@ export class ThirdPartyController {
     private _thirdPartyManager: ThirdPartyManager,
     private _mediaService: MediaService,
   ) {}
-
-  @Get('/list')
-  async getThirdPartyList() {
-    return this._thirdPartyManager.getAllThirdParties();
-  }
 
   @Get('/')
   async getSavedThirdParty(@GetOrgFromRequest() organization: Organization) {
@@ -50,14 +50,6 @@ export class ThirdPartyController {
         };
       })
     );
-  }
-
-  @Delete('/:id')
-  deleteById(
-    @GetOrgFromRequest() organization: Organization,
-    @Param('id') id: string
-  ) {
-    return this._thirdPartyManager.deleteIntegration(organization.id, id);
   }
 
   @Post('/:id/submit')
@@ -166,42 +158,5 @@ export class ThirdPartyController {
     }
 
     return results;
-  }
-
-  @Post('/:identifier')
-  async addApiKey(
-    @GetOrgFromRequest() organization: Organization,
-    @Param('identifier') identifier: string,
-    @Body('api') api: string
-  ) {
-    const thirdParty = this._thirdPartyManager.getThirdPartyByName(identifier);
-    if (!thirdParty) {
-      throw new HttpException('Invalid identifier', 400);
-    }
-
-    const connect = await thirdParty.instance.checkConnection(api);
-    if (!connect) {
-      throw new HttpException('Invalid API key', 400);
-    }
-
-    try {
-      const save = await this._thirdPartyManager.saveIntegration(
-        organization.id,
-        identifier,
-        api,
-        {
-          name: connect.name,
-          username: connect.username,
-          id: connect.id,
-        }
-      );
-
-      return {
-        id: save.id,
-      };
-    } catch (e) {
-      console.log(e);
-      throw new HttpException('Integration Already Exists', 400);
-    }
   }
 }
