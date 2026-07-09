@@ -19,6 +19,20 @@ const fixAcceptHeader = (req: Request) => {
   }
 };
 
+// Session mode makes `@mastra/mcp` retain a transport, and a per-session server
+// holding the whole tool schema, for every `initialize` request -- released only
+// on an explicit client DELETE, which connectors never send. Stateless mode
+// serves each request with a transient server that is discarded afterwards.
+//
+// Nothing here depends on session state: auth is bound per request through
+// `runWithContext`, and no tool uses sampling, elicitation or notifications.
+const statelessMcp = process.env.MCP_STATELESS === 'true';
+
+const mcpHttpOptions: Parameters<MCPServer['startHTTP']>[0]['options'] =
+  statelessMcp
+    ? { serverless: true, enableJsonResponse: true }
+    : { sessionIdGenerator: () => randomUUID(), enableJsonResponse: true };
+
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
@@ -121,12 +135,7 @@ export const startMcp = async (app: INestApplication) => {
       await server.startHTTP({
         url: url,
         httpPath: url.pathname,
-        options: {
-          sessionIdGenerator: () => {
-            return randomUUID();
-          },
-          enableJsonResponse: true,
-        },
+        options: mcpHttpOptions,
         req,
         res,
       });
@@ -173,12 +182,7 @@ export const startMcp = async (app: INestApplication) => {
       await server.startHTTP({
         url,
         httpPath: url.pathname,
-        options: {
-          sessionIdGenerator: () => {
-            return randomUUID();
-          },
-          enableJsonResponse: true,
-        },
+        options: mcpHttpOptions,
         req,
         res,
       });
@@ -218,12 +222,7 @@ export const startMcp = async (app: INestApplication) => {
         await server.startHTTP({
           url,
           httpPath: url.pathname,
-          options: {
-            sessionIdGenerator: () => {
-              return randomUUID();
-            },
-            enableJsonResponse: true,
-          },
+          options: mcpHttpOptions,
           req,
           res,
         });
