@@ -46,7 +46,7 @@ Desligar por configuração, **sem deletar código**:
 | # | Tarefa | Como |
 |---|---|---|
 | B1 | ✅ **FEITO 2026-07-02.** Ocultar rotas `agents`, `plugs`, `third-party` do menu | `top.menu.tsx`: flag `NEXT_PUBLIC_VOC_LEGACY_MODULES` (default oculto), reaproveitando o campo `hide` que o filtro do menu já suportava. Reversível via env, sem tocar código de rota. |
-| B2 | Registrar condicionalmente no NestJS os controllers correspondentes (`copilot`, `third-party`, `signature`?) | ⚠️ **AUDITADO 2026-07-09 (Sonnet, grep exaustivo) — SEM CANDIDATO SEGURO DE QUARENTENA DE CONTROLLER INTEIRO. Parado para decisão do Felipe, nada implementado.** Ver detalhe abaixo. |
+| B2 | Registrar condicionalmente no NestJS os controllers correspondentes (`copilot`, `third-party`, `signature`?) | ✅ **FEITO 2026-07-09.** Felipe decidiu seguir com a separação do `ThirdPartyController` (ver auditoria abaixo). `copilot`/`signature` continuam não tocados (core, veredito confirmado). |
 | B3 | Inventário de providers sociais implementados (36, `libraries/nestjs-libraries/src/integrations/social/`) — falta cruzar com uso real em produção | Rodar em prod (não neste worktree): `SELECT provider, count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY provider ORDER BY 2 DESC;` → definir `VOC_ENABLED_PROVIDERS`. Poda de providers é v2.0. |
 | B4 | Billing **fica** (decisão P-04 da Edwiges: tiers Postiz = verdade) | não tocar |
 
@@ -60,14 +60,25 @@ seguindo `poda-segura`: "zero hits é a única prova de morte, hit ambíguo = le
 | `third-party` | `ThirdPartyController` é **uso misto**, não isolável por controller: `GET /third-party`, `POST /:id/import` e `POST /function/:id/:functionName` são chamados incondicionalmente por `third-party.media.tsx:164`, `third-party.media-library.tsx:63,238` — renderizados sem gate dentro do Media Library principal (`media.component.tsx:453,515`, `<ThirdPartyMediaLibrary>` sempre montado). Só `GET /third-party/list` (catálogo) e a UI de conectar/remover integração (`third-party.list.component.tsx`, `third-party.component.tsx`) pertencem exclusivamente à página `/third-party` já oculta do menu (`top.menu.tsx:145-146`). **Quarentenar o controller inteiro quebraria a importação de mídia (heygen/reelfarm) em produção para todos os usuários.** Gate por endpoint (só as rotas exclusivas da página) exigiria separar o controller em duas superfícies — é decisão de arquitetura, fora do escopo autorizado desta sessão. |
 | `signature` (o "?" do plano) | `SignatureController` (`/signatures`) é usado por `editor.tsx` (assinatura no composer) e `settings.component.tsx`/`signatures.component.tsx` — feature core do Postiz, **sem nenhuma relação** com as rotas ocultas B1 (`agents`/`plugs`/`third-party`). O "?" original do plano estava certo em desconfiar: não é candidato. |
 
-**Conclusão:** não existe hoje, no NestJS, um controller cuja superfície *inteira* sirva
-exclusivamente às rotas já ocultas pelo B1. Fazer o gate como B2 pede — por controller —
-quebraria feature ativa (Media Library import e/ou IA do editor) para usuários reais.
-A única forma seria separar `ThirdPartyController` em endpoints "settings" (gate-ável) vs
-endpoints "media-library core" (sempre ativo), o que é uma decisão de arquitetura/produto,
-não uma execução mecânica de quarentena — **parado aqui, aguardando decisão do Felipe**.
-Nenhum código foi alterado; nenhum boot foi necessário (não há mudança de registro de
-módulo/DI para validar).
+**Conclusão da auditoria:** não existia, no NestJS, um controller cuja superfície *inteira*
+servisse exclusivamente às rotas já ocultas pelo B1. Fazer o gate como B2 pedia — por
+controller — quebraria feature ativa (Media Library import e/ou IA do editor) para
+usuários reais.
+
+**✅ Execução 2026-07-09 (commit `fbddd58e`), Felipe autorizou seguir com a separação:**
+`ThirdPartyController` foi dividido em dois: as 3 rotas exclusivas da página `/third-party`
+(`GET /list`, `DELETE /:id`, `POST /:identifier`) migraram para o novo
+`ThirdPartySettingsController` (`apps/backend/src/api/routes/third-party-settings.controller.ts`),
+registrado condicionalmente em `api.module.ts` pela mesma flag `NEXT_PUBLIC_VOC_LEGACY_MODULES`
+(reaproveitada do backend, sem criar uma segunda flag para evitar drift) — tanto no array de
+`controllers` quanto no `forRoutes` do `AuthMiddleware`, sem risco de uma rota ficar registrada
+sem proteção de auth. `ThirdPartyController` manteve só as rotas core (sempre ativas). `copilot`
+e `signature` não foram tocados (confirmados core na auditoria, sem candidato de quarentena).
+
+Validado: build real (`nest build`, heap 4096) limpo; boot real com a flag off (rotas de
+settings 404, rotas core 401 sem auth, resto do backend normal) e com a flag on (rotas de
+settings passam a 401 sem auth — registradas e protegidas — sem colisão com as rotas core).
+Revisado por `moody-revisor` (sem quebras) e pela skill `security-review` (sem achados).
 
 **Modelo:** Sonnet médio (B2 exige cuidado com injeção de dependências do Nest). **Verificação:** boot + login + agendar post + CRM + Religare + Volatis. **Reversão:** flag de volta.
 
