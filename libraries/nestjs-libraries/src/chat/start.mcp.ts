@@ -7,6 +7,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
 import { createOAuthMiddleware } from './oauth-middleware';
+import { startMcpMetrics } from './mcp.metrics';
 const fixAcceptHeader = (req: Request) => {
   const value = 'application/json, text/event-stream';
   req.headers.accept = value;
@@ -44,6 +45,8 @@ export const startMcp = async (app: INestApplication) => {
   };
 
   const server = new MCPServer(serverConfig);
+
+  startMcpMetrics(app, server);
 
   const oauthMiddleware = createOAuthMiddleware({
     oauth: {
