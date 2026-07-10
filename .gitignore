@@ -93,3 +93,6 @@ docs/atelie/pedidos/*
 docs/atelie/entregas/*
 !docs/atelie/pedidos/.gitkeep
 !docs/atelie/entregas/.gitkeep
+
+# Graphify — grafo de conhecimento é saída gerada localmente (cache/AST/graph.json), não versionar
+graphify-out/

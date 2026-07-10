@@ -1,0 +1,67 @@
+# Graphify ignore patterns — "Mapa do Maroto"
+# Código + docs vão para o grafo (extração semântica via ANTHROPIC_API_KEY)
+
+# Claude Code configuration (agent/skill instructions)
+.claude
+
+# Node.js & package managers
+node_modules
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+.pnpm-store
+
+# Build outputs
+.next
+dist
+build
+out
+coverage
+.turbo
+
+# IDEs & editors
+.vscode
+.cursor
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Git & source control
+.git
+.gitignore
+
+# Monorepo (pnpm workspaces)
+.pnpm
+
+# OS temp files
+Thumbs.db
+.classpath
+.project
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Python (graphify itself)
+__pycache__
+*.pyc
+
+# Videos & media (fora de escopo por ora)
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+*.m4a
+
+# Misc artifacts
+*.xlsx
+*.csv
