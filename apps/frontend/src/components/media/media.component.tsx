@@ -53,14 +53,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
 import { MiniImageEditorLoader } from '@gitroom/frontend/components/media/mini-image-editor-loader.component';
-// On hold (docs/auditoria/plano-leveza-2026-07.md, Fase C): editor de imagem
-// Polotno é feature básica demais pro peso que carrega. Desabilitado até
-// encontrarmos (ou não) uma alternativa mais leve. Como já é dynamic import,
-// mantendo os gatilhos ocultos o chunk nunca é baixado por ninguém.
-// Substituído (em teste) pelo MiniImageEditorLoader (Konva, docs/auditoria/
-// plano-leveza-2026-07.md Fase C onda C2) atrás da mesma flag — se cobrir o
-// caso de uso real, remove-se o Polotno de vez; se não, volta pra <Polonto>.
-// Reativar/testar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
+// Editor de imagem do Media Library (docs/auditoria/plano-leveza-2026-07.md, Fase C
+// onda C2 — decisão final do Felipe 2026-07-09: Konva substitui o Polotno, removido
+// de vez do package.json). Gatilhos continuam atrás de flag opt-in enquanto o rollout
+// pro resto da base de usuários não é decidido; ligar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
 const MEDIA_EDITOR_ENABLED =
   process.env.NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED === 'true';
 const showModalEmitter = new EventEmitter();

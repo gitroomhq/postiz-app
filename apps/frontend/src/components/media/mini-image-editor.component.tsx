@@ -1,14 +1,11 @@
 'use client';
 
 /**
- * Protótipo — alternativa leve ao editor Polotno (docs/auditoria/plano-leveza-2026-07.md,
- * Fase C onda C2). Escopo DELIBERADAMENTE menor que o Polotno: o Polotno abre um canvas em
- * branco tipo mini-Canva (texto, formas, painel de geração de imagem por IA); este componente
- * cobre só o caso de uso "básico" que motivou a quarentena — upload de uma imagem, recorte e
- * rotação. Reaproveita Konva (já pago em peso de bundle pelo Volatis) em vez de instalar lib nova.
- *
- * Mesma interface de props do Polonto (setMedia/closeModal/width/height) para poder trocar
- * um pelo outro nos gatilhos de media.component.tsx sem mexer nos chamadores.
+ * Editor de imagem do Media Library (docs/auditoria/plano-leveza-2026-07.md, Fase C
+ * onda C2 — decisão final do Felipe 2026-07-09: Konva substitui o Polotno, removido).
+ * Escopo deliberadamente enxuto — upload de uma imagem, recorte e rotação — em vez do
+ * mini-Canva completo do Polotno. Reaproveita Konva (já pago em peso de bundle pelo
+ * Volatis) em vez de instalar lib nova.
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';

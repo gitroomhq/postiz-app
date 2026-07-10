@@ -200,7 +200,6 @@
     "openai": "^6.2.0",
     "p-limit": "^3.1.0",
     "parse5": "^6.0.1",
-    "polotno": "^3.0.0-beta.25",
     "posthog-js": "^1.178.0",
     "react": "19.2.4",
     "react-colorful": "^5.6.1",

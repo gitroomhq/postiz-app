@@ -1,6 +1,5 @@
 @use './colors.scss';
 @use './vocaccio-tokens.scss';
-@use './polonto.css';
 @use '@uppy/core/dist/style.css' as uppyCore;
 @use '@uppy/dashboard/dist/style.css' as uppyDashboard;
 
@@ -305,10 +304,6 @@ body * {
 
 .editor :not(.removeEditor *) {
   @apply text-textColor;
-}
-
-.editor .polonto * {
-  color: black !important;
 }
 
 .bp5-portal {
