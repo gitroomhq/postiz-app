@@ -111,6 +111,10 @@
 
 To have the project up and running, please follow the [Quick Start Guide](https://docs.postiz.com/quickstart)
 
+Prefer a managed instance with no server to run? One-click deploy Postiz on Zenith:
+
+[![Deploy with Zenith](https://cdn.zenith.hosting/buttons/deploy-with-zenith.svg)](https://zenith.hosting/host/postiz)
+
 ## Sponsor Postiz
 
 We now give a few options to Sponsor Postiz:
