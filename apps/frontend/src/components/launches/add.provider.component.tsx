@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -20,6 +20,35 @@ import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
 const resolver = classValidatorResolver(ApiKeyDto);
+
+type ProviderAuthOption = {
+  id: string;
+  title: string;
+  description: string;
+  capabilities: string[];
+  recommended?: boolean;
+};
+
+type SocialProviderItem = {
+  identifier: string;
+  name: string;
+  toolTip?: string;
+  isExternal: boolean;
+  isWeb3: boolean;
+  isChromeExtension?: boolean;
+  extensionCookies?: Array<{
+    name: string;
+    domain: string;
+  }>;
+  authOptions?: ProviderAuthOption[];
+  customFields?: Array<{
+    key: string;
+    label: string;
+    validation: string;
+    type: 'text' | 'password';
+    hint?: string;
+  }>;
+};
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
@@ -377,25 +406,7 @@ const ChromeExtensionWarning: FC<{
 };
 
 export const AddProviderComponent: FC<{
-  social: Array<{
-    identifier: string;
-    name: string;
-    toolTip?: string;
-    isExternal: boolean;
-    isWeb3: boolean;
-    isChromeExtension?: boolean;
-    extensionCookies?: Array<{
-      name: string;
-      domain: string;
-    }>;
-    customFields?: Array<{
-      key: string;
-      label: string;
-      validation: string;
-      type: 'text' | 'password';
-      hint?: string;
-    }>;
-  }>;
+  social: SocialProviderItem[];
   article: Array<{
     identifier: string;
     name: string;
@@ -411,6 +422,12 @@ export const AddProviderComponent: FC<{
   const router = useRouter();
   const fetch = useFetch();
   const modal = useModals();
+  const t = useT();
+  const [authSelection, setAuthSelection] = useState<{
+    invite: boolean;
+    provider: SocialProviderItem;
+  }>();
+  const [selectedAuthMode, setSelectedAuthMode] = useState('');
   const getSocialLink = useCallback(
     (
         invite: boolean,
@@ -425,9 +442,25 @@ export const AddProviderComponent: FC<{
           defaultValue?: string;
           type: 'text' | 'password';
           hint?: string;
-        }>
+        }>,
+        authOptions?: ProviderAuthOption[],
+        authMode?: string
       ) =>
       async () => {
+        if (authOptions && authOptions.length > 1 && !authMode) {
+          const provider = social.find(
+            (item) => item.identifier === identifier
+          )!;
+          setSelectedAuthMode(
+            authOptions.find((option) => option.recommended)?.id ||
+              authOptions[0].id
+          );
+          setAuthSelection({ invite, provider });
+          return;
+        }
+
+        const resolvedAuthMode =
+          authMode || (authOptions?.length === 1 ? authOptions[0].id : '');
         const onboardingParam = onboarding ? 'onboarding=true' : '';
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
@@ -474,6 +507,9 @@ export const AddProviderComponent: FC<{
             onboardingParam,
             isMobile
               ? `redirectUrl=${encodeURIComponent('postiz://integrations')}`
+              : '',
+            resolvedAuthMode
+              ? `authMode=${encodeURIComponent(resolvedAuthMode)}`
               : '',
           ]
             .filter(Boolean)
@@ -664,10 +700,100 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    [onboarding]
+    [onboarding, social]
   );
 
-  const t = useT();
+  if (authSelection) {
+    const { provider, invite } = authSelection;
+    return (
+      <div className="w-full flex flex-col gap-[20px] rounded-[4px]">
+        <div className="flex items-center gap-[12px]">
+          <img
+            className="w-[32px] h-[32px] rounded-full"
+            src={`/icons/platforms/${provider.identifier}.png`}
+          />
+          <div>
+            <div className="text-[18px] font-semibold">
+              {t('connect_provider', 'Connect {{provider}}', {
+                provider: provider.name,
+              })}
+            </div>
+            <div className="text-[13px] text-textColor/70">
+              {t(
+                'choose_authentication_method',
+                'Choose how this channel should connect.'
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-[8px]">
+          {provider.authOptions!.map((option) => {
+            const selected = selectedAuthMode === option.id;
+            return (
+              <label
+                key={option.id}
+                className={clsx(
+                  'flex gap-[12px] border rounded-[6px] p-[14px] cursor-pointer',
+                  selected
+                    ? 'border-primary bg-primary/5'
+                    : 'border-tableBorder bg-newTableHeader'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="provider-auth-mode"
+                  value={option.id}
+                  checked={selected}
+                  onChange={() => setSelectedAuthMode(option.id)}
+                  className="mt-[3px]"
+                />
+                <span className="flex min-w-0 flex-1 flex-col gap-[4px]">
+                  <span className="flex flex-wrap items-center gap-[8px] text-[14px] font-medium">
+                    {option.title}
+                    {option.recommended && (
+                      <span className="text-[11px] text-textColor/70">
+                        {t('recommended', 'Recommended')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[13px] leading-[18px] text-textColor/70">
+                    {option.description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-[8px]">
+          <Button
+            type="button"
+            className="flex-1 !bg-transparent border border-tableBorder !text-textColor"
+            onClick={() => setAuthSelection(undefined)}
+          >
+            {t('back', 'Back')}
+          </Button>
+          <Button
+            type="button"
+            className="flex-1"
+            onClick={getSocialLink(
+              invite,
+              provider.identifier,
+              provider.isExternal,
+              provider.isWeb3,
+              provider.isChromeExtension,
+              provider.customFields,
+              provider.authOptions,
+              selectedAuthMode
+            )}
+          >
+            {t('continue', 'Continue')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
@@ -702,7 +828,8 @@ export const AddProviderComponent: FC<{
                   item.isExternal,
                   item.isWeb3,
                   item.isChromeExtension,
-                  item.customFields
+                  item.customFields,
+                  item.authOptions
                 )}
                 {...(!!item.toolTip
                   ? {

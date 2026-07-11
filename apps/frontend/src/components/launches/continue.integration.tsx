@@ -64,7 +64,7 @@ export const ContinueIntegration: FC<{
         refresh: searchParams.refresh || '',
       };
     }
-    if (provider === 'x') {
+    if (provider === 'x' && searchParams.oauth_token) {
       return {
         state: searchParams.oauth_token || '',
         code: searchParams.oauth_verifier || '',

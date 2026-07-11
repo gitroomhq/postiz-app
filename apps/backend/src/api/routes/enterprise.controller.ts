@@ -51,6 +51,7 @@ export class EnterpriseController {
         refreshId?: string;
         provider: string;
         webhookUrl: string;
+        authMode?: string;
       };
 
       if (!load || !load.redirectUrl || !load.apiKey || !load.provider) {
@@ -75,8 +76,25 @@ export class EnterpriseController {
         load.provider
       );
 
+      const selectableAuthProvider =
+        this._integrationManager.getSelectableAuthProvider(load.provider);
+      const previousIntegration =
+        selectableAuthProvider?.getAuthMode && load.refreshId
+          ? (await this._integrationService.getIntegrationsList(org.id)).find(
+              (item) => item.internalId === load.refreshId
+            )
+          : undefined;
+      const resolvedAuthMode =
+        load.authMode ||
+        (previousIntegration
+          ? selectableAuthProvider?.getAuthMode?.(previousIntegration)
+          : undefined);
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl();
+        selectableAuthProvider && resolvedAuthMode
+          ? await selectableAuthProvider.generateAuthUrlForMode(
+              resolvedAuthMode
+            )
+          : await integrationProvider.generateAuthUrl();
 
       if (load.refreshId) {
         await ioRedis.set(`refresh:${state}`, load.refreshId, 'EX', 3600);

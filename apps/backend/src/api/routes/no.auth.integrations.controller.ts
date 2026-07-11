@@ -239,11 +239,13 @@ export class NoAuthIntegrationsController {
           : undefined
       );
 
-    this._refreshIntegrationService
-      .startRefreshWorkflow(org.id, createUpdate.id, integrationProvider)
-      .catch((err) => {
-        console.log(err);
-      });
+    if (refreshToken) {
+      this._refreshIntegrationService
+        .startRefreshWorkflow(org.id, createUpdate.id, integrationProvider)
+        .catch((err) => {
+          console.log(err);
+        });
+    }
 
     // Fetch pages if this is a two-step provider and not a refresh
     let pages: any[] = [];

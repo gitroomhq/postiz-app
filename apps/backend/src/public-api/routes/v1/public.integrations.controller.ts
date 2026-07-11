@@ -328,6 +328,7 @@ export class PublicIntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
+    @Query('authMode') authMode: string,
     @GetOrgFromRequest() org: Organization
   ) {
     Sentry.metrics.count('public_api-request', 1);
@@ -352,8 +353,25 @@ export class PublicIntegrationsController {
     }
 
     try {
+      const selectableAuthProvider =
+        this._integrationManager.getSelectableAuthProvider(integration);
+      const previousIntegration =
+        selectableAuthProvider?.getAuthMode && refresh
+          ? (await this._integrationService.getIntegrationsList(org.id)).find(
+              (item) => item.internalId === refresh
+            )
+          : undefined;
+      const resolvedAuthMode =
+        authMode ||
+        (previousIntegration
+          ? selectableAuthProvider?.getAuthMode?.(previousIntegration)
+          : undefined);
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl();
+        selectableAuthProvider && resolvedAuthMode
+          ? await selectableAuthProvider.generateAuthUrlForMode(
+              resolvedAuthMode
+            )
+          : await integrationProvider.generateAuthUrl();
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 3600);

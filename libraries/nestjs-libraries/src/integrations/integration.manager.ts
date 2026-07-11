@@ -37,6 +37,10 @@ import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/sko
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 import { MeweProvider } from '@gitroom/nestjs-libraries/integrations/social/mewe.provider';
 import { TumblrProvider } from '@gitroom/nestjs-libraries/integrations/social/tumblr.provider';
+import {
+  CapableSocialProvider,
+  supportsSelectableAuth,
+} from '@gitroom/nestjs-libraries/integrations/provider.capabilities';
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
@@ -81,19 +85,25 @@ export class IntegrationManager {
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies
-            ? { extensionCookies: p.extensionCookies }
-            : {}),
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationList.map(async (p) => {
+          const provider = p as CapableSocialProvider;
+          return {
+            name: p.name,
+            identifier: p.identifier,
+            toolTip: p.toolTip,
+            editor: p.editor,
+            isExternal: !!p.externalUrl,
+            isWeb3: !!p.isWeb3,
+            isChromeExtension: !!p.isChromeExtension,
+            ...(p.extensionCookies
+              ? { extensionCookies: p.extensionCookies }
+              : {}),
+            ...(p.customFields ? { customFields: await p.customFields() } : {}),
+            ...(supportsSelectableAuth(provider)
+              ? { authOptions: provider.authOptions }
+              : {}),
+          };
+        })
       ),
       article: [] as any[],
     };
@@ -173,5 +183,12 @@ export class IntegrationManager {
   }
   getSocialIntegration(integration: string): SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
+  }
+
+  getSelectableAuthProvider(integration: string) {
+    const provider = socialIntegrationList.find(
+      (item) => item.identifier === integration
+    ) as CapableSocialProvider | undefined;
+    return provider && supportsSelectableAuth(provider) ? provider : undefined;
   }
 }

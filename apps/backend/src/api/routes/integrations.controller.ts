@@ -198,6 +198,7 @@ export class IntegrationsController {
     @Query('externalUrl') externalUrl: string,
     @Query('redirectUrl') redirectUrl: string,
     @Query('onboarding') onboarding: string,
+    @Query('authMode') authMode: string,
     @GetOrgFromRequest() org: Organization
   ) {
     if (
@@ -223,8 +224,26 @@ export class IntegrationsController {
           }
         : undefined;
 
+      const selectableAuthProvider =
+        this._integrationManager.getSelectableAuthProvider(integration);
+      const previousIntegration =
+        selectableAuthProvider?.getAuthMode && refresh
+          ? (await this._integrationService.getIntegrationsList(org.id)).find(
+              (item) => item.internalId === refresh
+            )
+          : undefined;
+      const resolvedAuthMode =
+        authMode ||
+        (previousIntegration
+          ? selectableAuthProvider?.getAuthMode?.(previousIntegration)
+          : undefined);
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(getExternalUrl);
+        selectableAuthProvider && resolvedAuthMode
+          ? await selectableAuthProvider.generateAuthUrlForMode(
+              resolvedAuthMode,
+              getExternalUrl
+            )
+          : await integrationProvider.generateAuthUrl(getExternalUrl);
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 3600);

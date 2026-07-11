@@ -22,6 +22,16 @@ import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { ProviderAuthOption } from '@gitroom/nestjs-libraries/integrations/provider.capabilities';
+
+const X_OAUTH2_PREFIX = 'oauth2:';
+const X_OAUTH2_SCOPES = [
+  'tweet.read',
+  'tweet.write',
+  'users.read',
+  'media.write',
+  'offline.access',
+] as const;
 
 @Rules(
   `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${
@@ -34,6 +44,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
+  refreshCron = true;
   scopes = [] as string[];
   stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
   override maxConcurrentJob = 1; // X has strict rate limits (300 posts per 3 hours)
@@ -42,6 +53,36 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   editor = 'normal' as const;
   dto = XDto;
+
+  get authOptions(): ProviderAuthOption[] {
+    const oauth1: ProviderAuthOption = {
+      id: 'oauth1',
+      title: 'Legacy publishing',
+      description:
+        'Connect with OAuth 1.0a for publishing and existing X features.',
+      capabilities: ['publishing', 'analytics'],
+    };
+
+    const oauth2: ProviderAuthOption = {
+      id: 'oauth2',
+      title: 'OAuth 2.0',
+      description:
+        'Connect with OAuth 2.0 for publishing and refreshable access.',
+      capabilities: ['publishing', 'analytics'],
+      recommended: true,
+    };
+
+    return [
+      ...(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET
+        ? [oauth2]
+        : []),
+      ...(process.env.X_API_KEY && process.env.X_API_SECRET ? [oauth1] : []),
+    ];
+  }
+
+  getAuthMode(integration: Integration) {
+    return integration.token.startsWith(X_OAUTH2_PREFIX) ? 'oauth2' : 'oauth1';
+  }
 
   maxLength(additionalSettings?: any) {
     // Accepts either the parsed additionalSettings array (from validation) or a
@@ -94,7 +135,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body',
         value: 'You are not allowed to create a post with duplicate content',
-      }
+      };
     }
 
     if (body.includes('usage-capped')) {
@@ -121,8 +162,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('Your account is not permitted to access this feature')) {
       return {
         type: 'bad-body',
-        value:
-          'X blocked your request',
+        value: 'X blocked your request',
       };
     }
     if (body.includes('The Tweet contains an invalid URL.')) {
@@ -168,15 +208,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     id: string,
     fields: { likesAmount: string }
   ) {
-    // @ts-ignore
-    // eslint-disable-next-line prefer-rest-params
-    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(integration.token);
 
     if (
       (await client.v2.tweetLikedBy(id)).meta.result_count >=
@@ -203,13 +235,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     postId: string,
     information: any
   ) {
-    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(integration.token);
 
     const {
       data: { id },
@@ -252,15 +278,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     id: string,
     fields: { likesAmount: string; post: string }
   ) {
-    // @ts-ignore
-    // eslint-disable-next-line prefer-rest-params
-    const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(integration.token);
 
     if (
       (await client.v2.tweetLikedBy(id)).meta.result_count >=
@@ -279,33 +297,62 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     return false;
   }
 
-  async refreshToken(): Promise<AuthTokenDetails> {
-    return {
-      id: '',
-      name: '',
-      accessToken: '',
-      refreshToken: '',
-      expiresIn: 0,
-      picture: '',
-      username: '',
-    };
+  async generateAuthUrl() {
+    const options = this.authOptions;
+    const defaultAuthMode =
+      options.find((option) => option.id === 'oauth1')?.id || options[0]?.id;
+
+    if (!defaultAuthMode) {
+      throw new Error('X authentication is not configured');
+    }
+
+    return this.generateAuthUrlForMode(defaultAuthMode);
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrlForMode(authMode: string) {
+    const callbackUrl = this.getCallbackUrl();
+
+    if (authMode === 'oauth2') {
+      if (!process.env.X_CLIENT_ID || !process.env.X_CLIENT_SECRET) {
+        throw new Error('X OAuth 2.0 is not configured');
+      }
+
+      const client = new TwitterApi({
+        clientId: process.env.X_CLIENT_ID,
+        clientSecret: process.env.X_CLIENT_SECRET,
+      });
+      const { url, codeVerifier, state } = client.generateOAuth2AuthLink(
+        callbackUrl,
+        {
+          scope: [...X_OAUTH2_SCOPES],
+        }
+      );
+
+      return {
+        url,
+        state,
+        codeVerifier: X_OAUTH2_PREFIX + codeVerifier,
+      };
+    }
+
+    if (authMode !== 'oauth1') {
+      throw new Error('Unsupported X authentication mode');
+    }
+
+    if (!process.env.X_API_KEY || !process.env.X_API_SECRET) {
+      throw new Error('X OAuth 1.0a is not configured');
+    }
+
     const client = new TwitterApi({
       appKey: process.env.X_API_KEY!,
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
-      await client.generateAuthLink(
-        (process.env.X_URL || process.env.FRONTEND_URL) +
-          `/integrations/social/x`,
-        {
-          authAccessType: 'write',
-          linkMode: 'authenticate',
-          forceLogin: false,
-        }
-      );
+      await client.generateAuthLink(callbackUrl, {
+        authAccessType: 'write',
+        linkMode: 'authenticate',
+        forceLogin: false,
+      });
     return {
       url,
       codeVerifier: oauth_token + ':' + oauth_token_secret,
@@ -315,6 +362,55 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   async authenticate(params: { code: string; codeVerifier: string }) {
     const { code, codeVerifier } = params;
+
+    if (codeVerifier.startsWith(X_OAUTH2_PREFIX)) {
+      const startingClient = new TwitterApi({
+        clientId: process.env.X_CLIENT_ID!,
+        clientSecret: process.env.X_CLIENT_SECRET!,
+      });
+      const { accessToken, refreshToken, expiresIn, client, scope } =
+        await startingClient.loginWithOAuth2({
+          code,
+          codeVerifier: codeVerifier.slice(X_OAUTH2_PREFIX.length),
+          redirectUri: this.getCallbackUrl(),
+        });
+
+      this.checkScopes([...X_OAUTH2_SCOPES], scope);
+
+      const {
+        data: { username, verified, profile_image_url, name, id },
+      } = await client.v2.me({
+        'user.fields': [
+          'username',
+          'verified',
+          'verified_type',
+          'profile_image_url',
+          'name',
+        ],
+      });
+      if (!refreshToken) {
+        throw new Error('X did not return an OAuth 2.0 refresh token');
+      }
+
+      return {
+        id: String(id),
+        accessToken: X_OAUTH2_PREFIX + accessToken,
+        name,
+        refreshToken: X_OAUTH2_PREFIX + refreshToken,
+        expiresIn,
+        picture: profile_image_url || '',
+        username,
+        additionalSettings: [
+          {
+            title: 'Verified',
+            description: 'Is this a verified user? (Premium)',
+            type: 'checkbox' as const,
+            value: verified,
+          },
+        ],
+      };
+    }
+
     const [oauth_token, oauth_token_secret] = codeVerifier.split(':');
 
     const startingClient = new TwitterApi({
@@ -359,7 +455,57 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
+    if (!refreshToken?.startsWith(X_OAUTH2_PREFIX)) {
+      return {
+        id: '',
+        name: '',
+        accessToken: '',
+        refreshToken: '',
+        expiresIn: 0,
+        picture: '',
+        username: '',
+      };
+    }
+
+    const startingClient = new TwitterApi({
+      clientId: process.env.X_CLIENT_ID!,
+      clientSecret: process.env.X_CLIENT_SECRET!,
+    });
+    const {
+      accessToken,
+      refreshToken: nextRefreshToken,
+      expiresIn,
+      client,
+      scope,
+    } = await startingClient.refreshOAuth2Token(
+      refreshToken.slice(X_OAUTH2_PREFIX.length)
+    );
+    this.checkScopes([...X_OAUTH2_SCOPES], scope);
+    const {
+      data: { username, profile_image_url, name, id },
+    } = await client.v2.me({
+      'user.fields': ['username', 'profile_image_url', 'name'],
+    });
+
+    return {
+      id: String(id),
+      name,
+      accessToken: X_OAUTH2_PREFIX + accessToken,
+      refreshToken:
+        X_OAUTH2_PREFIX +
+        (nextRefreshToken || refreshToken.slice(X_OAUTH2_PREFIX.length)),
+      expiresIn,
+      picture: profile_image_url || '',
+      username,
+    };
+  }
+
   private async getClient(accessToken: string) {
+    if (accessToken.startsWith(X_OAUTH2_PREFIX)) {
+      return new TwitterApi(accessToken.slice(X_OAUTH2_PREFIX.length));
+    }
+
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     return new TwitterApi({
       appKey: process.env.X_API_KEY!,
@@ -367,6 +513,28 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
+  }
+
+  private getCallbackUrl() {
+    const baseUrl = process.env.X_URL || process.env.FRONTEND_URL;
+    if (!baseUrl) {
+      throw new Error('X callback URL is not configured');
+    }
+
+    return `${baseUrl.replace(/\/$/, '')}/integrations/social/x`;
+  }
+
+  private getAuthorizationHeader(
+    method: string,
+    url: string,
+    accessToken: string
+  ) {
+    if (accessToken.startsWith(X_OAUTH2_PREFIX)) {
+      return `Bearer ${accessToken.slice(X_OAUTH2_PREFIX.length)}`;
+    }
+
+    const [token, secret] = accessToken.split(':');
+    return this.signOAuth1(method, url, token, secret);
   }
 
   private signOAuth1(
@@ -480,7 +648,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
 
     const [firstPost] = postDetails;
@@ -510,17 +677,18 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         : firstPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       made_with_ai: this.assetBoolean(firstPost?.settings?.made_with_ai),
-      paid_partnership: this.assetBoolean(firstPost?.settings?.paid_partnership),
+      paid_partnership: this.assetBoolean(
+        firstPost?.settings?.paid_partnership
+      ),
     };
 
     const tweetResponse = await this.fetch(tweetUrl, {
       method: 'POST',
       headers: {
-        Authorization: this.signOAuth1(
+        Authorization: this.getAuthorizationHeader(
           'POST',
           tweetUrl,
-          accessTokenSplit,
-          accessSecretSplit
+          accessToken
         ),
         'Content-Type': 'application/json',
       },
@@ -553,7 +721,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
     const [commentPost] = postDetails;
 
@@ -580,11 +747,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const tweetResponse = await this.fetch(tweetUrl, {
       method: 'POST',
       headers: {
-        Authorization: this.signOAuth1(
+        Authorization: this.getAuthorizationHeader(
           'POST',
           tweetUrl,
-          accessTokenSplit,
-          accessSecretSplit
+          accessToken
         ),
         'Content-Type': 'application/json',
       },
@@ -650,13 +816,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day');
     const since = dayjs().subtract(date > 100 ? 100 : date, 'day');
 
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(accessToken);
 
     try {
       const tweets = uniqBy(
@@ -740,13 +900,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const today = dayjs().format('YYYY-MM-DD');
 
-    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(accessToken);
 
     try {
       // Fetch the specific tweet with public metrics
@@ -819,13 +973,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   }
 
   override async mention(token: string, d: { query: string }) {
-    const [accessTokenSplit, accessSecretSplit] = token.split(':');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
-      accessToken: accessTokenSplit,
-      accessSecret: accessSecretSplit,
-    });
+    const client = await this.getClient(token);
 
     try {
       const data = await client.v2.userByUsername(d.query, {
