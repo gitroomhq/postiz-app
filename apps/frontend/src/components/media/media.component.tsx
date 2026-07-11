@@ -55,10 +55,8 @@ import { useDebounce } from 'use-debounce';
 import { MiniImageEditorLoader } from '@gitroom/frontend/components/media/mini-image-editor-loader.component';
 // Editor de imagem do Media Library (docs/auditoria/plano-leveza-2026-07.md, Fase C
 // onda C2 — decisão final do Felipe 2026-07-09: Konva substitui o Polotno, removido
-// de vez do package.json). Gatilhos continuam atrás de flag opt-in enquanto o rollout
-// pro resto da base de usuários não é decidido; ligar: NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true.
-const MEDIA_EDITOR_ENABLED =
-  process.env.NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED === 'true';
+// de vez do package.json). Rollout aprovado 2026-07-10: sem flag, mesmo padrão do
+// Polotno original (gate de acesso continua sendo só o tier AI do usuário).
 const showModalEmitter = new EventEmitter();
 export const Pagination: FC<{
   current: number;
@@ -743,7 +741,7 @@ export const MultiMediaComponent: FC<{
   );
 
   const designMedia = useCallback(() => {
-    if (MEDIA_EDITOR_ENABLED && !!user?.tier?.ai && !dummy) {
+    if (!!user?.tier?.ai && !dummy) {
       modals.openModal({
         askClose: false,
         title: t('design_media', 'Design Media'),
@@ -842,7 +840,7 @@ export const MultiMediaComponent: FC<{
                   </div>
                 </div>
               </div>
-              {MEDIA_EDITOR_ENABLED && (
+              {!!user?.tier?.ai && !dummy && (
                 <div
                   onClick={designMedia}
                   className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
@@ -927,7 +925,6 @@ export const MediaComponent: FC<{
   const mediaDirectory = useMediaDirectory();
 
   const showDesignModal = useCallback(() => {
-    if (!MEDIA_EDITOR_ENABLED) return;
     modals.openModal({
       title: t('media_editor', 'Media Editor'),
       askClose: false,
@@ -991,11 +988,9 @@ export const MediaComponent: FC<{
       )}
       <div className="flex gap-[5px]">
         <Button onClick={showModal}>{t('select', 'Select')}</Button>
-        {MEDIA_EDITOR_ENABLED && (
-          <Button onClick={showDesignModal} className="!bg-customColor45">
-            {t('editor', 'Editor')}
-          </Button>
-        )}
+        <Button onClick={showDesignModal} className="!bg-customColor45">
+          {t('editor', 'Editor')}
+        </Button>
         <Button secondary={true} onClick={clearMedia}>
           {t('clear', 'Clear')}
         </Button>

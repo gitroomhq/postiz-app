@@ -47,7 +47,7 @@ Desligar por configuração, **sem deletar código**:
 |---|---|---|
 | B1 | ✅ **FEITO 2026-07-02.** Ocultar rotas `agents`, `plugs`, `third-party` do menu | `top.menu.tsx`: flag `NEXT_PUBLIC_VOC_LEGACY_MODULES` (default oculto), reaproveitando o campo `hide` que o filtro do menu já suportava. Reversível via env, sem tocar código de rota. |
 | B2 | Registrar condicionalmente no NestJS os controllers correspondentes (`copilot`, `third-party`, `signature`?) | ✅ **FEITO 2026-07-09.** Felipe decidiu seguir com a separação do `ThirdPartyController` (ver auditoria abaixo). `copilot`/`signature` continuam não tocados (core, veredito confirmado). |
-| B3 | Inventário de providers sociais implementados (36, `libraries/nestjs-libraries/src/integrations/social/`) — falta cruzar com uso real em produção | Rodar em prod (não neste worktree): `SELECT provider, count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY provider ORDER BY 2 DESC;` → definir `VOC_ENABLED_PROVIDERS`. Poda de providers é v2.0. |
+| B3 | Inventário de providers sociais implementados (36, `libraries/nestjs-libraries/src/integrations/social/`) — falta cruzar com uso real em produção | ⚠️ **RODADO 2026-07-10, SEM SINAL PRA PODAR.** Query corrigida (coluna é `providerIdentifier`, não `provider`): `SELECT "providerIdentifier", count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY "providerIdentifier" ORDER BY 2 DESC;` → **zero linhas retornadas**: não existe nenhuma integração ativa de nenhum provider em produção (produto pré-MVP, zero pagantes — ver memória Fase M). O resultado não discrimina "provider usado" de "não usado", só confirma que ninguém usou posting ainda — **não é sinal válido pra podar providers específicos**, seria descartar capacidade sem embasamento. Decisão: **adiado pra pós-launch**, quando houver uso real (mesmo critério do v2.0 já previsto). Não rodar de novo até haver clientes pagantes com canais conectados. |
 | B4 | Billing **fica** (decisão P-04 da Edwiges: tiers Postiz = verdade) | não tocar |
 
 **Detalhe da auditoria B2 (2026-07-09, grep exaustivo em `apps/*/src` + `libraries/*/src`,
@@ -91,7 +91,7 @@ abaixo): a suposição original de C1 estava ERRADA.** Não editei `package.json
 | Onda | Candidatos originais | Veredito real (grep exaustivo em `apps/*` + `libraries/*`) |
 |---|---|---|
 | C1 | `@copilotkit/*`, `mastra`, `@mastra/*`, `@langchain/*`, `@ag-ui/mastra`, `openai` | ✅ **FECHADO 2026-07-03 — decisão: ADORMECER, não remover.** `@copilotkit/*`/`@langchain/*`/`openai` confirmados core (editor/autopost/media/video) — não remover. Mastra sustenta um endpoint MCP público (`/mcp/:apiKey`, documentado na página de API, pra ferramentas de IA externas tipo Claude Desktop) que Felipe **nunca usou/divulgou** (produto pré-MVP), mas **gostou da ideia** e quer reativar pós-MVP integrado aos agentes/back-office — não é caso de remoção definitiva como o Farcaster. Implementado "modo adormecido" (mesmo espírito da quarentena do Polotno, adaptado pro backend): **1)** `mastra.store.ts` — `pStore` era um `PostgresStore` **eager** (`export const pStore = new PostgresStore(...)`, conectava no import do módulo mesmo sem uso) → virou `getPStore()` singleton **lazy**, só conecta na primeira chamada real. Achado que motivou a mudança: `ChatModule` registrado no `app.module.ts` já bastava pra abrir esse pool de conexão à toa. **2)** `copilot.controller.ts` — removidas as rotas `/agent`, `/list`, `/:thread/list` (só a página `/agents`, já deletada, as consumia) — ficaram só `/chat`+`/credits` (CopilotKit puro, sem Mastra, usado pelo editor/autopost). **3)** `main.ts` — `startMcp()` trocou de `DISABLE_MCP!=='true'` (ligado por padrão) pra `MASTRA_ENABLED==='true'` (desligado por padrão) **com import dinâmico** (o módulo `@mastra/mcp`+OAuth middleware nem carrega na memória enquanto adormecida). Nada removido de `package.json`/`chat/tools/*` — reativação = só `MASTRA_ENABLED=true`. **Import morto do `MastraService` em `auth.middleware.ts`** (achado de rodada anterior) segue sem tocar, baixo risco isolado. |
-| C2 | `polotno` (+ `polonto.css`), `@uppy/transloadit`, `transloadit` | ✅ **FEITO 2026-07-09 — Polotno removido de vez.** Felipe testou o mini-editor Konva no browser (upload, crop arrastável, rotate 90°) e aprovou — cobre o caso de uso real. Removidos: dependência `polotno` do `package.json`; `apps/frontend/src/components/launches/polonto.tsx` + pasta `polonto/` (`polonto.picture.generation.tsx`); `apps/frontend/src/app/polonto.css` (16528 linhas) + o `@use` correspondente em `global.scss`. `MiniImageEditorLoader`/Konva vira a única implementação do Media Editor, ainda atrás da mesma flag `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED` (default off) — rollout pro resto da base é decisão separada do Felipe. `@uppy/transloadit`/`transloadit` **não tocados** — usados em `images.slides.ts` (vídeo) e `uppy.upload.ts` (infra genérica de upload, não confinada ao Polotno); seguem fora do escopo desta onda. |
+| C2 | `polotno` (+ `polonto.css`), `@uppy/transloadit`, `transloadit` | ✅ **FEITO 2026-07-09 — Polotno removido de vez.** Felipe testou o mini-editor Konva no browser (upload, crop arrastável, rotate 90°) e aprovou — cobre o caso de uso real. Removidos: dependência `polotno` do `package.json`; `apps/frontend/src/components/launches/polonto.tsx` + pasta `polonto/` (`polonto.picture.generation.tsx`); `apps/frontend/src/app/polonto.css` (16528 linhas) + o `@use` correspondente em `global.scss`. `MiniImageEditorLoader`/Konva vira a única implementação do Media Editor. **Rollout aprovado 2026-07-10**: flag `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED` removida de vez (`media.component.tsx`) — Design Media/Editor ficam sempre disponíveis, mesmo padrão do Polotno original (gate de acesso passa a ser só o tier AI do usuário, como já era no clique). `@uppy/transloadit`/`transloadit` **não tocados** — usados em `images.slides.ts` (vídeo) e `uppy.upload.ts` (infra genérica de upload, não confinada ao Polotno); seguem fora do escopo desta onda. |
 | C3 | Web3/nicho: `@solana/*`, `viem`, `bs58`, `tweetnacl`, `nostr-tools`, `@neynar/*`, `@postiz/wallets` | ✅ **FEITO 2026-07-03.** B3 rodado em produção (Felipe, Supabase SQL Editor): `total=0, ativas=0` na tabela `Integration` — zero clientes conectaram qualquer canal. Felipe aprovou remoção real (não quarentena) de Farcaster/Nostr/login-por-carteira: providers de posting (`farcaster`/`nostr.provider.ts`), providers de login (`wallet`/`farcaster.provider.ts` back+front), connect-flow (`wrapcaster.provider.tsx`, pastas `warpcast/`+`nostr/` do composer), botão Neynar (`nayner.auth.button.tsx`), registries (`integration.manager.ts`, `api.module.ts`, `show.all.providers.tsx`, `web3.list.tsx`, `all.providers.settings.ts`) + as 9 deps do `package.json`. `Telegram`/`Moltbook` mantidos (não são web3 de verdade, só compartilhavam pasta por convenção de nome do Postiz). `pnpm install` real rodado, lockfile regenerado, build real (não só typecheck) validado limpo em backend/orchestrator/frontend. 1 referência perdida na 1ª passada (`web3.list.tsx`) — pega pelo próprio `tsc`, corrigida. Commit `07315e1d`, pushado. |
 | C4 | Pinar o que sobrar de IA/volátil (VOC-41) | ✅ **FEITO 2026-07-09.** Pinadas as 11 deps de IA que ainda usavam range (`@ag-ui/mastra`, `@langchain/community`, `@langchain/core`, `@langchain/langgraph`, `@langchain/openai`, `@langchain/tavily`, `@mastra/core`, `@mastra/mcp`, `@mastra/memory`, `@mastra/pg`, `mastra`) para versão exata em `package.json` — todas já resolviam pro topo do range (conferido no `pnpm-lock.yaml` antes de editar), então é troca de política de versionamento, não upgrade/downgrade. `pnpm install` real regenerou o lockfile; build real (`nest build`, heap 4096) limpo nos 3 apps (backend/orchestrator/frontend); boot real do backend validado (rotas mapeadas, sem erro de DI, `/third-party` e `/copilot/credits` retornam 401 sem auth como esperado). |
 
@@ -115,8 +115,9 @@ nativo puro fica como plano B se o protótipo em Konva não convencer.
 - `mini-image-editor-loader.component.tsx` — wrapper `next/dynamic({ssr:false})`,
   mesmo padrão do `carousel-editor-loader.component.tsx` (Konva toca `window`/canvas).
 - `media.component.tsx`: os 2 gatilhos que abriam `<Polonto>` agora abrem
-  `<MiniImageEditorLoader>`, **ainda atrás da mesma flag** `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED`
-  (default off) — ninguém é afetado até alguém ligar a flag pra testar.
+  `<MiniImageEditorLoader>` — na época desta entrada (2026-07-03), atrás da flag
+  `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED` (default off). **Superado 2026-07-10**: flag
+  removida, ver linha C2 acima — sem efeito prático nesta descrição do que foi implementado.
 - **Validado nesta sessão** (rodei `pnpm install` real no worktree, ~7min via store
   hardlink — destravou build/typecheck real sem precisar de `.env`/DB): `tsc --noEmit`
   E `nest build` real limpos (exit 0) em backend/orchestrator/frontend, incluindo os 2
@@ -162,48 +163,14 @@ com boot real** (a partir de `C:\dev\vocaccio`, não de um worktree).
 
 ---
 
-## Passo-a-passo do Felipe — o que só você consegue fazer (2026-07-03)
+## Passo-a-passo do Felipe (2026-07-03) — ✅ TODOS OS 5 ITENS FECHADOS
 
-Tudo que dava pra executar sem acesso a produção/`.env` já foi feito e validado
-(build real, não só typecheck). O que sobra depende de coisas que só existem no
-seu ambiente/acesso:
-
-**1. Testar o editor Konva de imagem (mini-image-editor) visualmente**
-   - A partir de `C:\dev\vocaccio` (não deste worktree — lá tem `.env`/DB reais).
-   - `git pull` a branch `claude/magical-allen-1f35af` (ou merge pra sua branch de trabalho).
-   - No `.env`, adicionar `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED=true`.
-   - `pnpm run dev-backend` (backend+frontend).
-   - Na Media Library, clicar em "Design Media" (toolbar) ou "Editor" (num campo de
-     mídia de formulário) — deve abrir o editor novo (upload → crop arrastável →
-     girar 90° → "Use this media").
-   - **O que checar:** upload funciona, arrastar/redimensionar o retângulo de crop é
-     fluido, rotação não quebra o crop (bug que corrigi — confirmar visualmente),
-     resultado final sobe certo pro `/media/upload-simple` e aparece na galeria.
-   - Se aprovar: me avisa que decido remover `polotno` do `package.json` de vez
-     (Fase C real). Se não aprovar (ou achar limitado demais): me diz o que faltou —
-     dá pra evoluir o protótipo ou desistir e reabilitar o Polotno (é só reverter
-     o commit da troca, ou desligar a flag).
-
-**2. Rodar a query SQL de providers em produção (B3 — necessária pra Fase C real)**
-   - Só você tem acesso ao banco de produção.
-   - `SELECT provider, count(*) FROM "Integration" WHERE "deletedAt" IS NULL GROUP BY provider ORDER BY 2 DESC;`
-   - Isso diz quais dos 36 providers sociais realmente têm uso — decide se dá pra
-     podar as deps web3/Farcaster/Nostr (C3) ou se ficam.
-
-**3. Mergear esta branch em `main` (quando estiver satisfeito)**
-   - `main` já está atualizado com a Fase 0 (segurança). Esta branch
-     (`claude/magical-allen-1f35af`) tem as Fases A-E em cima — decida se quer PR
-     com review ou fast-forward direto, como fizemos com a Fase 0.
-
-**4. Aplicar a migration VOC-34 em produção**
-   - `libraries/nestjs-libraries/src/database/prisma/migrations/20260702_voc34_contentitem_kanban_index/`
-     foi escrita à mão (sem `prisma migrate dev` real, sem DB neste worktree).
-     Rodar `pnpm run prisma-migrate-deploy` (ou o fluxo de migration que vocês usam
-     em produção) pra aplicar de fato — é aditiva (`CREATE INDEX`), baixo risco.
-
-**5. Decisão futura sobre Fase B2 (quarentenar controllers do NestJS)**
-   - Ainda não fiz — precisa de boot real contra DB (não só build, que já validei).
-   Se quiser que eu prossiga a partir de `C:\dev\vocaccio` numa próxima sessão, é só pedir.
+Lista original arquivada — todos os itens foram resolvidos em sessões seguintes:
+1. Teste do editor Konva → aprovado 2026-07-09 (ver C2).
+2. Query SQL de providers (B3) → rodada 2026-07-10, zero linhas, poda adiada pro pós-launch (ver B3).
+3. Merge da branch em `main` → feito 2026-07-09/10 (commits até `f46e8db5`).
+4. Migration VOC-34 → aplicada (confirmado por Felipe: `prisma-migrate-deploy` sem pendências).
+5. Decisão B2 → fechada 2026-07-09 (separação `ThirdPartyController`, ver B2).
 
 ---
 

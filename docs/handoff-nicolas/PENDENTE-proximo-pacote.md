@@ -28,9 +28,9 @@
   encaixe no próximo pacote, já que afeta como o Actus Clip se conecta ao resto. AT-2
   (schema `ServiceOffering`/`ServiceRequest` real + cockpit `/atelie/fila`) já com código
   escrito (2026-07-02) — o modelo de dados que o vídeo do Nicolas vai plugar já existe.
-- **Carrosséis: Konva substitui Polotno** (protótipo `mini-image-editor.component.tsx`,
-  atrás de flag `NEXT_PUBLIC_VOC_MEDIA_EDITOR_ENABLED`) — decisão de leveza, Polotno em
-  quarentena. Relevante pro Nicolas se o Actus Clip cogitava usar Polotno/editor externo.
+- **Carrosséis: Konva substitui Polotno** (`mini-image-editor.component.tsx`) — decisão
+  final 2026-07-09/10, Polotno removido do `package.json`, sem flag (sempre disponível,
+  gate só por tier AI). Relevante pro Nicolas se o Actus Clip cogitava usar Polotno/editor externo.
 - **Plano de leveza & estabilidade 2026-07** (`docs/auditoria/plano-leveza-2026-07.md`):
   quarentena de rotas Postiz não usadas (`agents`/`plugs`/`third-party`), dieta do dev-loop,
   `NODE_OPTIONS=--max-old-space-size=4096` no tsc/build (relevante pro M1 8GB dele também).
