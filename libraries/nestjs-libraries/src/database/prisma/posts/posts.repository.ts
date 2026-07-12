@@ -568,21 +568,25 @@ export class PostsRepository {
       });
 
       posts.push(
-        await this._post.model.post.upsert({
-          where: {
-            id: value.id || uuidv4(),
-          },
-          create: { ...updateData('create') },
-          update: {
-            ...updateData('update'),
-            lastMessage: {
-              disconnect: true,
-            },
-            submittedForOrder: {
-              disconnect: true,
-            },
-          },
-        })
+        value.id
+          ? await this._post.model.post.update({
+              where: {
+                id: value.id,
+                organizationId: orgId,
+              },
+              data: {
+                ...updateData('update'),
+                lastMessage: {
+                  disconnect: true,
+                },
+                submittedForOrder: {
+                  disconnect: true,
+                },
+              },
+            })
+          : await this._post.model.post.create({
+              data: { ...updateData('create') },
+            })
       );
 
       if (posts.length === 1) {
@@ -590,6 +594,7 @@ export class PostsRepository {
           where: {
             post: {
               id: posts[0].id,
+              organizationId: orgId,
             },
           },
         });
@@ -608,6 +613,7 @@ export class PostsRepository {
             await this._post.model.post.update({
               where: {
                 id: posts[posts.length - 1].id,
+                organizationId: orgId,
               },
               data: {
                 tags: {
@@ -629,6 +635,7 @@ export class PostsRepository {
           await this._post.model.post.findFirst({
             where: {
               group: body.group,
+              organizationId: orgId,
               deletedAt: null,
               parentPostId: null,
             },
@@ -643,6 +650,7 @@ export class PostsRepository {
       await this._post.model.post.updateMany({
         where: {
           group: body.group,
+          organizationId: orgId,
           deletedAt: null,
         },
         data: {
@@ -830,6 +838,7 @@ export class PostsRepository {
     return this._tags.model.tags.update({
       where: {
         id,
+        orgId,
       },
       data: {
         name: body.name,
@@ -858,10 +867,23 @@ export class PostsRepository {
   ) {
     return this._comments.model.comments.create({
       data: {
-        organizationId: orgId,
-        userId,
-        postId,
         content,
+        organization: {
+          connect: {
+            id: orgId,
+          },
+        },
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+        post: {
+          connect: {
+            id: postId,
+            organizationId: orgId,
+          },
+        },
       },
     });
   }
