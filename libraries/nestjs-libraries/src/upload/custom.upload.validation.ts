@@ -38,7 +38,7 @@ export class CustomFileValidationPipe implements PipeTransform {
       throw new BadRequestException('Unsupported file type.');
     }
 
-    const maxSize = this.getMaxSize(detected.mime);
+    const maxSize = getMaxSize(detected.mime);
     if (value.size > maxSize) {
       throw new BadRequestException(
         `File size exceeds the maximum allowed size of ${maxSize} bytes.`
@@ -55,13 +55,14 @@ export class CustomFileValidationPipe implements PipeTransform {
     return value;
   }
 
-  private getMaxSize(mimeType: string): number {
-    if (mimeType.startsWith('image/')) {
-      return 10 * 1024 * 1024; // 10 MB
-    } else if (mimeType.startsWith('video/')) {
-      return 1024 * 1024 * 1024; // 1 GB
-    } else {
-      throw new BadRequestException('Unsupported file type.');
-    }
+}
+
+export function getMaxSize(mimeType: string): number {
+  if (mimeType.startsWith('image/')) {
+    return 10 * 1024 * 1024; // 10 MB
+  } else if (mimeType.startsWith('video/')) {
+    return 1024 * 1024 * 1024; // 1 GB
+  } else {
+    throw new BadRequestException('Unsupported file type.');
   }
 }

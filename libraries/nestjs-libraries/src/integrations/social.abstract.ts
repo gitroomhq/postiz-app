@@ -1,6 +1,6 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
-import { ApplicationFailure, Context } from '@temporalio/activity';
+import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
@@ -189,14 +189,6 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
-    const ctx = Context.current();
-    // Providers fetch user-supplied URLs (WordPress domain, Mastodon/Lemmy
-    // instance, Listmonk URL, etc.). Route through the SSRF guard so those
-    // requests can't be pointed at internal/private IPs (cloud metadata,
-    // localhost services, the internal network). Opt-out via env for
-    // self-hosters on a trusted private network. A caller may still pass its
-    // own dispatcher explicitly.
-    ctx.heartbeat(url);
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
