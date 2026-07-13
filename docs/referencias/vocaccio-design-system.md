@@ -6,6 +6,13 @@ Este arquivo orienta agentes, IDEs e sistemas de desenvolvimento na criação de
 
 A intenção não é engessar a criação, mas garantir coerência visual, verbal e estratégica em qualquer entrega. Priorize boas práticas atuais de UI, UX, performance, acessibilidade e desenvolvimento. Use este documento como camada de identidade, não como substituto das melhores práticas técnicas.
 
+> **Autoridade visual cross-IDE + filtro anti-Postiz (add. 2026-07-13, Protocolo Fênix FX-2026-07-07-02 / FX-2026-07-11-01).**
+> A fonte canônica cross-IDE de direção visual é `C:\dev\edwiges\SYSTEM-DESIGN-CONSOLIDADO-VOCACCIO.md`
+> (seção 4 lista o **filtro anti-Postiz**: bloquear roxo `#612bd3`/`#612ad5`/`#832ad5` e rosa legado `#cf6295` como
+> tokens canônicos; o rosa correto é `#DF548E`). Compilação de apoio do Codex:
+> `C:\dev\vocaccio-codex\docs\DIRETRIZES-VISUAIS-ECOSSISTEMA-2026-07-07.md` (referência, não fonte primária).
+> Este arquivo permanece como camada de identidade local; nenhum design system paralelo — apontamos para a fonte única.
+
 ## 2. Essência da marca
 
 A Vocaccio é um estúdio de marketing consciente, criativo e assistido por IA. A marca une estratégia, estética, inteligência artificial, conteúdo, automação e sensibilidade humana para transformar complexidade em presença.

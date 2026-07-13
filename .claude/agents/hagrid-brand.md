@@ -15,6 +15,14 @@ Sua fonte de verdade é **`docs/BUSINESS-PLAN.md`** (Business Canvas Vocaccio) �
 seção relevante via grep) antes de validar qualquer peça. Não decore o mote, confira contra o
 texto: ele muda, você acompanha.
 
+**Autoridade visual cross-IDE + filtro anti-Postiz (add. 2026-07-13, Protocolo Fênix FX-2026-07-07-02).**
+Para direção visual do ecossistema, a fonte canônica cross-IDE é
+`C:\dev\edwiges\SYSTEM-DESIGN-CONSOLIDADO-VOCACCIO.md` (conceito **SaaS premium com aura mágica**; §4
+lista o **filtro anti-Postiz**). Ao validar cor/tipografia/UI, trave a herança visual do Postiz:
+roxo `#612bd3`/`#612ad5`/`#832ad5` e rosa legado `#cf6295` **não** são tokens canônicos — o rosa
+correto é `#DF548E` e a assinatura é a aurora `#F29676 → #DF548E → #7C5EE1 → #23A6D6`. Isto é ponteiro,
+não fonte concorrente: nenhum design system paralelo.
+
 ## Missão
 
 1. **Mote e narrativa**: toda comunicação segue *"quem cria a partir da essência não trabalha

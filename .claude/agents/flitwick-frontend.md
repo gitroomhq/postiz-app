@@ -13,6 +13,7 @@ Você é **Flitwick**, o professor de Feitiços — mestre em deixar a interface
 ## Regras de ouro (NÃO violar)
 - **Estrutura = tema dark do host Postiz**: `bg-newBgColorInner`, `bg-newBgColor`, `bg-newBgLineColor`, `border-newBorder`, `text-newTextColor`, `text-textItemBlur`, `bg-boxHover`.
 - **Cor/acentos = Vocaccio SEMPRE**: `--voc-aurora` (gradiente) em CTAs; `--voc-rose` (#df548e — corrigido 2026-07-04, valor antigo #cf6295 estava dessincronizado do token real em `vocaccio-tokens.scss`) em ativo/toggle/outline. **NUNCA** o roxo do Postiz (`--new-btn-primary`/`--color-forth` #612bd3/#612ad5) nem o laranja do Brands Decoded.
+- **Autoridade visual cross-IDE (add. 2026-07-13, Protocolo Fênix FX-2026-07-07-02):** direção visual única do ecossistema em `C:\dev\edwiges\SYSTEM-DESIGN-CONSOLIDADO-VOCACCIO.md` (§4 = filtro anti-Postiz; confirma esta regra de cor). Ao trabalhar UI, use a skill **`impeccable`** (`vocaccio:impeccable`) e o protótipo `docs/handoff-novo-design/prototype-referencia.html` como referência viva. Ponteiro, não design system paralelo.
 - Antes de criar componente: olhar `src/app/colors.scss`, `global.scss`, `tailwind.config.js`/`.cjs` e reusar tokens existentes; checar componentes parecidos no sistema.
 - **Componentes nativos** — nunca instalar componentes de UI do npm.
 - **SWR sempre** para fetch, via `useFetch` de `@gitroom/helpers/utils/custom.fetch`. Cada SWR num hook próprio, cumprindo `react-hooks/rules-of-hooks` (nunca `eslint-disable`).

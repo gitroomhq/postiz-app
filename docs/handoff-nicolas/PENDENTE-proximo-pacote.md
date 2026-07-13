@@ -22,6 +22,14 @@
   Vocaccio (`--voc-*`) — regra que o Actus Clip também deve seguir se compartilhar componentes.
 
 ### Arquitetura / decisões de produto
+- **Fronteira front-office/back-office + DNA visual único do Acto/Actus** (add. 2026-07-13,
+  Protocolo Fênix FX-2026-07-07-03). Reconhecido no lado Claude: o Actus **pode ser vendido
+  separadamente sem virar produto visualmente independente** (vendável ≠ identidade própria);
+  front-office vendável e back-office assistido podem **divergir em interface sem divergir em
+  identidade** (mesmo DNA Vocaccio, editor como cockpit operacional). Handoff cross-IDE canônico
+  do Codex (referência, não copiar): `C:\dev\vocaccio-codex\docs\NICO-ACTO-HANDOFF-VISUAL-2026-07-07.md`
+  e `NICO-ACTO-PROMPT-CLAUDE-CODE-2026-07-07.md`; direção visual em
+  `C:\dev\edwiges\SYSTEM-DESIGN-CONSOLIDADO-VOCACCIO.md` §5 (Acto). Vale entrar no próximo pacote.
 - **Frente Ateliê Virtual (back-office)** — nova divisão front-office × back-office do
   produto (`docs/atelie/plano-atelie-virtual.md`). Quando o vídeo do Nicolas entrar, vira um
   `ServiceOffering` com `deliveryMode: "nicolas"` dentro desse contrato — vale explicar esse

@@ -4,6 +4,16 @@
 > Este documento consolida a evolução visual da Vocaccio, resolvendo a fragmentação anterior (Postiz vs Vocaccio Clássico) e estabelecendo um único padrão de design: **SaaS Premium com Aura Mágica** (referências: MyDose App, Circle.so).
 > Gerado em Junho/2026.
 
+> **Ponteiro cross-IDE (add. 2026-07-13, Protocolo Fênix FX-2026-07-11-01).** A fonte
+> canônica **cross-IDE** de direção visual do ecossistema passou a ser
+> `C:\dev\edwiges\SYSTEM-DESIGN-CONSOLIDADO-VOCACCIO.md` (mantida em terreno neutro Edwiges,
+> só decisão/hierarquia/ponteiros — não copia código nem assets). Ordem de precedência visual:
+> (1) o consolidado em Edwiges; (2) o protótipo `prototype-referencia.html` desta pasta —
+> **preservado como referência visual forte, não sobrescrever**; (3) **este documento**;
+> (4) diretrizes derivadas por IDE (ex. `C:\dev\vocaccio-codex\docs\DIRETRIZES-VISUAIS-ECOSSISTEMA-2026-07-07.md`);
+> (5) tokens/componentes implementados localmente. Este arquivo continua válido como
+> especificação local: nenhum design system paralelo é criado — apenas apontamos para a fonte superior.
+
 ---
 
 ## 1. O Novo Conceito Visual
