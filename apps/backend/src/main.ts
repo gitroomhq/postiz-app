@@ -17,6 +17,7 @@ import { AppModule } from './app.module';
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { startMemoryProbe } from '@gitroom/nestjs-libraries/telemetry/memory.probe';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
@@ -73,6 +74,16 @@ async function start() {
   try {
     await app.listen(port);
     console.log('Backend started successfully on port ' + port);
+
+    if (process.env.MEMORY_PROBE === 'true') {
+      const interval = Number(process.env.MEMORY_PROBE_INTERVAL_MS);
+      startMemoryProbe(
+        process.env.MEMORY_PROBE_SERVICE ||
+          process.env.RAILWAY_SERVICE_NAME ||
+          'backend',
+        interval > 0 ? interval : undefined
+      );
+    }
 
     checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
