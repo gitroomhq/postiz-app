@@ -23,6 +23,40 @@ export const getTemporalModule = (
     Number(process.env.WORKER_CONCURRENCY_DIVIDER) || 1
   );
 
+  // EVERY workflow in this codebase is started on `taskQueue: 'main'`
+  // (post.activity.ts:81 and :258, posts.service.ts:731, autopost.service.ts:110,
+  // refresh.integration.service.ts:66, email.service.ts:47). The provider name in
+  // a workflow's args routes its ACTIVITIES; the workflow itself always lives on
+  // `main`. So only ONE of the ~33 Workers below ever runs a workflow.
+  //
+  // Yet we hand `workflowsPath` to all of them, and each one therefore:
+  //   1. runs a FULL WEBPACK BUNDLE BUILD at boot -- getOrCreateBundle()
+  //      constructs a new WorkflowCodeBundler per Worker, nothing is shared
+  //      (@temporalio/worker worker.js:434-446). That is ~33 webpack compiles.
+  //   2. spawns a workflow thread with its own V8 isolate (worker.js:226-229)
+  //   3. allocates a sticky workflow cache
+  // For the 32 non-`main` Workers all three are dead weight: no workflow task
+  // ever arrives on their queue. Measured: 34 isolates, ~868 MB of idle JS heap.
+  //
+  // The SDK skips the workflow thread entirely when no bundle is given, so
+  // omitting `workflowsPath` removes all three costs. Verified: 34 isolates -> 2.
+  //
+  // Opt-in rather than the default ONLY because its safety rests on an invariant
+  // nothing enforces: if a workflow were ever scheduled on a provider queue, no
+  // Worker would poll for it and it would hang silently. True today; it would
+  // fail quietly if that ever changed.
+  const activityOnlyWorkers =
+    process.env.TEMPORAL_ACTIVITY_ONLY_WORKERS === 'true';
+
+  if (isWorkers) {
+    // One line at boot so the effective config is verifiable in production
+    // rather than assumed. Greppable as `[temporal]`.
+    console.log(
+      `[temporal] activityOnlyWorkers=${activityOnlyWorkers} ` +
+        `divider=${divider} excludeQueues=[${excludeQueues.join(',')}]`
+    );
+  }
+
   return TemporalModule.register({
     isGlobal: true,
     connection: {
@@ -59,9 +93,14 @@ export const getTemporalModule = (
                   )
                 : undefined;
 
+              // Workflows only ever run on `main`, so every other Worker can be
+              // activity-only: no bundle => no webpack build, no workflow
+              // thread, no V8 isolate, no sticky cache.
+              const runsWorkflows = taskQueue === 'main' || !activityOnlyWorkers;
+
               return {
                 taskQueue,
-                workflowsPath: path!,
+                ...(runsWorkflows ? { workflowsPath: path! } : {}),
                 activityClasses: activityClasses!,
                 autoStart: true,
                 ...(concurrency
