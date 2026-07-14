@@ -1,6 +1,7 @@
 import {
   IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional
 } from 'class-validator';
+import { JSONSchema } from 'class-validator-jsonschema';
 
 export class TikTokDto {
   @ValidateIf((p) => p.title)
@@ -44,5 +45,12 @@ export class TikTokDto {
 
   @IsIn(['DIRECT_POST', 'UPLOAD'])
   @IsString()
+  @JSONSchema({
+    description:
+      'Required. Use "DIRECT_POST" to actually publish the post to TikTok. ' +
+      '"UPLOAD" does NOT publish: it only sends the media to the user\'s TikTok app inbox, ' +
+      'where they must manually finish and publish it within 24 hours or it is discarded. ' +
+      'Only use "UPLOAD" when the user explicitly asks to review or edit the post inside the TikTok app before publishing.',
+  })
   content_posting_method: 'DIRECT_POST' | 'UPLOAD';
 }

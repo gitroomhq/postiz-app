@@ -19,7 +19,9 @@ import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 @Rules(
-  'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
+  'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment. ' +
+    'For the "content_posting_method" setting always use "DIRECT_POST" unless the user explicitly asks to review or edit the post inside the TikTok app before publishing. ' +
+    '"UPLOAD" does NOT publish the post: it only sends it to the user\'s TikTok app inbox, where they must manually complete it within 24 hours or it is discarded.'
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
@@ -476,6 +478,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
+  // UPLOAD does not publish - it only drops the media into the user's TikTok
+  // inbox - so only an explicit UPLOAD selects it. A missing value (drafts, or
+  // any caller that skipped the setting) publishes instead of silently landing
+  // in the inbox.
+  private contentPostingMethod(
+    firstPost: PostDetails<TikTokDto>
+  ): TikTokDto['content_posting_method'] {
+    return firstPost?.settings?.content_posting_method === 'UPLOAD'
+      ? 'UPLOAD'
+      : 'DIRECT_POST';
+  }
+
   private postingMethod(
     method: TikTokDto['content_posting_method'],
     isPhoto: boolean
@@ -491,7 +505,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-    const method = firstPost?.settings?.content_posting_method;
+    const method = this.contentPostingMethod(firstPost);
 
     if (method === 'DIRECT_POST') {
       return {
@@ -748,7 +762,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (isPhoto) {
       return {
         post_mode:
-          firstPost?.settings?.content_posting_method === 'DIRECT_POST'
+          this.contentPostingMethod(firstPost) === 'DIRECT_POST'
             ? 'DIRECT_POST'
             : 'MEDIA_UPLOAD',
         media_type: 'PHOTO',
@@ -794,7 +808,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
-          firstPost.settings.content_posting_method,
+          this.contentPostingMethod(firstPost),
           isPhoto
         )}`,
         {
