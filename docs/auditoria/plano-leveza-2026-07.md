@@ -221,7 +221,32 @@ sozinho) — usos indiretos, imports dinâmicos, string-based provider loading, 
 
 ---
 
-## Fase P — Performance do backend (auditoria 2026-07-13, Fable — execução pendente)
+## Fase P — Performance do backend (auditoria 2026-07-13, Fable — ✅ EXECUTADA 2026-07-14)
+
+**✅ P1, P2 e P3 concluídos 2026-07-14 (Sonnet), commits isolados com boot real +
+moody-revisor antes de cada um:**
+- P1 (`3dc60b69`): heap flag no `dev` de backend/orchestrator; `DISABLE_SWAGGER`
+  documentado no `.env.example`. Boot real: sobe limpo, `/user/self` → 401, sem rota
+  `/api` (Swagger) mapeada.
+- P2 (`97a5434e`): removido `import { Runtime } from '@temporalio/worker'` +
+  `Runtime.install(...)` do `main.ts` do backend (grep confirmou: só cliente Temporal,
+  `nestjs-temporal-core` client mode não referencia `@temporalio/worker`). Boot real 2x:
+  sem `TEMPORAL_ADDRESS` sobe limpo; com `TEMPORAL_ADDRESS` apontando pra endereço sem
+  servidor real, falha com `ECONNREFUSED` no cliente gRPC (capturado, sem crash) — **mesmo
+  comportamento reproduzido no baseline** (código original, antes da remoção), confirmando
+  que não é regressão. Validação completa do fluxo de agendar post com Temporal real fica
+  pendente de ambiente com Temporal acessível (fora do escopo — stack docker-compose.dev.yaml
+  pesada demais pro laptop 8GB).
+- P3 item 1 (`b41d4bea`): throttler não passa mais `storage` do Redis quando `REDIS_URL`
+  não está setado (evita quebra em runtime contra o `MockRedis`). Boot real 2x (com e sem
+  `REDIS_URL`) validado.
+- P3 item 2/opcional (`4520c403`): singletons de IA (`openai.service.ts`,
+  `agent.graph.service.ts`, `agent.graph.insert.service.ts`, `autopost.service.ts`) viram
+  lazy-getter, mesmo padrão do `mastra.store.ts`. Build real (`nest build`, heap 4096)
+  limpo + boot real validado.
+
+**P4 pulado por decisão explícita** (SWC builder no dev) — exige aprovação do Felipe antes
+de executar (deps novas `@swc/core`/`@swc/cli`), não solicitada nesta sessão.
 
 **Contexto:** varredura de runtime do backend focada em RAM/estabilidade no laptop 8GB.
 As fases 0/A/B/C/D/E já cobriram deps e quarentenas; esta fase ataca o que **ainda**
