@@ -934,9 +934,7 @@ export class PostsService {
       const publishTimeUnchanged =
         !!existingRoot &&
         existingRoot.state === 'QUEUE' &&
-        dayjs
-          .utc(existingRoot.publishDate)
-          .isSame(dayjs.utc(scheduledDate), 'minute');
+        dayjs(existingRoot.publishDate).isSame(dayjs(scheduledDate), 'minute');
 
       if (body.type !== 'update' && !publishTimeUnchanged) {
         this.startWorkflow(
