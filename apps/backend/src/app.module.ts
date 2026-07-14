@@ -44,7 +44,14 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
           limit: process.env.API_LIMIT ? Number(process.env.API_LIMIT) : 90,
         },
       ],
-      storage: new ThrottlerStorageRedisService(ioRedis),
+      // Sem REDIS_URL, ioRedis e um MockRedis (so get/set/del) que nao
+      // implementa os comandos/scripts que o ThrottlerStorageRedisService
+      // usa - passa-lo quebraria em runtime no primeiro request throttled.
+      // Sem storage explicito, o @nestjs/throttler usa o storage em
+      // memoria default.
+      ...(process.env.REDIS_URL
+        ? { storage: new ThrottlerStorageRedisService(ioRedis) }
+        : {}),
     }),
   ],
   controllers: [],
