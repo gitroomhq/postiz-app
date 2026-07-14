@@ -4,9 +4,18 @@ import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-});
+// Singleton preguicoso (docs/auditoria/plano-leveza-2026-07.md, Fase P3): boot
+// nao deve depender de OPENAI_API_KEY estar setado antes deste modulo ser
+// importado - so aloca o client na primeira chamada real.
+let _openai: OpenAI | undefined;
+function getOpenai(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+    });
+  }
+  return _openai;
+}
 
 const PicturePrompt = z.object({
   prompt: z.string(),
@@ -22,7 +31,7 @@ export class OpenaiService {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.
     const generate = (
-      await openai.images.generate({
+      await getOpenai().images.generate({
         prompt,
         model: 'chatgpt-image-latest',
         size: isVertical ? '1024x1536' : '1024x1024',
@@ -35,7 +44,7 @@ export class OpenaiService {
   async generatePromptForPicture(prompt: string) {
     return (
       (
-        await openai.chat.completions.parse({
+        await getOpenai().chat.completions.parse({
           model: 'gpt-4.1',
           messages: [
             {
@@ -56,7 +65,7 @@ export class OpenaiService {
   async generateVoiceFromText(prompt: string) {
     return (
       (
-        await openai.chat.completions.parse({
+        await getOpenai().chat.completions.parse({
           model: 'gpt-4.1',
           messages: [
             {
@@ -77,7 +86,7 @@ export class OpenaiService {
   async generatePosts(content: string) {
     const posts = (
       await Promise.all([
-        openai.chat.completions.create({
+        getOpenai().chat.completions.create({
           messages: [
             {
               role: 'assistant',
@@ -93,7 +102,7 @@ export class OpenaiService {
           temperature: 1,
           model: 'gpt-4.1',
         }),
-        openai.chat.completions.create({
+        getOpenai().chat.completions.create({
           messages: [
             {
               role: 'assistant',
@@ -133,7 +142,7 @@ export class OpenaiService {
     );
   }
   async extractWebsiteText(content: string) {
-    const websiteContent = await openai.chat.completions.create({
+    const websiteContent = await getOpenai().chat.completions.create({
       messages: [
         {
           role: 'assistant',
@@ -164,7 +173,7 @@ export class OpenaiService {
 
     const posts =
       (
-        await openai.chat.completions.parse({
+        await getOpenai().chat.completions.parse({
           model: 'gpt-4.1',
           messages: [
             {
@@ -197,7 +206,7 @@ export class OpenaiService {
             try {
               return (
                 (
-                  await openai.chat.completions.parse({
+                  await getOpenai().chat.completions.parse({
                     model: 'gpt-4.1',
                     messages: [
                       {
@@ -233,7 +242,7 @@ export class OpenaiService {
         const message = `You are an assistant that takes a text and break it into slides, each slide should have an image prompt and voice text to be later used to generate a video and voice, image prompt should capture the essence of the slide and also have a back dark gradient on top, image prompt should not contain text in the picture, generate between 3-5 slides maximum`;
         const parse =
           (
-            await openai.chat.completions.parse({
+            await getOpenai().chat.completions.parse({
               model: 'gpt-4.1',
               messages: [
                 {

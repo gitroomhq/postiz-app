@@ -35,16 +35,31 @@ interface WorkflowChannelsState {
   };
 }
 
-const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
-  temperature: 0.7,
-});
+// Singletons preguicosos (docs/auditoria/plano-leveza-2026-07.md, Fase P3):
+// boot nao deve depender de OPENAI_API_KEY estar setado antes deste modulo
+// ser importado - so alocam na primeira chamada real.
+let _model: ChatOpenAI | undefined;
+function getModel(): ChatOpenAI {
+  if (!_model) {
+    _model = new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+      model: 'gpt-4.1',
+      temperature: 0.7,
+    });
+  }
+  return _model;
+}
 
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'chatgpt-image-latest',
-});
+let _dalle: DallEAPIWrapper | undefined;
+function getDalle(): DallEAPIWrapper {
+  if (!_dalle) {
+    _dalle = new DallEAPIWrapper({
+      apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+      model: 'chatgpt-image-latest',
+    });
+  }
+  return _dalle;
+}
 
 const generateContent = z.object({
   socialMediaPostContent: z
@@ -215,7 +230,7 @@ export class AutopostService {
       };
     }
 
-    const structuredOutput = model.withStructuredOutput(generateContent);
+    const structuredOutput = getModel().withStructuredOutput(generateContent);
     const { socialMediaPostContent } = await ChatPromptTemplate.fromTemplate(
       `
         You are an assistant that gets raw 'description' of a content and generate a social media post content.
@@ -242,7 +257,7 @@ export class AutopostService {
   }
 
   async generatePicture(state: WorkflowChannelsState) {
-    const structuredOutput = model.withStructuredOutput(dallePrompt);
+    const structuredOutput = getModel().withStructuredOutput(dallePrompt);
     const { generatedTextToBeSentToDallE } =
       await ChatPromptTemplate.fromTemplate(
         `
@@ -257,7 +272,7 @@ export class AutopostService {
           content: state.load.description || state.description,
         });
 
-    const image = await dalle.invoke(generatedTextToBeSentToDallE);
+    const image = await getDalle().invoke(generatedTextToBeSentToDallE);
 
     return { ...state, image };
   }
