@@ -931,7 +931,10 @@ export class PostsService {
       // post without moving its time keeps the existing workflow - content and
       // settings are re-read from the DB at publish time, so a restart (which
       // would terminate + recreate the workflow) is unnecessary churn.
+      // Only a 'schedule' save may skip: 'draft'/'now' saves must still go
+      // through startWorkflow so the old run is terminated.
       const publishTimeUnchanged =
+        body.type === 'schedule' &&
         !!existingRoot &&
         existingRoot.state === 'QUEUE' &&
         dayjs(existingRoot.publishDate).isSame(dayjs(scheduledDate), 'minute');
