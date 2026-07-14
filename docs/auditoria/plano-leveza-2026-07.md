@@ -221,6 +221,73 @@ sozinho) — usos indiretos, imports dinâmicos, string-based provider loading, 
 
 ---
 
+## Fase P — Performance do backend (auditoria 2026-07-13, Fable — execução pendente)
+
+**Contexto:** varredura de runtime do backend focada em RAM/estabilidade no laptop 8GB.
+As fases 0/A/B/C/D/E já cobriram deps e quarentenas; esta fase ataca o que **ainda**
+pesa no processo do backend em si. **Executar a partir de `C:\dev\vocaccio`** (worktrees
+não têm `node_modules` — sem build/boot real, não mexer).
+
+### P1 — Dieta de dev (Haiku, esforço baixo · risco ~zero · ganho imediato)
+1. `DISABLE_SWAGGER=true` no `.env` local de dev — o gate já existe
+   (`apps/backend/src/main.ts:83`), só não é usado. Swagger regenera o schema de
+   todas as rotas a cada boot. Não mudar o default (prod continua com docs).
+2. Heap flag no **dev** do backend e do orchestrator: o A3 pôs
+   `--max-old-space-size=4096` só no `build`; o `dev` (`nest start --watch`) roda com
+   heap default e é o mesmo tsc que já OOMou. Adicionar `NODE_OPTIONS` ao script `dev`
+   de `apps/backend/package.json` e `apps/orchestrator/package.json` (via `cross-env`,
+   já usado no build).
+3. Reforçar `pnpm dev-backend` como comando padrão do dia a dia (já existe; A1).
+   Orchestrator/Temporal só quando for testar posting/workflows.
+
+**Verificação:** `pnpm dev-backend` sobe + curl em endpoint autenticável retorna 401.
+
+### P2 — Tirar o worker runtime do Temporal do processo da API (Sonnet, esforço médio · o achado grande)
+`apps/backend/src/main.ts:7-8` faz `import { Runtime } from '@temporalio/worker'` +
+`Runtime.install({ shutdownSignals: [] })` **no backend** — que é só *cliente* Temporal
+(único hit de `@temporalio/worker` fora do orchestrator, grep 2026-07-13). Isso carrega
+o core-bridge nativo (Rust) do worker na memória da API em todo boot, mesmo quando
+`TEMPORAL_ADDRESS` nem está setado (os módulos Temporal já são condicionais em
+`app.module.ts:20,35-39`, mas o import do `main.ts` roda sempre).
+
+Passos (nesta ordem, sem pular):
+1. Conferir se `nestjs-temporal-core` (modo client, `isWorkers=false`) exige o
+   `Runtime` instalado: `grep -r "@temporalio/worker" node_modules/nestjs-temporal-core/dist`.
+2. Se **não** exigir: remover import+install do `main.ts`.
+   Se exigir: condicionar com import dinâmico atrás de `process.env.TEMPORAL_ADDRESS`
+   (mesmo padrão do Mastra adormecido, `main.ts:54-63`).
+3. Boot real **duas vezes**: com `TEMPORAL_ADDRESS` setado (fluxo de agendar post não
+   pode regredir — o `Runtime.install({shutdownSignals: []})` existia provavelmente pra
+   impedir o Temporal de sequestrar SIGINT/SIGTERM; observar shutdown limpo) e sem.
+4. `rtk git diff` → moody-revisor → commit isolado.
+
+### P3 — Estabilidade barata (Sonnet, esforço baixo)
+1. **Throttler sem Redis:** `app.module.ts:47` passa `ioRedis` que, sem `REDIS_URL`,
+   é um `MockRedis` com 3 métodos fingindo ser `Redis`
+   (`libraries/nestjs-libraries/src/redis/redis.service.ts:25-30`). O
+   `ThrottlerStorageRedisService` usa comandos/scripts que o mock não tem → erro em
+   runtime no primeiro request em qualquer ambiente sem Redis. Trocar: sem `REDIS_URL`,
+   usar o storage em memória default do `@nestjs/throttler` (não passar `storage`).
+2. **Singletons de IA em module-scope:** `new OpenAI(...)` (`openai.service.ts:7`),
+   `new ChatOpenAI`/`new DallEAPIWrapper` (`agent.graph.service.ts:24,30`,
+   `agent.graph.insert.service.ts:11`, `autopost.service.ts:38,44`) leem env e alocam
+   no **import**. Ganho de RAM pequeno; ganho real é estabilidade/testabilidade
+   (boot não deve depender de ordem de env). Converter pro padrão lazy-getter já usado
+   no `mastra.store.ts` (`getPStore()`). **Opcional** — só se P1+P2 forem tranquilos;
+   nunca no mesmo commit.
+
+### P4 — SWC builder no dev (OPCIONAL — decisão do Felipe antes de executar)
+`nest start -b swc` derruba muito o custo de CPU/RAM do watch, mas exige devDeps novas
+(`@swc/core`, `@swc/cli`) — trade-off Griphook (dep pesada vs. laptop 8GB). **Não
+executar sem aprovação explícita.** Se aprovado: Sonnet médio, typecheck vira passo
+separado (`tsc --noEmit` manual/CI), validar que decorators/DI do Nest compilam certo.
+
+**Roteamento (Griphook):** P1 = Haiku baixo · P2 = Sonnet médio · P3 = Sonnet baixo ·
+P4 = Sonnet médio (se aprovado). Sessão única de Sonnet médio cobre tudo, com P1
+delegável a Haiku. Ordem: P1 → P2 → P3, um commit por item, boot real entre cada.
+
+---
+
 ## v2.0 — Pós-lançamento (robusto demais para agora; NÃO executar antes de faturar)
 1. **VOC-29 → trilho `prisma migrate`** + toda a Fase 3+ da auditoria: cifragem de tokens (VOC-03/08), tokens fora da history do Temporal (VOC-44), idempotência de posting (VOC-43), `onDelete`/FKs (VOC-35/36).
 2. **Poda de providers sociais**: allowlist real de providers (código carregado condicionalmente), remoção das deps de nicho restantes (C3 adiado).
