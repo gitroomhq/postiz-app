@@ -614,7 +614,7 @@ export class StripeService {
     if (!customer?.startsWith('cus_')) {
       return false;
     }
-    const check = this.checkDiscount(customer);
+    const check = await this.checkDiscount(customer);
     if (!check) {
       return false;
     }
