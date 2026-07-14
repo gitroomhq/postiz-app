@@ -245,8 +245,26 @@ moody-revisor antes de cada um:**
   lazy-getter, mesmo padrão do `mastra.store.ts`. Build real (`nest build`, heap 4096)
   limpo + boot real validado.
 
-**P4 pulado por decisão explícita** (SWC builder no dev) — exige aprovação do Felipe antes
-de executar (deps novas `@swc/core`/`@swc/cli`), não solicitada nesta sessão.
+**P4 (`05cbed58`): APROVADO por Felipe, tentado e PARCIALMENTE revertido.**
+`@swc/core`/`@swc/cli` já estavam instalados no repo (herdados do Postiz, nunca usados —
+não precisou `pnpm install`). Ao trocar `nest start --watch` por `-b swc`, o boot quebrou
+com `MODULE_NOT_FOUND` no primeiro import cross-package: o builder SWC do NestJS CLI, com
+este `nest-cli.json` (`monorepo: false`, `sourceRoot: "src"`), só compila os arquivos do
+próprio app (`apps/backend/src`, 54 arquivos) para `dist/src/main.js` — não compila as
+`libraries/nestjs-libraries/src/...` compartilhadas para uma estrutura de dist espelhada.
+Os aliases TypeScript cross-package (`@gitroom/nestjs-libraries/*` → `libraries/
+nestjs-libraries/src/*`, definidos em `tsconfig.base.json`) são reescritos para require
+relativo, mas a profundidade calculada fica errada porque o dist real é mais raso que o
+esperado. Testado também com `-p tsconfig.build.json` (mesmo tsconfig do build/typecheck)
+— erro idêntico. **Não é ajuste de flag, é incompatibilidade estrutural do builder SWC com
+monorepo baseado em path-aliases sem bundler** (webpack, usado no build de produção,
+resolve isso; SWC sozinho não). Decisão: reverter `-b swc` no `dev` (voltou 100% idêntico
+ao anterior), mas manter o ganho real e independente do builder: script `typecheck`
+(`tsc --noEmit`, heap 4096) separado do `build`, permitindo checar tipos sem esperar o
+build completo. Boot real do `dev` revertido validado: sobe limpo, `/user/self` → 401.
+**Reabrir SWC no futuro exigiria**: migrar pra `monorepo: true` no `nest-cli.json` com
+projeto compartilhado das libraries, ou webpack builder, ou um passo de pós-processamento
+tipo `tsc-alias` — fora do escopo desta sessão.
 
 **Contexto:** varredura de runtime do backend focada em RAM/estabilidade no laptop 8GB.
 As fases 0/A/B/C/D/E já cobriram deps e quarentenas; esta fase ataca o que **ainda**
