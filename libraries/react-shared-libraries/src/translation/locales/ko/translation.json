@@ -230,6 +230,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "선택한 페이지에 연결된 비즈니스를 찾을 수 없습니다.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "모든 페이지와 모든 비즈니스를 연결하는 것을 권장합니다.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "이 대화 상자를 닫고, 통합을 삭제한 후 새 채널을 다시 추가해 주세요.",
+  "back_to_postiz": "Postiz로 돌아가기",
   "select_instagram_account": "Instagram 계정 선택:",
   "select_page": "페이지 선택:",
   "generate_image_with_ai": "AI로 이미지 생성",
