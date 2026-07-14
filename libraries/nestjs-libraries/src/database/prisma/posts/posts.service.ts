@@ -932,10 +932,14 @@ export class PostsService {
       // settings are re-read from the DB at publish time, so a restart (which
       // would terminate + recreate the workflow) is unnecessary churn.
       // Only a 'schedule' save may skip: 'draft'/'now' saves must still go
-      // through startWorkflow so the old run is terminated.
+      // through startWorkflow so the old run is terminated. The existing row
+      // must also BE the root: if the edit promoted a child row (thread head
+      // removed/reordered), the workflow is keyed to the old root, which gets
+      // soft-deleted - the new root needs its own workflow.
       const publishTimeUnchanged =
         body.type === 'schedule' &&
         !!existingRoot &&
+        !existingRoot.parentPostId &&
         existingRoot.state === 'QUEUE' &&
         dayjs(existingRoot.publishDate).isSame(dayjs(scheduledDate), 'minute');
 
