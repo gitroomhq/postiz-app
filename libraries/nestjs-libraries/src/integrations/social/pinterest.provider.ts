@@ -461,7 +461,7 @@ export class PinterestProvider
 
     try {
       // Fetch pin analytics from Pinterest API
-      const response = await this.fetch(
+      const response = await fetch(
         `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
         {
           method: 'GET',

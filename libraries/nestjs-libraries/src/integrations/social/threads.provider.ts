@@ -566,7 +566,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     try {
       // Fetch thread insights from Threads API
       const { data } = await (
-        await this.fetch(
+        await fetch(
           `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`
         )
       ).json();

@@ -860,7 +860,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Get user stats (follower_count, following_count, likes_count, video_count)
-      const userStatsResponse = await this.fetch(
+      const userStatsResponse = await fetch(
         'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,following_count,likes_count,video_count',
         {
           method: 'GET',
@@ -910,7 +910,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       // Get recent videos and aggregate their stats
-      const videoListResponse = await this.fetch(
+      const videoListResponse = await fetch(
         'https://open.tiktokapis.com/v2/video/list/?fields=id',
         {
           method: 'POST',
@@ -929,7 +929,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         const videoIds = videos.map((v: { id: string }) => v.id);
 
         // Query video details to get engagement metrics
-        const videoQueryResponse = await this.fetch(
+        const videoQueryResponse = await fetch(
           'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
           {
             method: 'POST',
@@ -1036,7 +1036,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (postId.indexOf('v_pub_url') > -1) {
       const post = await (
-        await this.fetch(
+        await fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
             method: 'POST',
@@ -1047,10 +1047,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               publish_id: postId,
             }),
-          },
-          '',
-          0,
-          true
+          }
         )
       ).json();
 
@@ -1063,7 +1060,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Query video details using the video ID
-      const response = await this.fetch(
+      const response = await fetch(
         'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
         {
           method: 'POST',

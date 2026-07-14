@@ -1037,7 +1037,7 @@ export class InstagramProvider
     try {
       // Fetch media insights from Instagram Graph API
       const { data } = await (
-        await this.fetch(
+        await fetch(
           `https://${type}/v21.0/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
         )
       ).json();
