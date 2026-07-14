@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 dotenv -e ../../.env -- nest start --watch --entryFile=./apps/backend/src/main",
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc --noEmit -p tsconfig.build.json",
     "build": "cross-env NODE_ENV=production NODE_OPTIONS=--max-old-space-size=4096 nest build",
     "start": "dotenv -e ../../.env -- node --experimental-require-module ./dist/apps/backend/src/main.js",
     "pm2": "pm2 start pnpm --name backend -- start"
