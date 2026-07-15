@@ -251,6 +251,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        approvalStatus: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,

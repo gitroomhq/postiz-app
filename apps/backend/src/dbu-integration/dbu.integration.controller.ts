@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 
 // DBU System <-> Mapped Out Social Studio integration controller.
 // Mounted at `/dbu/v1` (externally `https://<host>/api/dbu/v1/*` — nginx strips
@@ -7,7 +8,10 @@ import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts
 // API key. Runs with no req.org/req.user, which the global guards allow.
 @Controller('dbu/v1')
 export class DbuIntegrationController {
-  constructor(private readonly _posts: PostsRepository) {}
+  constructor(
+    private readonly _posts: PostsRepository,
+    private readonly _notifications: NotificationService
+  ) {}
 
   // Phase 1: the DBU Settings "Test connection" does a signed round-trip here.
   @Post('health')
@@ -39,7 +43,27 @@ export class DbuIntegrationController {
       return { ok: false, error: 'missing_post' };
     }
     try {
-      await this._posts.setApprovalStatus(String(body.postId), action);
+      const updated: any = await this._posts.setApprovalStatus(
+        String(body.postId),
+        action
+      );
+      // Ring the operator's bell so the approval is visible without a refresh.
+      const orgId = updated?.organizationId;
+      if (orgId) {
+        const msg: Record<string, string> = {
+          APPROVED: '✅ A post was <b>approved</b> by the client.',
+          NEEDS_CHANGES: '✏️ The client <b>requested changes</b> on a post.',
+          REJECTED: '❌ A post was <b>rejected</b> by the client.',
+        };
+        await this._notifications
+          .inAppNotification(
+            orgId,
+            'Post approval updated',
+            msg[action] || `A post was ${action}.`,
+            false
+          )
+          .catch(() => {});
+      }
       return { ok: true, postId: body.postId, approvalStatus: action };
     } catch (e: any) {
       return { ok: false, error: e?.message || 'failed' };
@@ -55,11 +79,25 @@ export class DbuIntegrationController {
       return { ok: false, error: 'missing_post_or_comment' };
     }
     try {
-      await this._posts.appendDbuDiscussion(String(body.postId), {
-        author: String(body.authorName || 'Client'),
-        comment: String(body.comment),
-        at: new Date().toISOString(),
-      });
+      const updated: any = await this._posts.appendDbuDiscussion(
+        String(body.postId),
+        {
+          author: String(body.authorName || 'Client'),
+          comment: String(body.comment),
+          at: new Date().toISOString(),
+        }
+      );
+      const orgId = updated?.organizationId;
+      if (orgId) {
+        await this._notifications
+          .inAppNotification(
+            orgId,
+            'New client comment',
+            `💬 New client comment: “${String(body.comment).slice(0, 120)}”`,
+            false
+          )
+          .catch(() => {});
+      }
       return { ok: true, postId: body.postId };
     } catch (e: any) {
       return { ok: false, error: e?.message || 'failed' };

@@ -1012,6 +1012,27 @@ const CalendarItem: FC<{
     user?.impersonate &&
     post.creationMethod &&
     post.creationMethod !== 'UNKNOWN';
+  // DBU integration: client approval status pill (from the DBU portal round-trip).
+  const approval = (post as any).approvalStatus as string | undefined;
+  const approvalBadge =
+    approval && approval !== 'NONE'
+      ? (
+          {
+            WAITING_APPROVAL: {
+              bg: '#E5A13A',
+              label: 'Awaiting',
+              full: 'Awaiting client approval',
+            },
+            APPROVED: { bg: '#1F9D55', label: 'Approved', full: 'Approved by client' },
+            NEEDS_CHANGES: {
+              bg: '#E08A2B',
+              label: 'Changes',
+              full: 'Client requested changes',
+            },
+            REJECTED: { bg: '#E14B4B', label: 'Rejected', full: 'Rejected by client' },
+          } as Record<string, { bg: string; label: string; full: string }>
+        )[approval]
+      : null;
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -1049,6 +1070,16 @@ const CalendarItem: FC<{
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
         >
           !
+        </div>
+      )}
+      {approvalBadge && (
+        <div
+          className="absolute -top-[7px] right-[4px] z-20 px-[6px] h-[16px] rounded-full flex items-center justify-center text-white text-[9px] font-bold cursor-default shadow-md"
+          style={{ backgroundColor: approvalBadge.bg }}
+          data-tooltip-id="tooltip"
+          data-tooltip-content={approvalBadge.full}
+        >
+          {approvalBadge.label}
         </div>
       )}
       {showCreationMethodBadge && (
