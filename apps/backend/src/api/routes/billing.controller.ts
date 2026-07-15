@@ -4,11 +4,13 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { BillingCancelDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.cancel.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import dayjs from 'dayjs';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -114,16 +116,33 @@ export class BillingController {
   async cancel(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @Body() body: BillingCancelDto
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await this._stripeService.setToCancel(org.id);
 
-    return this._stripeService.setToCancel(org.id);
+    if (result.cancel_at) {
+      await this._subscriptionService.saveCancellationFeedback(
+        org.id,
+        user.id,
+        body.feedback
+      );
+
+      try {
+        await this._notificationService.sendEmail(
+          user.email,
+          'Your subscription has been cancelled',
+          `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+            result.cancel_at
+          ).format(
+            'MMMM D, YYYY'
+          )}.<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+            process.env.FRONTEND_URL
+          }/billing">billing page</a>.`
+        );
+      } catch (err) {}
+    }
+
+    return result;
   }
 
   @Post('/prorate')

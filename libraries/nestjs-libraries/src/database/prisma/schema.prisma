@@ -36,6 +36,7 @@ model Organization {
   sets                Sets[]
   signatures          Signatures[]
   subscription        Subscription?
+  cancellationFeedbacks SubscriptionCancellationFeedback[]
   tags                Tags[]
   thirdParty          ThirdParty[]
   usedCodes           UsedCodes[]
@@ -113,6 +114,7 @@ model User {
   sendFailureEmails     Boolean              @default(true)
   sendStreakEmails      Boolean              @default(true)
   oauthAuthorizations   OAuthAuthorization[]
+  cancellationFeedbacks SubscriptionCancellationFeedback[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -296,6 +298,19 @@ model Subscription {
 
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+model SubscriptionCancellationFeedback {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  feedback       String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model Customer {

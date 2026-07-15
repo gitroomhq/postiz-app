@@ -13,8 +13,25 @@ export class SubscriptionRepository {
     private readonly _organization: PrismaRepository<'organization'>,
     private readonly _user: PrismaRepository<'user'>,
     private readonly _credits: PrismaRepository<'credits'>,
-    private _usedCodes: PrismaRepository<'usedCodes'>
+    private _usedCodes: PrismaRepository<'usedCodes'>,
+    private readonly _cancellationFeedback: PrismaRepository<'subscriptionCancellationFeedback'>
   ) {}
+
+  saveCancellationFeedback(
+    organizationId: string,
+    userId: string,
+    feedback: string
+  ) {
+    return this._cancellationFeedback.model.subscriptionCancellationFeedback.create(
+      {
+        data: {
+          organizationId,
+          userId,
+          feedback,
+        },
+      }
+    );
+  }
 
   getUserAccount(userId: string) {
     return this._user.model.user.findFirst({

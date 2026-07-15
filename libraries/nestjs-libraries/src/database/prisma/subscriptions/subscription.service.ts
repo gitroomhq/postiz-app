@@ -33,6 +33,18 @@ export class SubscriptionService {
     return this._subscriptionRepository.getCode(code);
   }
 
+  saveCancellationFeedback(
+    organizationId: string,
+    userId: string,
+    feedback: string
+  ) {
+    return this._subscriptionRepository.saveCancellationFeedback(
+      organizationId,
+      userId,
+      feedback
+    );
+  }
+
   async deleteSubscription(customerId: string) {
     await this.modifySubscription(
       customerId,
