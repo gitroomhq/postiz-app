@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+import { emitDbuContentUpsert } from '@gitroom/nestjs-libraries/database/prisma/posts/dbu.emit';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -461,8 +462,8 @@ export class PostsRepository {
     });
   }
 
-  updatePost(id: string, postId: string, releaseURL: string) {
-    return this._post.model.post.update({
+  async updatePost(id: string, postId: string, releaseURL: string) {
+    const r = await this._post.model.post.update({
       where: {
         id,
       },
@@ -472,6 +473,35 @@ export class PostsRepository {
         releaseId: postId,
       },
     });
+    this.emitDbuStatus(id).catch(() => {});
+    return r;
+  }
+
+  // DBU System integration: mirror the post's publishing status (published/failed/
+  // scheduled) + published link to DBU. Fire-and-forget; only fires when the post
+  // carries a DBU association. Uses a status-only event that never blanks content.
+  async emitDbuStatus(id: string) {
+    try {
+      const post: any = await this._post.model.post.findUnique({
+        where: { id },
+        include: { integration: true },
+      });
+      if (!post?.dbuClientId) return;
+      await emitDbuContentUpsert({
+        event: 'content.status',
+        post,
+        dbu: {
+          clientId: post.dbuClientId,
+          projectId: post.dbuProjectId,
+          milestoneId: post.dbuMilestoneId,
+          contentCycle: post.dbuContentCycle,
+        },
+        provider: post.integration?.providerIdentifier,
+        orgId: post.organizationId,
+      });
+    } catch (e) {
+      /* best-effort */
+    }
   }
 
   // DBU System integration: record the DBU content item id returned by the sync.
@@ -528,6 +558,9 @@ export class PostsRepository {
         });
       } catch (err) {}
     }
+
+    // DBU System: mirror the new publishing status (e.g. ERROR/failed) to DBU.
+    this.emitDbuStatus(id).catch(() => {});
 
     return update;
   }

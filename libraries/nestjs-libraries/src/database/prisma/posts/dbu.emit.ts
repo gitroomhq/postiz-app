@@ -33,6 +33,7 @@ export async function emitDbuContentUpsert(opts: {
   dbu?: any;
   provider?: string;
   orgId: string;
+  event?: 'content.upsert' | 'content.status';
 }): Promise<{ ok: boolean; status?: number; contentItemId?: string; error?: string }> {
   const url = process.env.DBU_WEBHOOK_URL || '';
   const secret = process.env.DBU_INTEGRATION_SECRET || '';
@@ -42,7 +43,7 @@ export async function emitDbuContentUpsert(opts: {
   }
 
   const payload = {
-    event: 'content.upsert',
+    event: opts.event || 'content.upsert',
     idempotency_key: `${post.id}:${new Date(post.updatedAt || post.createdAt || Date.now()).getTime()}`,
     post: {
       id: post.id,
