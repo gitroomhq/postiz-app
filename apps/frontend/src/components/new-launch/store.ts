@@ -45,6 +45,10 @@ interface StoreState {
   // Shared so both the composer and provider settings read one source of truth.
   contentType: string;
   setContentType: (contentType: string) => void;
+  // True when a DBU client is selected — provider Settings then show the Content Type
+  // selector (instead of the native Post Type) and the composer offers Submit-for-Approval.
+  dbuActive: boolean;
+  setDbuActive: (dbuActive: boolean) => void;
   setLocked: (locked: boolean) => void;
   integrations: Integrations[];
   selectedIntegrations: SelectedIntegrations[];
@@ -155,6 +159,7 @@ const initialState = {
   locked: false,
   hide: false,
   contentType: '',
+  dbuActive: false,
   integrations: [] as Integrations[],
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
@@ -165,6 +170,7 @@ const initialState = {
 export const useLaunchStore = create<StoreState>()((set) => ({
   ...initialState,
   setContentType: (contentType: string) => set(() => ({ contentType })),
+  setDbuActive: (dbuActive: boolean) => set(() => ({ dbuActive })),
   setCurrent: (current: string) =>
     set((state) => ({
       current: current,

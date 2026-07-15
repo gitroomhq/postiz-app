@@ -1,15 +1,23 @@
 'use client';
 
-import { CSSProperties, FC, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  CSSProperties,
+  FC,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 // DBU System association selector for the composer. Cascading Client -> Active
 // Project -> Monthly Cycle, fed by the session-authed /dbu-options/* proxy
-// (org-scoped). Selecting a client also AUTO-DETECTS its connected channels (the
-// platform icons above light up) via the permanent channel↔client map — the
-// operator never re-selects the same account. Content type lives once in the
-// composer settings, not here. Defensive: renders nothing if the DBU integration
-// is disabled or any fetch fails, so it can never block non-DBU content.
+// (org-scoped). Selecting a client AUTO-DETECTS its connected channels (the platform
+// icons above light up) via the permanent channel↔client map. If a client has no
+// linked channel yet, a one-time "link a channel" control appears — created once,
+// reused forever, keyed by permanent channel ID (never names). Content type lives
+// in the channel Settings, not here. Defensive: renders nothing if the DBU
+// integration is disabled or any fetch fails, so it can never block non-DBU content.
 
 export interface DbuValue {
   clientId?: string;
@@ -36,6 +44,12 @@ interface ChannelMapRow {
   display_name?: string;
 }
 
+interface OrgChannel {
+  id: string;
+  name?: string;
+  identifier?: string;
+}
+
 const selStyle: CSSProperties = {
   width: '100%',
   background: 'transparent',
@@ -53,7 +67,9 @@ export const DbuAssociationPanel: FC<{
   // Called when the selected client's connected channels are resolved, so the
   // composer can auto-activate the matching platform icons.
   onResolveChannels?: (clientId: string | null, channelIds: string[]) => void;
-}> = ({ value, onChange, onResolveChannels }) => {
+  // The org's connected channels — used for the one-time "link a channel" control.
+  integrations?: OrgChannel[];
+}> = ({ value, onChange, onResolveChannels, integrations = [] }) => {
   const fetch = useFetch();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [clients, setClients] = useState<Opt[]>([]);
@@ -63,13 +79,16 @@ export const DbuAssociationPanel: FC<{
   const [clientId, setClientId] = useState(value?.clientId || '');
   const [projectId, setProjectId] = useState(value?.projectId || '');
   const [milestoneId, setMilestoneId] = useState(value?.milestoneId || '');
+  const [linkChannelId, setLinkChannelId] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState('');
   const channelsRef = useRef(onResolveChannels);
   channelsRef.current = onResolveChannels;
 
   const getJson = useCallback(
-    async (url: string) => {
+    async (url: string, opts?: any) => {
       try {
-        const r = await fetch(url);
+        const r = await fetch(url, opts);
         return await r.json();
       } catch {
         return null;
@@ -77,6 +96,11 @@ export const DbuAssociationPanel: FC<{
     },
     [fetch]
   );
+
+  const loadChannels = useCallback(async () => {
+    const ch = await getJson('/dbu-options/channels');
+    setChannelMap(Array.isArray(ch?.channels) ? ch.channels : []);
+  }, [getJson]);
 
   useEffect(() => {
     (async () => {
@@ -88,10 +112,9 @@ export const DbuAssociationPanel: FC<{
       setEnabled(true);
       const c = await getJson('/dbu-options/clients');
       setClients(c?.clients || []);
-      const ch = await getJson('/dbu-options/channels');
-      setChannelMap(Array.isArray(ch?.channels) ? ch.channels : []);
+      await loadChannels();
     })();
-  }, [getJson]);
+  }, [getJson, loadChannels]);
 
   useEffect(() => {
     if (!clientId) {
@@ -148,11 +171,40 @@ export const DbuAssociationPanel: FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, projectId, milestoneId, cycles, projects]);
 
+  const doLink = useCallback(async () => {
+    if (!clientId || !linkChannelId) return;
+    setLinking(true);
+    setLinkError('');
+    const integ = integrations.find((i) => i.id === linkChannelId);
+    const r = await getJson('/dbu-options/channels/link', {
+      method: 'POST',
+      body: JSON.stringify({
+        channelId: linkChannelId,
+        clientId,
+        provider: integ?.identifier || null,
+        displayName: integ?.name || null,
+      }),
+    });
+    setLinking(false);
+    if (r?.ok) {
+      setLinkChannelId('');
+      await loadChannels(); // refresh the map -> auto-detect fires and lights the icon
+    } else {
+      setLinkError(r?.error || 'Could not link the channel.');
+    }
+  }, [clientId, linkChannelId, integrations, getJson, loadChannels]);
+
   if (enabled === false || enabled === null) return null;
 
   const incomplete = !!clientId && (!projectId || !milestoneId);
   const proj = projects.find((x) => x.id === projectId);
   const mode = proj?.approval_mode;
+  const mappedForClient = channelMap.filter((c) => c.client_id === clientId);
+  const needsLink = !!clientId && mappedForClient.length === 0;
+  // Build a helpful label for each org channel (flag if already linked elsewhere).
+  const clientNameById = (id: string) =>
+    clients.find((c) => c.id === id)?.name || 'another client';
+  const mapByChannel = new Map(channelMap.map((c) => [c.channel_id, c.client_id]));
 
   return (
     <div
@@ -174,6 +226,8 @@ export const DbuAssociationPanel: FC<{
           setClientId(e.target.value);
           setProjectId('');
           setMilestoneId('');
+          setLinkChannelId('');
+          setLinkError('');
         }}
       >
         <option value="">Select DBU client…</option>
@@ -214,11 +268,70 @@ export const DbuAssociationPanel: FC<{
           ))}
         </select>
       )}
+      {needsLink && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            padding: 8,
+            borderRadius: 8,
+            border: '1px dashed rgba(127,127,127,0.5)',
+          }}
+        >
+          <div style={{ fontSize: 12, opacity: 0.85 }}>
+            This client has no linked social account yet. Link one once — it’s
+            remembered forever and its icon will light up automatically next time.
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <select
+              style={{ ...selStyle, flex: 1 }}
+              value={linkChannelId}
+              onChange={(e) => setLinkChannelId(e.target.value)}
+            >
+              <option value="">Select an account to link…</option>
+              {integrations.map((i) => {
+                const other = mapByChannel.get(i.id);
+                return (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                    {i.identifier ? ` (${String(i.identifier).split('-')[0]})` : ''}
+                    {other && other !== clientId
+                      ? ` — now: ${clientNameById(other)}`
+                      : ''}
+                  </option>
+                );
+              })}
+            </select>
+            <button
+              type="button"
+              disabled={!linkChannelId || linking}
+              onClick={doLink}
+              style={{
+                background: '#612BD3',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '0 16px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: !linkChannelId || linking ? 'not-allowed' : 'pointer',
+                opacity: !linkChannelId || linking ? 0.7 : 1,
+              }}
+            >
+              {linking ? 'Linking…' : 'Link'}
+            </button>
+          </div>
+          {!!linkError && (
+            <div style={{ fontSize: 12, color: '#e57373' }}>{linkError}</div>
+          )}
+        </div>
+      )}
       {!!projectId && mode && (
         <div style={{ fontSize: 12, opacity: 0.8 }}>
           {mode === 'direct_schedule'
-            ? '⚡ Direct scheduling — this project posts straight to the calendar.'
-            : '✔ Approval required — posts are sent to the client portal for approval first.'}
+            ? '⚡ Direct scheduling — this project can post straight to the calendar.'
+            : '✔ Approval required — use “Submit for Approval” to send it to the client portal first.'}
         </div>
       )}
       {incomplete && (

@@ -27,6 +27,16 @@ const postType = [
   },
 ];
 
+// DBU-managed single content type (shown in Settings for DBU posts).
+const DBU_CONTENT_TYPES = [
+  { value: 'static', label: 'Static Post' },
+  { value: 'carousel', label: 'Carousel' },
+  { value: 'reel', label: 'Reel' },
+  { value: 'story', label: 'Story' },
+  { value: 'video', label: 'Video' },
+  { value: 'ads', label: 'Ads' },
+];
+
 const graduationStrategies = [
   {
     value: 'MANUAL',
@@ -47,29 +57,47 @@ const InstagramCollaborators: FC<{
   const isTrialReel = watch('is_trial_reel');
   // The Audio API is only available with Facebook Login, not Instagram Login
   const supportsAudio = integration?.identifier === 'instagram';
-  // DBU-managed content picks its type ONCE in the composer's "Content Type"
-  // selector. Here we mirror it onto Instagram's native post_type (Story -> story;
-  // everything else -> post) and hide this duplicate selector.
-  const { dbuContentType } = useLaunchStore(
-    useShallow((s) => ({ dbuContentType: s.contentType }))
+  // DBU-managed posts choose their type HERE (in Settings) as the single "Content Type"
+  // selector — Static/Carousel/Reel/Story/Video/Ads. It is stored globally (dbu.contentType)
+  // and mirrored onto Instagram's native post_type (Story -> story; everything else -> post)
+  // so publishing, collaborators and audio still behave correctly.
+  const { dbuActive, storeContentType, setStoreContentType } = useLaunchStore(
+    useShallow((s) => ({
+      dbuActive: s.dbuActive,
+      storeContentType: s.contentType,
+      setStoreContentType: s.setContentType,
+    }))
   );
-  const dbuManaged = !!dbuContentType;
-  const igPostType = dbuContentType === 'story' ? 'story' : 'post';
+  const mapToNative = (ct: string) => (ct === 'story' ? 'story' : 'post');
   useEffect(() => {
-    if (dbuManaged) {
-      setValue('post_type', igPostType);
+    if (dbuActive) {
+      setValue('post_type', mapToNative(storeContentType));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbuManaged, igPostType]);
+  }, [dbuActive, storeContentType]);
   return (
     <>
-      {dbuManaged ? (
+      {dbuActive ? (
         <>
           <input type="hidden" {...register('post_type')} />
-          <div className="text-[13px] text-textColor opacity-70">
-            {t('content_type_set_above', 'Content type is set above')} (
-            {t(`content_type_${igPostType}`, igPostType === 'story' ? 'Story' : 'Post / Reel')}
-            ).
+          <div className="flex flex-col gap-[8px]">
+            <div className="text-[14px] font-[600] text-textColor">
+              {t('content_type', 'Content Type')}
+            </div>
+            <select
+              value={storeContentType}
+              onChange={(e) => setStoreContentType(e.target.value)}
+              className="w-full bg-newBgColor border border-newBorder rounded-[8px] px-[12px] h-[44px] text-[14px] text-textColor outline-none"
+            >
+              <option value="">
+                {t('select_content_type', 'Select content type…')}
+              </option>
+              {DBU_CONTENT_TYPES.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
         </>
       ) : (
