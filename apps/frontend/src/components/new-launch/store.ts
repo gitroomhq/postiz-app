@@ -41,6 +41,10 @@ interface StoreState {
   comments: boolean | 'no-media';
   locked: boolean;
   hide: boolean;
+  // DBU integration: single unified content type (Static/Carousel/Reel/Story/Video/Ads).
+  // Shared so both the composer and provider settings read one source of truth.
+  contentType: string;
+  setContentType: (contentType: string) => void;
   setLocked: (locked: boolean) => void;
   integrations: Integrations[];
   selectedIntegrations: SelectedIntegrations[];
@@ -150,6 +154,7 @@ const initialState = {
   current: 'global',
   locked: false,
   hide: false,
+  contentType: '',
   integrations: [] as Integrations[],
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
@@ -159,6 +164,7 @@ const initialState = {
 
 export const useLaunchStore = create<StoreState>()((set) => ({
   ...initialState,
+  setContentType: (contentType: string) => set(() => ({ contentType })),
   setCurrent: (current: string) =>
     set((state) => ({
       current: current,

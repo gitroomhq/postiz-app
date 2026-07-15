@@ -74,6 +74,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     setTags,
     integrations,
     setSelectedIntegrations,
+    contentType,
+    setContentType,
     locked,
     current,
     activateExitButton,
@@ -92,9 +94,61 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       selectedIntegrations: state.selectedIntegrations,
       integrations: state.integrations,
       setSelectedIntegrations: state.setSelectedIntegrations,
+      contentType: state.contentType,
+      setContentType: state.setContentType,
       locked: state.locked,
       activateExitButton: state.activateExitButton,
     }))
+  );
+
+  // DBU content types (single source; maps to Instagram's native post_type at save).
+  const DBU_CONTENT_TYPES = [
+    { v: 'static', l: 'Static Post' },
+    { v: 'carousel', l: 'Carousel' },
+    { v: 'reel', l: 'Reel' },
+    { v: 'story', l: 'Story' },
+    { v: 'video', l: 'Video' },
+    { v: 'ads', l: 'Ads' },
+  ];
+  // Multiple accounts of the same platform for the DBU client — the operator must
+  // pick which one(s); we never guess. Populated by the channel auto-detection.
+  const [multiAccountProviders, setMultiAccountProviders] = useState<string[]>([]);
+
+  // Approval Mode drives the primary action: Approval Required posts are submitted
+  // to the DBU client portal first; Direct Scheduling posts go straight to calendar.
+  const dbuApprovalRequired =
+    !!dbuAssoc?.clientId && dbuAssoc?.approvalMode === 'client_approval';
+
+  // Auto-detect the DBU client's connected channels and activate their icons.
+  // Only the single-account platforms are auto-selected; if a platform has 2+
+  // accounts for this client we leave it for the operator to choose.
+  const resolveDbuChannels = useCallback(
+    (cid: string | null, channelIds: string[]) => {
+      if (existingData?.integration) return; // editing an existing post — never override
+      if (!cid || channelIds.length === 0) {
+        setMultiAccountProviders([]);
+        return;
+      }
+      const matched = integrations.filter((p: any) => channelIds.includes(p.id));
+      const byPlatform = new Map<string, any[]>();
+      for (const integ of matched) {
+        const plat = String((integ as any).identifier || '').split('-')[0];
+        byPlatform.set(plat, [...(byPlatform.get(plat) || []), integ]);
+      }
+      const autoSelect: any[] = [];
+      const ambiguous: string[] = [];
+      byPlatform.forEach((list, plat) => {
+        if (list.length === 1) autoSelect.push(list[0]);
+        else ambiguous.push(plat);
+      });
+      setMultiAccountProviders(ambiguous);
+      if (autoSelect.length) {
+        setSelectedIntegrations(
+          autoSelect.map((p) => ({ settings: {}, selectedIntegrations: p }))
+        );
+      }
+    },
+    [integrations, setSelectedIntegrations, existingData]
   );
 
   useEffect(() => {
@@ -197,7 +251,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [existingData, mutate, modal]);
 
   const schedule = useCallback(
-    (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
+    (
+        type: 'draft' | 'now' | 'schedule' | 'update',
+        opts?: { submitForApproval?: boolean }
+      ) =>
+      async () => {
+        const submitForApproval = !!opts?.submitForApproval;
       if (
         (type === 'now' || type === 'schedule') &&
         (existingData?.posts?.[0]?.state === 'PUBLISHED' ||
@@ -249,7 +308,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       // client was selected, so non-DBU posts are unaffected.
       if (
         dbuAssoc?.clientId &&
-        (!dbuAssoc.projectId || !dbuAssoc.milestoneId || !dbuAssoc.contentType)
+        (!dbuAssoc.projectId || !dbuAssoc.milestoneId || !contentType)
       ) {
         toaster.show(
           'Select the DBU project, monthly cycle and content type before saving.',
@@ -269,13 +328,24 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       const group = existingData.group || makeId(10);
 
-      const posts = allValues.map((post: any) => ({
-        integration: {
-          id: post.id,
-        },
-        group,
-        settings: { ...(post.settings || {}) },
-        value: post.values.map((value: any) => ({
+      const posts = allValues.map((post: any) => {
+        const settings = { ...(post.settings || {}) };
+        // DBU: the single content type drives Instagram's native post_type so the
+        // operator never picks the type twice (Story -> story; everything else -> post,
+        // where feed/carousel/reel are distinguished by the attached media).
+        if (dbuAssoc?.clientId && contentType) {
+          const integ = integrations.find((i: any) => i.id === post.id);
+          if (String((integ as any)?.identifier || '').startsWith('instagram')) {
+            settings.post_type = contentType === 'story' ? 'story' : 'post';
+          }
+        }
+        return {
+          integration: {
+            id: post.id,
+          },
+          group,
+          settings,
+          value: post.values.map((value: any) => ({
           ...(value.id ? { id: value.id } : {}),
           content: value.content,
           delay: value.delay || 0,
@@ -289,8 +359,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 thumbnailTimestamp,
               })
             ) || [],
-        })),
-      }));
+          })),
+        };
+      });
 
       if (!dummy) {
         const checkAllValid = await (
@@ -321,7 +392,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return;
         }
 
-        if (type !== 'draft') {
+        if (type !== 'draft' || submitForApproval) {
           for (const item of checkAllValid) {
             if (item.valid === false) {
               toaster.show(
@@ -409,8 +480,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
         posts,
-        // DBU System association (only when a DBU client is selected).
-        ...(dbuAssoc?.clientId ? { dbu: dbuAssoc } : {}),
+        // DBU System association (only when a DBU client is selected). The single
+        // content type is merged in here; submitForApproval routes it through the
+        // client portal (Approval Required) instead of straight to the calendar.
+        ...(dbuAssoc?.clientId
+          ? {
+              dbu: { ...dbuAssoc, contentType },
+              ...(submitForApproval ? { submitForApproval: true } : {}),
+            }
+          : {}),
       };
 
       if (dummy) {
@@ -456,7 +534,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
+    [
+      ref,
+      repeater,
+      tags,
+      date,
+      addEditSets,
+      dummy,
+      shortlinkPreferenceData,
+      dbuAssoc,
+      contentType,
+      integrations,
+      selectedIntegrations,
+    ]
   );
 
   return (
@@ -493,7 +583,47 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     </div>
                   </div>
                   {!dummy && (
-                    <DbuAssociationPanel value={dbuAssoc} onChange={setDbuAssoc} />
+                    <DbuAssociationPanel
+                      value={dbuAssoc}
+                      onChange={setDbuAssoc}
+                      onResolveChannels={resolveDbuChannels}
+                    />
+                  )}
+                  {!dummy && !!dbuAssoc?.clientId && (
+                    <div className="flex flex-col gap-[6px] -mt-[4px] mb-[4px]">
+                      <div className="text-[13px] font-[600] text-textColor">
+                        {t('content_type', 'Content Type')}
+                      </div>
+                      <select
+                        value={contentType}
+                        onChange={(e) => setContentType(e.target.value)}
+                        className="w-full bg-transparent border border-newBorder rounded-[8px] px-[10px] py-[8px] text-[14px] text-textColor outline-none"
+                      >
+                        <option value="">
+                          {t('select_content_type', 'Select content type…')}
+                        </option>
+                        {DBU_CONTENT_TYPES.map((ct) => (
+                          <option key={ct.v} value={ct.v}>
+                            {ct.l}
+                          </option>
+                        ))}
+                      </select>
+                      {multiAccountProviders.length > 0 && (
+                        <div className="text-[12px] text-[#e5a13a]">
+                          {t(
+                            'multi_account_pick',
+                            'This client has more than one'
+                          )}{' '}
+                          {multiAccountProviders
+                            .map((p) => capitalize(p))
+                            .join(', ')}{' '}
+                          {t(
+                            'multi_account_pick_2',
+                            'account — pick the right one above.'
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                   <div className="flex flex-1 gap-[6px] flex-col">
                     <div>{!existingData.integration && <SelectCurrent />}</div>
@@ -632,7 +762,29 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 Save Set
               </button>
             )}
-            {!addEditSets && (
+            {!addEditSets && dbuApprovalRequired && (
+              <button
+                disabled={
+                  selectedIntegrations.length === 0 || loading || locked
+                }
+                onClick={schedule('draft', { submitForApproval: true })}
+                className="text-white relative min-w-[200px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
+              >
+                {loading && (
+                  <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
+                    <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
+                  </div>
+                )}
+                <div
+                  className={clsx('text-[15px] font-[600]', loading && 'invisible')}
+                >
+                  {selectedIntegrations.length === 0
+                    ? t('check_circles_above', 'Check the circles above')
+                    : t('submit_for_approval', 'Submit for Approval')}
+                </div>
+              </button>
+            )}
+            {!addEditSets && !dbuApprovalRequired && (
               <div className="group cursor-pointer relative">
                 <button
                   disabled={

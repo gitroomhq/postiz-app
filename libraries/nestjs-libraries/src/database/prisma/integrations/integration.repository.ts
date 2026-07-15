@@ -540,6 +540,20 @@ export class IntegrationRepository {
     });
   }
 
+  // DBU integration: permanent channel↔client link (mirror of DBU social_channel_map).
+  // Scoped to the org so an employee can only relabel channels in their own workspace.
+  assignDbuClient(
+    org: string,
+    integrationId: string,
+    dbuClientId: string | null,
+    dbuClientName: string | null
+  ) {
+    return this._integration.model.integration.updateMany({
+      where: { id: integrationId, organizationId: org },
+      data: { dbuClientId, dbuClientName },
+    });
+  }
+
   async disableChannel(org: string, id: string) {
     await this._integration.model.integration.update({
       where: {

@@ -114,6 +114,12 @@ export class DbuAssociation {
   @IsOptional()
   @IsString()
   contentType?: string;
+
+  // Resolved Approval Mode from DBU (project override ?? client default):
+  // 'client_approval' (route through the client portal) | 'direct_schedule'.
+  @IsOptional()
+  @IsString()
+  approvalMode?: string;
 }
 
 export class CreatePostDto {
@@ -154,4 +160,11 @@ export class CreatePostDto {
   @ValidateNested()
   @Type(() => DbuAssociation)
   dbu?: DbuAssociation;
+
+  // Approval-Required workflow: create the post as a DRAFT awaiting client approval
+  // (approvalStatus=WAITING_APPROVAL). The chosen `date` is stored as the intended
+  // publish date and the post auto-schedules when the client approves in the DBU portal.
+  @IsOptional()
+  @IsBoolean()
+  submitForApproval?: boolean;
 }

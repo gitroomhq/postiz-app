@@ -148,6 +148,20 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org);
   }
 
+  assignDbuClient(
+    org: string,
+    integrationId: string,
+    dbuClientId: string | null,
+    dbuClientName: string | null
+  ) {
+    return this._integrationRepository.assignDbuClient(
+      org,
+      integrationId,
+      dbuClientId,
+      dbuClientName
+    );
+  }
+
   // --- Mapped Out channel/client scoping (Phase 2B) -------------------------
   // Returns which channels/clients a user may see in a workspace.
   // { all: true } => Super Admin / workspace owner: everything.

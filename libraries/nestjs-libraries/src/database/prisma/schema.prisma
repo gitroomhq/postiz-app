@@ -325,6 +325,8 @@ model Customer {
   id           String           @id @default(uuid())
   name         String
   orgId        String
+  dbuClientId   String?
+  dbuClientName String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   deletedAt    DateTime?
@@ -358,6 +360,8 @@ model Integration {
   customerId            String?
   rootInternalId        String?
   additionalSettings    String?                @default("[]")
+  dbuClientId           String?
+  dbuClientName         String?
   exisingPlugData       ExisingPlugData[]
   customer              Customer?              @relation(fields: [customerId], references: [id])
   organization          Organization           @relation(fields: [organizationId], references: [id])
@@ -378,6 +382,7 @@ model Integration {
   @@index([inBetweenSteps])
   @@index([refreshNeeded])
   @@index([disabled])
+  @@index([dbuClientId])
 }
 
 model Signatures {

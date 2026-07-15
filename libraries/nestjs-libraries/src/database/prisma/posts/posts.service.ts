@@ -924,7 +924,18 @@ export class PostsService {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
+      // Approval-Required workflow: mark the (draft) post as awaiting client approval
+      // and do NOT start the publish workflow — it schedules only after the client
+      // approves in the DBU portal and the operator uses "Add to calendar".
+      if (body.submitForApproval && posts[0]) {
+        await this._postRepository.setApprovalStatus(
+          posts[0].id,
+          'WAITING_APPROVAL'
+        );
+        (posts[0] as any).approvalStatus = 'WAITING_APPROVAL';
+      }
+
+      if (body.type !== 'update' && !body.submitForApproval) {
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
