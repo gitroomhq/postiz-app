@@ -2,13 +2,13 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 
 const options = {
   headers: {
-    Authorization: `Bearer ${process.env.SHORT_IO_SECRET_KEY}`,
+    Authorization: `${process.env.SHORT_IO_SECRET_KEY}`,
     'Content-Type': 'application/json',
   },
 };
 
 export class ShortIo implements ShortLinking {
-  shortLinkDomain = 'short.io';
+  shortLinkDomain = process.env.SHORT_IO_DOMAIN || 'short.io';
 
   async linksStatistics(links: string[]) {
     return Promise.all(
@@ -38,10 +38,8 @@ export class ShortIo implements ShortLinking {
       ...options,
       method: 'POST',
       body: JSON.stringify({
-        url: link,
-        tenantId: id,
-        domain: this.shortLinkDomain,
         originalURL: link,
+        domain: this.shortLinkDomain,
       }),
     }).then((res) => res.json());
 
