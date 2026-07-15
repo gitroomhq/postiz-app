@@ -29,6 +29,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { capitalize } from 'lodash';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import {
+  DbuAssociationPanel,
+  DbuValue,
+} from '@gitroom/frontend/components/new-launch/dbu.association.panel';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
@@ -51,6 +55,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
   const toaster = useToaster();
+  // DBU System association (client/project/cycle) selected in the composer.
+  const [dbuAssoc, setDbuAssoc] = useState<DbuValue | null>(null);
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
@@ -238,6 +244,21 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       setLoading(true);
 
+      // DBU System: a DBU-managed post must carry a valid project + monthly cycle
+      // + content type before it can be saved/scheduled. Only enforced when a DBU
+      // client was selected, so non-DBU posts are unaffected.
+      if (
+        dbuAssoc?.clientId &&
+        (!dbuAssoc.projectId || !dbuAssoc.milestoneId || !dbuAssoc.contentType)
+      ) {
+        toaster.show(
+          'Select the DBU project, monthly cycle and content type before saving.',
+          'warning'
+        );
+        setLoading(false);
+        return;
+      }
+
       // Pull the local values to build the payload, but rely on the server
       // (`/posts/valid`) for the actual validation — checkValidity now lives
       // server-side so it can't be bypassed.
@@ -388,6 +409,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
         posts,
+        // DBU System association (only when a DBU client is selected).
+        ...(dbuAssoc?.clientId ? { dbu: dbuAssoc } : {}),
       };
 
       if (dummy) {
@@ -469,6 +492,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       )}
                     </div>
                   </div>
+                  {!dummy && (
+                    <DbuAssociationPanel value={dbuAssoc} onChange={setDbuAssoc} />
+                  )}
                   <div className="flex flex-1 gap-[6px] flex-col">
                     <div>{!existingData.integration && <SelectCurrent />}</div>
                     <div className="flex-1 flex">
