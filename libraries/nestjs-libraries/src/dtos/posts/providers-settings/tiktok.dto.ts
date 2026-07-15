@@ -91,7 +91,11 @@ export class TikTokDto {
   @IsString()
   @JSONSchema({
     description:
-      'DIRECT_POST publishes to the account. UPLOAD only sends the media to the TikTok app inbox as a draft for the user to publish manually, and makes TikTok ignore every other setting here.',
+      'Required. Use "DIRECT_POST" to actually publish the post to TikTok. ' +
+      '"UPLOAD" does NOT publish: it only sends the media to the user\'s TikTok app inbox, ' +
+      'where they must manually finish and publish it within 24 hours or it is discarded, ' +
+      'and it makes TikTok ignore every other setting here. ' +
+      'Only use "UPLOAD" when the user explicitly asks to review or edit the post inside the TikTok app before publishing.',
   })
   content_posting_method: 'DIRECT_POST' | 'UPLOAD';
 }

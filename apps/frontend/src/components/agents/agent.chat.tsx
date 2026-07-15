@@ -303,7 +303,7 @@ const OpenModal: FC<{
                 integration: integration.integrationId,
                 integrationPicture:
                   properties.find((p) => p.id === integration.integrationId)
-                    .picture || '',
+                    ?.picture || '',
                 settings: integration.settings || {},
                 posts: integration.posts.map((p) => ({
                   approvedSubmitForOrder: 'NO',

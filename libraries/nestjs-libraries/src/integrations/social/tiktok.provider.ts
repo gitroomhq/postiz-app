@@ -21,7 +21,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 @Rules(
   [
     'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment.',
-    'content_posting_method=DIRECT_POST publishes the post to the account. content_posting_method=UPLOAD does NOT publish: it only drops the media into the user inbox of the TikTok app, where the user has to finish and publish it manually. Use DIRECT_POST unless the user explicitly asks to review or edit the post inside the TikTok app first.',
+    'content_posting_method=DIRECT_POST publishes the post to the account. content_posting_method=UPLOAD does NOT publish: it only sends the media to the user inbox of the TikTok app, where the user must manually complete and publish it within 24 hours or it is discarded. Use DIRECT_POST unless the user explicitly asks to review or edit the post inside the TikTok app first.',
     'With content_posting_method=UPLOAD, TikTok ignores every setting except the title / post content. Never tell the user that video_made_with_ai, privacy_level, duet, stitch, comment, autoAddMusic, brand_content_toggle or brand_organic_toggle will be applied in UPLOAD mode - they are silently discarded. If the user asks for any of those settings, tell them it requires DIRECT_POST.',
     'video_made_with_ai, duet and stitch apply to video posts only. TikTok has no equivalent field for photo posts, so those settings are discarded when the attachment is a picture.',
   ].join(' ')
@@ -481,6 +481,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
+  // UPLOAD does not publish - it only drops the media into the user's TikTok
+  // inbox - so only an explicit UPLOAD selects it. A missing value (drafts, or
+  // any caller that skipped the setting) publishes instead of silently landing
+  // in the inbox.
+  private contentPostingMethod(
+    firstPost: PostDetails<TikTokDto>
+  ): TikTokDto['content_posting_method'] {
+    return firstPost?.settings?.content_posting_method === 'UPLOAD'
+      ? 'UPLOAD'
+      : 'DIRECT_POST';
+  }
+
   private postingMethod(
     method: TikTokDto['content_posting_method'],
     isPhoto: boolean
@@ -496,7 +508,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-    const method = firstPost?.settings?.content_posting_method;
+    const method = this.contentPostingMethod(firstPost);
 
     if (method === 'DIRECT_POST') {
       return {
@@ -753,7 +765,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (isPhoto) {
       return {
         post_mode:
-          firstPost?.settings?.content_posting_method === 'DIRECT_POST'
+          this.contentPostingMethod(firstPost) === 'DIRECT_POST'
             ? 'DIRECT_POST'
             : 'MEDIA_UPLOAD',
         media_type: 'PHOTO',
@@ -799,7 +811,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
-          firstPost.settings.content_posting_method,
+          this.contentPostingMethod(firstPost),
           isPhoto
         )}`,
         {
@@ -851,7 +863,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Get user stats (follower_count, following_count, likes_count, video_count)
-      const userStatsResponse = await this.fetch(
+      const userStatsResponse = await fetch(
         'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,following_count,likes_count,video_count',
         {
           method: 'GET',
@@ -901,7 +913,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       // Get recent videos and aggregate their stats
-      const videoListResponse = await this.fetch(
+      const videoListResponse = await fetch(
         'https://open.tiktokapis.com/v2/video/list/?fields=id',
         {
           method: 'POST',
@@ -920,7 +932,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         const videoIds = videos.map((v: { id: string }) => v.id);
 
         // Query video details to get engagement metrics
-        const videoQueryResponse = await this.fetch(
+        const videoQueryResponse = await fetch(
           'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
           {
             method: 'POST',
@@ -1027,7 +1039,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     if (postId.indexOf('v_pub_url') > -1) {
       const post = await (
-        await this.fetch(
+        await fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
             method: 'POST',
@@ -1038,10 +1050,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               publish_id: postId,
             }),
-          },
-          '',
-          0,
-          true
+          }
         )
       ).json();
 
@@ -1054,7 +1063,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     try {
       // Query video details using the video ID
-      const response = await this.fetch(
+      const response = await fetch(
         'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
         {
           method: 'POST',
