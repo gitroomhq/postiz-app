@@ -442,6 +442,15 @@ model Post {
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
   deletedAt                  DateTime?
+  // DBU System integration (Phase 2): link this post to ONE DBU content item.
+  // Additive/nullable — the DBU association selected in the composer (client ->
+  // active project -> monthly cycle). Never inferred from the channel.
+  dbuContentItemId           String?
+  dbuClientId                String?
+  dbuProjectId               String?
+  dbuMilestoneId             String?
+  dbuContentCycle            String?
+  dbuSyncedAt                DateTime?
   comments                   Comments[]
   approvals                  PostApproval[]
   errors                     Errors[]
@@ -471,6 +480,8 @@ model Post {
   @@index([releaseURL])
   @@index([integrationId])
   @@index([approvalStatus])
+  @@index([dbuContentItemId])
+  @@index([dbuClientId])
 }
 
 // Mapped Out (Phase 2B): append-only client approval history for a post.

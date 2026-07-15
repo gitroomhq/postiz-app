@@ -474,6 +474,14 @@ export class PostsRepository {
     });
   }
 
+  // DBU System integration: record the DBU content item id returned by the sync.
+  updateDbuLink(id: string, dbuContentItemId: string) {
+    return this._post.model.post.update({
+      where: { id },
+      data: { dbuContentItemId, dbuSyncedAt: new Date() },
+    });
+  }
+
   updateReleaseId(id: string, orgId: string, releaseId: string) {
     return this._post.model.post.update({
       where: {
@@ -589,7 +597,14 @@ export class PostsRepository {
     body: PostBody,
     tags: { value: string; label: string }[],
     creationMethod: CreationMethod,
-    inter?: number
+    inter?: number,
+    dbu?: {
+      clientId?: string;
+      projectId?: string;
+      milestoneId?: string;
+      contentCycle?: string;
+      contentType?: string;
+    }
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -623,6 +638,15 @@ export class PostsRepository {
         group: uuid,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
+        // DBU System association (stamped on create + update; never inferred from channel)
+        ...(dbu
+          ? {
+              dbuClientId: dbu.clientId ?? null,
+              dbuProjectId: dbu.projectId ?? null,
+              dbuMilestoneId: dbu.milestoneId ?? null,
+              dbuContentCycle: dbu.contentCycle ?? null,
+            }
+          : {}),
         ...(type === 'create' ? { creationMethod } : {}),
         ...(state === 'update'
           ? {}

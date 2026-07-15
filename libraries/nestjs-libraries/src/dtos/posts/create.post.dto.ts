@@ -90,6 +90,32 @@ class Tags {
   label: string;
 }
 
+// DBU System integration: the HQ association selected in the composer for a
+// DBU-managed client (client -> active project -> monthly cycle + content type).
+// All optional at the DTO layer; requiredness for DBU-managed clients is enforced
+// in the composer + service, never inferred from the channel.
+export class DbuAssociation {
+  @IsOptional()
+  @IsString()
+  clientId?: string;
+
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  milestoneId?: string;
+
+  @IsOptional()
+  @IsString()
+  contentCycle?: string;
+
+  @IsOptional()
+  @IsString()
+  contentType?: string;
+}
+
 export class CreatePostDto {
   @IsDefined()
   @IsIn(['draft', 'schedule', 'now', 'update'])
@@ -122,4 +148,10 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
   posts: Post[];
+
+  // DBU System association (optional; present for DBU-managed clients).
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DbuAssociation)
+  dbu?: DbuAssociation;
 }

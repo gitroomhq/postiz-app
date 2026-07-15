@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { emitDbuContentUpsert } from '@gitroom/nestjs-libraries/database/prisma/posts/dbu.emit';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -915,7 +916,8 @@ export class PostsService {
         post,
         body.tags,
         creationMethod,
-        body.inter
+        body.inter,
+        body.dbu
       );
 
       if (!posts?.length) {
@@ -929,6 +931,27 @@ export class PostsService {
           orgId,
           posts[0].state
         ).catch((err) => {});
+      }
+
+      // DBU System sync: mirror this content item into DBU (client/project/cycle
+      // association selected in the composer). Fire-and-forget; failures are logged
+      // + retriable on the DBU side and never block Mapped Out publishing.
+      if (body.dbu?.clientId && posts[0]) {
+        emitDbuContentUpsert({
+          post: posts[0],
+          dbu: body.dbu,
+          provider: (post.settings as any)?.__type,
+          orgId,
+        })
+          .then((r) => {
+            if (r.ok && r.contentItemId) {
+              return this._postRepository
+                .updateDbuLink(posts[0].id, r.contentItemId)
+                .catch(() => {});
+            }
+            return undefined;
+          })
+          .catch(() => {});
       }
 
       Sentry.metrics.count('post_created', 1);
