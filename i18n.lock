@@ -211,6 +211,7 @@ checksums:
     seconds: 9fe44d788e12e327341ac64b23fdc3e0
     this_feature_available_only_for_photos: 481e4c29e64017a374e37eb0deabae9a
     allow_user_to: e10ba849a3c17daff09d81d0b014f1cc
+    tiktok_video_features: da5d90eeba8f233bd7335da8643c41fe
     your_video_will_be_labeled_promotional: 0ce1af8d546489e29cace603b71b8a60
     this_cannot_be_changed_once_posted: 573c255b14e173e8ad2ed0b95d79a9f4
     turn_on_to_disclose_video_promotes: 6f81f5ae234fbe62256b8f35fea279ec
@@ -404,9 +405,9 @@ checksums:
     label_who_can_see_this_video: 97a543d589797d703bcebfa6ece94f96
     label_content_posting_method: a0d5daae42d5a57980ac3a547a4850f2
     label_auto_add_music: c27a46bded470b3ac85d5e2d26d13879
-    label_duet: c763963722d8a2eb45cbdba353b885a4
-    label_stitch: 59f4d4bf508f4a33cf01cbf64739cb27
-    label_comments: 502237cd1044491c48494aa60967a985
+    label_duet: 3aba52fc7f5771e67c30c7edb109b672
+    label_stitch: 0aa087faf0ad6e8c3fec5ff7a69aeb5e
+    label_comments: af37b5573979c438e0720a3a81229346
     label_disclose_video_content: bb8d25e6abe604a08c2782ff3a7fd22e
     label_your_brand: 3a49f029f7f7a62ca218239d40d399f6
     label_branded_content: 794d5681b2fbd2b7a210bc6e241d0135
@@ -456,7 +457,7 @@ checksums:
     self_only: 20fd775216f2e16a432f4720d6daaae0
     post_content_directly_to_tiktok: 2612250f75c43a3128016b99569c5fff
     upload_content_to_tiktok_without_posting: 6c3943e4d796b720933b90d250bd611c
-    choose_upload_without_posting_description: 223c59be260eeaafe420791b76e2523c
+    choose_upload_without_posting_description: 16c335a4607224a061a9f251ccdecfe0
     faq_am_i_going_to_be_charged_by_postiz: f4aad17d35bcaf45427216a432f23af3
     faq_to_confirm_credit_card_information_postiz_will_hold: ec475e644e3b5db2550c5bc06320b1cd
     faq_can_i_trust_postiz_gitroom: 9ee3c694bc392c339333047484d36003
