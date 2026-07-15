@@ -820,7 +820,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // by post_total_media_view_unique (unique media views = reach), available on
       // Graph API v23.0+. Engagement metrics below are unaffected.
       const { data } = await (
-        await this.fetch(
+        await fetch(
           `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
