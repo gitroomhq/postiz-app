@@ -45,4 +45,24 @@ export class DbuIntegrationController {
       return { ok: false, error: e?.message || 'failed' };
     }
   }
+
+  // Phase 4: mirror a client discussion comment from the DBU portal onto the post,
+  // so the Mapped Out operator can see client feedback. Stored as JSON (no Postiz
+  // user fabricated). DBU remains the authoritative discussion record.
+  @Post('comment')
+  async comment(@Body() body: any) {
+    if (!body?.postId || !body?.comment) {
+      return { ok: false, error: 'missing_post_or_comment' };
+    }
+    try {
+      await this._posts.appendDbuDiscussion(String(body.postId), {
+        author: String(body.authorName || 'Client'),
+        comment: String(body.comment),
+        at: new Date().toISOString(),
+      });
+      return { ok: true, postId: body.postId };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'failed' };
+    }
+  }
 }

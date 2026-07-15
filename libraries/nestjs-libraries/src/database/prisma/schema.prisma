@@ -456,6 +456,9 @@ model Post {
   dbuMilestoneId             String?
   dbuContentCycle            String?
   dbuSyncedAt                DateTime?
+  // Client discussion mirrored from the DBU portal (JSON array of {author,comment,at}).
+  // Stored here (not as Postiz Comments) so no Postiz user is fabricated for the client.
+  dbuDiscussion              String?
   comments                   Comments[]
   approvals                  PostApproval[]
   errors                     Errors[]

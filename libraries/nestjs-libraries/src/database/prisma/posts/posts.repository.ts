@@ -512,6 +512,30 @@ export class PostsRepository {
     });
   }
 
+  // Append one client-discussion entry (from the DBU portal) to the post's mirrored
+  // thread. No Postiz Comments row / no fabricated user — the entry is plain JSON.
+  async appendDbuDiscussion(
+    id: string,
+    entry: { author: string; comment: string; at: string }
+  ) {
+    const existing = await this._post.model.post.findUnique({
+      where: { id },
+      select: { dbuDiscussion: true },
+    });
+    let list: any[] = [];
+    try {
+      list = existing?.dbuDiscussion ? JSON.parse(existing.dbuDiscussion) : [];
+      if (!Array.isArray(list)) list = [];
+    } catch {
+      list = [];
+    }
+    list.push(entry);
+    return this._post.model.post.update({
+      where: { id },
+      data: { dbuDiscussion: JSON.stringify(list.slice(-100)) },
+    });
+  }
+
   updateReleaseId(id: string, orgId: string, releaseId: string) {
     return this._post.model.post.update({
       where: {
