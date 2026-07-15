@@ -121,11 +121,15 @@ export class BillingController {
     const result = await this._stripeService.setToCancel(org.id);
 
     if (result.cancel_at) {
-      await this._subscriptionService.saveCancellationFeedback(
-        org.id,
-        user.id,
-        body.feedback
-      );
+      try {
+        await this._subscriptionService.saveCancellationFeedback(
+          org.id,
+          user.id,
+          body.feedback
+        );
+      } catch (err) {
+        console.error('Failed to save cancellation feedback', err);
+      }
 
       try {
         await this._notificationService.sendEmail(
