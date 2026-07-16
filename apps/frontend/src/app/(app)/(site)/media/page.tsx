@@ -1,9 +1,10 @@
 import { MediaLayoutComponent } from '@gitroom/frontend/components/new-layout/layout.media.component';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
+import { getBrandName } from '@gitroom/helpers/utils/brand';
 
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Media`,
+  title: `${isGeneralServerSide() ? getBrandName() : 'Gitroom'} Media`,
   description: '',
 };
 

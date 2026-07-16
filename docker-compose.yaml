@@ -1,6 +1,6 @@
 services:
   postiz:
-    image: ghcr.io/gitroomhq/postiz-app:latest
+    image: ghcr.io/zgababa/media-publish:latest
     container_name: postiz
     restart: always
     environment:

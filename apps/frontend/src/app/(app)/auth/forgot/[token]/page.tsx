@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 import { ForgotReturn } from '@gitroom/frontend/components/auth/forgot-return';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
+import { getBrandName } from '@gitroom/helpers/utils/brand';
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Forgot Password`,
+  title: `${isGeneralServerSide() ? getBrandName() : 'Gitroom'} Forgot Password`,
   description: '',
 };
 export default async function Auth(params: {
