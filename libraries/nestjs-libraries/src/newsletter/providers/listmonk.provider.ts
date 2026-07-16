@@ -32,7 +32,7 @@ export class ListmonkProvider implements NewsletterInterface {
       const welcomeEmail = {
         subscriber_id: id,
         template_id: +process.env.LISTMONK_WELCOME_TEMPLATE_ID,
-        subject: 'Welcome to Postiz 🚀',
+        subject: 'Welcome to Lime Manager 🚀',
       };
 
       await fetch(`${process.env.LISTMONK_DOMAIN}/api/tx`, {

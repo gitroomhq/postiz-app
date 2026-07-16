@@ -5,7 +5,7 @@ import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
   title: `${
-    isGeneralServerSide() ? 'Postiz Integrations' : 'Gitroom Integrations'
+    isGeneralServerSide() ? 'Lime Manager Integrations' : 'Lime Manager Integrations'
   }`,
   description: '',
 };

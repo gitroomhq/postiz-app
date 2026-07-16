@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Postiz",
+  "name": "Lime Manager",
   "version": "2.0.0",
-  "description": "Postiz browser extension for social media scheduling",
+  "description": "Lime Manager browser extension for social media scheduling",
   "icons": {
     "32": "icon-32.png",
     "128": "icon-128.png"

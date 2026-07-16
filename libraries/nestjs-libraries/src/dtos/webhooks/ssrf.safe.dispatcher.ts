@@ -38,7 +38,7 @@ export const ssrfSafeDispatcher = new Agent({
   },
 });
 
-// Self-hosters legitimately connect Postiz to WordPress/Mastodon/Lemmy/Listmonk
+// Self-hosters legitimately connect Lime Manager to WordPress/Mastodon/Lemmy/Listmonk
 // instances that live on a private network (e.g. the same Docker network or VPC).
 // Setting DISABLE_SSRF_PROTECTION=true opts those deployments out of the IP
 // guard. It stays ON by default so the hosted product is protected.
