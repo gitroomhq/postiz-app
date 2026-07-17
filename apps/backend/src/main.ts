@@ -24,7 +24,12 @@ async function start() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
-      ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
+      // Cross-origin credentialed requests are needed whenever
+      // frontend/backend are on different origins (e.g. localhost:4200 ->
+      // localhost:3000), independent of NOT_SECURED (which only controls
+      // the cookie's secure/httpOnly/sameSite attributes) -- gating this
+      // on the same flag broke cross-origin cookie storage locally.
+      credentials: true,
       allowedHeaders: [
         'Content-Type',
         'Authorization',

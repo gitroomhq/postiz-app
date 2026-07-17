@@ -44,7 +44,12 @@ export const customFetch = (
             ?.split('=')[1];
 
     const fetchRequest = await fetch(params.baseUrl + url, {
-      ...(secured ? { credentials: 'include' } : {}),
+      // Cross-origin credentialed fetch is needed whenever frontend/backend
+      // are on different origins (e.g. localhost:4200 -> localhost:3000),
+      // independent of whether the cookie itself is Secure/HttpOnly --
+      // `secured` only controls those cookie attributes elsewhere, gating
+      // this on it too broke cross-origin cookie storage under NOT_SECURED.
+      credentials: 'include',
       ...(newRequestObject || options),
       headers: {
         ...(showorg
