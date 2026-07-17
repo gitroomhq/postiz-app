@@ -90,7 +90,7 @@ export async function proxy(request: NextRequest) {
   const url = new URL(nextUrl).search;
   if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
     const providers = ['google', 'settings'];
-    const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
+    const findIndex = providers.find((p) => nextUrl.pathname.indexOf(p) > -1);
     const additional = !findIndex
       ? ''
       : (url.indexOf('?') > -1 ? '&' : '?') +
