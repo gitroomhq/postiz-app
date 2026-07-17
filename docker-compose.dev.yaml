@@ -16,7 +16,14 @@ services:
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      # 5432 (not 5432:5432): host machine already has a native (non-Docker)
+      # Postgres bound to 127.0.0.1:5432 for another local project -- that
+      # silently intercepts loopback connections meant for this container,
+      # producing misleading "role does not exist" errors. Remapped to the
+      # host's 5433 instead; container-internal port (other services on the
+      # same docker network, e.g. via DATABASE_URL inside the app if it ever
+      # runs in-network) stays 5432.
+      - 5433:5432
     networks:
       - postiz-network
   postiz-redis:
