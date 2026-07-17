@@ -31,6 +31,7 @@ model Organization {
   buyerOrganization   MessagesGroup[]
   notifications       Notifications[]
   plugs               Plugs[]
+  automations         Automation[]
   post                Post[]               @relation("organization")
   submittedPost       Post[]               @relation("submittedForOrg")
   sets                Sets[]
@@ -334,6 +335,7 @@ model Integration {
   customerId            String?
   rootInternalId        String?
   additionalSettings    String?                @default("[]")
+  scope                 String?                @default("[]")
   exisingPlugData       ExisingPlugData[]
   customer              Customer?              @relation(fields: [customerId], references: [id])
   organization          Organization           @relation(fields: [organizationId], references: [id])
@@ -404,6 +406,7 @@ model Post {
   parentPostId               String?
   releaseId                  String?
   releaseURL                 String?
+  automationId               String?
   settings                   String?
   image                      String?
   submittedForOrderId        String?
@@ -420,6 +423,7 @@ model Post {
   errors                     Errors[]
   payoutProblems             PayoutProblems[]
   integration                Integration               @relation(fields: [integrationId], references: [id])
+  automation                 Automation?               @relation(fields: [automationId], references: [id])
   lastMessage                Messages?                 @relation(fields: [lastMessageId], references: [id])
   organization               Organization              @relation("organization", fields: [organizationId], references: [id])
   parentPost                 Post?                     @relation("parentPostId", fields: [parentPostId], references: [id])
@@ -436,6 +440,8 @@ model Post {
   @@index([parentPostId])
   @@index([submittedForOrderId])
   @@index([intervalInDays])
+  @@index([automationId])
+  @@index([releaseId])
   @@index([approvedSubmitForOrder])
   @@index([creationMethod])
   @@index([lastMessageId])
@@ -558,6 +564,35 @@ model Plugs {
 
   @@unique([plugFunction, integrationId])
   @@index([organizationId])
+}
+
+model Automation {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  name               String
+  platform           String
+  automationFunction String
+  data               String
+  activated          Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  posts              Post[]
+
+  @@index([organizationId])
+  @@index([platform])
+  @@index([deletedAt])
+}
+
+model AutomationProcessedEvent {
+  id        String   @id @default(uuid())
+  platform  String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  @@unique([platform, eventId])
+  @@index([createdAt])
 }
 
 model ExisingPlugData {

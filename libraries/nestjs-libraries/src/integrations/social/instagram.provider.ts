@@ -1,14 +1,18 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  IWebhooks,
   PostDetails,
   PostResponse,
   SocialProvider,
+  WebhookRequest,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -17,19 +21,34 @@ import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { Webhook } from '@gitroom/helpers/decorators/webhook.decorator';
 
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
 )
 export class InstagramProvider
   extends SocialAbstract
-  implements SocialProvider
+  implements SocialProvider, IWebhooks
 {
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
+    'instagram_basic',
+    'pages_show_list',
+    'pages_read_engagement',
+    'business_management',
+    'instagram_content_publish',
+    'instagram_manage_comments',
+    'instagram_manage_insights',
+    'instagram_manage_messages',
+    // needed to subscribe the page to the app webhooks (subscribed_apps)
+    'pages_manage_metadata',
+  ];
+  // integrations connected before scopes were saved to the db were
+  // requested without instagram_manage_messages
+  defaultScopes = [
     'instagram_basic',
     'pages_show_list',
     'pages_read_engagement',
@@ -312,6 +331,18 @@ export class InstagramProvider
       };
     }
 
+    if (
+      body.indexOf('(#200)') > -1 ||
+      body.indexOf('(#10)') > -1 ||
+      body.indexOf('(#3)') > -1
+    ) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The account is missing a permission for this action, please re-add the account and allow all the permissions',
+      };
+    }
+
     if (body.indexOf('36003') > -1) {
       return {
         type: 'bad-body' as const,
@@ -353,7 +384,7 @@ export class InstagramProvider
       return {
         type: 'retry' as const,
         value: 'Could not upload your media',
-      }
+      };
     }
 
     if (body.indexOf('2207077') > -1) {
@@ -366,8 +397,9 @@ export class InstagramProvider
     if (body.indexOf('too little or too many attachments') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Instagram carousel should have between 2 and 10 media attachments',
-      }
+        value:
+          'Instagram carousel should have between 2 and 10 media attachments',
+      };
     }
 
     if (body.indexOf('2207027') > -1) {
@@ -1092,5 +1124,202 @@ export class InstagramProvider
       console.error('Error fetching Instagram post analytics:', err);
       return [];
     }
+  }
+
+  @Webhook({
+    identifier: 'instagram-comment-responder',
+    title: 'Comment responder',
+    description:
+      'When somebody comments on your post, reply with a comment and send them a DM',
+    scopes: [
+      'instagram_manage_comments',
+      'instagram_manage_messages',
+      'pages_manage_metadata',
+    ],
+    trigger: {
+      title: 'Trigger keywords',
+      description:
+        'Comma separated keywords, respond only when the comment contains one of them. Leave empty to respond to every comment',
+      placeholder: 'LINK, GUIDE, PRICE',
+    },
+    actions: [
+      {
+        type: 'comment',
+        title: 'Reply with a comment',
+        description:
+          'Add multiple variations, a random one will be picked every time',
+        placeholder: 'Thank you! Check your DMs',
+        required: false,
+      },
+      {
+        type: 'send-dm',
+        title: 'Send a DM',
+        description:
+          'Add multiple variations, a random one will be picked every time',
+        placeholder: 'Hey! Here is the link you asked for...',
+        required: true,
+      },
+    ],
+  })
+  async commentResponder(
+    integration: Integration,
+    automation: {
+      keywords?: string[];
+      actions: { type: string; variations: string[] }[];
+    },
+    comment: { id: string; text: string },
+    type = 'graph.facebook.com'
+  ) {
+    const [accessToken] = integration.token.split('___');
+
+    const keywords = (automation.keywords || [])
+      .map((keyword) => keyword.toLowerCase().trim())
+      .filter(Boolean);
+
+    // respond only when the comment contains one of the trigger keywords
+    if (
+      keywords.length &&
+      !keywords.some((keyword) =>
+        (comment.text || '').toLowerCase().includes(keyword)
+      )
+    ) {
+      return;
+    }
+
+    for (const action of automation.actions || []) {
+      const variations = (action.variations || []).filter(
+        (variation) => !!variation?.trim()
+      );
+      if (!variations.length) {
+        continue;
+      }
+
+      // pick a random variation every time
+      const message = variations[Math.floor(Math.random() * variations.length)];
+
+      if (action.type === 'comment') {
+        await this.fetch(
+          `https://${type}/v20.0/${
+            comment.id
+          }/replies?message=${encodeURIComponent(
+            message
+          )}&access_token=${accessToken}`,
+          {
+            method: 'POST',
+          }
+        );
+      }
+
+      if (action.type === 'send-dm') {
+        await this.fetch(
+          `https://${type}/v20.0/me/messages?access_token=${accessToken}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              recipient: {
+                comment_id: comment.id,
+              },
+              message: {
+                text: message,
+              },
+            }),
+          }
+        );
+      }
+    }
+  }
+
+  async webhookVerification(
+    request: WebhookRequest,
+    secret = process.env.FACEBOOK_APP_SECRET
+  ): Promise<string | boolean> {
+    if (request.method === 'GET') {
+      if (
+        request.query['hub.mode'] === 'subscribe' &&
+        !!process.env.AUTOMATIONS_API_KEY &&
+        request.query['hub.verify_token'] === process.env.AUTOMATIONS_API_KEY
+      ) {
+        return String(request.query['hub.challenge'] || '');
+      }
+      return false;
+    }
+
+    const signature = request.headers['x-hub-signature-256'];
+    if (!signature || !request.rawBody || !secret) {
+      return false;
+    }
+    const expected =
+      'sha256=' +
+      createHmac('sha256', secret).update(request.rawBody).digest('hex');
+    try {
+      return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async subscribeToWebhooks(
+    integration: Integration,
+    type = 'graph.facebook.com',
+    fields = 'feed'
+  ): Promise<void> {
+    const [accessToken] = integration.token.split('___');
+
+    // subscribes the connected page / account to the app, without it Meta
+    // will not deliver any webhook event for this account
+    await this.fetch(
+      `https://${type}/v20.0/me/subscribed_apps?subscribed_fields=${fields}&access_token=${accessToken}`,
+      {
+        method: 'POST',
+      }
+    );
+  }
+
+  webhookPostAndCommentId(
+    payload: any
+  ): { postId: string; commentId: string; text: string } | undefined {
+    for (const entry of payload?.entry || []) {
+      // Facebook Login apps deliver a "changes" array, Instagram Login
+      // (standalone) apps deliver the field / value directly on the entry
+      const changes = entry?.changes?.length
+        ? entry.changes
+        : entry?.field
+        ? [{ field: entry.field, value: entry.value }]
+        : [];
+
+      for (const change of changes) {
+        // only new comments should trigger automations, the same envelope
+        // delivers other subscribed fields too (mentions, story_insights...)
+        if (change?.field !== 'comments') {
+          continue;
+        }
+        const value = change?.value;
+        // the comment id is documented as "id", but some payloads
+        // deliver it as "comment_id"
+        const commentId = value?.id || value?.comment_id;
+        if (!value?.media?.id || !commentId) {
+          continue;
+        }
+        // never respond to comments made by the account itself,
+        // otherwise replying will trigger the webhook again (infinite loop)
+        if (value?.from?.id === entry?.id) {
+          continue;
+        }
+        // replies to comments should not trigger automations, only
+        // top level comments on the post itself
+        if (value?.parent_id) {
+          continue;
+        }
+        return {
+          postId: String(value.media.id),
+          commentId: String(commentId),
+          text: String(value.text || ''),
+        };
+      }
+    }
+    return undefined;
   }
 }

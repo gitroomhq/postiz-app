@@ -12,7 +12,7 @@ export class MastodonCustomProvider extends MastodonProvider {
   override identifier = 'mastodon-custom';
   override name = 'M. Instance';
   override maxConcurrentJob = 5; // Custom Mastodon instances typically have generous limits
-  editor = 'normal' as const;
+  override editor = 'normal' as const;
 
   async externalUrl(url: string) {
     const form = new FormData();
@@ -47,7 +47,6 @@ export class MastodonCustomProvider extends MastodonProvider {
       state,
       external?.client_id!,
       process.env.FRONTEND_URL!,
-      refresh
     );
 
     return {

@@ -1,9 +1,12 @@
 import {
   AuthTokenDetails,
+  IWebhooks,
   PostDetails,
   PostResponse,
   SocialProvider,
+  WebhookRequest,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { Webhook } from '@gitroom/helpers/decorators/webhook.decorator';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
@@ -22,13 +25,22 @@ const instagramProvider = new InstagramProvider();
 )
 export class InstagramStandaloneProvider
   extends SocialAbstract
-  implements SocialProvider
+  implements SocialProvider, IWebhooks
 {
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
   refreshCron = true;
   scopes = [
+    'instagram_business_basic',
+    'instagram_business_content_publish',
+    'instagram_business_manage_comments',
+    'instagram_business_manage_insights',
+    'instagram_business_manage_messages',
+  ];
+  // integrations connected before scopes were saved to the db were
+  // requested without instagram_business_manage_messages
+  defaultScopes = [
     'instagram_business_basic',
     'instagram_business_content_publish',
     'instagram_business_manage_comments',
@@ -230,6 +242,79 @@ export class InstagramStandaloneProvider
       accessToken,
       postId,
       date,
+      'graph.instagram.com'
+    );
+  }
+
+  async webhookVerification(
+    request: WebhookRequest
+  ): Promise<string | boolean> {
+    return instagramProvider.webhookVerification(
+      request,
+      process.env.INSTAGRAM_APP_SECRET
+    );
+  }
+
+  webhookPostAndCommentId(
+    payload: any
+  ): { postId: string; commentId: string; text: string } | undefined {
+    return instagramProvider.webhookPostAndCommentId(payload);
+  }
+
+  async subscribeToWebhooks(integration: Integration): Promise<void> {
+    return instagramProvider.subscribeToWebhooks(
+      integration,
+      'graph.instagram.com',
+      'comments'
+    );
+  }
+
+  @Webhook({
+    identifier: 'instagram-standalone-comment-responder',
+    title: 'Comment responder',
+    description:
+      'When somebody comments on your post, reply with a comment and send them a DM',
+    scopes: [
+      'instagram_business_manage_comments',
+      'instagram_business_manage_messages',
+    ],
+    trigger: {
+      title: 'Trigger keywords',
+      description:
+        'Comma separated keywords, respond only when the comment contains one of them. Leave empty to respond to every comment',
+      placeholder: 'LINK, GUIDE, PRICE',
+    },
+    actions: [
+      {
+        type: 'comment',
+        title: 'Reply with a comment',
+        description:
+          'Add multiple variations, a random one will be picked every time',
+        placeholder: 'Thank you! Check your DMs',
+        required: false,
+      },
+      {
+        type: 'send-dm',
+        title: 'Send a DM',
+        description:
+          'Add multiple variations, a random one will be picked every time',
+        placeholder: 'Hey! Here is the link you asked for...',
+        required: true,
+      },
+    ],
+  })
+  async commentResponder(
+    integration: Integration,
+    automation: {
+      keywords?: string[];
+      actions: { type: string; variations: string[] }[];
+    },
+    comment: { id: string; text: string }
+  ) {
+    return instagramProvider.commentResponder(
+      integration,
+      automation,
+      comment,
       'graph.instagram.com'
     );
   }

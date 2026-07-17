@@ -23,6 +23,7 @@ import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { AutomationRepository } from '@gitroom/nestjs-libraries/database/prisma/automations/automation.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
 
@@ -34,6 +35,7 @@ export class IntegrationService {
   constructor(
     private _integrationRepository: IntegrationRepository,
     private _autopostsRepository: AutopostRepository,
+    private _automationRepository: AutomationRepository,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
     @Inject(forwardRef(() => RefreshIntegrationService))
@@ -116,24 +118,92 @@ export class IntegrationService {
         : await this.storage.uploadSimple(picture)
       : undefined;
 
-    return this._integrationRepository.createOrUpdateIntegration(
-      additionalSettings,
-      oneTimeToken,
-      org,
-      name,
-      uploadedPicture,
-      type,
-      internalId,
-      provider,
-      token,
-      refreshToken,
-      expiresIn,
-      username,
-      isBetweenSteps,
-      refresh,
-      timezone,
-      customInstanceDetails
+    // save the scopes the provider currently requests, so we can tell which
+    // connected accounts are missing newer permissions
+    const scope =
+      type === 'social'
+        ? this._integrationManager.getSocialIntegration(provider)?.scopes || []
+        : [];
+
+    const integration =
+      await this._integrationRepository.createOrUpdateIntegration(
+        additionalSettings,
+        oneTimeToken,
+        org,
+        name,
+        uploadedPicture,
+        type,
+        internalId,
+        provider,
+        token,
+        refreshToken,
+        expiresIn,
+        username,
+        isBetweenSteps,
+        refresh,
+        timezone,
+        customInstanceDetails,
+        scope
+      );
+
+    this.subscribeAutomationWebhooks(org, integration).catch(() => {});
+
+    return integration;
+  }
+
+  getIntegrationScopes(integration: Integration): string[] {
+    let saved: string[] = [];
+    try {
+      saved = JSON.parse(integration.scope || '[]');
+    } catch (err) {
+      saved = [];
+    }
+
+    if (saved.length) {
+      return saved;
+    }
+
+    // integrations connected before scopes were saved to the db fall back
+    // to the scopes the provider requested at the time
+    const provider = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
     );
+
+    return provider?.defaultScopes || provider?.scopes || [];
+  }
+
+  // channels connected (or refreshed) after an automation was already
+  // created still need to be subscribed to the platform webhooks
+  async subscribeAutomationWebhooks(org: string, integration: Integration) {
+    // two-step providers (instagram / facebook) hold a user token until the
+    // page is selected, the subscription needs the final page token
+    if (integration.inBetweenSteps) {
+      return;
+    }
+
+    const provider = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (!provider?.subscribeToWebhooks || !process.env.AUTOMATIONS_API_KEY) {
+      return;
+    }
+
+    const automations = await this._automationRepository.getAutomations(
+      org,
+      integration.providerIdentifier
+    );
+    if (!automations.some((automation) => automation.activated)) {
+      return;
+    }
+
+    try {
+      await provider.subscribeToWebhooks(integration);
+    } catch (err) {
+      console.error(
+        `[automations] failed to subscribe ${integration.providerIdentifier} integration ${integration.id} to webhooks:`,
+        err
+      );
+    }
   }
 
   updateIntegrationGroup(org: string, id: string, group: string) {
@@ -262,7 +332,19 @@ export class IntegrationService {
       throw new Error('You have reached the maximum number of channels');
     }
 
-    return this._integrationRepository.enableChannel(org, id);
+    const enabled = await this._integrationRepository.enableChannel(org, id);
+
+    // disabled channels are skipped when an automation subscribes the
+    // platform, so they need to catch up once they are enabled again
+    const integration = await this._integrationRepository.getIntegrationById(
+      org,
+      id
+    );
+    if (integration) {
+      this.subscribeAutomationWebhooks(org, integration).catch(() => {});
+    }
+
+    return enabled;
   }
 
   async getPostsForChannel(org: string, id: string) {
@@ -322,6 +404,15 @@ export class IntegrationService {
       token: getIntegrationInformation.access_token,
       profile: getIntegrationInformation.username,
     });
+
+    // the final page token is only available after the page selection,
+    // this is the token the webhook subscription needs
+    this.subscribeAutomationWebhooks(org, {
+      ...getIntegration,
+      internalId: String(getIntegrationInformation.id),
+      token: getIntegrationInformation.access_token,
+      inBetweenSteps: false,
+    }).catch(() => {});
 
     return { success: true };
   }

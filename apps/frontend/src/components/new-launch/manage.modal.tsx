@@ -248,28 +248,32 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       const group = existingData.group || makeId(10);
 
-      const posts = allValues.map((post: any) => ({
-        integration: {
-          id: post.id,
-        },
-        group,
-        settings: { ...(post.settings || {}) },
-        value: post.values.map((value: any) => ({
-          ...(value.id ? { id: value.id } : {}),
-          content: value.content,
-          delay: value.delay || 0,
-          image:
-            (value?.media || []).map(
-              ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
-                id,
-                path,
-                alt,
-                thumbnail,
-                thumbnailTimestamp,
-              })
-            ) || [],
-        })),
-      }));
+      const posts = allValues.map((post: any) => {
+        const { automationId, ...settings } = post.settings || {};
+        return {
+          integration: {
+            id: post.id,
+          },
+          group,
+          ...(automationId ? { automationId } : {}),
+          settings,
+          value: post.values.map((value: any) => ({
+            ...(value.id ? { id: value.id } : {}),
+            content: value.content,
+            delay: value.delay || 0,
+            image:
+              (value?.media || []).map(
+                ({ id, path, alt, thumbnail, thumbnailTimestamp }: any) => ({
+                  id,
+                  path,
+                  alt,
+                  thumbnail,
+                  thumbnailTimestamp,
+                })
+              ) || [],
+          })),
+        };
+      });
 
       if (!dummy) {
         const checkAllValid = await (

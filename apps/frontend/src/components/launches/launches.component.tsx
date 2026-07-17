@@ -221,6 +221,7 @@ export const MenuComponent: FC<
       changeProfilePicture: boolean;
       changeNickName: boolean;
       refreshNeeded?: boolean;
+      missingScopes?: boolean;
     };
   }
 > = (props) => {
@@ -288,6 +289,23 @@ export const MenuComponent: FC<
             <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
           </div>
         )}
+        {!integration.inBetweenSteps &&
+          !integration.refreshNeeded &&
+          integration.missingScopes && (
+            <div
+              className="absolute start-0 top-0 cursor-pointer"
+              onClick={refreshChannel(integration)}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={t(
+                'channel_missing_permissions_reconnect',
+                'This channel is missing new permissions, click to reconnect.'
+              )}
+            >
+              <div className="bg-orange-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                !
+              </div>
+            </div>
+          )}
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}

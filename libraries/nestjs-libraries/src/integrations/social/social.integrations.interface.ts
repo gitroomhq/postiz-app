@@ -169,6 +169,9 @@ export interface SocialProvider
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
+  // the scopes older integrations were connected with, used as a fallback
+  // when the integration was saved before scopes were tracked in the db
+  defaultScopes?: string[];
   externalUrl?: (
     url: string
   ) => Promise<{ client_id: string; client_secret: string }>;
@@ -186,4 +189,25 @@ export interface SocialProvider
     accessToken: string,
     data: any
   ): Promise<FetchPageInformationResult>;
+  webhookVerification?(request: WebhookRequest): Promise<string | boolean>;
+  webhookPostAndCommentId?(
+    payload: any
+  ): { postId: string; commentId: string; text: string } | undefined;
+  subscribeToWebhooks?(integration: Integration): Promise<void>;
+}
+
+export interface WebhookRequest {
+  method: string;
+  query: Record<string, any>;
+  headers: Record<string, any>;
+  body?: any;
+  rawBody?: Buffer;
+}
+
+export interface IWebhooks {
+  webhookVerification(request: WebhookRequest): Promise<string | boolean>;
+  webhookPostAndCommentId(
+    payload: any
+  ): { postId: string; commentId: string; text: string } | undefined;
+  subscribeToWebhooks(integration: Integration): Promise<void>;
 }

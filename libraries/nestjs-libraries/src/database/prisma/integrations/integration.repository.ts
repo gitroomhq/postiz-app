@@ -229,7 +229,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    scope?: string[]
   ) {
     const postTimes = timezone
       ? {
@@ -268,12 +269,14 @@ export class IntegrationRepository {
         additionalSettings: additionalSettings
           ? JSON.stringify(additionalSettings)
           : '[]',
+        scope: JSON.stringify(scope || []),
       },
       update: {
         ...(additionalSettings
           ? { additionalSettings: JSON.stringify(additionalSettings) }
           : {}),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(scope ? { scope: JSON.stringify(scope) } : {}),
         type: type as any,
         ...(!refresh
           ? {

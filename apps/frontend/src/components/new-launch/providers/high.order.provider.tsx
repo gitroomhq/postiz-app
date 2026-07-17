@@ -19,6 +19,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
+import { AutomationSelect } from '@gitroom/frontend/components/launches/automation.select.component';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
@@ -160,6 +161,29 @@ export const withProvider = function <T extends object>(params: {
       }
     );
 
+    const getAutomations = useCallback(async () => {
+      return (
+        await fetch(
+          `/automations?platform=${selectedIntegration.integration.identifier}`
+        )
+      ).json();
+    }, [selectedIntegration.integration.identifier]);
+    const { data: automations } = useSWR(
+      `automations-${selectedIntegration.integration.identifier}`,
+      getAutomations,
+      {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        revalidateIfStale: false,
+        revalidateOnMount: true,
+        refreshWhenHidden: false,
+        refreshWhenOffline: false,
+        fallbackData: [],
+      }
+    );
+    const hasAutomations = !!automations?.filter((p: any) => p.activated)
+      ?.length;
+
     const value = useMemo(() => {
       if (internal?.integrationValue?.length) {
         return internal.integrationValue;
@@ -246,7 +270,9 @@ export const withProvider = function <T extends object>(params: {
           >
             {current &&
               (tab === 0 ||
-                (!SettingsComponent && !data?.internalPlugs?.length)) &&
+                (!SettingsComponent &&
+                  !data?.internalPlugs?.length &&
+                  !hasAutomations)) &&
               !value?.[0]?.content?.length && (
                 <div>
                   {t(
@@ -257,7 +283,9 @@ export const withProvider = function <T extends object>(params: {
               )}
             {current &&
               (tab === 0 ||
-                (!SettingsComponent && !data?.internalPlugs?.length)) &&
+                (!SettingsComponent &&
+                  !data?.internalPlugs?.length &&
+                  !hasAutomations)) &&
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
@@ -286,7 +314,9 @@ export const withProvider = function <T extends object>(params: {
                   }
                 />
               ))}
-            {(SettingsComponent || !!data?.internalPlugs?.length) &&
+            {(SettingsComponent ||
+              !!data?.internalPlugs?.length ||
+              hasAutomations) &&
               createPortal(
                 <div data-id={props.id} className={isGlobal ? 'bg-newSettings pb-[12px] px-[12px]' : 'hidden bg-newSettings px-[12px] pb-[12px]'}>
                   {isGlobal && (
@@ -313,7 +343,8 @@ export const withProvider = function <T extends object>(params: {
                       <div className="text-[20px]">{selectedIntegration?.integration.name}</div>
                     </div>
                   )}
-                  <SettingsComponent />
+                  {SettingsComponent && <SettingsComponent />}
+                  {hasAutomations && !dummy && <AutomationSelect />}
                   {!!data?.internalPlugs?.length && !dummy && (
                     <InternalChannels plugs={data?.internalPlugs} />
                   )}
@@ -323,6 +354,7 @@ export const withProvider = function <T extends object>(params: {
               )}
             {current &&
               !SettingsComponent &&
+              !hasAutomations &&
               createPortal(
                 <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
                 document.querySelector('#social-settings') ||

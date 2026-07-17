@@ -506,7 +506,10 @@ export class PostsService {
       ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      settings: {
+        ...JSON.parse(posts[0].settings || '{}'),
+        automationId: posts[0].automationId || '',
+      },
     };
   }
 

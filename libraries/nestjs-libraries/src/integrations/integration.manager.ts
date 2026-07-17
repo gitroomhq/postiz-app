@@ -151,6 +151,21 @@ export class IntegrationManager {
       .filter((f) => f.plugs.length);
   }
 
+  getAllWebhooks() {
+    return socialIntegrationList
+      .map((p) => {
+        return {
+          name: p.name,
+          identifier: p.identifier,
+          webhooks: (
+            Reflect.getMetadata('custom:webhook', p.constructor.prototype) ||
+            []
+          ).filter((f: any) => !f.disabled),
+        };
+      })
+      .filter((f) => f.webhooks.length);
+  }
+
   getInternalPlugs(providerName: string) {
     const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
     return {

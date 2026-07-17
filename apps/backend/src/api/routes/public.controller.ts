@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Query,
+  RawBodyRequest,
   Req,
   Res,
   StreamableFile,
@@ -20,6 +21,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { AutomationService } from '@gitroom/nestjs-libraries/database/prisma/automations/automation.service';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { Readable, pipeline } from 'stream';
@@ -37,7 +40,9 @@ export class PublicController {
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _automationService: AutomationService,
+    private _integrationManager: IntegrationManager
   ) {}
   @Post('/agent')
   async createAgent(@Body() body: { text: string; apiKey: string }) {
@@ -49,6 +54,40 @@ export class PublicController {
       return;
     }
     return this._agentGraphInsertService.newPost(body.text);
+  }
+
+  @Get('/automations/:platform')
+  async verifyAutomationWebhook(
+    @Param('platform') platform: string,
+    @Req() req: RawBodyRequest<Request>,
+    @Res() res: Response
+  ) {
+    const provider = this._integrationManager.getSocialIntegration(platform);
+    const verification = await provider?.webhookVerification?.(req);
+    if (!verification) {
+      return res.status(403).send();
+    }
+    return res.status(200).send(verification === true ? '' : verification);
+  }
+
+  @Post('/automations/:platform')
+  async catchAutomationWebhook(
+    @Param('platform') platform: string,
+    @Req() req: RawBodyRequest<Request>
+  ) {
+    const provider = this._integrationManager.getSocialIntegration(platform);
+    if (
+      !provider?.webhookVerification ||
+      !(await provider.webhookVerification(req))
+    ) {
+      // visible in the logs, a misconfigured app secret would otherwise
+      // silently drop every incoming event
+      console.error(
+        `[automations] rejected an unverified webhook for ${platform}`
+      );
+      return;
+    }
+    return this._automationService.processWebhook(platform, req.body);
   }
 
   @Get(`/posts/:id`)

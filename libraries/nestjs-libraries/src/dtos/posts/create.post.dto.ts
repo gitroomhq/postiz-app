@@ -68,6 +68,10 @@ export class Post {
   @IsString()
   group: string;
 
+  @IsOptional()
+  @IsString()
+  automationId?: string;
+
   @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {

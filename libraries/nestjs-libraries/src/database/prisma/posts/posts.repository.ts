@@ -560,6 +560,22 @@ export class PostsRepository {
             }),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
+        ...((body.automationId
+          ? {
+              automation: {
+                connect: {
+                  id: body.automationId,
+                  organizationId: orgId,
+                },
+              },
+            }
+          : type === 'update'
+          ? {
+              automation: {
+                disconnect: true,
+              },
+            }
+          : {}) as { automation?: any }),
         organization: {
           connect: {
             id: orgId,

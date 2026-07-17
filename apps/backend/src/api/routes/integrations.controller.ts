@@ -95,6 +95,7 @@ export class IntegrationsController {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );
+          const scopes = this._integrationService.getIntegrationScopes(p);
           return {
             name: p.name,
             id: p.id,
@@ -117,6 +118,12 @@ export class IntegrationsController {
             changeNickName: !!findIntegration?.changeNickname,
             customer: p.customer,
             additionalSettings: p.additionalSettings || '[]',
+            scopes,
+            // the provider requests more permissions than the channel was
+            // connected with, a reconnect is needed to grant them
+            missingScopes: !(findIntegration?.scopes || []).every((scope) =>
+              scopes.includes(scope)
+            ),
           };
         })
       ),
