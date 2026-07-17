@@ -81,11 +81,17 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
-        if (!isSecured) {
-          setCookie('auth', '', -10);
-          setCookie('showorg', '', -10);
-          setCookie('impersonate', '', -10);
-        }
+        // Always attempt to clear these client-side, regardless of
+        // isSecured. Previously this only ran when !isSecured, so a stale/
+        // invalid cookie in a "secured" config was never cleared -- the
+        // user got bounced back to '/', which presence-only-redirects to
+        // /launches, which 401s again, forever: a silent infinite loop
+        // with the login form unreachable. If the cookie is real httpOnly
+        // this is a harmless no-op (JS can't touch it either way); if it's
+        // not, this is the only thing that breaks the loop.
+        setCookie('auth', '', -10);
+        setCookie('showorg', '', -10);
+        setCookie('impersonate', '', -10);
         window.location.href = '/';
       }
       if (response.status === 406) {
