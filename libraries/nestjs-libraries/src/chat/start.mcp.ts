@@ -33,14 +33,14 @@ export const startMcp = async (app: INestApplication) => {
   };
 
   const mastra = await mastraService.mastra();
-  const agent = mastra.getAgent('postiz');
+  const agent = mastra.getAgent('lime-manager');
   const tools = await agent.listTools();
 
   const serverConfig = {
     name: 'Lime Manager MCP',
     version: '1.0.0',
     tools,
-    agents: { postiz: agent },
+    agents: { 'lime-manager': agent },
   };
 
   const server = new MCPServer(serverConfig);
