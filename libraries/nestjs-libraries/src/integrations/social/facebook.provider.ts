@@ -566,30 +566,72 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       finalId = lastPostId;
       finalUrl = `https://www.facebook.com/stories/${lastPostId}`;
     } else if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
-      const {
-        id: videoId,
-        permalink_url,
-        ...all
-      } = await (
+      // Facebook Reels must be published through the dedicated Reels Publishing
+      // API (/video_reels: start -> upload -> finish with video_state=PUBLISHED).
+      // Posting a vertical video to the plain /videos endpoint only ingests it
+      // and leaves it as a draft, so the Page owner just gets a "your reel is
+      // ready, share it with your followers" notification and it never
+      // auto-publishes. Mirror the video_stories hosted-upload flow above.
+      const { video_id, upload_url } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
+          `https://graph.facebook.com/v20.0/${id}/video_reels?upload_phase=start&access_token=${accessToken}`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              file_url: firstPost?.media?.[0]?.path!,
-              description: firstPost.message,
-              published: true,
-            }),
           },
-          'upload mp4'
+          'start reel upload'
         )
       ).json();
 
-      finalUrl = 'https://www.facebook.com/reel/' + videoId;
-      finalId = videoId;
+      await this.fetch(
+        upload_url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `OAuth ${accessToken}`,
+            file_url: firstPost?.media?.[0]?.path!,
+          },
+        },
+        'upload reel'
+      );
+
+      let videoStatus = 'in_progress';
+      let attempts = 0;
+      const maxAttempts = 54; // ~9 minutes at 10s interval
+      while (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
+        if (attempts++ >= maxAttempts) {
+          throw new Error('Video processing timed out');
+        }
+
+        const { status } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,
+            undefined,
+            '',
+            0,
+            true
+          )
+        ).json();
+        videoStatus = status?.video_status || 'in_progress';
+        if (videoStatus === 'error') {
+          throw new Error('Video processing failed');
+        }
+        if (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
+          await timer(10000);
+        }
+      }
+
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${id}/video_reels?upload_phase=finish&video_id=${video_id}&video_state=PUBLISHED&description=${encodeURIComponent(
+          firstPost.message || ''
+        )}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        },
+        'publish reel'
+      );
+
+      finalUrl = 'https://www.facebook.com/reel/' + video_id;
+      finalId = video_id;
     } else {
       const uploadPhotos = !firstPost?.media?.length
         ? []
