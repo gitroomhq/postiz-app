@@ -127,7 +127,13 @@ export function RegisterAfter({
             if (response.headers.get('activate') === 'true') {
               router.push('/auth/activate');
             } else {
-              router.push('/auth/login');
+              // Registration already set a valid auth cookie at this point
+              // (no activation required) -- push to root so the layout's
+              // auth check picks it up and forwards the user straight into
+              // the app, instead of dropping them on the login screen with
+              // an already-authenticated session (reads exactly like a
+              // "registration didn't work" dead end).
+              router.push('/');
             }
           });
         } else {
