@@ -85,6 +85,24 @@ export class PostsService {
     return this._postRepository.getPostReleaseId(id);
   }
 
+  // The in-flight publish id is transient de-duplication state, not a durable
+  // record, so it lives in Redis (with a TTL) rather than the DB. A provider
+  // records it at its publish boundary; a re-run reads it back to resume the
+  // in-flight publish instead of initiating a duplicate. The 2-hour TTL makes
+  // stale markers self-expire, so a later repeat-post cycle never resumes an
+  // old publish (polling never exceeds ~9 minutes).
+  async setPostInFlight(id: string, inFlightId: string) {
+    await ioRedis.set(`post:inflight:${id}`, inFlightId, 'EX', 2 * 60 * 60);
+  }
+
+  getPostInFlight(id: string) {
+    return ioRedis.get(`post:inflight:${id}`);
+  }
+
+  async clearPostInFlight(id: string) {
+    await ioRedis.del(`post:inflight:${id}`);
+  }
+
   async getMissingContent(
     orgId: string,
     postId: string,
@@ -942,6 +960,11 @@ export class PostsService {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    // A terminal error ends the current publish attempt — drop the in-flight
+    // marker so it can't leak into a later cycle before its TTL expires.
+    if (state === 'ERROR') {
+      await this.clearPostInFlight(id);
+    }
     return this._postRepository.changeState(id, state, err, body);
   }
 

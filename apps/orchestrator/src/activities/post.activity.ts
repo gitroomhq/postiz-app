@@ -227,6 +227,7 @@ export class PostActivity {
     // workflow loaded before running this activity means the current cycle
     // hasn't published yet (repeatable posts re-run with the same post id).
     const [firstPost] = posts;
+    let inFlight: string | undefined;
     if (firstPost) {
       const current = await this._postService.getPostReleaseId(firstPost.id);
       if (current?.releaseId && current.releaseId !== firstPost.releaseId) {
@@ -239,6 +240,12 @@ export class PostActivity {
           },
         ];
       }
+
+      // A previous attempt initiated a publish but died before observing its
+      // outcome — pass the provider publish id along so the provider can
+      // resume polling it instead of publishing again. The marker's TTL guards
+      // repeatable posts: a leftover from an earlier cycle has already expired.
+      inFlight = (await this._postService.getPostInFlight(firstPost.id)) || undefined;
     }
 
     const newPosts = await this._postService.updateTags(
@@ -250,7 +257,7 @@ export class PostActivity {
       integration.internalId,
       integration.token,
       await Promise.all(
-        (newPosts || []).map(async (p) => ({
+        (newPosts || []).map(async (p, index) => ({
           id: p.id,
           message: stripHtmlValidation(
             getIntegration.editor,
@@ -266,18 +273,28 @@ export class PostActivity {
             JSON.parse(p.image || '[]'),
             getIntegration?.convertToJPEG || false
           ),
+          ...(index === 0 && inFlight ? { inFlight } : {}),
         }))
       ),
       integration,
       async (response) => {
+        if (response.status === 'in-progress') {
+          // The publish is initiated but not confirmed — record it only as a
+          // resume hint for a possible retry; the post is not published yet,
+          // so it must not be marked PUBLISHED.
+          await this._postService.setPostInFlight(response.id, response.postId);
+          return;
+        }
+
         // Persist the remote id the moment the platform confirms the
         // publish, so a crash or retry after this point cannot publish a
-        // duplicate.
+        // duplicate; drop the resume marker now that we're done with it.
         await this._postService.updatePost(
           response.id,
           response.postId,
           response.releaseURL
         );
+        await this._postService.clearPostInFlight(response.id);
       }
     );
 
