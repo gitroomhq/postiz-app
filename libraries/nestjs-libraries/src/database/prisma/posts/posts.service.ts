@@ -960,11 +960,6 @@ export class PostsService {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
-    // A terminal error ends the current publish attempt — drop the in-flight
-    // marker so it can't leak into a later cycle before its TTL expires.
-    if (state === 'ERROR') {
-      await this.clearPostInFlight(id);
-    }
     return this._postRepository.changeState(id, state, err, body);
   }
 
