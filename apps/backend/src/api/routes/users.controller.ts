@@ -153,7 +153,7 @@ export class UsersController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._userService.getImpersonateUser(name);
+    return this._userService.getImpersonateUser(name, user.id);
   }
 
   @Post('/impersonate')
