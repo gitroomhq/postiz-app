@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { sign } from 'jsonwebtoken';
-import { Organization, User } from '@prisma/client';
+import { Organization, Provider, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
@@ -181,6 +181,25 @@ export class UsersController {
     if (process.env.NOT_SECURED) {
       response.header('impersonate', id);
     }
+  }
+
+  @Post('/activate-by-admin')
+  async activateByAdmin(@GetUserFromRequest() user: User) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    if (user.providerName !== Provider.LOCAL) {
+      throw new HttpException('User is not a local user', 400);
+    }
+
+    if (user.activated) {
+      throw new HttpException('User is already activated', 400);
+    }
+
+    await this._userService.activateUser(user.id);
+
+    return { activated: true };
   }
 
   @Post('/personal')
