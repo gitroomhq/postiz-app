@@ -259,10 +259,16 @@ export class UsersController {
   }
 
   @Post('/change-org')
-  changeOrg(
+  async changeOrg(
+    @GetUserFromRequest() user: User,
     @Body('id') id: string,
     @Res({ passthrough: true }) response: Response
   ) {
+    const organizations = await this._orgService.getOrgsByUserId(user.id);
+    if (organizations.some((org) => org.id === id)) {
+      await this._userService.updateLastSelectedOrg(user.id, id);
+    }
+
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED

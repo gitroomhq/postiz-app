@@ -93,6 +93,7 @@ model User {
   updatedAt             DateTime             @updatedAt
   lastReadNotifications DateTime             @default(now())
   inviteId              String?
+  lastSelectedOrgId     String?
   activated             Boolean              @default(true)
   account               String?
   connectedAccount      Boolean              @default(false)

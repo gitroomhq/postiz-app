@@ -32,6 +32,10 @@ export class UsersService {
     return this._usersRepository.activateUser(id);
   }
 
+  updateLastSelectedOrg(id: string, lastSelectedOrgId: string) {
+    return this._usersRepository.updateLastSelectedOrg(id, lastSelectedOrgId);
+  }
+
   updatePassword(id: string, password: string) {
     return this._usersRepository.updatePassword(id, password);
   }
