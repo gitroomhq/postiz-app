@@ -374,6 +374,50 @@ export class OrganizationRepository {
     });
   }
 
+  updateTeamMemberRole(orgId: string, userId: string, role: Role) {
+    return this._userOrg.model.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+      data: {
+        role,
+      },
+    });
+  }
+
+  async transferSuperAdminRole(
+    orgId: string,
+    fromUserId: string,
+    toUserId: string
+  ) {
+    await this._userOrg.model.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId: toUserId,
+          organizationId: orgId,
+        },
+      },
+      data: {
+        role: Role.SUPERADMIN,
+      },
+    });
+
+    return this._userOrg.model.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId: fromUserId,
+          organizationId: orgId,
+        },
+      },
+      data: {
+        role: Role.ADMIN,
+      },
+    });
+  }
+
   async deleteTeamMember(orgId: string, userId: string) {
     await this._user.model.user.updateMany({
       where: {

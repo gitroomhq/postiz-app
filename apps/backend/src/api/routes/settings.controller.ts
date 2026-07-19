@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+import { UpdateTeamMemberRoleDto } from '@gitroom/nestjs-libraries/dtos/settings/update.team.member.role.dto';
 import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -34,6 +36,25 @@ export class SettingsController {
     @Body() body: AddTeamMemberDto
   ) {
     return this._organizationService.inviteTeamMember(org.id, body);
+  }
+
+  @Put('/team/:id')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  updateTeamMemberRole(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string,
+    @Body() body: UpdateTeamMemberRoleDto
+  ) {
+    return this._organizationService.updateTeamMemberRole(
+      org,
+      user,
+      id,
+      body.role
+    );
   }
 
   @Delete('/team/:id')
