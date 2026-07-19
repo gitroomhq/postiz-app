@@ -6,7 +6,7 @@ import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.te
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Organization, ShortLinkPreference } from '@prisma/client';
+import { Organization, ShortLinkPreference, User } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Injectable()
@@ -77,17 +77,20 @@ export class OrganizationService {
     return this._organizationRepository.getOrgByCustomerId(customerId);
   }
 
-  async inviteTeamMember(orgId: string, body: AddTeamMemberDto) {
+  async inviteTeamMember(org: Organization, user: User, body: AddTeamMemberDto) {
     const timeLimit = dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm:ss');
     const id = makeId(5);
     const url =
       process.env.FRONTEND_URL +
-      `/?org=${AuthService.signJWT({ ...body, orgId, timeLimit, id })}`;
+      `/?org=${AuthService.signJWT({ ...body, orgId: org.id, timeLimit, id })}`;
     if (body.sendEmail) {
+      const inviter = user.name
+        ? `${user.name} (${user.email})`
+        : user.email;
       await this._notificationsService.sendEmail(
         body.email,
-        'You have been invited to join an organization',
-        `You have been invited to join an organization. Click <a href="${url}">here</a> to join.<br />The link will expire in 2 days.`
+        `${user.name || user.email} invited you to join "${org.name}"`,
+        `${inviter} has invited you to join the "${org.name}" team.<br /><a href="${url}">Accept the invitation</a> to get started.<br />The link will expire in 2 days.`
       );
     }
     return { url };
