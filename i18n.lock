@@ -609,6 +609,11 @@ checksums:
     send_invitation_link: 8eccac7afd966c2bf358b9e04fb02ee8
     copy_link: 57a37acfe6d7ed71d00fbbc8079fbb35
     are_you_sure_remove_team_member: fdd24783fdaefbfcd8150d51d088cc9d
+    are_you_sure_change_member_role: d04ca0b16f816a20c1ff95e01f7706ae
+    are_you_sure_transfer_super_admin: 4425e6968b8ff3fe78c7dc49658a718c
+    yes_change_it: 632b14f375334e8a133b7277845ad84c
+    role_updated: 73606ae9c35101f1bb518961f68559d0
+    could_not_update_role: ee9296bb7a6e4bcbc08097ef1b0ea9b0
     admin: 90eb20f1400db82ab874744e47836dc6
     super_admin: 6f8651907beb1156db8c3bb5a7d5d791
     update_webhook: 7c761650a21097d9738cdef4a382a9d4
