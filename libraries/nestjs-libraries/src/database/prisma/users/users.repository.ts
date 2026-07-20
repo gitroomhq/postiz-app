@@ -1,4 +1,7 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import {
+  PrismaRepository,
+  PrismaTransaction,
+} from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Provider } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -8,7 +11,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class UsersRepository {
-  constructor(private _user: PrismaRepository<'user'>) {}
+  constructor(
+    private _user: PrismaRepository<'user'>,
+    private _transaction: PrismaTransaction
+  ) {}
 
   async switchUserCredentials(currentUserId: string, targetUserId: string) {
     const current = await this._user.model.user.findUnique({
@@ -43,18 +49,20 @@ export class UsersRepository {
 
     // (email, providerName) is unique and checked per-statement, so park the
     // current user on a throwaway email first, then fill each freed slot
-    await this._user.model.user.update({
-      where: { id: current.id },
-      data: { email: `switch-${makeId(10)}-${current.email}` },
-    });
-    await this._user.model.user.update({
-      where: { id: target.id },
-      data: currentCredentials,
-    });
-    await this._user.model.user.update({
-      where: { id: current.id },
-      data: targetCredentials,
-    });
+    await this._transaction.model.$transaction([
+      this._user.model.user.update({
+        where: { id: current.id },
+        data: { email: `switch-${makeId(10)}-${current.email}` },
+      }),
+      this._user.model.user.update({
+        where: { id: target.id },
+        data: currentCredentials,
+      }),
+      this._user.model.user.update({
+        where: { id: current.id },
+        data: targetCredentials,
+      }),
+    ]);
 
     return {
       kept: { id: current.id, email: targetCredentials.email },
