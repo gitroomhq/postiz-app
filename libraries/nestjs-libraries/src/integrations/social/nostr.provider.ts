@@ -11,6 +11,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { Integration } from '@prisma/client';
 
 // @ts-ignore
@@ -33,7 +34,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
-  toolTip = 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to'
+  toolTip =
+    'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to';
 
   maxLength() {
     return 100000;
@@ -71,6 +73,13 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  /** Convert a stored hex private key into the Uint8Array nostr-tools expects. */
+  private toSecretKey(password: string): Uint8Array {
+    return Uint8Array.from(
+      password.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16))
+    );
+  }
+
   private async findRelayInformation(pubkey: string) {
     // This queries ALL relays in parallel and resolves with
     // the first matching event from ANY relay.
@@ -96,30 +105,61 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     return {};
   }
 
+  /**
+   * Publish an event to all configured relays without waiting for a
+   * subscription match. Prefer this when `finalizeEvent` already gave us a
+   * deterministic event id (posts, comments, reposts).
+   */
+  private async broadcast(event: any): Promise<void> {
+    await Promise.allSettled(
+      list.map(async (relayUrl) => {
+        try {
+          const relayInstance = await Relay.connect(relayUrl);
+          try {
+            await relayInstance.publish(event);
+          } finally {
+            relayInstance.close();
+          }
+        } catch {
+          /** empty **/
+        }
+      })
+    );
+  }
+
   private async publish(pubkey: string, event: any) {
+    // finalizeEvent always stamps a deterministic id — prefer it over
+    // waiting for relays to echo the event back (which often times out).
+    if (event?.id) {
+      await this.broadcast(event);
+      return event.id as string;
+    }
+
     let id = '';
     for (const relay of list) {
       try {
         const relayInstance = await Relay.connect(relay);
         const value = new Promise<any>((resolve) => {
-          relayInstance.subscribe([{ kinds: [1], authors: [pubkey] }], {
-            eoseTimeout: 6000,
-            onevent: (event) => {
-              resolve(event);
-            },
-            oneose: () => {
-              resolve({});
-            },
-            onclose: () => {
-              resolve({});
-            },
-          });
+          relayInstance.subscribe(
+            [{ kinds: [event?.kind ?? 1], authors: [pubkey] }],
+            {
+              eoseTimeout: 6000,
+              onevent: (observed) => {
+                resolve(observed);
+              },
+              oneose: () => {
+                resolve({});
+              },
+              onclose: () => {
+                resolve({});
+              },
+            }
+          );
         });
 
         await relayInstance.publish(event);
         const all = await value;
         relayInstance.close();
-        // relayInstance.close();
         id = id || all?.id;
       } catch (err) {
         /**empty**/
@@ -173,6 +213,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const secretKey = this.toSecretKey(password);
     const [firstPost] = postDetails;
 
     const textEvent = finalizeEvent(
@@ -182,15 +223,18 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      secretKey
     );
 
-    const eventId = await this.publish(id, textEvent);
+    // Use the finalized event id — publish() may return empty when relays
+    // time out, which would break multi-account reposts that need postId.
+    await this.publish(id, textEvent);
+    const eventId = String(textEvent.id);
 
     return [
       {
         id: firstPost.id,
-        postId: String(eventId),
+        postId: eventId,
         releaseURL: `https://primal.net/e/${eventId}`,
         status: 'completed',
       },
@@ -206,6 +250,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const { password } = AuthService.verifyJWT(accessToken) as any;
+    const secretKey = this.toSecretKey(password);
     const [commentPost] = postDetails;
     const replyToId = lastCommentId || postId;
 
@@ -219,18 +264,66 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      secretKey
     );
 
-    const eventId = await this.publish(id, textEvent);
+    await this.publish(id, textEvent);
+    const eventId = String(textEvent.id);
 
     return [
       {
         id: commentPost.id,
-        postId: String(eventId),
+        postId: eventId,
         releaseURL: `https://primal.net/e/${eventId}`,
         status: 'completed',
       },
     ];
+  }
+
+  /**
+   * Multi-account crosspost: when composing a Nostr post, pick other connected
+   * Nostr integrations to repost it (same "Add Re-posters" PostPlug as X/LinkedIn).
+   * Publishes a NIP-18 kind:6 repost signed by each selected account.
+   */
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add accounts to repost your post',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    _information: any
+  ) {
+    if (!postId) {
+      return;
+    }
+
+    try {
+      const { password } = AuthService.verifyJWT(integration.token) as any;
+      const secretKey = this.toSecretKey(password);
+
+      // NIP-18 repost: kind 6, empty content, e = note id (+ relay hint), p = author.
+      const repostEvent = finalizeEvent(
+        {
+          kind: 6,
+          content: '',
+          tags: [
+            ['e', postId, list[0]],
+            ['p', originalIntegration.internalId],
+          ],
+          created_at: Math.floor(Date.now() / 1000),
+        },
+        secretKey
+      );
+
+      // Fire-and-forget broadcast — no kind:1 subscription wait (repost is kind 6).
+      await this.broadcast(repostEvent);
+    } catch {
+      // Mirror X: swallow failures so one bad account does not fail the post.
+    }
   }
 }
