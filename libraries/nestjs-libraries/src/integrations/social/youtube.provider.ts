@@ -16,6 +16,7 @@ import {
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
+import { Readable } from 'stream';
 import dayjs from 'dayjs';
 import { GaxiosResponse } from 'gaxios/build/src/common';
 import Schema$Video = youtube_v3.Schema$Video;
@@ -195,6 +196,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'We have uploaded your video but the thumbnail image is too wide.',
+      };
+    }
+
+    if (body.includes('captionExists')) {
+      return {
+        type: 'bad-body',
+        value:
+          'We have uploaded your video but a caption track for this language already exists.',
       };
     }
 
@@ -442,6 +451,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
               ...(settings?.tags?.length
                 ? { tags: settings.tags.map((p) => p.label) }
                 : {}),
+              ...(settings?.defaultLanguage
+                ? { defaultLanguage: settings.defaultLanguage }
+                : {}),
             },
             status: {
               privacyStatus: settings.type,
@@ -471,6 +483,52 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           },
         })
       );
+    }
+
+    if (settings?.localizations?.length) {
+      await this.runInConcurrent(
+        async () =>
+          youtubeClient.videos.update({
+            part: ['localizations'],
+            requestBody: {
+              id: all?.data?.id!,
+              localizations: Object.fromEntries(
+                settings.localizations!.map((l) => [
+                  l.language,
+                  {
+                    title: l.title,
+                    ...(l.description ? { description: l.description } : {}),
+                  },
+                ])
+              ),
+            },
+          }),
+        true
+      );
+    }
+
+    if (settings?.captions?.length) {
+      for (const caption of settings.captions) {
+        await this.runInConcurrent(
+          async () =>
+            youtubeClient.captions.insert({
+              part: ['snippet'],
+              requestBody: {
+                snippet: {
+                  videoId: all?.data?.id!,
+                  language: caption.language,
+                  name: caption.name || '',
+                  isDraft: caption.isDraft ?? false,
+                },
+              },
+              media: {
+                mimeType: 'application/octet-stream',
+                body: Readable.from([caption.srt]),
+              },
+            }),
+          true
+        );
+      }
     }
 
     return [

@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDefined,
   IsIn,
   IsOptional,
@@ -63,6 +64,43 @@ export class YoutubeTagsSettings {
   label: string;
 }
 
+export class YoutubeLocalization {
+  @IsString()
+  @IsDefined()
+  language: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  @IsDefined()
+  title: string;
+
+  @IsString()
+  @MaxLength(5000)
+  @IsOptional()
+  description?: string;
+}
+
+export class YoutubeCaption {
+  @IsString()
+  @IsDefined()
+  language: string;
+
+  @IsString()
+  @MaxLength(150)
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @MinLength(1)
+  @IsDefined()
+  srt: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isDraft?: boolean;
+}
+
 export class YoutubeSettingsDto {
   @IsString()
   @MinLength(2)
@@ -89,4 +127,20 @@ export class YoutubeSettingsDto {
   @IsYoutubeTagsLength()
   @Type(() => YoutubeTagsSettings)
   tags: YoutubeTagsSettings[];
+
+  @IsString()
+  @IsOptional()
+  defaultLanguage?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => YoutubeLocalization)
+  localizations?: YoutubeLocalization[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => YoutubeCaption)
+  captions?: YoutubeCaption[];
 }
