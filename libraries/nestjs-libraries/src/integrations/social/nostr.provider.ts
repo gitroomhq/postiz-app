@@ -7,7 +7,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { getPublicKey, Relay, finalizeEvent, SimplePool, nip19 } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -160,6 +160,133 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+
+  /**
+   * Nostr profile mention autocomplete (NIP-01 kind:0 + NIP-50 search when supported).
+   * Returns candidates for the TipTap mention dropdown.
+   */
+  override async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const q = (d?.query || '').trim();
+    if (!q || q.length < 2) {
+      return [];
+    }
+
+    const results: { id: string; label: string; image: string; doNotCache?: boolean }[] = [];
+    const seen = new Set<string>();
+
+    const pushProfile = (pubkey: string, content: any) => {
+      if (!pubkey || seen.has(pubkey)) return;
+      seen.add(pubkey);
+      const label =
+        content?.display_name ||
+        content?.displayName ||
+        content?.name ||
+        content?.username ||
+        pubkey.slice(0, 12);
+      results.push({
+        id: pubkey,
+        label: String(label),
+        image: content?.picture || content?.image || '',
+      });
+    };
+
+    // Resolve direct npub / hex pubkey queries first
+    try {
+      let pubkey = '';
+      if (q.startsWith('npub1')) {
+        const decoded = nip19.decode(q);
+        if (decoded.type === 'npub') pubkey = decoded.data as string;
+      } else if (/^[0-9a-fA-F]{64}$/.test(q)) {
+        pubkey = q.toLowerCase();
+      }
+      if (pubkey) {
+        const info = await this.findRelayInformation(pubkey);
+        pushProfile(pubkey, info || {});
+        return results;
+      }
+    } catch {
+      /* continue to search */
+    }
+
+    // NIP-50 search across relays (best-effort; relays without search simply return nothing)
+    try {
+      const events = await Promise.race([
+        pool.querySync(list, {
+          kinds: [0],
+          search: q,
+          limit: 12,
+        } as any),
+        new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 4500)),
+      ]);
+
+      for (const evt of events || []) {
+        let content: any = {};
+        try {
+          content = JSON.parse(evt.content || '{}');
+        } catch {
+          content = {};
+        }
+        // client-side filter in case relay ignored search
+        const hay = `${content.display_name || ''} ${content.displayName || ''} ${
+          content.name || ''
+        } ${content.nip05 || ''}`.toLowerCase();
+        if (!hay.includes(q.toLowerCase()) && events.length > 3) {
+          // still include if relay returned it as a search hit with empty metadata
+          if (!content.name && !content.display_name && !content.displayName) {
+            pushProfile(evt.pubkey, content);
+          }
+        } else {
+          pushProfile(evt.pubkey, content);
+        }
+      }
+    } catch (err) {
+      console.log('Nostr mention search error', err);
+    }
+
+    return results.slice(0, 12);
+  }
+
+  /**
+   * NIP-27 unencoded mention form using npub bech32 for portable text.
+   * Post pipeline also extracts p-tags for mentioned pubkeys.
+   */
+  mentionFormat(idOrHandle: string, name: string) {
+    try {
+      if (idOrHandle.startsWith('npub1')) {
+        return `nostr:${idOrHandle}`;
+      }
+      if (/^[0-9a-fA-F]{64}$/.test(idOrHandle)) {
+        return `nostr:${nip19.npubEncode(idOrHandle.toLowerCase())}`;
+      }
+    } catch {
+      /* fall through */
+    }
+    return `@${name || idOrHandle}`;
+  }
+
+  /** Extract hex pubkeys from NIP-27 nostr:npub mentions in message body. */
+  private extractMentionedPubkeys(message: string): string[] {
+    const pubkeys: string[] = [];
+    const re = /nostr:(npub1[0-9a-z]+)/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(message || '')) !== null) {
+      try {
+        const decoded = nip19.decode(m[1]);
+        if (decoded.type === 'npub') {
+          pubkeys.push(decoded.data as string);
+        }
+      } catch {
+        /* skip bad bech32 */
+      }
+    }
+    return [...new Set(pubkeys)];
+  }
+
   private buildContent(post: PostDetails): string {
     const mediaContent = post.media?.map((m) => m.path).join('\n\n') || '';
     return mediaContent
@@ -175,11 +302,16 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     const { password } = AuthService.verifyJWT(accessToken) as any;
     const [firstPost] = postDetails;
 
+    const content = this.buildContent(firstPost);
+    const mentionTags = this.extractMentionedPubkeys(content).map(
+      (pk) => ['p', pk] as [string, string]
+    );
+
     const textEvent = finalizeEvent(
       {
         kind: 1, // Text note
-        content: this.buildContent(firstPost),
-        tags: [],
+        content,
+        tags: mentionTags,
         created_at: Math.floor(Date.now() / 1000),
       },
       password
@@ -209,13 +341,18 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     const [commentPost] = postDetails;
     const replyToId = lastCommentId || postId;
 
+    const commentContent = this.buildContent(commentPost);
+    const mentionTags = this.extractMentionedPubkeys(commentContent).map(
+      (pk) => ['p', pk] as [string, string]
+    );
     const textEvent = finalizeEvent(
       {
         kind: 1, // Text note
-        content: this.buildContent(commentPost),
+        content: commentContent,
         tags: [
           ['e', replyToId, '', 'reply'],
           ['p', id],
+          ...mentionTags,
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
