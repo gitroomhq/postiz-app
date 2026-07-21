@@ -122,6 +122,16 @@ export class UsersController {
       role: organization?.users[0]?.role,
       // @ts-ignore
       isLifetime: !!organization?.subscription?.isLifetime,
+      // An admin-granted subscription stores the user id in `paymentId` rather
+      // than a real Stripe `cus_...` customer; used to expose an admin-only
+      // remove action without risking a real paid subscription. Requires a
+      // non-null paymentId so lifetime deals (subscription, no paymentId)
+      // don't match.
+      adminGrantedSubscription:
+        // @ts-ignore
+        !!organization?.subscription &&
+        !!organization?.paymentId &&
+        !organization.paymentId.startsWith('cus_'),
       admin: !!user.isSuperAdmin,
       impersonate: !!impersonate,
       isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY

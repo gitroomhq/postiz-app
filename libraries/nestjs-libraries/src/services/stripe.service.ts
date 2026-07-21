@@ -914,6 +914,29 @@ export class StripeService {
     return { refunded, failed };
   }
 
+  // Remove an admin-granted subscription. These store the user id in
+  // `paymentId` (not a real `cus_...` customer), so there is nothing to cancel
+  // on Stripe — we only downgrade to FREE and drop the local subscription row.
+  // A real Stripe subscription must go through `cancelSubscription` instead.
+  async removeAdminGrantedSubscription(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      throw new Error('No subscription found for this organization');
+    }
+    if (org.paymentId.startsWith('cus_')) {
+      throw new Error(
+        'This organization has a real Stripe customer; use cancel-subscription instead'
+      );
+    }
+
+    // deleteSubscription locates everything by paymentId, so clear the fake
+    // customer id only after it runs. Leaving it would make later Stripe flows
+    // (checkout, discount checks) call Stripe with a non-existent customer.
+    await this._subscriptionService.deleteSubscription(org.paymentId);
+    await this._subscriptionService.clearCustomerId(org.id);
+    return { removed: true };
+  }
+
   async cancelSubscription(organizationId: string) {
     const org = await this._organizationService.getOrgById(organizationId);
     if (!org?.paymentId) {

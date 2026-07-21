@@ -545,15 +545,17 @@ export const MainBillingComponent: FC<{
               'Update Payment Method / Invoices History'
             )}
           </Button>
-          {isGeneral && !subscription?.cancelAt && (
-            <Button
-              className="bg-red-500"
-              loading={loading}
-              onClick={moveToCheckout('FREE')}
-            >
-              {t('cancel_subscription_1', 'Cancel subscription')}
-            </Button>
-          )}
+          {isGeneral &&
+            !subscription?.cancelAt &&
+            !(user as any)?.adminGrantedSubscription && (
+              <Button
+                className="bg-red-500"
+                loading={loading}
+                onClick={moveToCheckout('FREE')}
+              >
+                {t('cancel_subscription_1', 'Cancel subscription')}
+              </Button>
+            )}
         </div>
       )}
       {subscription?.cancelAt && isGeneral && (

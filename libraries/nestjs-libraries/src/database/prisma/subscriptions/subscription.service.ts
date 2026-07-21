@@ -51,6 +51,10 @@ export class SubscriptionService {
     );
   }
 
+  clearCustomerId(organizationId: string) {
+    return this._subscriptionRepository.clearCustomerId(organizationId);
+  }
+
   async checkSubscription(organizationId: string, subscriptionId: string) {
     return await this._subscriptionRepository.checkSubscription(
       organizationId,
