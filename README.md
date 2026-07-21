@@ -13,6 +13,8 @@
 </a>
 </p>
 
+> **Why this fork.** Personal fork of [`gitroomhq/postiz-app`](https://github.com/gitroomhq/postiz-app) maintained by [The Software Engineer](https://github.com/the-software-engineer). It adds post analytics for Bluesky and LinkedIn personal profiles, and corrected per-platform character counting for links. Everything else tracks upstream. For general Postiz work, please use upstream.
+
 <h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
