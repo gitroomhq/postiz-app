@@ -10,7 +10,10 @@ import { JSONSchema } from 'class-validator-jsonschema';
 // video_made_with_ai / duet / stitch are additionally video-only: TikTok's photo
 // post_info has no is_aigc, disable_duet or disable_stitch field.
 // Fields stay required here (existing clients depend on it); the constraints are
-// documented, not enforced.
+// documented, not enforced. The one exception is privacy_level, which is only
+// required on DIRECT_POST: TikTok's audit UX guidelines demand the user picks it
+// manually (no preselected default), so the composer starts it empty and UPLOAD
+// posts must not be blocked by it.
 export class TikTokDto {
   @ValidateIf((p) => p.title)
   @MaxLength(90)
@@ -20,6 +23,7 @@ export class TikTokDto {
   })
   title: string;
 
+  @ValidateIf((p) => p.content_posting_method !== 'UPLOAD')
   @IsIn([
     'PUBLIC_TO_EVERYONE',
     'MUTUAL_FOLLOW_FRIENDS',
@@ -29,7 +33,7 @@ export class TikTokDto {
   @IsString()
   @JSONSchema({
     description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
+      'Required when content_posting_method=DIRECT_POST; must be chosen explicitly by the user (TikTok forbids preselecting it). Ignored by TikTok on UPLOAD.',
   })
   privacy_level:
     | 'PUBLIC_TO_EVERYONE'
