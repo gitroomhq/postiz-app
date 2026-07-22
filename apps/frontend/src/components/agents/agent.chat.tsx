@@ -95,6 +95,7 @@ You can also use me as an MCP Server, check Settings >> Public API
 const LoadMessages: FC<{ id: string }> = ({ id }) => {
   const { messages, setMessages } = useCopilotMessagesContext();
   const fetch = useFetch();
+  const currentId = useRef<string | null>(null);
   const loaded = useRef<{ id: string; messages: CopilotMessage[] } | null>(
     null
   );
@@ -108,7 +109,7 @@ const LoadMessages: FC<{ id: string }> = ({ id }) => {
       });
     });
 
-    if (loaded.current?.id !== idToSet) {
+    if (currentId.current !== idToSet) {
       return;
     }
 
@@ -117,11 +118,13 @@ const LoadMessages: FC<{ id: string }> = ({ id }) => {
   }, []);
 
   useEffect(() => {
-    loaded.current = { id, messages: [] };
+    currentId.current = id;
     if (id === 'new') {
+      loaded.current = { id, messages: [] };
       setMessages([]);
       return;
     }
+    loaded.current = null;
     loadMessages(id);
   }, [id]);
 
