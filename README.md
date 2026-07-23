@@ -89,6 +89,8 @@
 | [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
 | [ChatbotX](https://chatbotx.io/?ref=postiz) | <img src="https://github.com/user-attachments/assets/0aa6b058-9a64-46d3-bc26-337abc51737d" alt="ChatbotX" width="500"/> | The ManyChat alternative that you can self-host, white-label, and resell to your clients. Bring your own OpenClaw, Hermes, or Claude agents! |
 
+<object type="image/svg+xml" data="https://opencollective.com/postiz/tiers/main-repository-bronze-tier.svg?avatarHeight=36&width=600"></object>
+
 # Intro
 
 - Schedule all your social media posts (many AI features)
@@ -127,10 +129,6 @@ Link: https://opencollective.com/postiz
 - Postiz does not collect, store, or proxy API keys or access tokens from users.
 - Postiz never asks users to paste API keys into our hosted product.
 - Postiz users always authenticate directly with the social platform (e.g., X, Discord, etc.), ensuring platform compliance and data privacy.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=gitroomhq/postiz-app&type=date&legend=top-left)](https://www.star-history.com/#gitroomhq/postiz-app&type=date&legend=top-left)
 
 ## License
 
