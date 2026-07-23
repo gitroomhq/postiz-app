@@ -341,7 +341,7 @@ export const DecisionModal: FC<{
   const { closeCurrent } = useModals();
   return (
     <div className="flex flex-col">
-      <div>{description}</div>
+      <div className="max-w-[600px]">{description}</div>
       <div className="flex gap-[12px] mt-[16px]">
         <Button
           onClick={() => {

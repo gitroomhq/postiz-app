@@ -159,6 +159,42 @@ export class StripeService {
     );
   }
 
+  // After a login swap, move each Stripe customer's email to the login that
+  // now owns it. Owner-only so a member's switch can't rewrite a shared org's
+  // billing email, deduped per customer, and skipping admin-granted
+  // subscriptions (their paymentId is a user id, not a `cus_...` customer).
+  async syncCustomerEmailsAfterSwitch(
+    accounts: { id: string; email: string }[]
+  ) {
+    if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+      return;
+    }
+    const emailByCustomer = new Map<string, string>();
+    for (const account of accounts) {
+      const organizations = await this._organizationService.getOrgsByUserId(
+        account.id
+      );
+      for (const org of organizations) {
+        if (
+          org.users?.[0]?.role === 'SUPERADMIN' &&
+          org.paymentId?.startsWith('cus_') &&
+          !emailByCustomer.has(org.paymentId)
+        ) {
+          emailByCustomer.set(org.paymentId, account.email);
+        }
+      }
+    }
+    await Promise.all(
+      [...emailByCustomer].map(([customerId, email]) =>
+        stripe.customers
+          .update(customerId, {
+            email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
+          })
+          .catch(() => {})
+      )
+    );
+  }
+
   async createOrGetCustomer(organization: Organization) {
     if (organization.paymentId) {
       return organization.paymentId;

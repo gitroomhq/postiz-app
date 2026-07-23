@@ -379,7 +379,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal } = await (
+        const { url, portal, blocked } = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -390,6 +390,18 @@ export const MainBillingComponent: FC<{
             }),
           })
         ).json();
+        if (blocked) {
+          setLoading(false);
+          await deleteDialog(
+            t(
+              'billing_other_account_subscribed',
+              'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
+            ),
+            t('ok', 'OK'),
+            t('already_subscribed', 'Already subscribed')
+          );
+          return;
+        }
         if (url) {
           await track(TrackEnum.InitiateCheckout, {
             value:

@@ -16,6 +16,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { Response, Request } from 'express';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
+import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
@@ -200,6 +201,51 @@ export class UsersController {
     await this._userService.activateUser(user.id);
 
     return { activated: true };
+  }
+
+  @Post('/switch')
+  async switchUser(
+    @GetUserFromRequest() user: User,
+    @Body('id') id: string,
+    @Req() req: Request
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    // `user` is the impersonated account, so the admin id comes from the token.
+    // Require an active impersonation session and never allow the admin's own
+    // account in the swap — either would trade away the admin's login.
+    const adminId = this.getRequestUserId(req);
+    if (
+      !id ||
+      !adminId ||
+      id === user.id ||
+      adminId === user.id ||
+      adminId === id
+    ) {
+      throw new HttpException('Invalid user to switch to', 400);
+    }
+
+    const { kept, switched } = await this._userService.switchUser(
+      user.id,
+      id,
+      adminId
+    );
+
+    await this._stripeService.syncCustomerEmailsAfterSwitch([kept, switched]);
+
+    return { success: true };
+  }
+
+  private getRequestUserId(req: Request): string | null {
+    try {
+      const auth = (req.headers.auth as string) || req.cookies?.auth;
+      const payload = AuthChecker.verifyJWT(auth) as { id?: string } | null;
+      return payload?.id || null;
+    } catch {
+      return null;
+    }
   }
 
   @Post('/personal')

@@ -59,6 +59,7 @@ const useCommunity = () => {
 
 - Linting of the project can run only from the root.
 - Use only pnpm.
+- Never use RAW SQL queries, always use Prisma.
 - The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
 - Whenever you generate a PR, PR description, or similar, **always** follow the PR Template (.github/PULL_REQUEST_TEMPLATE.md)
 - Avoid as much as possible creating new files with pure logic of algorithms, it's usually wrong
