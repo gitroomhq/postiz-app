@@ -653,6 +653,7 @@
   "please_fix_your_settings": "Veuillez corriger vos paramètres",
   "shortlink_urls_question": "Voulez-vous raccourcir les URL ? Cela vous permettra d'obtenir des statistiques sur les clics.",
   "yes_shortlink_it": "Oui, raccourcissez-les !",
+  "no_original_urls": "Non, URLs originales",
   "added_successfully": "Ajouté avec succès",
   "updated_successfully": "Mis à jour avec succès",
   "create_post_title": "Créer une publication",

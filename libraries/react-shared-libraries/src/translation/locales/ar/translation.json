@@ -653,6 +653,7 @@
   "please_fix_your_settings": "يرجى تصحيح إعداداتك",
   "shortlink_urls_question": "هل تريد تقصير الروابط؟ سيسمح لك ذلك بالحصول على إحصائيات حول النقرات",
   "yes_shortlink_it": "نعم، قصّر الرابط!",
+  "no_original_urls": "لا، أبقِ الروابط الأصلية!",
   "added_successfully": "تمت الإضافة بنجاح",
   "updated_successfully": "تم التحديث بنجاح",
   "create_post_title": "إنشاء منشور",

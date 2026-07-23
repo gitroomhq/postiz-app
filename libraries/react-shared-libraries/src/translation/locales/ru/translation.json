@@ -653,6 +653,7 @@
   "please_fix_your_settings": "Пожалуйста, исправьте ваши настройки",
   "shortlink_urls_question": "Хотите сократить ссылки? Это позволит получать статистику по кликам.",
   "yes_shortlink_it": "Да, сократить!",
+  "no_original_urls": "Нет, оставить оригинальные URL",
   "added_successfully": "Успешно добавлено",
   "updated_successfully": "Успешно обновлено",
   "create_post_title": "Создать пост",

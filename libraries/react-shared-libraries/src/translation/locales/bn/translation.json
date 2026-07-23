@@ -653,6 +653,7 @@
   "please_fix_your_settings": "অনুগ্রহ করে আপনার সেটিংস ঠিক করুন",
   "shortlink_urls_question": "আপনি কি URL গুলো শর্টলিংক করতে চান? এতে আপনি ক্লিকের পরিসংখ্যান পেতে পারবেন",
   "yes_shortlink_it": "হ্যাঁ, শর্টলিংক করুন!",
+  "no_original_urls": "না, মূল URL রাখুন",
   "added_successfully": "সফলভাবে যোগ হয়েছে",
   "updated_successfully": "সফলভাবে আপডেট হয়েছে",
   "create_post_title": "পোস্ট তৈরি করুন",
