@@ -664,6 +664,12 @@ export class InstagramProvider
     const [accessToken] = token.split('___');
     const [firstPost] = postDetails;
     const isStory = firstPost.settings.post_type === 'story';
+    const collaborators =
+      firstPost?.settings?.collaborators?.length && !isStory
+        ? `&collaborators=${JSON.stringify(
+            firstPost?.settings?.collaborators.map((p) => p.label)
+          )}`
+        : ``;
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
@@ -700,12 +706,10 @@ export class InstagramProvider
             )}`
           : ``;
 
-        const collaborators =
-          firstPost?.settings?.collaborators?.length && !isStory
-            ? `&collaborators=${JSON.stringify(
-                firstPost?.settings?.collaborators.map((p) => p.label)
-              )}`
-            : ``;
+        // collaborators are not allowed on carousel child items,
+        // they go on the carousel container instead
+        const itemCollaborators =
+          firstPost?.media?.length === 1 ? collaborators : ``;
 
         // audio_configuration is only supported for Reels (single video, not a story)
         // and only with Facebook Login (not Instagram Login / graph.instagram.com)
@@ -732,7 +736,7 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -762,6 +766,13 @@ export class InstagramProvider
               : 'carousel',
           containers: medias,
           message: firstPost?.message || '',
+          ...(collaborators
+            ? {
+                collaborators: firstPost.settings.collaborators!.map(
+                  (p) => p.label
+                ),
+              }
+            : {}),
         },
       },
     ];
@@ -775,6 +786,7 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      collaborators?: string[];
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -841,6 +853,7 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      collaborators?: string[];
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -897,7 +910,11 @@ export class InstagramProvider
             pendingData.message || ''
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
             pendingData.containers.join(',')
-          )}&access_token=${accessToken}`,
+          )}${
+            pendingData.collaborators?.length
+              ? `&collaborators=${JSON.stringify(pendingData.collaborators)}`
+              : ``
+          }&access_token=${accessToken}`,
           {
             method: 'POST',
           }
