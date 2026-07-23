@@ -15,15 +15,15 @@ export function isBlockedIPv4(ip: string): boolean {
   if ([a, b].some((n) => Number.isNaN(n))) return true;
 
   return (
-    a === 0 ||                       // 0.0.0.0/8
-    a === 10 ||                      // 10.0.0.0/8
-    a === 127 ||                     // 127.0.0.0/8
-    (a === 169 && b === 254) ||      // 169.254.0.0/16
+    a === 0 || // 0.0.0.0/8
+    a === 10 || // 10.0.0.0/8
+    a === 127 || // 127.0.0.0/8
+    (a === 169 && b === 254) || // 169.254.0.0/16
     (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
-    (a === 192 && b === 168) ||      // 192.168.0.0/16
+    (a === 192 && b === 168) || // 192.168.0.0/16
     (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10
     (a === 198 && (b === 18 || b === 19)) || // 198.18.0.0/15
-    a >= 224                         // multicast/reserved
+    a >= 224 // multicast/reserved
   );
 }
 
@@ -31,12 +31,12 @@ export function isBlockedIPv6(ip: string): boolean {
   const normalized = ip.toLowerCase();
 
   return (
-    normalized === '::1' ||          // loopback
-    normalized === '::' ||           // unspecified
+    normalized === '::1' || // loopback
+    normalized === '::' || // unspecified
     normalized.startsWith('fe80:') || // link-local
-    normalized.startsWith('fc') ||   // unique local fc00::/7
-    normalized.startsWith('fd') ||   // unique local fd00::/7
-    normalized.startsWith('ff')      // multicast
+    normalized.startsWith('fc') || // unique local fc00::/7
+    normalized.startsWith('fd') || // unique local fd00::/7
+    normalized.startsWith('ff') // multicast
   );
 }
 
@@ -108,7 +108,9 @@ export async function isSafePublicHttpsUrl(value: unknown): Promise<boolean> {
 }
 
 @ValidatorConstraint({ name: 'IsSafeWebhookUrl', async: true })
-export class IsSafeWebhookUrlConstraint implements ValidatorConstraintInterface {
+export class IsSafeWebhookUrlConstraint
+  implements ValidatorConstraintInterface
+{
   async validate(value: unknown, _args: ValidationArguments): Promise<boolean> {
     return isSafePublicHttpsUrl(value);
   }

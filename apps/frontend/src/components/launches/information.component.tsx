@@ -178,12 +178,22 @@ export const InformationComponent: FC<{
       {isValid ? <Valid /> : <Invalid />}
 
       {!isGlobal && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div
+          className={clsx(
+            'text-[10px] font-[600] flex justify-center items-center',
+            !isValid && 'text-white'
+          )}
+        >
           {totalChars}/{totalAllowedChars}
         </div>
       )}
       {isGlobal && globalDisplayLimit !== null && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div
+          className={clsx(
+            'text-[10px] font-[600] flex justify-center items-center',
+            !isValid && 'text-white'
+          )}
+        >
           {totalChars}/{globalDisplayLimit}
         </div>
       )}
@@ -216,7 +226,10 @@ export const InformationComponent: FC<{
                 isGlobal && selectedIntegrations.length && 'mb-[12px]'
               )}
             >
-              {t('your_post_should_have_at_least_one_character_or_one_image', 'Your post should have at least one character or one image.')}
+              {t(
+                'your_post_should_have_at_least_one_character_or_one_image',
+                'Your post should have at least one character or one image.'
+              )}
             </div>
           )}
           {isGlobal && (
@@ -243,7 +256,10 @@ export const InformationComponent: FC<{
                     )}
                   >
                     {p.integration.name} (
-                    {capitalize(p.integration.identifier.split('-')[0])}):
+                    {p.integration.display?.includes('@')
+                      ? p.integration.display.split('@').pop()
+                      : capitalize(p.integration.identifier.split('-')[0])}
+                    ):
                   </div>
                   <div
                     className={clsx(
