@@ -372,6 +372,10 @@ export class LinkedinPageProvider
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {
+        if (!current?.timeRange?.start) {
+          return all;
+        }
+
         if (
           typeof current?.totalPageStatistics?.views?.allPageViews
             ?.pageViews !== 'undefined'
