@@ -203,6 +203,14 @@ export class OrganizationRepository {
     });
   }
 
+  getUsersByEmail(email: string) {
+    return this._user.model.user.findMany({
+      where: {
+        email,
+      },
+    });
+  }
+
   async addUserToOrg(
     userId: string,
     id: string,

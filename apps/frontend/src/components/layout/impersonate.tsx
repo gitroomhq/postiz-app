@@ -10,8 +10,13 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { Button } from '@gitroom/react/form/button';
 import { ImportDebugPostModal } from '@gitroom/frontend/components/launches/import-debug-post.modal';
+import { useForm, FormProvider } from 'react-hook-form';
+import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 interface Charge {
   id: string;
@@ -411,6 +416,92 @@ const AddAnnouncement = () => {
   );
 };
 
+const AddTeamMemberModal: FC<{ close: () => void }> = ({ close }) => {
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const [saving, setSaving] = useState(false);
+  const resolver = useMemo(() => {
+    return classValidatorResolver(AdminAddTeamMemberDto);
+  }, []);
+  const form = useForm({
+    values: {
+      email: '',
+      role: '',
+    },
+    resolver,
+    mode: 'onChange',
+  });
+
+  const submit = useCallback(
+    async (values: { email: string; role: string }) => {
+      setSaving(true);
+      try {
+        const response = await fetch('/settings/team/add', {
+          method: 'POST',
+          body: JSON.stringify(values),
+        });
+        if (!response.ok) {
+          toast.show(
+            (await response.json()).message ||
+              t('could_not_add_member', 'Could not add the member'),
+            'warning'
+          );
+          return;
+        }
+        toast.show(t('member_added', 'Member added'));
+        close();
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(submit)}>
+        <div className="flex flex-col gap-[10px] min-w-[400px]">
+          <Input
+            label="Email"
+            placeholder={t('enter_email', 'Enter email')}
+            name="email"
+          />
+          <Select label="Role" name="role">
+            <option value="">{t('select_role', 'Select Role')}</option>
+            <option value="USER">{t('user', 'User')}</option>
+            <option value="ADMIN">{t('admin', 'Admin')}</option>
+          </Select>
+          <Button type="submit" loading={saving} className="rounded-[4px]">
+            {t('add_team_member', 'Add Team Member')}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
+  );
+};
+
+const AddTeamMember = () => {
+  const { openModal } = useModals();
+  const t = useT();
+
+  const handleClick = useCallback(() => {
+    openModal({
+      title: t('add_team_member', 'Add Team Member'),
+      children: (close) => <AddTeamMemberModal close={close} />,
+    });
+  }, []);
+
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-teal-700 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('add_team_member', 'Add Team Member')}
+    </div>
+  );
+};
+
 const ViewErrors = () => {
   const t = useT();
   const handleClick = useCallback(() => {
@@ -459,6 +550,155 @@ const ImportDebugPost = () => {
       onClick={handleClick}
     >
       {t('import_debug_post', 'Import Debug Post')}
+    </div>
+  );
+};
+
+const SwitchUser = () => {
+  const fetch = useFetch();
+  const t = useT();
+  const toaster = useToaster();
+  const currentUser = useUser();
+  const [name, setName] = useState('');
+  const [selected, setSelected] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
+  const [switching, setSwitching] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!name) {
+      return [];
+    }
+    return await (await fetch(`/user/impersonate?name=${name}`)).json();
+  }, [name]);
+
+  const { data } = useSWR(`/switch-search-${name}`, load, {
+    refreshWhenHidden: false,
+    revalidateOnMount: true,
+    revalidateOnReconnect: false,
+    revalidateOnFocus: false,
+    refreshWhenOffline: false,
+    revalidateIfStale: false,
+    refreshInterval: 0,
+  });
+
+  const mapData = useMemo(() => {
+    // one row per user-organization: dedupe by user id, drop the impersonated user
+    const seen = new Set<string>();
+    return (data || [])
+      .filter((curr: any) => curr.user.id !== currentUser?.id)
+      .filter((curr: any) => {
+        if (seen.has(curr.user.id)) {
+          return false;
+        }
+        seen.add(curr.user.id);
+        return true;
+      })
+      .map((curr: any) => ({
+        id: curr.user.id,
+        name: curr.user.name,
+        email: curr.user.email,
+      }));
+  }, [data, currentUser?.id]);
+
+  const pick = useCallback(
+    (item: { id: string; name: string; email: string }) => () => {
+      setSelected(item);
+      setName('');
+    },
+    []
+  );
+
+  const doSwitch = useCallback(async () => {
+    if (!selected) {
+      return;
+    }
+    if (
+      !(await deleteDialog(
+        t(
+          'switch_user_confirm',
+          `This will replace the current account's login with ${selected.email}. All data and the subscription stay with the account — only the login changes, and the new login gains its full access. Switch back to revert.`
+        ),
+        t('yes_switch', 'Yes, switch'),
+        t('switch_user_title', 'Switch User?'),
+        t('no_cancel', 'No, cancel')
+      ))
+    ) {
+      return;
+    }
+    setSwitching(true);
+    try {
+      const res = await fetch('/user/switch', {
+        method: 'POST',
+        body: JSON.stringify({ id: selected.id }),
+      });
+      // customFetch does not throw on HTTP errors
+      if (!res.ok) {
+        throw new Error(await res.text().catch(() => ''));
+      }
+      window.location.reload();
+    } catch {
+      setSwitching(false);
+      toaster.show(
+        t('switch_user_failed', 'The user switch failed and nothing was changed'),
+        'warning'
+      );
+    }
+  }, [selected]);
+
+  return (
+    <div className="relative flex items-center gap-[10px]">
+      <div className="flex-1 min-w-[220px]">
+        <Input
+          autoComplete="off"
+          placeholder={t('select_user_to_switch_to', 'Select user to switch to')}
+          name="switchUser"
+          disableForm={true}
+          label=""
+          removeError={true}
+          value={
+            selected
+              ? `${selected.name ? `${selected.name} - ` : ''}${selected.email}`
+              : name
+          }
+          onChange={(e) => {
+            setSelected(null);
+            setName(e.target.value);
+          }}
+        />
+      </div>
+      <Button
+        onClick={doSwitch}
+        loading={switching}
+        disabled={!selected}
+        className="rounded-[4px] whitespace-nowrap"
+      >
+        {t('switch_user', 'Switch User')}
+      </Button>
+      {!!mapData?.length && !selected && (
+        <>
+          <div
+            className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
+            onClick={() => setName('')}
+          />
+          <div className="absolute top-[100%] start-0 w-full bg-sixth border border-customColor6 text-textColor z-[999]">
+            {mapData.map((item: any) => (
+              <div
+                onClick={pick(item)}
+                key={item.id}
+                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+              >
+                {t('user_1', 'user:')}
+                {item.id.split('-').at(-1)} -{' '}
+                {item.name ? `${item.name} - ` : ''}
+                {item.email}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -524,11 +764,15 @@ export const Impersonate = () => {
   return (
     <div>
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
-        <div className="relative flex flex-col w-[600px]">
+        <div
+          className={`relative flex flex-col ${
+            user?.impersonate ? 'w-full px-[20px]' : 'w-[600px]'
+          }`}
+        >
           <div className="relative z-[1]">
             {user?.impersonate ? (
-              <div className="text-center flex justify-center items-center gap-[20px]">
-                <div>
+              <div className="text-center flex justify-center items-center gap-[10px]">
+                <div className="whitespace-nowrap">
                   {t('currently_impersonating', 'Currently Impersonating')}
                 </div>
                 <div>
@@ -540,7 +784,9 @@ export const Impersonate = () => {
                   </div>
                 </div>
                 {user?.tier?.current === 'FREE' && <Subscription />}
+                {user?.tier?.team_members && <AddTeamMember />}
                 {billingEnabled && <ManageBilling />}
+                <SwitchUser />
               </div>
             ) : (
               <div className="flex items-center gap-[10px]">
