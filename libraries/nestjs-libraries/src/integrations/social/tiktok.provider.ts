@@ -560,6 +560,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           : {}),
         ...(!isPhoto && firstPost.message ? { title: firstPost.message } : {}),
         ...(isPhoto ? { description: firstPost.message } : {}),
+       
+        privacy_level:
+          firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
       },
     };
   }
