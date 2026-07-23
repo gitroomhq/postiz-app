@@ -1,8 +1,10 @@
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -94,6 +96,62 @@ export class OrganizationService {
       );
     }
     return { url };
+  }
+
+  async addTeamMemberByEmail(org: Organization, body: AdminAddTeamMemberDto) {
+    const tier =
+      // @ts-ignore
+      org?.subscription?.subscriptionTier ||
+      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE');
+
+    if (!pricing[tier].team_members) {
+      throw new HttpException(
+        'The organization plan does not include team members',
+        400
+      );
+    }
+
+    const users = await this._organizationRepository.getUsersByEmail(
+      body.email
+    );
+    if (!users.length) {
+      throw new HttpException('No Postiz account found for this email', 400);
+    }
+
+    if (users.length > 1) {
+      throw new HttpException(
+        'Multiple accounts exist for this email (different login providers)',
+        400
+      );
+    }
+
+    const [user] = users;
+
+    const userOrgs = await this._organizationRepository.getOrgsByUserId(
+      user.id
+    );
+    if (userOrgs.some((current) => current.id === org.id)) {
+      throw new HttpException(
+        'User is already a member of this organization',
+        400
+      );
+    }
+
+    const added = await this._organizationRepository.addUserToOrg(
+      user.id,
+      makeId(5),
+      org.id,
+      body.role as 'USER' | 'ADMIN'
+    );
+
+    if (!added) {
+      throw new HttpException(
+        'Could not add the user to the organization',
+        400
+      );
+    }
+
+    return { added: true };
   }
 
   async deleteTeamMember(org: Organization, userId: string) {
