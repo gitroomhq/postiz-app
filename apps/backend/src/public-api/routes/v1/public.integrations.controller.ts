@@ -270,6 +270,9 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     const getPostById = await this._postsService.getPost(org.id, id);
+    if (!getPostById.group) {
+      throw new HttpException({ msg: 'Post not found' }, 404);
+    }
     return this._postsService.deletePost(org.id, getPostById.group);
   }
 

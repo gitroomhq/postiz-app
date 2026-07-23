@@ -505,8 +505,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
   }
 
@@ -543,8 +543,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
 
     return list;
