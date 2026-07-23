@@ -1,6 +1,6 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Provider } from '@prisma/client';
+import { Provider, Role } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
@@ -61,6 +61,24 @@ export class UsersRepository {
           },
         },
       },
+    });
+  }
+
+  getUserWithActiveSubscriptionByEmail(email: string, excludeUserId: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        email,
+        id: { not: excludeUserId },
+        organizations: {
+          some: {
+            role: Role.SUPERADMIN,
+            organization: {
+              subscription: { is: { deletedAt: null } },
+            },
+          },
+        },
+      },
+      select: { id: true, email: true, providerName: true },
     });
   }
 

@@ -20,6 +20,13 @@ export class UsersService {
     return this._usersRepository.getUserById(id);
   }
 
+  getUserWithActiveSubscriptionByEmail(email: string, excludeUserId: string) {
+    return this._usersRepository.getUserWithActiveSubscriptionByEmail(
+      email,
+      excludeUserId
+    );
+  }
+
   getImpersonateUser(name: string) {
     return this._organizationRepository.getImpersonateUser(name);
   }
