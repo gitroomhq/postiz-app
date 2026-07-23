@@ -657,8 +657,10 @@ export class InstagramProvider
     const isStory = firstPost.settings.post_type === 'story';
     const collaborators =
       firstPost?.settings?.collaborators?.length && !isStory
-        ? `&collaborators=${JSON.stringify(
-            firstPost?.settings?.collaborators.map((p) => p.label)
+        ? `&collaborators=${encodeURIComponent(
+            JSON.stringify(
+              firstPost?.settings?.collaborators.map((p) => p.label)
+            )
           )}`
         : ``;
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
@@ -903,7 +905,9 @@ export class InstagramProvider
             pendingData.containers.join(',')
           )}${
             pendingData.collaborators?.length
-              ? `&collaborators=${JSON.stringify(pendingData.collaborators)}`
+              ? `&collaborators=${encodeURIComponent(
+                  JSON.stringify(pendingData.collaborators)
+                )}`
               : ``
           }&access_token=${accessToken}`,
           {
