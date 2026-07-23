@@ -115,7 +115,7 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 
 We now give a few options to Sponsor Postiz:
 - Just a donation: You like what we are building, and want to buy us some coffee so we can build faster.
-- Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has almost 6m downloads and 20k views per month.
+- Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has over 7M downloads and 20k views per month.
 
 Link: https://opencollective.com/postiz
 
