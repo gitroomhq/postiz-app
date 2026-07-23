@@ -25,7 +25,8 @@ export class NodeMailerProvider implements EmailInterface {
     subject: string,
     html: string,
     emailFromName: string,
-    emailFromAddress: string
+    emailFromAddress: string,
+    replyTo?: string
   ) {
     const sends = await transporter.sendMail({
       from: `${emailFromName} <${emailFromAddress}>`, // sender address
@@ -33,6 +34,7 @@ export class NodeMailerProvider implements EmailInterface {
       subject: subject, // Subject line
       text: html, // plain text body
       html: html, // html body
+      ...(replyTo && { replyTo }),
     });
 
     return sends;
