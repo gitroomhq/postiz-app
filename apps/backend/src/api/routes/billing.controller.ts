@@ -138,15 +138,18 @@ export class BillingController {
     const result = await this._stripeService.setToCancel(org.id);
 
     if (result.cancel_at) {
+      const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
       try {
         await this._notificationService.sendEmail(
           user.email,
           'Your subscription has been cancelled',
-          `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
-            result.cancel_at
-          ).format(
-            'MMMM D, YYYY'
-          )}.<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+          `${
+            isFutureCancel
+              ? `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+                  result.cancel_at
+                ).format('MMMM D, YYYY')}.`
+              : 'Your subscription has been cancelled and access to paid features has ended.'
+          }<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
             process.env.FRONTEND_URL
           }/billing">billing page</a>.`
         );
