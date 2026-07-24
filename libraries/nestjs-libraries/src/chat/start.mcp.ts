@@ -45,10 +45,11 @@ export const startMcp = async (app: INestApplication) => {
 
   const server = new MCPServer(serverConfig);
 
+  const oauthResource = new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
   const oauthMiddleware = createOAuthMiddleware({
     oauth: {
-      resource: new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
-      authorizationServers: [process.env.NEXT_PUBLIC_BACKEND_URL!],
+      resource: oauthResource,
+      authorizationServers: [oauthResource],
       validateToken: async (token: string) => {
         const org = await resolveAuth(token);
         if (!org) {
@@ -67,12 +68,25 @@ export const startMcp = async (app: INestApplication) => {
     });
   }
 
-  app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response) => {
+  app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response, next: () => void) => {
+    // Only the /mcp-oauth resource is OAuth-protected. Answering discovery on
+    // any other path (including the root, which clients fall back to) makes
+    // them demand OAuth for /mcp/:id too
+    if (req.path !== '/mcp-oauth') {
+      next();
+      return;
+    }
+
     const url = new URL('/.well-known/oauth-protected-resource', process.env.NEXT_PUBLIC_BACKEND_URL);
     await oauthMiddleware(req, res, url);
   });
 
-  app.use('/.well-known/oauth-authorization-server', async (req: Request, res: Response) => {
+  app.use('/.well-known/oauth-authorization-server', async (req: Request, res: Response, next: () => void) => {
+    if (req.path !== '/mcp-oauth') {
+      next();
+      return;
+    }
+
     res.setHeader('Access-Control-Allow-Origin', '*');
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -84,7 +98,9 @@ export const startMcp = async (app: INestApplication) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'max-age=3600');
     res.json({
-      issuer: process.env.NEXT_PUBLIC_BACKEND_URL,
+      // RFC 8414: metadata served at /.well-known/oauth-authorization-server/mcp-oauth
+      // belongs to the path-based issuer <backend>/mcp-oauth
+      issuer: oauthResource,
       authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
       token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
       response_types_supported: ['code'],
