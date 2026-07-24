@@ -415,6 +415,38 @@ const AddAnnouncement = () => {
   );
 };
 
+const ActivateUser = () => {
+  const fetch = useFetch();
+  const t = useT();
+
+  const handleClick = useCallback(async () => {
+    if (
+      !(await deleteDialog(
+        t(
+          'activate_user_confirm',
+          'This will activate the user account as if they clicked the link in the activation email. Continue?'
+        ),
+        t('yes_activate', 'Yes, activate')
+      ))
+    ) {
+      return;
+    }
+    await fetch('/user/activate-by-admin', {
+      method: 'POST',
+    });
+    window.location.reload();
+  }, []);
+
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-orange-600 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('activate_user', 'Activate User')}
+    </div>
+  );
+};
+
 const AddTeamMemberModal: FC<{ close: () => void }> = ({ close }) => {
   const fetch = useFetch();
   const toast = useToaster();
@@ -783,6 +815,9 @@ export const Impersonate = () => {
                   </div>
                 </div>
                 {user?.tier?.current === 'FREE' && <Subscription />}
+                {user?.providerName === 'LOCAL' && !user?.activated && (
+                  <ActivateUser />
+                )}
                 {user?.tier?.team_members && <AddTeamMember />}
                 {billingEnabled && <ManageBilling />}
                 <SwitchUser />
