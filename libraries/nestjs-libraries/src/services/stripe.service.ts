@@ -238,6 +238,12 @@ export class StripeService {
 
   async prorate(organizationId: string, body: BillingSubscribeDto) {
     const org = await this._organizationService.getOrgById(organizationId);
+    // Admin-granted subscriptions store the user id in paymentId (not a real
+    // `cus_...` customer); there is nothing to prorate against and Stripe would
+    // throw "No such customer", so return a zero price without calling it.
+    if (org?.paymentId && !org.paymentId.startsWith('cus_')) {
+      return { price: 0 };
+    }
     const customer = await this.createOrGetCustomer(org!);
     const priceData = pricing[body.billing];
     const allProducts = await stripe.products.list({
@@ -577,6 +583,11 @@ export class StripeService {
   }
 
   async finishTrial(paymentId: string) {
+    // No real Stripe customer (admin-granted or never-subscribed) → nothing to
+    // finish; skip the call that would throw "No such customer".
+    if (!paymentId?.startsWith('cus_')) {
+      return;
+    }
     const list = (
       await stripe.subscriptions.list({
         customer: paymentId,
@@ -590,6 +601,12 @@ export class StripeService {
 
   async checkDiscount(customer: string) {
     if (!process.env.STRIPE_DISCOUNT_ID) {
+      return false;
+    }
+
+    // No real Stripe customer (admin-granted or never-subscribed) → no discount
+    // to offer; skip the call that would throw "No such customer".
+    if (!customer?.startsWith('cus_')) {
       return false;
     }
 
@@ -628,7 +645,12 @@ export class StripeService {
   }
 
   async applyDiscount(customer: string) {
-    const check = this.checkDiscount(customer);
+    // No real Stripe customer (admin-granted or never-subscribed) → nothing to
+    // apply a discount to; skip the call that would throw "No such customer".
+    if (!customer?.startsWith('cus_')) {
+      return false;
+    }
+    const check = await this.checkDiscount(customer);
     if (!check) {
       return false;
     }
@@ -880,7 +902,10 @@ export class StripeService {
 
   async getCharges(organizationId: string) {
     const org = await this._organizationService.getOrgById(organizationId);
-    if (!org?.paymentId) {
+    // Only real Stripe customers have charges. Admin-granted subscriptions
+    // store the user id in `paymentId` (not a `cus_...` customer), so calling
+    // Stripe for them just throws "No such customer".
+    if (!org?.paymentId || !org.paymentId.startsWith('cus_')) {
       return [];
     }
 
