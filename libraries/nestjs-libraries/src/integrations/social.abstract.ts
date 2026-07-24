@@ -119,6 +119,25 @@ export abstract class SocialAbstract {
     return value || false;
   }
 
+  /**
+   * Absolute callback URL sent to the provider as `redirect_uri`.
+   *
+   * Defaults to `FRONTEND_URL`, but can be overridden with `PUBLIC_OAUTH_URL`
+   * when the frontend is not reachable from the internet (private network,
+   * VPN-only deployment) while the provider requires a publicly verifiable
+   * redirect URI. The override must then redirect back to `FRONTEND_URL`.
+   *
+   * The `redirectmeto.com` prefix keeps local http development working, since
+   * most providers reject non-https redirect URIs.
+   */
+  protected oauthRedirectUri(identifier: string) {
+    const base = process.env.PUBLIC_OAUTH_URL || process.env.FRONTEND_URL || '';
+    const prefix =
+      base.indexOf('https') === -1 ? 'https://redirectmeto.com/' : '';
+
+    return `${prefix}${base}/integrations/social/${identifier}`;
+  }
+
   /** Reads the pixel dimensions of an image via sharp (works for http or local paths). */
   protected async getImageDimensions(
     path: string
