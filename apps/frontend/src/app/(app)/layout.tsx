@@ -87,7 +87,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           googleAdsTrialTracking={process.env.NEXT_PUBLIC_TRACKING_TRIAL}
           language={language}
           transloadit={
-            process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
+            // Transloadit templates export to the R2 bucket and save-media builds the
+            // path from CLOUDFLARE_BUCKET_URL, so it only works with cloudflare
+            // storage; with local storage it would silently lose uploads.
+            process.env.STORAGE_PROVIDER === 'cloudflare' &&
+            process.env.TRANSLOADIT_AUTH &&
+            process.env.TRANSLOADIT_TEMPLATE
               ? [
                   process.env.TRANSLOADIT_AUTH!,
                   process.env.TRANSLOADIT_TEMPLATE!,
