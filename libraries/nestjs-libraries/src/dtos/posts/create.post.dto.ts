@@ -21,6 +21,7 @@ import {
 } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { ValidContent } from '@gitroom/helpers/utils/valid.images';
 import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
+import { EndRecurrenceType } from '@prisma/client';
 
 export class Integration {
   @IsDefined()
@@ -90,6 +91,18 @@ class Tags {
   label: string;
 }
 
+export class RecurrenceDto {
+  @IsDefined()
+  @IsNumber()
+  repeat: number;
+
+  @IsDefined()
+  endRecurrenceType: EndRecurrenceType;
+
+  @IsOptional()
+  endRecurrenceAfter?: string | number;
+}
+
 export class CreatePostDto {
   @IsDefined()
   @IsIn(['draft', 'schedule', 'now', 'update'])
@@ -104,8 +117,9 @@ export class CreatePostDto {
   shortLink: boolean;
 
   @IsOptional()
-  @IsNumber()
-  inter?: number;
+  @ValidateNested()
+  @Type(() => RecurrenceDto)
+  recurrence?: RecurrenceDto;
 
   @IsDefined()
   @IsDateString()

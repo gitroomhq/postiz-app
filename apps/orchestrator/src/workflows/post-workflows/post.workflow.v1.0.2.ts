@@ -9,7 +9,7 @@ import {
   setHandler,
 } from '@temporalio/workflow';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, EndRecurrenceType } from '@prisma/client';
 import { capitalize, sortBy } from 'lodash';
 import { PostResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -269,7 +269,33 @@ export async function postWorkflowV102({
   );
 
   // Check if the post is repeatable
-  const repeatPost = !post.intervalInDays
+  let isRepeatable = false;
+  if (post.intervalInDays) {
+    if (post.endRecurrenceType === EndRecurrenceType.POSTS) {
+      const recurrenceEndDate = new Date(
+        new Date(post.publishDate).getTime() +
+          post.intervalInDays *
+            (Number(post.endRecurrenceAfter) - 1) *
+            24 *
+            60 *
+            60 *
+            1000
+      );
+
+      if (new Date() <= recurrenceEndDate) {
+        isRepeatable = true;
+      }
+    } else if (post.endRecurrenceType === EndRecurrenceType.DATE) {
+      const recurrenceEndDate = new Date(post.endRecurrenceAfter);
+
+      if (new Date() <= recurrenceEndDate) {
+        isRepeatable = true;
+      }
+    } else if (post.endRecurrenceType === EndRecurrenceType.NEVER) {
+      isRepeatable = true;
+    }
+  }
+  const repeatPost = !isRepeatable
     ? []
     : [
         {

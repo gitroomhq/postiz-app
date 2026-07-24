@@ -504,5 +504,10 @@
     "label_who_can_reply_to_this_post": "ვის შეუძლია პასუხის გაცემა ამ პოსტზე?",
     "delete_integration": "ინტეგრაციის წაშლა",
     "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის",
-    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?"
+    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?",
+    "end_never": "არასდროს დასრულდება",
+    "end_after_date": "თარიღის შემდეგ დასრულდება",
+    "end_after_posts": "პოსტების შემდეგ დასრულდება",
+    "no_of_posts": "პოსტების რაოდენობა",
+    "never": "არასდროს"
 }

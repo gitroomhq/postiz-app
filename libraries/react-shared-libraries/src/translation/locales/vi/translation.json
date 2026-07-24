@@ -698,5 +698,10 @@
   "watch_tutorial_description": "Xem video ngắn này để biết cách tận dụng tối đa Postiz",
   "back": "Quay lại",
   "get_started": "Bắt đầu",
+  "end_never": "Không bao giờ kết thúc",
+  "end_after_date": "Kết thúc sau ngày",
+  "end_after_posts": "Kết thúc sau số bài viết",
+  "no_of_posts": "Số lượng bài viết",
+  "never": "Không bao giờ",
   "kick_select_channel": "Chọn kênh"
 }

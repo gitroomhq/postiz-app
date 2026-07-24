@@ -698,5 +698,10 @@
   "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من Postiz بأفضل شكل",
   "back": "رجوع",
   "get_started": "ابدأ",
+  "end_never": "لا ينتهي أبداً",
+  "end_after_date": "ينتهي بعد تاريخ محدد",
+  "end_after_posts": "ينتهي بعد عدد من المنشورات",
+  "no_of_posts": "عدد المنشورات",
+  "never": "أبداً",
   "kick_select_channel": "اختر القناة"
 }

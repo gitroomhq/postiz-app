@@ -698,5 +698,10 @@
   "watch_tutorial_description": "观看这个简短的视频，学习如何最大程度地利用Postiz",
   "back": "返回",
   "get_started": "开始使用",
+  "end_never": "永不结束",
+  "end_after_date": "在指定日期后结束",
+  "end_after_posts": "在指定篇数后结束",
+  "no_of_posts": "文章数量",
+  "never": "永不",
   "kick_select_channel": "选择频道"
 }

@@ -7,11 +7,14 @@ import { isUSCitizen } from './isuscitizen.utils';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
+import clsx from 'clsx';
 export const DatePicker: FC<{
+  view?: 'icon' | 'full';
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
+  minDate?: dayjs.Dayjs;
 }> = (props) => {
-  const { date, onChange } = props;
+  const { view = 'full', date, onChange, minDate } = props;
   const [open, setOpen] = useState(false);
   const t = useT();
 
@@ -35,16 +38,23 @@ export const DatePicker: FC<{
   );
   return (
     <div
-      className="px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1"
+      className={clsx(
+        view === 'full' ? 'flex-1' : '',
+        'px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none'
+      )}
       onClick={changeShow}
       ref={ref}
     >
       <div className="cursor-pointer">
         <CalendarIcon />
       </div>
-      <div className="cursor-pointer">
-        {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
-      </div>
+      {view !== 'icon' && (
+        <div className="cursor-pointer">
+          {date.format(
+            isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm'
+          )}
+        </div>
+      )}
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -53,6 +63,7 @@ export const DatePicker: FC<{
           <Calendar
             onChange={changeDate('date')}
             value={date.toDate()}
+            minDate={minDate?.toDate()}
             dayClassName={(date, modifiers) => {
               if (modifiers.weekend) {
                 return '!text-customColor28';
