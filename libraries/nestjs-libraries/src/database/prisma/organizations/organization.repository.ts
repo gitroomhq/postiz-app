@@ -259,6 +259,7 @@ export class OrganizationRepository {
       },
       data: {
         inviteId: id,
+        lastSelectedOrgId: orgId,
       },
     });
 
@@ -382,6 +383,16 @@ export class OrganizationRepository {
   }
 
   async deleteTeamMember(orgId: string, userId: string) {
+    await this._user.model.user.updateMany({
+      where: {
+        id: userId,
+        lastSelectedOrgId: orgId,
+      },
+      data: {
+        lastSelectedOrgId: null,
+      },
+    });
+
     return this._userOrg.model.userOrganization.delete({
       where: {
         userId_organizationId: {

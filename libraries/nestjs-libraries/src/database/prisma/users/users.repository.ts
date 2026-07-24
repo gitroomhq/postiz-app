@@ -154,6 +154,17 @@ export class UsersRepository {
     });
   }
 
+  updateLastSelectedOrg(id: string, lastSelectedOrgId: string) {
+    return this._user.model.user.update({
+      where: {
+        id,
+      },
+      data: {
+        lastSelectedOrgId,
+      },
+    });
+  }
+
   getUserByProvider(providerId: string, provider: Provider) {
     return this._user.model.user.findFirst({
       where: {
