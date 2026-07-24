@@ -900,10 +900,22 @@ export class PostsService {
         content: removeLinks ? stripLinks(updateContent[i]) : updateContent[i],
       }));
 
+      const scheduledDate =
+        body.type === 'now'
+          ? dayjs().format('YYYY-MM-DDTHH:mm:00')
+          : body.date;
+
+      // Grab the current publish time BEFORE the upsert overwrites it, so we
+      // can tell (below) whether an edit actually moved the post's time.
+      const existingRootId = post.value?.[0]?.id;
+      const existingRoot = existingRootId
+        ? await this._postRepository.getPostById(existingRootId, orgId)
+        : null;
+
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        scheduledDate,
         post,
         body.tags,
         creationMethod,
@@ -914,7 +926,24 @@ export class PostsService {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
+      // Only (re)start the Temporal workflow when it's actually needed: a new
+      // post, or a scheduled post whose publish time changed. Editing a queued
+      // post without moving its time keeps the existing workflow - content and
+      // settings are re-read from the DB at publish time, so a restart (which
+      // would terminate + recreate the workflow) is unnecessary churn.
+      // Only a 'schedule' save may skip: 'draft'/'now' saves must still go
+      // through startWorkflow so the old run is terminated. The existing row
+      // must also BE the root: if the edit promoted a child row (thread head
+      // removed/reordered), the workflow is keyed to the old root, which gets
+      // soft-deleted - the new root needs its own workflow.
+      const publishTimeUnchanged =
+        body.type === 'schedule' &&
+        !!existingRoot &&
+        !existingRoot.parentPostId &&
+        existingRoot.state === 'QUEUE' &&
+        dayjs(existingRoot.publishDate).isSame(dayjs(scheduledDate), 'minute');
+
+      if (body.type !== 'update' && !publishTimeUnchanged) {
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
