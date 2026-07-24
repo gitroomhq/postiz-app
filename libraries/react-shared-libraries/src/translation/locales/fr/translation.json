@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Nous n'avons trouvé aucune entreprise liée aux pages sélectionnées.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Nous vous recommandons de connecter toutes les pages et toutes les entreprises.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Veuillez fermer cette fenêtre, supprimer votre intégration et ajouter à nouveau un nouveau canal.",
+  "back_to_postiz": "Retour à Postiz",
   "select_instagram_account": "Sélectionnez le compte Instagram :",
   "select_page": "Sélectionnez la page :",
   "generate_image_with_ai": "Générer une image avec l'IA",

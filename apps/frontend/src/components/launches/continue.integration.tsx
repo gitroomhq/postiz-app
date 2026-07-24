@@ -354,6 +354,16 @@ export const ContinueIntegration: FC<{
                 existingId={[]}
                 initialData={twoStepState.pages}
                 isSaving={isSaving}
+                onBack={
+                  logged || twoStepState.returnURL
+                    ? () =>
+                        navigateOrShow(
+                          '/launches',
+                          twoStepState.returnURL,
+                          'Channel setup cancelled'
+                        )
+                    : undefined
+                }
               />
             </IntegrationContext.Provider>
           </div>

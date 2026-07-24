@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "لم نتمكن من العثور على أي نشاط تجاري مرتبط بالصفحات المحددة.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "نوصي بربط جميع الصفحات وجميع الأنشطة التجارية.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "يرجى إغلاق هذه النافذة، حذف التكامل الخاص بك، ثم إضافة قناة جديدة مرة أخرى.",
+  "back_to_postiz": "العودة إلى Postiz",
   "select_instagram_account": "اختر حساب إنستغرام:",
   "select_page": "اختر الصفحة:",
   "generate_image_with_ai": "توليد صورة بالذكاء الاصطناعي",

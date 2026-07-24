@@ -28,7 +28,8 @@ export class InstagramProvider
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
-  toolTip = 'Instagram must be business and connected to a Facebook page';
+  toolTip =
+    'Your Facebook page selection is shared across all your Meta channels, check all relevant pages\nInstagram must be business and connected to a Facebook page, check this page too';
   scopes = [
     'instagram_basic',
     'pages_show_list',
@@ -319,11 +320,11 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('190,') > -1) {
+    if (/"code":\s*190\b/.test(body)) {
       return {
-        type: 'bad-body' as const,
+        type: 'refresh-token' as const,
         value:
-          'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
+          'The Instagram access token is invalid, please reconnect the channel',
       };
     }
 
@@ -421,6 +422,9 @@ export class InstagramProvider
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
+        // Re-prompt permissions/assets the user previously declined, so a
+        // bad page grant can be repaired by reconnecting
+        `&auth_type=rerequest` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
@@ -544,21 +548,36 @@ export class InstagramProvider
       // Business Manager API not available for all users
     }
 
-    const onlyConnectedAccounts = await Promise.all(
-      allFacebookPages
-        .filter((f: any) => f.instagram_business_account)
-        .map(async (p: any) => {
-          return {
-            pageId: p.id,
-            ...(await (
+    const onlyConnectedAccounts = (
+      await Promise.all(
+        allFacebookPages
+          .filter((f: any) => f.instagram_business_account)
+          .map(async (p: any) => {
+            // Pages without an access_token were never granted to the app
+            // in the OAuth dialog — selecting them would store a broken
+            // "undefined___..." token
+            const { access_token } = await (
               await fetch(
-                `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${p.id}?fields=access_token&access_token=${accessToken}`
               )
-            ).json()),
-            id: p.instagram_business_account.id,
-          };
-        })
-    );
+            ).json();
+
+            if (!access_token) {
+              return null;
+            }
+
+            return {
+              pageId: p.id,
+              ...(await (
+                await fetch(
+                  `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
+                )
+              ).json()),
+              id: p.instagram_business_account.id,
+            };
+          })
+      )
+    ).filter(Boolean);
 
     return onlyConnectedAccounts.map((p: any) => ({
       pageId: p.pageId,

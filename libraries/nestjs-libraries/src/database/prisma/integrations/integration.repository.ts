@@ -189,6 +189,7 @@ export class IntegrationRepository {
         ...params,
         disabled: false,
         deletedAt: null,
+        refreshNeeded: false,
       },
     });
   }
