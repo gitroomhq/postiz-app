@@ -10,6 +10,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import dayjs from 'dayjs';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -134,14 +135,25 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await this._stripeService.setToCancel(org.id);
 
-    return this._stripeService.setToCancel(org.id);
+    if (result.cancel_at) {
+      try {
+        await this._notificationService.sendEmail(
+          user.email,
+          'Your subscription has been cancelled',
+          `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+            result.cancel_at
+          ).format(
+            'MMMM D, YYYY'
+          )}.<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+            process.env.FRONTEND_URL
+          }/billing">billing page</a>.`
+        );
+      } catch (err) {}
+    }
+
+    return result;
   }
 
   @Post('/prorate')
