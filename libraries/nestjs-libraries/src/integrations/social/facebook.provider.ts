@@ -814,6 +814,19 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
+    // The stored id (releaseId) shape depends on the post type set in post():
+    //   - feed post  -> `{pageid}_{postid}` (contains `_`), has an `insights` edge
+    //   - reel/video -> bare numeric video id, NO `insights` edge (only `video_insights`)
+    //   - story      -> bare story id, no usable insights via this path
+    // There is no separate stored type, so id shape is the discriminator. Calling
+    // `/{videoId}/insights` on a video/story node returns
+    // `(#100) Tried accessing nonexisting field (insights)`, which is what surfaced
+    // in prod as "Error fetching Facebook post analytics: ApplicationFailure". Route
+    // bare ids to the video-only edge instead.
+    if (!postId.includes('_')) {
+      return this.videoPostAnalytics(accessToken, postId, today);
+    }
+
     try {
       // Fetch post insights from Facebook Graph API.
       // post_impressions_unique was deprecated by Meta on 2026-06-15; it is replaced
@@ -881,6 +894,91 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return result;
     } catch (err) {
       console.error('Error fetching Facebook post analytics:', err);
+      return [];
+    }
+  }
+
+  // Video/reel posts store a bare video id whose node has no `insights` edge; their
+  // analytics live on the `/{videoId}/video_insights` edge instead. Story posts also
+  // store a bare id but have no usable insights here — the video_insights call comes
+  // back with an `error` (or empty data), which we swallow to an empty result so a
+  // single story/video can't break the statistics page.
+  private async videoPostAnalytics(
+    accessToken: string,
+    videoId: string,
+    today: string
+  ): Promise<AnalyticsData[]> {
+    try {
+      // Metric names verified against the Graph API v23.0 video_insights docs:
+      //   - total_video_impressions: times the video was shown
+      //   - total_video_views: 3s+ (or full, if shorter) plays
+      //   - total_video_reactions_by_type_total: reactions object, keyed by type
+      // Use plain fetch (not this.fetch) so a `(#100) nonexisting field` / story
+      // response doesn't throw an ApplicationFailure — we want a quiet `[]` instead.
+      const { data, error } = await (
+        await fetch(
+          `https://graph.facebook.com/v23.0/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total&access_token=${accessToken}`
+        )
+      ).json();
+
+      // Stories (and videos without this edge) come back with an error / no data —
+      // return an empty result quietly rather than logging a scary error. But a
+      // `nonexisting field (video_insights)` is the only "expected" error here; any
+      // other error (bad metric name, token, permissions) means the fix is silently
+      // returning empty when it shouldn't be, so surface it as a warning (not a throw,
+      // not a scary error) so it's diagnosable without breaking the statistics page.
+      if (error || !data || data.length === 0) {
+        if (error && !/nonexisting field/i.test(error.message || '')) {
+          console.warn('Facebook video_insights returned an error:', {
+            videoId,
+            error,
+          });
+        }
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+        let total = '';
+
+        switch (metric.name) {
+          case 'total_video_impressions':
+            label = 'Impressions';
+            total = String(value);
+            break;
+          case 'total_video_views':
+            label = 'Views';
+            total = String(value);
+            break;
+          case 'total_video_reactions_by_type_total':
+            // This returns an object with reaction types
+            if (typeof value === 'object') {
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Reactions';
+              total = String(totalReactions);
+            }
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total, date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Facebook video post analytics:', err);
       return [];
     }
   }
