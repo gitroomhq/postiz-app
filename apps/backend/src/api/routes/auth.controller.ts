@@ -269,15 +269,24 @@ export class AuthController {
 
   @Post('/oauth/:provider/exists')
   async oauthExists(
+    @Req() req: Request,
     @Body('code') code: string,
     @Body('redirect_uri') redirect_uri: string,
     @Param('provider') provider: string,
     @Res({ passthrough: false }) response: Response
   ) {
-    const { jwt, token } = await this._authService.checkExists(
+    // Existing-user OAuth login: this path doesn't run routeAuth, so read the
+    // org invite cookie and join the org here too (when the invite is valid).
+    // See register/login for the same logic.
+    const getOrgFromCookie = this._authService.getOrgFromCookie(
+      req?.cookies?.org
+    );
+
+    const { jwt, token, addedOrg } = await this._authService.checkExists(
       provider,
       code,
-      redirect_uri
+      redirect_uri,
+      getOrgFromCookie
     );
 
     if (token) {
@@ -298,6 +307,27 @@ export class AuthController {
 
     if (process.env.NOT_SECURED) {
       response.header('auth', jwt);
+    }
+
+    // Joined a new org via the invite: tell the frontend to switch the active
+    // org to it (mirrors register/login). showorg is also a header so the
+    // NOT_SECURED setup, which can't set cross-site cookies, still works.
+    if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
+      response.cookie('showorg', addedOrg.organizationId, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('showorg', addedOrg.organizationId);
+      }
     }
 
     response.header('reload', 'true');
