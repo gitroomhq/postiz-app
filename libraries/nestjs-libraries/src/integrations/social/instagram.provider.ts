@@ -605,6 +605,14 @@ export class InstagramProvider
     const [firstPost] = postDetails;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
+    const collaborators =
+      firstPost?.settings?.collaborators?.length && !isStory
+        ? `&collaborators=${encodeURIComponent(
+            JSON.stringify(
+              firstPost?.settings?.collaborators.map((p) => p.label)
+            )
+          )}`
+        : ``;
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
@@ -641,12 +649,10 @@ export class InstagramProvider
             )}`
           : ``;
 
-        const collaborators =
-          firstPost?.settings?.collaborators?.length && !isStory
-            ? `&collaborators=${JSON.stringify(
-                firstPost?.settings?.collaborators.map((p) => p.label)
-              )}`
-            : ``;
+        // collaborators are not allowed on carousel child items,
+        // they go on the carousel container instead
+        const itemCollaborators =
+          firstPost?.media?.length === 1 ? collaborators : ``;
 
         // audio_configuration is only supported for Reels (single video, not a story)
         // and only with Facebook Login (not Instagram Login / graph.instagram.com)
@@ -673,7 +679,7 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -775,7 +781,7 @@ export class InstagramProvider
             firstPost?.message
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
             medias.join(',')
-          )}&access_token=${accessToken}`,
+          )}${collaborators}&access_token=${accessToken}`,
           {
             method: 'POST',
           }
