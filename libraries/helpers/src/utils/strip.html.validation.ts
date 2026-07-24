@@ -131,6 +131,266 @@ const underlineMap = {
   '0': '0̲',
 };
 
+const italic = {
+  a: '𝘢',
+  b: '𝘣',
+  c: '𝘤',
+  d: '𝘥',
+  e: '𝘦',
+  f: '𝘧',
+  g: '𝘨',
+  h: '𝘩',
+  i: '𝘪',
+  j: '𝘫',
+  k: '𝘬',
+  l: '𝘭',
+  m: '𝘮',
+  n: '𝘯',
+  o: '𝘰',
+  p: '𝘱',
+  q: '𝘲',
+  r: '𝘳',
+  s: '𝘴',
+  t: '𝘵',
+  u: '𝘶',
+  v: '𝘷',
+  w: '𝘸',
+  x: '𝘹',
+  y: '𝘺',
+  z: '𝘻',
+  A: '𝘈',
+  B: '𝘉',
+  C: '𝘊',
+  D: '𝘋',
+  E: '𝘌',
+  F: '𝘍',
+  G: '𝘎',
+  H: '𝘏',
+  I: '𝘐',
+  J: '𝘑',
+  K: '𝘒',
+  L: '𝘓',
+  M: '𝘔',
+  N: '𝘕',
+  O: '𝘖',
+  P: '𝘗',
+  Q: '𝘘',
+  R: '𝘙',
+  S: '𝘚',
+  T: '𝘛',
+  U: '𝘜',
+  V: '𝘝',
+  W: '𝘞',
+  X: '𝘟',
+  Y: '𝘠',
+  Z: '𝘡',
+  0: '0',
+  1: '1',
+  2: '2',
+  3: '3',
+  4: '4',
+  5: '5',
+  6: '6',
+  7: '7',
+  8: '8',
+  9: '9',
+};
+
+const strikethrough = {
+  a: 'a̶',
+  b: 'b̶',
+  c: 'c̶',
+  d: 'd̶',
+  e: 'e̶',
+  f: 'f̶',
+  g: 'g̶',
+  h: 'h̶',
+  i: 'i̶',
+  j: 'j̶',
+  k: 'k̶',
+  l: 'l̶',
+  m: 'm̶',
+  n: 'n̶',
+  o: 'o̶',
+  p: 'p̶',
+  q: 'q̶',
+  r: 'r̶',
+  s: 's̶',
+  t: 't̶',
+  u: 'u̶',
+  v: 'v̶',
+  w: 'w̶',
+  x: 'x̶',
+  y: 'y̶',
+  z: 'z̶',
+  A: 'A̶',
+  B: 'B̶',
+  C: 'C̶',
+  D: 'D̶',
+  E: 'E̶',
+  F: 'F̶',
+  G: 'G̶',
+  H: 'H̶',
+  I: 'I̶',
+  J: 'J̶',
+  K: 'K̶',
+  L: 'L̶',
+  M: 'M̶',
+  N: 'N̶',
+  O: 'O̶',
+  P: 'P̶',
+  Q: 'Q̶',
+  R: 'R̶',
+  S: 'S̶',
+  T: 'T̶',
+  U: 'U̶',
+  V: 'V̶',
+  W: 'W̶',
+  X: 'X̶',
+  Y: 'Y̶',
+  Z: 'Z̶',
+  0: '0̶',
+  1: '1̶',
+  2: '2̶',
+  3: '3̶',
+  4: '4̶',
+  5: '5̶',
+  6: '6̶',
+  7: '7̶',
+  8: '8̶',
+  9: '9̶',
+};
+
+const blockquote = {
+  a: 'ａ',
+  b: 'ｂ',
+  c: 'ｃ',
+  d: 'ｄ',
+  e: 'ｅ',
+  f: 'ｆ',
+  g: 'ｇ',
+  h: 'ｈ',
+  i: 'ｉ',
+  j: 'ｊ',
+  k: 'ｋ',
+  l: 'ｌ',
+  m: 'ｍ',
+  n: 'ｎ',
+  o: 'ｏ',
+  p: 'ｐ',
+  q: 'ｑ',
+  r: 'ｒ',
+  s: 'ｓ',
+  t: 'ｔ',
+  u: 'ｕ',
+  v: 'ｖ',
+  w: 'ｗ',
+  x: 'ｘ',
+  y: 'ｙ',
+  z: 'ｚ',
+  A: 'Ａ',
+  B: 'Ｂ',
+  C: 'Ｃ',
+  D: 'Ｄ',
+  E: 'Ｅ',
+  F: 'Ｆ',
+  G: 'Ｇ',
+  H: 'Ｈ',
+  I: 'Ｉ',
+  J: 'Ｊ',
+  K: 'Ｋ',
+  L: 'Ｌ',
+  M: 'Ｍ',
+  N: 'Ｎ',
+  O: 'Ｏ',
+  P: 'Ｐ',
+  Q: 'Ｑ',
+  R: 'Ｒ',
+  S: 'Ｓ',
+  T: 'Ｔ',
+  U: 'Ｕ',
+  V: 'Ｖ',
+  W: 'Ｗ',
+  X: 'Ｘ',
+  Y: 'Ｙ',
+  Z: 'Ｚ',
+  0: '０',
+  1: '１',
+  2: '２',
+  3: '３',
+  4: '４',
+  5: '５',
+  6: '６',
+  7: '７',
+  8: '８',
+  9: '９',
+};
+
+const code = {
+  a: '𝚊',
+  b: '𝚋',
+  c: '𝚌',
+  d: '𝚍',
+  e: '𝚎',
+  f: '𝚏',
+  g: '𝚐',
+  h: '𝚑',
+  i: '𝚒',
+  j: '𝚓',
+  k: '𝚔',
+  l: '𝚕',
+  m: '𝚖',
+  n: '𝚗',
+  o: '𝚘',
+  p: '𝚙',
+  q: '𝚚',
+  r: '𝚛',
+  s: '𝚜',
+  t: '𝚝',
+  u: '𝚞',
+  v: '𝚟',
+  w: '𝚠',
+  x: '𝚡',
+  y: '𝚢',
+  z: '𝚣',
+  A: '𝙰',
+  B: '𝙱',
+  C: '𝙲',
+  D: '𝙳',
+  E: '𝙴',
+  F: '𝙵',
+  G: '𝙶',
+  H: '𝙷',
+  I: '𝙸',
+  J: '𝙹',
+  K: '𝙺',
+  L: '𝙻',
+  M: '𝙼',
+  N: '𝙽',
+  O: '𝙾',
+  P: '𝙿',
+  Q: '𝚀',
+  R: '𝚁',
+  S: '𝚂',
+  T: '𝚃',
+  U: '𝚄',
+  V: '𝚅',
+  W: '𝚆',
+  X: '𝚇',
+  Y: '𝚈',
+  Z: '𝚉',
+  0: '𝟶',
+  1: '𝟷',
+  2: '𝟸',
+  3: '𝟹',
+  4: '𝟺',
+  5: '𝟻',
+  6: '𝟼',
+  7: '𝟽',
+  8: '𝟾',
+  9: '𝟿',
+};
+
 export const stripHtmlValidation = (
   type: 'none' | 'normal' | 'markdown' | 'html',
   val: string,
@@ -166,6 +426,10 @@ export const stripHtmlValidation = (
       'strong',
       'u',
       'a',
+      'em',
+      's',
+      'code',
+      'blockquote',
     ])
       .replace(/&gt;/gi, '>')
       .replace(/&lt;/gi, '<')
@@ -286,7 +550,7 @@ export const convertMention = (
 
 export const convertToAscii = (value: string): string => {
   return value
-    .replace(/<strong>(.+?)<\/strong>/gi, (match, p1) => {
+    .replace(/<strong>([\s\S]+?)<\/strong>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return bold?.[char] || char;
@@ -294,12 +558,36 @@ export const convertToAscii = (value: string): string => {
 
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<u>(.+?)<\/u>/gi, (match, p1) => {
+    .replace(/<u>([\s\S]+?)<\/u>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return underlineMap?.[char] || char;
       });
 
+      return match.replace(p1, replacer.join(''));
+    })
+    .replace(/<em>([\s\S]+?)<\/em>/gi, (match, p1) => {
+      const replacer = p1.split('').map((char: string) => {
+        return italic?.[char] || char;
+      });
+      return match.replace(p1, replacer.join(''));
+    })
+    .replace(/<s>([\s\S]+?)<\/s>/gi, (match, p1) => {
+      const replacer = p1.split('').map((char: string) => {
+        return strikethrough?.[char] || char;
+      });
+      return match.replace(p1, replacer.join(''));
+    })
+    .replace(/<blockquote>([\s\S]+?)<\/blockquote>/gi, (match, p1) => {
+      const replacer = p1.split('').map((char: string) => {
+        return blockquote?.[char] || char;
+      });
+      return match.replace(p1, replacer.join(''));
+    })
+    .replace(/<code>([\s\S]+?)<\/code>/gi, (match, p1) => {
+      const replacer = p1.split('').map((char: string) => {
+        return code?.[char] || char;
+      });
       return match.replace(p1, replacer.join(''));
     });
 };
