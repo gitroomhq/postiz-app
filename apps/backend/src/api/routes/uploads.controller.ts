@@ -20,7 +20,15 @@ import { readFromR2 } from '@gitroom/nestjs-libraries/upload/r2.reader';
 export class UploadsController {
   // Keys as produced by CloudflareStorage: makeId(10) plus an extension. No
   // slashes, no traversal, no query — nothing that could address another object.
-  private static readonly KEY = /^[A-Za-z0-9._-]{1,128}$/;
+  //
+  // The extension is part of the check, not decoration. An install may keep
+  // more than media in its bucket — backups, exports, anything — and this
+  // endpoint is public by necessity. Without the suffix list it would happily
+  // hand back a `.sql` sitting next to the images, and the only thing standing
+  // in the way would be nobody knowing its name. The list mirrors the types
+  // CloudflareStorage will actually store.
+  private static readonly KEY =
+    /^[A-Za-z0-9_-]{1,120}\.(jpe?g|png|gif|webp|avif|bmp|tiff?|mp4|mp3|m4a|wav|ogg)$/i;
 
   @Get('/:key')
   async serve(
@@ -59,6 +67,14 @@ export class UploadsController {
     res.setHeader(
       'Content-Type',
       object.contentType || 'application/octet-stream'
+    );
+    // Same hardening the image's nginx applies to locally served uploads: never
+    // let the browser second-guess the type, and make sure that whatever comes
+    // back cannot execute if it somehow is not what it claims to be.
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'none'; script-src 'none'; frame-ancestors 'none'; sandbox"
     );
     if (object.contentLength) {
       res.setHeader('Content-Length', String(object.contentLength));
