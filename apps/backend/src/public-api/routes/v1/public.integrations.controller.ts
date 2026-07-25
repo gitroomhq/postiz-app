@@ -22,7 +22,10 @@ import { Organization } from '@prisma/client';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  discardTempFile,
+  spooledFileInterceptor,
+} from '@gitroom/nestjs-libraries/upload/uploaded.file';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
@@ -78,7 +81,7 @@ export class PublicIntegrationsController {
   ) {}
 
   @Post('/upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(spooledFileInterceptor())
   @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
@@ -89,12 +92,16 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
-    const getFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(
-      org.id,
-      getFile.originalname,
-      getFile.path
-    );
+    try {
+      const getFile = await this.storage.uploadFile(file);
+      return await this._mediaService.saveFile(
+        org.id,
+        getFile.originalname,
+        getFile.path
+      );
+    } finally {
+      await discardTempFile(file);
+    }
   }
 
   @Post('/upload-from-url')

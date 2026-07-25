@@ -3,8 +3,7 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer } = require('file-type');
+import { detectUploadType } from '@gitroom/nestjs-libraries/upload/uploaded.file';
 
 const ALLOWED_MIME_TYPES = new Set<string>([
   'image/jpeg',
@@ -29,11 +28,13 @@ export class CustomFileValidationPipe implements PipeTransform {
       return value;
     }
 
-    if (!value.buffer || !Buffer.isBuffer(value.buffer)) {
+    // Held in memory, or spooled to disk when the file came to us rather than
+    // straight to storage. Either is valid; neither being present is not.
+    if (value.buffer ? !Buffer.isBuffer(value.buffer) : !value.path) {
       throw new BadRequestException('Invalid file upload.');
     }
 
-    const detected = await fromBuffer(value.buffer);
+    const detected = await detectUploadType(value);
     if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
       throw new BadRequestException('Unsupported file type.');
     }

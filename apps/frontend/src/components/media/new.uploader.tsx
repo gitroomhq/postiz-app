@@ -44,8 +44,13 @@ export function useUppyUploader(props: {
 }) {
   const setLocked = useLaunchStore((state) => state.setLocked);
   const toast = useToaster();
-  const { storageProvider, backendUrl, disableImageCompression, transloadit } =
-    useVariables();
+  const {
+    storageProvider,
+    uploadViaServer,
+    backendUrl,
+    disableImageCompression,
+    transloadit,
+  } = useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
   return useMemo(() => {
@@ -167,8 +172,20 @@ export function useUppyUploader(props: {
       });
     });
 
+    // Transloadit still wins where it is configured — it replaces storage
+    // rather than feeding it. Otherwise uploadViaServer picks the same strategy
+    // 'local' has always meant: XHR to /media/upload-server. That endpoint
+    // writes through whichever storage provider is configured, so with R2 the
+    // file still lands in the bucket — the browser just stops talking to it.
+    const uploadStrategy =
+      transloadit.length > 0
+        ? 'transloadit'
+        : uploadViaServer
+        ? 'local'
+        : storageProvider;
+
     const { plugin, options } = getUppyUploadPlugin(
-      transloadit.length > 0 ? 'transloadit' : storageProvider,
+      uploadStrategy,
       fetch,
       backendUrl,
       transloadit
@@ -215,7 +232,10 @@ export function useUppyUploader(props: {
         return orderA - orderB;
       });
 
-      if (storageProvider === 'local') {
+      // An XHR upload answers with the saved media row itself; the multipart
+      // path wraps it in `.saved`. Read the wrong one and the upload succeeds
+      // while nothing appears in the library.
+      if (uploadStrategy === 'local') {
         setLocked(false);
         fileOrderIndex = 0;
         onUploadSuccess(sortedSuccessful.map((p) => p.response.body));

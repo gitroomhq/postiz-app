@@ -18,8 +18,11 @@ import { Organization } from '@prisma/client';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import {
+  discardTempFile,
+  spooledFileInterceptor,
+} from '@gitroom/nestjs-libraries/upload/uploaded.file';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
@@ -86,20 +89,24 @@ export class MediaController {
   }
 
   @Post('/upload-server')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(spooledFileInterceptor())
   @UsePipes(new CustomFileValidationPipe())
   async uploadServer(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const originalName = file?.originalname || '';
-    const uploadedFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(
-      org.id,
-      uploadedFile.originalname,
-      uploadedFile.path,
-      originalName
-    );
+    try {
+      const originalName = file?.originalname || '';
+      const uploadedFile = await this.storage.uploadFile(file);
+      return await this._mediaService.saveFile(
+        org.id,
+        uploadedFile.originalname,
+        uploadedFile.path,
+        originalName
+      );
+    } finally {
+      await discardTempFile(file);
+    }
   }
 
   @Post('/save-media')
@@ -112,6 +119,16 @@ export class MediaController {
     if (!name) {
       return false;
     }
+
+    // Whatever arrives here is concatenated onto the public bucket URL and
+    // stored as a media address — one that later gets handed to the social
+    // networks. Storage only ever produces names like "aB3xY9pQr7.png", so
+    // anything with a slash, a scheme or a query in it did not come from
+    // storage and has no business becoming a URL.
+    if (!/^[A-Za-z0-9._-]{1,128}$/.test(name)) {
+      return false;
+    }
+
     return this._mediaService.saveFile(
       org.id,
       name,
@@ -129,27 +146,31 @@ export class MediaController {
   }
 
   @Post('/upload-simple')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(spooledFileInterceptor())
   @UsePipes(new CustomFileValidationPipe())
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File,
     @Body('preventSave') preventSave: string = 'false'
   ) {
-    const originalName = file.originalname;
-    const getFile = await this.storage.uploadFile(file);
+    try {
+      const originalName = file.originalname;
+      const getFile = await this.storage.uploadFile(file);
 
-    if (preventSave === 'true') {
-      const { path } = getFile;
-      return { path };
+      if (preventSave === 'true') {
+        const { path } = getFile;
+        return { path };
+      }
+
+      return await this._mediaService.saveFile(
+        org.id,
+        getFile.originalname,
+        getFile.path,
+        originalName
+      );
+    } finally {
+      await discardTempFile(file);
     }
-
-    return this._mediaService.saveFile(
-      org.id,
-      getFile.originalname,
-      getFile.path,
-      originalName
-    );
   }
 
   @Post('/:endpoint')

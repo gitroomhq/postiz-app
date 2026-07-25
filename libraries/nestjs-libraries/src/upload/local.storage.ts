@@ -1,5 +1,12 @@
 import { IUploadProvider } from './upload.interface';
-import { mkdirSync, unlink, writeFileSync } from 'fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  renameSync,
+  unlink,
+  writeFileSync,
+} from 'fs';
+import { detectUploadType } from '@gitroom/nestjs-libraries/upload/uploaded.file';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
@@ -75,7 +82,7 @@ export class LocalStorage implements IUploadProvider {
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
     try {
-      const detected = await fromBuffer(file.buffer);
+      const detected = await detectUploadType(file);
       if (!detected || !LOCAL_STORAGE_ALLOWED_MIME.has(detected.mime)) {
         throw new Error('Unsupported file type.');
       }
@@ -99,7 +106,19 @@ export class LocalStorage implements IUploadProvider {
       const filePath = `${dir}/${randomName}${safeExt}`;
       const publicPath = `${innerPath}/${randomName}${safeExt}`;
 
-      writeFileSync(filePath, file.buffer);
+      if (file.buffer) {
+        writeFileSync(filePath, file.buffer);
+      } else {
+        // A spooled upload is already on disk, so move it instead of reading it
+        // back through memory — the reason it was spooled in the first place.
+        // rename fails across filesystems, which is likely enough when the temp
+        // dir is a tmpfs and the upload dir is a mount.
+        try {
+          renameSync(file.path, filePath);
+        } catch {
+          copyFileSync(file.path, filePath);
+        }
+      }
 
       return {
         filename: `${randomName}${safeExt}`,

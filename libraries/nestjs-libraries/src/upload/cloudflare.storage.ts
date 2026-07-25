@@ -10,6 +10,11 @@ import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/we
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
 import { r2Endpoint } from '@gitroom/nestjs-libraries/upload/r2.endpoint';
+import {
+  detectUploadType,
+  uploadBody,
+  uploadLength,
+} from '@gitroom/nestjs-libraries/upload/uploaded.file';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fromBuffer } = require('file-type');
 
@@ -119,7 +124,7 @@ class CloudflareStorage implements IUploadProvider {
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
     try {
-      const detected = await fromBuffer(file.buffer);
+      const detected = await detectUploadType(file);
       if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
         throw new Error('Unsupported file type.');
       }
@@ -127,12 +132,15 @@ class CloudflareStorage implements IUploadProvider {
       const extension = detected.ext;
       const safeContentType = detected.mime;
 
-      // Create the PutObjectCommand to upload the file to Cloudflare R2
+      // Create the PutObjectCommand to upload the file to Cloudflare R2.
+      // A spooled file is streamed rather than read into memory, which means
+      // no length is implied by the body and S3 needs to be told it outright.
       const command = new PutObjectCommand({
         Bucket: this._bucketName,
         ACL: 'public-read',
         Key: `${id}.${extension}`,
-        Body: file.buffer,
+        Body: uploadBody(file),
+        ContentLength: uploadLength(file),
         ContentType: safeContentType,
       });
 

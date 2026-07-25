@@ -35,6 +35,15 @@ interface VariableContextInterface {
   affiliateUrl: string;
   plontoKey: string;
   storageProvider: 'local' | 'cloudflare';
+  /**
+   * Post files to the backend and let it write them to storage, instead of
+   * having the browser upload to the bucket directly with a presigned URL.
+   * Direct uploads are faster but fragile: anything that rewrites the request
+   * on its way out — a privacy extension trimming query parameters, a corporate
+   * proxy — invalidates the signature, and the browser reports the resulting
+   * rejection as a CORS error that says nothing about the cause.
+   */
+  uploadViaServer: boolean;
   backendUrl: string;
   environment: string;
   uploadDirectory: string;
@@ -75,6 +84,7 @@ const VariableContext = createContext({
   legalUrl: '',
   affiliateUrl: '',
   storageProvider: 'local',
+  uploadViaServer: false,
   plontoKey: '',
   backendUrl: '',
   uploadDirectory: '',

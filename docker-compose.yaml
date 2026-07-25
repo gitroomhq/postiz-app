@@ -34,6 +34,12 @@ services:
       # Only for jurisdiction-restricted buckets ('eu'); such a bucket is
       # invisible on the account-wide endpoint. Blank for a normal bucket.
       # CLOUDFLARE_JURISDICTION: ''
+      # Upload through the backend rather than from the browser to the bucket.
+      # Slower and uses server bandwidth, but immune to anything that rewrites
+      # the request in transit (privacy extensions, proxies) and invalidates the
+      # presigned signature — which R2 rejects as a bare 403 that the browser
+      # then reports as a CORS error.
+      # UPLOAD_VIA_SERVER: 'true'
 
       # === Social Media API Settings
       X_URL: ''
