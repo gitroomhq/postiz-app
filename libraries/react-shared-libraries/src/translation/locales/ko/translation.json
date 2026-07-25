@@ -309,7 +309,6 @@
   "forks": "포크",
   "registration_is_disabled": "회원가입이 비활성화되었습니다",
   "login_instead": "대신 로그인하기",
-  "gitroom": "PostQueen",
   "select_a_conversation_and_chat_away": "대화를 선택하고 채팅을 시작하세요.",
   "adding_channel_redirecting_you": "채널 추가 중, 리디렉션합니다",
   "could_not_add_provider": "공급자를 추가할 수 없습니다.",

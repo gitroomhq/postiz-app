@@ -22,13 +22,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
  */
 export const SUBSCRIPTION_SERVICE_TAG = 'postqueen';
 
-/**
- * Tags this app used to write. An install that migrated from upstream still has
- * live subscriptions carrying the old value, and their renewals have to keep
- * being processed, so the webhook accepts these too. Never write them.
- */
-export const LEGACY_SUBSCRIPTION_SERVICE_TAGS = ['gitroom'];
-
 @Injectable()
 export class StripeService {
   constructor(
