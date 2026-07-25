@@ -35,6 +35,7 @@ import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.con
 import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
 import { ApprovedAppsController } from '@gitroom/backend/api/routes/approved-apps.controller';
 import { OAuthController, OAuthAuthorizedController } from '@gitroom/backend/api/routes/oauth.controller';
+import { UploadsController } from '@gitroom/backend/api/routes/uploads.controller';
 import { AnnouncementsController } from '@gitroom/backend/api/routes/announcements.controller';
 import { AdminController } from '@gitroom/backend/api/routes/admin.controller';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
@@ -76,6 +77,9 @@ const authenticatedController = [
     EnterpriseController,
     NoAuthIntegrationsController,
     OAuthController,
+    // Deliberately outside authenticatedController: media URLs are fetched by
+    // the social networks' own servers, which carry no session.
+    UploadsController,
     ...authenticatedController,
   ],
   providers: [
