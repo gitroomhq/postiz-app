@@ -190,11 +190,23 @@ export class PublicIntegrationsController {
     @Body() rawBody: any
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    const body = await this._postsService.mapTypeToPost(
-      rawBody,
-      org.id,
-      rawBody?.type === 'draft' || true
-    );
+
+    // Always true. Passing `schedule` in is what makes the settings schema run
+    // for drafts as well, which is deliberate and documented: a draft you
+    // promote later should already be valid. The left half of the old
+    // `rawBody?.type === 'draft' || true` could never change the result.
+    const body = await this._postsService.mapTypeToPost(rawBody, org.id, true);
+
+    // Which means the DTO validated `schedule`, not what the caller sent, so
+    // the caller's own value has to be checked here before it is put back. It
+    // decides the stored state and whether a publishing workflow starts.
+    const POST_TYPES = ['draft', 'schedule', 'now', 'update'];
+    if (rawBody?.type !== undefined && !POST_TYPES.includes(rawBody.type)) {
+      throw new HttpException(
+        { msg: `type must be one of: ${POST_TYPES.join(', ')}` },
+        400
+      );
+    }
     body.type = rawBody.type;
 
     if (
@@ -410,8 +422,22 @@ export class PublicIntegrationsController {
       id
     );
     if (isTherePosts.length) {
-      for (const post of isTherePosts) {
-        this._postsService.deletePost(org.id, post.group).catch(() => {});
+      // Wait for these. Fired without await, deleteChannel returned first and
+      // the posts were deleted afterwards or not at all, while the API had
+      // already promised they would go with the channel.
+      const results = await Promise.allSettled(
+        isTherePosts.map((post) =>
+          this._postsService.deletePost(org.id, post.group)
+        )
+      );
+
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          Sentry.captureException(result.reason, {
+            tags: { area: 'delete_channel_posts' },
+            extra: { orgId: org.id, integrationId: id },
+          });
+        }
       }
     }
 
@@ -590,6 +616,17 @@ export class PublicIntegrationsController {
             continue;
           }
         }
+        // Anything that is not an expired token. The caller still gets a
+        // generic 500 because the provider's own message can carry account
+        // detail, but throwing this away entirely made a malformed `data`
+        // payload indistinguishable from PostQueen being down.
+        Sentry.captureException(err, {
+          tags: { area: 'integration_trigger' },
+          extra: {
+            provider: getIntegration.providerIdentifier,
+            methodName: body.methodName,
+          },
+        });
         throw new HttpException({ msg: 'Unexpected error' }, 500);
       }
     }

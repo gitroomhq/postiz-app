@@ -6,7 +6,6 @@ import {
   Req,
 } from '@nestjs/common';
 import {
-  LEGACY_SUBSCRIPTION_SERVICE_TAGS,
   StripeService,
   SUBSCRIPTION_SERVICE_TAG,
 } from '@gitroom/nestjs-libraries/services/stripe.service';
@@ -29,15 +28,11 @@ export class StripeController {
     );
 
     // One Stripe account can serve several integrations, so ignore anything we
-    // did not create. The legacy tags matter for installs migrated from
-    // upstream: their existing subscriptions still carry the old value, and
-    // dropping them here would silently stop processing their renewals.
+    // did not create.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const service = event?.data?.object?.metadata?.service;
-    const isOurs =
-      service === SUBSCRIPTION_SERVICE_TAG ||
-      LEGACY_SUBSCRIPTION_SERVICE_TAGS.includes(service);
+    const isOurs = service === SUBSCRIPTION_SERVICE_TAG;
 
     if (!isOurs && event.type !== 'invoice.payment_succeeded') {
       return { ok: true };

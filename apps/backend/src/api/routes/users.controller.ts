@@ -80,23 +80,6 @@ export class UsersController {
     return { token };
   }
 
-  @Get('/agent-media-sso')
-  async getAgentMediaSsoUrl(
-    @GetUserFromRequest() user: User,
-    @GetOrgFromRequest() organization: Organization
-  ) {
-    if (!process.env.AGENT_MEDIA_SSO_KEY) {
-      throw new HttpException('Agent Media SSO is not configured', 400);
-    }
-
-    const token = sign(
-      { id: organization.id, displayName: organization.name },
-      process.env.AGENT_MEDIA_SSO_KEY
-    );
-
-    return { url: `https://agent-media.ai/sso/${token}` };
-  }
-
   @Get('/self')
   async getSelf(
     @GetUserFromRequest() user: User,

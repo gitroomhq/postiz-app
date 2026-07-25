@@ -270,8 +270,12 @@ export class PostsService {
           }
 
           return {
-            type: replaceDraft ? 'schedule' : body?.type,
             ...post,
+            // After the spread, not before. Post.type carries no validator, so
+            // with the spread last a caller could set a per-post type of
+            // 'draft' and skip that entry's settings validation while the
+            // top-level type stayed 'schedule'.
+            type: replaceDraft ? 'schedule' : body?.type,
             settings: {
               ...(post.settings || ({} as any)),
               __type: integration.providerIdentifier,
@@ -939,12 +943,26 @@ export class PostsService {
       }
 
       if (body.type !== 'update') {
+        // The row is already written, so a failure here does not undo the post:
+        // it leaves it in QUEUE with nothing scheduled to publish it. Swallowing
+        // that made an unreachable Temporal look exactly like a successful
+        // schedule, so record it. The request still succeeds, because the post
+        // does exist and can be rescheduled.
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
           orgId,
           posts[0].state
-        ).catch((err) => {});
+        ).catch((err) => {
+          Sentry.captureException(err, {
+            tags: { area: 'post_workflow_start' },
+            extra: { postId: posts[0].id, orgId },
+          });
+          console.error(
+            `Could not start the publishing workflow for post ${posts[0].id}. It will not go out until it is rescheduled.`,
+            err
+          );
+        });
       }
 
       Sentry.metrics.count('post_created', 1);

@@ -7,6 +7,7 @@ import {
   IsIn,
   IsNumber,
   IsOptional,
+  Min,
   IsString,
   Validate,
   ValidateIf,
@@ -105,6 +106,10 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsNumber()
+  // Repeats walk forward from publishDate. A negative value walks backwards
+  // instead, and the expansion loop in posts.repository.ts then never reaches
+  // its end date, so one such post wedges every calendar read that covers it.
+  @Min(1)
   inter?: number;
 
   @IsDefined()

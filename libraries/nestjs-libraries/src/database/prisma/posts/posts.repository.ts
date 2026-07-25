@@ -157,19 +157,17 @@ export class PostsRepository {
             ],
           },
         ],
+        // GOTCHA: the customer filter used to be spread in below as a second
+        // `integration` key, and the later key won. Filtering by customer
+        // therefore dropped `deletedAt: null` and returned posts belonging to
+        // channels the user had already disconnected. Merge, do not re-declare.
         integration: {
           deletedAt: null,
           organizationId: orgId,
+          ...(query.customer ? { customerId: query.customer } : {}),
         },
         deletedAt: null,
         parentPostId: null,
-        ...(query.customer
-          ? {
-              integration: {
-                customerId: query.customer,
-              },
-            }
-          : {}),
       },
       select: {
         id: true,
@@ -198,7 +196,10 @@ export class PostsRepository {
     });
 
     return list.reduce((all, post) => {
-      if (!post.intervalInDays) {
+      // A non-positive interval would step backwards and never reach endDate,
+      // spinning here forever. @Min(1) on the DTO stops new ones; this covers
+      // any row written before that validator existed.
+      if (!post.intervalInDays || post.intervalInDays < 1) {
         return [...all, post];
       }
 
