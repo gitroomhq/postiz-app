@@ -402,7 +402,7 @@ docker compose up -d          # then open http://localhost:4007
 
 You will need Docker and about 4 GB of RAM. To connect real social accounts you will also need a public HTTPS domain behind a reverse proxy: the networks send their OAuth callbacks there. The stack ships the app and its backing services: PostgreSQL, Redis and Temporal.
 
-Full walkthrough: [self-host guide](https://docs.postqueen.ai/installation/docker-compose) &nbsp;·&nbsp; Kubernetes: [postqueen-helmchart](https://github.com/GkhanKINAY/postqueen-helmchart) &nbsp;·&nbsp; every setting: [configuration reference](https://docs.postqueen.ai/configuration/reference)
+Full walkthrough: [deploy to a server](https://docs.postqueen.ai/installation/production) &nbsp;·&nbsp; just looking: [try it locally](https://docs.postqueen.ai/installation/quickstart-local) &nbsp;·&nbsp; Kubernetes: [postqueen-helmchart](https://github.com/GkhanKINAY/postqueen-helmchart) &nbsp;·&nbsp; every setting: [configuration reference](https://docs.postqueen.ai/configuration/reference)
 
 <br/>
 
@@ -458,7 +458,7 @@ export POSTQUEEN_API_KEY="your_api_key"
 
 ### 2. Connect over MCP
 
-The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants call tools, and PostQueen ships a hosted MCP server with **10 of them**. Your assistant can read each platform's posting rules, schedule posts, and generate the images and video to go with them. Point any MCP client at the server and social media becomes something your assistant simply knows how to do.
+The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants call tools, and PostQueen speaks it at one URL she hosts, offering **11 of them**. Your assistant can read each platform's posting rules, schedule posts, and generate the images and video to go with them. Point any MCP client at the server and social media becomes something your assistant simply knows how to do.
 
 ```bash
 # Claude Code, one line:
