@@ -17,15 +17,20 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { productRoleLabel } from '@gitroom/nestjs-libraries/security/roles';
 
+// Mapped Out staff roles (Option B). AGENCY_ADMIN=ADMIN (agency-wide access),
+// ACCOUNT_MANAGER=USER (scoped to explicitly assigned clients + channels).
+// CLIENT is intentionally NOT offered here — client accounts are owned by the
+// DBU Client Portal and are never created inside Mapped Out.
 const roles = [
   {
-    name: 'Manager',
+    name: 'Agency Admin',
     value: 'ADMIN',
   },
   {
-    name: 'Client',
-    value: 'CLIENT',
+    name: 'Account Manager',
+    value: 'USER',
   },
 ];
 // Mapped Out (Phase 2B): pick which clients and/or channels a member can access.
@@ -226,20 +231,22 @@ export const AddMember = () => {
               </option>
             ))}
           </Select>
-          {role === 'ADMIN' && (
+          {(role === 'ADMIN' || role === 'USER') && (
             <div className="flex gap-[5px]">
               <div>
                 <Checkbox name="canConnectChannels" />
               </div>
               <div>
                 {t(
-                  'allow_manager_connect_channels',
-                  'Allow this manager to connect channels'
+                  'allow_member_connect_channels',
+                  'Allow this member to connect channels'
                 )}
               </div>
             </div>
           )}
-          {!!role && (
+          {/* Account Managers are scoped to explicit clients/channels; Agency
+              Admins have agency-wide access and need no assignment. */}
+          {role === 'USER' && (
             <AssignmentSelector
               integrationIds={integrationIds}
               customerIds={customerIds}
@@ -248,6 +255,14 @@ export const AddMember = () => {
                 form.setValue('customerIds', v.customerIds);
               }}
             />
+          )}
+          {role === 'ADMIN' && (
+            <div className="text-[12px] text-customColor18 border border-fifth rounded-[8px] p-[12px]">
+              {t(
+                'agency_admin_agency_wide',
+                'Agency Admins have agency-wide access to all clients and channels.'
+              )}
+            </div>
           )}
           <div className="flex gap-[5px]">
             <div>
@@ -399,18 +414,10 @@ export const TeamsComponent = () => {
               <div className="flex-1">
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
-              <div className="flex-1">
-                {p.role === 'CLIENT'
-                  ? t('client', 'Client')
-                  : p.role === 'USER'
-                  ? t('user', 'User')
-                  : p.role === 'ADMIN'
-                  ? t('manager', 'Manager')
-                  : t('super_admin', 'Super Admin')}
-              </div>
+              <div className="flex-1">{productRoleLabel(p.role)}</div>
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end gap-[8px]">
-                  {(p.role === 'ADMIN' || p.role === 'CLIENT') && (
+                  {(p.role === 'USER' || p.role === 'CLIENT') && (
                     <Button
                       className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
                       onClick={editAccess(p.user.id)}
