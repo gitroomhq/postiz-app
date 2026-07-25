@@ -72,6 +72,16 @@ export class PostsRepository {
     });
   }
 
+  // All posts in a group (a group may span several channels) for group-level
+  // scope checks (GET/DELETE /group, debug-export). Org + assignment scope are
+  // applied by isGroupInScope in the service layer.
+  getGroupForScopeCheck(group: string) {
+    return this._post.model.post.findMany({
+      where: { group },
+      select: { organizationId: true, integrationId: true },
+    });
+  }
+
   setApprovalStatus(postId: string, approvalStatus: any) {
     return this._post.model.post.update({
       where: { id: postId },

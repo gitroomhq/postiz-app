@@ -52,10 +52,26 @@
   fix stops here — **implemented + locally unit-tested** — pending your staging demo + approval before
   production. **I did not deploy anything.**
 
+### Session 2 — 2026-07-25 (owner present; decisions given)
+- **Group/export routes closed** (your Phase 2 item #1): added `getGroupForScopeCheck` (repo) +
+  `getGroupIfAllowed` (service, uses the tested `isGroupInScope`) + shared `assertGroupInScope` helper,
+  wired into `GET /group/:group` and `DELETE /:group`. `GET /group/:group/debug-export` was **already
+  super-admin-only** (`if (!user.isSuperAdmin) 403`) — left as-is (already safe). 15/15 tests pass;
+  0 type errors in changed files.
+- **Owner decisions recorded:** role mapping SUPERADMIN→SUPER_ADMIN / ADMIN→AGENCY_ADMIN /
+  USER→ACCOUNT_MANAGER (keep CLIENT), **show SUPERADMIN/ADMIN users for confirmation before migrating**;
+  review environment = **social.mappedout.co** (deploy each completed phase there, wait for approval);
+  **Instagram = fully hands-off (do NOT touch the live Époque IG account or do any IG work)**; order =
+  finish Phase 2 → deploy → review → then Phase 1 design.
+- ⚠️ **Deploying to social.mappedout.co = production deploy + `prisma db push` on the LIVE prod DB** the
+  DBU integration uses. Role migration will therefore run additive-only + `prisma db pull` parity check
+  first + preserve CLIENT + reversible. Awaiting owner ack that "keep production untouched" = "don't break
+  DBU/portal/Époque/publishing" (not "never deploy").
+
 ### Remaining for Phase 2 (planned, not yet done)
-- **Group/export/delete routes** still org-only: `GET /group/:group`, `GET /group/:group/debug-export`
-  (an *export* — high priority), `DELETE /:group`. Need a `getPostsForScopeCheckByGroup` repo method +
-  `isGroupInScope` (util already exists). **Deferred, documented — the IDOR is only partially closed.**
+- **Full object-level sweep** across the rest of the inventory as those modules exist (media, tags,
+  campaigns, tasks, reports, analytics, exports, social accounts, bulk, downloads, background jobs).
+  Campaigns/tasks/reports arrive in Phases 3–5 and must adopt the same `assert…InScope` primitive.
 - **Full object-level sweep** across the rest of your inventory (media, campaigns, tasks, reports,
   analytics, exports, social accounts, bulk actions, file downloads, background jobs). NOTE: campaigns/
   tasks/reports as first-class modules **don't exist yet** — they arrive in Phases 3–5 and must adopt the

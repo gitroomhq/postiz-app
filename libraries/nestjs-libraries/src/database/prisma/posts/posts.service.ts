@@ -6,7 +6,10 @@ import {
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { emitDbuContentUpsert } from '@gitroom/nestjs-libraries/database/prisma/posts/dbu.emit';
-import { isPostInScope } from '@gitroom/nestjs-libraries/security/authorization.util';
+import {
+  isGroupInScope,
+  isPostInScope,
+} from '@gitroom/nestjs-libraries/security/authorization.util';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -1229,6 +1232,21 @@ export class PostsService {
       return null;
     }
     return post;
+  }
+
+  // Group-level equivalent of getPostIfAllowed for /group and /:group routes.
+  // Every post in the group must be in the caller's org AND scope, else null
+  // (a group spanning an unassigned channel is denied — no partial-scope export).
+  async getGroupIfAllowed(
+    group: string,
+    orgId: string,
+    scope: { all: boolean; integrationIds: string[] }
+  ) {
+    const posts = await this._postRepository.getGroupForScopeCheck(group);
+    if (!isGroupInScope(posts, orgId, scope)) {
+      return null;
+    }
+    return posts;
   }
 
   async setApproval(

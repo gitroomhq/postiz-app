@@ -58,6 +58,20 @@ export class PostsController {
     return post;
   }
 
+  /**
+   * Group-level equivalent for /group and /:group routes. Every post in the
+   * group must be in the caller's org AND assignment scope (a group spanning an
+   * unassigned channel is denied — no cross-client group read/delete/export).
+   */
+  private async assertGroupInScope(user: User, orgId: string, group: string) {
+    const scope = await this._integrationService.getScope(user, orgId);
+    const posts = await this._postsService.getGroupIfAllowed(group, orgId, scope);
+    if (!posts) {
+      throw new ForbiddenException();
+    }
+    return posts;
+  }
+
   @Get('/:id/statistics')
   async getStatistics(
     @GetOrgFromRequest() org: Organization,
@@ -191,7 +205,12 @@ export class PostsController {
   }
 
   @Get('/group/:group')
-  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+  async getPostsByGroup(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('group') group: string
+  ) {
+    await this.assertGroupInScope(user, org.id, group);
     return this._postsService.getPostsByGroup(org.id, group);
   }
 
@@ -285,10 +304,12 @@ export class PostsController {
   }
 
   @Delete('/:group')
-  deletePost(
+  async deletePost(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Param('group') group: string
   ) {
+    await this.assertGroupInScope(user, org.id, group);
     return this._postsService.deletePost(org.id, group);
   }
 
