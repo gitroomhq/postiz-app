@@ -34,8 +34,12 @@ if grep -rq "featured_by_gitroom" apps libraries \
 fi
 
 # Text files under git, minus protected paths.
+# apps/sdk/{README.md,LICENSE} carry the AGPL notice and the "fork of Postiz"
+# attribution; a blanket Postiz->PostQueen pass turns those into nonsense
+# ("PostQueen is a fork of PostQueen"), so they are protected like the root ones.
 FILES=$(git ls-files -- . \
   ':!README.md' ':!CHANGELOG.md' ':!LICENSE' \
+  ':!apps/sdk/README.md' ':!apps/sdk/LICENSE' \
   ':!pnpm-lock.yaml' \
   ':!libraries/postiz-wallets/**' \
   ':!scripts/rebrand.sh' \
