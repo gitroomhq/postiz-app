@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { isAgencyWideRole } from '@gitroom/nestjs-libraries/security/roles';
 import {
   AnalyticsData,
   SocialProvider,
@@ -180,8 +181,10 @@ export class IntegrationService {
     if (!userOrg) {
       return { all: false, integrationIds: [], customerIds: [] };
     }
-    // The workspace owner (org-level SUPERADMIN) sees everything.
-    if (userOrg.role === 'SUPERADMIN') {
+    // Agency-wide roles (SUPER_ADMIN=SUPERADMIN, AGENCY_ADMIN=ADMIN) see
+    // everything in the workspace. ACCOUNT_MANAGER (USER) + CLIENT are scoped
+    // to their explicit assignments below. (Option B role model — security/roles.ts.)
+    if (isAgencyWideRole(userOrg.role)) {
       return { all: true, integrationIds: [], customerIds: [] };
     }
 
