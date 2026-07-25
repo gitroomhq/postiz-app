@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization, User } from '@prisma/client';
+import { Organization, Role, User } from '@prisma/client';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { OrgRoles } from '@gitroom/backend/services/auth/permissions/roles.guard';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
@@ -20,6 +21,7 @@ export class SettingsController {
   ) {}
 
   @Get('/team')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
     [AuthorizationActions.Create, Sections.ADMIN]
@@ -29,6 +31,7 @@ export class SettingsController {
   }
 
   @Post('/team')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
     [AuthorizationActions.Create, Sections.ADMIN]
@@ -53,6 +56,7 @@ export class SettingsController {
   }
 
   @Get('/team/:userId/assignments')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
     [AuthorizationActions.Create, Sections.ADMIN]
@@ -65,6 +69,7 @@ export class SettingsController {
   }
 
   @Post('/team/:userId/assignments')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
     [AuthorizationActions.Create, Sections.ADMIN]
@@ -90,6 +95,7 @@ export class SettingsController {
   }
 
   @Delete('/team/:id')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
   @CheckPolicies(
     [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
     [AuthorizationActions.Create, Sections.ADMIN]
