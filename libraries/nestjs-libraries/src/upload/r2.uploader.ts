@@ -14,6 +14,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { r2Endpoint } from '@gitroom/nestjs-libraries/upload/r2.endpoint';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fromBuffer } = require('file-type');
 
@@ -41,11 +42,12 @@ const {
   CLOUDFLARE_SECRET_ACCESS_KEY,
   CLOUDFLARE_BUCKETNAME,
   CLOUDFLARE_BUCKET_URL,
+  CLOUDFLARE_JURISDICTION,
 } = process.env;
 
 const R2 = new S3Client({
   region: 'auto',
-  endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: r2Endpoint(CLOUDFLARE_ACCOUNT_ID!, CLOUDFLARE_JURISDICTION),
   credentials: {
     accessKeyId: CLOUDFLARE_ACCESS_KEY!,
     secretAccessKey: CLOUDFLARE_SECRET_ACCESS_KEY!,

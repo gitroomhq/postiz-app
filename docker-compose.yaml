@@ -27,8 +27,13 @@ services:
       # CLOUDFLARE_ACCESS_KEY: 'your-access-key'
       # CLOUDFLARE_SECRET_ACCESS_KEY: 'your-secret-access-key'
       # CLOUDFLARE_BUCKETNAME: 'your-bucket-name'
-      # CLOUDFLARE_BUCKET_URL: 'https://your-bucket-url.r2.cloudflarestorage.com/'
+      # The bucket's public base URL (r2.dev or a custom domain), not the S3
+      # API endpoint — it is served to browsers and social platforms unsigned.
+      # CLOUDFLARE_BUCKET_URL: 'https://pub-your-hash.r2.dev'
       # CLOUDFLARE_REGION: 'auto'
+      # Only for jurisdiction-restricted buckets ('eu'); such a bucket is
+      # invisible on the account-wide endpoint. Blank for a normal bucket.
+      # CLOUDFLARE_JURISDICTION: ''
 
       # === Social Media API Settings
       X_URL: ''
