@@ -14,6 +14,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -21,8 +22,17 @@ export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _usersService: UsersService
   ) {}
+
+  private async assertNoOtherSubscribedAccount(user: User) {
+    const other = await this._usersService.getUserWithActiveSubscriptionByEmail(
+      user.email,
+      user.id
+    );
+    return !!other;
+  }
 
   @Get('/check/:id')
   async checkId(
@@ -67,12 +77,16 @@ export class BillingController {
 
   @Post('/embedded')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
-  embedded(
+  async embedded(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.embedded(
       uniqueId,
@@ -85,12 +99,16 @@ export class BillingController {
 
   @Post('/subscribe')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
-  subscribe(
+  async subscribe(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.subscribe(
       uniqueId,
