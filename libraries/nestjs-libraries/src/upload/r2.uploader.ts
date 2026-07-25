@@ -52,6 +52,14 @@ const R2 = new S3Client({
     accessKeyId: CLOUDFLARE_ACCESS_KEY!,
     secretAccessKey: CLOUDFLARE_SECRET_ACCESS_KEY!,
   },
+  // These URLs are signed here and uploaded to by the browser. Since v3.729 the
+  // SDK computes a CRC32 for every UploadPart and folds it into the signature —
+  // but at signing time there is no body, so what gets signed is the checksum of
+  // nothing. The browser then sends the real bytes, R2 compares them against
+  // that checksum, and rejects the part; Uppy retries and gives up. Nothing in
+  // the logs points at the cause: every request the app itself makes returns
+  // 200. cloudflare.storage.ts carries the same guard for its direct uploads.
+  requestChecksumCalculation: 'WHEN_REQUIRED',
 });
 
 // Function to generate a random string
