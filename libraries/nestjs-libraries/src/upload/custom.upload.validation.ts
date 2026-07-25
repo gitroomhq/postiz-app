@@ -60,7 +60,14 @@ export class CustomFileValidationPipe implements PipeTransform {
 
 export function getMaxSize(mimeType: string): number {
   if (mimeType.startsWith('image/')) {
-    return 10 * 1024 * 1024; // 10 MB
+    // Matches the limit the uploader enforces in the browser. They used to
+    // disagree — 30 MB there, 10 MB here — which normally went unnoticed
+    // because compression shrinks an image well under either figure before it
+    // is sent. The gap showed itself where compression does not apply: GIFs are
+    // skipped by design, and DISABLE_IMAGE_COMPRESSION turns it off entirely.
+    // In those cases the browser accepted a file, uploaded all of it, and only
+    // then heard it was too large.
+    return 30 * 1024 * 1024; // 30 MB
   } else if (mimeType.startsWith('video/')) {
     return 1024 * 1024 * 1024; // 1 GB
   } else {
