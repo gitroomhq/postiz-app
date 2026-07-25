@@ -132,36 +132,20 @@ export function useUppyUploader(props: {
       return new Promise<void>((resolve, reject) => {
         const files = uppy2.getFiles();
 
+        // One ceiling, matching the server's. Images used to have a second,
+        // much smaller one here that the server did not share, so a file
+        // between the two was accepted, uploaded in full, and then refused.
+        const maxUploadSize = 1000 * 1024 * 1024; // 1GB
+
         for (const file of files) {
           if (fileIDs.includes(file.id)) {
-            const isImage = file.type?.startsWith('image/');
-            const isVideo = file.type?.startsWith('video/');
-
-            const maxImageSize = 30 * 1024 * 1024; // 30MB
-            const maxVideoSize = 1000 * 1024 * 1024; // 1GB
-
-            if (isImage && file.size > maxImageSize) {
+            if (file.size && file.size > maxUploadSize) {
               const error = new Error(
-                `Image file "${file.name}" is too large. Maximum size allowed is 30MB.`
+                `"${file.name}" is too large. Maximum size allowed is 1GB.`
               );
               uppy2.log(error.message, 'error');
               uppy2.info(error.message, 'error', 5000);
-              toast.show(
-                `Image file is too large. Maximum size allowed is 30MB.`
-              );
-              uppy2.removeFile(file.id); // Remove file from queue
-              return reject(error);
-            }
-
-            if (isVideo && file.size > maxVideoSize) {
-              const error = new Error(
-                `Video file "${file.name}" is too large. Maximum size allowed is 1GB.`
-              );
-              uppy2.log(error.message, 'error');
-              uppy2.info(error.message, 'error', 5000);
-              toast.show(
-                `Video file is too large. Maximum size allowed is 1GB.`
-              );
+              toast.show(`File is too large. Maximum size allowed is 1GB.`);
               uppy2.removeFile(file.id); // Remove file from queue
               return reject(error);
             }

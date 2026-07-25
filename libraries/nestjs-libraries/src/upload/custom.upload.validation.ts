@@ -6,6 +6,7 @@ import {
 import {
   detectUploadType,
   discardTempFile,
+  MAX_UPLOAD_BYTES,
 } from '@gitroom/nestjs-libraries/upload/uploaded.file';
 
 const ALLOWED_MIME_TYPES = new Set<string>([
@@ -71,18 +72,17 @@ export class CustomFileValidationPipe implements PipeTransform {
 }
 
 export function getMaxSize(mimeType: string): number {
-  if (mimeType.startsWith('image/')) {
-    // Matches the limit the uploader enforces in the browser. They used to
-    // disagree — 30 MB there, 10 MB here — which normally went unnoticed
-    // because compression shrinks an image well under either figure before it
-    // is sent. The gap showed itself where compression does not apply: GIFs are
-    // skipped by design, and DISABLE_IMAGE_COMPRESSION turns it off entirely.
-    // In those cases the browser accepted a file, uploaded all of it, and only
-    // then heard it was too large.
-    return 30 * 1024 * 1024; // 30 MB
-  } else if (mimeType.startsWith('video/')) {
-    return 1024 * 1024 * 1024; // 1 GB
-  } else {
-    throw new BadRequestException('Unsupported file type.');
+  // One ceiling for everything, and it is the same one multer enforces while
+  // reading. Images used to be held to a separate, much smaller figure that
+  // disagreed with what the uploader allowed, so a file in between was accepted
+  // by the browser, uploaded in full, and refused at the end. A single limit
+  // cannot drift like that.
+  //
+  // Note this is the limit on what may be *stored*. Social networks impose
+  // their own, far smaller limits on what they will publish.
+  if (mimeType.startsWith('image/') || mimeType.startsWith('video/')) {
+    return MAX_UPLOAD_BYTES;
   }
+
+  throw new BadRequestException('Unsupported file type.');
 }
