@@ -153,7 +153,16 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  @Tool({ description: 'Label', dataSchema: [] })
+  @Tool({
+    description: 'Label',
+    dataSchema: [
+      {
+        key: 'id',
+        type: 'string',
+        description: 'Skool group id, from the groups tool',
+      },
+    ],
+  })
   async label(accessToken: string, params: any, id: string, integration: Integration) {
     try {
       const { client_id, auth_token } = this.getCookies(integration);

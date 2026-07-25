@@ -191,7 +191,16 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  @Tool({ description: 'Experiences', dataSchema: [] })
+  @Tool({
+    description: 'Experiences',
+    dataSchema: [
+      {
+        key: 'id',
+        type: 'string',
+        description: 'Whop company id, from the companies tool',
+      },
+    ],
+  })
   async experiences(accessToken: string, params: any, id: string) {
     try {
       if (!params?.id) return [];
