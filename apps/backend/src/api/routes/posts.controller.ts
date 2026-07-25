@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   Param,
@@ -41,28 +42,50 @@ export class PostsController {
     private _integrationService: IntegrationService
   ) {}
 
+  /**
+   * Centralized object-level authorization for by-id post routes.
+   * Resolves the caller's assignment scope and confirms the post is in their
+   * org AND scope (same proven decision as the client portal). Throws 403
+   * otherwise. Closes the per-client IDOR on the by-id routes
+   * (docs/MAPPED_OUT_UPGRADE_AUDIT.md §16).
+   */
+  private async assertPostInScope(user: User, orgId: string, postId: string) {
+    const scope = await this._integrationService.getScope(user, orgId);
+    const post = await this._postsService.getPostIfAllowed(postId, orgId, scope);
+    if (!post) {
+      throw new ForbiddenException();
+    }
+    return post;
+  }
+
   @Get('/:id/statistics')
   async getStatistics(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Param('id') id: string
   ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.getStatistics(org.id, id);
   }
 
   @Get('/:id/missing')
   async getMissingContent(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Param('id') id: string
   ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.getMissingContent(org.id, id);
   }
 
   @Put('/:id/release-id')
   async updateReleaseId(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Param('id') id: string,
     @Body('releaseId') releaseId: string
   ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.updateReleaseId(org.id, id, releaseId);
   }
 
@@ -78,6 +101,7 @@ export class PostsController {
     @Param('id') id: string,
     @Body() body: { comment: string }
   ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.createComment(org.id, user.id, id, body.comment);
   }
 
@@ -172,7 +196,12 @@ export class PostsController {
   }
 
   @Get('/:id')
-  getPost(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+  async getPost(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string
+  ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.getPost(org.id, id);
   }
 
@@ -264,12 +293,14 @@ export class PostsController {
   }
 
   @Put('/:id/date')
-  changeDate(
+  async changeDate(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Param('id') id: string,
     @Body('date') date: string,
     @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
+    await this.assertPostInScope(user, org.id, id);
     return this._postsService.changeDate(org.id, id, date, action);
   }
 

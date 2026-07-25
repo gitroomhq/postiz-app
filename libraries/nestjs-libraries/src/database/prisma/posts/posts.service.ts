@@ -6,6 +6,7 @@ import {
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import { emitDbuContentUpsert } from '@gitroom/nestjs-libraries/database/prisma/posts/dbu.emit';
+import { isPostInScope } from '@gitroom/nestjs-libraries/security/authorization.util';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -1223,10 +1224,8 @@ export class PostsService {
     scope: { all: boolean; integrationIds: string[] }
   ) {
     const post = await this._postRepository.getPostForScopeCheck(postId);
-    if (!post || post.organizationId !== orgId) {
-      return null;
-    }
-    if (!scope.all && !scope.integrationIds.includes(post.integrationId)) {
+    // Single centralized decision (also unit-tested in security/authorization.util.spec).
+    if (!isPostInScope(post, orgId, scope)) {
       return null;
     }
     return post;
