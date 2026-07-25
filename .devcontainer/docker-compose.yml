@@ -1,0 +1,84 @@
+# Self-contained stack for the dev container.
+#
+# This deliberately does NOT reuse ../docker-compose.dev.yaml. That file pins
+# container names and publishes host ports, so it collides with an existing
+# PostQueen install on the same machine. Nothing here is published to the host
+# and nothing has a fixed name, so the dev container can run alongside one.
+#
+# Temporal runs without Elasticsearch here, which costs nothing in development
+# and saves roughly a gigabyte of memory.
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/typescript-node:22-bookworm
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/postqueen-app:cached
+      - pnpm-store:/home/node/.local/share/pnpm/store
+    environment:
+      DATABASE_URL: postgresql://postqueen-local:postqueen-local-pwd@db:5432/postqueen-db-local
+      REDIS_URL: redis://redis:6379
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postqueen-local
+      POSTGRES_PASSWORD: postqueen-local-pwd
+      POSTGRES_DB: postqueen-db-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postqueen-local -d postqueen-db-local']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  temporal-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+    volumes:
+      - temporal-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U temporal']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    restart: unless-stopped
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-db
+      TEMPORAL_NAMESPACE: default
+
+volumes:
+  pnpm-store:
+  postgres-data:
+  temporal-data:

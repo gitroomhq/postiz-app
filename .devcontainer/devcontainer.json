@@ -1,14 +1,25 @@
 {
 	"name": "PostQueen Dev Container",
-	"image": "localhost/postqueen-devcontainer",
-	"features": {},
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "workspace",
+	"workspaceFolder": "/workspaces/postqueen-app",
+	"remoteUser": "node",
+	"forwardPorts": [4200, 3000, 3002],
+	"portsAttributes": {
+		"4200": { "label": "Frontend", "onAutoForward": "notify" },
+		"3000": { "label": "Backend API", "onAutoForward": "silent" },
+		"3002": { "label": "Orchestrator", "onAutoForward": "silent" }
+	},
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
 	"customizations": {
 		"vscode": {
 			"settings": {},
-			"extensions": []
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"Prisma.prisma",
+				"bradlc.vscode-tailwindcss"
+			]
 		}
-	},
-	"forwardPorts": ["4200:4200", "3000:3000"],
-	"mounts": ["source=/apps,destination=/apps/dist/,type=bind,consistency=cached"]
+	}
 }
-
