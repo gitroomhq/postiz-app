@@ -68,7 +68,22 @@
   first + preserve CLIENT + reversible. Awaiting owner ack that "keep production untouched" = "don't break
   DBU/portal/Époque/publishing" (not "never deploy").
 
-### Remaining for Phase 2 (planned, not yet done)
+### Phase 2 — CODE COMPLETE (2026-07-25, owner decisions applied)
+Confirmed live users: hello@mappedout.co=SUPERADMIN(→SUPER_ADMIN), mhr9@live.com=ADMIN(→AGENCY_ADMIN)
+in Mapped Out org + SUPERADMIN in unused DBU org, itsmohaji@gmail.com=CLIENT (kept). Option B chosen.
+- ✅ Authz IDOR closed (by-id + group post routes) — centralized, 15 tests.
+- ✅ Role model (Option B): security/roles.ts + getScope (AGENCY_ADMIN agency-wide) + team/invite UI
+  (Agency Admin / Account Manager; CLIENT not offered to staff; assignment for Account Manager only) +
+  labels. 7 tests.
+- ✅ Capability gating: team management (invite/assignments/delete) → SUPER_ADMIN + AGENCY_ADMIN only
+  (was ungated for ACCOUNT_MANAGER on this Stripe-less stack).
+- ✅ No schema change (enum kept) ⇒ `prisma db push` on deploy is a no-op ⇒ no DB migration risk.
+- **Backup taken before deploy:** `/root/mappedout-backups/postiz-db-20260725-214345.dump` (VPS, 142 objs).
+- Coolify 419 fixed (stale cached config → `artisan optimize:clear`).
+- **Deploying to social.mappedout.co for owner review** (merge → `mappedout-branding` → GHCR `:mappedout`
+  → Coolify redeploy). Verify: 22/22 tests, backend+frontend tsc clean on changed files.
+
+### Remaining for Phase 2 (deferred to when those modules exist)
 - **Full object-level sweep** across the rest of the inventory as those modules exist (media, tags,
   campaigns, tasks, reports, analytics, exports, social accounts, bulk, downloads, background jobs).
   Campaigns/tasks/reports arrive in Phases 3–5 and must adopt the same `assert…InScope` primitive.
