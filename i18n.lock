@@ -313,7 +313,6 @@ checksums:
     forks: d692bdb4892481b1b4d9adf13b5b7ce0
     registration_is_disabled: eff7aff64ccfe6068849fe1a1212c0a0
     login_instead: 4e7a13b6c39065d8e093c554345ccd7c
-    gitroom: 6edccb5285794dba2f351f2fb1d2f803
     select_a_conversation_and_chat_away: 941ced71a44545919a489e4e7e8223d0
     adding_channel_redirecting_you: 397169979a6de32672e54cf01c9e7f24
     could_not_add_provider: 9326fd712ed969f76071f9d2debee931
