@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PostQueen",
   "version": "2.0.0",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqtH6qclAsfFf6qbUKfPmhBbfycGrt13+0h6ti/olniCGnjQjhkVVTnURfLFz+v+842Ee+pAS5HBEXo57dQ9xUtwFGXnavVR+myjN+Un9NIfFyYmYEBvLrinclsMJBwWMM8JkhxKuaOagxp1hqGgNAO4C0bzE3YN/SPoTjNpGU8TGm/ENZ/TDUneZyyVM5HEEmOTZEmjmy9FJaxbzGmZ2rixNO45pkjXMFp8+/XrFSNiCqNZt6LQNIqL5SfVIRUKGBjE3OG/gtahVToBdlXi5yzP1uYE0Qs4grJ/T1rUUzTXFAQa7heWA9mskf0xAMEtTSED4N9bZ4sF8cf5J+SGGlwIDAQAB",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1mljDYOV/dUW83fPkjJ1mSvQFDI5eBkxgVVqobHqKAsIm9vSz3+1arVi3DPWK/vbWElGz1zqY9GBlDBgM0TFzmosnZXRSILXqujZfHj0nlP20JjRwTMhXNW/RugBlaG6U5Xr9StxwdPgHg+V8yOBQLr9P2nogiivFCnMQzHHS//1pLzVc3BMl9adE/4uGusa9tR+SlDdfYMcCGcqpuNEQRLZQaGZg2ZqM+9qjsSc3e1qRcSZ5IomtgM138vYqY3enQnXy22ofQYrUwSohElYOlIbePlTBVZve70U92QacuytJw12cDGV+dq6S6bnrZMDQbgmSRarEw5XrtmDICZ/UQIDAQAB",
   "description": "PostQueen browser extension for social media scheduling",
   "icons": {
     "32": "icon-32.png",
