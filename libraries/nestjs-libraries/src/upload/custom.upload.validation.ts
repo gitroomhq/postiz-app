@@ -3,7 +3,10 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { detectUploadType } from '@gitroom/nestjs-libraries/upload/uploaded.file';
+import {
+  detectUploadType,
+  discardTempFile,
+} from '@gitroom/nestjs-libraries/upload/uploaded.file';
 
 const ALLOWED_MIME_TYPES = new Set<string>([
   'image/jpeg',
@@ -28,32 +31,41 @@ export class CustomFileValidationPipe implements PipeTransform {
       return value;
     }
 
-    // Held in memory, or spooled to disk when the file came to us rather than
-    // straight to storage. Either is valid; neither being present is not.
-    if (value.buffer ? !Buffer.isBuffer(value.buffer) : !value.path) {
-      throw new BadRequestException('Invalid file upload.');
+    // Rejecting here means the route handler never runs, so the `finally` that
+    // deletes a spooled file never runs either. Multer only cleans up after
+    // limits it enforces itself, and a file refused for its type or size is not
+    // one of those — so without this, every rejected upload stays on disk.
+    try {
+      // Held in memory, or spooled to disk when the file came to us rather than
+      // straight to storage. Either is valid; neither being present is not.
+      if (value.buffer ? !Buffer.isBuffer(value.buffer) : !value.path) {
+        throw new BadRequestException('Invalid file upload.');
+      }
+
+      const detected = await detectUploadType(value);
+      if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
+        throw new BadRequestException('Unsupported file type.');
+      }
+
+      const maxSize = getMaxSize(detected.mime);
+      if (value.size > maxSize) {
+        throw new BadRequestException(
+          `File size exceeds the maximum allowed size of ${maxSize} bytes.`
+        );
+      }
+
+      value.mimetype = detected.mime;
+      const safeBase = (value.originalname || 'upload')
+        .replace(/\.[^./\\]*$/, '')
+        .replace(/[\\/]/g, '_')
+        .slice(0, 100) || 'upload';
+      value.originalname = `${safeBase}.${detected.ext}`;
+
+      return value;
+    } catch (err) {
+      await discardTempFile(value);
+      throw err;
     }
-
-    const detected = await detectUploadType(value);
-    if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
-      throw new BadRequestException('Unsupported file type.');
-    }
-
-    const maxSize = getMaxSize(detected.mime);
-    if (value.size > maxSize) {
-      throw new BadRequestException(
-        `File size exceeds the maximum allowed size of ${maxSize} bytes.`
-      );
-    }
-
-    value.mimetype = detected.mime;
-    const safeBase = (value.originalname || 'upload')
-      .replace(/\.[^./\\]*$/, '')
-      .replace(/[\\/]/g, '_')
-      .slice(0, 100) || 'upload';
-    value.originalname = `${safeBase}.${detected.ext}`;
-
-    return value;
   }
 
 }

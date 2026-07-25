@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer, fromFile } = require('file-type');
+const { fromBuffer } = require('file-type');
 
 /**
  * An upload arrives in one of two shapes: held in memory, or spooled to disk.
@@ -54,19 +54,41 @@ export function spooledFileInterceptor(field = 'file') {
 }
 
 /**
+ * How much of a file is enough to identify it. Every type we accept declares
+ * itself in the first few bytes; file-type's own minimum is 4100.
+ */
+const SNIFF_BYTES = 64 * 1024;
+
+/**
  * The declared mime type is never trusted — neither the browser's nor the
  * extension's. This sniffs the real one from the leading bytes, whichever shape
  * the file arrived in.
+ *
+ * Only a bounded prefix is examined, and that bound is the point. Handed a
+ * whole file, file-type walks a PNG's chunk structure to tell APNG apart from
+ * PNG — and when the header is valid but the body is not, that walk runs to the
+ * end of the file. A megabyte of that took 26 seconds; tens of megabytes never
+ * finished. Since anyone who can upload can choose the bytes, the cost of
+ * identifying a file cannot be allowed to scale with its size.
  */
 export async function detectUploadType(
   file: Express.Multer.File
 ): Promise<{ ext: string; mime: string } | undefined> {
   if (file?.buffer) {
-    return fromBuffer(file.buffer);
+    return fromBuffer(file.buffer.subarray(0, SNIFF_BYTES));
   }
+
   if (file?.path) {
-    return fromFile(file.path);
+    const handle = await fsp.open(file.path, 'r');
+    try {
+      const prefix = Buffer.alloc(SNIFF_BYTES);
+      const { bytesRead } = await handle.read(prefix, 0, SNIFF_BYTES, 0);
+      return fromBuffer(prefix.subarray(0, bytesRead));
+    } finally {
+      await handle.close();
+    }
   }
+
   return undefined;
 }
 
