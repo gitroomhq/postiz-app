@@ -39,6 +39,19 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     return 100000;
   }
 
+  /**
+   * The key is stored as the hex string the user typed, but nostr-tools takes
+   * bytes: finalizeEvent hands the key straight to @noble/curves, which rejects
+   * a string with "expected Uint8Array, got type=string". authenticate() has
+   * always converted; post() and comment() passed the raw string through an
+   * `as any`, so every publish threw.
+   */
+  private secretKeyBytes(hex: string): Uint8Array {
+    return Uint8Array.from(
+      (hex.match(/.{1,2}/g) || []).map((byte) => parseInt(byte, 16))
+    );
+  }
+
   async customFields() {
     return [
       {
@@ -137,11 +150,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     try {
       const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-      const pubkey = getPublicKey(
-        Uint8Array.from(
-          body.password.match(/.{1,2}/g).map((byte: any) => parseInt(byte, 16))
-        )
-      );
+      const pubkey = getPublicKey(this.secretKeyBytes(body.password));
 
       const user = await this.findRelayInformation(pubkey);
 
@@ -172,7 +181,9 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails[]
   ): Promise<PostResponse[]> {
-    const { password } = AuthService.verifyJWT(accessToken) as any;
+    const { password } = AuthService.verifyJWT(accessToken) as {
+      password: string;
+    };
     const [firstPost] = postDetails;
 
     const textEvent = finalizeEvent(
@@ -182,7 +193,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKeyBytes(password)
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -205,7 +216,9 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]> {
-    const { password } = AuthService.verifyJWT(accessToken) as any;
+    const { password } = AuthService.verifyJWT(accessToken) as {
+      password: string;
+    };
     const [commentPost] = postDetails;
     const replyToId = lastCommentId || postId;
 
@@ -219,7 +232,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKeyBytes(password)
     );
 
     const eventId = await this.publish(id, textEvent);

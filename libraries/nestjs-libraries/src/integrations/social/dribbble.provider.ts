@@ -14,7 +14,6 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import mime from 'mime-types';
-import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
@@ -51,42 +50,23 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     return 'Invalid image size. Requires 400x300 or 800x600 px images.';
   }
 
+  /**
+   * Dribbble access tokens do not expire and the OAuth exchange returns no
+   * refresh token, so there is nothing to refresh: authenticate() stores an
+   * empty refreshToken. Returning empty details is the same signal the other
+   * non-refreshable providers give — refreshProcess() sees no accessToken and
+   * puts the channel into the reconnect state, which is the right outcome when
+   * a token really has been revoked on Dribbble's side.
+   */
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const { access_token, expires_in } = await (
-      await this.fetch('https://api-sandbox.pinterest.com/v5/oauth/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
-          ).toString('base64')}`,
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          scope: `${this.scopes.join(',')}`,
-          redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/pinterest`,
-        }),
-      })
-    ).json();
-
-    const { id, profile_image, username } = await (
-      await this.fetch('https://api-sandbox.pinterest.com/v5/user_account', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      })
-    ).json();
-
     return {
-      id: id,
-      name: username,
-      accessToken: access_token,
-      refreshToken: refreshToken,
-      expiresIn: expires_in,
-      picture: profile_image || '',
-      username,
+      refreshToken: '',
+      expiresIn: 0,
+      accessToken: '',
+      id: '',
+      name: '',
+      picture: '',
+      username: '',
     };
   }
 
