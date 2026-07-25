@@ -17,6 +17,8 @@ tmp
 !**/.env.example
 # dependencies
 node_modules
+# pnpm drops a store here when its configured one is on another filesystem.
+.pnpm-store
 
 # IDEs and editors
 /.idea

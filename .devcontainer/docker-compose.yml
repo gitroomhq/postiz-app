@@ -5,19 +5,61 @@
 # PostQueen install on the same machine. Nothing here is published to the host
 # and nothing has a fixed name, so the dev container can run alongside one.
 #
-# Temporal runs without Elasticsearch here, which costs nothing in development
-# and saves roughly a gigabyte of memory.
+# Temporal runs with Elasticsearch, the same as docker-compose.dev.yaml. It is
+# not optional: the backend registers its search attributes at boot, and the SQL
+# visibility store refuses more than three of type Text, so without Elasticsearch
+# the backend fails to start.
 services:
   workspace:
     image: mcr.microsoft.com/devcontainers/typescript-node:22-bookworm
     command: sleep infinity
     volumes:
       - ..:/workspaces/postqueen-app:cached
-      - pnpm-store:/home/node/.local/share/pnpm/store
+      # Every node_modules is a named volume, one per workspace package.
+      #
+      # This is not an optimisation, it is required. Without it the host's
+      # node_modules is visible inside the container, and because it was built
+      # for a different platform pnpm decides to remove and reinstall it. That
+      # prompt has no terminal to answer it during setup, so the install hangs
+      # forever, and answering yes would delete the host's node_modules.
+      #
+      # It is also much faster than installing into a bind mount on macOS.
+      - node-modules-root:/workspaces/postqueen-app/node_modules
+      - node-modules-backend:/workspaces/postqueen-app/apps/backend/node_modules
+      - node-modules-frontend:/workspaces/postqueen-app/apps/frontend/node_modules
+      - node-modules-orchestrator:/workspaces/postqueen-app/apps/orchestrator/node_modules
+      - node-modules-extension:/workspaces/postqueen-app/apps/extension/node_modules
+      - node-modules-commands:/workspaces/postqueen-app/apps/commands/node_modules
+      - node-modules-sdk:/workspaces/postqueen-app/apps/sdk/node_modules
+      - node-modules-helpers:/workspaces/postqueen-app/libraries/helpers/node_modules
+      - node-modules-nestjs:/workspaces/postqueen-app/libraries/nestjs-libraries/node_modules
+      - node-modules-react:/workspaces/postqueen-app/libraries/react-shared-libraries/node_modules
+      - node-modules-wallets:/workspaces/postqueen-app/libraries/postqueen-wallets/node_modules
+    # The dev scripts load .env without --override, so everything set here wins
+    # over the file. That is deliberate: the repository is bind mounted, so a
+    # .env tailored to someone's host comes along with it, and these are the
+    # values that have to be true inside the container.
     environment:
       DATABASE_URL: postgresql://postqueen-local:postqueen-local-pwd@db:5432/postqueen-db-local
       REDIS_URL: redis://redis:6379
       TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      # Absolute URLs, because the backend builds URL objects from them at boot
+      # and a relative value such as "/api" throws before it finishes starting.
+      FRONTEND_URL: http://localhost:4200
+      MAIN_URL: http://localhost:4200
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:3000
+      BACKEND_INTERNAL_URL: http://localhost:3000
+      # Empty on purpose: proxying /api elsewhere is a host-only workflow.
+      DEV_BACKEND_PROXY: ''
+      # Sign-in over plain HTTP needs this, and there is no TLS in here.
+      NOT_SECURED: 'true'
+      IS_GENERAL: 'true'
+      # The Nest watch build exceeds Node's default heap on this codebase.
+      NODE_OPTIONS: --max-old-space-size=3072
+      # Keep the package store on the same volume as the root node_modules, so
+      # pnpm can hardlink into it instead of copying every file.
+      npm_config_store_dir: /workspaces/postqueen-app/node_modules/.pnpm-store
     depends_on:
       db:
         condition: service_healthy
@@ -64,11 +106,37 @@ services:
       timeout: 5s
       retries: 10
 
+  temporal-elasticsearch:
+    image: elasticsearch:7.17.27
+    restart: unless-stopped
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -fsS "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s" || exit 1',
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
   temporal:
     image: temporalio/auto-setup:1.28.1
     restart: unless-stopped
     depends_on:
       temporal-db:
+        condition: service_healthy
+      temporal-elasticsearch:
         condition: service_healthy
     environment:
       DB: postgres12
@@ -76,9 +144,26 @@ services:
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal
       POSTGRES_SEEDS: temporal-db
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+      ENABLE_ES: 'true'
+      ES_SEEDS: temporal-elasticsearch
+      ES_VERSION: v7
       TEMPORAL_NAMESPACE: default
+    volumes:
+      - ../dynamicconfig:/etc/temporal/config/dynamicconfig
 
 volumes:
-  pnpm-store:
   postgres-data:
   temporal-data:
+  elasticsearch-data:
+  node-modules-root:
+  node-modules-backend:
+  node-modules-frontend:
+  node-modules-orchestrator:
+  node-modules-extension:
+  node-modules-commands:
+  node-modules-sdk:
+  node-modules-helpers:
+  node-modules-nestjs:
+  node-modules-react:
+  node-modules-wallets:
