@@ -18,7 +18,13 @@ export const Title = () => {
   const path = usePathname();
   const { all: menuItems } = useMenuItem();
   const currentTitle = useMemo(() => {
-    const fromMenu = menuItems.find((item) => path.indexOf(item.path) > -1)?.name;
+    // Skip entries with no path and entries this deployment hides. Affiliate
+    // carries `path: affiliateUrl`, which is '' unless AFFILIATE_URL is set, and
+    // every string contains '' — so it matched every route and titled the whole
+    // app "Affiliate".
+    const fromMenu = menuItems.find(
+      (item) => !item.hide && !!item.path && path.indexOf(item.path) > -1
+    )?.name;
     if (fromMenu) return fromMenu;
     const fallbackKey = Object.keys(FALLBACK_TITLES).find(
       (key) => path.indexOf(key) > -1
