@@ -466,6 +466,37 @@ export class InstagramProvider
     const permissions = data
       .filter((d: any) => d.status === 'granted')
       .map((p: any) => p.permission);
+
+    // [MO-OAUTH-DEBUG] TEMPORARY diagnostics (secrets masked). Remove once the
+    // root cause is confirmed.
+    console.log(
+      '[MO-OAUTH-DEBUG][instagram] redirect_uri=',
+      `${process.env.FRONTEND_URL}/integrations/social/instagram${
+        params.refresh ? `?refresh=${params.refresh}` : ''
+      }`,
+      '| refresh=',
+      params.refresh || '(none)'
+    );
+    console.log(
+      '[MO-OAUTH-DEBUG][instagram] first_exchange=',
+      JSON.stringify({
+        ...getAccessToken,
+        access_token: getAccessToken?.access_token ? '<present>' : '<MISSING>',
+      })
+    );
+    console.log(
+      '[MO-OAUTH-DEBUG][instagram] long_lived_token=',
+      access_token ? '<present>' : '<MISSING>',
+      '| extra=',
+      JSON.stringify(all)
+    );
+    console.log(
+      '[MO-OAUTH-DEBUG][instagram] required=',
+      this.scopes.join(' '),
+      '| granted=',
+      (permissions || []).join(' ')
+    );
+
     this.checkScopes(this.scopes, permissions);
 
     const { id, name, picture } = await (

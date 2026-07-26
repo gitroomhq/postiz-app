@@ -169,21 +169,14 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const body = new URLSearchParams();
     body.append('grant_type', 'authorization_code');
     body.append('code', params.code);
-    body.append(
-      'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
-        params.refresh ? `?refresh=${params.refresh}` : ''
-      }`
-    );
+    const redirectUri = `${process.env.FRONTEND_URL}/integrations/social/linkedin${
+      params.refresh ? `?refresh=${params.refresh}` : ''
+    }`;
+    body.append('redirect_uri', redirectUri);
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
 
-    const {
-      access_token: accessToken,
-      expires_in: expiresIn,
-      refresh_token: refreshToken,
-      scope,
-    } = await (
+    const tokenResponse = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -192,6 +185,37 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         body,
       })
     ).json();
+
+    // [MO-OAUTH-DEBUG] TEMPORARY diagnostics — capture the exact LinkedIn
+    // response the code otherwise discards (secrets masked). Remove once the
+    // root cause is confirmed.
+    console.log(
+      '[MO-OAUTH-DEBUG][linkedin] redirect_uri=',
+      redirectUri,
+      '| refresh=',
+      params.refresh || '(none)'
+    );
+    console.log(
+      '[MO-OAUTH-DEBUG][linkedin] token_response=',
+      JSON.stringify({
+        ...tokenResponse,
+        access_token: tokenResponse?.access_token ? '<present>' : '<MISSING>',
+        refresh_token: tokenResponse?.refresh_token ? '<present>' : '<absent>',
+      })
+    );
+    console.log(
+      '[MO-OAUTH-DEBUG][linkedin] required=',
+      this.scopes.join(' '),
+      '| granted=',
+      tokenResponse?.scope
+    );
+
+    const {
+      access_token: accessToken,
+      expires_in: expiresIn,
+      refresh_token: refreshToken,
+      scope,
+    } = tokenResponse;
 
     this.checkScopes(this.scopes, scope);
 
