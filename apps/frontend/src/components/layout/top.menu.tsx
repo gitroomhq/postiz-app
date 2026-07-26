@@ -350,7 +350,7 @@ export const TopMenu: FC = () => {
             <Link
               href="/settings?tab=teams"
               title="Invite"
-              className="group w-full py-[8px] px-[6px] flex flex-col items-center justify-center gap-[4px] rounded-[12px] font-[600] text-textItemBlur hover:text-newTextColor hover:bg-boxHover transition-colors"
+              className="group w-full py-[8px] px-[6px] flex flex-col items-center justify-center gap-[4px] rounded-[12px] font-[600] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path
@@ -370,7 +370,10 @@ export const TopMenu: FC = () => {
             <Link
               href="/billing"
               title="Upgrade"
-              className="crown-gradient group w-full py-[8px] px-[6px] flex flex-col items-center justify-center gap-[4px] rounded-[12px] font-[600] text-white hover:opacity-90 transition-opacity"
+              // Solid white on the branded rail: the brand gradient this used
+              // to wear is now the surface behind it, so it had nothing left to
+              // stand out against.
+              className="group w-full py-[8px] px-[6px] flex flex-col items-center justify-center gap-[4px] rounded-[12px] font-[600] bg-white text-btnPrimary hover:bg-white/90 transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path

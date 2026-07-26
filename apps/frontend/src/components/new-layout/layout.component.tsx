@@ -40,7 +40,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { BillingAdminRequiredComponent } from '@gitroom/frontend/components/billing/billing.admin.required.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
-import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
+import { CrownGlyph } from '@gitroom/frontend/components/ui/logo.component';
 import { UserMenu } from '@gitroom/frontend/components/new-layout/user.menu';
 
 /** A fixed vertical divider for the header. */
@@ -52,12 +52,12 @@ const HeaderDivider = () => (
 const LayoutSkeleton = () => (
   <div className="flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]">
     <div className="flex-1 flex gap-[8px]">
-      <div className="w-[80px] shrink-0 rounded-[12px] bg-newBgColorInner flex flex-col items-center gap-[24px] py-[16px]">
-        <PostQueenLogo tileClassName="size-10" />
+      <div className="brand-rail w-[80px] shrink-0 rounded-[12px] flex flex-col items-center gap-[24px] py-[16px]">
+        <CrownGlyph className="size-[30px] text-white" />
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="size-[44px] rounded-[12px] bg-newBgLineColor animate-pulse"
+            className="size-[44px] rounded-[12px] bg-white/15 animate-pulse"
           />
         ))}
       </div>
@@ -127,9 +127,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <div className="flex-1 flex gap-[8px]">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] shrink-0 rounded-[12px]">
-                      <div className="flex flex-col gap-[32px] flex-1 py-[16px] px-[8px] overflow-y-auto">
-                        <Logo />
+                    <div className="brand-rail flex flex-col w-[80px] shrink-0 rounded-[12px]">
+                      <div className="flex flex-col gap-[24px] flex-1 py-[16px] px-[8px] overflow-y-auto">
+                        <div className="flex flex-col gap-[14px]">
+                          <Logo variant="rail" />
+                          <div className="h-[1px] bg-white/25" />
+                        </div>
                         <TopMenu />
                       </div>
                     </div>

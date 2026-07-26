@@ -1,35 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
+import {
+  CrownGlyph,
+  PostQueenLogo,
+} from '@gitroom/frontend/components/ui/logo.component';
 
 /**
- * Icon-only brand mark for the left rail (40px inside the 64px rail), with the
- * deployment's own hostname as a tagline under it. Links to the Calendar so the
- * crown doubles as a "home" affordance.
+ * Brand mark for the app chrome, in two variants because it sits on two very
+ * different surfaces:
+ *
+ *   'tile' — the purple tile, on a neutral surface (the OAuth consent screen,
+ *            the billing screen).
+ *   'rail' — the crown alone, in white, on the branded left rail. A purple
+ *            tile on a purple rail reads as a smudge, so the tile comes off
+ *            and the mark sits directly on the gradient.
+ *
+ * It used to print the deployment's hostname under the mark. At 9px in a 64px
+ * column that was a cramped URL rather than a tagline, and the host is already
+ * in the address bar.
+ *
+ * Links to the Calendar either way, so the crown doubles as "home".
  */
-export const Logo = () => {
-  const { frontEndUrl } = useVariables();
-  let host = '';
-  try {
-    host = new URL(frontEndUrl).hostname;
-  } catch {
-    // Unset or malformed: show the mark alone rather than a stale domain.
-  }
-
-  return (
+export const Logo = ({ variant = 'tile' }: { variant?: 'tile' | 'rail' }) => (
   <Link
     href="/launches"
     aria-label="Calendar"
-    className="flex flex-col items-center gap-[4px] transition-transform duration-200 hover:scale-105"
+    className="flex items-center justify-center transition-transform duration-200 hover:scale-105"
   >
-    <PostQueenLogo tileClassName="size-10" />
-    {!!host && (
-      <span className="text-[9px] leading-none whitespace-nowrap font-[500] text-newTextColor/70">
-        {host}
-      </span>
+    {variant === 'rail' ? (
+      <CrownGlyph className="size-[30px] text-white" />
+    ) : (
+      <PostQueenLogo tileClassName="size-10" />
     )}
   </Link>
-  );
-};
+);

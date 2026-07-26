@@ -23,6 +23,21 @@ body {
   background-image: linear-gradient(145deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
+// The left rail. Same two brand values as .crown-gradient, run down the column
+// instead of across it: pop-600 behind the mark at the top, settling into brand
+// purple for the length of the menu, where white labels have the contrast they
+// need. Brand values again, so the rail is the same in light and dark — only
+// the surfaces around it change.
+.brand-rail {
+  background-image: linear-gradient(
+    180deg,
+    #e0189e 0%,
+    #7c3aed 28%,
+    #6d28d9 62%,
+    #5b21b6 100%
+  );
+}
+
 // Only suppress the outline for pointer interaction; keyboard focus must stay
 // visible. This was an unscoped `body * { outline: none !important }`, which
 // removed every focus ring in the app and made it unusable without a mouse.
