@@ -22,6 +22,7 @@ import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.p
 import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
+import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
@@ -509,6 +510,12 @@ export const LaunchesComponent = () => {
     <DNDProvider>
       <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
+        {/* The page's primary action belongs in the chrome's header, but the
+            button reads useCalendar() — so it is mounted here, inside the
+            provider, and only its output is portalled up. */}
+        <HeaderAction>
+          {sortedIntegrations?.length > 0 && <NewPost />}
+        </HeaderAction>
         <div
           className={clsx(
             'flex relative flex-col',
@@ -549,8 +556,8 @@ export const LaunchesComponent = () => {
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col">
-                {sortedIntegrations?.length > 0 && <NewPost />}
+              {/* Create Post used to sit here; it is in the header now. */}
+              <div className="flex gap-[8px] group-[.sidebar]:flex-col empty:hidden">
                 {sortedIntegrations?.length > 0 &&
                   user?.tier?.ai &&
                   billingEnabled && <GeneratorComponent />}

@@ -29,7 +29,6 @@ import { Sets } from '@gitroom/frontend/components/sets/sets';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 export const SettingsPopup: FC<{
@@ -106,33 +105,50 @@ export const SettingsPopup: FC<{
   // Tier alone said nothing about the caller's role, so a regular member saw
   // the tabs and got a 402 for opening them.
   const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
+  // `group` only sorts the sub-nav into sections; which tabs exist, what they
+  // are called and what they open are all unchanged.
   const list = useMemo(() => {
-    const arr = [];
-    arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
-    arr.push({ tab: 'language', label: t('language', 'Language') });
+    const arr: { tab: string; label: string; group: string }[] = [];
+    const workspace = t('workspace', 'Workspace');
+    const publishing = t('publishing', 'Publishing');
+    const developers = t('developers', 'Developers');
+
+    arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings'), group: workspace });
+    arr.push({ tab: 'language', label: t('language', 'Language'), group: workspace });
     // Populate tabs based on user permissions
     if (user?.tier?.team_members && isGeneral && isOrgAdmin) {
-      arr.push({ tab: 'teams', label: t('teams', 'Teams') });
+      arr.push({ tab: 'teams', label: t('teams', 'Teams'), group: workspace });
     }
     if (user?.tier?.webhooks) {
-      arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
+      arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks'), group: publishing });
     }
     if (user?.tier?.autoPost) {
-      arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post') });
+      arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post'), group: publishing });
     }
     if (user?.tier.current !== 'FREE') {
-      arr.push({ tab: 'sets', label: t('sets', 'Sets') });
+      arr.push({ tab: 'sets', label: t('sets', 'Sets'), group: publishing });
     }
     if (user?.tier.current !== 'FREE') {
-      arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
+      arr.push({ tab: 'signatures', label: t('signatures', 'Signatures'), group: publishing });
     }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
-      arr.push({ tab: 'api', label: t('developers', 'Developers') });
+      arr.push({ tab: 'api', label: t('developers', 'Developers'), group: developers });
     }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps'), group: developers });
 
     return arr;
   }, [user, isGeneral, showLogout, isOrgAdmin, t]);
+
+  /** The same items, in the same order, bucketed by their group label. */
+  const groupedList = useMemo(() => {
+    const groups: { group: string; items: typeof list }[] = [];
+    for (const item of list) {
+      const last = groups[groups.length - 1];
+      if (last?.group === item.group) last.items.push(item);
+      else groups.push({ group: item.group, items: [item] });
+    }
+    return groups;
+  }, [list]);
 
   useEffect(() => {
     loadProfile();
@@ -140,29 +156,32 @@ export const SettingsPopup: FC<{
 
   return (
     <>
-      <div className="bg-newBgColorInner p-[20px] flex flex-col transition-all w-[260px]">
-        <div className="flex flex-1 flex-col gap-[15px]">
-          {list.map(({ tab: tabKey, label }) => (
-            <div
-              key={tabKey}
-              className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-e-[8px]',
-                tabKey === tab && 'bg-boxHover'
-              )}
-              onClick={() => setTab(tabKey)}
-            >
-              <div
-                className={clsx(
-                  'h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity',
-                  tabKey === tab && 'opacity-100'
-                )}
-              >
-                <SVGLine />
+      <div className="bg-newBgColorInner p-[16px] flex flex-col transition-all w-[260px]">
+        <nav className="flex flex-1 flex-col gap-[20px]">
+          {groupedList.map(({ group, items }) => (
+            <div key={group} className="flex flex-col gap-[2px]">
+              <div className="px-[10px] pb-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-textItemBlur">
+                {group}
               </div>
-              {label}
+              {items.map(({ tab: tabKey, label }) => (
+                <button
+                  key={tabKey}
+                  type="button"
+                  onClick={() => setTab(tabKey)}
+                  aria-current={tabKey === tab ? 'page' : undefined}
+                  className={clsx(
+                    'flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors',
+                    tabKey === tab
+                      ? 'bg-boxFocused font-[600] text-textItemFocused'
+                      : 'text-textItemBlur hover:bg-boxHover hover:text-newTextColor'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           ))}
-        </div>
+        </nav>
       </div>
       <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
         <FormProvider {...form}>

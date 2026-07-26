@@ -81,7 +81,6 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
           )}
         </div>
       </div>
-      {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator" />}
     </>
   );
 };

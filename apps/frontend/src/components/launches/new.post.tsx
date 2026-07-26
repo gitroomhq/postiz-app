@@ -75,29 +75,30 @@ export const NewPost = () => {
     });
   }, [integrations, sets]);
   return (
+    // Sized for the header, where this now lives. It used to be a block in the
+    // Channels column, hence the flex-1 / 44px / collapsed-sidebar variants.
     <button
       onClick={createAPost}
-      className="text-white flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
+      className="flex h-[36px] shrink-0 items-center gap-[6px] rounded-[8px] bg-btnPrimary ps-[12px] pe-[16px] text-[14px] font-[500] text-white outline-none transition-opacity hover:opacity-90"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="21"
-        height="20"
+        width="18"
+        height="18"
         viewBox="0 0 21 20"
         fill="none"
-        className="min-w-[21px] min-h-[20px]"
+        aria-hidden="true"
+        className="shrink-0"
       >
         <path
           d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
-          stroke="white"
-          strokeWidth="1.5"
+          stroke="currentColor"
+          strokeWidth="1.7"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
-      <div className="flex-1 text-start text-[14px] group-[.sidebar]:hidden">
-        {t('create_new_post', 'Create Post')}
-      </div>
+      {t('create_new_post', 'Create Post')}
     </button>
   );
 };

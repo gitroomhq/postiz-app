@@ -60,9 +60,14 @@ export const Input: FC<
           />
         </div>
       )}
+      {/* newBorder, not newTableBorder: this is a field edge, and the table
+          token sits a shade off every other bordered surface. The focus ring is
+          on the wrapper because the real <input> is transparent and
+          borderless, so focus had nothing to show on. */}
       <div
         className={clsx(
-          'bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] text-textColor placeholder-textColor flex items-center justify-center',
+          'bg-newBgColorInner h-[42px] border-newBorder border rounded-[8px] text-textColor placeholder-textColor flex items-center justify-center transition-colors',
+          'focus-within:border-btnPrimary focus-within:ring-1 focus-within:ring-btnPrimary',
           className
         )}
       >

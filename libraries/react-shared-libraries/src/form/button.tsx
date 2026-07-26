@@ -58,8 +58,11 @@ export const Button: FC<
   // `secondary` (legacy boolean) still wins for back-compat; otherwise use the
   // variant, defaulting to the brand primary.
   const resolved = secondary ? 'secondary' : variant || 'primary';
+  // btnPrimary, not forth: both resolve to the brand purple today, but forth is
+  // a legacy palette slot while btnPrimary is the token the rest of the chrome
+  // reads. One token means the brand can move in one place.
   const variantClass = {
-    primary: 'bg-forth text-white hover:opacity-90',
+    primary: 'bg-btnPrimary text-white hover:opacity-90',
     secondary: 'bg-third text-newTextColor hover:bg-boxHover',
     outline:
       'bg-transparent border border-newBorder text-newTextColor hover:bg-boxHover',
@@ -81,6 +84,9 @@ export const Button: FC<
         variantClass,
         sizeClass,
         'rounded-[8px] font-[500] cursor-pointer items-center justify-center flex relative transition-all',
+        // Keyboard focus has to be visible; the app's global rule only drops
+        // the ring for pointer interaction.
+        'outline-none focus-visible:ring-2 focus-visible:ring-btnPrimary focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
         props?.className
       )}
     >
