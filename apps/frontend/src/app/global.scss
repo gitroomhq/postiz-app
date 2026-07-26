@@ -23,14 +23,14 @@ body {
   background-image: linear-gradient(145deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
-// The left rail: the logo's own gradient, turned vertical. Same three stops as
-// .crown-gradient in the same order, spread across the full height of the
-// column so the colour moves the whole way down rather than resolving in the
-// first quarter — a short run of it reads as a band with an edge, not as a
-// gradient. Brand values again, so the rail is the same in light and dark and
-// only the surfaces around it change.
+// The left rail. Only the brand purples, brand-500 down to brand-700, spread
+// across the full height of the column: the point is depth, not a change of
+// colour. .crown-gradient's pop-600 belongs on a 40px logo tile, where it is a
+// highlight; down a rail the length of the window it becomes a pink half.
+// Brand values, so the rail is the same in light and dark and only the
+// surfaces around it change.
 .brand-rail {
-  background-image: linear-gradient(180deg, #6d28d9, #7c3aed 45%, #e0189e);
+  background-image: linear-gradient(180deg, #7c3aed, #6d28d9 50%, #5b21b6);
 }
 
 // Only suppress the outline for pointer interaction; keyboard focus must stay
