@@ -32,6 +32,8 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import ModeComponent from '@gitroom/frontend/components/layout/mode.component';
+import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -87,6 +89,7 @@ export const SettingsPopup: FC<{
   const list = useMemo(() => {
     const arr = [];
     arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
+    arr.push({ tab: 'appearance', label: t('appearance', 'Appearance') });
     // Populate tabs based on user permissions
     if (user?.tier?.team_members && isGeneral) {
       arr.push({ tab: 'teams', label: t('teams', 'Teams') });
@@ -163,6 +166,35 @@ export const SettingsPopup: FC<{
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />
+                </div>
+              )}
+              {tab === 'appearance' && (
+                <div className="flex flex-col gap-[16px]">
+                  <div className="text-[18px] font-[600]">
+                    {t('appearance', 'Appearance')}
+                  </div>
+                  <div className="flex items-center justify-between glass-surface rounded-[12px] px-[16px] py-[14px]">
+                    <div>
+                      <div className="text-[14px] font-[600]">
+                        {t('theme', 'Theme')}
+                      </div>
+                      <div className="text-[12px] text-textItemBlur mt-[2px]">
+                        {t('theme_help', 'Switch between light and dark mode')}
+                      </div>
+                    </div>
+                    <ModeComponent />
+                  </div>
+                  <div className="flex items-center justify-between glass-surface rounded-[12px] px-[16px] py-[14px]">
+                    <div>
+                      <div className="text-[14px] font-[600]">
+                        {t('language', 'Language')}
+                      </div>
+                      <div className="text-[12px] text-textItemBlur mt-[2px]">
+                        {t('language_help', 'Choose your interface language')}
+                      </div>
+                    </div>
+                    <LanguageComponent />
+                  </div>
                 </div>
               )}
               {tab === 'teams' && !!user?.tier?.team_members && isGeneral && (
