@@ -12,7 +12,8 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization, User } from '@prisma/client';
+import { Organization, Role, User } from '@prisma/client';
+import { OrgRoles } from '@gitroom/backend/services/auth/permissions/roles.guard';
 import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.function.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -70,6 +71,21 @@ export class IntegrationsController {
     }
     const allowed = new Set(scope.customerIds);
     return customers.filter((c) => allowed.has(c.id));
+  }
+
+  // Create a client (customer) directly from the Clients page. Agency-wide roles
+  // only — Account Managers are assigned to clients, they don't create them.
+  @Post('/customer')
+  @OrgRoles(Role.SUPERADMIN, Role.ADMIN)
+  async createCustomer(
+    @GetOrgFromRequest() org: Organization,
+    @Body('name') name: string
+  ) {
+    const clean = (name || '').trim().slice(0, 120);
+    if (!clean) {
+      return { error: 'Client name is required' };
+    }
+    return this._integrationService.createCustomer(org.id, clean);
   }
 
   @Put('/:id/group')

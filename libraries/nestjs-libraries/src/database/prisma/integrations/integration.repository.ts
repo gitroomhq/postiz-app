@@ -528,6 +528,16 @@ export class IntegrationRepository {
     });
   }
 
+  async createCustomer(orgId: string, name: string) {
+    const existing = await this._customers.model.customer.findFirst({
+      where: { orgId, name, deletedAt: null },
+    });
+    if (existing) {
+      return existing;
+    }
+    return this._customers.model.customer.create({ data: { orgId, name } });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {

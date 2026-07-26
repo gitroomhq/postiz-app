@@ -595,6 +595,10 @@ export class IntegrationService {
     return this._integrationRepository.customers(orgId);
   }
 
+  createCustomer(orgId: string, name: string) {
+    return this._integrationRepository.createCustomer(orgId, name);
+  }
+
   getPlugsByIntegrationId(org: string, integrationId: string) {
     return this._integrationRepository.getPlugsByIntegrationId(
       org,
