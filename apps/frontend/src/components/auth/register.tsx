@@ -2,7 +2,6 @@
 
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -223,16 +222,11 @@ export function RegisterAfter({
     </div>
   );
 
-  const footer = (
-    <p className="mt-auto pt-[24px] text-center text-sm text-textItemBlur">
-      {t('already_have_an_account', 'Already Have An Account?')}&nbsp;
-      <Link
-        href="/auth/login"
-        className="underline cursor-pointer text-newTextColor font-[500]"
-      >
-        {t('sign_in', 'Sign In')}
-      </Link>
-    </p>
+  // The sign-in cross-link lives in the auth chrome (top right), so the form
+  // itself carries no footer.
+  const subtitle = t(
+    'sign_up_subtitle',
+    'Create your account and connect your first channel.'
   );
 
   if (!isAfterProvider && passwordlessLogin) {
@@ -240,6 +234,7 @@ export function RegisterAfter({
       <div className="flex-1 flex">
         <AuthShell
           title={t('sign_up', 'Sign Up')}
+          subtitle={subtitle}
           step={step}
           onContinueEmail={() => setStep('email')}
           onBack={() => setStep('method')}
@@ -247,7 +242,6 @@ export function RegisterAfter({
           emailStep={
             <OtpEmailStep submitLabel={t('create_account', 'Create Account')} />
           }
-          footer={footer}
         />
       </div>
     );
@@ -263,20 +257,22 @@ export function RegisterAfter({
             <h1 className="text-[40px] font-[600] -tracking-[0.8px] font-display">
               {t('sign_up', 'Sign Up')}
             </h1>
-            <div className="min-h-[420px] flex flex-col mt-[32px]">
+            <p className="mt-[10px] text-[15px] text-textItemBlur">
+              {subtitle}
+            </p>
+            <div className="min-h-[320px] flex flex-col mt-[28px]">
               {emailFields}
-              {footer}
             </div>
           </div>
         ) : (
           <AuthShell
             title={t('sign_up', 'Sign Up')}
+            subtitle={subtitle}
             step={step}
             onContinueEmail={() => setStep('email')}
             onBack={() => setStep('method')}
             extraProviders={billingEnabled ? <WalletProvider /> : undefined}
             emailStep={emailFields}
-            footer={footer}
           />
         )}
       </form>

@@ -42,22 +42,22 @@ function Providers({ extraProviders }: { extraProviders?: ReactNode }) {
  */
 export function AuthShell({
   title,
+  subtitle,
   step,
   onContinueEmail,
   onBack,
   extraProviders,
   emailStep,
-  footer,
 }: {
   title: string;
+  /** One line under the title, in the manner of the marketing site. */
+  subtitle?: string;
   step: AuthStep;
   onContinueEmail: () => void;
   onBack: () => void;
   extraProviders?: ReactNode;
   /** The email + password (+ company) fields and submit button. */
   emailStep: ReactNode;
-  /** Sign-in / sign-up cross-link, rendered under both steps. */
-  footer?: ReactNode;
 }) {
   const t = useT();
 
@@ -87,8 +87,15 @@ export function AuthShell({
         </h1>
       </div>
 
-      {/* min height keeps the card from resizing between steps */}
-      <div className="min-h-[420px] flex flex-col mt-[32px]">
+      {!!subtitle && (
+        <p className="mt-[10px] text-[15px] text-textItemBlur">{subtitle}</p>
+      )}
+
+      {/* A floor rather than a reservation: enough that the short method step
+          does not look cramped, low enough that the taller email step does not
+          leave a hole under it. The layout centres this block vertically, so
+          what growth remains reads as the form breathing, not jumping. */}
+      <div className="min-h-[320px] flex flex-col mt-[28px]">
         {step === 'method' ? (
           <>
             <div className="text-[14px] mb-[12px] text-textItemBlur">
@@ -132,8 +139,6 @@ export function AuthShell({
         ) : (
           emailStep
         )}
-
-        {footer}
       </div>
     </div>
   );

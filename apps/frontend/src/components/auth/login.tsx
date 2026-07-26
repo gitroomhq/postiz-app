@@ -39,28 +39,23 @@ export function Login() {
     },
   });
   const fetchData = useFetch();
-  const signupFooter = (
-    <p className="mt-auto pt-[24px] text-center text-sm text-textItemBlur">
-      {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-      <Link
-        href="/auth"
-        className="underline cursor-pointer text-newTextColor font-[500]"
-      >
-        {t('sign_up', 'Sign Up')}
-      </Link>
-    </p>
+  // The sign-up cross-link lives in the auth chrome (top right), so the form
+  // itself carries no footer.
+  const subtitle = t(
+    'sign_in_subtitle',
+    'Welcome back. Sign in to get to your calendar.'
   );
   if (passwordlessLogin) {
     return (
       <div className="flex-1 flex">
         <AuthShell
           title={t('sign_in', 'Sign In')}
+          subtitle={subtitle}
           step={step}
           onContinueEmail={() => setStep('email')}
           onBack={() => setStep('method')}
           extraProviders={billingEnabled ? <WalletProvider /> : undefined}
           emailStep={<OtpEmailStep submitLabel={t('sign_in_1', 'Sign in')} />}
-          footer={signupFooter}
         />
       </div>
     );
@@ -92,6 +87,7 @@ export function Login() {
       <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
         <AuthShell
           title={t('sign_in', 'Sign In')}
+          subtitle={subtitle}
           step={step}
           onContinueEmail={() => setStep('email')}
           onBack={() => setStep('method')}
@@ -150,17 +146,6 @@ export function Login() {
                 </Link>
               </p>
             </div>
-          }
-          footer={
-            <p className="mt-auto pt-[24px] text-center text-sm text-textItemBlur">
-              {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-              <Link
-                href="/auth"
-                className="underline cursor-pointer text-newTextColor font-[500]"
-              >
-                {t('sign_up', 'Sign Up')}
-              </Link>
-            </p>
           }
         />
       </form>

@@ -1,37 +1,39 @@
-import { getT } from '@gitroom/react/translation/get.translation.service.backend';
-
 export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
-import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
+import {
+  AuthFooter,
+  AuthNav,
+} from '@gitroom/frontend/components/auth/auth-chrome';
 import { ProductShowcase } from '@gitroom/frontend/components/auth/product-showcase';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 
+/**
+ * Split screen: the form on a plain surface at the start edge, the product
+ * still on a brand panel filling the rest. Both halves run to the edge of the
+ * viewport — the card-on-a-tinted-page framing the rest of the app uses would
+ * only shrink the one thing this page is here to show.
+ *
+ * Below `lg` the panel drops out entirely and the form takes the full width.
+ */
 export default async function AuthLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const t = await getT();
-
   return (
-    <div className="bg-newBgColor text-newTextColor flex flex-1 p-[12px] gap-[12px] min-h-screen w-screen">
+    <div className="bg-newBgColorInner text-newTextColor flex min-h-screen w-full">
       <ReturnUrlComponent />
-      <div className="flex flex-col py-[40px] px-[20px] flex-1 lg:w-[600px] lg:flex-none rounded-[12px] bg-newBgColorInner p-[12px]">
-        <div className="w-full max-w-[440px] mx-auto justify-center gap-[20px] h-full flex flex-col">
-          <LogoTextComponent />
-          <div className="flex">{children}</div>
+      <div className="flex flex-1 flex-col px-[24px] py-[28px] sm:px-[40px] lg:w-[46%] lg:max-w-[640px] lg:flex-none">
+        <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
+          <AuthNav />
+          <div className="flex flex-1 flex-col justify-center py-[40px]">
+            <div className="flex w-full">{children}</div>
+          </div>
+          <AuthFooter year={new Date().getFullYear()} />
         </div>
       </div>
-      <div className="flex-1 pt-[64px] px-[40px] hidden lg:flex flex-col items-center gap-[48px]">
-        <div className="text-center text-[36px] font-[600] leading-tight">
-          {t('auth_headline_a', 'Schedule')}{' '}
-          <span className="text-ai">{t('auth_headline_b', 'everywhere')}</span>
-          <br />
-          {t('auth_headline_c', 'PostQueen grows your social presence')}
-        </div>
-        <ProductShowcase />
-      </div>
+      <ProductShowcase />
     </div>
   );
 }

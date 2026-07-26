@@ -1,178 +1,109 @@
 'use client';
 
-// Fills the right half of the auth split-screen with a light-theme product
-// still — a sample week of scheduled posts. Ported from the landing site's
-// app-mock / mocks-light (postqueen.ai) so the login screen previews the real
-// calendar instead of the empty testimonial marquee that shipped here. Sample
-// data only; no metrics or claims.
+// The right half of the auth split-screen: the product still that ships in the
+// README (.github/assets/calendar.svg, copied to public/auth/calendar.svg) on a
+// brand gradient, so the first thing a new account sees is the calendar it is
+// signing up for. Sample data only; no metrics or claims.
+//
+// This replaced a hand-built React calendar. The still is the same artwork the
+// README and the marketing site use, which keeps one picture of the product
+// instead of three that drift apart.
 
-const DAY_START = 8;
-const DAY_END = 20;
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
-interface Chip {
-  /** 24h clock, e.g. 9.25 is 9:15 */
-  at: number;
-  label: string;
-  icon: string;
-  tone: string;
-}
-
-interface Day {
-  day: string;
-  date: number;
-  today?: boolean;
-  chips: Chip[];
-}
-
-const ICON = (slug: string) => `/icons/platforms/${slug}.png`;
-
-const TONE_BRAND = 'bg-btnPrimary/12 text-btnPrimary';
-const TONE_BLUE = 'bg-[#5b7bd5]/12 text-[#5b7bd5]';
-const TONE_POP = 'bg-ai/12 text-ai';
-
-const WEEK: Day[] = [
-  {
-    day: 'Mon',
-    date: 13,
-    chips: [
-      { at: 9.25, label: 'Launch teaser', icon: 'instagram', tone: TONE_BRAND },
-      { at: 13.5, label: 'Feature thread', icon: 'x', tone: TONE_BLUE },
-    ],
-  },
-  {
-    day: 'Tue',
-    date: 14,
-    chips: [
-      { at: 10.5, label: 'Behind the build', icon: 'tiktok', tone: TONE_POP },
-      { at: 16, label: 'Community poll', icon: 'discord', tone: TONE_BRAND },
-    ],
-  },
-  {
-    day: 'Wed',
-    date: 15,
-    chips: [
-      { at: 11.5, label: 'Customer story', icon: 'linkedin', tone: TONE_BRAND },
-      { at: 15, label: 'AMA recap', icon: 'reddit', tone: TONE_BLUE },
-    ],
-  },
-  {
-    day: 'Thu',
-    date: 16,
-    chips: [
-      { at: 10, label: 'Changelog', icon: 'threads', tone: TONE_BRAND },
-      { at: 17.25, label: 'Clip of the week', icon: 'youtube', tone: TONE_POP },
-    ],
-  },
-  {
-    day: 'Fri',
-    date: 17,
-    today: true,
-    chips: [
-      { at: 10.5, label: 'Release notes', icon: 'instagram', tone: TONE_POP },
-      { at: 15.5, label: 'Weekly recap', icon: 'linkedin', tone: TONE_BRAND },
-    ],
-  },
-  {
-    day: 'Sat',
-    date: 18,
-    chips: [{ at: 11, label: 'Tip of the day', icon: 'x', tone: TONE_BLUE }],
-  },
-  {
-    day: 'Sun',
-    date: 19,
-    chips: [{ at: 12, label: 'Week ahead', icon: 'mastodon', tone: TONE_BRAND }],
-  },
+/**
+ * A sample of what the app publishes to, drawn from the icons already in
+ * public/icons/platforms. Ten fit on one row at every width the panel appears
+ * at; the caption carries the real number.
+ */
+const CHANNELS = [
+  'instagram',
+  'x',
+  'linkedin',
+  'youtube',
+  'tiktok',
+  'facebook',
+  'threads',
+  'pinterest',
+  'reddit',
+  'discord',
 ];
 
-const HOURS = [9, 11, 13, 15, 17, 19];
-const TOTAL = WEEK.reduce((n, d) => n + d.chips.length, 0);
-
-const top = (at: number) => ((at - DAY_START) / (DAY_END - DAY_START)) * 100;
-
 export const ProductShowcase = () => {
-  return (
-    <div className="w-full max-w-[760px] rounded-[20px] border border-newBorder bg-newBgColorInner overflow-hidden shadow-lg text-newTextColor">
-      {/* window chrome */}
-      <div className="flex items-center gap-[12px] border-b border-newBorder px-[16px] h-[48px]">
-        <div className="flex gap-[6px]">
-          <span className="w-[10px] h-[10px] rounded-full bg-newBgLineColor" />
-          <span className="w-[10px] h-[10px] rounded-full bg-newBgLineColor" />
-          <span className="w-[10px] h-[10px] rounded-full bg-newBgLineColor" />
-        </div>
-        <div className="text-[13px] font-[600]">Calendar</div>
-        <div className="text-[12px] text-textItemBlur">July 2026</div>
-        <div className="ms-auto rounded-[8px] bg-btnPrimary px-[12px] py-[6px] text-[11px] font-[600] text-white">
-          + New Post
-        </div>
-      </div>
+  const t = useT();
 
-      {/* week grid */}
-      <div className="flex h-[340px]">
-        {/* hour gutter */}
-        <div className="relative w-[44px] shrink-0 border-e border-newBorder">
-          <div className="h-[28px] border-b border-newBorder" />
-          <div className="relative h-[calc(100%-28px)]">
-            {HOURS.map((h) => (
-              <span
-                key={h}
-                style={{ top: `${top(h)}%` }}
-                className="absolute end-[8px] -translate-y-1/2 text-[10px] text-textItemBlur"
-              >
-                {h > 12 ? h - 12 : h}
-                {h >= 12 ? 'p' : 'a'}
-              </span>
+  return (
+    <aside className="relative hidden flex-1 items-center justify-center overflow-hidden lg:flex">
+      {/* Brand wash. Inline rather than an arbitrary Tailwind value: the colour
+          stops read better here than escaped inside a class name. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            'radial-gradient(115% 85% at 12% 0%, #8b5cf6 0%, #6d28d9 30%, #3d1a7a 62%, #1c0e37 100%)',
+        }}
+      />
+
+      {/* The only texture on the panel: a grid tilted off-axis so it reads as
+          depth behind the card rather than as a second table next to it. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-[-30%] opacity-[0.12]"
+        style={{
+          backgroundImage:
+            'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          transform: 'rotate(-14deg)',
+        }}
+      />
+
+      <div className="relative flex w-full max-w-[760px] flex-col items-center gap-[36px] px-[40px] py-[48px] text-white">
+        <div className="text-center">
+          {/* text-balance so the narrowest panel width does not leave "AI"
+              alone on its own line */}
+          <h2 className="font-display text-balance text-[28px] font-[700] leading-[1.25] -tracking-[0.6px] xl:text-[32px]">
+            {t('auth_showcase_title', 'Schedule and generate posts with AI')}
+          </h2>
+          <p className="mx-auto mt-[12px] max-w-[440px] text-[15px] leading-[1.6] text-white/70">
+            {t(
+              'auth_showcase_body',
+              'Plan your whole week in one place, let AI draft what goes out, and drag any post to a better time.'
+            )}
+          </p>
+        </div>
+
+        <img
+          src="/auth/calendar.svg"
+          width={660}
+          height={430}
+          alt={t(
+            'auth_showcase_alt',
+            'A week of scheduled posts in the PostQueen calendar'
+          )}
+          className="w-full max-w-[660px] drop-shadow-[0_28px_60px_rgba(12,6,32,0.55)]"
+        />
+
+        <div className="flex flex-col items-center gap-[14px]">
+          <div className="flex items-center gap-[10px]">
+            {CHANNELS.map((channel) => (
+              <img
+                key={channel}
+                src={`/icons/platforms/${channel}.png`}
+                alt=""
+                aria-hidden="true"
+                className="size-[30px] rounded-full ring-1 ring-inset ring-white/25"
+              />
             ))}
           </div>
-        </div>
-
-        <div className="grid flex-1 grid-cols-7">
-          {WEEK.map(({ day, date, today, chips }) => (
-            <div key={day} className="min-w-0 border-e border-newBorder last:border-e-0">
-              <div className="flex h-[28px] items-center justify-center gap-[6px] border-b border-newBorder text-[11px] font-[500] text-textItemBlur">
-                {day}
-                <span
-                  className={
-                    today
-                      ? 'grid size-[18px] place-items-center rounded-full bg-btnPrimary text-[10px] font-[600] text-white'
-                      : ''
-                  }
-                >
-                  {date}
-                </span>
-              </div>
-              <div className="relative h-[calc(100%-28px)]">
-                {HOURS.map((h) => (
-                  <span
-                    key={h}
-                    style={{ top: `${top(h)}%` }}
-                    className="absolute inset-x-0 border-t border-newBorder/60"
-                  />
-                ))}
-                {chips.map((c) => (
-                  <div
-                    key={c.label}
-                    style={{ top: `${top(c.at)}%` }}
-                    className={`absolute inset-x-[4px] flex items-center gap-[4px] rounded-[6px] px-[5px] py-[4px] text-[10px] font-[500] ${c.tone}`}
-                  >
-                    <img
-                      src={ICON(c.icon)}
-                      alt=""
-                      className="size-[12px] shrink-0 rounded-[3px]"
-                    />
-                    <span className="truncate">{c.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          <p className="text-[13px] text-white/60">
+            {t(
+              'auth_showcase_channels',
+              'One calendar for the 30+ channels you publish to.'
+            )}
+          </p>
         </div>
       </div>
-
-      {/* status bar */}
-      <div className="flex items-center justify-between border-t border-newBorder px-[16px] py-[10px] text-[11px] text-textItemBlur">
-        <span>{TOTAL} posts scheduled this week</span>
-        <span className="hidden sm:inline">Drag a post to reschedule</span>
-      </div>
-    </div>
+    </aside>
   );
 };
