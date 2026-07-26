@@ -125,7 +125,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <TopMenu />
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[16px] overflow-hidden flex flex-col gap-[1px] blurMe border border-[var(--glass-border)]">
+                    <div className="flex-1 bg-[var(--glass-surface)] backdrop-blur-xl rounded-[16px] overflow-hidden flex flex-col gap-[1px] blurMe border border-[var(--glass-border)]">
                       <div className="flex bg-[var(--glass-surface)] backdrop-blur-xl h-[74px] px-[22px] items-center border-b border-[var(--glass-border)]">
                         <div className="text-[24px] font-[600] flex flex-1">
                           <Title />

@@ -32,8 +32,8 @@
 body {
   /* Mapped Out — dreamy depth over the base ground (Phase 1) */
   background:
-    radial-gradient(46% 40% at 85% -6%, rgba(140, 158, 205, 0.10), transparent 62%),
-    radial-gradient(44% 46% at 2% 106%, rgba(158, 146, 196, 0.08), transparent 60%),
+    radial-gradient(50% 42% at 85% -8%, rgba(120, 160, 220, 0.16), transparent 62%),
+    radial-gradient(46% 48% at 0% 108%, rgba(92, 154, 214, 0.12), transparent 60%),
     var(--new-bgColor) !important;
   background-attachment: fixed !important;
   color: var(--new-btn-text);

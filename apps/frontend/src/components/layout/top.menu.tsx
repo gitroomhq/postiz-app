@@ -34,6 +34,27 @@ export const useMenuItem = () => {
 
   const firstMenu = [
     {
+      name: t('dashboard', 'Dashboard'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M3 13h8V3H3zM13 21h8V3h-8zM3 21h8v-6H3z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/dashboard',
+    },
+    {
       name: t('clients', 'Clients'),
       icon: (
         <svg
