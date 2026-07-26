@@ -116,22 +116,17 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <div className="flex-1 flex gap-[8px]">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
-                      <div
-                        id="left-menu"
-                        className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
-                          user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
-                        )}
-                      >
-                        <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
-                          <Logo />
-                          <TopMenu />
-                        </div>
+                    <div
+                      id="left-menu"
+                      className="flex flex-col w-[232px] shrink-0 rounded-[16px] bg-[var(--glass-surface)] backdrop-blur-xl border border-[var(--glass-border)]"
+                    >
+                      <div className="flex flex-col h-full gap-[18px] flex-1 py-[18px] px-[12px] overflow-y-auto no-scrollbar">
+                        <Logo />
+                        <TopMenu />
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
+                    <div className="flex-1 bg-newBgLineColor rounded-[16px] overflow-hidden flex flex-col gap-[1px] blurMe border border-[var(--glass-border)]">
+                      <div className="flex bg-[var(--glass-surface)] backdrop-blur-xl h-[74px] px-[22px] items-center border-b border-[var(--glass-border)]">
                         <div className="text-[24px] font-[600] flex flex-1">
                           <Title />
                         </div>
