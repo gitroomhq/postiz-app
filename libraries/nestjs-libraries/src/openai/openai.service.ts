@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import OpenAI from 'openai';
 import { shuffle } from 'lodash';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
+import {
+  createImageOpenAIClient,
+  createTextOpenAIClient,
+  DEFAULT_OPENAI_IMAGE_MODEL,
+  getTextAiModel,
+} from '@gitroom/nestjs-libraries/openai/ai.provider.config';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-});
+const textOpenai = createTextOpenAIClient();
+const imageOpenai = createImageOpenAIClient();
 
 const PicturePrompt = z.object({
   prompt: z.string(),
@@ -22,9 +26,9 @@ export class OpenaiService {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.
     const generate = (
-      await openai.images.generate({
+      await imageOpenai.images.generate({
         prompt,
-        model: 'chatgpt-image-latest',
+        model: DEFAULT_OPENAI_IMAGE_MODEL,
         size: isVertical ? '1024x1536' : '1024x1024',
       })
     ).data[0];
@@ -35,8 +39,8 @@ export class OpenaiService {
   async generatePromptForPicture(prompt: string) {
     return (
       (
-        await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+        await textOpenai.chat.completions.parse({
+          model: getTextAiModel(),
           messages: [
             {
               role: 'system',
@@ -56,8 +60,8 @@ export class OpenaiService {
   async generateVoiceFromText(prompt: string) {
     return (
       (
-        await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+        await textOpenai.chat.completions.parse({
+          model: getTextAiModel(),
           messages: [
             {
               role: 'system',
@@ -77,7 +81,7 @@ export class OpenaiService {
   async generatePosts(content: string) {
     const posts = (
       await Promise.all([
-        openai.chat.completions.create({
+        textOpenai.chat.completions.create({
           messages: [
             {
               role: 'assistant',
@@ -91,9 +95,9 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: getTextAiModel(),
         }),
-        openai.chat.completions.create({
+        textOpenai.chat.completions.create({
           messages: [
             {
               role: 'assistant',
@@ -107,7 +111,7 @@ export class OpenaiService {
           ],
           n: 5,
           temperature: 1,
-          model: 'gpt-4.1',
+          model: getTextAiModel(),
         }),
       ])
     ).flatMap((p) => p.choices);
@@ -133,7 +137,7 @@ export class OpenaiService {
     );
   }
   async extractWebsiteText(content: string) {
-    const websiteContent = await openai.chat.completions.create({
+    const websiteContent = await textOpenai.chat.completions.create({
       messages: [
         {
           role: 'assistant',
@@ -145,7 +149,7 @@ export class OpenaiService {
           content,
         },
       ],
-      model: 'gpt-4.1',
+      model: getTextAiModel(),
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
@@ -164,8 +168,8 @@ export class OpenaiService {
 
     const posts =
       (
-        await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+        await textOpenai.chat.completions.parse({
+          model: getTextAiModel(),
           messages: [
             {
               role: 'system',
@@ -197,8 +201,8 @@ export class OpenaiService {
             try {
               return (
                 (
-                  await openai.chat.completions.parse({
-                    model: 'gpt-4.1',
+                  await textOpenai.chat.completions.parse({
+                    model: getTextAiModel(),
                     messages: [
                       {
                         role: 'system',
@@ -233,8 +237,8 @@ export class OpenaiService {
         const message = `You are an assistant that takes a text and break it into slides, each slide should have an image prompt and voice text to be later used to generate a video and voice, image prompt should capture the essence of the slide and also have a back dark gradient on top, image prompt should not contain text in the picture, generate between 3-5 slides maximum`;
         const parse =
           (
-            await openai.chat.completions.parse({
-              model: 'gpt-4.1',
+            await textOpenai.chat.completions.parse({
+              model: getTextAiModel(),
               messages: [
                 {
                   role: 'system',
