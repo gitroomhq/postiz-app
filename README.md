@@ -74,7 +74,7 @@
 <p align="center">
   <a href="https://postqueen.ai"><img src=".github/assets/cta-cloud.svg" height="52" alt="Start free for 7 days" /></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/GkhanKINAY/postqueen-docker-compose"><img src=".github/assets/cta-selfhost.svg" height="52" alt="Self-host it free" /></a>
+  <a href="https://docs.postqueen.ai/installation/overview"><img src=".github/assets/cta-selfhost.svg" height="52" alt="Self-host it free" /></a>
 </p>
 
 <br/>
@@ -655,7 +655,7 @@ On npm: [`postqueen`](https://www.npmjs.com/package/postqueen) (CLI) · [`@postq
 <p align="center">
   <a href="https://postqueen.ai"><img src=".github/assets/cta-cloud.svg" height="52" alt="Start free for 7 days" /></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/GkhanKINAY/postqueen-docker-compose"><img src=".github/assets/cta-selfhost.svg" height="52" alt="Self-host it free" /></a>
+  <a href="https://docs.postqueen.ai/installation/overview"><img src=".github/assets/cta-selfhost.svg" height="52" alt="Self-host it free" /></a>
 </p>
 
 ## License
