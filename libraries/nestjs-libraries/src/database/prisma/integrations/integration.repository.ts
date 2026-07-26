@@ -599,6 +599,23 @@ export class IntegrationRepository {
     });
   }
 
+  // Last successfully-published post date per integration for an org — powers the
+  // "Last publish" column on the Accounts page. Derived (Integration has no stored
+  // last-post field). Read-only aggregate; safe/additive.
+  getLastPublishedDates(org: string) {
+    return this._posts.model.post.groupBy({
+      by: ['integrationId'],
+      where: {
+        organizationId: org,
+        state: 'PUBLISHED',
+        deletedAt: null,
+      },
+      _max: {
+        publishDate: true,
+      },
+    });
+  }
+
   deleteChannel(org: string, id: string) {
     return this._integration.model.integration.update({
       where: {

@@ -157,6 +157,31 @@ export class IntegrationsController {
     };
   }
 
+  // Last successful publish per channel — powers the Accounts page "Last publish"
+  // column. Scoped identically to /list so Account Managers only see their channels.
+  @Get('/last-published')
+  async getLastPublished(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User
+  ) {
+    const scope = await this._integrationService.getScope(user, org.id);
+    const rows = await this._integrationService.getLastPublishedDates(org.id);
+    const allowed = scope.all ? null : new Set(scope.integrationIds);
+    return rows.reduce<Record<string, string>>((acc, row) => {
+      if (!row.integrationId) {
+        return acc;
+      }
+      if (allowed && !allowed.has(row.integrationId)) {
+        return acc;
+      }
+      const date = row._max?.publishDate;
+      if (date) {
+        acc[row.integrationId] = new Date(date).toISOString();
+      }
+      return acc;
+    }, {});
+  }
+
   @Post('/:id/settings')
   async updateProviderSettings(
     @GetOrgFromRequest() org: Organization,

@@ -55,6 +55,27 @@ export const useMenuItem = () => {
       path: '/clients',
     },
     {
+      name: t('accounts', 'Accounts'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M18 6.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM6 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18 22.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8.15 10.85l7.7-4.2M8.15 13.15l7.7 4.2"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/accounts',
+    },
+    {
       name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
       icon: (
         <svg

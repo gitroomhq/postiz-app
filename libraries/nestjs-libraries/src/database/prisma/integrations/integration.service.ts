@@ -456,6 +456,10 @@ export class IntegrationService {
     return this._integrationRepository.getPostsForChannel(org, id);
   }
 
+  async getLastPublishedDates(org: string) {
+    return this._integrationRepository.getLastPublishedDates(org);
+  }
+
   async deleteChannel(org: string, id: string) {
     return this._integrationRepository.deleteChannel(org, id);
   }
