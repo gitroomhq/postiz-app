@@ -38,11 +38,30 @@ Preview artifact (the agreed look): https://claude.ai/code/artifact/0e20c13e-a77
 - **No profile in the sidebar** (it's top-right). **No emoji** in greetings.
 - Dashboard is content-forward + feature-dense (6 stat cards, Scheduled Today, Connected Accounts w/ health, Top Performing, Campaigns, Audience heatmap, Approvals).
 
-### Shell refinements still PENDING (I shipped a wide glass sidebar, not yet the full spec):
-1. Make the sidebar **collapsible** (hamburger toggle) + the **separate floating-pieces** structure (hamburger / menu / settings as distinct glass blocks).
-2. Move the theme toggle out of the top bar into **Settings**.
-3. Clean remaining **hardcoded purple `#612bd3`** in `components/launches/statistics.tsx`, `platform-analytics/render.analytics.tsx`, `layout/loading.tsx`.
-4. Unique nav icons + centered-when-collapsed (per the artifact).
+### ⚠️ HONEST VISUAL SCOPE — read this, it's the crux of the owner's frustration
+So far only **tokens (colors) + the sidebar** were changed. Verified live: the served CSS DOES have
+`#0a0c11`/`#5c9ad6`/`glass-surface` — the theme deployed. BUT the app still "looks like the old one"
+because **the bespoke demo look ≠ reskinned Postiz**. Every page/card/table/panel still uses Postiz's
+ORIGINAL component styling. Making it look like the artifact
+(https://claude.ai/code/artifact/0e20c13e-a77f-4be0-80f0-e2ff42f591f7) is a **systematic surface-by-surface
+restyle**, NOT a token swap. Do NOT keep tweaking tokens and calling it transformed — the owner sees through it.
+
+**The real restyle plan (do this deliberately next session):**
+1. **Shell, properly** — the sidebar as **separate floating glass pieces** (logo / hamburger / menu / settings),
+   **collapsible** (default icon-rail → hamburger expands), centered icons when collapsed, unique nav icons
+   (AI=sparkle), theme toggle moved to **Settings**, no profile in sidebar. (Owner's exact spec + artifact.)
+2. **Make the dreamy background actually VISIBLE** — right now it's on `body` but the content wrapper
+   (`bg-newBgLineColor`) covers it and the glows are too faint over near-black. Strengthen the glows and/or
+   make the content wrapper translucent so depth shows. This is a big part of the "wow" that's currently invisible.
+3. **Glass the content surfaces** — the panels/cards/tables inside pages (Postiz components) need the glass
+   treatment (translucent + blur + `--glass-border`), restyled page by page as each module is built.
+4. Clean remaining hardcoded purple `#612bd3` in `components/launches/statistics.tsx`,
+   `platform-analytics/render.analytics.tsx`, `layout/loading.tsx` (the `--color-forth` button purple + light
+   focus tokens are already fixed).
+
+Set expectations with the owner: the app becomes the demo **progressively** (shell first, then each page),
+not in one deploy. Best approach: do a focused "shell + dreamy-bg + one flagship page" deploy so he SEES a
+real transformation on at least one screen, then roll the same treatment across pages as modules ship.
 
 ## What's next — module by module (owner's phase order). Each REAL + functional + LIVE.
 
