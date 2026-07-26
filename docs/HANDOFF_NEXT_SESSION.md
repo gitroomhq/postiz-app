@@ -28,7 +28,8 @@
 - ✅ **Phase 0** (audit) + **Phase 2** (auth: per-client IDOR fix on posts by-id + group routes; 3-role model `SUPER_ADMIN`/`AGENCY_ADMIN`/`ACCOUNT_MANAGER` via **Option B** = keep the Prisma enum `SUPERADMIN/ADMIN/USER/CLIENT`, map on top; team-management gated `@OrgRoles(SUPERADMIN,ADMIN)`; 22 security unit tests) — **LIVE**.
 - ✅ **Phase 1 theme** — dark blue-glass tokens (`colors.scss` `.dark`/`.light` `--new-*`: killed purple `#612bd3`→`#5c9ad6`, grounds→`#0a0c11`), dreamy body gradient (`global.scss`), real Mapped Out logo (already in `logo.tsx`) — **LIVE**.
 - ✅ **Clients module** — `/clients` page (`components/clients/clients.component.tsx` + route + nav in `top.menu.tsx`): real customers list w/ accounts, health, active/total, status, search/filter, expand-to-see-accounts, real "Add Client" (`POST /integrations/customer` → `createCustomer` service+repo, admin-gated). **LIVE**.
-- ⏳ **Glass shell** (commit pushed, deploying in background at handoff time) — wide 232px glass sidebar (`layout.component.tsx`) + readable horizontal nav items (`menu-item.tsx`) + glass top bar + theme-aware `--glass-surface/border/hover` tokens. **Verify it's live**: hard-refresh in Dark mode; SSH grep marker `glass-surface`. If the deploy didn't finish, re-run step 2 of the pipeline.
+- ✅ **Glass shell** — wide 232px glass sidebar (`layout.component.tsx`) + horizontal nav items (`menu-item.tsx`) + glass top bar + theme-aware `--glass-surface/border/hover` tokens — **LIVE** (verified in container, marker `glass-surface`). NOTE: this is the WIDE glass sidebar, NOT yet the full "separate floating pieces / collapsible" spec — that refinement is still pending (see Honest Visual Scope §1 below).
+- ✅ **Accounts module** (session 2026-07-26) — `/accounts` (`components/accounts/accounts.component.tsx` + route + nav): every connected channel as a card w/ platform-logo overlay, owning client, connection health (active / reconnect / finish-setup / disabled) and **last publish**. New additive endpoint `GET /integrations/last-published` (repo `getLastPublishedDates` groupBy PUBLISHED posts + service; scoped like `/list`, no schema change). Real actions: **Reconnect** (`GET /integrations/social/:identifier?refresh=:internalId` → redirect), **Assign/Unassign client** (`PUT /integrations/:id/customer-name`), **Enable/Disable** (`POST /integrations/enable|disable`). Search + status filters + summary counts. **LIVE** (commit `ef2c1ada`; verified route + marker + endpoint→401 in container). ⚠️ Reconnect/Disable are wired but were NOT exercised against the live Époque IG (owner rule).
 
 ## Design direction (APPROVED by owner — build to this)
 
@@ -65,8 +66,8 @@ real transformation on at least one screen, then roll the same treatment across 
 
 ## What's next — module by module (owner's phase order). Each REAL + functional + LIVE.
 
-1. **Accounts** — social accounts page: each account card w/ platform, client, connection status, token health (reuse `Integration.refreshNeeded/disabled`), last-publish, reconnect. Data: `/integrations/list`.
-2. **Client Dashboard** (per-client) — overview, accounts, content, campaigns, analytics tabs. Needs some new endpoints.
+1. ✅ **Accounts** — DONE + LIVE (see Live state above).
+2. **Client Dashboard** (per-client) — overview, accounts, content, campaigns, analytics tabs. Needs some new endpoints. **← NEXT (owner says "go on")**
 3. **Calendar + Composer premium pass** — restyle the EXISTING (already-functional) calendar/`new-launch` composer/schedule to the new look. Do NOT rebuild working scheduling/publishing.
 4. **Post Library** — folder tree (client→year→month→campaign) over `Post`. New grouping UI; posts already exist.
 5. **Media Library** — folders/tags over existing `Media`.
