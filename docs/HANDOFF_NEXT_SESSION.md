@@ -77,7 +77,9 @@ real transformation on at least one screen, then roll the same treatment across 
 8. **Analytics + Reports** — extend existing analytics; Reports = export.
 
 ## The big INSTAGRAM item (deferred by owner, do NOT touch without go-ahead)
-Root cause found (docs/MAPPED_OUT_UPGRADE_AUDIT.md §6): a token-refresh failure sets `Integration.refreshNeeded=true` but not `disabled`, so the account shows "Connected" while the publish workflow silently early-returns (no ERROR). **Owner said: do NOT touch the live Époque Instagram account or do any IG publishing/testing** until he explicitly says so. External social actions on client profiles are prohibited.
+Root cause found (docs/MAPPED_OUT_UPGRADE_AUDIT.md §6): a token-refresh failure sets `Integration.refreshNeeded=true` but not `disabled`, so the account shows "Connected" while the publish workflow silently early-returns (no ERROR).
+
+**CLARIFIED RULE (owner, 2026-07-26):** the prohibition is specifically about **NOT accidentally POSTING or DELETING** on a CLIENT's account (e.g. Époque IG). **Reads are FINE** — pulling analytics / followers / impressions / post history does not post or delete, so it's allowed on client accounts (incl. the live-provider `/analytics/:integration` endpoints + OAuth token refresh they do). **DBU Group is the owner's OWN account → free to use/test.** So: never trigger publish/delete on a client channel by mistake; read-only actions (analytics, lists) are OK; test write flows only on DBU Group. (This supersedes the earlier "do no IG anything" note — that was over-cautious.)
 
 ## DBU integration — preserve, don't rebuild
 DBU System ⇄ DBU Portal ⇄ Mapped Out. Only fix/strengthen sync (outbound is fire-and-forget → durability gap, §8). Contract: `itsmohaji/dbu-group-system/docs/integration/*`. Never bake DBU into the core (keep it an optional module — matters for the future SaaS: same codebase becomes SaaS by enabling signup + Stripe billing + org-per-customer; DBU stays an agency-only add-on).
