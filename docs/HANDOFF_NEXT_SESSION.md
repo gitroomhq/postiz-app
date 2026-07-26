@@ -82,6 +82,28 @@ Root cause found (docs/MAPPED_OUT_UPGRADE_AUDIT.md §6): a token-refresh failure
 
 **CLARIFIED RULE (owner, 2026-07-26):** the prohibition is specifically about **NOT accidentally POSTING or DELETING** on a CLIENT's account (e.g. Époque IG). **Reads are FINE** — pulling analytics / followers / impressions / post history does not post or delete, so it's allowed on client accounts (incl. the live-provider `/analytics/:integration` endpoints + OAuth token refresh they do). **DBU Group is the owner's OWN account → free to use/test.** So: never trigger publish/delete on a client channel by mistake; read-only actions (analytics, lists) are OK; test write flows only on DBU Group. (This supersedes the earlier "do no IG anything" note — that was over-cautious.)
 
+## Social connect (OAuth) failures — ROOT CAUSE (proven 2026-07-26, commit `c98effa1`)
+Symptom: "LinkedIn (and sometimes Instagram) won't connect" even with correct client-id/secret/redirect.
+**Proven via the container nginx access log** — LinkedIn's authorize-step redirect returned
+`error=unauthorized_scope_error&error_description=Scope "w_organization_social" is not authorized for your
+application`. LinkedIn rejects the ENTIRE auth request if ANY requested scope isn't approved for the app, so
+no `code` is issued → the `/api/integrations/social-connect/:p` callback POSTs with `error` → 400 →
+`authenticate()`/`checkScopes` never even run (that's why provider-level logging showed nothing).
+**Root cause:** the providers hard-code elevated, approval-gated scopes.
+- **Personal `linkedin`** was requesting org scopes (`rw_organization_admin`/`w_organization_social`/
+  `r_organization_social`) + `r_basicprofile` it does NOT need → **CODE FIX shipped**: reduced to
+  `['openid','profile','w_member_social']` (self-serve "Sign In w/ OIDC" + "Share on LinkedIn"). Personal
+  LinkedIn now connects with NO special approval. (`checkScopes` uses the same set, so it stays consistent.)
+- **`linkedin-page`** genuinely needs the org scopes → requires the LinkedIn **"Community Management API"**
+  product to be approved on the app (owner action; dropped `r_basicprofile` so CMA is the only approval).
+- **`instagram`** scopes (`business_management`/`instagram_content_publish`/`instagram_manage_insights`/…)
+  need Meta **App Review / Advanced Access**, or the connecting FB user must be an app **tester/admin** (why
+  it "sometimes" works). Left unchanged — they're required for IG features; the fix is approval/tester, not code.
+**DEBUG TECHNIQUE that worked (reuse):** provider `authenticate()` logging is useless for authorize-step
+rejections (they never reach it). Read the **container nginx access log** instead:
+`docker exec <postiz> tail -300 /var/log/nginx/access.log | grep -iE "social/|social-connect"` — the
+`?error=...&error_description=...` on the callback redirect is LinkedIn/Meta telling you the exact reason.
+
 ## DBU integration — preserve, don't rebuild
 DBU System ⇄ DBU Portal ⇄ Mapped Out. Only fix/strengthen sync (outbound is fire-and-forget → durability gap, §8). Contract: `itsmohaji/dbu-group-system/docs/integration/*`. Never bake DBU into the core (keep it an optional module — matters for the future SaaS: same codebase becomes SaaS by enabling signup + Stripe billing + org-per-customer; DBU stays an agency-only add-on).
 
