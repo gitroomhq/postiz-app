@@ -7,6 +7,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useRouter } from 'next/navigation';
 
 interface Customer {
   id: string;
@@ -90,45 +91,13 @@ const AddClientModal = ({ onCreated }: { onCreated: () => void }) => {
   );
 };
 
-const AccountRow = ({ a }: { a: Integration }) => (
-  <div className="flex items-center gap-[10px] py-[8px]">
-    <div className="relative">
-      {a.picture ? (
-        <img
-          src={a.picture}
-          alt={a.name}
-          className="w-[26px] h-[26px] rounded-full object-cover"
-        />
-      ) : (
-        <div className="w-[26px] h-[26px] rounded-full bg-newBgLineColor" />
-      )}
-      <span
-        className={`absolute -bottom-[1px] -end-[1px] w-[9px] h-[9px] rounded-full border-2 border-newBgColorInner ${
-          a.disabled || a.refreshNeeded ? 'bg-[#daa646]' : 'bg-[#47b985]'
-        }`}
-      />
-    </div>
-    <div className="flex-1 min-w-0">
-      <div className="text-[12.5px] font-[600] truncate">{a.name}</div>
-      <div className="text-[11px] text-textItemBlur capitalize">
-        {a.providerIdentifier?.split('-')[0]}
-      </div>
-    </div>
-    {(a.disabled || a.refreshNeeded) && (
-      <span className="text-[10.5px] text-[#daa646]">
-        {a.refreshNeeded ? 'Reconnect' : 'Disabled'}
-      </span>
-    )}
-  </div>
-);
-
 export const ClientsComponent = () => {
   const fetch = useFetch();
   const t = useT();
   const modals = useModals();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | Status>('all');
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = useCallback(
     async (url: string) => (await fetch(url)).json(),
@@ -266,11 +235,10 @@ export const ClientsComponent = () => {
         {!loading &&
           filtered.map((c) => {
             const meta = STATUS_META[c.status];
-            const isOpen = expanded === c.id;
             return (
               <div key={c.id} className="border-b border-newTableBorder last:border-b-0">
                 <div
-                  onClick={() => setExpanded(isOpen ? null : c.id)}
+                  onClick={() => router.push('/clients/' + c.id)}
                   className="grid grid-cols-[minmax(0,2fr)_minmax(0,2fr)_120px_140px_40px] gap-[10px] px-[18px] py-[13px] items-center cursor-pointer hover:bg-newBgLineColor/40 transition-colors"
                 >
                   <div className="flex items-center gap-[11px] min-w-0">
@@ -342,33 +310,13 @@ export const ClientsComponent = () => {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className={`inline transition-transform ${
-                        isOpen ? 'rotate-90' : ''
-                      }`}
+                      className="inline"
                     >
                       <path d="m9 6 6 6-6 6" />
                     </svg>
                   </div>
                 </div>
 
-                {isOpen && (
-                  <div className="px-[18px] pb-[14px] ps-[65px]">
-                    {c.accounts.length === 0 ? (
-                      <div className="text-[12.5px] text-textItemBlur py-[6px]">
-                        {t(
-                          'no_accounts_connected',
-                          'No social accounts connected to this client yet.'
-                        )}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-x-[24px]">
-                        {c.accounts.map((a) => (
-                          <AccountRow key={a.id} a={a} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}
