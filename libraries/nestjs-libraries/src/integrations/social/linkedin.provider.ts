@@ -31,15 +31,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Personal LinkedIn profile posting needs ONLY the self-serve scopes:
+  // "Sign In with LinkedIn using OpenID Connect" (openid, profile) + "Share on
+  // LinkedIn" (w_member_social). The organization scopes (rw_organization_admin
+  // / w_organization_social / r_organization_social) and r_basicprofile are
+  // approval-gated (Community Management API / Profile API) and are NOT needed
+  // to post as a person — requesting them made LinkedIn reject the entire
+  // authorization with "unauthorized_scope_error". Company Pages use the
+  // separate linkedin-page provider (which does need those, + CMA approval).
+  scopes = ['openid', 'profile', 'w_member_social'];
   override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
@@ -169,14 +169,21 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const body = new URLSearchParams();
     body.append('grant_type', 'authorization_code');
     body.append('code', params.code);
-    const redirectUri = `${process.env.FRONTEND_URL}/integrations/social/linkedin${
-      params.refresh ? `?refresh=${params.refresh}` : ''
-    }`;
-    body.append('redirect_uri', redirectUri);
+    body.append(
+      'redirect_uri',
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
+        params.refresh ? `?refresh=${params.refresh}` : ''
+      }`
+    );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
 
-    const tokenResponse = await (
+    const {
+      access_token: accessToken,
+      expires_in: expiresIn,
+      refresh_token: refreshToken,
+      scope,
+    } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -185,37 +192,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
         body,
       })
     ).json();
-
-    // [MO-OAUTH-DEBUG] TEMPORARY diagnostics — capture the exact LinkedIn
-    // response the code otherwise discards (secrets masked). Remove once the
-    // root cause is confirmed.
-    console.log(
-      '[MO-OAUTH-DEBUG][linkedin] redirect_uri=',
-      redirectUri,
-      '| refresh=',
-      params.refresh || '(none)'
-    );
-    console.log(
-      '[MO-OAUTH-DEBUG][linkedin] token_response=',
-      JSON.stringify({
-        ...tokenResponse,
-        access_token: tokenResponse?.access_token ? '<present>' : '<MISSING>',
-        refresh_token: tokenResponse?.refresh_token ? '<present>' : '<absent>',
-      })
-    );
-    console.log(
-      '[MO-OAUTH-DEBUG][linkedin] required=',
-      this.scopes.join(' '),
-      '| granted=',
-      tokenResponse?.scope
-    );
-
-    const {
-      access_token: accessToken,
-      expires_in: expiresIn,
-      refresh_token: refreshToken,
-      scope,
-    } = tokenResponse;
 
     this.checkScopes(this.scopes, scope);
 

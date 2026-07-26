@@ -25,11 +25,15 @@ export class LinkedinPageProvider
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
+  // Company Page posting requires the LinkedIn "Community Management API"
+  // product (organization scopes below) — the app MUST be approved for it or
+  // LinkedIn rejects the authorization with "unauthorized_scope_error". Dropped
+  // r_basicprofile (legacy Profile-API scope, also approval-gated) — identity
+  // comes from openid/profile — so the only approval this needs is CMA.
   override scopes = [
     'openid',
     'profile',
     'w_member_social',
-    'r_basicprofile',
     'rw_organization_admin',
     'w_organization_social',
     'r_organization_social',
