@@ -56,8 +56,43 @@ export class MediaService {
     return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
   }
 
-  getMedia(org: string, page: number, search?: string) {
-    return this._mediaRepository.getMedia(org, page, search);
+  getMedia(org: string, page: number, search?: string, folderId?: string) {
+    return this._mediaRepository.getMedia(org, page, search, folderId);
+  }
+
+  async listFolders(org: string) {
+    const [folders, counts] = await Promise.all([
+      this._mediaRepository.listFolders(org),
+      this._mediaRepository.folderCounts(org),
+    ]);
+    const countMap = new Map<string | null, number>();
+    for (const c of counts) {
+      countMap.set(c.folderId, c._count?._all || 0);
+    }
+    return {
+      folders: folders.map((f) => ({
+        ...f,
+        count: countMap.get(f.id) || 0,
+      })),
+      unfiled: countMap.get(null) || 0,
+      total: Array.from(countMap.values()).reduce((s, n) => s + n, 0),
+    };
+  }
+
+  createFolder(org: string, name: string) {
+    return this._mediaRepository.createFolder(org, name);
+  }
+
+  renameFolder(org: string, id: string, name: string) {
+    return this._mediaRepository.renameFolder(org, id, name);
+  }
+
+  deleteFolder(org: string, id: string) {
+    return this._mediaRepository.deleteFolder(org, id);
+  }
+
+  assignFolder(org: string, mediaId: string, folderId: string | null) {
+    return this._mediaRepository.assignFolder(org, mediaId, folderId);
   }
 
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {

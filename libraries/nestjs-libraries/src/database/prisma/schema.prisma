@@ -243,6 +243,7 @@ model Media {
   thumbnail          String?
   alt                String?
   thumbnailTimestamp Int?
+  folderId           String?
   organization       Organization        @relation(fields: [organizationId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]
@@ -251,6 +252,21 @@ model Media {
   @@index([name])
   @@index([organizationId])
   @@index([type])
+  @@index([folderId])
+}
+
+// Media Library folders — org-scoped organization over existing Media.
+// Additive/standalone (Media.folderId references this by id; kept as a plain
+// scalar, no Prisma relation, to keep the boot-time db push minimal + safe).
+model MediaFolder {
+  id             String    @id @default(uuid())
+  name           String
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  @@index([organizationId])
 }
 
 model SocialMediaAgency {

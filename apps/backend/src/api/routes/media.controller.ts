@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -34,6 +35,56 @@ export class MediaController {
     private _mediaService: MediaService,
     private _subscriptionService: SubscriptionService
   ) {}
+
+  // --- Media Library folders ---
+  // Declared BEFORE the generic POST '/:endpoint' (R2 handler) and DELETE '/:id'
+  // so '/media/folders*' is never captured by those param routes.
+  @Get('/folders')
+  listFolders(@GetOrgFromRequest() org: Organization) {
+    return this._mediaService.listFolders(org.id);
+  }
+
+  @Post('/folders')
+  createFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Body('name') name: string
+  ) {
+    const clean = (name || '').trim().slice(0, 120);
+    if (!clean) {
+      return { error: 'Folder name is required' };
+    }
+    return this._mediaService.createFolder(org.id, clean);
+  }
+
+  @Put('/folders/:id')
+  renameFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('name') name: string
+  ) {
+    const clean = (name || '').trim().slice(0, 120);
+    if (!clean) {
+      return { error: 'Folder name is required' };
+    }
+    return this._mediaService.renameFolder(org.id, id, clean);
+  }
+
+  @Delete('/folders/:id')
+  deleteFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._mediaService.deleteFolder(org.id, id);
+  }
+
+  @Post('/:id/folder')
+  assignFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body('folderId') folderId: string | null
+  ) {
+    return this._mediaService.assignFolder(org.id, id, folderId || null);
+  }
 
   @Delete('/:id')
   deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
@@ -182,9 +233,10 @@ export class MediaController {
   getMedia(
     @GetOrgFromRequest() org: Organization,
     @Query('page') page: number,
-    @Query('search') search?: string
+    @Query('search') search?: string,
+    @Query('folderId') folderId?: string
   ) {
-    return this._mediaService.getMedia(org.id, page, search);
+    return this._mediaService.getMedia(org.id, page, search, folderId);
   }
 
   @Get('/video-options')

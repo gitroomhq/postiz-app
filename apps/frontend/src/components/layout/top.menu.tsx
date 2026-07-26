@@ -160,6 +160,27 @@ export const useMenuItem = () => {
       path: '/media',
     },
     {
+      name: t('media_library', 'Media Library'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M9 14.5l2 2 3.5-3.5"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/media-library',
+    },
+    {
       name: t('plugs', 'Plugs'),
       icon: (
         <svg

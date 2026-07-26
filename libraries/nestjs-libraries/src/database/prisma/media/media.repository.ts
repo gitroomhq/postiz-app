@@ -4,7 +4,10 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 
 @Injectable()
 export class MediaRepository {
-  constructor(private _media: PrismaRepository<'media'>) {}
+  constructor(
+    private _media: PrismaRepository<'media'>,
+    private _mediaFolder: PrismaRepository<'mediaFolder'>
+  ) {}
 
   saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
     return this._media.model.media.create({
@@ -72,7 +75,12 @@ export class MediaRepository {
     });
   }
 
-  async getMedia(org: string, page: number, search?: string) {
+  async getMedia(
+    org: string,
+    page: number,
+    search?: string,
+    folderId?: string
+  ) {
     const pageNum = (page || 1) - 1;
     const trimmedSearch = search?.trim();
     const searchFilter = trimmedSearch
@@ -83,6 +91,13 @@ export class MediaRepository {
           },
         }
       : {};
+    // 'unfiled' = media with no folder; a real id = that folder; else all.
+    const folderFilter =
+      folderId === 'unfiled'
+        ? { folderId: null }
+        : folderId
+        ? { folderId }
+        : {};
     const query = {
       where: {
         organization: {
@@ -90,6 +105,7 @@ export class MediaRepository {
         },
         deletedAt: null,
         ...searchFilter,
+        ...folderFilter,
       },
     };
     const pages = Math.ceil((await this._media.model.media.count(query)) / 18);
@@ -98,6 +114,7 @@ export class MediaRepository {
         organizationId: org,
         deletedAt: null,
         ...searchFilter,
+        ...folderFilter,
       },
       orderBy: {
         createdAt: 'desc',
@@ -110,6 +127,8 @@ export class MediaRepository {
         thumbnail: true,
         alt: true,
         thumbnailTimestamp: true,
+        folderId: true,
+        type: true,
       },
       skip: pageNum * 18,
       take: 18,
@@ -119,5 +138,55 @@ export class MediaRepository {
       pages,
       results,
     };
+  }
+
+  // --- Media Library folders (org-scoped) ---
+  listFolders(org: string) {
+    return this._mediaFolder.model.mediaFolder.findMany({
+      where: { organizationId: org, deletedAt: null },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
+  }
+
+  folderCounts(org: string) {
+    return this._media.model.media.groupBy({
+      by: ['folderId'],
+      where: { organizationId: org, deletedAt: null },
+      _count: { _all: true },
+    });
+  }
+
+  createFolder(org: string, name: string) {
+    return this._mediaFolder.model.mediaFolder.create({
+      data: { organizationId: org, name },
+      select: { id: true, name: true },
+    });
+  }
+
+  renameFolder(org: string, id: string, name: string) {
+    return this._mediaFolder.model.mediaFolder.updateMany({
+      where: { id, organizationId: org },
+      data: { name },
+    });
+  }
+
+  async deleteFolder(org: string, id: string) {
+    // Un-file this folder's media (never orphan it), then soft-delete the folder.
+    await this._media.model.media.updateMany({
+      where: { organizationId: org, folderId: id },
+      data: { folderId: null },
+    });
+    return this._mediaFolder.model.mediaFolder.updateMany({
+      where: { id, organizationId: org },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  assignFolder(org: string, mediaId: string, folderId: string | null) {
+    return this._media.model.media.updateMany({
+      where: { id: mediaId, organizationId: org },
+      data: { folderId: folderId || null },
+    });
   }
 }
