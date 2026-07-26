@@ -37,6 +37,13 @@ interface PostItem {
     picture?: string;
   };
 }
+interface AnalyticsDataItem {
+  label: string;
+  data: Array<{ total: number; date: string }>;
+  average?: boolean;
+  percentageChange?: number;
+  available?: boolean;
+}
 
 type Tab = 'overview' | 'accounts' | 'content' | 'analytics';
 type Health = 'active' | 'reconnect' | 'setup' | 'disabled';
@@ -192,6 +199,145 @@ const PostRow: FC<{ p: PostItem; t: (k: string, d: string) => string }> = ({
   );
 };
 
+const fmtNum = (n: number | string) =>
+  new Intl.NumberFormat().format(Number(n) || 0);
+
+const Sparkline: FC<{ data: { total: number }[] }> = ({ data }) => {
+  const pts = (data || []).map((d) => Number(d.total) || 0);
+  if (pts.length < 2) return null;
+  const max = Math.max(...pts);
+  const min = Math.min(...pts);
+  const range = max - min || 1;
+  const w = 100;
+  const h = 32;
+  const step = w / (pts.length - 1);
+  const coords = pts
+    .map(
+      (v, i) =>
+        `${(i * step).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`
+    )
+    .join(' ');
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      className="w-full h-[34px] text-btnPrimary"
+    >
+      <polyline
+        points={coords}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+};
+
+const Trend: FC<{ value: number; average?: boolean }> = ({ value, average }) => {
+  if (!value) return null;
+  const up = value > 0;
+  return (
+    <span
+      className={`flex items-center gap-[3px] text-[11.5px] font-[600] ${
+        up ? 'text-[#47b985]' : 'text-[#d16a6a]'
+      }`}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 12 12"
+        fill="currentColor"
+        className={up ? '' : 'rotate-180'}
+      >
+        <path d="M6 2.5 10 7.5H2z" />
+      </svg>
+      {Math.abs(value).toFixed(1)}
+      {average ? 'pp' : '%'}
+    </span>
+  );
+};
+
+const MetricCard: FC<{
+  item: AnalyticsDataItem;
+  t: (k: string, d: string) => string;
+}> = ({ item, t }) => {
+  if (item.available === false) {
+    return (
+      <div className="bg-newBgLineColor/40 border border-newTableBorder rounded-[14px] p-[14px] flex flex-col min-h-[118px]">
+        <div className="text-[12.5px] font-[600] text-textItemBlur">
+          {item.label}
+        </div>
+        <div className="flex-1 flex items-center text-[12px] text-textItemBlur">
+          {t('not_available_platform', 'Not available from platform API')}
+        </div>
+      </div>
+    );
+  }
+  const latest = item.data?.length ? item.data[item.data.length - 1].total : 0;
+  return (
+    <div className="glass-surface bg-newBgColorInner border border-newTableBorder rounded-[14px] p-[14px]">
+      <div className="flex items-center justify-between gap-[8px]">
+        <span className="text-[12.5px] font-[600] truncate">{item.label}</span>
+        {item.percentageChange !== undefined && (
+          <Trend value={item.percentageChange} average={item.average} />
+        )}
+      </div>
+      <div className="text-[26px] font-[700] tabular-nums mt-[6px] leading-none">
+        {fmtNum(latest)}
+      </div>
+      <div className="mt-[10px]">
+        <Sparkline data={item.data} />
+      </div>
+    </div>
+  );
+};
+
+const PlatformMetrics: FC<{
+  integrationId: string;
+  days: number;
+  t: (k: string, d: string) => string;
+}> = ({ integrationId, days, t }) => {
+  const fetch = useFetch();
+  const { data, isLoading } = useSWR(
+    integrationId ? `/analytics/${integrationId}?date=${days}` : null,
+    async (url: string) =>
+      (await (await fetch(url)).json()) as AnalyticsDataItem[],
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  if (isLoading) {
+    return (
+      <div className="text-[12.5px] text-textItemBlur py-[24px] text-center">
+        {t('loading_metrics', 'Loading platform metrics…')}
+      </div>
+    );
+  }
+  const items = Array.isArray(data) ? data : [];
+  if (!items.length) {
+    return (
+      <div className="text-[12.5px] text-textItemBlur py-[24px] text-center">
+        {t(
+          'no_platform_metrics',
+          'No platform metrics for this channel yet — it may need reconnecting.'
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px]">
+      {items.map((it, i) => (
+        <MetricCard key={`${it.label}-${i}`} item={it} t={t} />
+      ))}
+    </div>
+  );
+};
+
 export const ClientDashboardComponent: FC = () => {
   const params = useParams<{ id: string }>();
   const clientId = params.id;
@@ -201,6 +347,8 @@ export const ClientDashboardComponent: FC = () => {
   const t = useT();
   const [tab, setTab] = useState<Tab>('overview');
   const [contentFilter, setContentFilter] = useState<'all' | 'scheduled' | 'published' | 'draft'>('all');
+  const [metricChannelId, setMetricChannelId] = useState<string | null>(null);
+  const [metricDays, setMetricDays] = useState(30);
 
   const load = useCallback(async (url: string) => (await fetch(url)).json(), []);
   const loadPosts = useCallback(
@@ -740,10 +888,62 @@ export const ClientDashboardComponent: FC = () => {
             </div>
           </div>
 
+          {/* Live platform metrics (read-only; per channel, on demand) */}
+          {channels.length > 0 && (
+            <div className="glass-surface bg-newBgColorInner border border-newTableBorder rounded-[16px] p-[16px] flex flex-col gap-[14px]">
+              <div className="flex items-center justify-between gap-[10px] flex-wrap">
+                <div className="text-[13px] font-[600]">
+                  {t('platform_metrics', 'Platform metrics')}
+                </div>
+                <div className="flex items-center gap-[3px] bg-newBgLineColor rounded-[10px] p-[3px]">
+                  {[7, 30, 90].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setMetricDays(d)}
+                      className={`px-[10px] py-[5px] rounded-[7px] text-[11.5px] font-[600] transition-colors ${
+                        metricDays === d
+                          ? 'bg-btnPrimary text-white'
+                          : 'text-textItemBlur hover:text-newTextColor'
+                      }`}
+                    >
+                      {d}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-[8px] flex-wrap">
+                {channels.map((c) => {
+                  const sel = (metricChannelId || channels[0]?.id) === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setMetricChannelId(c.id)}
+                      className={`flex items-center gap-[7px] px-[10px] py-[6px] rounded-[10px] border text-[12px] font-[600] transition-colors ${
+                        sel
+                          ? 'border-btnPrimary bg-btnPrimary/10 text-newTextColor'
+                          : 'border-newTableBorder text-textItemBlur hover:text-newTextColor'
+                      }`}
+                    >
+                      <PlatformAvatar picture={c.picture} size={20} />
+                      <span className="truncate max-w-[130px]">{c.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <PlatformMetrics
+                integrationId={metricChannelId || channels[0]?.id || ''}
+                days={metricDays}
+                t={t}
+              />
+            </div>
+          )}
+
           <div className="text-[11.5px] text-textItemBlur">
             {t(
-              'analytics_db_note',
-              'Figures are computed from this client’s posts in Mapped Out. Platform reach & engagement metrics are available per channel on the Analytics page.'
+              'analytics_note_v2',
+              'Post volume is computed from this client’s posts in Mapped Out. Platform metrics are read live from each channel (read-only, cached ~1h); some metrics may be unavailable depending on the platform API.'
             )}
           </div>
         </div>
