@@ -7,6 +7,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mapped Out — real glass surfaces (translucent + blur), driven by the
+   --glass-* tokens in colors.scss. !important so it reliably beats Tailwind
+   bg-* / border-* utilities stacked on the same element. This is the class
+   every premium card/panel/cell uses (Accounts, Client Dashboard, Calendar
+   headers, composer modal, …). */
+.glass-surface {
+  background: var(--glass-surface) !important;
+  border: 1px solid var(--glass-border) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+.glass-hover {
+  transition: background-color 0.15s ease;
+}
+.glass-hover:hover {
+  background: var(--glass-hover) !important;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

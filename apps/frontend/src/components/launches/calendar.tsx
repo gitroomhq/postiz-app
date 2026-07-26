@@ -362,11 +362,11 @@ export const WeekView = () => {
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
         <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
+          <div className="z-10 glass-surface flex justify-center items-center flex-col h-[62px] rounded-[10px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
+              className="p-2 text-center glass-surface flex justify-center items-center flex-col h-[62px] rounded-[10px] sticky top-0 z-[20]"
             >
               <div className="text-[14px] font-[500] text-newTableText">
                 {day.name}
@@ -464,7 +464,7 @@ export const MonthView = () => {
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="z-[20] p-2 glass-surface flex justify-center items-center flex-col h-[62px] rounded-[10px] sticky top-0"
             >
               <div>{day}</div>
             </div>
@@ -1055,9 +1055,9 @@ const CalendarItem: FC<{
       // @ts-ignore
       ref={dragRef}
       className={clsx(
-        'w-full flex h-full flex-1 flex-col group',
+        'w-full flex h-full flex-1 flex-col group rounded-[10px] shadow-[0_3px_14px_-5px_rgba(0,0,0,0.45)] transition-shadow duration-200 hover:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.55)]',
         'relative',
-        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+        state === 'ERROR' && 'ring-2 ring-red-500'
       )}
       style={{
         opacity,

@@ -46,10 +46,10 @@ export const ModalWrapperComponent: FC<{
         <div className="absolute -top-[30px] left-0" ref={ref} />
       </div>
       <div
-        className="p-[32px] flex flex-col text-newTextColor bg-newBgColorInner rounded-[24px]"
+        className="p-[32px] flex flex-col text-newTextColor glass-surface rounded-[24px] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.75)]"
       >
         <div className="flex items-start mb-[24px]">
-          <div className="flex-1 text-[24px]">{title}</div>
+          <div className="flex-1 text-[24px] font-[600]">{title}</div>
           <div className="cursor-pointer" onClick={closeModal}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
