@@ -23,19 +23,14 @@ body {
   background-image: linear-gradient(145deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
-// The left rail. Same two brand values as .crown-gradient, run down the column
-// instead of across it: pop-600 behind the mark at the top, settling into brand
-// purple for the length of the menu, where white labels have the contrast they
-// need. Brand values again, so the rail is the same in light and dark — only
-// the surfaces around it change.
+// The left rail: the logo's own gradient, turned vertical. Same three stops as
+// .crown-gradient in the same order, spread across the full height of the
+// column so the colour moves the whole way down rather than resolving in the
+// first quarter — a short run of it reads as a band with an edge, not as a
+// gradient. Brand values again, so the rail is the same in light and dark and
+// only the surfaces around it change.
 .brand-rail {
-  background-image: linear-gradient(
-    180deg,
-    #e0189e 0%,
-    #7c3aed 28%,
-    #6d28d9 62%,
-    #5b21b6 100%
-  );
+  background-image: linear-gradient(180deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
 // Only suppress the outline for pointer interaction; keyboard focus must stay
