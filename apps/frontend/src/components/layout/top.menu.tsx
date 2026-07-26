@@ -118,6 +118,27 @@ export const useMenuItem = () => {
       path: '/analytics',
     },
     {
+      name: t('post_library', 'Post Library'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M4 5.5c0-.7 0-1.05.14-1.32.12-.24.31-.43.55-.55C4.95 3.5 5.3 3.5 6 3.5h1c.7 0 1.05 0 1.32.14.24.12.43.31.55.55.14.27.14.62.14 1.32V19M4 5.5V19m0-13.5H2.6M8 5.5h2.5c.7 0 1.05 0 1.32.14.24.12.43.31.55.55.14.27.14.62.14 1.32V19M15.4 6.3l1.9-.5c.68-.18 1.02-.27 1.32-.2.26.06.49.22.64.44.17.25.26.6.44 1.28l2.5 9.4c.18.68.27 1.02.2 1.32-.06.26-.22.49-.44.64-.25.17-.6.26-1.28.44l-1.36.36M4 19h10M4 19H2.6M14 19h1.4"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/post-library',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg
