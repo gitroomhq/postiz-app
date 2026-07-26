@@ -71,8 +71,8 @@ real transformation on at least one screen, then roll the same treatment across 
 1. ✅ **Accounts** — DONE + LIVE (see Live state above).
 2. ✅ **Client Dashboard** — DONE + LIVE (see Live state; Campaigns tab deferred to module #6; analytics is DB-derived, IG-safe).
 3. ✅ **Calendar + Composer premium pass (pass 1)** — DONE + LIVE (real `.glass-surface`, calendar headers/pills, composer frame). Pass 2 (composer internals, toolbar, dreamy-bg-behind-panels) still pending — see Live state.
-4. **Post Library** — folder tree (client→year→month→campaign) over `Post`. New grouping UI; posts already exist. **← NEXT (owner says "go on")**
-5. **Media Library** — folders/tags over existing `Media`.
+4. ✅ **Post Library** — DONE + LIVE (`/post-library`, commit `e5b6dab1`): `components/library/post-library.component.tsx` + route + nav. Pick a client → lazy-fetch its full history (published paginated + scheduled + draft merged via `/posts/list`+`expandPostsList`; `state=all` is future-only so published fetched separately) → **Client → Year → Month** folder tree w/ counts + per-folder post list + search; post click → `/p/:id` preview. No schema change. NOTE: click-to-EDIT uses the calendar (editPost needs `useCalendar` context); library click opens preview instead — fine for browse. Groups per-client (posts carry no customer field).
+5. **Media Library** — folders/tags over existing `Media`. **← NEXT (owner says "go on")**
 6. **Campaigns** — NEW module (schema `Campaign` additive + API + UI + link posts).
 7. **Tasks** — NEW module (schema `Task` additive + API + UI: detail drawer, assignee, comments, reminders).
 8. **Analytics + Reports** — extend existing analytics; Reports = export.
