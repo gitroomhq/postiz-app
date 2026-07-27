@@ -167,8 +167,7 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @GetUserFromRequest() user: User
   ) {
     const result = await (await this.provider(org)).setToCancel(org.id);
 
