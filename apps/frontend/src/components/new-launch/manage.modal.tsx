@@ -43,6 +43,7 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { EndAfterComponent } from '../launches/end-after.component';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -64,6 +65,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     setDate,
     repeater,
     setRepeater,
+    endRecurrenceType,
+    setEndRecurrenceType,
+    endRecurrenceAfter,
+    setEndRecurrenceAfter,
     tags,
     setTags,
     integrations,
@@ -81,6 +86,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       current: state.current,
       repeater: state.repeater,
       setRepeater: state.setRepeater,
+      endRecurrenceType: state.endRecurrenceType,
+      setEndRecurrenceType: state.setEndRecurrenceType,
+      endRecurrenceAfter: state.endRecurrenceAfter,
+      setEndRecurrenceAfter: state.setEndRecurrenceAfter,
       tags: state.tags,
       setTags: state.setTags,
       selectedIntegrations: state.selectedIntegrations,
@@ -385,7 +394,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       const data = {
         type,
-        ...(repeater ? { inter: repeater } : {}),
+        ...(repeater
+          ? {
+              recurrence: {
+                repeat: repeater ?? 0,
+                endRecurrenceType,
+                endRecurrenceAfter,
+              },
+            }
+          : {}),
         tags,
         shortLink,
         date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
@@ -435,7 +452,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
+    [
+      ref,
+      repeater,
+      endRecurrenceType,
+      endRecurrenceAfter,
+      tags,
+      date,
+      addEditSets,
+      dummy,
+      shortlinkPreferenceData,
+    ]
   );
 
   return (
@@ -564,6 +591,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             {!dummy && (
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
+            )}
+            {repeater ? (
+              <EndAfterComponent
+                type={endRecurrenceType}
+                onTypeChange={setEndRecurrenceType}
+                endAfter={endRecurrenceAfter}
+                onEndAfterChange={setEndRecurrenceAfter}
+              />
+            ) : (
+              <></>
             )}
           </div>
           <div className="pe-[20px] flex items-center justify-end gap-[8px]">

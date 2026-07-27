@@ -698,5 +698,10 @@
   "watch_tutorial_description": "이 짧은 영상을 통해 Postiz를 최대한 활용하는 방법을 알아보세요",
   "back": "뒤로가기",
   "get_started": "시작하기",
+  "end_never": "종료 안 함",
+  "end_after_date": "지정 날짜 후 종료",
+  "end_after_posts": "게시물 수 도달 시 종료",
+  "no_of_posts": "게시물 수",
+  "never": "안 함",
   "kick_select_channel": "채널 선택"
 }

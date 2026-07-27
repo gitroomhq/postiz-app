@@ -6,6 +6,7 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { createRef, RefObject } from 'react';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { EndRecurrenceType } from '@prisma/client';
 
 interface Values {
   id: string;
@@ -32,6 +33,8 @@ interface StoreState {
   postComment: PostComment;
   dummy: boolean;
   repeater?: number;
+  endRecurrenceType: EndRecurrenceType;
+  endRecurrenceAfter?: dayjs.Dayjs | number;
   isCreateSet: boolean;
   totalChars: number;
   activateExitButton: boolean;
@@ -113,6 +116,8 @@ interface StoreState {
   setHide: (hide: boolean) => void;
   setDate: (date: dayjs.Dayjs) => void;
   setRepeater: (repeater: number) => void;
+  setEndRecurrenceType: (type: EndRecurrenceType) => void;
+  setEndRecurrenceAfter: (value: dayjs.Dayjs | number) => void;
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
   setTotalChars?: (totalChars: number) => void;
@@ -155,6 +160,7 @@ const initialState = {
   global: [] as Values[],
   internal: [] as Internal[],
   chars: {},
+  endRecurrenceType: EndRecurrenceType.NEVER,
 };
 
 export const useLaunchStore = create<StoreState>()((set) => ({
@@ -369,7 +375,10 @@ export const useLaunchStore = create<StoreState>()((set) => ({
           if (item.integration.id === integrationId) {
             const targetIndex = direction === 'up' ? index - 1 : index + 1;
 
-            if (targetIndex < 0 || targetIndex >= item.integrationValue.length) {
+            if (
+              targetIndex < 0 ||
+              targetIndex >= item.integrationValue.length
+            ) {
               return item;
             }
 
@@ -536,6 +545,14 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setRepeater: (repeater: number) =>
     set((state) => ({
       repeater,
+    })),
+  setEndRecurrenceType: (type: EndRecurrenceType) =>
+    set((state) => ({
+      endRecurrenceType: type,
+    })),
+  setEndRecurrenceAfter: (value: dayjs.Dayjs | number) =>
+    set((state) => ({
+      endRecurrenceAfter: value,
     })),
   setTags: (tags: { label: string; value: string }[]) =>
     set((state) => ({

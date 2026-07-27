@@ -698,5 +698,10 @@
   "watch_tutorial_description": "この短い動画を見て、Postizを最大限に活用する方法を学びましょう",
   "back": "戻る",
   "get_started": "開始",
+  "end_never": "終了しない",
+  "end_after_date": "指定日に終了",
+  "end_after_posts": "指定回数で終了",
+  "no_of_posts": "投稿数",
+  "never": "なし",
   "kick_select_channel": "チャンネルを選択"
 }

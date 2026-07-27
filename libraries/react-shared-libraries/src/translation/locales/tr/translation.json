@@ -698,5 +698,10 @@
   "watch_tutorial_description": "Postiz'den en iyi şekilde yararlanmayı öğrenmek için bu kısa videoyu izleyin",
   "back": "Geri",
   "get_started": "Başlayın",
+  "end_never": "Asla bitmez",
+  "end_after_date": "Tarihten sonra biter",
+  "end_after_posts": "Gönderi sayısından sonra biter",
+  "no_of_posts": "Gönderi sayısı",
+  "never": "Asla",
   "kick_select_channel": "Kanal Seç"
 }
