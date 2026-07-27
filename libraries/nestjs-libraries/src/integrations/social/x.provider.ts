@@ -417,6 +417,56 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
+  /**
+   * Prepares a media buffer for X's v2 upload endpoint and returns the
+   * `media_type` that matches the actual bytes. X's `/2/media/upload` validates
+   * the declared `media_type` against the uploaded bytes and rejects any
+   * mismatch, so the two must always be produced together.
+   */
+  private async prepareMedia(
+    path: string
+  ): Promise<{ buffer: Buffer; media_type: string }> {
+    // Videos are uploaded as-is.
+    if (hasExtension(path, 'mp4')) {
+      return {
+        buffer: Buffer.from(await readOrFetch(path)),
+        media_type: 'video/mp4',
+      };
+    }
+
+    const mime = lookup(path) || '';
+
+    // GIFs pass through untouched (sharp would break animation).
+    if (mime === 'image/gif') {
+      return {
+        buffer: Buffer.from(await readOrFetch(path)),
+        media_type: 'image/gif',
+      };
+    }
+
+    // PNG and JPEG keep their original format so PNGs stay lossless with their
+    // alpha channel intact; anything else (webp, tiff, ...) is converted to
+    // JPEG. Previously every non-mp4 image was encoded as GIF while media_type
+    // stayed the original type (image/png, image/jpeg, ...), and X's v2
+    // /2/media/upload rejects that mismatch.
+    const keepFormat = mime === 'image/png' || mime === 'image/jpeg';
+
+    // Downscale to stay under X's dimension limits (fit within a 6000x6000 box,
+    // downscale-only) rather than forcing a fixed width.
+    const pipeline = sharp(await readOrFetch(path), { animated: false }).resize({
+      width: 6000,
+      height: 6000,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+
+    const buffer = await (
+      keepFormat ? pipeline : pipeline.toFormat('jpeg')
+    ).toBuffer();
+
+    return { buffer, media_type: keepFormat ? mime : 'image/jpeg' };
+  }
+
   private async uploadMedia(
     client: TwitterApi,
     postDetails: PostDetails<any>[]
@@ -425,24 +475,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       await Promise.all(
         postDetails.flatMap((p) =>
           p?.media?.flatMap(async (m) => {
+            const { buffer, media_type } = await this.prepareMedia(m.path);
             return {
               id: await this.runInConcurrent(
                 async () =>
-                  client.v2.uploadMedia(
-                    hasExtension(m.path, 'mp4')
-                      ? Buffer.from(await readOrFetch(m.path))
-                      : await sharp(await readOrFetch(m.path), {
-                          animated: lookup(m.path) === 'image/gif',
-                        })
-                          .resize({
-                            width: 1000,
-                          })
-                          .gif()
-                          .toBuffer(),
-                    {
-                      media_type: (lookup(m.path) || '') as any,
-                    }
-                  ),
+                  client.v2.uploadMedia(buffer, {
+                    media_type: media_type as any,
+                  }),
                 true
               ),
               postId: p.id,
