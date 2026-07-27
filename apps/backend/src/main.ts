@@ -10,7 +10,9 @@ Runtime.install({ shutdownSignals: [] });
 process.env.TZ = 'UTC';
 
 for (const key of ['FRONTEND_URL', 'MAIN_URL', 'NEXT_PUBLIC_BACKEND_URL']) {
-  process.env[key] = process.env[key]?.replace(/\/+$/, '');
+  if (process.env[key]) {
+    process.env[key] = process.env[key].replace(/\/+$/, '');
+  }
 }
 
 import cookieParser from 'cookie-parser';

@@ -11,7 +11,9 @@ import * as dns from 'node:dns';
 dns.setDefaultResultOrder('ipv4first');
 
 for (const key of ['FRONTEND_URL', 'MAIN_URL', 'NEXT_PUBLIC_BACKEND_URL']) {
-  process.env[key] = process.env[key]?.replace(/\/+$/, '');
+  if (process.env[key]) {
+    process.env[key] = process.env[key].replace(/\/+$/, '');
+  }
 }
 
 async function bootstrap() {
