@@ -23,6 +23,7 @@ import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
 import * as Sentry from '@sentry/nestjs';
+import { randomBytes, timingSafeEqual } from 'crypto';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -213,7 +214,31 @@ export class AuthController {
   }
 
   @Get('/oauth/:provider')
-  async oauthLink(@Param('provider') provider: string, @Query() query: any) {
+  async oauthLink(
+    @Param('provider') provider: string,
+    @Query() query: any,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    // GENERIC only: bind a random OAuth `state` to this browser via a
+    // short-lived cookie; /oauth/:provider/exists compares it against the
+    // value the IdP echoes back (RFC 6749 §10.12 CSRF protection). Other
+    // providers do not send `state`, so setting the cookie for them would
+    // break their callback validation.
+    if (provider === 'GENERIC') {
+      const state = randomBytes(32).toString('base64url');
+      response.cookie('oauth_state', state, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none' as const,
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 10),
+      });
+      return this._authService.oauthLink(provider, { ...query, state });
+    }
     return this._authService.oauthLink(provider, query);
   }
 
@@ -270,10 +295,36 @@ export class AuthController {
   @Post('/oauth/:provider/exists')
   async oauthExists(
     @Body('code') code: string,
+    @Body('state') state: string,
     @Body('redirect_uri') redirect_uri: string,
     @Param('provider') provider: string,
+    @Req() request: Request,
     @Res({ passthrough: false }) response: Response
   ) {
+    // Verify the `state` echoed back by the IdP against the cookie set in
+    // oauthLink(). GENERIC only, and only when the cookie is present, so
+    // older links and flows of the other providers keep working; the cookie
+    // is one-shot either way (an abandoned GENERIC attempt must not poison a
+    // later login).
+    const expectedState = request.cookies?.oauth_state;
+    if (expectedState) {
+      response.clearCookie('oauth_state', {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      });
+    }
+    if (provider === 'GENERIC' && expectedState) {
+      const received = Buffer.from(String(state || ''));
+      const expected = Buffer.from(String(expectedState));
+      if (
+        received.length !== expected.length ||
+        !timingSafeEqual(received, expected)
+      ) {
+        return response
+          .status(403)
+          .json({ error: 'Invalid OAuth state parameter' });
+      }
+    }
+
     const { jwt, token } = await this._authService.checkExists(
       provider,
       code,

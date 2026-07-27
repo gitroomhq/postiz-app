@@ -42,6 +42,7 @@ export function Register() {
   const fetch = useFetch();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
+  const [state] = useState(getQuery?.get('state') || '');
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (provider && code) {
@@ -54,6 +55,7 @@ export function Register() {
         method: 'POST',
         body: JSON.stringify({
           code,
+          state,
         }),
       })
     ).json();
