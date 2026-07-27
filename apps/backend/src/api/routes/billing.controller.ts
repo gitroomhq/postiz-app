@@ -131,14 +131,12 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
       'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
+      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`
     );
 
     return this._stripeService.setToCancel(org.id);
@@ -195,18 +193,14 @@ export class BillingController {
   }
 
   @Post('/chatbase-refund')
-  async chatbaseRefund(
-    @GetUserFromRequest() user: User,
-    @GetOrgFromRequest() org: Organization
-  ) {
+  async chatbaseRefund(@GetOrgFromRequest() org: Organization) {
     const refund = await this._stripeService.chatbaseRefund(org.id);
 
     if (refund.refunded) {
       await this._notificationService.sendEmail(
         process.env.EMAIL_FROM_ADDRESS,
         'Refund issued from Chatbase',
-        `Organization ${org.name} received a refund of ${refund.amount} ${refund.currency} and their subscription was cancelled`,
-        user.email
+        `Organization ${org.name} received a refund of ${refund.amount} ${refund.currency} and their subscription was cancelled`
       );
     }
 
