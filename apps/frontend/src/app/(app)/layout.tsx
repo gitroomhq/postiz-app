@@ -59,7 +59,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             process.env.STORAGE_PROVIDER! as 'local' | 'cloudflare'
           }
           environment={process.env.NODE_ENV!}
-          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!.replace(/\/+$/, '')}
+          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, '')!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           stripeClient={process.env.STRIPE_PUBLISHABLE_KEY!}
           isChatBase={!!process.env.CHATBASE_TOKEN}
