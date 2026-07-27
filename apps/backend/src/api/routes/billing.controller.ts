@@ -166,8 +166,7 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @GetUserFromRequest() user: User
   ) {
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
