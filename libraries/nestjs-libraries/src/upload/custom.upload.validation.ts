@@ -89,6 +89,10 @@ export function isCompleteMp4(buffer: Buffer): boolean {
         return false;
       }
       size = Number(largeSize);
+      // a largesize box header is 16 bytes, so smaller values are malformed
+      if (size < 16) {
+        return false;
+      }
     }
     if (size < 8) {
       return false;
