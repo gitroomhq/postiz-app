@@ -45,6 +45,10 @@ export class CustomFileValidationPipe implements PipeTransform {
       );
     }
 
+    if (detected.mime === 'video/mp4' && !isCompleteMp4(value.buffer)) {
+      throw new BadRequestException(INCOMPLETE_MP4_ERROR);
+    }
+
     value.mimetype = detected.mime;
     const safeBase = (value.originalname || 'upload')
       .replace(/\.[^./\\]*$/, '')
@@ -55,6 +59,43 @@ export class CustomFileValidationPipe implements PipeTransform {
     return value;
   }
 
+}
+
+export const INCOMPLETE_MP4_ERROR =
+  'Video file is corrupted or incomplete (missing moov atom). This usually means the file was uploaded before the encoder finished writing it — wait for the render to complete and upload it again.';
+
+// A playable mp4 must contain a top-level moov box (the index of the file).
+// Encoders write it last (or rewrite the file with it first for faststart),
+// so a file grabbed mid-encode has only ftyp + mdat and can't be played or
+// published anywhere.
+export function isCompleteMp4(buffer: Buffer): boolean {
+  let offset = 0;
+  while (offset + 8 <= buffer.length) {
+    let size: number = buffer.readUInt32BE(offset);
+    const type = buffer.toString('latin1', offset + 4, offset + 8);
+    if (type === 'moov') {
+      return true;
+    }
+    if (size === 0) {
+      // box extends to end of file
+      return false;
+    }
+    if (size === 1) {
+      if (offset + 16 > buffer.length) {
+        return false;
+      }
+      const largeSize = buffer.readBigUInt64BE(offset + 8);
+      if (largeSize > BigInt(Number.MAX_SAFE_INTEGER)) {
+        return false;
+      }
+      size = Number(largeSize);
+    }
+    if (size < 8) {
+      return false;
+    }
+    offset += size;
+  }
+  return false;
 }
 
 export function getMaxSize(mimeType: string): number {
