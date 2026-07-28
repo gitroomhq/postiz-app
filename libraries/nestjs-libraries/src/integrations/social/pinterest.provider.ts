@@ -270,12 +270,9 @@ export class PinterestProvider
         })
       ).json();
 
-      const { data, status } = await axios.get(
-        postDetails?.[0]?.media?.[0]?.path!,
-        {
-          responseType: 'stream',
-        }
-      );
+      const { data, status } = await axios.get(findMp4.path, {
+        responseType: 'stream',
+      });
 
       const formData = Object.keys(upload_parameters)
         .filter((f) => f)
