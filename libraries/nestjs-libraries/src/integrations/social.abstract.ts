@@ -133,11 +133,13 @@ export abstract class SocialAbstract {
     pendingData: any,
     integration: Integration
   ): Promise<PendingCheckResponse> {
+    // 'Unknown Error' keeps this developer guard out of the user-facing
+    // post.error (changeState only surfaces curated bad_body messages)
     throw new BadBody(
       this.identifier,
+      '{"error":"checkPostStatus is not implemented for this provider"}',
       '{}',
-      '{}',
-      'checkPostStatus is not implemented for this provider'
+      'Unknown Error'
     );
   }
 
@@ -149,9 +151,9 @@ export abstract class SocialAbstract {
   ): Promise<PendingCheckResponse> {
     throw new BadBody(
       this.identifier,
+      '{"error":"finalizePost is not implemented for this provider"}',
       '{}',
-      '{}',
-      'finalizePost is not implemented for this provider'
+      'Unknown Error'
     );
   }
 
