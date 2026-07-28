@@ -59,6 +59,24 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 
+// Older posts stored the whole serialized workflow failure; extract the message
+const extractErrorMessage = (error?: string | null) => {
+  if (!error) {
+    return error;
+  }
+  try {
+    const parsed = JSON.parse(error);
+    return (
+      parsed?.cause?.failure?.message ||
+      parsed?.failure?.cause?.message ||
+      parsed?.message ||
+      error
+    );
+  } catch (e) {
+    return error;
+  }
+};
+
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
 extend(isSameOrBefore);
@@ -1046,7 +1064,8 @@ const CalendarItem: FC<{
         <div
           className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
           data-tooltip-id="tooltip"
-          data-tooltip-content={post.error || 'An error occurred while publishing this post'}
+          data-tooltip-class-name="!max-w-[400px] break-words"
+          data-tooltip-content={extractErrorMessage(post.error) || 'An error occurred while publishing this post'}
         >
           !
         </div>

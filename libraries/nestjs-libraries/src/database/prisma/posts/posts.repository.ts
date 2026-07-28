@@ -178,6 +178,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,
@@ -416,15 +417,24 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    // Workflow failures arrive as serialized ActivityFailure objects; surface
+    // the underlying provider message instead of the whole failure JSON
+    const errorMessage = !err
+      ? undefined
+      : typeof err === 'string'
+      ? err
+      : err?.cause?.failure?.message ||
+        err?.failure?.cause?.message ||
+        err?.message ||
+        JSON.stringify(err);
+
     const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        ...(err
-          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
-          : {}),
+        ...(errorMessage ? { error: errorMessage } : {}),
       },
       include: {
         integration: {
