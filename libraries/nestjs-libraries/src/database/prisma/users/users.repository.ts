@@ -111,7 +111,10 @@ export class UsersRepository {
   getUserByEmail(email: string) {
     return this._user.model.user.findFirst({
       where: {
-        email,
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
         providerName: Provider.LOCAL,
       },
       include: {
