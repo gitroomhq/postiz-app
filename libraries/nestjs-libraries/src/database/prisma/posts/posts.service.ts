@@ -249,7 +249,13 @@ export class PostsService {
     organization: string,
     replaceDraft: boolean = false
   ): Promise<CreatePostDto> {
-    if (!body?.posts?.every((p) => p?.integration?.id)) {
+    if (!body?.posts || !Array.isArray(body.posts) || body.posts.length === 0) {
+      throw new BadRequestException(
+        'Request body must include a non-empty "posts" array'
+      );
+    }
+
+    if (!body.posts.every((p) => p?.integration?.id)) {
       throw new BadRequestException('All posts must have an integration id');
     }
 
