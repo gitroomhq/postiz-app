@@ -846,6 +846,7 @@ export class PostsService {
           id: integration.id,
           identifier: integration.providerIdentifier,
           name: integration.name,
+          display: integration.profile,
           valid,
           settingsError,
           errors,

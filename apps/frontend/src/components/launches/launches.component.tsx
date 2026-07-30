@@ -221,6 +221,7 @@ export const MenuComponent: FC<
       changeProfilePicture: boolean;
       changeNickName: boolean;
       refreshNeeded?: boolean;
+      display?: string;
     };
   }
 > = (props) => {
@@ -256,7 +257,9 @@ export const MenuComponent: FC<
       {...(collapsed
         ? {
             'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': integration.name,
+            'data-tooltip-content': integration.display?.includes('@')
+              ? `${integration.name} (${integration.display.split('@').pop()})`
+              : integration.name,
           }
         : {})}
       className={clsx(
@@ -327,11 +330,18 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
+          'group-[.sidebar]:hidden flex-1 min-w-0 cursor-move flex flex-col',
           integration.disabled && 'opacity-50'
         )}
       >
-        {integration.name}
+        <div className="whitespace-nowrap text-ellipsis overflow-hidden">
+          {integration.name}
+        </div>
+        {integration.display && (
+          <div className="text-[11px] text-textColor/50 whitespace-nowrap text-ellipsis overflow-hidden">
+            {integration.display}
+          </div>
+        )}
       </div>
       <Menu
         canChangeProfilePicture={integration.changeProfilePicture}

@@ -142,7 +142,11 @@ export const SelectCurrent: FC = () => {
               <div
                 {...{
                   'data-tooltip-id': 'tooltip',
-                  'data-tooltip-content': integration.name,
+                  'data-tooltip-content': integration.display?.includes('@')
+                    ? `${integration.name} (${integration.display
+                        .split('@')
+                        .pop()})`
+                    : integration.name,
                 }}
                 className={clsx(
                   'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'

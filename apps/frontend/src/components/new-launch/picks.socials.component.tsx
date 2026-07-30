@@ -43,10 +43,14 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
               .map((integration) => (
                 <div
                   key={integration.id}
-                  className="flex gap-[8px] items-center"
+                  className="flex flex-col gap-[4px] items-center"
                   {...(toolTip && {
                     'data-tooltip-id': 'tooltip',
-                    'data-tooltip-content': integration.name,
+                    'data-tooltip-content': integration.display?.includes('@')
+                      ? `${integration.name} (${integration.display
+                          .split('@')
+                          .pop()})`
+                      : integration.name,
                   })}
                 >
                   <div
@@ -96,6 +100,11 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       />
                     )}
                   </div>
+                  {integration.display?.includes('@') && (
+                    <div className="text-[9px] text-textColor/50 max-w-[50px] text-center truncate leading-none">
+                      {integration.display.split('@').pop()}
+                    </div>
+                  )}
                 </div>
               ))}
           </div>

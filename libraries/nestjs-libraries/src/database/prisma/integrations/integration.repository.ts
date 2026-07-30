@@ -281,6 +281,7 @@ export class IntegrationRepository {
             }
           : {}),
         ...(picture ? { picture } : {}),
+        name,
         profile: username,
         providerIdentifier: provider,
         token,

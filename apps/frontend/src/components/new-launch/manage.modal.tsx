@@ -285,9 +285,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         const notEnoughChars = checkAllValid.filter((p: any) => p.emptyContent);
 
+        const integrationLabel = (item: any) => {
+          const host = item.display?.includes('@')
+            ? item.display.split('@').pop()
+            : null;
+          return host
+            ? `${item.name} (${host})`
+            : `${capitalize(item.identifier.split('-')[0])} (${item.name})`;
+        };
+
         for (const item of notEnoughChars) {
           toaster.show(
-            `${capitalize(item.identifier.split('-')[0])} (${item.name}):` +
+            `${integrationLabel(item)}:` +
               ' ' +
               t(
                 'post_needs_content_or_image',
@@ -304,7 +313,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           for (const item of checkAllValid) {
             if (item.valid === false) {
               toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                `${integrationLabel(item)}: ${
                   item.settingsError ||
                   t('please_fix_your_settings', 'Please fix your settings')
                 }`,
@@ -318,9 +327,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             if (item.errors !== true) {
               toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.errors
-                }`,
+                `${integrationLabel(item)}: ${item.errors}`,
                 'warning'
               );
               focus(item.id, 'preview');
@@ -331,7 +338,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             if (item.tooLong) {
               toaster.show(
-                `${item.name} (${item.identifier}) ${t(
+                `${integrationLabel(item)} ${t(
                   'post_is_too_long',
                   'post is too long, please fix it'
                 )}`,

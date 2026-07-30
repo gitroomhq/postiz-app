@@ -20,7 +20,12 @@ interface DebugPostData {
     settings: { __type: string; [key: string]: any };
     value: Array<{
       content: string;
-      image: Array<{ id: string; path: string; alt?: string; thumbnail?: string }>;
+      image: Array<{
+        id: string;
+        path: string;
+        alt?: string;
+        thumbnail?: string;
+      }>;
       delay: number;
     }>;
   }>;
@@ -64,7 +69,9 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
     try {
       const data = JSON.parse(value);
       if (!data.posts || !data._debug?.providerIdentifier) {
-        setParseError('Invalid debug JSON format. Missing posts or _debug data.');
+        setParseError(
+          'Invalid debug JSON format. Missing posts or _debug data.'
+        );
         return;
       }
       setParsed(data);
@@ -149,24 +156,23 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
             </div>
             <div className="text-[12px] text-textColor/70 flex flex-col gap-[4px] min-w-0 break-all">
               <div>
-                <span className="font-[500]">
-                  {t('provider', 'Provider')}:
-                </span>{' '}
-                {parsed._debug.providerIdentifier} ({parsed._debug.providerName})
+                <span className="font-[500]">{t('provider', 'Provider')}:</span>{' '}
+                {parsed._debug.providerIdentifier} ({parsed._debug.providerName}
+                )
               </div>
               <div>
-                <span className="font-[500]">
-                  {t('state', 'State')}:
-                </span>{' '}
-                <span className={parsed._debug.state === 'ERROR' ? 'text-red-500' : ''}>
+                <span className="font-[500]">{t('state', 'State')}:</span>{' '}
+                <span
+                  className={
+                    parsed._debug.state === 'ERROR' ? 'text-red-500' : ''
+                  }
+                >
                   {parsed._debug.state}
                 </span>
               </div>
               {parsed._debug.error && (
                 <div>
-                  <span className="font-[500]">
-                    {t('error', 'Error')}:
-                  </span>{' '}
+                  <span className="font-[500]">{t('error', 'Error')}:</span>{' '}
                   <span className="text-red-400">{parsed._debug.error}</span>
                 </div>
               )}
@@ -227,7 +233,11 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                       alt={integration.name}
                     />
                     <div className="text-[13px] text-textColor">
-                      {integration.name}
+                      {(integration as any).display?.includes('@')
+                        ? `${integration.name} (${(integration as any).display
+                            .split('@')
+                            .pop()})`
+                        : integration.name}
                     </div>
                     <img
                       src={`/icons/platforms/${integration.identifier}.png`}
