@@ -6,12 +6,14 @@
   IsBoolean,
   Min,
   MaxLength,
+  MinLength
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class PeerTubeDto {
   @IsString()
-  @MaxLength(120) // PeerTube video title limit
+  @MinLength(3)   // PeerTube's min video title limit
+  @MaxLength(120) // PeerTube's max video title limit
   title: string;
 
 

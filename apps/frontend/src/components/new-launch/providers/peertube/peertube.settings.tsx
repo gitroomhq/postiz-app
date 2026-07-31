@@ -39,7 +39,7 @@ export const PeertubeSettings: FC = () => {
                         <option value="3">Private</option>
                     </select>
                 </div>
-                <Input label="Tags (comma separated)" name="tags" type="text" />
+                <Input label="Tags (comma separated e.g foo,bar,baz,qux)" name="tags" type="text" />
 
                 <label className="flex items-center gap-[8px] text-[14px]">
                     <input type="checkbox" {...register('nsfw')} />

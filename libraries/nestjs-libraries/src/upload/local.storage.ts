@@ -70,7 +70,7 @@ export class LocalStorage implements IUploadProvider {
     // Logic to save the file to the filesystem goes here
     writeFileSync(filePath, body);
 
-    return process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY + publicPath;
+    return process.env.FRONTEND_URL + '/uploads' + publicPath;
   }
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
@@ -103,7 +103,7 @@ export class LocalStorage implements IUploadProvider {
 
       return {
         filename: `${randomName}${safeExt}`,
-        path: process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY + publicPath,
+        path: process.env.FRONTEND_URL + '/uploads' + publicPath,
         mimetype: safeMime,
         originalname: `${randomName}${safeExt}`,
       };

@@ -1,6 +1,6 @@
 import { AuthService } from "@gitroom/helpers/auth/auth.service";
 import { SocialAbstract, ValidityMedia } from "@gitroom/nestjs-libraries/integrations/social.abstract";
-import { AuthTokenDetails, ClientInformation, GenerateAuthUrlResponse, PostDetails, PostResponse, SocialProvider } from "@gitroom/nestjs-libraries/integrations/social/social.integrations.interface"
+import { AuthTokenDetails, ClientInformation, GenerateAuthUrlResponse, PostDetails, PostResponse, SocialProvider } from "@gitroom/nestjs-libraries/integrations/social/social.integrations.interface";
 import { makeId } from "@gitroom/nestjs-libraries/services/make.is";
 import { Integration } from "@prisma/client";
 import axios from "axios";
@@ -53,10 +53,10 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
   async customFields() {
     return [
       {
-        key: "instanceUrl",   //don't know what to pass for now!
+        key: "instanceUrl",
         label: "PeerTube URL",
         defaultValue: "",
-        validation: "/^https?:\\/\\/.+$/",  // Test it later if regex is correct or not with differect urls + bluesky =validation: `/^(https?:\\/\\/)?((([a-zA-Z0-9\\-_]{1,256}\\.[a-zA-Z]{2,6})|(([0-9]{1,3}\\.){3}[0-9]{1,3}))(:[0-9]{1,5})?)(\\/[^\\s]*)?$/`,
+        validation: `/^https?:\\/\\/.+$/`,
         type: "text" as const,
         hint: "Your PeerTube Instance should be a valid URL e.g https://clip.place"
       },
@@ -64,17 +64,17 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
         key: "username",
         label: "Username",
         defaultValue: "",
-        validation: "/^.+$/",   //not empty but allow " " + test it later
+        validation: `^[a-z0-9._]+$/`,   // regex applied from PeerTube official docs: https://docs.joinpeertube.org/api-rest-reference.html#tag/Session/operation/getOAuthToken 
         type: "text" as const,
-        hint: "",      //add a better hint for good user Xperience
+        hint: "Username of your Peertube instance",
       },
       {
         key: "password",
         label: "Password",
         defaultValue: "",
-        validation: "/^.+$/",  //not empty but allows " "  + test it later + used in bluesky = validation: `/^.{3,}$/`,
+        validation: `/^.{6,50}$/`,  // PeerTube accepts min:6chars, max:50chars
         type: "password" as const,
-        hint: ""       //add a better hint for good user Xperience
+        hint: "Password to your Peertube instance"
       }
     ]
   }
@@ -301,13 +301,9 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     // PeerTube doesn't provide an `externalUrl` and use CustomFields for authentication, so during authentication we pass the
-    // `customField` as:
-    // AuthService.fixedEncryption(Buffer.from(body.code, 'base64').toString()). to _integrationService.createOrUpdateIntegration()
-
-
+    // `customField` as: AuthService.fixedEncryption(Buffer.from(body.code, 'base64').toString()). to _integrationService.createOrUpdateIntegration()
     // `_integrationService.createOrUpdateIntegration()` upserts this into the database
     // as `CustomInstanceDetails`.
-
 
     // Since `instanceUrl`, `username`, and `password` from CustomField was
     // `fixedEncrypted`, we can retrieve them by using `fixedDecryption` because
@@ -328,6 +324,7 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
         responseType: 'arraybuffer',
       });
 
+      // Getting thumbnail if user uploaded it
       let thumbnailResponse;
       if (thumbnailPath) {
         thumbnailResponse = await axios.get(thumbnailPath, {
@@ -336,7 +333,8 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
       }
 
       const videoBuffer = Buffer.from(videoResponse.data);
-      const thumbnailBuffer = Buffer.from(thumbnailResponse.data);
+      const thumbnailBuffer = thumbnailResponse ? Buffer.from(thumbnailResponse.data) : undefined;
+
       // Request Body Schema as per PeerTube API reference -> https://docs.joinpeertube.org/api-rest-reference.html#tag/Video-Upload
       const form = new FormData();
       form.append(
@@ -348,11 +346,13 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
       form.append('description', post.message);
       form.append('channelId', (post.settings?.channelId));
       form.append('privacy', (post.settings?.privacy || 1)); // 1 = public, 2 = unlisted and 3 = private
-      form.append
-        ('thumbnailfile',
-          new Blob([thumbnailBuffer], { type: 'image/jpeg' }),
-          //outputs file name
-          (post.settings?.thumbnail?.path.split('/').pop() || 'thumbnail.jpeg'));
+      if (thumbnailBuffer) {
+        form.append
+          ('thumbnailfile',
+            new Blob([thumbnailBuffer], { type: 'image/jpeg' }),
+            //outputs file name
+            (post.settings?.thumbnail?.path.split('/').pop() || 'thumbnail.jpeg'));
+      }
       form.append('nsfw', post.settings?.nsfw);
       if (post.settings?.tags?.length) {
         //PeerTube only allows upto 5 tags
@@ -387,7 +387,8 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
     return results;
   }
 
-  //removes trailing slashes eg. https://clip.place/ -> https://clip.place or https://clip.place// -> https://clip.place
+  // removes trailing slashes eg. https://clip.place/ -> https://clip.place or https://clip.place// -> https://clip.place
+  // extra trailing slashes(//) can cause errors in subsequent request using instanceUrls
   private normalizeUrl(url: string): string {
     return url.replace(/\/+$/, '');
   }
