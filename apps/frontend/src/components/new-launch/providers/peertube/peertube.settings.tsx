@@ -8,7 +8,7 @@ export const PeertubeSettings: FC = () => {
     const { integration } = useIntegration();
     const { register } = useFormContext();
 
-    const settings = JSON.parse(integration.additionalSettings);
+    const settings = JSON.parse(integration.additionalSettings || '[]');
 
     //minimum 1 channels will be there
     const channels: Array<{ id: number, name: string }> = JSON.parse(settings[0].value);

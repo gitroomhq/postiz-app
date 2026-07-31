@@ -38,14 +38,15 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
     return 10000;   //peertube description max length is 10000 characters
   }
 
-  override async checkValidity(posts: Array<ValidityMedia[]>): Promise<string | true> {
-    const hasVideo = posts[0];
-
-    if (!hasVideo || hasVideo.length === 0) {
-      return "PeerTube requires a video file"
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = posts ?? [];
+    if (posts?.[0]?.length !== 1) {
+      return 'You need one media';
     }
-    if (hasVideo.length > 1) {
-      return 'PeerTube only supports one video per post';
+    if ((firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) === -1) {
+      return 'Item must be a video';
     }
     return true;
   }
