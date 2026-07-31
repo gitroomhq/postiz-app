@@ -345,8 +345,8 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
       );
       form.append('name', (post.settings?.title ?? '').slice(0, 120));
       form.append('description', post.message);
-      form.append('channelId', (post.settings?.channelId));
-      form.append('privacy', (post.settings?.privacy || 1)); // 1 = public, 2 = unlisted and 3 = private
+      form.append('channelId',  String(post.settings?.channelId));
+      form.append('privacy', String(post.settings?.privacy || 1)); // 1 = public, 2 = unlisted and 3 = private
       if (thumbnailBuffer) {
         form.append
           ('thumbnailfile',
