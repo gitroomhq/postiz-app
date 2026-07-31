@@ -897,6 +897,15 @@ const SwitchUser = () => {
         id: curr.user.id,
         name: curr.user.name,
         email: curr.user.email,
+        orgs: (data || [])
+          .filter((org: any) => org.user.id === curr.user.id)
+          .map(
+            (org: any) =>
+              `${org.organization?.name} (${org.role} / ${
+                org.organization?.subscription?.subscriptionTier || 'FREE'
+              })`
+          )
+          .join(', '),
       }));
   }, [data, currentUser?.id]);
 
@@ -991,6 +1000,7 @@ const SwitchUser = () => {
                 {item.id.split('-').at(-1)} -{' '}
                 {item.name ? `${item.name} - ` : ''}
                 {item.email}
+                {item.orgs ? ` - ${item.orgs}` : ''}
               </div>
             ))}
           </div>
@@ -1054,6 +1064,9 @@ export const Impersonate = () => {
         id: curr.id,
         name: curr.user.name,
         email: curr.user.email,
+        orgName: curr.organization?.name,
+        role: curr.role,
+        tier: curr.organization?.subscription?.subscriptionTier || 'FREE',
       }),
       []
     );
@@ -1120,7 +1133,8 @@ export const Impersonate = () => {
                     className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
                   >
                     {t('user_1', 'user:')}
-                    {user.id.split('-').at(-1)} - {user.name} - {user.email}
+                    {user.id.split('-').at(-1)} - {user.name} - {user.email} -{' '}
+                    {user.orgName} ({user.role} / {user.tier})
                   </div>
                 ))}
               </div>

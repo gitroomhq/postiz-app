@@ -49,7 +49,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
             <div className="bg-btnPrimary !flex !relative max-w-[500px] mx-auto py-[12px] px-[12px]">Select Organization</div>
           )}
           {!asOpenSelect && (
-            <div className="flex items-center">
+            <div className="flex items-center gap-[6px]">
               <svg
                 className={user?.tier.current === 'FREE' ? 'animate-bounce drop-shadow-glow': ''}
                 width="24"
@@ -63,6 +63,9 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                   fill="currentColor"
                 />
               </svg>
+              {!!current?.name && (
+                <div className="max-w-[120px] truncate">{current.name}</div>
+              )}
             </div>
           )}
           {data?.length > 1 && (
@@ -72,7 +75,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
-              {data?.map((org: { name: string; id: string }) => (
+              {withoutCurrent?.map((org: { name: string; id: string }) => (
                 <div key={org.id} onClick={changeOrg(org)}>
                   {org.name}
                 </div>
