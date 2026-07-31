@@ -75,11 +75,29 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
-              {withoutCurrent?.map((org: { name: string; id: string }) => (
-                <div key={org.id} onClick={changeOrg(org)}>
-                  {org.name}
-                </div>
-              ))}
+              {withoutCurrent?.map(
+                (org: {
+                  name: string;
+                  id: string;
+                  users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
+                }) => (
+                  <div key={org.id} onClick={changeOrg(org)}>
+                    {org.name}
+                    {!!org.users?.[0]?.role && (
+                      <span className="text-customColor18">
+                        {' '}
+                        (
+                        {org.users[0].role === 'SUPERADMIN'
+                          ? 'Super-Admin'
+                          : org.users[0].role === 'ADMIN'
+                          ? 'Admin'
+                          : 'User'}
+                        )
+                      </span>
+                    )}
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
