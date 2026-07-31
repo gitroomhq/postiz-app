@@ -353,7 +353,7 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
             //outputs file name
             (post.settings?.thumbnail?.path.split('/').pop() || 'thumbnail.jpeg'));
       }
-      form.append('nsfw', post.settings?.nsfw);
+      form.append('nsfw', String(post.settings?.nsfw ?? false));
       if (post.settings?.tags?.length) {
         //PeerTube only allows upto 5 tags
         if (post.settings?.tags?.length > 5) {
