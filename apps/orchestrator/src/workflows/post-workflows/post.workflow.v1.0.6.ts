@@ -304,6 +304,11 @@ export async function postWorkflowV106({
         }
 
         pendingData = result.pendingData;
+
+        // a fully successful iteration proves the platform is reachable: the
+        // error budget bounds consecutive failures, not blips accumulated over
+        // a long upload
+        errorAttempts = 0;
       } catch (err) {
         const handle = await handleActivityError(err);
 
