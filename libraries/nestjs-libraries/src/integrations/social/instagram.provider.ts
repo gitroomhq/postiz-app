@@ -654,7 +654,6 @@ export class InstagramProvider
   ): Promise<PostResponse[]> {
     const [accessToken] = token.split('___');
     const [firstPost] = postDetails;
-    console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(

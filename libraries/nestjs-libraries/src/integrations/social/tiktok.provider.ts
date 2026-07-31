@@ -465,16 +465,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (status === 'PUBLISH_COMPLETE') {
+      // an empty array is truthy, so index it once and branch on the value
+      const publicPostId = publicaly_available_post_id?.[0];
+
       return {
         status: 'completed',
-        releaseURL: !publicaly_available_post_id
+        releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
-          : `https://www.tiktok.com/@${integration.profile}/video/` +
-            publicaly_available_post_id,
+          : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
         // TikTok returns the id as a number, releaseId in the db is a string
-        postId: !publicaly_available_post_id
-          ? pendingData.publishId
-          : String(publicaly_available_post_id?.[0]),
+        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
       };
     }
 
@@ -710,6 +710,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       const response = await fetch(path, {
         headers: { Range: `bytes=${start}-${end}` },
       });
+
+      // A store that ignores Range (200 with the full file) or answers with an
+      // error page would corrupt the upload at this offset.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'tiktok-error-upload',
+          '{}',
+          '{}',
+          'The media storage did not return the requested byte range, please try again'
+        );
+      }
+
       return response.body;
     }
 
@@ -893,7 +905,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const started = Date.now();
 
-    for (const i of Array(27).keys()) {
+    for (const _ of Array(27).keys()) {
       // ~9 minutes at 20s interval
       const check = await this.checkPostStatus(
         accessToken,

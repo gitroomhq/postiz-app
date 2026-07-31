@@ -77,8 +77,10 @@ const poke = defineSignal('poke');
 
 const iterate = Array.from({ length: 5 });
 
-// ~15 minutes at 20s interval (longer than the old in-activity loop, timers are free)
-const maxPendingChecks = 45;
+// ~30 minutes at 20s interval (longer than the old in-activity loop, timers are
+// free). Multi-item flows (stories, chunked uploads) consume several checks per
+// item, so the budget must cover the largest realistic post, not one poll cycle.
+const maxPendingChecks = 90;
 
 export async function postWorkflowV106({
   taskQueue,

@@ -453,6 +453,18 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       const response = await fetch(path, {
         headers: { Range: `bytes=${start}-${end}` },
       });
+
+      // A store that ignores Range (200 with the full file) or answers with an
+      // error page would corrupt the upload at this offset.
+      if (response.status !== 206) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'The media storage did not return the requested byte range, please try again'
+        );
+      }
+
       return response.body;
     }
 
@@ -810,10 +822,13 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       // Cap below the 10-minute activity timeout of the old workflows using
-      // this method: failing here is safe (no video exists until the upload
-      // completes and the abandoned session just expires), timing the
-      // activity out is not.
-      if (Date.now() - started > 4.5 * 60 * 1000) {
+      // this method, leaving room for one more full upload batch: failing here
+      // is safe (no video exists until the upload completes and the abandoned
+      // session just expires), timing the activity out is not.
+      if (
+        Date.now() - started >
+        8 * 60 * 1000 - YoutubeProvider.YOUTUBE_UPLOAD_BATCH_MS
+      ) {
         throw new BadBody(
           this.identifier,
           '{}',
