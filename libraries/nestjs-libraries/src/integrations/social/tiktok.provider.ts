@@ -17,6 +17,7 @@ import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { createReadStream, statSync } from 'fs';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -686,7 +687,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // a HEAD request for remote URLs, statSync for local files.
   private async tiktokMediaSize(path: string): Promise<number> {
     if (path.indexOf('http') === 0) {
-      const head = await fetch(path, { method: 'HEAD' });
+      // the media path is user-influenced, keep the SSRF-safe dispatcher that
+      // this.fetch applies to every other outbound request
+      const head = await fetch(path, {
+        method: 'HEAD',
+        dispatcher: getSsrfSafeDispatcher(),
+      } as any);
       const length = head.headers.get('content-length');
       if (!length) {
         throw new BadBody(
@@ -709,7 +715,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (path.indexOf('http') === 0) {
       const response = await fetch(path, {
         headers: { Range: `bytes=${start}-${end}` },
-      });
+        dispatcher: getSsrfSafeDispatcher(),
+      } as any);
 
       // A store that ignores Range (200 with the full file) or answers with an
       // error page would corrupt the upload at this offset.
