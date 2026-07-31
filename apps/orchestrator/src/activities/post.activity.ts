@@ -220,6 +220,27 @@ export class PostActivity {
       integration.providerIdentifier
     );
 
+    // If an earlier attempt of this activity already published the post (the
+    // remote id is persisted at the publish boundary via the progress
+    // callback below), don't publish again — retrying after a post-publish
+    // failure used to create duplicates. A releaseId equal to the one the
+    // workflow loaded before running this activity means the current cycle
+    // hasn't published yet (repeatable posts re-run with the same post id).
+    const [firstPost] = posts;
+    if (firstPost) {
+      const current = await this._postService.getPostReleaseId(firstPost.id);
+      if (current?.releaseId && current.releaseId !== firstPost.releaseId) {
+        return [
+          {
+            id: firstPost.id,
+            postId: current.releaseId,
+            releaseURL: current.releaseURL || '',
+            status: 'success',
+          },
+        ];
+      }
+    }
+
     const newPosts = await this._postService.updateTags(
       integration.organizationId,
       posts
@@ -247,7 +268,17 @@ export class PostActivity {
           ),
         }))
       ),
-      integration
+      integration,
+      async (response) => {
+        // Persist the remote id the moment the platform confirms the
+        // publish, so a crash or retry after this point cannot publish a
+        // duplicate.
+        await this._postService.updatePost(
+          response.id,
+          response.postId,
+          response.releaseURL
+        );
+      }
     );
 
     await this._temporalService.client

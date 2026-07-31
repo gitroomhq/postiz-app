@@ -86,7 +86,11 @@ export interface ISocialMediaIntegration {
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
-    integration: Integration
+    integration: Integration,
+    // Called the moment the platform confirms a publish, so the caller can
+    // persist the remote id before any later step can fail — a retry after
+    // a post-publish failure must not publish a duplicate.
+    progress?: (response: PostResponse) => Promise<unknown> | unknown
   ): Promise<PostResponse[]>; // Schedules a new post
 
   comment?(

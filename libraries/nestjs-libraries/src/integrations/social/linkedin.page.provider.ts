@@ -268,9 +268,17 @@ export class LinkedinPageProvider
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
-    integration: Integration
+    integration: Integration,
+    progress?: (response: PostResponse) => Promise<unknown> | unknown
   ): Promise<PostResponse[]> {
-    return super.post(id, accessToken, postDetails, integration, 'company');
+    return super.post(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      progress,
+      'company'
+    );
   }
 
   override async comment(

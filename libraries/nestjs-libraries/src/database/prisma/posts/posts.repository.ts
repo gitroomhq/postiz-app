@@ -402,6 +402,18 @@ export class PostsRepository {
     });
   }
 
+  getPostReleaseId(id: string) {
+    return this._post.model.post.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        releaseId: true,
+        releaseURL: true,
+      },
+    });
+  }
+
   updateReleaseId(id: string, orgId: string, releaseId: string) {
     return this._post.model.post.update({
       where: {

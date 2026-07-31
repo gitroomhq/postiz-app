@@ -594,15 +594,44 @@ export class InstagramProvider
     };
   }
 
+  // The post is already live when this is called — a failure fetching the
+  // permalink must not fail the publish (it used to mark a published post
+  // as ERROR, invite duplicate retries and email a false failure).
+  private async getPermalink(
+    type: string,
+    mediaId: string,
+    token: string,
+    fallback: string
+  ) {
+    try {
+      const { permalink } = await (
+        await this.fetch(
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${token}`,
+          undefined,
+          'instagram-permalink'
+        )
+      ).json();
+      return permalink || fallback;
+    } catch (err) {
+      return fallback;
+    }
+  }
+
   async post(
     id: string,
     token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
+    progress?: (response: PostResponse) => Promise<unknown> | unknown,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
     const [accessToken, userToken] = token.split('___');
     const [firstPost] = postDetails;
+    // Used when the post is live but the permalink can't be fetched — the
+    // publish must still be reported as a success.
+    const fallbackUrl = `https://www.instagram.com/${
+      integration.profile || ''
+    }`;
     console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
@@ -676,7 +705,8 @@ export class InstagramProvider
             `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
-            }
+            },
+            'instagram-create-media'
           )
         ).json();
         console.log('in progress2', id);
@@ -695,7 +725,7 @@ export class InstagramProvider
                 userToken || accessToken
               }&fields=status_code`,
               undefined,
-              '',
+              'instagram-media-status',
               0,
               true
             )
@@ -719,19 +749,25 @@ export class InstagramProvider
             `https://${type}/v20.0/${id}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
             {
               method: 'POST',
-            }
+            },
+            'instagram-media-publish'
           )
         ).json();
         lastMediaId = mediaId;
 
-        const { permalink } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-              userToken || accessToken
-            }`
-          )
-        ).json();
-        lastPermalink = permalink;
+        await progress?.({
+          id: firstPost.id,
+          postId: mediaId,
+          releaseURL: fallbackUrl,
+          status: 'success',
+        });
+
+        lastPermalink = await this.getPermalink(
+          type,
+          mediaId,
+          userToken || accessToken,
+          fallbackUrl
+        );
       }
 
       return [
@@ -748,17 +784,24 @@ export class InstagramProvider
           `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
-          }
+          },
+          'instagram-media-publish'
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
+      await progress?.({
+        id: firstPost.id,
+        postId: mediaId,
+        releaseURL: fallbackUrl,
+        status: 'success',
+      });
+
+      const permalink = await this.getPermalink(
+        type,
+        mediaId,
+        userToken || accessToken,
+        fallbackUrl
+      );
 
       return [
         {
@@ -778,7 +821,8 @@ export class InstagramProvider
           )}&access_token=${accessToken}`,
           {
             method: 'POST',
-          }
+          },
+          'instagram-create-carousel'
         )
       ).json();
 
@@ -796,7 +840,7 @@ export class InstagramProvider
               userToken || accessToken
             }`,
             undefined,
-            '',
+            'instagram-media-status',
             0,
             true
           )
@@ -810,17 +854,24 @@ export class InstagramProvider
           `https://${type}/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
           {
             method: 'POST',
-          }
+          },
+          'instagram-media-publish'
         )
       ).json();
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
+      await progress?.({
+        id: firstPost.id,
+        postId: mediaId,
+        releaseURL: fallbackUrl,
+        status: 'success',
+      });
+
+      const permalink = await this.getPermalink(
+        type,
+        mediaId,
+        userToken || accessToken,
+        fallbackUrl
+      );
 
       return [
         {

@@ -180,13 +180,15 @@ export class InstagramStandaloneProvider
     id: string,
     accessToken: string,
     postDetails: PostDetails<InstagramDto>[],
-    integration: Integration
+    integration: Integration,
+    progress?: (response: PostResponse) => Promise<unknown> | unknown
   ): Promise<PostResponse[]> {
     return instagramProvider.post(
       id,
       accessToken,
       postDetails,
       integration,
+      progress,
       'graph.instagram.com'
     );
   }
