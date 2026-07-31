@@ -11,7 +11,7 @@ export const PeertubeSettings: FC = () => {
     const settings = JSON.parse(integration.additionalSettings || '[]');
 
     //minimum 1 channels will be there
-    const channels: Array<{ id: number, name: string }> = JSON.parse(settings[0].value);
+    const channels: Array<{ id: number, name: string }> = JSON.parse(settings[0]?.value || '[]');
 
     return (
         <div className="flex flex-col gap-[12px]">
