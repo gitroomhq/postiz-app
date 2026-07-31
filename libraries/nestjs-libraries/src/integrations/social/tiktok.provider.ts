@@ -700,6 +700,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       const response = await fetch(path, {
         headers: { Range: `bytes=${start}-${end}` },
       });
+      // A 200 means the origin ignored the Range header and is sending the
+      // whole file: uploading it as this chunk would silently corrupt the
+      // video, so fail loudly instead.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'tiktok-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          `Media server ignored the ranged request (status ${response.status}); it must support HTTP Range requests for chunked TikTok uploads`
+        );
+      }
       return response.body;
     }
 
