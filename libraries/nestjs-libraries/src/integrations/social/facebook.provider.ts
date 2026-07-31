@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -8,6 +9,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -457,21 +459,49 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     throw new Error('Page not found in your accounts');
   }
 
-  async post(
+  // Single, read-only status check of a story video - the polling loop that
+  // used to live inside post() is now driven by the post workflow.
+  private async fbVideoStatus(videoId: string, accessToken: string) {
+    const { status } = await (
+      await this.fetch(
+        `https://graph.facebook.com/v20.0/${videoId}?fields=status&access_token=${accessToken}`,
+        undefined,
+        '',
+        0,
+        true
+      )
+    ).json();
+
+    const videoStatus = status?.video_status || 'in_progress';
+
+    if (videoStatus === 'error') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify({ status }),
+        '{}',
+        'Video processing failed'
+      );
+    }
+
+    return videoStatus === 'upload_complete' || videoStatus === 'ready';
+  }
+
+  async postPending(
     id: string,
     accessToken: string,
-    postDetails: PostDetails<FacebookDto>[]
+    postDetails: PostDetails<FacebookDto>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
     const isStory = firstPost?.settings?.post_type === 'story';
 
-    let finalId = '';
-    let finalUrl = '';
     if (isStory) {
-      let lastPostId = '';
+      // Only upload the media here - uploads are invisible until the
+      // publish calls, which run one at a time in finalizePost so a failure
+      // can never re-publish the stories that already went out.
+      const items = [];
       for (const media of firstPost?.media || []) {
-        const isVideoStory = hasExtension(media.path, 'mp4');
-        if (isVideoStory) {
+        if (hasExtension(media.path, 'mp4')) {
           const { video_id, upload_url } = await (
             await this.fetch(
               `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=start&access_token=${accessToken}`,
@@ -494,43 +524,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             'upload video story'
           );
 
-          let videoStatus = 'in_progress';
-          let attempts = 0;
-          const maxAttempts = 54; // ~9 minutes at 10s interval
-          while (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
-            if (attempts++ >= maxAttempts) {
-              throw new Error('Video processing timed out');
-            }
-
-            const { status } = await (
-              await this.fetch(
-                `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,
-                undefined,
-                '',
-                0,
-                true
-              )
-            ).json();
-            videoStatus = status?.video_status || 'in_progress';
-            if (videoStatus === 'error') {
-              throw new Error('Video processing failed');
-            }
-            if (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
-              await timer(10000);
-            }
-          }
-
-          const { post_id: storyPostId } = await (
-            await this.fetch(
-              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=finish&video_id=${video_id}&access_token=${accessToken}`,
-              {
-                method: 'POST',
-              },
-              'finish video story upload'
-            )
-          ).json();
-
-          lastPostId = storyPostId;
+          items.push({ kind: 'video', mediaId: video_id });
         } else {
           const { id: photoId } = await (
             await this.fetch(
@@ -549,23 +543,221 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             )
           ).json();
 
-          const { post_id: storyPostId } = await (
-            await this.fetch(
-              `https://graph.facebook.com/v20.0/${id}/photo_stories?photo_id=${photoId}&access_token=${accessToken}`,
-              {
-                method: 'POST',
-              },
-              'publish photo story'
-            )
-          ).json();
-
-          lastPostId = storyPostId;
+          items.push({ kind: 'photo', mediaId: photoId });
         }
       }
 
-      finalId = lastPostId;
-      finalUrl = `https://www.facebook.com/stories/${lastPostId}`;
-    } else if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
+      return [
+        {
+          id: firstPost.id,
+          postId: '',
+          releaseURL: '',
+          status: 'pending',
+          pendingData: {
+            postType: 'story',
+            items,
+            publishedCount: 0,
+            lastPostId: '',
+          },
+        },
+      ];
+    }
+
+    return this.postNonStory(id, accessToken, postDetails);
+  }
+
+  override async checkPostStatus(
+    accessToken: string,
+    pendingData: {
+      postType: 'story';
+      items: { kind: 'video' | 'photo'; mediaId: string }[];
+      publishedCount: number;
+      lastPostId: string;
+      attempting?: number | null;
+      confirmed?: boolean;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // A confirmed publish attempt died without reporting its result: Facebook
+    // has no API to ask whether a story was published, so never publish that
+    // item again - stop with an explicit warning instead.
+    if (pendingData.attempting != null && pendingData.confirmed) {
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        '{}',
+        'Facebook may have already published part of the story, please check your page before posting again to avoid duplicates'
+      );
+    }
+
+    // wait for every not-yet-published video to finish processing, photos are
+    // ready as soon as they are uploaded
+    for (const item of pendingData.items.slice(pendingData.publishedCount)) {
+      if (item.kind !== 'video') {
+        continue;
+      }
+
+      if (!(await this.fbVideoStatus(item.mediaId, accessToken))) {
+        return { status: 'pending', pendingData };
+      }
+    }
+
+    // witness the armed publish so finalizePost knows the attempt is uniquely
+    // accounted for before it mutates anything
+    if (pendingData.attempting != null && !pendingData.confirmed) {
+      return {
+        status: 'ready',
+        pendingData: { ...pendingData, confirmed: true },
+      };
+    }
+
+    return { status: 'ready', pendingData };
+  }
+
+  override async finalizePost(
+    accessToken: string,
+    pendingData: {
+      postType: 'story';
+      items: { kind: 'video' | 'photo'; mediaId: string }[];
+      publishedCount: number;
+      lastPostId: string;
+      attempting?: number | null;
+      confirmed?: boolean;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // Publish exactly one story per call, with an arm -> confirm -> publish
+    // handshake: the publish only runs after checkPostStatus witnessed the
+    // intent, so a run that dies mid-publish is detectable and the item is
+    // never published twice.
+    if (pendingData.attempting == null || !pendingData.confirmed) {
+      return {
+        status: 'pending',
+        pendingData: {
+          ...pendingData,
+          attempting: pendingData.publishedCount,
+          confirmed: false,
+        },
+      };
+    }
+
+    const item = pendingData.items[pendingData.publishedCount];
+
+    const { post_id: storyPostId } = await (
+      await this.fetch(
+        item.kind === 'video'
+          ? `https://graph.facebook.com/v20.0/${integration.internalId}/video_stories?upload_phase=finish&video_id=${item.mediaId}&access_token=${accessToken}`
+          : `https://graph.facebook.com/v20.0/${integration.internalId}/photo_stories?photo_id=${item.mediaId}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        },
+        item.kind === 'video'
+          ? 'finish video story upload'
+          : 'publish photo story'
+      )
+    ).json();
+
+    const publishedCount = pendingData.publishedCount + 1;
+
+    if (publishedCount < pendingData.items.length) {
+      return {
+        status: 'pending',
+        pendingData: {
+          ...pendingData,
+          publishedCount,
+          lastPostId: storyPostId,
+          attempting: null,
+          confirmed: false,
+        },
+      };
+    }
+
+    return {
+      status: 'completed',
+      postId: storyPostId,
+      releaseURL: `https://www.facebook.com/stories/${storyPostId}`,
+    };
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that don't
+  // know how to resolve a `pending` response.
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<FacebookDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [firstPost] = postDetails;
+    const [response] = await this.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration
+    );
+
+    if (response.status !== 'pending') {
+      return [response];
+    }
+
+    let pendingData = response.pendingData;
+    const started = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here (non-retryable) is safe, timing the
+      // activity out is not - a retried activity would publish again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Video processing timed out'
+        );
+      }
+
+      const check = await this.checkPostStatus(
+        accessToken,
+        pendingData,
+        integration
+      );
+
+      if (check.status === 'pending') {
+        pendingData = check.pendingData;
+        await timer(10000);
+        continue;
+      }
+
+      const result =
+        check.status === 'ready'
+          ? await this.finalizePost(accessToken, check.pendingData, integration)
+          : check;
+
+      if (result.status === 'completed') {
+        return [
+          {
+            id: firstPost.id,
+            postId: result.postId,
+            releaseURL: result.releaseURL,
+            status: 'success',
+          },
+        ];
+      }
+
+      pendingData = result.pendingData;
+    }
+  }
+
+  private async postNonStory(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<FacebookDto>[]
+  ): Promise<PostResponse[]> {
+    const [firstPost] = postDetails;
+
+    let finalId = '';
+    let finalUrl = '';
+    if (hasExtension(firstPost?.media?.[0]?.path, 'mp4')) {
       const {
         id: videoId,
         permalink_url,

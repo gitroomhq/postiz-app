@@ -1,5 +1,6 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
+import { PendingCheckResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -110,6 +111,43 @@ export abstract class SocialAbstract {
     additionalSettings: any[]
   ): Promise<string | true> {
     return true;
+  }
+
+  /**
+   * Providers that return a `pending` PostResponse from `post` / `comment` must
+   * override this with a single, read-only status check (no loops, no timers) -
+   * the polling loop lives in the post workflow, where a retry is harmless.
+   *
+   * The defaults throw so a provider that returns `pending` without overriding
+   * fails loudly on the first test post instead of silently completing with a
+   * bogus releaseURL. They are unreachable for providers that never return
+   * `pending`.
+   */
+  public async checkPostStatus(
+    accessToken: string,
+    pendingData: any,
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      'checkPostStatus is not implemented for this provider'
+    );
+  }
+
+  /** Runs the mutations left after `checkPostStatus` returns `ready`. Same contract as `checkPostStatus`. */
+  public async finalizePost(
+    accessToken: string,
+    pendingData: any,
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      'finalizePost is not implemented for this provider'
+    );
   }
 
   protected assetBoolean(value: boolean | string) {
