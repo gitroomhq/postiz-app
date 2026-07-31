@@ -27,6 +27,7 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
+import { UpdatePostSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/update.post.settings.dto';
 import {
   AuthorizationActions,
   Sections,
@@ -472,6 +473,21 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/posts/:id/settings')
+  async updatePostSettings(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdatePostSettingsDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.updatePostSettings(
+      org.id,
+      id,
+      body.settings,
+      'API'
+    );
   }
 
   @Put('/posts/:id/status')
