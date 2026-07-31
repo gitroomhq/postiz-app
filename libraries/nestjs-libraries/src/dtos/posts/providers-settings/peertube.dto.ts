@@ -6,9 +6,12 @@
   IsBoolean,
   Min,
   MaxLength,
-  MinLength
+  MinLength,
+  ValidateNested
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
+import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
+import { Type } from 'class-transformer';
 
 export class PeerTubeDto {
   @IsString()
@@ -44,4 +47,9 @@ export class PeerTubeDto {
   @IsOptional()
   @IsBoolean()
   nsfw?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MediaDto)
+  thumbnail?: MediaDto;
 }
