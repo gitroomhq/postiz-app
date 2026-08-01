@@ -4,12 +4,13 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { AdminApplyCouponDto } from '@gitroom/nestjs-libraries/dtos/billing/admin.apply.coupon.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -18,8 +19,16 @@ export class BillingController {
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
     private _notificationService: NotificationService,
-    private _nowpayments: Nowpayments
+    private _usersService: UsersService
   ) {}
+
+  private async assertNoOtherSubscribedAccount(user: User) {
+    const other = await this._usersService.getUserWithActiveSubscriptionByEmail(
+      user.email,
+      user.id
+    );
+    return !!other;
+  }
 
   @Get('/check/:id')
   async checkId(
@@ -63,12 +72,16 @@ export class BillingController {
   }
 
   @Post('/embedded')
-  embedded(
+  async embedded(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.embedded(
       uniqueId,
@@ -80,12 +93,16 @@ export class BillingController {
   }
 
   @Post('/subscribe')
-  subscribe(
+  async subscribe(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.subscribe(
       uniqueId,
@@ -136,14 +153,6 @@ export class BillingController {
     return this._stripeService.prorate(org.id, body);
   }
 
-  @Post('/lifetime')
-  async lifetime(
-    @GetOrgFromRequest() org: Organization,
-    @Body() body: { code: string }
-  ) {
-    return this._stripeService.lifetimeDeal(org.id, body.code);
-  }
-
   @Get('/charges')
   async getCharges(
     @GetUserFromRequest() user: User,
@@ -181,6 +190,67 @@ export class BillingController {
     return this._stripeService.cancelSubscription(org.id);
   }
 
+  @Get('/coupon-info')
+  async couponInfo(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.getCouponInfo(org.id);
+  }
+
+  @Post('/apply-coupon')
+  async applyCoupon(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: AdminApplyCouponDto
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.applyCoupon(org.id, body);
+  }
+
+  @Post('/cancel-coupon')
+  async cancelCoupon(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.cancelCoupon(org.id);
+  }
+
+  @Get('/chatbase-refund/preview')
+  chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
+    return this._stripeService.chatbaseRefundPreview(org.id);
+  }
+
+  @Post('/chatbase-refund')
+  async chatbaseRefund(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    const refund = await this._stripeService.chatbaseRefund(org.id);
+
+    if (refund.refunded) {
+      await this._notificationService.sendEmail(
+        process.env.EMAIL_FROM_ADDRESS,
+        'Refund issued from Chatbase',
+        `Organization ${org.name} received a refund of ${refund.amount} ${refund.currency} and their subscription was cancelled`,
+        user.email
+      );
+    }
+
+    return refund;
+  }
+
   @Post('/add-subscription')
   async addSubscription(
     @Body() body: { subscription: string },
@@ -198,8 +268,4 @@ export class BillingController {
     );
   }
 
-  @Get('/crypto')
-  async crypto(@GetOrgFromRequest() org: Organization) {
-    return this._nowpayments.createPaymentPage(org.id);
-  }
 }

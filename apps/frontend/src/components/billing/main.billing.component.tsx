@@ -23,7 +23,6 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
-import { PurchaseCrypto } from '@gitroom/frontend/components/billing/purchase.crypto';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -380,7 +379,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal } = await (
+        const { url, portal, blocked } = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -391,6 +390,18 @@ export const MainBillingComponent: FC<{
             }),
           })
         ).json();
+        if (blocked) {
+          setLoading(false);
+          await deleteDialog(
+            t(
+              'billing_other_account_subscribed',
+              'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
+            ),
+            t('ok', 'OK'),
+            t('already_subscribed', 'Already subscribed')
+          );
+          return;
+        }
         if (url) {
           await track(TrackEnum.InitiateCheckout, {
             value:
@@ -538,7 +549,6 @@ export const MainBillingComponent: FC<{
             </div>
           ))}
       </div>
-      {!subscription?.id && <PurchaseCrypto />}
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
           <Button onClick={updatePayment}>

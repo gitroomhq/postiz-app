@@ -8,7 +8,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { lookup } from 'mime-types';
 import axios from 'axios';
 import WebSocket from 'ws';
@@ -30,6 +33,29 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
 
   maxLength() {
     return 10000;
+  }
+
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (
+      settings?.subreddit?.some(
+        (p: any) => p?.value?.type === 'media' && posts?.[0]?.length !== 1
+      )
+    ) {
+      return 'When posting a media post, you must attached exactly one media file.';
+    }
+
+    if (
+      posts?.some((p) =>
+        p?.some((a) => !a?.thumbnail && (a?.path?.indexOf?.('mp4') ?? -1) > -1)
+      )
+    ) {
+      return 'You must attach a thumbnail to your video post.';
+    }
+
+    return true;
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {

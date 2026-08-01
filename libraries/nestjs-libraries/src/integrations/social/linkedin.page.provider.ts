@@ -433,7 +433,7 @@ export class LinkedinPageProvider
 
     const { elements: shareElements }: { elements: PostShareStatElement[] } =
       await (
-        await this.fetch(shareStatsUrl, {
+        await fetch(shareStatsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',
@@ -449,7 +449,7 @@ export class LinkedinPageProvider
         postId
       )}`;
       socialActions = await (
-        await this.fetch(socialActionsUrl, {
+        await fetch(socialActionsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',

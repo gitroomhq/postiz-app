@@ -10,7 +10,11 @@ import {
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { createReadStream, statSync } from 'fs';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -24,7 +28,11 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  'X can have maximum 4 pictures, or maximum one video, it can also be without attachments'
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${
+    process.env.STRIP_LINKS_FROM_X_POSTS
+      ? 'do not add links, they will be stripped from the post'
+      : ''
+  }`
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
@@ -39,21 +47,33 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   editor = 'normal' as const;
   dto = XDto;
 
-  maxLength(isTwitterPremium: boolean) {
-    return isTwitterPremium ? 4000 : 200;
+  maxLength(additionalSettings?: any) {
+    // Accepts either the parsed additionalSettings array (from validation) or a
+    // plain boolean (legacy callers). "Verified" => premium => higher limit.
+    const isTwitterPremium = Array.isArray(additionalSettings)
+      ? !!additionalSettings.find((p: any) => p?.title === 'Verified')?.value
+      : !!additionalSettings;
+    return isTwitterPremium ? 4000 : 280;
   }
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
     if (body.includes('You are not permitted to perform this action')) {
       return {
         type: 'bad-body',
-        value: 'There is a problem posting, please edit your post and check character count and media attachments',
-      }
+        value:
+          'There is a problem posting, please edit your post and check character count and media attachments',
+      };
+    }
+    if (body.includes('Service Unavailable')) {
+      return {
+        type: 'retry',
+        value: 'X is currently unavailable, please try again later',
+      };
     }
     if (body.includes('maximum of one cashtag')) {
       return {
@@ -74,10 +94,25 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('You are not allowed to create a Tweet')) {
+      return {
+        type: 'bad-body',
+        value: 'You are not allowed to create a post with duplicate content',
+      }
+    }
+
     if (body.includes('usage-capped')) {
       return {
         type: 'bad-body',
         value: 'Posting failed - capped reached. Please try again later',
+      };
+    }
+
+    if (body.includes('user-suspended')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your X account has been suspended, please reconnect with another account',
       };
     }
     if (body.includes('duplicate-rules')) {
@@ -85,6 +120,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'You have already posted this post, please wait before posting again',
+      };
+    }
+    if (body.includes('Your account is not permitted to access this feature')) {
+      return {
+        type: 'bad-body',
+        value:
+          'X blocked your request',
       };
     }
     if (body.includes('The Tweet contains an invalid URL.')) {
@@ -379,6 +421,130 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
+  // Same INIT / APPEND / FINALIZE flow as client.v2.uploadMedia, but the
+  // video is never held in memory whole: total_bytes comes from a HEAD
+  // request (statSync for local files) and each 1MB segment is fetched with
+  // a ranged GET right before its APPEND. client.v2.uploadMedia only accepts
+  // a Buffer, which is why the loop is replicated here.
+  private async uploadVideoChunked(client: TwitterApi, path: string) {
+    const size = await this.videoSize(path);
+    const chunkSize = 1024 * 1024;
+
+    const initResponse = await client.v2.post<{ data: { id: string } }>(
+      'media/upload/initialize',
+      {
+        media_type: lookup(path) || 'video/mp4',
+        total_bytes: size,
+        media_category: 'tweet_video',
+      }
+    );
+    const mediaId = initResponse.data.id;
+
+    for (let i = 0; i < size; i += chunkSize) {
+      const end = Math.min(i + chunkSize, size) - 1;
+      await client.v2.post(
+        `media/upload/${mediaId}/append`,
+        {
+          segment_index: i / chunkSize,
+          media: await this.videoChunk(path, i, end),
+        },
+        { forceBodyMode: 'form-data' }
+      );
+    }
+
+    const finalizeResponse = await client.v2.post<{
+      data: { processing_info?: object };
+    }>(`media/upload/${mediaId}/finalize`);
+    if (finalizeResponse.data.processing_info) {
+      await this.waitForMediaProcessing(client, mediaId);
+    }
+
+    return mediaId;
+  }
+
+  // Mirrors the private client.v2.waitForMediaProcessing.
+  private async waitForMediaProcessing(client: TwitterApi, mediaId: string) {
+    const response = await client.v2.get<{
+      data: {
+        processing_info?: {
+          state: string;
+          check_after_secs?: number;
+          error?: { message?: string };
+        };
+      };
+    }>('media/upload', { command: 'STATUS', media_id: mediaId });
+
+    const info = response.data.processing_info;
+    if (!info || info.state === 'succeeded') {
+      return;
+    }
+    if (info.state === 'failed') {
+      throw new BadBody(
+        'x-error-upload',
+        JSON.stringify(response.data),
+        Buffer.from('{}'),
+        `X media processing failed: ${info.error?.message || 'unknown error'}`
+      );
+    }
+    await timer((info.check_after_secs || 1) * 1000);
+    await this.waitForMediaProcessing(client, mediaId);
+  }
+
+  // Resolves the total byte size of the video without loading it into memory:
+  // a HEAD request for remote URLs, statSync for local files.
+  private async videoSize(path: string): Promise<number> {
+    if (path.indexOf('http') === 0) {
+      const head = await fetch(path, { method: 'HEAD' });
+      const length = head.headers.get('content-length');
+      if (!length) {
+        throw new BadBody(
+          'x-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          'Could not determine the video size for X upload'
+        );
+      }
+      return Number(length);
+    }
+
+    return statSync(path).size;
+  }
+
+  // Returns only the [start, end] byte window of the video as a Buffer (a
+  // ranged GET for remote URLs, a ranged read for local files), so memory is
+  // bounded by the segment size.
+  private async videoChunk(
+    path: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    if (path.indexOf('http') === 0) {
+      const response = await fetch(path, {
+        headers: { Range: `bytes=${start}-${end}` },
+      });
+      // A 200 means the origin ignored the Range header and is sending the
+      // whole file: uploading it as this segment would silently corrupt the
+      // video, so fail loudly instead.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'x-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          `Media server ignored the ranged request (status ${response.status}); it must support HTTP Range requests for chunked X uploads`
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      createReadStream(path, { start, end })
+        .on('data', (chunk) => chunks.push(chunk as Buffer))
+        .on('end', () => resolve(Buffer.concat(chunks)))
+        .on('error', reject);
+    });
+  }
+
   private async uploadMedia(
     client: TwitterApi,
     postDetails: PostDetails<any>[]
@@ -390,10 +556,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             return {
               id: await this.runInConcurrent(
                 async () =>
-                  client.v2.uploadMedia(
-                    hasExtension(m.path, 'mp4')
-                      ? Buffer.from(await readOrFetch(m.path))
-                      : await sharp(await readOrFetch(m.path), {
+                  hasExtension(m.path, 'mp4')
+                    ? this.uploadVideoChunked(client, m.path)
+                    : client.v2.uploadMedia(
+                        await sharp(await readOrFetch(m.path), {
                           animated: lookup(m.path) === 'image/gif',
                         })
                           .resize({
@@ -401,10 +567,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                           })
                           .gif()
                           .toBuffer(),
-                    {
-                      media_type: (lookup(m.path) || '') as any,
-                    }
-                  ),
+                        {
+                          media_type: (lookup(m.path) || '') as any,
+                        }
+                      ),
                 true
               ),
               postId: p.id,
@@ -439,17 +605,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         | 'verified';
       made_with_ai?: boolean;
       paid_partnership?: boolean;
-    }>[]
+    }>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
 
     const [firstPost] = postDetails;
 
@@ -477,8 +637,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         ? removeLinks(firstPost.message)
         : firstPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
-      made_with_ai: !!firstPost?.settings?.made_with_ai,
-      paid_partnership: !!firstPost?.settings?.paid_partnership,
+      made_with_ai: this.assetBoolean(firstPost?.settings?.made_with_ai),
+      paid_partnership: this.assetBoolean(firstPost?.settings?.paid_partnership),
     };
 
     const tweetResponse = await this.fetch(tweetUrl, {
@@ -502,7 +662,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       {
         postId: data.id,
         id: firstPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];
@@ -523,14 +683,6 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = await this.getClient(accessToken);
-    const {
-      data: { username },
-    } = await this.runInConcurrent(async () =>
-      client.v2.me({
-        'user.fields': 'username',
-      })
-    );
-
     const [commentPost] = postDetails;
 
     // upload media for the comment
@@ -547,8 +699,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         : commentPost.message,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       reply: { in_reply_to_tweet_id: replyToId },
-      made_with_ai: !!commentPost?.settings?.made_with_ai,
-      paid_partnership: !!commentPost?.settings?.paid_partnership,
+      made_with_ai: this.assetBoolean(commentPost?.settings?.made_with_ai),
+      paid_partnership: this.assetBoolean(
+        commentPost?.settings?.paid_partnership
+      ),
     };
 
     const tweetResponse = await this.fetch(tweetUrl, {
@@ -572,7 +726,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       {
         postId: data.id,
         id: commentPost.id,
-        releaseURL: `https://twitter.com/${username}/status/${data.id}`,
+        releaseURL: `https://twitter.com/${integration.profile}/status/${data.id}`,
         status: 'posted',
       },
     ];

@@ -88,23 +88,6 @@ export default withProvider({
   SettingsComponent: SettingsComponent,
   CustomPreviewComponent: undefined,
   dto: XDto,
-  checkValidity: async (posts, settings, additionalSettings: any) => {
-    const premium =
-      additionalSettings?.find((p: any) => p?.title === 'Verified')?.value ||
-      false;
-    // if (posts?.some((p) => (p?.length ?? 0) > 4)) {
-    //   return 'There can be maximum 4 pictures in a post.';
-    // }
-    for (const load of posts?.flatMap((p) => p?.flatMap((a) => a?.path)) ?? []) {
-      if ((load?.indexOf?.('mp4') ?? -1) > -1) {
-        const isValid = await checkVideoDuration(load, premium);
-        if (!isValid) {
-          return 'Video duration must be less than or equal to 140 seconds.';
-        }
-      }
-    }
-    return true;
-  },
   maximumCharacters: (settings) => {
     if (settings?.[0]?.value) {
       return 4000;
@@ -112,25 +95,3 @@ export default withProvider({
     return 280;
   },
 });
-const checkVideoDuration = async (
-  url: string,
-  isPremium = false
-): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.src = url;
-    video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      // Check if the duration is less than or equal to 140 seconds
-      const duration = video.duration;
-      if ((!isPremium && duration <= 140) || isPremium) {
-        resolve(true); // Video duration is acceptable
-      } else {
-        resolve(false); // Video duration exceeds 140 seconds
-      }
-    };
-    video.onerror = () => {
-      reject(new Error('Failed to load video metadata.'));
-    };
-  });
-};

@@ -8,7 +8,10 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -49,6 +52,31 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
   maxLength() {
     return 1500;
+  }
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>,
+    settings: any
+  ): Promise<string | true> {
+    // GMB posts can have text only, or text with one image
+    if ((items?.length ?? 0) > 0 && (items?.[0]?.length ?? 0) > 1) {
+      return 'Google My Business posts can only have one image';
+    }
+
+    // Check for video - GMB doesn't support video in local posts
+    if ((items?.length ?? 0) > 0 && (items?.[0]?.length ?? 0) > 0) {
+      const media = items?.[0]?.[0];
+      if ((media?.path?.indexOf?.('mp4') ?? -1) > -1) {
+        return 'Google My Business posts do not support video attachments';
+      }
+    }
+
+    // Event posts require a title
+    if (settings?.topicType === 'EVENT' && !settings?.eventTitle) {
+      return 'Event posts require an event title';
+    }
+
+    return true;
   }
 
   override handleErrors(body: string):

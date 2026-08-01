@@ -120,7 +120,12 @@ export class PostActivity {
         return false;
       }
     }
-    return this._postService.getPostById(postId, orgId);
+    const post = await this._postService.getPostById(postId, orgId);
+    if (post.deletedAt) {
+      return false;
+    }
+
+    return post;
   }
 
   @ActivityMethod()

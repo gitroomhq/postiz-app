@@ -1,26 +1,60 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
 import { ApplicationFailure } from '@temporalio/activity';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import sharp from 'sharp';
+
+export type ValidityMedia = {
+  path: string;
+  thumbnail?: string;
+};
+
+// Temporal serializes the whole ApplicationFailure (message + details) into the
+// workflow history and ships it over gRPC, which has a hard frame limit (4MB by
+// default). Provider error messages/bodies can be huge (full HTML error pages,
+// base64 media echoed back, stack traces), so we cap every string that goes into
+// the failure to keep the history small and avoid "GRPC Message too large".
+const MAX_FAILURE_MESSAGE = 2_000;
+const MAX_FAILURE_FIELD = 4_000;
+
+export function truncateForTemporal(value: any, max: number): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const str = typeof value === 'string' ? value : safeStringify(value);
+  if (str.length <= max) {
+    return str;
+  }
+
+  return `${str.slice(0, max)}… [truncated ${str.length - max} chars]`;
+}
 
 export class RefreshToken extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
-    super(message, 'refresh_token', true, [
-      {
-        identifier,
-        json,
-        body,
-      },
-    ]);
+    super(
+      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
+      'refresh_token',
+      true,
+      [
+        {
+          identifier,
+          json: truncateForTemporal(json, MAX_FAILURE_FIELD),
+          body: truncateForTemporal(body, MAX_FAILURE_FIELD),
+        },
+      ]
+    );
   }
 }
 
 export class BadBody extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
-    super(message, 'bad_body', true, [
+    super(truncateForTemporal(message, MAX_FAILURE_MESSAGE), 'bad_body', true, [
       {
         identifier,
-        json,
-        body,
+        json: truncateForTemporal(json, MAX_FAILURE_FIELD),
+        body: truncateForTemporal(body, MAX_FAILURE_FIELD),
       },
     ]);
   }
@@ -52,11 +86,53 @@ export abstract class SocialAbstract {
 
   public handleErrors(
     body: string,
-    status: number,
+    status: number
   ):
     | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
     | undefined {
     return undefined;
+  }
+
+  /**
+   * Server-side replacement for the old client-side `checkValidity`.
+   * Validates the media attached to a post (and its comments) against the
+   * provider rules. Returns `true` when valid, or an error message string.
+   *
+   * `posts` mirrors the client shape: the outer array is the main post followed
+   * by each comment, the inner array is the media items for that entry.
+   *
+   * Note: video-duration validations that used to run in the browser are not
+   * re-implemented here (no ffmpeg dependency). Image-dimension checks use sharp.
+   */
+  async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    settings: any,
+    additionalSettings: any[]
+  ): Promise<string | true> {
+    return true;
+  }
+
+  protected assetBoolean(value: boolean | string) {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value || false;
+  }
+
+  /** Reads the pixel dimensions of an image via sharp (works for http or local paths). */
+  protected async getImageDimensions(
+    path: string
+  ): Promise<{ width: number; height: number }> {
+    // Stored media paths are relative (e.g. "uploads/x.png"); resolve them to a
+    // fetchable URL the same way posts.service.updateMedia does.
+    const url =
+      path?.indexOf('http') === -1
+        ? `${process.env.FRONTEND_URL}/${path}`
+        : path;
+    const { width = 0, height = 0 } = await sharp(
+      await readOrFetch(url)
+    ).metadata();
+    return { width, height };
   }
 
   public async mention(
@@ -75,12 +151,14 @@ export abstract class SocialAbstract {
     func: (...args: any[]) => Promise<T>,
     ignoreConcurrency?: boolean
   ) {
+    let globalErr = {};
     let value: any;
     try {
       value = await func();
     } catch (err) {
       const handle = this.handleErrors(safeStringify(err), 200);
       value = { err: true, value: 'Unknown Error', ...(handle || {}) };
+      globalErr = err;
     }
 
     if (value && value?.err && value?.value) {
@@ -92,7 +170,12 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
-      throw new BadBody('', safeStringify({}), {} as any, value.value || '');
+      throw new BadBody(
+        '',
+        safeStringify(globalErr),
+        {} as any,
+        value.value || ''
+      );
     }
 
     return value;
@@ -103,16 +186,17 @@ export abstract class SocialAbstract {
     options: RequestInit = {},
     identifier = '',
     totalRetries = 0,
-    ignoreConcurrency = false
+    ignoreConcurrency = false,
+    message = ''
   ): Promise<Response> {
-    const request = await fetch(url, options);
+    const request = await fetch(url, {
+      ...options,
+      // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
+      dispatcher: (options as any).dispatcher ?? getSsrfSafeDispatcher(),
+    });
 
     if (request.status === 200 || request.status === 201) {
       return request;
-    }
-
-    if (totalRetries > 2) {
-      throw new BadBody(identifier, '{}', options.body || '{}');
     }
 
     let json = '{}';
@@ -120,6 +204,12 @@ export abstract class SocialAbstract {
       json = await request.text();
     } catch (err) {
       json = '{}';
+    }
+
+    if (totalRetries > 2) {
+      // Include the platform's actual response body so the failure is
+      // diagnosable, instead of an empty '{}'.
+      throw new BadBody(identifier, json, options.body || '{}', message);
     }
 
     const handleError = this.handleErrors(json || '{}', request.status);
@@ -136,7 +226,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 
@@ -147,7 +238,8 @@ export abstract class SocialAbstract {
         options,
         identifier,
         totalRetries + 1,
-        ignoreConcurrency
+        ignoreConcurrency,
+        handleError?.value || 'Unknown Error'
       );
     }
 
@@ -168,7 +260,7 @@ export abstract class SocialAbstract {
       identifier,
       json,
       options.body!,
-      handleError?.value || ''
+      handleError?.value || 'Unknown Error'
     );
   }
 

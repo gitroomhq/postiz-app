@@ -9,11 +9,17 @@ import sharp from 'sharp';
 import { lookup } from 'mime-types';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@gitroom/helpers/utils/timer';
+import {
+  BadBody,
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
+import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -35,11 +41,37 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'w_organization_social',
     'r_organization_social',
   ];
-  override maxConcurrentJob = 2; // LinkedIn has professional posting limits
+  override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
   maxLength() {
     return 3000;
+  }
+
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>,
+    vals: any
+  ): Promise<string | true> {
+    const [firstPost, ...restPosts] = posts ?? [];
+
+    if (
+      this.assetBoolean(vals?.post_as_images_carousel) &&
+      ((firstPost?.length ?? 0) < 2 ||
+        firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
+    ) {
+      return 'Carousel can only be created with 2 or more images and no videos.';
+    }
+
+    if (
+      (firstPost?.length ?? 0) > 1 &&
+      firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+    ) {
+      return 'Can have maximum 1 media when selecting a video.';
+    }
+    if (restPosts?.some((p) => (p?.length ?? 0) > 0)) {
+      return 'Comments can only contain text.';
+    }
+    return true;
   }
 
   override handleErrors(
@@ -54,7 +86,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    if (body.indexOf('resource is forbidden') > -1) {
+    if (body.indexOf('resource is forbidden') > -1 || body.indexOf('Service Unavailable') > -1) {
       return {
         type: 'retry',
         value: 'Resource is forbidden',
@@ -247,6 +279,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       endpoint = 'images';
     }
 
+    // Videos arrive as a path/URL (not a Buffer) so the file is never held in
+    // memory whole: the size comes from a HEAD request / stat, and each 2MB
+    // part is fetched with a ranged GET right before its PUT.
+    const videoSize = isVideo ? await this.videoSize(picture) : 0;
+
     const {
       value: { uploadUrl, image, video, document, uploadInstructions, ...all },
     } = await (
@@ -268,7 +305,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : `urn:li:organization:${personId}`,
               ...(isVideo
                 ? {
-                    fileSizeBytes: picture.length,
+                    fileSizeBytes: videoSize,
                     uploadCaptions: false,
                     uploadThumbnail: false,
                   }
@@ -283,8 +320,36 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const finalOutput = video || image || document;
 
     const etags = [];
-    for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
-      const upload = await this.fetch(
+    if (isVideo) {
+      // Only the Videos API uses multipart chunked uploads. Each 2MB part is
+      // PUT separately and the returned etags are passed to finalizeUpload.
+      for (let i = 0; i < videoSize; i += 1024 * 1024 * 2) {
+        const end = Math.min(i + 1024 * 1024 * 2, videoSize) - 1;
+        const upload = await this.fetch(
+          sendUrlRequest,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/octet-stream',
+            },
+            body: await this.videoChunk(picture, i, end),
+          },
+          'linkedin',
+          0,
+          true
+        );
+
+        etags.push(upload.headers.get('etag'));
+      }
+    } else {
+      // Images and documents (PDF carousels) use a single-shot upload URL and
+      // must be sent as one PUT of the whole file. Chunking here would send
+      // multiple overwriting PUTs to the same URL, leaving LinkedIn with only
+      // the final chunk and corrupting anything larger than 2MB.
+      await this.fetch(
         sendUrlRequest,
         {
           method: 'PUT',
@@ -292,24 +357,18 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
             'X-Restli-Protocol-Version': '2.0.0',
             'LinkedIn-Version': '202601',
             Authorization: `Bearer ${accessToken}`,
-            ...(isVideo
-              ? { 'Content-Type': 'application/octet-stream' }
-              : isPdf
-              ? { 'Content-Type': 'application/pdf' }
-              : {}),
+            ...(isPdf ? { 'Content-Type': 'application/pdf' } : {}),
           },
-          body: picture.slice(i, i + 1024 * 1024 * 2),
+          body: picture,
         },
         'linkedin',
         0,
         true
       );
-
-      etags.push(upload.headers.get('etag'));
     }
 
     if (isVideo) {
-      const a = await this.fetch(
+      await this.fetch(
         'https://api.linkedin.com/rest/videos?action=finalizeUpload',
         {
           method: 'POST',
@@ -328,9 +387,99 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           },
         }
       );
+
+      // After finalizing, the video is processed asynchronously. We have to
+      // wait until it reaches the AVAILABLE status before attaching it to a
+      // post, otherwise LinkedIn rejects the post with a processing error.
+      await this.waitForMediaToBeReady(video, accessToken, 'videos');
+    } else if (isPdf) {
+      // Documents (PDF carousels) are processed asynchronously too and must be
+      // AVAILABLE before being attached to a post, otherwise LinkedIn rejects
+      // the post or publishes a broken carousel.
+      if (type === 'company') {
+        // Organization-owned documents can be polled for their status.
+        await this.waitForMediaToBeReady(document, accessToken, 'documents');
+      } else {
+        // A w_member_social (personal) token is write-only for rest/documents
+        // and can't perform the GET, so polling would always be forbidden.
+        // Give LinkedIn a moment to finish processing before attaching it.
+        await timer(10000);
+      }
+    } else {
+      // Images are also processed asynchronously and must be AVAILABLE before
+      // being attached to a post.
+      if (type === 'company') {
+        // Organization-owned images can be polled for their processing status.
+        await this.waitForMediaToBeReady(image, accessToken, 'images');
+      } else {
+        // A w_member_social (personal) token is write-only for rest/images and
+        // can't perform the GET, so polling would always be forbidden. Images
+        // are quick to process, so we just give LinkedIn a moment before
+        // attaching it to the post.
+        await timer(10000);
+      }
     }
 
     return finalOutput;
+  }
+
+  // Polls the "Get a Video"/"Get an Image" API until the media finishes
+  // processing (status === AVAILABLE).
+  // videos: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api#get-a-video
+  // images: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api#get-a-single-image
+  private async waitForMediaToBeReady(
+    urn: string,
+    accessToken: string,
+    type: 'videos' | 'images' | 'documents',
+    maxAttempts = 20,
+    intervalMs = 30000
+  ): Promise<void> {
+    const label =
+      type === 'videos' ? 'video' : type === 'documents' ? 'document' : 'image';
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const json = await (
+        await this.fetch(
+          `https://api.linkedin.com/rest/${type}/${encodeURIComponent(urn)}`,
+          {
+            method: 'GET',
+            headers: {
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        )
+      ).json();
+
+      const { status, processingFailureReason } = json;
+
+      if (status === 'AVAILABLE') {
+        return;
+      }
+
+      if (status === 'PROCESSING_FAILED') {
+        throw new BadBody(
+          this.identifier,
+          JSON.stringify(json),
+          '{}',
+          `LinkedIn ${label} processing failed${
+            processingFailureReason ? `: ${processingFailureReason}` : ''
+          }`
+        );
+      }
+
+      // status is PROCESSING or WAITING_UPLOAD, keep polling.
+      await timer(intervalMs);
+    }
+
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      `Timed out waiting for LinkedIn ${label} to be ready`
+    );
   }
 
   protected fixText(text: string) {
@@ -438,7 +587,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       postDetails.flatMap(
         (post) =>
           post.media?.map(async (media) => {
-            let mediaBuffer: Buffer;
+            // Videos are passed through as their path/URL: uploadPicture
+            // downloads them in 2MB ranges instead of buffering the whole file.
+            let mediaBuffer: Buffer | string;
 
             // Check if media has a buffer (from PDF conversion)
             if (
@@ -448,6 +599,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               Buffer.isBuffer(media.buffer)
             ) {
               mediaBuffer = (media as any).buffer;
+            } else if (hasExtension(media.path, 'mp4')) {
+              mediaBuffer = media.path;
             } else {
               mediaBuffer = await this.prepareMediaBuffer(media.path);
             }
@@ -477,18 +630,84 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }, {} as Record<string, string[]>);
   }
 
+  // Resolves the total byte size of the video without loading it into memory:
+  // a HEAD request for remote URLs, statSync for local files.
+  private async videoSize(path: string): Promise<number> {
+    if (path.indexOf('http') === 0) {
+      const head = await fetch(path, { method: 'HEAD' });
+      const length = head.headers.get('content-length');
+      if (!length) {
+        throw new BadBody(
+          'linkedin-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          'Could not determine the video size for LinkedIn upload'
+        );
+      }
+      return Number(length);
+    }
+
+    return statSync(path).size;
+  }
+
+  // Returns only the [start, end] byte window of the video as a Buffer (a
+  // ranged GET for remote URLs, a ranged read for local files), so memory is
+  // bounded by the part size. A Buffer (not a stream) because this.fetch may
+  // retry the PUT, which would fail with a consumed one-shot stream body.
+  private async videoChunk(
+    path: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    if (path.indexOf('http') === 0) {
+      const response = await fetch(path, {
+        headers: { Range: `bytes=${start}-${end}` },
+      });
+      // A 200 means the origin ignored the Range header and is sending the
+      // whole file: uploading it as this part would silently corrupt the
+      // video, so fail loudly instead.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'linkedin-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          `Media server ignored the ranged request (status ${response.status}); it must support HTTP Range requests for chunked LinkedIn uploads`
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+
+    return this.streamToBuffer(createReadStream(path, { start, end }));
+  }
+
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = hasExtension(mediaUrl, 'mp4');
     const isGif = lookup(mediaUrl) === 'image/gif';
 
-    if (isVideo || isGif) {
+    // GIFs pass through untouched (sharp would break animation).
+    if (isGif) {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
-    return await sharp(await readOrFetch(mediaUrl), { animated: false })
-      .toFormat('jpeg')
-      .resize({ width: 1000 })
-      .toBuffer();
+    const mime = lookup(mediaUrl);
+    // PNG and JPEG (covers both .jpg and .jpeg) keep their original format;
+    // anything else (webp, tiff, ...) is converted to jpeg for compatibility.
+    const keepFormat = mime === 'image/png' || mime === 'image/jpeg';
+
+    // Always downscale to stay under LinkedIn's 36,152,320-pixel cap: fit within
+    // a 6000x6000 box (max 36,000,000 px for any aspect ratio) while preserving
+    // the aspect ratio and never enlarging smaller images (downscale-only).
+    // NOTE: this guard is required for self-hosted instances running with
+    // DISABLE_IMAGE_COMPRESSION=true, where the frontend no longer shrinks
+    // uploads and full-size images reach LinkedIn directly. Do not remove it on
+    // the assumption that the frontend compression already caps dimensions.
+    const pipeline = sharp(await readOrFetch(mediaUrl), { animated: false }).resize({
+      width: 6000,
+      height: 6000,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+
+    return await (keepFormat ? pipeline : pipeline.toFormat('jpeg')).toBuffer();
   }
 
   private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
@@ -575,7 +794,12 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     });
 
     if (response.status !== 201 && response.status !== 200) {
-      throw new Error('Error posting to LinkedIn');
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        JSON.stringify(postPayload),
+        'Error posting to LinkedIn'
+      );
     }
 
     return response.headers.get('x-restli-id')!;
@@ -592,13 +816,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
 
     const response = await this.fetch(
-      `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+      `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(
         parentPostId
       )}/comments`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+        'LinkedIn-Version': '202306',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
@@ -643,7 +869,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
 
     // Check if we should convert images to PDF carousel
-    if (firstPost.settings?.post_as_images_carousel) {
+    if (this.assetBoolean(firstPost.settings?.post_as_images_carousel)) {
       processedPostDetails = await this.convertImagesToPdfCarousel(
         postDetails,
         firstPost
@@ -672,7 +898,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       processedFirstPost,
       mainPostMediaIds,
       type,
-      !!firstPost.settings?.post_as_images_carousel
+      this.assetBoolean(firstPost.settings?.post_as_images_carousel)
     );
 
     // Return response for main post only

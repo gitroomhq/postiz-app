@@ -8,7 +8,10 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import axios from 'axios';
 import FormData from 'form-data';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import mime from 'mime-types';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
@@ -25,6 +28,28 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     return 40000;
   }
   dto = DribbbleDto;
+
+  override async checkValidity(
+    [firstItem]: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const isMp4 = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
+    );
+    if (firstItem?.length !== 1) {
+      return 'Requires one item';
+    }
+    if (isMp4) {
+      return 'Does not support mp4 files';
+    }
+    const details = await this.getImageDimensions(firstItem?.[0]?.path);
+    if (
+      (details?.width === 400 && details?.height === 300) ||
+      (details?.width === 800 && details?.height === 600)
+    ) {
+      return true;
+    }
+    return 'Invalid image size. Requires 400x300 or 800x600 px images.';
+  }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const { access_token, expires_in } = await (

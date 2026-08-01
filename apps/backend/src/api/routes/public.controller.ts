@@ -19,7 +19,6 @@ import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -38,7 +37,6 @@ export class PublicController {
     private _trackService: TrackService,
     private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
-    private _nowpayments: Nowpayments,
     private _subscriptionService: SubscriptionService
   ) {}
   @Post('/agent')
@@ -156,11 +154,6 @@ export class PublicController {
     }
   }
 
-  @Post('/crypto/:path')
-  async cryptoPost(@Body() body: any, @Param('path') path: string) {
-    console.log('cryptoPost', body, path);
-    return this._nowpayments.processPayment(path, body);
-  }
 
   @Get('/stream')
   async streamFile(
