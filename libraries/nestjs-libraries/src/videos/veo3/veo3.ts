@@ -63,6 +63,7 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
     }
 
     const taskId = value.data.taskId;
+    console.log('veo3 taskId', taskId);
     let attempts = 0;
     const maxAttempts = 180; // ~30 minutes at 10s interval
     while (true) {
