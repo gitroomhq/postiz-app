@@ -59,7 +59,7 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
     ).json();
 
     if (value.code !== 200 && value.code !== 201) {
-      throw new Error(`Failed to generate video`);
+      throw new Error(value?.msg || `Failed to generate video`);
     }
 
     const taskId = value.data.taskId;
