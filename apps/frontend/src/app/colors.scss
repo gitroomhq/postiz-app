@@ -199,128 +199,134 @@
   }
 }
 
+// The old vocabulary, now resolving to the redesign's tokens.
+//
+// Every name here is still declared, so the ~440 `bg-newBgColorInner`-style
+// usages across the frontend and libraries keep working untouched — they simply
+// render the new palette. Names are retired screen by screen in the steps that
+// follow, which is what lets those steps be about structure rather than colour.
+//
+// A few are deliberately left on their own values, marked below: composer and
+// preview surfaces with no counterpart in the redesign's token set. Step 5
+// restyles them properly rather than guessing now.
 :root {
   .dark {
+    // The composer's global-lock scrim, used under `opacity-60`. Routing it
+    // through an already-transparent token would compound the alpha.
     --new-back-drop: #000;
-    --new-settings: #242323;
-    --new-border: #252525;
-    --new-bgColor: #0e0e0e;
-    --new-bgColorInner: #1a1919;
-    --new-sep: #454444;
-    --new-bgLineColor: #212121;
-    --new-textItemFocused: #1a1919;
-    --new-textItemBlur: #999999;
-    --new-boxFocused: #fff;
-    --new-textColor: 255 255 255;
-    --new-blockSeparator: #272626;
-    --new-btn-simple: #313030;
-    --new-btn-text: #ffffff;
-    // Brand purple and pink, shared with the landing site (postqueen.ai
-    // globals.css: --color-brand-500 / --color-pop-600 / --color-pop-300).
-    // Keep these identical across .dark and .light — the brand does not change
-    // with the theme, only the surfaces around it do.
-    --new-btn-primary: #7c3aed;
-    --new-ai-btn: #e0189e;
-    --new-box-hover: #201f1f;
-    --new-table-border: #2b2b2b;
-    --new-table-header: #1e1d1d;
-    --new-table-text: #9c9c9c;
-    --new-table-text-focused: #ff70e6;
-    --new-small-strips: #191818;
-    --new-big-strips: #161515;
-    --new-col-color: #2c2b2b;
-    --new-menu-dots: #696868;
-    --new-menu-hover: #fff;
-    --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5);
-    --popup-color: rgba(65, 64, 66, 0.3);
+    --new-settings: var(--settings);
+    --new-border: var(--border);
+    --new-bgColor: var(--bg);
+    --new-bgColorInner: var(--inner);
+    --new-sep: var(--border);
+    // The background a page's 1px column gaps show through.
+    --new-bgLineColor: var(--line);
+    --new-textItemFocused: var(--focused);
+    --new-textItemBlur: var(--muted);
+    --new-boxFocused: var(--boxFocused);
+    // Space-separated channels, not a hex: Tailwind consumes this as
+    // `rgb(var(--new-textColor) / <alpha-value>)`, so a hex here would silently
+    // kill every `text-newTextColor/70` in the app. This is --text in RGB.
+    --new-textColor: 237 237 240;
+    --new-blockSeparator: var(--blockSeparator);
+    --new-btn-simple: var(--btnSimple);
+    --new-btn-text: var(--text);
+    --new-btn-primary: var(--brand);
+    --new-ai-btn: var(--pink);
+    // An overlay tint rather than the solid this used to be — the redesign's
+    // hover sits on top of whatever surface it lands on.
+    --new-box-hover: var(--hover);
+    --new-table-border: var(--tableBorder);
+    --new-table-header: var(--tableHeader);
+    --new-table-text: var(--tableText);
+    --new-table-text-focused: var(--tableTextFocused);
+    --new-small-strips: var(--third);
+    --new-big-strips: var(--third);
+    --new-col-color: var(--colColor);
+    --new-menu-dots: var(--menuDots);
+    --new-menu-hover: var(--text);
+    --menu-shadow: var(--shadow);
+    --popup-color: var(--popup);
+    // Preview frames — step 5.
     --border-preview: transparent;
     --preview-box-shadow: none;
-    --linkedin-border: #2e3438;
-    --linkedin-bg: #1b1f23;
-    --linkedin-text: #c6c7c8;
-    --facebook-bg: #242526;
-    --facebook-bg-comment: #333334;
-    --instagram-bg: #0b1014;
-    --tiktok-item-bg: #2a2a2a;
-    --tiktok-item-icon-bg: #FFF;
-    --youtube-bg: #0F0F0F;
-    --youtube-button: #F1F1F1;
-    --youtube-action-color: #272727;
-    --youtube-svg-border: #A0A0A0;
+    --linkedin-border: var(--linkedinBorder);
+    --linkedin-bg: var(--linkedinBg);
+    --linkedin-text: var(--linkedinText);
+    --facebook-bg: var(--facebookBg);
+    --facebook-bg-comment: var(--facebookComment);
+    --instagram-bg: var(--instagramBg);
+    --tiktok-item-bg: var(--tiktokItem);
+    --tiktok-item-icon-bg: var(--tiktokIcon);
+    --youtube-bg: var(--youtubeBg);
+    --youtube-button: var(--youtubeButton);
+    --youtube-action-color: var(--youtubeAction);
+    --youtube-svg-border: var(--youtubeSvgBorder);
   }
-  // Light surfaces follow the landing site's neutral family (postqueen.ai
-  // globals.css @theme): warm greys rather than the blue-grey this shipped
-  // with, so the app and the marketing site read as one product. The tinted
-  // page / white card split is kept deliberately — it is what gives cards
-  // their depth; a pure-white page would flatten the whole UI.
   .light {
     --new-back-drop: #2d1b57;
-    --new-settings: #ececf1;
-    --new-sep: #d5d9dd;
-    --new-border: #e3e3ea; // slightly darker than surface for a crisp field edge
-    --new-bgColor: #f5f5f7; // --color-surface
-    --new-bgColorInner: #ffffff; // --color-bg
-    --new-bgLineColor: #f0f0f3;
-    --new-textItemFocused: #5b21b6; // --color-brand-700
-    --new-textItemBlur: #62626e; // --color-muted
-    --new-boxFocused: #f3eefe; // --color-brand-50
-    --new-textColor: 11 11 14; // --color-ink
-    --new-blockSeparator: #f2f2f4;
-    --new-btn-simple: #ececf1;
-    --new-btn-text: #0b0b0e; // --color-ink
-    --new-btn-primary: #7c3aed; // --color-brand-500
-    --new-ai-btn: #e0189e; // --color-pop-600
-    --new-box-hover: #f5f5f7;
-    --new-table-border: #e3e3ea;
-    --new-table-header: #f5f5f7;
-    --new-table-text: #62626e;
-    // pop-600, not pop-300: the light pink this shipped with (#fc69ff) is
-    // unreadable as text on white.
-    --new-table-text-focused: #e0189e;
-    --new-small-strips: #f5f5f7;
-    --new-big-strips: #f5f5f7;
-    --new-col-color: #ececf1;
-    --new-menu-dots: #696868;
-    --new-menu-hover: #000;
-    --menu-shadow: -22px 83px 24px 0 rgba(55, 52, 75, 0),
-      -14px 53px 22px 0 rgba(55, 52, 75, 0.01),
-      -8px 30px 19px 0 rgba(55, 52, 75, 0.05),
-      -3px 13px 14px 0 rgba(55, 52, 75, 0.09),
-      -1px 3px 8px 0 rgba(55, 52, 75, 0.1);
-    --popup-color: rgba(55, 37, 97, 0.2);
+    --new-settings: var(--settings);
+    --new-sep: var(--border);
+    --new-border: var(--border);
+    --new-bgColor: var(--bg);
+    --new-bgColorInner: var(--inner);
+    --new-bgLineColor: var(--line);
+    --new-textItemFocused: var(--focused);
+    --new-textItemBlur: var(--muted);
+    --new-boxFocused: var(--boxFocused);
+    // --text in RGB channels; see the note in .dark.
+    --new-textColor: 24 24 27;
+    --new-blockSeparator: var(--blockSeparator);
+    --new-btn-simple: var(--btnSimple);
+    --new-btn-text: var(--text);
+    --new-btn-primary: var(--brand);
+    --new-ai-btn: var(--pink);
+    --new-box-hover: var(--hover);
+    --new-table-border: var(--tableBorder);
+    --new-table-header: var(--tableHeader);
+    --new-table-text: var(--tableText);
+    --new-table-text-focused: var(--tableTextFocused);
+    --new-small-strips: var(--third);
+    --new-big-strips: var(--third);
+    --new-col-color: var(--colColor);
+    --new-menu-dots: var(--menuDots);
+    --new-menu-hover: var(--text);
+    --menu-shadow: var(--shadow);
+    --popup-color: var(--popup);
+    // Preview frames — step 5.
     --border-preview: #f1f0f3;
     --preview-box-shadow: 0 386px 108px 0 rgba(38, 32, 64, 0),
       0 247px 99px 0 rgba(38, 32, 64, 0.01),
       0 139px 83px 0 rgba(38, 32, 64, 0.03),
       0 62px 62px 0 rgba(38, 32, 64, 0.04), 0 15px 34px 0 rgba(38, 32, 64, 0.05);
-    --linkedin-border: #e9e5df;
-    --linkedin-bg: #fff;
-    --linkedin-text: #707070;
-    --facebook-bg: #fff;
-    --facebook-bg-comment: #f6f6f6;
-    --instagram-bg: #fff;
-    --tiktok-item-bg: #EEF1F0;
-    --tiktok-item-icon-bg: #454645;
-    --youtube-bg: #FFF;
-    --youtube-button: #000;
-    --youtube-action-color: #F1F1F1;
-    --youtube-svg-border: #1A1A1A;
+    --linkedin-border: var(--linkedinBorder);
+    --linkedin-bg: var(--linkedinBg);
+    --linkedin-text: var(--linkedinText);
+    --facebook-bg: var(--facebookBg);
+    --facebook-bg-comment: var(--facebookComment);
+    --instagram-bg: var(--instagramBg);
+    --tiktok-item-bg: var(--tiktokItem);
+    --tiktok-item-icon-bg: var(--tiktokIcon);
+    --youtube-bg: var(--youtubeBg);
+    --youtube-button: var(--youtubeButton);
+    --youtube-action-color: var(--youtubeAction);
+    --youtube-svg-border: var(--youtubeSvgBorder);
   }
 }
 
 :root {
   .dark {
-    --color-primary: #0e0e0e;
-    --color-secondary: #090b13;
-    --color-text: #ffffff;
-    --color-third: #080b13;
-    --color-forth: #7c3aed; // --color-brand-500 (shared Button uses bg-forth)
+    --color-primary: var(--bg);
+    --color-secondary: var(--pop);
+    --color-text: var(--text);
+    --color-third: var(--third);
+    --color-forth: var(--brand); // the shared Button uses bg-forth
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
-    --color-seventh: #6d28d9; // --color-brand-600
-    --color-gray: #8c8c8c;
+    --color-seventh: var(--brandHover);
+    --color-gray: var(--soft);
     --color-input: var(--new-table-header);
-    --color-input-text: #64748b;
+    --color-input-text: var(--soft);
     --color-table-border: var(--new-table-border);
     --color-custom1: #324264;
     --color-custom2: #141c2c;
@@ -380,18 +386,18 @@
     --color-modalCustom: #000000;
   }
   .light {
-    --color-primary: #f5f5f7; // --color-surface
-    --color-secondary: #fff;
-    --color-text: #000;
-    --color-third: white;
-    --color-forth: #7c3aed; // --color-brand-500 (shared Button uses bg-forth)
+    --color-primary: var(--bg);
+    --color-secondary: var(--pop);
+    --color-text: var(--text);
+    --color-third: var(--third);
+    --color-forth: var(--brand); // the shared Button uses bg-forth
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
-    --color-seventh: #6d28d9; // --color-brand-600
-    --color-gray: #8c8c8c;
+    --color-seventh: var(--brandHover);
+    --color-gray: var(--soft);
     --color-input: var(--new-table-header);
-    --color-input-text: #64748b;
-    --color-table-border: #efefef;
+    --color-input-text: var(--soft);
+    --color-table-border: var(--tableBorder);
     --color-custom1: #324264;
     --color-custom2: #f8f8f8;
     --color-custom3: #fff;

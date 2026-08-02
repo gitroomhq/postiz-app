@@ -249,3 +249,37 @@ The baseline was then re-captured against stashed changes so both sides were mea
 The lesson generalises: **when a comparison disagrees with what the diff says should have happened,
 re-capture the same code twice before believing it.** Two identical runs differing means the
 harness is lying, not the code.
+
+---
+
+### Step 1b · Token layer, repointed — done
+
+The old `--new-*` and `--color-*` names now resolve to the redesign's tokens. This is the first
+visible change: the whole app moves to the new palette in one commit, and reverting that commit puts
+it back.
+
+Nothing outside `colors.scss` was touched, so the ~440 `bg-newBgColorInner`-style usages keep working
+— they render new values. The names get retired screen by screen from here.
+
+**Checks:** types 0 errors · api 134 · i18n 585 · routes 27 — all unchanged.
+
+**Visual:** 48 / 48 screenshots changed, which is the point, and both themes were read rather than
+counted. Dark surfaces move to `#0b0b0d` / `#131316`; light to `#f1f1f4` / `#fbfbfc`. Selected states
+become brand-tinted with `--focused` text and stay legible in both themes. No layout moved, no
+contrast collapsed, no element disappeared.
+
+**Two mappings that are judgement rather than transcription:**
+
+- `--new-box-hover` was a solid (`#201f1f` / `#f5f5f7`); it now resolves to `--hover`, which is an
+  alpha overlay. That is deliberate — doc 01 is explicit that hover is a tint on top of whatever
+  surface it lands on, never a `filter: brightness()`.
+- `--new-boxFocused` was **white** in dark, and doc 01 warns not to assume "selected = brand tint".
+  That warning describes the old source, not the design: the prototype's own `--boxFocused` is
+  `rgba(124,58,237,.18)`. The design wins on appearance, so selected is now a tint. Flagging it
+  because the doc reads like the opposite instruction.
+
+**Deliberately left alone,** because they are composer and preview surfaces with no counterpart in
+the redesign's token set and step 5 restyles them properly: `--new-back-drop` (the global-lock scrim,
+used under `opacity-60`, where routing through an already-transparent token would compound the
+alpha), `--border-preview` and `--preview-box-shadow`. The `--color-custom1..55` family is untouched
+for the same reason — 108 usages, no design equivalents, retired per screen.
