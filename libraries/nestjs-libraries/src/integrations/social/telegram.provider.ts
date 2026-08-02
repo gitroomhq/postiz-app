@@ -178,7 +178,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     const text = striptags(message.message || '', ['u', 'strong', 'p', 'em', 's', 'blockquote', 'code', 'a'])
       .replace(/<strong>/g, '<b>')
       .replace(/<\/strong>/g, '</b>')
-      .replace(/<p>(.*?)<\/p>/g, '$1\n');
+      .replace(/<p>([\s\S]*?)<\/p>/g, '$1\n');
 
     console.log(text);
     const processedMedia = this.processMedia(mediaFiles);

@@ -1,7 +1,7 @@
 import striptags from 'striptags';
 import { parseFragment, serialize } from 'parse5';
 
-const bold = {
+const bold: Record<string, string> = {
   a: '𝗮',
   b: '𝗯',
   c: '𝗰',
@@ -66,7 +66,7 @@ const bold = {
   '0': '𝟬',
 };
 
-const underlineMap = {
+const underlineMap: Record<string, string> = {
   a: 'a̲',
   b: 'b̲',
   c: 'c̲',
@@ -131,7 +131,7 @@ const underlineMap = {
   '0': '0̲',
 };
 
-const italic = {
+const italic: Record<string, string> = {
   a: '𝘢',
   b: '𝘣',
   c: '𝘤',
@@ -196,7 +196,7 @@ const italic = {
   9: '9',
 };
 
-const strikethrough = {
+const strikethrough: Record<string, string> = {
   a: 'a̶',
   b: 'b̶',
   c: 'c̶',
@@ -261,7 +261,7 @@ const strikethrough = {
   9: '9̶',
 };
 
-const blockquote = {
+const blockquote: Record<string, string> = {
   a: 'ａ',
   b: 'ｂ',
   c: 'ｃ',
@@ -326,7 +326,7 @@ const blockquote = {
   9: '９',
 };
 
-const code = {
+const code: Record<string, string> = {
   a: '𝚊',
   b: '𝚋',
   c: '𝚌',

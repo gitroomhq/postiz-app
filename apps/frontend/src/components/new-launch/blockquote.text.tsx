@@ -2,6 +2,7 @@ import { FC } from 'react';
 
 export const BlockquoteText: FC<{
   editor: any;
+  currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
     editor?.commands?.toggleBlockquote();

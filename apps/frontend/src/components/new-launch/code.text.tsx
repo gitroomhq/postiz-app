@@ -2,6 +2,7 @@ import { FC } from 'react';
 
 export const CodeText: FC<{
   editor: any;
+  currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
     editor?.commands?.toggleCode();

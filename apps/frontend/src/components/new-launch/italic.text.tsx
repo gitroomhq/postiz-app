@@ -2,6 +2,7 @@ import { FC } from 'react';
 
 export const ItalicText: FC<{
   editor: any;
+  currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
     editor?.commands?.toggleItalic();

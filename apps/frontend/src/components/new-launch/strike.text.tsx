@@ -2,6 +2,7 @@ import { FC } from 'react';
 
 export const StrikeText: FC<{
   editor: any;
+  currentValue: string;
 }> = ({ editor }) => {
   const mark = () => {
     editor?.commands?.toggleStrike();
