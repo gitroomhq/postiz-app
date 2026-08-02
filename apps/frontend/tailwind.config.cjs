@@ -5,6 +5,77 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // --- redesign token layer -------------------------------------------
+        // Aliases for the tokens declared at the top of src/app/colors.scss.
+        //
+        // Every one is `pq`-prefixed. Two reasons: the design's own names would
+        // shadow Tailwind's built-in palettes — `amber` alone is used as
+        // `amber-500` / `amber-600` in six places, and overriding it makes
+        // those classes resolve to nothing — and the prefix makes it trivial to
+        // find what still has to move when the old vocabulary is retired.
+        //
+        // The `newBgColor` / `customColorN` aliases below are that old
+        // vocabulary. Both resolve to real variables until each screen is
+        // migrated off them.
+        pqBg: 'var(--bg)',
+        pqInner: 'var(--inner)',
+        pqRail: 'var(--rail)',
+        pqRailLine: 'var(--railLine)',
+        pqPop: 'var(--pop)',
+        pqThird: 'var(--third)',
+        pqSettings: 'var(--settings)',
+        pqColColor: 'var(--colColor)',
+        pqBtnSimple: 'var(--btnSimple)',
+        pqLine: 'var(--line)',
+        pqBorder: 'var(--border)',
+        pqBlockSeparator: 'var(--blockSeparator)',
+        pqText: 'var(--text)',
+        pqMuted: 'var(--muted)',
+        pqSoft: 'var(--soft)',
+        pqBrand: 'var(--brand)',
+        pqBrandHover: 'var(--brandHover)',
+        pqBrandSoft: 'var(--brandSoft)',
+        pqBrandFaint: 'var(--brandFaint)',
+        pqPink: 'var(--pink)',
+        pqFocused: 'var(--focused)',
+        pqBoxFocused: 'var(--boxFocused)',
+        pqHover: 'var(--hover)',
+        pqNavOn: 'var(--navOn)',
+        pqHatch: 'var(--hatch)',
+        pqUpgradeFg: 'var(--upgradeFg)',
+        pqUpgradeFgHover: 'var(--upgradeFgHover)',
+        pqUpgradeHover: 'var(--upgradeHover)',
+        pqTableHeader: 'var(--tableHeader)',
+        pqTableBorder: 'var(--tableBorder)',
+        pqTableText: 'var(--tableText)',
+        pqTableTextFocused: 'var(--tableTextFocused)',
+        pqMenuDots: 'var(--menuDots)',
+        pqPopup: 'var(--popup)',
+        pqAiLockScrim: 'var(--aiLockScrim)',
+        pqOk: 'var(--ok)',
+        pqOkSoft: 'var(--okSoft)',
+        pqWarn: 'var(--warn)',
+        pqAmber: 'var(--amber)',
+        pqAmberSoft: 'var(--amberSoft)',
+        pqAmberLine: 'var(--amberLine)',
+        pqAvatarBg: 'var(--avatarBg)',
+        pqBadgeRing: 'var(--badgeRing)',
+        // Lifetime / founding-member surfaces.
+        pqLtSolid: 'var(--ltSolid)',
+        pqLtSolidFg: 'var(--ltSolidFg)',
+        pqLtAmber: 'var(--ltAmber)',
+        pqLtText: 'var(--ltText)',
+        pqLtDim: 'var(--ltDim)',
+        pqLtDimmer: 'var(--ltDimmer)',
+        pqLtLabel: 'var(--ltLabel)',
+        pqLtLine: 'var(--ltLine)',
+        pqLtLine2: 'var(--ltLine2)',
+        pqLtRowBg: 'var(--ltRowBg)',
+        pqLtChipBg: 'var(--ltChipBg)',
+        pqLtTick: 'var(--ltTick)',
+        pqLtTickFg: 'var(--ltTickFg)',
+        // --- end redesign token layer ---------------------------------------
+
         primary: 'var(--color-primary)',
         secondary: 'var(--color-secondary)',
         textColor: 'var(--new-btn-text)',
@@ -125,13 +196,34 @@ module.exports = {
       // read ['Helvetica Neue'], contradicting the font actually applied to
       // <body> — harmless only because nothing in the app used `font-sans`.
       fontFamily: {
-        sans: ['var(--font-dm-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: [
+          'var(--font-dm-sans)',
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif',
+        ],
         display: [
           'var(--font-jakarta)',
           'var(--font-dm-sans)',
           'ui-sans-serif',
           'sans-serif',
         ],
+        // For values the reader copies rather than reads: API keys, MCP config,
+        // channel IDs, CLI commands.
+        mono: [
+          'var(--font-jetbrains-mono)',
+          'ui-monospace',
+          'SFMono-Regular',
+          'monospace',
+        ],
+      },
+      // The design's radius scale. Modals are 24px and pills 999px, both of
+      // which Tailwind already covers as `rounded-3xl` / `rounded-full`.
+      borderRadius: {
+        pqSm: 'var(--r-sm)',
+        pqMd: 'var(--r-md)',
+        pqLg: 'var(--r-lg)',
+        pqXl: 'var(--r-xl)',
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
@@ -145,6 +237,27 @@ module.exports = {
         newMessages: 'newMessages 1s ease-in-out 4s forwards',
         marqueeUp: 'marquee-up 100s linear infinite',
         marqueeDown: 'marquee-down 100s linear infinite',
+        // The redesign's motion. Keyframes live in src/app/global.scss rather
+        // than in the `keyframes` block below, because several of them use
+        // `var(--brand)` and reference the token layer directly.
+        //
+        // Transitions, for reference: 120ms ease for hover and colour, 180ms
+        // cubic-bezier(.2,.8,.2,1) for anything that moves or resizes.
+        pqSpin: 'pqspin 1s linear infinite',
+        pqPop: 'pqpop 0.15s ease-out',
+        pqFadeDown: 'pqfadeDown 0.24s cubic-bezier(.2,.8,.2,1)',
+        pqIn: 'pqin 0.38s cubic-bezier(.2,.8,.3,1) both',
+        pqTip: 'pqtip 0.12s ease-out',
+        // Indefinite loops. Anything using one of these must also carry the
+        // `pq-loop` class, which is what prefers-reduced-motion switches off —
+        // see the note in global.scss.
+        pqUnlim: 'pqunlim 1.9s ease-in-out infinite',
+        pqTick: 'pqtick 1.9s ease-in-out infinite',
+        pqRing: 'pqring 1.9s ease-in-out infinite',
+        pqGlow: 'pqglow 5.5s ease-in-out infinite',
+        pqBtnGlow: 'pqbtnglow 2.6s ease-in-out infinite',
+        pqBtnBloom: 'pqbtnbloom 2.6s ease-in-out infinite',
+        pqBtnSheen: 'pqbtnsheen 2.9s ease-in-out infinite',
       },
       boxShadow: {
         yellow: '0 0 60px 20px #6b6237',
@@ -152,6 +265,12 @@ module.exports = {
         greenToast: '0px 0px 50px rgba(60, 124, 90, 0.3)',
         menu: 'var(--menu-shadow)',
         previewShadow: 'var(--preview-box-shadow)',
+        // The design's elevation scale: e1 at rest, e2 on hover and dropdowns,
+        // e3 on modals. `pq` is the generic drop shadow.
+        pqE1: 'var(--e1)',
+        pqE2: 'var(--e2)',
+        pqE3: 'var(--e3)',
+        pq: 'var(--shadow)',
       },
       dropShadow: {
         glow: [

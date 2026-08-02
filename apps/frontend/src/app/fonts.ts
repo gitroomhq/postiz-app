@@ -1,4 +1,4 @@
-import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
+import { DM_Sans, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 
 // One shared instance for every layout. This used to be declared separately in
 // each of the three root layouts plus layout.component.tsx, which downloads and
@@ -24,8 +24,20 @@ export const jakartaSans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
+// The redesign's third family, for anything the reader is expected to copy
+// rather than read: API keys, MCP config blocks, channel IDs, CLI commands.
+// Those are rendered in the browser's default monospace today, which changes
+// shape between platforms and makes a key hard to compare by eye.
+export const jetBrainsMono = JetBrains_Mono({
+  weight: ['400', '500'],
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
+
 /**
- * Goes on <body>: publishes both font variables (so `font-sans` / `font-display`
- * resolve) and sets DM Sans as the inherited base.
+ * Goes on <body>: publishes all three font variables (so `font-sans`,
+ * `font-display` and `font-mono` resolve) and sets DM Sans as the inherited
+ * base.
  */
-export const fontClassName = `${dmSans.variable} ${jakartaSans.variable} ${dmSans.className}`;
+export const fontClassName = `${dmSans.variable} ${jakartaSans.variable} ${jetBrainsMono.variable} ${dmSans.className}`;

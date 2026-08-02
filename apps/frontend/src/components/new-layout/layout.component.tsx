@@ -43,6 +43,7 @@ import { BillingAdminRequiredComponent } from '@gitroom/frontend/components/bill
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { CrownGlyph } from '@gitroom/frontend/components/ui/logo.component';
 import { UserMenu } from '@gitroom/frontend/components/new-layout/user.menu';
+import { ViewportProvider } from '@gitroom/frontend/components/layout/use.viewport';
 
 /** A fixed vertical divider for the header. */
 const HeaderDivider = () => (
@@ -109,88 +110,95 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   return (
     <ContextWrapper user={user}>
-      <CopilotKit
-        credentials="include"
-        runtimeUrl={backendUrl + '/copilot/chat'}
-        showDevConsole={false}
-      >
-        <MantineWrapper>
-          <ToolTip />
-          <Toaster />
-          <TrialTracker />
-          <CheckPayment check={searchParams.get('check') || ''} mutate={mutate}>
-            <ShowMediaBoxModal />
-            <ShowLinkedinCompany />
-            <MediaSettingsLayout />
-            <ShowPostSelector />
-            <PreConditionComponent />
-            <NewSubscription />
-            <ContinueProvider />
-            <div className="flex flex-col min-h-screen w-full text-newTextColor">
-              <div>{user?.admin ? <Impersonate /> : <div />}</div>
-              {user.tier === 'FREE' && isGeneral && billingEnabled ? (
-                ['ADMIN', 'SUPERADMIN'].includes(user?.role!) ? (
-                  <FirstBillingComponent />
+      {/* Outside CopilotKit so the root data-mobile/data-tablet attributes are
+          in place before any surface that reads them mounts. */}
+      <ViewportProvider>
+        <CopilotKit
+          credentials="include"
+          runtimeUrl={backendUrl + '/copilot/chat'}
+          showDevConsole={false}
+        >
+          <MantineWrapper>
+            <ToolTip />
+            <Toaster />
+            <TrialTracker />
+            <CheckPayment
+              check={searchParams.get('check') || ''}
+              mutate={mutate}
+            >
+              <ShowMediaBoxModal />
+              <ShowLinkedinCompany />
+              <MediaSettingsLayout />
+              <ShowPostSelector />
+              <PreConditionComponent />
+              <NewSubscription />
+              <ContinueProvider />
+              <div className="flex flex-col min-h-screen w-full text-newTextColor">
+                <div>{user?.admin ? <Impersonate /> : <div />}</div>
+                {user.tier === 'FREE' && isGeneral && billingEnabled ? (
+                  ['ADMIN', 'SUPERADMIN'].includes(user?.role!) ? (
+                    <FirstBillingComponent />
+                  ) : (
+                    <BillingAdminRequiredComponent />
+                  )
                 ) : (
-                  <BillingAdminRequiredComponent />
-                )
-              ) : (
-                <>
-                  <AnnouncementBanner />
-                  <div className="flex flex-1 min-h-0">
-                    <Support />
-                    <div className="brand-rail flex flex-col w-[80px] shrink-0">
-                      <div className="flex flex-col gap-[24px] flex-1 py-[16px] px-[8px] overflow-y-auto">
-                        <div className="flex flex-col gap-[14px]">
-                          <Logo variant="rail" />
-                          <div className="h-[1px] bg-white/25" />
+                  <>
+                    <AnnouncementBanner />
+                    <div className="flex flex-1 min-h-0">
+                      <Support />
+                      <div className="brand-rail flex flex-col w-[80px] shrink-0">
+                        <div className="flex flex-col gap-[24px] flex-1 py-[16px] px-[8px] overflow-y-auto">
+                          <div className="flex flex-col gap-[14px]">
+                            <Logo variant="rail" />
+                            <div className="h-[1px] bg-white/25" />
+                          </div>
+                          <TopMenu />
                         </div>
-                        <TopMenu />
                       </div>
-                    </div>
-                    <div className="flex flex-1 min-w-0 flex-col overflow-hidden blurMe">
-                      <header className="flex h-[64px] shrink-0 items-center gap-[8px] border-b border-newBorder bg-newBgColorInner px-[24px]">
-                        {/* Title owns the <h1>; this only sizes and truncates it. */}
-                        <div className="flex-1 min-w-0 text-[20px] font-[600] -tracking-[0.2px] [&>h1]:truncate">
-                          <Title />
-                        </div>
-                        {/* Filled by the page, if it has a primary action. */}
-                        <HeaderActionSlot />
-                        <HeaderDivider />
-                        <div className="flex items-center gap-[4px] text-textItemBlur">
-                          <StreakComponent />
-                          <HeaderIcon>
-                            <OrganizationSelector />
-                          </HeaderIcon>
-                          <HeaderIcon>
-                            <ChromeExtensionComponent />
-                          </HeaderIcon>
-                          <HeaderIcon>
-                            <AttachToFeedbackIcon />
-                          </HeaderIcon>
-                          <HeaderIcon>
-                            <NotificationComponent />
-                          </HeaderIcon>
-                          <HeaderIcon>
-                            <ModeComponent />
-                          </HeaderIcon>
-                        </div>
-                        <HeaderDivider />
-                        <UserMenu />
-                      </header>
-                      {/* The 1px gaps over this background are what draw the
+                      <div className="flex flex-1 min-w-0 flex-col overflow-hidden blurMe">
+                        <header className="flex h-[64px] shrink-0 items-center gap-[8px] border-b border-newBorder bg-newBgColorInner px-[24px]">
+                          {/* Title owns the <h1>; this only sizes and truncates it. */}
+                          <div className="flex-1 min-w-0 text-[20px] font-[600] -tracking-[0.2px] [&>h1]:truncate">
+                            <Title />
+                          </div>
+                          {/* Filled by the page, if it has a primary action. */}
+                          <HeaderActionSlot />
+                          <HeaderDivider />
+                          <div className="flex items-center gap-[4px] text-textItemBlur">
+                            <StreakComponent />
+                            <HeaderIcon>
+                              <OrganizationSelector />
+                            </HeaderIcon>
+                            <HeaderIcon>
+                              <ChromeExtensionComponent />
+                            </HeaderIcon>
+                            <HeaderIcon>
+                              <AttachToFeedbackIcon />
+                            </HeaderIcon>
+                            <HeaderIcon>
+                              <NotificationComponent />
+                            </HeaderIcon>
+                            <HeaderIcon>
+                              <ModeComponent />
+                            </HeaderIcon>
+                          </div>
+                          <HeaderDivider />
+                          <UserMenu />
+                        </header>
+                        {/* The 1px gaps over this background are what draw the
                           hairlines between a page's own columns. */}
-                      <div className="flex flex-1 min-h-0 gap-[1px] bg-newBgLineColor">
-                        {children}
+                        <div className="flex flex-1 min-h-0 gap-[1px] bg-newBgLineColor">
+                          {children}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </CheckPayment>
-        </MantineWrapper>
-      </CopilotKit>
+                  </>
+                )}
+              </div>
+            </CheckPayment>
+          </MantineWrapper>
+        </CopilotKit>
+      </ViewportProvider>
     </ContextWrapper>
   );
 };

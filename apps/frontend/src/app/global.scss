@@ -842,3 +842,184 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+// ---------------------------------------------------------------------------
+// Redesign motion
+//
+// From design/handoff/tokens.css. Nothing uses these yet — they land with the
+// token layer so each later step only has to reference them.
+//
+// The looping ones (pqbtnglow, pqbtnbloom, pqbtnsheen, pqunlim, pqtick, pqring)
+// run forever by design. They are gated below: an indefinite animation is the
+// kind that triggers motion sickness, and the handoff asks for the gate but the
+// prototype never implemented it.
+// ---------------------------------------------------------------------------
+
+// Loaders.
+@keyframes pqspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Popover entry: 150ms, opacity plus a 4px rise.
+@keyframes pqpop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Toast entry. Paired with the -50% X translate the toast already carries, so
+// the keyframe has to restate it or the toast jumps left as it animates.
+@keyframes pqfadeDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+// Card entry for the tour's calendar demo.
+@keyframes pqin {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// Tooltip fade.
+@keyframes pqtip {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// The "Unlimited channels" line on a plan card.
+@keyframes pqunlim {
+  0%,
+  100% {
+    color: var(--unlimA);
+    text-shadow: none;
+  }
+  50% {
+    color: var(--unlimB);
+    text-shadow: 0 0 12px rgba(167, 139, 250, 0.65);
+  }
+}
+
+// Tour target ring.
+@keyframes pqtick {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.22),
+      0 0 12px rgba(124, 58, 237, 0.5);
+  }
+}
+
+// The tour's spotlight. The 9999px spread is what dims the rest of the screen,
+// so this ring is both the highlight and the scrim.
+@keyframes pqring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 9999px rgba(2, 2, 6, 0.72), 0 0 0 2px var(--brand),
+      0 0 24px -6px rgba(124, 58, 237, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(2, 2, 6, 0.72), 0 0 0 3px var(--brand),
+      0 0 48px -4px rgba(124, 58, 237, 1);
+  }
+}
+
+// Attention pulse on a connection card.
+//
+// tokens.css declares pqglow twice — an early text-shadow version and this
+// outline one. In CSS the later wins, so this is the one that actually ran in
+// the prototype; the text-shadow version is dead and is not ported.
+@keyframes pqglow {
+  0%,
+  100% {
+    outline-color: var(--border);
+    box-shadow: none;
+    transform: none;
+  }
+  8% {
+    outline-color: rgba(124, 58, 237, 0.95);
+    box-shadow: 0 0 30px -6px rgba(124, 58, 237, 0.85);
+    transform: translateY(-2px);
+  }
+  20% {
+    outline-color: var(--border);
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+// The upgrade CTA's three stacked loops: the button's own halo, a blurred bloom
+// behind it, and a sheen crossing it.
+@keyframes pqbtnglow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4),
+      0 10px 30px -8px rgba(124, 58, 237, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(124, 58, 237, 0),
+      0 14px 44px -6px rgba(124, 58, 237, 0.85);
+  }
+}
+
+@keyframes pqbtnbloom {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pqbtnsheen {
+  0% {
+    transform: translateX(-130%);
+  }
+  55%,
+  100% {
+    transform: translateX(230%);
+  }
+}
+
+// Every element carrying one of the indefinite loops above must also carry
+// `pq-loop`, which is the hook that turns them off for readers who ask for less
+// motion. Matching on the animation name is not possible in CSS, and matching
+// on inline `style` would only work for elements styled inline — so this is a
+// convention the components have to keep, not something the stylesheet can
+// enforce on its own.
+//
+// The one-shot entrances (pqpop, pqfadeDown, pqin, pqtip) are deliberately not
+// covered: removing them makes surfaces appear with no transition at all, which
+// reads as a glitch rather than as calm.
+@media (prefers-reduced-motion: reduce) {
+  .pq-loop {
+    animation: none !important;
+  }
+}

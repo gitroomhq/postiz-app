@@ -1,3 +1,204 @@
+// ---------------------------------------------------------------------------
+// Redesign token layer
+//
+// Ported verbatim from design/handoff/tokens.css, with one translation: the
+// prototype themes with `:root[data-theme="dark"]`, this app themes with a
+// `.dark` / `.light` class on <body> (tailwind.config.cjs `darkMode: 'class'`,
+// set from the `mode` cookie). There are no `dark:` utilities anywhere in the
+// frontend — every colour resolves through these two blocks, so a token that is
+// declared in one and not the other renders as nothing rather than as a
+// fallback.
+//
+// Nothing consumes these yet. They are added ahead of the components so each
+// later step only has to move structure, and so this step can be verified by
+// the screenshots being unchanged.
+//
+// The `--new-*` and `--color-custom*` vocabulary below is the old one. It stays
+// until each screen is migrated off it.
+// ---------------------------------------------------------------------------
+:root {
+  .dark {
+    --brandFaint: rgba(124, 58, 237, 0.08);
+    --hatch: rgba(255, 255, 255, 0.035);
+    --bg: #0b0b0d;
+    --inner: #131316;
+    --line: rgba(255, 255, 255, 0.07);
+    --border: #26262c;
+    --rail: #0b0b0d;
+    --railLine: rgba(255, 255, 255, 0.07);
+    --settings: #1f1f24;
+    --colColor: #1f1f24;
+    --btnSimple: #26262c;
+    --blockSeparator: rgba(255, 255, 255, 0.07);
+    --text: #ededf0;
+    --muted: #9b9ba4;
+    --soft: #6e6e78;
+    --focused: #c4b5fd;
+    --boxFocused: rgba(124, 58, 237, 0.18);
+    --hover: rgba(255, 255, 255, 0.05);
+    --upgradeFg: #b9a8fb;
+    --upgradeFgHover: #d6cbff;
+    --upgradeHover: rgba(139, 92, 246, 0.16);
+    --brand: #7c3aed;
+    --brandHover: #8b5cf6;
+    --brandSoft: rgba(124, 58, 237, 0.16);
+    --pink: #e0189e;
+    --navOn: rgba(255, 255, 255, 0.075);
+    --pop: #1b1b20;
+    --third: #17171b;
+    --tableHeader: #17171b;
+    --tableBorder: #26262c;
+    --tableText: #9b9ba4;
+    --tableTextFocused: #f0abfc;
+    --menuDots: #6e6e78;
+    --popup: rgba(0, 0, 0, 0.6);
+    --aiLockScrim: rgba(12, 12, 15, 0.72);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+    --e1: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --e2: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
+    --e3: 0 18px 44px -12px rgba(0, 0, 0, 0.75);
+    --ring: rgba(167, 139, 250, 0.5);
+    --r-sm: 8px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 18px;
+    --ok: #4ade80;
+    --okSoft: rgba(74, 222, 128, 0.13);
+    --warn: #f87171;
+    --unlimA: #a78bfa;
+    --unlimB: #fff;
+    --avatarBg: #101014;
+    --badgeRing: #101014;
+    // Lifetime / founding-member surfaces only.
+    --ltCardOn: linear-gradient(120deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.07) 55%, transparent);
+    --ltCardOff: linear-gradient(120deg, rgba(245, 158, 11, 0.11), rgba(245, 158, 11, 0.035) 55%, transparent);
+    --ltSolid: #f59e0b;
+    --ltSolidFg: #1a1205;
+    --ltLine2: rgba(245, 158, 11, 0.55);
+    --ltLabel: rgba(255, 238, 214, 0.42);
+    --ltRowBg: rgba(245, 158, 11, 0.14);
+    --ltAmber: #f5b13d;
+    --ltDim: rgba(255, 238, 214, 0.66);
+    --ltDimmer: rgba(255, 238, 214, 0.42);
+    --ltText: rgba(255, 244, 228, 0.92);
+    --ltLine: rgba(245, 158, 11, 0.18);
+    --ltChipBg: rgba(245, 158, 11, 0.14);
+    --ltTick: rgba(245, 158, 11, 0.85);
+    --ltTickFg: #1a1205;
+    // Post previews. Themed rather than the platforms' brand hexes, so light
+    // mode works.
+    --linkedinBg: #1b1f23;
+    --linkedinText: #c6c7c8;
+    --linkedinBorder: #2e3438;
+    --facebookBg: #242526;
+    --facebookComment: #333334;
+    --instagramBg: #0b1014;
+    --tiktokItem: #2a2a2a;
+    --tiktokIcon: #ffffff;
+    --youtubeBg: #0f0f0f;
+    --youtubeButton: #f1f1f1;
+    --youtubeAction: #272727;
+    --youtubeSvgBorder: #a0a0a0;
+    // Not in the handoff — two gaps the design leaves that we have to fill.
+    //
+    // The checkout's "subscription ended" notice paints an orange box and then
+    // reaches for --warn for its icon, which is red. Warning and expiry are
+    // different states and need different colours.
+    --amber: #fb923c;
+    --amberSoft: rgba(251, 146, 60, 0.12);
+    --amberLine: rgba(251, 146, 60, 0.28);
+    // No input in the prototype has a focus state at all. One is needed before
+    // Stripe's PaymentElement can be themed to match, and for keyboard use.
+    --fieldRing: rgba(167, 139, 250, 0.4);
+  }
+  .light {
+    --brandFaint: rgba(124, 58, 237, 0.05);
+    --hatch: rgba(9, 9, 11, 0.05);
+    --bg: #f1f1f4;
+    --inner: #fbfbfc;
+    --line: rgba(9, 9, 11, 0.07);
+    --border: #e4e4e9;
+    --rail: #f8f8fa;
+    --railLine: rgba(9, 9, 11, 0.07);
+    --settings: #e9e9ef;
+    --colColor: #e9e9ef;
+    --btnSimple: #e6e6ec;
+    --blockSeparator: rgba(9, 9, 11, 0.07);
+    --text: #18181b;
+    --muted: #5f5f6b;
+    --soft: #8f8f9a;
+    --focused: #6d28d9;
+    --boxFocused: #f3eefe;
+    --hover: rgba(9, 9, 11, 0.055);
+    --upgradeFg: #6d28d9;
+    --upgradeFgHover: #5b21b6;
+    --upgradeHover: rgba(124, 58, 237, 0.1);
+    --brand: #7c3aed;
+    --brandHover: #6d28d9;
+    --brandSoft: rgba(124, 58, 237, 0.1);
+    --pink: #e0189e;
+    --navOn: rgba(9, 9, 11, 0.055);
+    --pop: #ffffff;
+    --third: #fbfbfc;
+    --tableHeader: #f5f5f8;
+    --tableBorder: #e4e4e9;
+    --tableText: #5f5f6b;
+    --tableTextFocused: #c026a3;
+    --menuDots: #8f8f9a;
+    --popup: rgba(9, 9, 11, 0.35);
+    --aiLockScrim: rgba(250, 250, 252, 0.72);
+    --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 28px -8px rgba(9, 9, 11, 0.16);
+    --e1: 0 1px 2px rgba(9, 9, 11, 0.05);
+    --e2: 0 4px 12px -2px rgba(9, 9, 11, 0.1);
+    --e3: 0 12px 32px -8px rgba(9, 9, 11, 0.22);
+    --ring: rgba(124, 58, 237, 0.45);
+    --r-sm: 8px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 18px;
+    --ok: #16a34a;
+    --okSoft: rgba(21, 128, 61, 0.1);
+    --warn: #dc2626;
+    --unlimA: #6d28d9;
+    --unlimB: #a855f7;
+    --avatarBg: #eceae6;
+    --badgeRing: #f7f5f2;
+    --ltCardOn: linear-gradient(120deg, #fdf3e2, #fefaf3 58%, #fffdfa);
+    --ltCardOff: linear-gradient(120deg, #fdf8f0, #fefcf8 55%, transparent);
+    --ltSolid: #d97706;
+    --ltSolidFg: #fffaf2;
+    --ltLine2: rgba(217, 119, 6, 0.5);
+    --ltLabel: rgba(120, 63, 4, 0.62);
+    --ltRowBg: rgba(217, 119, 6, 0.11);
+    --ltAmber: #c2620a;
+    --ltDim: rgba(87, 50, 10, 0.74);
+    --ltDimmer: rgba(87, 50, 10, 0.5);
+    --ltText: #3b2606;
+    --ltLine: rgba(217, 119, 6, 0.2);
+    --ltChipBg: rgba(245, 158, 11, 0.15);
+    --ltTick: #d97706;
+    --ltTickFg: #fffaf2;
+    --linkedinBg: #ffffff;
+    --linkedinText: #707070;
+    --linkedinBorder: #e9e5df;
+    --facebookBg: #ffffff;
+    --facebookComment: #f6f6f6;
+    --instagramBg: #ffffff;
+    --tiktokItem: #eef1f0;
+    --tiktokIcon: #454645;
+    --youtubeBg: #ffffff;
+    --youtubeButton: #000000;
+    --youtubeAction: #f1f1f1;
+    --youtubeSvgBorder: #1a1a1a;
+    // Ours, as above. The amber reads darker here so it stays legible on the
+    // light surface it sits on.
+    --amber: #b45309;
+    --amberSoft: rgba(251, 146, 60, 0.12);
+    --amberLine: rgba(251, 146, 60, 0.3);
+    --fieldRing: rgba(124, 58, 237, 0.35);
+  }
+}
+
 :root {
   .dark {
     --new-back-drop: #000;
