@@ -140,6 +140,12 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
+  handleErrors?(
+    body: string,
+    status: number
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined;
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;
   refreshCron?: boolean;

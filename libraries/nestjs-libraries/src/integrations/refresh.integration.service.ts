@@ -7,6 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { TemporalService } from 'nestjs-temporal-core';
+import { safeStringify } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @Injectable()
 export class RefreshIntegrationService {
@@ -73,11 +74,33 @@ export class RefreshIntegrationService {
     socialProvider: SocialProvider,
     cause = ''
   ): Promise<AuthTokenDetails | false> {
+    let refreshError: any = null;
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
-      .catch((err) => false);
+      .catch((err) => {
+        refreshError = err;
+        return false as const;
+      });
 
     if (!refresh || !refresh.accessToken) {
+      console.error(
+        `Refresh failed for ${integration.providerIdentifier} (${integration.id}):`,
+        refreshError || 'no access token returned'
+      );
+
+      if (refreshError) {
+        const handle = socialProvider.handleErrors?.(
+          `${refreshError?.message || ''} ${safeStringify(refreshError)}`,
+          refreshError?.status || refreshError?.response?.status || 0
+        );
+
+        // transient / unrecognized errors should not disconnect the channel,
+        // only errors the provider recognizes as an invalid refresh token
+        if (handle?.type !== 'refresh-token') {
+          return false;
+        }
+      }
+
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id

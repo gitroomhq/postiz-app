@@ -66,7 +66,7 @@ export class NotEnoughScopes {
   ) {}
 }
 
-function safeStringify(obj: any) {
+export function safeStringify(obj: any) {
   const seen = new WeakSet();
 
   return JSON.stringify(obj, (key, value) => {
