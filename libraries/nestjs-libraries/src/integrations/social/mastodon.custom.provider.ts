@@ -5,6 +5,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 
 export class MastodonCustomProvider extends MastodonProvider {
@@ -26,6 +27,8 @@ export class MastodonCustomProvider extends MastodonProvider {
       await fetch(url + '/api/v1/apps', {
         method: 'POST',
         body: form,
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
       })
     ).json();
 

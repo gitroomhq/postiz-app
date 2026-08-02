@@ -375,7 +375,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 'shortlink_urls_question',
                 'Do you want to shortlink the URLs? it will let you get statistics over clicks'
               ),
-              t('yes_shortlink_it', 'Yes, shortlink it!')
+              t('yes_shortlink_it', 'Yes, shortlink it!'),
+              undefined,
+              t('no_original_urls', 'No, original URLs')
             );
           }
         }

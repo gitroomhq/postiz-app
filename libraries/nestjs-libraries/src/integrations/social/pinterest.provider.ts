@@ -103,6 +103,12 @@ export class PinterestProvider
         value: 'Pinterest was unable to reach the URL provided. Please check the link and try again.',
       }
     }
+    if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'The board ID must be a numeric string. Please check the board ID format.',
+      }
+    }
     if (body.indexOf('Board not found') > -1) {
       return {
         type: 'bad-body' as const,
@@ -264,12 +270,9 @@ export class PinterestProvider
         })
       ).json();
 
-      const { data, status } = await axios.get(
-        postDetails?.[0]?.media?.[0]?.path!,
-        {
-          responseType: 'stream',
-        }
-      );
+      const { data } = await axios.get(findMp4.path, {
+        responseType: 'stream',
+      });
 
       const formData = Object.keys(upload_parameters)
         .filter((f) => f)
@@ -282,7 +285,18 @@ export class PinterestProvider
       await axios.post(upload_url, formData);
 
       let statusCode = '';
+      let attempts = 0;
+      const maxAttempts = 18; // ~9 minutes at 30s interval
       while (statusCode !== 'succeeded') {
+        if (attempts++ >= maxAttempts) {
+          throw new BadBody(
+            'pinterest',
+            JSON.stringify({}),
+            {} as any,
+            'The file took too long to process, please try again'
+          );
+        }
+
         const mediafile = await (
           await this.fetch(
             'https://api.pinterest.com/v5/media/' + media_id,
@@ -374,7 +388,10 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    // Pinterest analytics only cover the last 90 days (89 for a UTC safety margin)
+    const since = dayjs()
+      .subtract(Math.min(date, 89), 'day')
+      .format('YYYY-MM-DD');
 
     const {
       all: { daily_metrics },
@@ -439,12 +456,12 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-    // Use a very long date range (2 years) to capture lifetime metrics for older posts
-    const since = dayjs().subtract(2, 'year').format('YYYY-MM-DD');
+    // Pinterest only serves pin analytics for the last 90 days (89 for a UTC safety margin)
+    const since = dayjs().subtract(89, 'day').format('YYYY-MM-DD');
 
     try {
       // Fetch pin analytics from Pinterest API
-      const response = await this.fetch(
+      const response = await fetch(
         `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
         {
           method: 'GET',

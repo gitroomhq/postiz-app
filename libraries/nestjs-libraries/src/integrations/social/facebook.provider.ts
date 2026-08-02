@@ -11,7 +11,10 @@ import {
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
+import {
+  FacebookDto,
+  FACEBOOK_PRESET_MAX_CHARS,
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
 import { DribbbleDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/dribbble.dto';
 import { Integration } from '@prisma/client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -492,7 +495,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           );
 
           let videoStatus = 'in_progress';
-          while (videoStatus !== 'ready') {
+          let attempts = 0;
+          const maxAttempts = 54; // ~9 minutes at 10s interval
+          while (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
+            if (attempts++ >= maxAttempts) {
+              throw new Error('Video processing timed out');
+            }
+
             const { status } = await (
               await this.fetch(
                 `https://graph.facebook.com/v20.0/${video_id}?fields=status&access_token=${accessToken}`,
@@ -506,7 +515,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             if (videoStatus === 'error') {
               throw new Error('Video processing failed');
             }
-            if (videoStatus !== 'ready') {
+            if (videoStatus !== 'upload_complete' && videoStatus !== 'ready') {
               await timer(10000);
             }
           }
@@ -607,30 +616,90 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             })
           );
 
-      const {
-        id: postId,
-        permalink_url,
-        ...all
-      } = await (
-        await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+      // Background presets are only valid on text-only posts (no media) and
+      // Facebook caps them at ~130 chars, so we only attach the preset when it
+      // can apply.
+      const presetId =
+        !uploadPhotos?.length &&
+        firstPost?.settings?.text_format_preset_id &&
+        (firstPost.message?.length || 0) <= FACEBOOK_PRESET_MAX_CHARS
+          ? firstPost.settings.text_format_preset_id
+          : undefined;
+
+      const publishFeed = async (withPreset: boolean) =>
+        (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...(uploadPhotos?.length
+                  ? { attached_media: uploadPhotos }
+                  : {}),
+                ...(firstPost?.settings?.url
+                  ? { link: firstPost.settings.url }
+                  : {}),
+                ...(withPreset && presetId
+                  ? { text_format_preset_id: presetId }
+                  : {}),
+                message: firstPost.message,
+                published: true,
+              }),
             },
-            body: JSON.stringify({
-              ...(uploadPhotos?.length ? { attached_media: uploadPhotos } : {}),
-              ...(firstPost?.settings?.url
-                ? { link: firstPost.settings.url }
-                : {}),
-              message: firstPost.message,
-              published: true,
-            }),
-          },
-          'finalize upload'
-        )
-      ).json();
+            'finalize upload'
+          )
+        ).json();
+
+      // Facebook exposes no official preset list and adds/retires backgrounds
+      // over time, so a stale text_format_preset_id can make FB reject the whole
+      // post. Observed Graph API responses for a bad preset:
+      //   - malformed id  -> HTTP 400, code 100, message names
+      //                      "text_format_preset_id" explicitly
+      //   - retired numeric id -> HTTP 500, code 1, generic "unknown error"
+      //     (our fetch() retries 500s and then reports it with the body stripped)
+      // So retry once without the preset on an explicit preset error or a
+      // generic/unknown failure, but never on a recognized auth/token error
+      // (dropping the background can't fix that). A retry that only succeeds once
+      // the preset is removed confirms the preset was the cause.
+      const isPresetRejection = (err: any): boolean => {
+        const detail = `${err?.details?.[0]?.json ?? ''} ${err?.message ?? ''}`;
+        if (
+          /access token|re-authenticate|revoked|"code":\s*190\b/i.test(detail)
+        ) {
+          return false;
+        }
+        return (
+          /text_format_preset_id/i.test(detail) ||
+          /"code":\s*1\b/.test(detail) ||
+          String(err?.message) === 'Unknown Error'
+        );
+      };
+
+      let feedResult: any;
+      try {
+        feedResult = await publishFeed(!!presetId);
+      } catch (err) {
+        if (!presetId || !isPresetRejection(err)) {
+          throw err;
+        }
+        // Surface the (recovered) rejection in the logs, since the fallback
+        // below makes the activity succeed and Facebook's error would otherwise
+        // be swallowed silently.
+        console.warn(
+          'Facebook rejected text_format_preset_id — dropping the background and publishing as plain text',
+          {
+            preset: presetId,
+            facebook: (err as any)?.details?.[0]?.json,
+            message: (err as any)?.message,
+          }
+        );
+        feedResult = await publishFeed(false);
+      }
+
+      const { id: postId, permalink_url, ...all } = feedResult;
 
       finalUrl = permalink_url;
       finalId = postId;
@@ -694,27 +763,43 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
+    // Reach/impression metrics (page_impressions_unique, page_posts_impressions_unique,
+    // page_video_views) were deprecated by Meta on 2026-06-15 and now return an
+    // "invalid metric" error. They are replaced by the Media Views metrics, which
+    // require Graph API v23.0+:
+    //   - page_total_media_view_unique: total unique views on the page's media (reach)
+    //   - page_media_view: total media views, broken down between paid and organic
     const { data } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/${id}/insights?metric=page_impressions_unique,page_posts_impressions_unique,page_post_engagements,page_daily_follows,page_video_views&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+
+    // page_media_view returns paid/organic breakdowns as an object; sum them to
+    // keep the single-total UI working.
+    const sumValue = (value: any): number => {
+      if (value && typeof value === 'object') {
+        return Object.values(value as Record<string, number>).reduce(
+          (sum: number, v: number) => sum + (Number(v) || 0),
+          0
+        );
+      }
+      return Number(value) || 0;
+    };
 
     return (
       data?.map((d: any) => ({
         label:
-          d.name === 'page_impressions_unique'
+          d.name === 'page_total_media_view_unique'
             ? 'Page Impressions'
             : d.name === 'page_post_engagements'
             ? 'Posts Engagement'
             : d.name === 'page_daily_follows'
             ? 'Page followers'
-            : d.name === 'page_video_views'
-            ? 'Videos views'
-            : 'Posts Impressions',
+            : 'Media views',
         percentageChange: 5,
         data: d?.values?.map((v: any) => ({
-          total: v.value,
+          total: sumValue(v.value),
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
         })),
       })) || []
@@ -730,10 +815,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const today = dayjs().format('YYYY-MM-DD');
 
     try {
-      // Fetch post insights from Facebook Graph API
+      // Fetch post insights from Facebook Graph API.
+      // post_impressions_unique was deprecated by Meta on 2026-06-15; it is replaced
+      // by post_total_media_view_unique (unique media views = reach), available on
+      // Graph API v23.0+. Engagement metrics below are unaffected.
       const { data } = await (
-        await this.fetch(
-          `https://graph.facebook.com/v20.0/${postId}/insights?metric=post_impressions_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+        await fetch(
+          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
 
@@ -751,7 +839,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         let total = '';
 
         switch (metric.name) {
-          case 'post_impressions_unique':
+          case 'post_total_media_view_unique':
             label = 'Impressions';
             total = String(value);
             break;

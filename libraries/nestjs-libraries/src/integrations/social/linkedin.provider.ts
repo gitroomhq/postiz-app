@@ -19,6 +19,7 @@ import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
+import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -40,7 +41,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'w_organization_social',
     'r_organization_social',
   ];
-  override maxConcurrentJob = 2; // LinkedIn has professional posting limits
+  override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
   maxLength() {
@@ -54,7 +55,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const [firstPost, ...restPosts] = posts ?? [];
 
     if (
-      vals?.post_as_images_carousel &&
+      this.assetBoolean(vals?.post_as_images_carousel) &&
       ((firstPost?.length ?? 0) < 2 ||
         firstPost?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1))
     ) {
@@ -278,6 +279,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       endpoint = 'images';
     }
 
+    // Videos arrive as a path/URL (not a Buffer) so the file is never held in
+    // memory whole: the size comes from a HEAD request / stat, and each 2MB
+    // part is fetched with a ranged GET right before its PUT.
+    const videoSize = isVideo ? await this.videoSize(picture) : 0;
+
     const {
       value: { uploadUrl, image, video, document, uploadInstructions, ...all },
     } = await (
@@ -299,7 +305,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
                   : `urn:li:organization:${personId}`,
               ...(isVideo
                 ? {
-                    fileSizeBytes: picture.length,
+                    fileSizeBytes: videoSize,
                     uploadCaptions: false,
                     uploadThumbnail: false,
                   }
@@ -317,7 +323,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     if (isVideo) {
       // Only the Videos API uses multipart chunked uploads. Each 2MB part is
       // PUT separately and the returned etags are passed to finalizeUpload.
-      for (let i = 0; i < picture.length; i += 1024 * 1024 * 2) {
+      for (let i = 0; i < videoSize; i += 1024 * 1024 * 2) {
+        const end = Math.min(i + 1024 * 1024 * 2, videoSize) - 1;
         const upload = await this.fetch(
           sendUrlRequest,
           {
@@ -328,7 +335,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/octet-stream',
             },
-            body: picture.slice(i, i + 1024 * 1024 * 2),
+            body: await this.videoChunk(picture, i, end),
           },
           'linkedin',
           0,
@@ -580,7 +587,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       postDetails.flatMap(
         (post) =>
           post.media?.map(async (media) => {
-            let mediaBuffer: Buffer;
+            // Videos are passed through as their path/URL: uploadPicture
+            // downloads them in 2MB ranges instead of buffering the whole file.
+            let mediaBuffer: Buffer | string;
 
             // Check if media has a buffer (from PDF conversion)
             if (
@@ -590,6 +599,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
               Buffer.isBuffer(media.buffer)
             ) {
               mediaBuffer = (media as any).buffer;
+            } else if (hasExtension(media.path, 'mp4')) {
+              mediaBuffer = media.path;
             } else {
               mediaBuffer = await this.prepareMediaBuffer(media.path);
             }
@@ -619,18 +630,84 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     }, {} as Record<string, string[]>);
   }
 
+  // Resolves the total byte size of the video without loading it into memory:
+  // a HEAD request for remote URLs, statSync for local files.
+  private async videoSize(path: string): Promise<number> {
+    if (path.indexOf('http') === 0) {
+      const head = await fetch(path, { method: 'HEAD' });
+      const length = head.headers.get('content-length');
+      if (!length) {
+        throw new BadBody(
+          'linkedin-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          'Could not determine the video size for LinkedIn upload'
+        );
+      }
+      return Number(length);
+    }
+
+    return statSync(path).size;
+  }
+
+  // Returns only the [start, end] byte window of the video as a Buffer (a
+  // ranged GET for remote URLs, a ranged read for local files), so memory is
+  // bounded by the part size. A Buffer (not a stream) because this.fetch may
+  // retry the PUT, which would fail with a consumed one-shot stream body.
+  private async videoChunk(
+    path: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    if (path.indexOf('http') === 0) {
+      const response = await fetch(path, {
+        headers: { Range: `bytes=${start}-${end}` },
+      });
+      // A 200 means the origin ignored the Range header and is sending the
+      // whole file: uploading it as this part would silently corrupt the
+      // video, so fail loudly instead.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'linkedin-error-upload',
+          '{}',
+          Buffer.from('{}'),
+          `Media server ignored the ranged request (status ${response.status}); it must support HTTP Range requests for chunked LinkedIn uploads`
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+
+    return this.streamToBuffer(createReadStream(path, { start, end }));
+  }
+
   private async prepareMediaBuffer(mediaUrl: string): Promise<Buffer> {
-    const isVideo = hasExtension(mediaUrl, 'mp4');
     const isGif = lookup(mediaUrl) === 'image/gif';
 
-    if (isVideo || isGif) {
+    // GIFs pass through untouched (sharp would break animation).
+    if (isGif) {
       return Buffer.from(await readOrFetch(mediaUrl));
     }
 
-    return await sharp(await readOrFetch(mediaUrl), { animated: false })
-      .toFormat('jpeg')
-      .resize({ width: 1000 })
-      .toBuffer();
+    const mime = lookup(mediaUrl);
+    // PNG and JPEG (covers both .jpg and .jpeg) keep their original format;
+    // anything else (webp, tiff, ...) is converted to jpeg for compatibility.
+    const keepFormat = mime === 'image/png' || mime === 'image/jpeg';
+
+    // Always downscale to stay under LinkedIn's 36,152,320-pixel cap: fit within
+    // a 6000x6000 box (max 36,000,000 px for any aspect ratio) while preserving
+    // the aspect ratio and never enlarging smaller images (downscale-only).
+    // NOTE: this guard is required for self-hosted instances running with
+    // DISABLE_IMAGE_COMPRESSION=true, where the frontend no longer shrinks
+    // uploads and full-size images reach LinkedIn directly. Do not remove it on
+    // the assumption that the frontend compression already caps dimensions.
+    const pipeline = sharp(await readOrFetch(mediaUrl), { animated: false }).resize({
+      width: 6000,
+      height: 6000,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+
+    return await (keepFormat ? pipeline : pipeline.toFormat('jpeg')).toBuffer();
   }
 
   private buildPostContent(isPdf: boolean, mediaIds: string[], pdfTitle?: string) {
@@ -792,7 +869,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
 
     // Check if we should convert images to PDF carousel
-    if (firstPost.settings?.post_as_images_carousel) {
+    if (this.assetBoolean(firstPost.settings?.post_as_images_carousel)) {
       processedPostDetails = await this.convertImagesToPdfCarousel(
         postDetails,
         firstPost
@@ -821,7 +898,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       processedFirstPost,
       mainPostMediaIds,
       type,
-      !!firstPost.settings?.post_as_images_carousel
+      this.assetBoolean(firstPost.settings?.post_as_images_carousel)
     );
 
     // Return response for main post only

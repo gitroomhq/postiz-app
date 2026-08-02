@@ -36,6 +36,7 @@ import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 import { MeweProvider } from '@gitroom/nestjs-libraries/integrations/social/mewe.provider';
+import { TumblrProvider } from '@gitroom/nestjs-libraries/integrations/social/tumblr.provider';
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
@@ -71,6 +72,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new WhopProvider(),
   new SkoolProvider(),
   new MeweProvider(),
+  new TumblrProvider(),
   // new MastodonCustomProvider(),
 ];
 
@@ -87,7 +89,9 @@ export class IntegrationManager {
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
+          ...(p.extensionCookies
+            ? { extensionCookies: p.extensionCookies }
+            : {}),
           ...(p.customFields ? { customFields: await p.customFields() } : {}),
         }))
       ),

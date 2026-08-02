@@ -254,7 +254,13 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
         });
 
         let uploadStatus = 'pending';
+        let attempts = 0;
+        const maxAttempts = 108; // ~9 minutes at 5s interval
         while (uploadStatus !== 'ready') {
+          if (attempts++ >= maxAttempts) {
+            throw new Error('File upload timed out');
+          }
+
           const fileStatus = await (
             await this.fetch(
               `https://api.whop.com/api/v1/files/${createFileResponse.id}`,

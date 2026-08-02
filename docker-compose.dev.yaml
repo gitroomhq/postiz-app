@@ -1,6 +1,5 @@
-# Do **not** use this yml for production. It is not up-to-date.
-# Use https://docs.postiz.com/installation/docker-compose
-# This is only for the dev enviroment
+# This docker-compose file is used for development purposes. It sets up the necessary services for the Postiz application.
+# It is **not** intended for production use. For production, please refer to the official documentation.
 
 services:
   postiz-postgres:
