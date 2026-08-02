@@ -13,7 +13,7 @@ We have 3 important folders
 
 - apps/backend - this is where the API code is (NESTJS)
 - apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
+- apps/frontend - this is the code of the frontend (Next.js App Router, ReactJS)
 - /libraries contains a lot of services shared between backend and orchestrator and frontend components.
 
 We are using only pnpm, don't use any other dependency manager.
@@ -22,7 +22,7 @@ Never install frontend components from npmjs, focus on writing native components
 The project uses tailwind 3, before writing any component look at:
 - /apps/frontend/src/app/colors.scss
 - /apps/frontend/src/app/global.scss
-- /apps/frontend/tailwind.config.js
+- /apps/frontend/tailwind.config.cjs
 
 All the --color-custom* are deprecated, don't use them.
 
@@ -67,4 +67,62 @@ const useCommunity = () => {
 - When you finished running, run another agents that matches the new code with the existing system code, to see that it looks similar and is not a weird pattern.
 - Workflows files can never be changed if they are already in origin/main, because changing a workflow will fail all its activities, instead create a new workflow with the version, and everywhere the workflow being called, change it to the new workflow version.
 - Workflows activities parameters cannot be changed, as it will break the workflow, if we need to change the parameters, if we need to change the parameters, we need to create a new activity with the new parameters, and then create a new workflow that uses the new activity.
-- Code must always be generic, there can't be a way that a specific logic, let's say facebook or instagram, appear in a file that use a generic logic, instead, we need to edit the interface of the provider, add another function, and then generically call it from the generic code, and then implement the specific logic in the provider implementation. we can't have something like if(facebookProvider) {} inside a non facebook provider file. 
+- Code must always be generic, there can't be a way that a specific logic, let's say facebook or instagram, appear in a file that use a generic logic, instead, we need to edit the interface of the provider, add another function, and then generically call it from the generic code, and then implement the specific logic in the provider implementation. we can't have something like if(facebookProvider) {} inside a non facebook provider file.
+
+# UI migration (in progress)
+
+A visual redesign of `apps/frontend` is being applied step by step. The reference lives in
+`design/handoff/`. Read `design/handoff/README.md` before touching frontend code.
+
+**It is git-ignored on purpose** — this repository is public and the handoff contains an unreleased
+design and unannounced pricing. It is working material held locally; if it is missing from your
+checkout, ask for it rather than guessing. `docs/ui-migration-log.md` is the part that ships.
+
+## The rule
+
+**The design is authoritative on how it LOOKS. This repo is authoritative on how it WORKS.**
+
+Take colour, spacing, type, layout, motion and element inventory from the design. Take behaviour,
+strings, routing, validation, API calls and feature-gate conditions from the code. When the design
+implies behaviour the code doesn't have, **raise it — do not implement it silently.**
+
+## Non-negotiables
+
+- `design/handoff/design/PostQueen App v2.dc.html` is a prototype, not production code. **Never copy
+  its HTML.** Reproduce it with this repo's components, stores and Tailwind setup.
+- **It is ~800 KB — never read it whole.** Grep the named `*Vals()` method and read only that region
+  plus its template block. Method index is in `design/handoff/README.md`.
+- **The prototype outranks the handoff's own markdown docs.** Those docs are stale in ~20 places;
+  the corrections table is in `docs/ui-migration-log.md`. Read the method, not the doc.
+- All colour comes from the token layer in `apps/frontend/src/app/colors.scss`. No hex literals in
+  components. Missing value → add a token.
+- Do not rewrite copy, handlers, API calls or provider settings while restyling. Those were verified
+  against source; "cleaning them up" is a regression.
+- **Never delete a capability just because the design doesn't show it.** The design's rail has no
+  Plugs, no Affiliate and no Create-Post button; all three exist here and stay.
+- Keep **i18n** (14 languages) and **RTL** (he, ar) working. The prototype has neither — it is
+  hardcoded English, LTR only.
+- Theming is a **`.dark` / `.light` class on `<body>`** (`darkMode: 'class'`), not `data-theme` on
+  `<html>`. There are zero `dark:` utilities — everything flows through those two blocks.
+- Responsive structure keys off `[data-mobile="1"]` / `[data-tablet="1"]` on the app root
+  (mobile <760, tablet 760–1179, desktop ≥1180). Do **not** change the Tailwind `mobile:`/`tablet:`
+  breakpoints — 88 call sites depend on them.
+- The 1px hairlines between a page's own columns are drawn by `gap-[1px]` over a
+  `bg-newBgLineColor` parent. The design uses the identical trick. Do not replace it.
+
+## Every step must prove it broke nothing
+
+Run all four before opening a PR, and record the results in `docs/ui-migration-log.md`:
+
+```
+scripts/ui-migration-check.sh
+```
+
+Types clean, the API-path list unchanged, the i18n key list unchanged, the route list unchanged.
+Then screenshot the screen at 420 / 900 / 1440 in both themes and compare against the prototype
+served from `design/handoff/design/`.
+
+## Order of work
+
+`docs/ui-migration-log.md` tracks which step is done. Tokens land first, shell second. Do not start
+a screen step before both are merged. 
