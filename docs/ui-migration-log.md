@@ -22,7 +22,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 2 · Shell | done — rail, header, drawer, user menu, org switcher, modal shell, toaster |
 | 3 · Calendar | done — grid, cells, post card, toolbar, month view |
 | 4 · Composer | restyled; **not screenshot-verified** (needs a connected channel) |
-| 5 · Channels + inline connect | Add Channel restyled, photographed and **grouped** (34 tiles, counted); the modal→inline-pane conversion is still open |
+| 5 · Channels + inline connect | Add Channel restyled, photographed and **grouped** (34 tiles, counted). The modal→inline-pane conversion is **declined** — it needs a channels page this repo does not have; see below |
 | 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
@@ -41,6 +41,8 @@ to add strings and each recorded where it happened: **585 → 607** (step 2, the
 The backend type check was added late, when the migration stopped being frontend-only — the tier
 rename, the lifetime route and the provider categories all live in `libraries/` and `apps/backend`,
 and a guard that only compiled the frontend waved every one of them through.
+Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 629** (i18n moved
+585 → 607 once, in step 2, for the strings the design adds; every step since has left it alone).
 
 **Two surfaces cannot be verified on this install and were not marked verified:** the composer needs
 a connected channel, and every billing screen needs `billingEnabled`. `/billing` redirects to the
@@ -981,6 +983,42 @@ invalid input value for enum "SubscriptionTier": "CREATOR"
 — which is an ordering constraint rather than a defect: `pm2-run` runs `prisma-apply` before starting
 anything, so a normal deploy adds the values first. The script documents it as a prerequisite. Run it
 **after** a deploy, never before.
+### The agent page on a phone — finished, and the inline-pane question answered
+
+**Finished.** The earlier half-fix collapsed both side columns to a 100px icon rail below 760, which
+left the chat about 220px of a 420px screen. The note said that was "not enough on its own";
+photographing it showed what it actually means — two or three words a line, and a message box the
+shape of a bookmark.
+
+Both columns are off-canvas drawers below 760 now, and the chat takes the full width. The pattern is
+`rail.tsx`'s, for the reasons `rail.tsx` learned them: the drawer top is **measured** so it opens
+under the chrome rather than over it, the parked panel is **clipped** so it cannot widen the page in
+RTL, Escape and the scrim both close it, and `role="dialog"` is set only while it is open. Inside the
+drawer each column is the full expanded list rather than the icon rail, and the desktop collapse
+chevron is hidden — there is nothing to collapse to in a drawer.
+
+Desktop is untouched by construction: `AgentDrawer` is a passthrough when inactive, and the 1440
+screenshot is the same three columns as before. The reason the earlier note gave for not doing this —
+that the chat surface cannot be exercised here, since copilot 503s without a model key — turned out
+not to block it: the **layout** is verifiable even when the chat content is not.
+
+**Not changed:** the agent's greeting still reads *"from the left menu"* / *"from the right menu"*,
+which is now only true on desktop. That is the agent's own copy, and rewriting copy during a restyle
+is the thing this migration has refused to do everywhere else. Flagged for the owner.
+
+**The design's modal → inline connect pane is not built, and should not be.** The prototype's connect
+flow is a wizard (`chAdd` → `addStep` → `addContinue`) living on a `page: 'channels'` at
+`max-width: 760`. This repo has **no channels page**: channels are a column on the calendar, and
+Add Channel is a modal. Building the pane means creating a route that does not exist, moving channel
+management off the calendar page where users do it today, and rebuilding the connect step as a
+wizard around OAuth redirects and per-provider custom-field forms. That is an information-architecture
+change, not a restyle, and it is exactly the case the migration rule covers — *the design implies
+structure the code does not have, so raise it rather than implement it silently*. The modal is
+restyled, grouped, counted and photographed; it does the job.
+
+**Checks:** types 0 · api 134 · routes 27 unchanged. **i18n 628 → 629** — `conversations`, the label
+on the second drawer toggle.
+
 ### The `text-white` audit — and one I had just written myself
 
 95 uses. The interesting one was mine: the tour's Next button was `bg-pqBrand` with
