@@ -661,6 +661,7 @@ move_to_billing
 music_usage_confirmation
 mutual_follow_friends
 n8n_node
+n_publishing_options
 name
 needs_reconnect
 new_post
@@ -685,6 +686,7 @@ no_original_urls
 no_posts
 no_posts_here
 no_published_posts
+no_publishing_options
 no_short_link_results
 no_statistics_available
 no_time_slots
@@ -756,6 +758,7 @@ public_to_everyone
 publication_date
 published
 publishing
+publishing_options
 reactivate_subscription
 read_the_docs
 reconnect_channel

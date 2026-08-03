@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
@@ -10,6 +10,9 @@ import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
 
 /**
  * The Channels page.
@@ -61,6 +64,91 @@ const ChannelCounts: FC<{ integrationId: string }> = ({ integrationId }) => {
     </div>
   );
 };
+
+/**
+ * The design gives publishing options their own row on the channel detail
+ * ("X options · 5 publishing options"). They already exist — behind the
+ * three-dot menu's "Additional Settings" — and they are declared per provider,
+ * so nothing is written here: `additionalSettings` is read off the integration
+ * and its titles are listed. A provider that declares none says so instead of
+ * showing an empty card.
+ */
+const PublishingOptions: FC<{ integration: any; mutate: () => void }> = ({
+  integration,
+  mutate,
+}) => {
+  const t = useT();
+  const modal = useModals();
+  const toast = useToaster();
+
+  const options: any[] = useMemo(() => {
+    try {
+      const parsed = JSON.parse(integration.additionalSettings || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [integration.additionalSettings]);
+
+  const open = useCallback(() => {
+    modal.openModal({
+      title: t('additional_settings', 'Additional Settings'),
+      children: (
+        <SettingsModal
+          integration={integration}
+          onClose={() => {
+            mutate();
+            toast.show(t('settings_updated', 'Settings Updated'), 'success');
+          }}
+        />
+      ),
+    });
+  }, [integration, modal, mutate, t, toast]);
+
+  return (
+    <div className="flex flex-col gap-[8px]">
+      <div className="flex items-baseline gap-[8px]">
+        <span className="text-[11px] font-[700] uppercase tracking-[0.08em] text-pqSoft">
+          {t('publishing_options', 'Publishing options')}
+        </span>
+        <span className="h-[1px] flex-1 bg-pqLine" />
+      </div>
+      <div
+        data-publishing-options={options.length}
+        className="flex items-center gap-[14px] rounded-pqMd border border-pqBorder p-[16px]"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-[500]">
+            {options.length
+              ? t('n_publishing_options', '{count} publishing options').replace(
+                  '{count}',
+                  String(options.length)
+                )
+              : t(
+                  'no_publishing_options',
+                  'This channel has no extra publishing options'
+                )}
+          </div>
+          {!!options.length && (
+            <div className="mt-[3px] truncate text-[12.5px] text-pqMuted">
+              {options.map((option) => option.title).join(' · ')}
+            </div>
+          )}
+        </div>
+        {!!options.length && (
+          <button
+            type="button"
+            onClick={open}
+            className="shrink-0 rounded-pqSm bg-pqBtnSimple px-[14px] py-[8px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+          >
+            {t('edit', 'Edit')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ChannelsComponent: FC = () => {
   const t = useT();
   const { data: integrations, mutate } = useIntegrationList();
@@ -217,6 +305,8 @@ export const ChannelsComponent: FC = () => {
               {t('automations', 'Automations')}
             </Link>
           </div>
+
+          <PublishingOptions integration={current} mutate={mutate} />
 
           <div className="flex flex-col gap-[8px]">
             <div className="flex items-baseline gap-[8px]">
