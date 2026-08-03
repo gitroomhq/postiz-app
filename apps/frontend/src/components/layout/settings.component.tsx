@@ -23,6 +23,7 @@ import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/lan
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
+import { ConnectionsComponent } from '@gitroom/frontend/components/public-api/connections.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
@@ -91,6 +92,7 @@ export const SettingsPopup: FC<{
     'sets',
     'signatures',
     'api',
+    'connections',
     'approved_apps',
   ];
   const requestedTab = url.get('tab');
@@ -133,6 +135,8 @@ export const SettingsPopup: FC<{
     }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
       arr.push({ tab: 'api', label: t('developers', 'Developers'), group: developers });
+      // Same gate as Developers: both are the API key wearing different hats.
+      arr.push({ tab: 'connections', label: t('connections', 'Connections'), group: developers });
     }
     arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps'), group: developers });
 
@@ -245,6 +249,16 @@ export const SettingsPopup: FC<{
                 isOrgAdmin && (
                   <div>
                     <PublicComponent />
+                  </div>
+                )}
+
+              {tab === 'connections' &&
+                !!user?.tier?.public_api &&
+                isGeneral &&
+                showLogout &&
+                isOrgAdmin && (
+                  <div>
+                    <ConnectionsComponent />
                   </div>
                 )}
 
