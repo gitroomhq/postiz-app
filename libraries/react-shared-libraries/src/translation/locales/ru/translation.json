@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Да, отменить купон",
   "cancel_coupon_title": "Отменить купон?",
   "cancel_coupon_failed": "Не удалось отменить купон",
-  "cancel_coupon_success": "Купон отменён"
+  "cancel_coupon_success": "Купон отменён",
+  "recurrence_projection": "Повтор: будущий случай этой повторяющейся публикации"
 }

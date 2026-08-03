@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Ja, Gutschein stornieren",
   "cancel_coupon_title": "Gutschein stornieren?",
   "cancel_coupon_failed": "Der Gutschein konnte nicht storniert werden",
-  "cancel_coupon_success": "Gutschein storniert"
+  "cancel_coupon_success": "Gutschein storniert",
+  "recurrence_projection": "Wiederholung: ein zukünftiges Auftreten dieses wiederkehrenden Beitrags"
 }

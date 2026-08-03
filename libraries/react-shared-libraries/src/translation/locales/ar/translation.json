@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "نعم، إلغاء القسيمة",
   "cancel_coupon_title": "إلغاء القسيمة؟",
   "cancel_coupon_failed": "تعذّر إلغاء القسيمة",
-  "cancel_coupon_success": "تم إلغاء القسيمة"
+  "cancel_coupon_success": "تم إلغاء القسيمة",
+  "recurrence_projection": "التكرار: حدوث مستقبلي لهذا المنشور المتكرر"
 }

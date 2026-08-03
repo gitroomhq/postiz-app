@@ -206,10 +206,14 @@ export class PostsRepository {
       let startingDate = dayjs.utc(post.publishDate);
       while (dayjs.utc(endDate).isSameOrAfter(startingDate)) {
         if (dayjs(startingDate).isSameOrAfter(dayjs.utc(post.publishDate))) {
+          // every occurrence except the row's real date is a synthesized
+          // projection of the recurrence, not a real post
+          const projected = !startingDate.isSame(dayjs.utc(post.publishDate));
           addMorePosts.push({
             ...post,
             publishDate: startingDate.toDate(),
             actualDate: post.publishDate,
+            ...(projected ? { projected } : {}),
           });
         }
 
