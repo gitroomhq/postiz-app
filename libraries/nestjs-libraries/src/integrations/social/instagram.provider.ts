@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -9,6 +10,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -594,16 +596,64 @@ export class InstagramProvider
     };
   }
 
-  async post(
+  // Single, read-only status check of a media container - the polling loops
+  // that used to live inside post() are now driven by the post workflow.
+  private async igContainerStatus(
+    containerId: string,
+    checkToken: string,
+    type: string
+  ): Promise<string> {
+    const { status_code, status } = await (
+      await this.fetch(
+        `https://${type}/v20.0/${containerId}?access_token=${checkToken}&fields=status_code,status`,
+        undefined,
+        '',
+        0,
+        true
+      )
+    ).json();
+
+    if (status_code === 'ERROR' || status_code === 'EXPIRED') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify({ status_code, status }),
+        '{}',
+        status || 'Instagram could not process the media'
+      );
+    }
+
+    return status_code;
+  }
+
+  // The post is live, the permalink is only cosmetic: never fail (and risk
+  // re-publishing) a live post over it.
+  private async igPermalink(
+    mediaId: string,
+    checkToken: string,
+    type: string,
+    integration: Integration
+  ): Promise<string> {
+    try {
+      const { permalink } = await (
+        await this.fetch(
+          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${checkToken}`
+        )
+      ).json();
+      return permalink;
+    } catch (err) {
+      return `https://www.instagram.com/${integration.profile}`;
+    }
+  }
+
+  async postPending(
     id: string,
     token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
-    const [accessToken, userToken] = token.split('___');
+    const [accessToken] = token.split('___');
     const [firstPost] = postDetails;
-    console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
@@ -679,102 +729,165 @@ export class InstagramProvider
             }
           )
         ).json();
-        console.log('in progress2', id);
-
-        let status = 'IN_PROGRESS';
-        let attempts = 0;
-        const maxAttempts = 18; // ~9 minutes at 30s interval
-        while (status === 'IN_PROGRESS') {
-          if (attempts++ >= maxAttempts) {
-            throw new Error('Media processing timed out');
-          }
-
-          const { status_code } = await (
-            await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${
-                userToken || accessToken
-              }&fields=status_code`,
-              undefined,
-              '',
-              0,
-              true
-            )
-          ).json();
-          await timer(30000);
-          status = status_code;
-        }
-        console.log('in progress3', id);
 
         return photoId;
       }) || []
     );
 
-    if (isStory && medias.length > 1) {
-      // Stories don't support carousels - publish each media as a separate story
+    // Containers are invisible until media_publish runs: the processing wait
+    // and the publish itself move to checkPostStatus / finalizePost so a
+    // failure there can never re-create (and re-publish) the whole post.
+    return [
+      {
+        id: firstPost.id,
+        postId: '',
+        releaseURL: '',
+        status: 'pending',
+        pendingData: {
+          type,
+          postType:
+            isStory && medias.length > 1
+              ? 'stories'
+              : medias.length === 1
+              ? 'single'
+              : 'carousel',
+          containers: medias,
+          message: firstPost?.message || '',
+        },
+      },
+    ];
+  }
+
+  override async checkPostStatus(
+    token: string,
+    pendingData: {
+      type: string;
+      postType: 'stories' | 'single' | 'carousel';
+      containers: string[];
+      message?: string;
+      carouselId?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    const [accessToken, userToken] = token.split('___');
+    const checkToken = userToken || accessToken;
+
+    // the carousel container was already created: wait for it
+    if (pendingData.carouselId) {
+      const status = await this.igContainerStatus(
+        pendingData.carouselId,
+        checkToken,
+        pendingData.type
+      );
+
+      if (status === 'IN_PROGRESS') {
+        return { status: 'pending', pendingData };
+      }
+
+      // a previous finalizePost published but died before reporting: the post
+      // is live, never publish again
+      if (status === 'PUBLISHED') {
+        return {
+          status: 'completed',
+          postId: pendingData.carouselId,
+          releaseURL: `https://www.instagram.com/${integration.profile}`,
+        };
+      }
+
+      return { status: 'ready', pendingData };
+    }
+
+    for (const containerId of pendingData.containers) {
+      const status = await this.igContainerStatus(
+        containerId,
+        checkToken,
+        pendingData.type
+      );
+
+      if (status === 'IN_PROGRESS') {
+        return { status: 'pending', pendingData };
+      }
+
+      if (status === 'PUBLISHED') {
+        // a previous finalizePost died mid-way: a single post is fully live,
+        // stories are resumed by finalizePost (it skips published containers)
+        if (pendingData.postType === 'single') {
+          return {
+            status: 'completed',
+            postId: containerId,
+            releaseURL: `https://www.instagram.com/${integration.profile}`,
+          };
+        }
+      }
+    }
+
+    return { status: 'ready', pendingData };
+  }
+
+  override async finalizePost(
+    token: string,
+    pendingData: {
+      type: string;
+      postType: 'stories' | 'single' | 'carousel';
+      containers: string[];
+      message?: string;
+      carouselId?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    const [accessToken, userToken] = token.split('___');
+    const checkToken = userToken || accessToken;
+    const igId = integration.internalId;
+
+    if (pendingData.postType === 'stories') {
+      // Stories don't support carousels - publish each media as a separate
+      // story, skipping containers a previous (crashed) run already published
       let lastMediaId = '';
-      let lastPermalink = '';
-      for (const mediaCreationId of medias) {
+      for (const mediaCreationId of pendingData.containers) {
+        const status = await this.igContainerStatus(
+          mediaCreationId,
+          checkToken,
+          pendingData.type
+        );
+        if (status === 'PUBLISHED') {
+          continue;
+        }
+
         const { id: mediaId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
+            `https://${pendingData.type}/v20.0/${igId}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
             {
               method: 'POST',
             }
           )
         ).json();
         lastMediaId = mediaId;
-
-        const { permalink } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-              userToken || accessToken
-            }`
-          )
-        ).json();
-        lastPermalink = permalink;
       }
 
-      return [
-        {
-          id: firstPost.id,
-          postId: lastMediaId,
-          releaseURL: lastPermalink,
-          status: 'success',
-        },
-      ];
-    } else if (medias.length === 1) {
-      const { id: mediaId } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
+      return {
+        status: 'completed',
+        postId: lastMediaId || pendingData.containers.at(-1)!,
+        releaseURL: !lastMediaId
+          ? `https://www.instagram.com/${integration.profile}`
+          : await this.igPermalink(
+              lastMediaId,
+              checkToken,
+              pendingData.type,
+              integration
+            ),
+      };
+    }
 
-      const { permalink } = await (
+    if (pendingData.postType === 'carousel' && !pendingData.carouselId) {
+      // create the carousel container and hand back to the workflow to wait
+      // for it (an orphan container from a crashed run is invisible, so
+      // re-running this is safe)
+      const { id: containerId } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
-
-      return [
-        {
-          id: firstPost.id,
-          postId: mediaId,
-          releaseURL: permalink,
-          status: 'success',
-        },
-      ];
-    } else {
-      const { id: containerId, ...all3 } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media?caption=${encodeURIComponent(
-            firstPost?.message
+          `https://${pendingData.type}/v20.0/${igId}/media?caption=${encodeURIComponent(
+            pendingData.message || ''
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
-            medias.join(',')
+            pendingData.containers.join(',')
           )}&access_token=${accessToken}`,
           {
             method: 'POST',
@@ -782,54 +895,99 @@ export class InstagramProvider
         )
       ).json();
 
-      let status = 'IN_PROGRESS';
-      let attempts = 0;
-      const maxAttempts = 18; // ~9 minutes at 30s interval
-      while (status === 'IN_PROGRESS') {
-        if (attempts++ >= maxAttempts) {
-          throw new Error('Media processing timed out');
-        }
+      return {
+        status: 'pending',
+        pendingData: { ...pendingData, carouselId: containerId },
+      };
+    }
 
-        const { status_code } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${
-              userToken || accessToken
-            }`,
-            undefined,
-            '',
-            0,
-            true
-          )
-        ).json();
-        await timer(30000);
-        status = status_code;
+    const creationId =
+      pendingData.postType === 'carousel'
+        ? pendingData.carouselId
+        : pendingData.containers[0];
+
+    const { id: mediaId } = await (
+      await this.fetch(
+        `https://${pendingData.type}/v20.0/${igId}/media_publish?creation_id=${creationId}&access_token=${accessToken}&field=id`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    return {
+      status: 'completed',
+      postId: mediaId,
+      releaseURL: await this.igPermalink(
+        mediaId,
+        checkToken,
+        pendingData.type,
+        integration
+      ),
+    };
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that don't
+  // know how to resolve a `pending` response.
+  async post(
+    id: string,
+    token: string,
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration,
+    type = 'graph.facebook.com'
+  ): Promise<PostResponse[]> {
+    const [firstPost] = postDetails;
+    const [response] = await this.postPending(
+      id,
+      token,
+      postDetails,
+      integration,
+      type
+    );
+
+    let pendingData = response.pendingData;
+    const started = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here (non-retryable) is safe, timing the
+      // activity out is not - a retried activity would publish again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Media processing timed out'
+        );
       }
 
-      const { id: mediaId, ...all4 } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
+      const check = await this.checkPostStatus(token, pendingData, integration);
+
+      if (check.status === 'pending') {
+        pendingData = check.pendingData;
+        await timer(30000);
+        continue;
+      }
+
+      const result =
+        check.status === 'ready'
+          ? await this.finalizePost(token, check.pendingData, integration)
+          : check;
+
+      if (result.status === 'completed') {
+        return [
           {
-            method: 'POST',
-          }
-        )
-      ).json();
+            id: firstPost.id,
+            postId: result.postId,
+            releaseURL: result.releaseURL,
+            status: 'success',
+          },
+        ];
+      }
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
-
-      return [
-        {
-          id: firstPost.id,
-          postId: mediaId,
-          releaseURL: permalink,
-          status: 'success',
-        },
-      ];
+      pendingData = result.pendingData;
+      await timer(30000);
     }
   }
 

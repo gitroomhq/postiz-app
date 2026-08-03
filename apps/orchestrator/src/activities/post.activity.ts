@@ -76,7 +76,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV105', {
+        .workflow.signalWithStart('postWorkflowV106', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -206,6 +206,23 @@ export class PostActivity {
 
   @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
+    return this.postSocialInternal(integration, posts, false);
+  }
+
+  // Used by postWorkflowV106 and up: providers that implement `postPending`
+  // return a `pending` response the workflow resolves via checkPostStatus /
+  // finalizePost. Older workflow versions keep calling `postSocial` and get
+  // the old blocking behavior.
+  @ActivityMethod()
+  async postSocialPending(integration: Integration, posts: Post[]) {
+    return this.postSocialInternal(integration, posts, true);
+  }
+
+  private async postSocialInternal(
+    integration: Integration,
+    posts: Post[],
+    allowPending: boolean
+  ) {
     if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         integration.organizationId
@@ -225,47 +242,89 @@ export class PostActivity {
       posts
     );
 
-    const postNow = await getIntegration.post(
-      integration.internalId,
-      integration.token,
-      await Promise.all(
-        (newPosts || []).map(async (p) => ({
-          id: p.id,
-          message: stripHtmlValidation(
-            getIntegration.editor,
-            p.content,
-            true,
-            false,
-            !/<\/?[a-z][\s\S]*>/i.test(p.content),
-            getIntegration.mentionFormat
-          ),
-          settings: JSON.parse(p.settings || '{}'),
-          media: await this._postService.updateMedia(
-            p.id,
-            JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
-          ),
-        }))
-      ),
-      integration
+    const mappedPosts = await Promise.all(
+      (newPosts || []).map(async (p) => ({
+        id: p.id,
+        message: stripHtmlValidation(
+          getIntegration.editor,
+          p.content,
+          true,
+          false,
+          !/<\/?[a-z][\s\S]*>/i.test(p.content),
+          getIntegration.mentionFormat
+        ),
+        settings: JSON.parse(p.settings || '{}'),
+        media: await this._postService.updateMedia(
+          p.id,
+          JSON.parse(p.image || '[]'),
+          getIntegration?.convertToJPEG || false
+        ),
+      }))
     );
 
-    await this._temporalService.client
-      .getRawClient()
-      .workflow.start('streakWorkflow', {
-        args: [{ organizationId: integration.organizationId }],
-        workflowId: `streak_${integration.organizationId}`,
-        taskQueue: 'main',
-        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
-        typedSearchAttributes: new TypedSearchAttributes([
-          {
-            key: organizationId,
-            value: integration.organizationId,
-          },
-        ]),
-      });
+    const postNow =
+      allowPending && getIntegration.postPending
+        ? await getIntegration.postPending(
+            integration.internalId,
+            integration.token,
+            mappedPosts,
+            integration
+          )
+        : await getIntegration.post(
+            integration.internalId,
+            integration.token,
+            mappedPosts,
+            integration
+          );
+
+    // The post is already published at this point: the streak is best-effort,
+    // failing the activity here would retry it and publish again.
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.start('streakWorkflow', {
+          args: [{ organizationId: integration.organizationId }],
+          workflowId: `streak_${integration.organizationId}`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: organizationId,
+              value: integration.organizationId,
+            },
+          ]),
+        });
+    } catch (err) {
+      /**empty**/
+    }
 
     return postNow;
+  }
+
+  @ActivityMethod()
+  async checkPostStatus(integration: Integration, pendingData: any) {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    return getIntegration.checkPostStatus(
+      integration.token,
+      pendingData,
+      integration
+    );
+  }
+
+  @ActivityMethod()
+  async finalizePost(integration: Integration, pendingData: any) {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    return getIntegration.finalizePost(
+      integration.token,
+      pendingData,
+      integration
+    );
   }
 
   @ActivityMethod()
