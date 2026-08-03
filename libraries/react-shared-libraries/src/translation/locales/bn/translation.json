@@ -730,5 +730,12 @@
   "yes_cancel_coupon": "হ্যাঁ, কুপন বাতিল করুন",
   "cancel_coupon_title": "কুপন বাতিল করবেন?",
   "cancel_coupon_failed": "কুপন বাতিল করা যায়নি",
-  "cancel_coupon_success": "কুপন বাতিল হয়েছে"
+  "cancel_coupon_success": "কুপন বাতিল হয়েছে",
+  "what_do_you_want_to_do": "আপনি কী করতে চান?",
+  "just_update_post_details": "শুধুমাত্র পোস্টের বিবরণ আপডেট করুন",
+  "reschedule_post": "পোস্ট পুনঃনির্ধারণ করুন",
+  "republish_the_post": "পোস্টটি পুনঃপ্রকাশ করুন",
+  "post_already_published_republish_warning": "এই পোস্টটি ইতিমধ্যে প্রকাশিত হয়েছে। পুনঃপ্রকাশ করলে এটি আবার প্রকাশিত হবে",
+  "republish_at": "সময়",
+  "republish_recurring_note": "এটি একটি পুনরাবৃত্তিমূলক পোস্ট: আপনার পরিবর্তনসমূহ এখন থেকে শুরু করে সকল ভবিষ্যৎ পুনরাবৃত্তিতে প্রয়োগ হবে।"
 }

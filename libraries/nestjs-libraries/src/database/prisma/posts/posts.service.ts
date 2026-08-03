@@ -873,6 +873,29 @@ export class PostsService {
     return '';
   }
 
+  // A schedule-type save targeting an already-PUBLISHED post republishes it to
+  // the platform: require the explicit `republish` opt-in instead. The message
+  // doubles as the confirmation dialog for API/MCP automation.
+  private guardAgainstRepublish(
+    post: { state: State; publishDate: Date; integration?: { providerIdentifier: string } } | null,
+    source: 'createPost' | 'changeDate'
+  ) {
+    if (post?.state !== 'PUBLISHED') {
+      return;
+    }
+
+    const howToUpdate =
+      source === 'createPost' ? `use type 'update'` : `use action 'update'`;
+
+    throw new BadRequestException(
+      `This post was already published on ${dayjs
+        .utc(post.publishDate)
+        .format('YYYY-MM-DD HH:mm')} UTC. Saving it this way would publish it again to ${
+        post.integration?.providerIdentifier || 'the channel'
+      }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
+    );
+  }
+
   async createPost(
     orgId: string,
     body: CreatePostDto,
@@ -880,6 +903,16 @@ export class PostsService {
   ): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
+      if (
+        (body.type === 'schedule' || body.type === 'now') &&
+        !body.republish &&
+        post.value?.[0]?.id
+      ) {
+        this.guardAgainstRepublish(
+          await this._postRepository.getPostById(post.value[0].id, orgId),
+          'createPost'
+        );
+      }
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
       );
@@ -970,9 +1003,14 @@ export class PostsService {
     orgId: string,
     id: string,
     date: string,
-    action: 'schedule' | 'update' = 'schedule'
+    action: 'schedule' | 'update' = 'schedule',
+    republish = false
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
+
+    if (action === 'schedule' && !republish) {
+      this.guardAgainstRepublish(getPostById, 'changeDate');
+    }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
     // update: Just change the date without changing the status
