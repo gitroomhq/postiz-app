@@ -388,6 +388,7 @@ export const AddProviderComponent: FC<{
     identifier: string;
     name: string;
     toolTip?: string;
+    category?: string;
     isExternal: boolean;
     isWeb3: boolean;
     isChromeExtension?: boolean;
@@ -676,9 +677,53 @@ export const AddProviderComponent: FC<{
 
   const t = useT();
 
+  // The design sorts this grid into five groups. The category comes from the
+  // provider itself (`social.integrations.interface.ts`), not from a list kept
+  // here — so a provider added without one lands in "Other" rather than
+  // disappearing from the only screen that can connect it.
+  const groups = useMemo(() => {
+    const visible = social.filter((item) =>
+      !props.invite
+        ? true
+        : !item.isExternal &&
+          !item.isWeb3 &&
+          !item.isChromeExtension &&
+          !item.customFields
+    );
+    const order: Array<[string, string]> = [
+      ['social', t('category_social', 'Social')],
+      ['chat', t('category_chat', 'Chat & communities')],
+      ['video', t('category_video', 'Video & streaming')],
+      ['business', t('category_business', 'Business & portfolio')],
+      ['publishing', t('category_publishing', 'Blogs & newsletters')],
+    ];
+    const known = new Set(order.map(([key]) => key));
+    return [
+      ...order.map(([key, label]) => ({
+        key,
+        label,
+        items: visible.filter((item) => item.category === key),
+      })),
+      {
+        key: 'other',
+        label: t('category_other', 'Other'),
+        items: visible.filter(
+          (item) => !item.category || !known.has(item.category)
+        ),
+      },
+    ].filter((group) => group.items.length);
+  }, [social, props.invite, t]);
+
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
       <div className="flex flex-col">
+        {groups.map((group) => (
+        <div key={group.key} className="flex flex-col">
+          {!onboarding && groups.length > 1 && (
+            <div className="mb-[10px] mt-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqSoft first:mt-0">
+              {group.label}
+            </div>
+          )}
         <div
           className={clsx(
             isMobile && 'gap-[20px] flex flex-col',
@@ -687,19 +732,7 @@ export const AddProviderComponent: FC<{
             isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
           )}
         >
-          {social
-            .filter((item) => {
-              if (!props.invite) {
-                return true;
-              }
-
-              return (
-                !item.isExternal &&
-                !item.isWeb3 &&
-                !item.isChromeExtension &&
-                !item.customFields
-              );
-            })
+          {group.items
             .map((item) => (
               <div
                 key={item.identifier}
@@ -764,6 +797,8 @@ export const AddProviderComponent: FC<{
               </div>
             ))}
         </div>
+        </div>
+        ))}
       </div>
     </div>
   );

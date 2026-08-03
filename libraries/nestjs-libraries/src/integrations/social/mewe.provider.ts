@@ -14,6 +14,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class MeweProvider extends SocialAbstract implements SocialProvider {
   identifier = 'mewe';
+  category = 'social' as const;
   name = 'MeWe';
   isBetweenSteps = false;
   scopes = [] as string[];

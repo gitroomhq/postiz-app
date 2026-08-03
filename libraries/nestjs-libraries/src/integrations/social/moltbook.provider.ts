@@ -15,6 +15,7 @@ const MOLTBOOK_API_BASE = 'https://www.moltbook.com/api/v1';
 export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
+  category = 'chat' as const;
   name = 'Moltbook';
   isBetweenSteps = false;
   scopes = [] as string[];

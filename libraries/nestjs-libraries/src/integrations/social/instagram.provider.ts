@@ -26,6 +26,7 @@ export class InstagramProvider
   implements SocialProvider
 {
   identifier = 'instagram';
+  category = 'social' as const;
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';

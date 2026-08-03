@@ -14,6 +14,7 @@ import { createHash, randomBytes } from 'crypto';
 export class KickProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3;
   identifier = 'kick';
+  category = 'video' as const;
   name = 'Kick';
   isBetweenSteps = false;
   editor = 'normal' as const;

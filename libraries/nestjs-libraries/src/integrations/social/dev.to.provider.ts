@@ -14,6 +14,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class DevToProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dev.to has moderate publishing limits
   identifier = 'devto';
+  category = 'publishing' as const;
   name = 'Dev.to';
   isBetweenSteps = false;
   editor = 'markdown' as const;

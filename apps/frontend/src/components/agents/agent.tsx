@@ -227,12 +227,17 @@ const Threads: FC = () => {
   const { id } = useParams<{ id: string }>();
 
   const { data } = useSWR('threads', threads);
+  const { mobile } = useViewport();
 
   return (
+    // Below 760 this drops to the same 100px strip the channel column uses.
+    // Two fixed 260px columns beside the chat left it nothing at phone widths —
+    // the page rendered with no conversation area at all, and did so before the
+    // migration too.
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        'w-[260px]'
+        'trz bg-newBgColorInner flex shrink-0 flex-col gap-[15px] transition-all relative',
+        mobile ? 'group sidebar w-[100px]' : 'w-[260px]'
       )}
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">

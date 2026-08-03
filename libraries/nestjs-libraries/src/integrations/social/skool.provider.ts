@@ -15,6 +15,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 export class SkoolProvider extends SocialAbstract implements SocialProvider {
   identifier = 'skool';
+  category = 'chat' as const;
   name = 'Skool';
   isBetweenSteps = false;
   isChromeExtension = true;

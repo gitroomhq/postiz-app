@@ -123,6 +123,12 @@ cancel_subscription
 cancel_subscription_1
 cancel_subscription_title
 carousel_name
+category_business
+category_chat
+category_other
+category_publishing
+category_social
+category_video
 change_bot
 change_bot_picture_title
 change_language

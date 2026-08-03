@@ -19,6 +19,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
   identifier = 'lemmy';
+  category = 'social' as const;
   name = 'Lemmy';
   isBetweenSteps = false;
   scopes = [] as string[];

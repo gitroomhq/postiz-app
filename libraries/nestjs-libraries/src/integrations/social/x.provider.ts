@@ -32,6 +32,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
+  category = 'social' as const;
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];

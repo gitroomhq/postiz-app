@@ -177,6 +177,17 @@ Gaps in the design itself, to be filled rather than copied:
 
 ---
 
+## The local backend runs from an image, not from source
+
+Worth knowing before anyone plans backend work here: the `postqueen` container mounts only
+`/config` and `/uploads` — **no source**. It runs a built image, so every change under
+`libraries/nestjs-libraries` is invisible to the running API until the image is rebuilt. Provider
+categories, `pricing.ts`, the tier enum and any new endpoint all live there.
+
+The fast loop is `pnpm run dev:backend`, which runs the API from source; the frontend then needs to
+point at it instead of `:4007`. Until that happens, backend changes can be written but not
+exercised — and this migration's whole discipline is that unexercised is not verified.
+
 ## Open questions for the owner
 
 Written down rather than asked, at the owner's instruction, so work could continue overnight. Each

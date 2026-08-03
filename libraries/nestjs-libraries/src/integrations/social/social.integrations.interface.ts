@@ -166,6 +166,21 @@ export interface SocialProvider
   >;
   name: string;
   toolTip?: string;
+  /**
+   * Which group this provider sits in on the Add Channel grid.
+   *
+   * It lives on the provider rather than in a list on the frontend on purpose:
+   * a map maintained elsewhere is one someone forgets to update when they add a
+   * provider, and the provider then vanishes from the only screen that can
+   * connect it. Unset is fine — anything without a category falls into the
+   * default group, so forgetting costs a placement, never a channel.
+   */
+  category?:
+    | 'social'
+    | 'chat'
+    | 'video'
+    | 'business'
+    | 'publishing';
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];

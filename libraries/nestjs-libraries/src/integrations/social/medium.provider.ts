@@ -14,6 +14,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class MediumProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Medium has lenient publishing limits
   identifier = 'medium';
+  category = 'publishing' as const;
   name = 'Medium';
   isBetweenSteps = false;
   scopes = [] as string[];

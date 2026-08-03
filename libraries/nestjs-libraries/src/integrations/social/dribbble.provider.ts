@@ -19,6 +19,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dribbble has moderate API limits
   identifier = 'dribbble';
+  category = 'business' as const;
   name = 'Dribbble';
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
