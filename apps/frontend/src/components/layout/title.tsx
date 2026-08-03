@@ -32,6 +32,7 @@ export const Title = () => {
   // prettier-ignore
   const SUBTITLES: Record<string, string> = {
     '/launches': t('subtitle_calendar', 'Plan and publish across every channel'),
+    /* prettier-ignore */ '/channels': t('subtitle_channels', 'Connect and manage your social accounts'),
     '/agents': t('subtitle_agents', 'Draft, generate and schedule with the agent'),
     '/analytics': t('subtitle_analytics', 'How your channels are performing'),
     '/media': t('subtitle_media', 'Every asset in one place'),

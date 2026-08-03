@@ -68,6 +68,7 @@ auth_showcase_title
 authorized_on
 auto_add
 auto_post
+automations
 autopost
 autopost_added_successfully
 autopost_updated_successfully
@@ -140,6 +141,7 @@ channel_added
 channel_connected
 channel_deleted
 channel_disabled
+channel_disconnected
 channel_enabled
 channel_id_copied
 channel_settings
@@ -571,6 +573,8 @@ music_usage_confirmation
 mutual_follow_friends
 n8n_node
 name
+needs_reconnect
+new_post
 next
 next_package
 next_predicted_github_trending
@@ -742,6 +746,7 @@ subtitle_agents
 subtitle_analytics
 subtitle_billing
 subtitle_calendar
+subtitle_channels
 subtitle_integrations
 subtitle_media
 subtitle_plugs

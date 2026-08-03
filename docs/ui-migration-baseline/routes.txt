@@ -6,6 +6,7 @@
 /(app)/(site)/analytics/page.tsx
 /(app)/(site)/billing/lifetime/page.tsx
 /(app)/(site)/billing/page.tsx
+/(app)/(site)/channels/page.tsx
 /(app)/(site)/err/page.tsx
 /(app)/(site)/launches/page.tsx
 /(app)/(site)/media/page.tsx
