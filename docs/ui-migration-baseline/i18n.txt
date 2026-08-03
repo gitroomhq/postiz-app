@@ -74,7 +74,6 @@ back
 back_to_global
 billing
 billing_100_percent_free
-billing_20_percent_off
 billing_admin_required_title
 billing_applied
 billing_apply
@@ -97,12 +96,15 @@ billing_grow_your
 billing_have_discount_coupon
 billing_invalid_coupon
 billing_monthly
+billing_months_free
+billing_months_free_upto
 billing_no_risk_trial
 billing_on
 billing_order_summary
 billing_pay_now
 billing_payment
 billing_per_month
+billing_per_month_short
 billing_per_year
 billing_powered_by_stripe
 billing_remove

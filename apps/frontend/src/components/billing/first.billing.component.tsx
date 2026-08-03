@@ -11,7 +11,11 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  effectiveMonthly,
+  monthsFree,
+  pricing,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { capitalize } from 'lodash';
 import clsx from 'clsx';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -135,6 +139,13 @@ export const FirstBillingComponent = () => {
         ([key, value]) => key !== 'FREE' && !value.retired
       ),
     []
+  );
+
+  // The toggle sits above the whole grid, so it can only speak for the best
+  // tier on offer. The per-plan figure is exact.
+  const bestMonthsFree = useMemo(
+    () => Math.max(...price.map(([key]) => monthsFree(key))),
+    [price]
   );
 
   const JoinOver = () => {
@@ -283,8 +294,14 @@ export const FirstBillingComponent = () => {
                   onClick={() => setPeriod('YEARLY')}
                 >
                   <div>{t('billing_yearly', 'Yearly')}</div>
-                  <div className="bg-pqPink text-[white] px-[8px] rounded-[4px] mobile:hidden">
-                    {t('billing_20_percent_off', '20% Off')}
+                  {/* Was a hardcoded "20% Off", true of the old prices and an
+                      understatement of every current one. Derived now, and it
+                      says "up to" because the tiers differ: CREATOR gives five
+                      months, the rest four. The exact figure per plan is on the
+                      card below. */}
+                  <div className="bg-pqOkSoft text-pqOk px-[8px] rounded-[4px] text-[13px] font-[700] mobile:hidden">
+                    {/* prettier-ignore */}
+                    {t('billing_months_free_upto', 'Up to {{n}} months free', { n: bestMonthsFree })}
                   </div>
                 </div>
               </div>
@@ -318,6 +335,14 @@ export const FirstBillingComponent = () => {
                         ? t('billing_per_month', '/ month')
                         : t('billing_per_year', '/ year')}
                     </div>
+                    {period === 'YEARLY' && (
+                      <div className="text-[13px] text-pqMuted">
+                        ${effectiveMonthly(key)}
+                        {t('billing_per_month_short', '/mo')} ·{' '}
+                        {/* prettier-ignore */}
+                        {t('billing_months_free', '{{n}} months free', { n: monthsFree(key) })}
+                      </div>
+                    )}
                   </div>
                 ),
                 []

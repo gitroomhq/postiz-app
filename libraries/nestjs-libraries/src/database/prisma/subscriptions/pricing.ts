@@ -64,9 +64,10 @@ export const pricing: PricingInterface = {
   CREATOR: {
     current: 'CREATOR',
     month_price: 20,
-    // 6.6x the monthly where the other three are exactly 8x. Doc 06 §B flags
-    // this as possibly a typo and it was taken from the design as-is on the
-    // owner's instruction. Worth a second look before it goes near Stripe.
+    // 6.6x the monthly where the other three are 8x. Doc 06 §B guessed this was
+    // a typo. It is not: 132 / 12 is exactly $11 a month, where 8x would be
+    // $13.33. The entry tier is deliberately sweetened *and* lands on a round
+    // per-month figure. Confirmed by the owner — leave it.
     year_price: 132,
     channel: 5,
     posts_per_month: 1000000,
@@ -242,3 +243,28 @@ export const lifetimeLadder: { [key: string]: PaidTier } = {
 
 export const nextLifetimeTier = (current?: string | null): PaidTier =>
   lifetimeLadder[current || 'FREE'] || 'CREATOR';
+
+/**
+ * What a yearly plan works out to per month. Every tier is priced so this lands
+ * on a whole number — 11 / 22 / 33 / 66 — which is why CREATOR's yearly is 6.6x
+ * its monthly and not 8x like the rest.
+ */
+export const effectiveMonthly = (tier: string) => {
+  const plan = pricing[tier] || pricing.PRO;
+  const perMonth = plan.year_price / 12;
+  return perMonth % 1 === 0 ? String(perMonth) : perMonth.toFixed(2);
+};
+
+/**
+ * How many months of a year a customer does not pay for by billing yearly.
+ * Derived rather than written down: the badge used to be a hardcoded "20% Off",
+ * which was true of the old prices and understates every current one — CREATOR
+ * is 45% off, the rest are 33%.
+ */
+export const monthsFree = (tier: string) => {
+  const plan = pricing[tier] || pricing.PRO;
+  if (!plan.month_price) return 0;
+  return Math.round(
+    (plan.month_price * 12 - plan.year_price) / plan.month_price
+  );
+};
