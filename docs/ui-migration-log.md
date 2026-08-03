@@ -27,6 +27,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
 | 9 · Onboarding + tour | tour built and photographed; the existing onboarding modal is unchanged apart from Get Started now starting the tour |
+| E · Lifetime redemption | route added — it was missing entirely, see the finding below. Purchase flow still open |
 | 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
 
 Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 607** (i18n moved
@@ -162,6 +163,7 @@ this repo. **Read the `*Vals()` method, not the doc.** Verified during the surve
 | 06 §C | the Chrome extension's header entry point is designed | `openExtension` exists in `chromeVals():6425` but is **never rendered** — the design has no entry point for it |
 | 02 | the dragged post card goes fully transparent, not 40% | the prototype is `opacity: dragId === p.id ? '.4' : '1'` (`calendarVals():6884`) — **40%** |
 | 02 | the calendar grid is 24 hourly rows | true of *this repo* (`calendar.tsx:89`); the prototype's own grid is 08:00–20:00, 12 rows. Take the row's look from the design and the hours from the code |
+| 06 §B | the repo already has lifetime **code redemption**, so only the purchase flow is new | the redemption *route* did not exist — `POST /billing/lifetime` was a 404 the UI silently mistranslated into "invalid code". The service behind it was complete; only the controller entry was missing. Added |
 
 Three more `chromeVals()` values are computed and never rendered, the same way doc 04's setup
 panel is: `openCommand` (the ⌘K search), `usageMeters` and `channelUsage`. The rail has no search
@@ -265,15 +267,17 @@ not something to do while you are asleep.
 **2. CREATOR yearly is \$132 — 6.6× the monthly, where every other tier is exactly 8×.** Doc 06 §B
 already flags this as possibly a typo. Unresolved; nothing depends on it until prices actually move.
 
-**3. The lifetime *purchase* flow does not exist.** The design's \$49 one-time offer, its 24-hour
-countdown and its "37 of 200 left" seat counter are invented (doc 06 §B). What this repo has is a
-**code redemption**: `POST /billing/lifetime` takes a code and stacks the user one tier up. There is
-no purchase endpoint, no countdown, no inventory.
+**3. The lifetime *purchase* flow does not exist — and neither did the redemption route.** The
+design's \$49 one-time offer, its 24-hour countdown and its "37 of 200 left" seat counter are
+invented (doc 06 §B). ~~What this repo has is a **code redemption**: `POST /billing/lifetime`~~ —
+this, which doc 06 §B and my own earlier entries both asserted, was **wrong**. See *The lifetime
+route the frontend has always called did not exist* below. **Resolved and closed.**
 
-*Taken in the meantime:* every real `isLifetime` behaviour is kept and restyled — the hidden Billing
-entry, the hidden rail Upgrade, the `{Tier} tier` line, the redirect away from `/billing` — and the
-redemption UI wears the design's founding-member surface. The countdown and the seat counter are
-**not** built: a timer counting down to nothing is a lie in the UI, not a visual detail.
+*Decided:* every real `isLifetime` behaviour is kept and restyled — the hidden Billing entry, the
+hidden rail Upgrade, the `{Tier} tier` line, the redirect away from `/billing` — and the redemption
+UI wears the design's founding-member surface. The countdown and the seat counter are **not** built:
+a timer counting down to nothing is a lie in the UI, not a visual detail. The owner confirmed both
+halves of this — *"satın alma evet, sayaç hayır"*.
 
 **4. Trial copy that the backend cannot honour.** The design writes "4 months free" where the repo's
 string is `billing_20_percent_off`. The discount is a Stripe coupon; the copy has to match whatever
@@ -952,3 +956,74 @@ new keys, all of them tour copy (`tour_*`, `skip`, `next`, `finish`,
 **Photographed:** step 1 at 420 / 1440 in both themes, step 5 and step 6 at 1440
 dark. Step 6 is the `dim` step and correctly shows no ring with a full scrim.
 
+### The lifetime route the frontend has always called did not exist
+
+Step E was supposed to be "build a purchase flow beside the existing redemption flow". Probing the
+running backend before writing anything returned:
+
+```
+POST /billing/lifetime -> 404 {"message":"Cannot POST /billing/lifetime"}
+```
+
+`lifetime.deal.tsx:25` has always posted there. `billing.controller.ts` never had the route — its
+posts are `/check/:id`, `/check-discount`, `/apply-discount`, `/finish-trial`, `/embedded`,
+`/subscribe`, `/portal`, `/cancel-subscription`, `/chatbase-refund`, `/add-subscription`. So **no
+lifetime code has ever been redeemable through the UI.**
+
+It failed silently, which is why it survived. The frontend destructures `success` from a 404 body,
+gets `undefined`, and takes the else branch — `toast.show('Code already claimed or invalid code',
+'warning')`. A customer with a perfectly good code is told their code is bad, and the product looks
+like it is working.
+
+**The capability was there the whole time; only the door was missing.** `StripeService.lifetimeDeal`
+(`stripe.service.ts:1192`) is complete and correct — it rejects an org that already pays for a
+non-lifetime plan, decrypts the code, checks it against `UsedCodes`, and stacks the org one tier up.
+`UsedCodes`, `subscription.repository.ts`'s `isLifetime: !!code`, `getCode` — the whole chain exists
+and nothing calls it. So E was not "build a payment system"; it was four lines of controller.
+
+Note what this says about doc 06 §B and about my own earlier entries: both described the repo as
+*having* code redemption. Both were reading the frontend and inferring the backend. The design docs
+being wrong was expected; my own log repeating it was not.
+
+**Two more things fell out of it:**
+
+`subscription.service.ts:178` still typed `billing` as `'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'` —
+the rename in step 7a updated the two sibling signatures at lines 64 and 113 and missed this one.
+Nothing caught it because nothing passed a new tier through that parameter until now. Widened to the
+full set.
+
+The one-tier-up ladder lived **twice** — once in `stripe.service.ts` as `!current ? 'STANDARD' :
+'PRO'`, once in `lifetime.deal.tsx` as the map I wrote during the rename. After the rename they
+disagreed: the screen promised GROWTH and the backend would have granted PRO. It is now
+`nextLifetimeTier()` in `pricing.ts`, which both import, so the tier the UI names is the tier the
+backend grants. Verified across every rung:
+
+```
+FREE -> CREATOR (5)      GROWTH -> PRO (30)     AGENCY   -> AGENCY (saturated: +5 channels)
+CREATOR -> GROWTH (10)   TEAM -> PRO (30)       ULTIMATE -> AGENCY (100)
+STANDARD -> GROWTH (10)  PRO -> AGENCY (100)
+```
+
+The saturation branch is a generalisation of the old `=== 'PRO'` test — at the top of the ladder a
+further code buys 5 channels instead of a tier. It also fixes a pre-existing bug: an ULTIMATE
+subscriber redeeming a code used to land on PRO and **lose** channels. ULTIMATE and AGENCY are both
+100, so nobody loses anything now.
+
+**Verified:** `/billing/lifetime` returns `{"success":false}` for a junk code (the 404 is gone, and
+the frontend's warning is now shown for the right reason) and `400 "code must be longer than or
+equal to 4 characters"` for an empty one. The **success** path — a correctly encrypted, unused code
+— was **not** exercised: it writes a lifetime subscription to the org, and this is the owner's real
+local dev database. `lifetimeDeal` touches no Stripe API, so unlike the billing screens this one is
+blocked on data, not on keys.
+
+**The check script did not notice any of this, and that is worth saying.** `/billing/lifetime` is
+line 30 of `docs/ui-migration-baseline/api.txt` — it has been in the baseline since step 0. The
+collector greps the *frontend* for `fetch('/…')`, so it records which endpoints the UI calls, never
+whether they answer. `api 134 unchanged` here is the correct signal — the frontend's call surface
+genuinely did not move — but a "no route behind it" class of bug is invisible to it by construction.
+The live probe is what caught this, and it is the fourth time this session that a check passed while
+the thing itself was broken.
+
+**Checks:** types 0 · api 134 · i18n 613 · routes 27 — unchanged. `api` staying at 134 while a
+backend route was added is expected, per the paragraph above; the plan's prediction that E would move
+the baseline was wrong about which side the collector reads.

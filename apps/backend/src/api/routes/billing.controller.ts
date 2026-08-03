@@ -4,6 +4,7 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { LifetimeDto } from '@gitroom/nestjs-libraries/dtos/billing/lifetime.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
@@ -239,6 +240,15 @@ export class BillingController {
     }
 
     return refund;
+  }
+
+  @Post('/lifetime')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async lifetime(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: LifetimeDto
+  ) {
+    return this._stripeService.lifetimeDeal(org.id, body.code);
   }
 
   @Post('/add-subscription')

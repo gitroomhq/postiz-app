@@ -204,3 +204,34 @@ export const pricing: PricingInterface = {
     generate_videos: 60,
   },
 };
+
+/**
+ * A lifetime code stacks the organization one tier up. The ladder has to name
+ * the tiers on sale today and still understand a legacy subscriber, who sits on
+ * the equivalent rung: STANDARD ~ CREATOR, TEAM ~ GROWTH, ULTIMATE ~ AGENCY.
+ *
+ * The redemption endpoint and the screen that previews it both read this, so
+ * the tier the UI promises is the tier the backend actually grants.
+ */
+export type PaidTier =
+  | 'STANDARD'
+  | 'TEAM'
+  | 'PRO'
+  | 'ULTIMATE'
+  | 'CREATOR'
+  | 'GROWTH'
+  | 'AGENCY';
+
+export const lifetimeLadder: { [key: string]: PaidTier } = {
+  FREE: 'CREATOR',
+  CREATOR: 'GROWTH',
+  STANDARD: 'GROWTH',
+  GROWTH: 'PRO',
+  TEAM: 'PRO',
+  PRO: 'AGENCY',
+  AGENCY: 'AGENCY',
+  ULTIMATE: 'AGENCY',
+};
+
+export const nextLifetimeTier = (current?: string | null): PaidTier =>
+  lifetimeLadder[current || 'FREE'] || 'CREATOR';

@@ -3,7 +3,10 @@
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useCallback, useMemo, useState } from 'react';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  nextLifetimeTier,
+  pricing,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { useSWRConfig } from 'swr';
@@ -41,22 +44,12 @@ export const LifetimeDeal = () => {
     }
     setCode('');
   }, [code]);
-  // A lifetime code stacks the org one tier up. The ladder has to name the
-  // tiers on sale today and still understand a legacy subscriber, who sits at
-  // the equivalent rung: STANDARD ~ CREATOR, TEAM ~ GROWTH, ULTIMATE ~ AGENCY.
-  const nextPackage = useMemo(() => {
-    const next: Record<string, string> = {
-      FREE: 'CREATOR',
-      CREATOR: 'GROWTH',
-      STANDARD: 'GROWTH',
-      GROWTH: 'PRO',
-      TEAM: 'PRO',
-      PRO: 'AGENCY',
-      AGENCY: 'AGENCY',
-      ULTIMATE: 'AGENCY',
-    };
-    return next[user?.tier?.current || 'FREE'] || 'CREATOR';
-  }, [user?.tier]);
+  // The ladder is shared with the redemption endpoint so this preview always
+  // names the tier the backend will actually grant.
+  const nextPackage = useMemo(
+    () => nextLifetimeTier(user?.tier?.current),
+    [user?.tier]
+  );
   const features = useMemo(() => {
     if (!user?.tier) {
       return [];

@@ -6,7 +6,10 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { groupBy } from 'lodash';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  nextLifetimeTier,
+  pricing,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -1207,15 +1210,18 @@ export class StripeService {
         };
       }
 
-      const nextPackage = !getCurrentSubscription ? 'STANDARD' : 'PRO';
+      const currentTier = getCurrentSubscription?.subscriptionTier;
+      const nextPackage = nextLifetimeTier(currentTier);
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
         false,
         makeId(10),
         organizationId,
-        getCurrentSubscription?.subscriptionTier === 'PRO'
-          ? getCurrentSubscription.totalChannels + 5
+        // At the top of the ladder a further code can no longer raise the tier,
+        // so it buys channels instead — what PRO did before the rename.
+        currentTier && nextPackage === currentTier
+          ? getCurrentSubscription!.totalChannels + 5
           : findPricing.channel!,
         nextPackage,
         'MONTHLY',

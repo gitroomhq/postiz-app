@@ -175,7 +175,14 @@ export class SubscriptionService {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE',
+    billing:
+      | 'STANDARD'
+      | 'TEAM'
+      | 'PRO'
+      | 'ULTIMATE'
+      | 'CREATOR'
+      | 'GROWTH'
+      | 'AGENCY',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,
