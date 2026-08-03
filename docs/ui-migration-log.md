@@ -1552,26 +1552,41 @@ middleware bounces a signed-in visitor away from `/auth`), and names the four it
 `/p/[id]`, `/oauth/authorize`, `/admin/stats`, `/admin/errors` — so the gap is visible beside the
 coverage instead of being invisible.
 
-### What it found on its first run: opening Billing logs you out
+### What it found on its first run: opening Billing logs you out — and the fix
 
-Not an overflow. `/billing` and `/billing/lifetime` both end on `/auth`.
+Not an overflow. `/billing` and `/billing/lifetime` both ended on `/auth`.
 
-The chain, verified endpoint by endpoint rather than inferred:
+**My first reading of this was wrong and is corrected here.** I wrote that the ADMIN policy on
+`/user/subscription/tiers` was refusing. It is not: `permissions.service.ts:130` grants `Sections.ADMIN`
+to roles `ADMIN` and `SUPERADMIN`, and this account is one. The 401 came from further in, and the
+backend log named it:
 
-1. SSR returns **200** for `/billing` — the redirect is client-side.
-2. `billing.component.tsx` calls `/user/subscription/tiers` because `role` is `SUPERADMIN` and its
-   `isOrgAdmin` test passes.
-3. That route is `@CheckPolicies([Create, ADMIN])` and answers **401** for this account.
-4. `layout.context.tsx:83` treats *any* 401 as a session ending: it clears `auth`, `showorg` and
-   `impersonate`, then sends the browser to `/`. The middleware bounces that to `/auth`.
+```
+StripeAuthenticationError: Invalid API Key provided: sk_nothing
+```
 
-So an organization admin who opens Billing is **signed out**. Both halves predate this branch —
-`layout.context.tsx:83` comes from `74d66569` and the ADMIN policy on tiers from `0ef84a9a`, both on
-`origin/main` — and the restyle neither caused it nor could have caught it, because the screen was
-not in the sweep.
+`stripe.service.ts:19` constructs the SDK with `process.env.STRIPE_SECRET_KEY || 'sk_nothing'`, so on
+an install with no key **every** Stripe call answers 401. `getPackages()` makes one. And
+`layout.context.tsx:83` treats any 401 as an expired session: it clears `auth`, `showorg` and
+`impersonate` and sends the browser to `/`, which the middleware bounces to `/auth`.
 
-**Not fixed here, deliberately.** The blunt fix — stop treating 401 as a logout — changes how every
-request in the app behaves when a session really has expired, and that is not a change to make at the
-end of a long session on a screen that cannot be exercised without Stripe keys anyway. It is written
-down as a defect with its exact chain, and it goes in the same pile as the billing work: the keys
-arrive, the screen becomes reachable, and this gets fixed with the states around it.
+So on a self-hosted install — billing off, Billing hidden from the navigation but still reachable by
+URL — **visiting `/billing` signed the user out.** Both halves predate this branch
+(`74d66569` and the Stripe placeholder), and the restyle could never have caught it, because the
+screen was not in the sweep.
+
+**Fixed at the honest end.** `getPackages()` returns `{}` when `isBillingEnabled()` is false. There
+are no packages to list when nobody can buy one, so it says so instead of asking Stripe a question it
+cannot answer. Not touched: the 401-means-logout rule, which is correct when a session really has
+expired — the bug was a feature endpoint reporting a *Stripe* authentication failure as if it were
+the user's.
+
+**Verified:**
+
+```
+before   GET /user/subscription/tiers → 401   → /billing lands on /auth
+after    GET /user/subscription/tiers → 200 {} → /billing renders
+```
+
+`/billing/lifetime` now reaches `/billing` rather than `/auth` — the app's own redirect, not a
+session loss.

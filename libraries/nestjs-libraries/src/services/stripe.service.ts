@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { groupBy } from 'lodash';
+import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
 import {
   nextLifetimeTier,
   PaidTier,
@@ -231,6 +232,19 @@ export class StripeService {
   }
 
   async getPackages() {
+    // A self-hosted install has no key, so line 19 hands Stripe the string
+    // 'sk_nothing' and this call comes back 401. That 401 is not harmless: the
+    // frontend treats any 401 as an expired session, clears the auth cookie and
+    // sends the browser to the login page — so opening /billing on an install
+    // with billing switched off *signs the user out*. Billing is hidden from
+    // the navigation there, but the route is still reachable by URL.
+    //
+    // There are no packages to list when nobody can buy one, so say that
+    // instead of asking Stripe.
+    if (!isBillingEnabled()) {
+      return {};
+    }
+
     const products = await stripe.prices.list({
       active: true,
       expand: ['data.tiers', 'data.product'],
