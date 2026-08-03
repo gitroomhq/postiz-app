@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -16,6 +16,10 @@ import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import {
+  ProviderGuide,
+  useProviderGuides,
+} from '@gitroom/frontend/components/launches/provider.guides';
 import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
@@ -383,6 +387,150 @@ const ChromeExtensionWarning: FC<{
   );
 };
 
+
+/**
+ * The screen between picking a provider and actually connecting it.
+ *
+ * It exists for one reason: every precondition here — Instagram needing a
+ * Business account, WordPress needing an application password rather than a
+ * login password, Bluesky not supporting 2FA — used to be discovered *after*
+ * a failed round trip through someone else's login screen.
+ */
+const ProviderSetupStep: FC<{
+  item: {
+    identifier: string;
+    name: string;
+    isExternal: boolean;
+    isWeb3: boolean;
+    isChromeExtension?: boolean;
+    customFields?: Array<{ key: string; label: string }>;
+  };
+  guide: ProviderGuide;
+  onBack: () => void;
+  onConnect: () => void;
+}> = ({ item, guide, onBack, onConnect }) => {
+  const t = useT();
+  const needsFields = !!item.customFields?.length;
+
+  return (
+    <div
+      data-provider-step={item.identifier}
+      className="flex w-full flex-col gap-[18px]"
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex h-[32px] w-fit items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[10px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {t('all_channels', 'All channels')}
+      </button>
+
+      <div className="flex items-center gap-[14px]">
+        <img
+          src={`/icons/platforms/${item.identifier}.png`}
+          alt=""
+          className="h-[44px] w-[44px] rounded-full"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="text-[19px] font-[600] -tracking-[0.01em]">
+            {capitalize(item.name)}
+          </div>
+          <div className="mt-[2px] text-[13px] leading-[1.5] text-pqMuted">
+            {guide.summary}
+          </div>
+        </div>
+      </div>
+
+      {!!guide.requirement && (
+        <div
+          data-provider-requirement="1"
+          className="flex gap-[10px] rounded-pqSm bg-pqAmberSoft p-[12px] text-[12.5px] leading-[1.55] text-pqText"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            aria-hidden="true"
+            className="mt-[1px] shrink-0 text-pqAmber"
+          >
+            <path
+              d="M12 8v5m0 3.5h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>{guide.requirement}</span>
+        </div>
+      )}
+
+      {!!guide.steps?.length && (
+        <ol className="flex flex-col gap-[10px]">
+          {guide.steps.map((line, index) => (
+            <li key={line} className="flex gap-[10px]">
+              <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-pqBrandSoft text-[10.5px] font-[700] text-pqBrand">
+                {index + 1}
+              </span>
+              <span className="text-[12.5px] leading-[1.55] text-pqMuted">
+                {line}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {!!guide.fields && (
+        <div className="flex flex-col gap-[6px]">
+          {(item.customFields || []).map((field) =>
+            guide.fields?.[field.key] ? (
+              <div key={field.key} className="text-[12.5px] text-pqMuted">
+                <span className="font-[600] text-pqText">{field.label}</span>
+                {' — '}
+                {guide.fields[field.key]}
+              </div>
+            ) : null
+          )}
+        </div>
+      )}
+
+      {!!guide.link && (
+        <a
+          href={guide.link.href}
+          target="_blank"
+          rel="noreferrer"
+          className="w-fit text-[12.5px] font-[600] text-pqBrand hover:underline"
+        >
+          {guide.link.label} →
+        </a>
+      )}
+
+      <button
+        type="button"
+        data-provider-connect="1"
+        onClick={onConnect}
+        className="h-[40px] w-fit rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+      >
+        {needsFields
+          ? t('enter_details', 'Enter details')
+          : t('continue_to', 'Continue to {{name}}', {
+              name: capitalize(item.name),
+            })}
+      </button>
+    </div>
+  );
+};
+
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
@@ -414,6 +562,12 @@ export const AddProviderComponent: FC<{
   isMobile?: boolean;
 }> = (props) => {
   const { update, social, article, onboarding, isMobile } = props;
+  // Which provider's setup step is open. The grid used to connect on click,
+  // which meant a precondition you did not know about — an Instagram account
+  // that is not a Business account, an X session on the wrong login — only
+  // surfaced after a round trip through somebody else's OAuth screen.
+  const [step, setStep] = useState<(typeof social)[number] | null>(null);
+  const { guides, fallback } = useProviderGuides();
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
@@ -714,6 +868,25 @@ export const AddProviderComponent: FC<{
     ].filter((group) => group.items.length);
   }, [social, props.invite, t]);
 
+  if (step) {
+    const guide = guides[step.identifier] || fallback(capitalize(step.name));
+    return (
+      <ProviderSetupStep
+        item={step}
+        guide={guide}
+        onBack={() => setStep(null)}
+        onConnect={getSocialLink(
+          props.invite,
+          step.identifier,
+          step.isExternal,
+          step.isWeb3,
+          step.isChromeExtension,
+          step.customFields
+        )}
+      />
+    );
+  }
+
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
       <div className="flex flex-col">
@@ -737,14 +910,7 @@ export const AddProviderComponent: FC<{
               <div
                 key={item.identifier}
                 data-provider={item.identifier}
-                onClick={getSocialLink(
-                  props.invite,
-                  item.identifier,
-                  item.isExternal,
-                  item.isWeb3,
-                  item.isChromeExtension,
-                  item.customFields
-                )}
+                onClick={() => setStep(item)}
                 {...(!!item.toolTip
                   ? {
                       'data-tooltip-id': 'tooltip',
