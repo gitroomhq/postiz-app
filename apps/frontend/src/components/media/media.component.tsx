@@ -207,6 +207,11 @@ export const MediaBox: FC<{
   closeModal: () => void;
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
+  // The design's All / Images / Video tabs. The filter below already did this,
+  // driven by the `type` prop the picker passes; on the standalone page nothing
+  // was passing it, so the whole library was the only view available.
+  const [tab, setTab] = useState<'all' | 'image' | 'video'>('all');
+  const activeType = standalone ? (tab === 'all' ? undefined : tab) : type;
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 300);
   const fetch = useFetch();
@@ -523,11 +528,37 @@ export const MediaBox: FC<{
                 ))}
               </>
             )}
+            {standalone && (
+              <div className="mb-[12px] flex w-full items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px] w-fit">
+                {(
+                  [
+                    ['all', t('all', 'All')],
+                    ['image', t('images', 'Images')],
+                    ['video', t('video', 'Video')],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    data-media-tab={value}
+                    onClick={() => setTab(value)}
+                    className={clsx(
+                      'h-[30px] rounded-[6px] px-[16px] text-[12.5px] transition-colors',
+                      tab === value
+                        ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
+                        : 'font-[500] text-pqSoft hover:text-pqText'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
             {data?.results
               ?.filter((f: any) => {
-                if (type === 'video') {
+                if (activeType === 'video') {
                   return hasExtension(f.path, 'mp4');
-                } else if (type === 'image') {
+                } else if (activeType === 'image') {
                   return !hasExtension(f.path, 'mp4');
                 }
                 return true;

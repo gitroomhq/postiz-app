@@ -504,6 +504,7 @@ hide_key
 hide_posts
 hour
 i_understand_continue
+images
 import
 import_as_draft
 import_debug_post
@@ -835,6 +836,7 @@ use_signature
 use_this_media
 user
 user_1
+video
 video_made_with_ai
 view_errors
 view_receipt
