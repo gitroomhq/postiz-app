@@ -1,7 +1,7 @@
 'use client';
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
@@ -361,11 +361,29 @@ export const LaunchesComponent = () => {
   const fireEvents = useFireEvents();
   const t = useT();
   const [reload, setReload] = useState(false);
-  const { mobile } = useViewport();
+  const { mobile, tablet } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   // One source of truth for the column's width: below 760 it is always the
   // icon rail, whatever the cookie remembers from a desktop session.
   const channelsCollapsed = mobile || collapseMenu === '1';
+  /** See the rail: true only while the *window* is what collapsed this. */
+  const autoCollapsed = useRef(false);
+
+  // Below 1180 a 260px column and a calendar do not both fit. The design
+  // collapses this one on width exactly as it does the rail, and restores it
+  // only if the width was the thing that closed it.
+  useEffect(() => {
+    if (mobile) return;
+    if (tablet && collapseMenu !== '1') {
+      autoCollapsed.current = true;
+      setCollapseMenu('1', { days: 365 });
+      return;
+    }
+    if (!tablet && autoCollapsed.current) {
+      autoCollapsed.current = false;
+      setCollapseMenu('0', { days: 365 });
+    }
+  }, [mobile, tablet, collapseMenu, setCollapseMenu]);
   const [mode] = useCookie('mode', 'light');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 

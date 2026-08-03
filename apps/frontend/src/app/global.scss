@@ -1150,3 +1150,22 @@ html[dir='rtl'] .lbox {
     opacity: 1;
   }
 }
+
+// The agent page's channel column does the same, at its own widths. Unlike the
+// rail it grows *in* the flow rather than floating — which is what the design
+// does here too (it sets `flex` as well as `width`), because the chat beside it
+// reflows happily and a floating panel would cover the message you are reading.
+//
+// `!important` because the labels are hidden by a Tailwind `group-[.sidebar]`
+// rule; this has to outrank it rather than replace it, so the resting state
+// stays exactly as it was.
+@media (hover: hover) and (pointer: fine) {
+  [data-cr][data-crhov='1']:hover {
+    width: 260px;
+    flex: 0 0 260px;
+  }
+
+  [data-cr][data-crhov='1']:hover [data-crl='1'] {
+    display: block !important;
+  }
+}

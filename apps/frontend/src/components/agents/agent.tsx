@@ -114,6 +114,8 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
 
   return (
     <div
+      data-cr="1"
+      data-crhov={!mobile && channelsCollapsed ? '1' : '0'}
       className={clsx(
         'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
         mobile
@@ -125,7 +127,10 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
         <div className="flex items-center">
-          <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
+          <h2
+            data-crl="1"
+            className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]"
+          >
             {t('select_channels', 'Select Channels')}
           </h2>
           {/* The collapse toggle only means anything on desktop — in the mobile
@@ -200,6 +205,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                 />
               </div>
               <div
+                data-crl="1"
                 className={clsx(
                   'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden',
                   integration.disabled && 'opacity-50'
