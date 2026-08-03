@@ -529,6 +529,7 @@ export const LaunchesComponent = () => {
             page that arrives with milestone 5, and the proper phone treatment
             (a drawer off the header) comes with it. */}
         <div
+          data-tour="channels-column"
           className={clsx(
             'flex relative shrink-0 flex-col',
             channelsCollapsed ? 'group sidebar w-[100px]' : 'w-[260px]'
@@ -569,7 +570,10 @@ export const LaunchesComponent = () => {
                 </svg>
               </div>
             </div>
-            <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
+            <div
+              data-tour="add-channel"
+              className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]"
+            >
               <AddProviderButton update={() => update(true)} />
               {/* Create Post used to sit here; it is in the header now. */}
               <div className="flex gap-[8px] group-[.sidebar]:flex-col empty:hidden">

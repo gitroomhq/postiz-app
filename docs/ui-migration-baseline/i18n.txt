@@ -263,6 +263,7 @@ faq_what_are_team_members
 farcaster
 finding_the_topic
 finding_time_to_post
+finish
 five_days
 follower_of_creator
 forgot_password
@@ -448,6 +449,7 @@ remove
 remove_from_customer
 repeat_post_every
 repeat_post_every_label
+replay_tour
 report_a_bug
 repository
 reschedule_post
@@ -511,6 +513,7 @@ sign_up
 signatures
 six_days
 six_digit_code
+skip
 something_went_wrong
 specific_integrations
 stars
@@ -558,6 +561,18 @@ today
 top_title_add_member
 total_forks
 total_stars
+tour_add_channel_text
+tour_add_channel_title
+tour_calendar_text
+tour_calendar_title
+tour_channels_text
+tour_channels_title
+tour_clients_text
+tour_clients_title
+tour_connect_text
+tour_connect_title
+tour_views_text
+tour_views_title
 trial_reel
 try_again
 two_days

@@ -47,6 +47,7 @@ import {
   ViewportProvider,
 } from '@gitroom/frontend/components/layout/use.viewport';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Tour } from '@gitroom/frontend/components/onboarding/tour';
 
 /** A fixed vertical divider for the header. */
 const HeaderDivider = () => (
@@ -263,6 +264,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <AnnouncementBanner />
                     <Support />
                     <AppChrome>{children}</AppChrome>
+                    {/* Outside AppChrome: the tour spans routes and paints over
+                        the whole app, including the rail. */}
+                    <Tour />
                   </>
                 )}
               </div>

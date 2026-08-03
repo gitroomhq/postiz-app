@@ -300,7 +300,7 @@ try {
         const { result: p } = await cdp.send('Runtime.evaluate', {
           expression: `(() => { const el = document.querySelector(${JSON.stringify(
             probe
-          )}); if (!el) return 'no match'; const cs = getComputedStyle(el); return JSON.stringify({ text: el.textContent.trim().slice(0, 30), cls: el.className, dirAttr: el.getAttribute('dir'), direction: cs.direction, outline: cs.outlineStyle === 'none' ? 'none' : cs.outlineStyle + ' ' + cs.outlineWidth + ' ' + cs.outlineColor }); })()`,
+          )}); if (!el) return 'no match'; const cs = getComputedStyle(el); const r = el.getBoundingClientRect(); return JSON.stringify({ text: el.textContent.trim().slice(0, 30), cls: typeof el.className === 'string' ? el.className.slice(0, 90) : '', dirAttr: el.getAttribute('dir'), direction: cs.direction, outline: cs.outlineStyle === 'none' ? 'none' : cs.outlineStyle + ' ' + cs.outlineWidth + ' ' + cs.outlineColor, shadow: cs.boxShadow.slice(0, 70), bg: cs.backgroundColor, z: cs.zIndex, rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(',') }); })()`,
           returnByValue: true,
         });
         console.log(`  probe ${probe}: ${p.value}`);

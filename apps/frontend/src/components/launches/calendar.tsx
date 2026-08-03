@@ -371,7 +371,10 @@ export const WeekView = () => {
             edge. 84px still fits a card and only bites below ~650px.
             The hour column is 72px, not 62px, because a 12-hour locale writes
             "12:00 AM" there and 62px wrapped it onto two lines. */}
-        <div className="absolute inset-0 grid content-start overflow-auto bg-pqInner [grid-template-columns:72px_repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
+        <div
+          data-tour="cal-grid"
+          className="absolute inset-0 grid content-start overflow-auto bg-pqInner [grid-template-columns:72px_repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+        >
           <div className="sticky top-0 z-[12] h-[54px] border-b border-pqBorder bg-pqInner" />
           {localizedDays.map((day) => {
             const today = day.day === newDayjs().format('L');

@@ -55,6 +55,7 @@ module.exports = {
         pqMenuDots: 'var(--menuDots)',
         pqPopup: 'var(--popup)',
         pqAiLockScrim: 'var(--aiLockScrim)',
+        pqTourScrim: 'var(--tourScrim)',
         pqOk: 'var(--ok)',
         pqOkSoft: 'var(--okSoft)',
         pqWarn: 'var(--warn)',

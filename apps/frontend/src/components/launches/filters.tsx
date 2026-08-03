@@ -294,7 +294,10 @@ export const Filters = () => {
   const segmentOn = 'bg-pqInner font-[600] text-pqText shadow-pqE1';
   const segmentOff = 'font-[500] text-pqSoft hover:text-pqText';
   return (
-    <div className="flex select-none flex-col items-center gap-[8px] text-pqText md:flex-row">
+    <div
+      data-tour="cal-views"
+      className="flex select-none flex-col items-center gap-[8px] text-pqText md:flex-row"
+    >
       {!isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
           <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">

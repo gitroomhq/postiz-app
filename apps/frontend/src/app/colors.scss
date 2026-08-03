@@ -64,6 +64,10 @@
     --menuDots: #6e6e78;
     --popup: rgba(0, 0, 0, 0.6);
     --aiLockScrim: rgba(12, 12, 15, 0.72);
+    // The product tour's scrim. It stays dark in both themes: it exists to push
+    // the app back so the spotlit target reads as lit, which a light scrim on a
+    // light app cannot do.
+    --tourScrim: rgba(2, 2, 6, 0.66);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
     --e1: 0 1px 2px rgba(0, 0, 0, 0.35);
     --e2: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
@@ -163,6 +167,9 @@
     --menuDots: #8f8f9a;
     --popup: rgba(9, 9, 11, 0.35);
     --aiLockScrim: rgba(250, 250, 252, 0.72);
+    // Lighter than dark's 0.66 — the same opacity over a white app reads as
+    // almost opaque and the spotlight stops looking like a spotlight.
+    --tourScrim: rgba(2, 2, 6, 0.5);
     --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 28px -8px rgba(9, 9, 11, 0.16);
     --e1: 0 1px 2px rgba(9, 9, 11, 0.05);
     --e2: 0 4px 12px -2px rgba(9, 9, 11, 0.1);

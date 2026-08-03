@@ -225,7 +225,10 @@ const McpSection = ({
     : remoteUrl.replace(user.publicApi, '*'.repeat(user.publicApi.length));
 
   return (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+    <div
+      data-tour="connect-pq"
+      className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden"
+    >
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
           <div className="text-[15px] font-[600]">
@@ -275,7 +278,7 @@ const McpSection = ({
           </div>
         </div>
         {method === 'header' && (
-          <div className="flex flex-col gap-[6px]">
+          <div data-tour="mcp-clients" className="flex flex-col gap-[6px]">
             <div className="text-[13px] font-[600] text-pqMuted">
               {t('mcp_client', 'Client')}
             </div>

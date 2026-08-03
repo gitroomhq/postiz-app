@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSentryFeedback } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
+import { useTour } from '@gitroom/frontend/components/onboarding/tour';
 
 const HelpIcon: FC<{ d: string }> = ({ d }) => (
   <svg
@@ -48,6 +49,7 @@ export const HelpMenu = () => {
   const router = useRouter();
   const { isChatBase, extensionStoreUrl, billingEnabled } = useVariables();
   const sentry = useSentryFeedback();
+  const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -138,6 +140,15 @@ export const HelpMenu = () => {
             'M9 11.5l2.5 2.5L17 8.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
             t('setup_tour', 'Setup tour'),
             'tour'
+          )}
+
+          {/* The tour itself, replayable at any time — it navigates to the page
+              each step lives on, so it does not matter where it starts from. */}
+          {live(
+            () => startTour(),
+            'M8 5v14l11-7-11-7Z',
+            t('replay_tour', 'Replay tour'),
+            'replay-tour'
           )}
 
           {/* No target yet — see the note at the top of this file. */}
