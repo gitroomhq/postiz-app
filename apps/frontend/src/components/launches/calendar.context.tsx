@@ -23,6 +23,7 @@ import useCookie from 'react-use-cookie';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
+import { useTourDemo } from '@gitroom/frontend/components/onboarding/tour';
 extend(isoWeek);
 extend(weekOfYear);
 
@@ -294,7 +295,43 @@ export const CalendarWeekProvider: FC<{
     []
   );
 
-  const posts = useMemo(() => calendarData?.posts || [], [calendarData?.posts]);
+  const realPosts = useMemo(
+    () => calendarData?.posts || [],
+    [calendarData?.posts]
+  );
+
+  // The product tour's demo calendar. Only ever added on top of an *empty*
+  // week — the moment there is a real post, `revealed` is ignored and the
+  // user's own calendar is what they see. Nothing here is persisted or sent
+  // anywhere; it exists for as long as step one of the tour is on screen.
+  const demo = useTourDemo();
+  const posts = useMemo(() => {
+    if (!demo.length || realPosts.length) return realPosts;
+    const weekStart = dayjs(filters.startDate).startOf('day');
+    return demo.map(
+      ({ day, hour, provider, title, body }, index) =>
+        ({
+          id: `pq-tour-demo-${index}`,
+          // One paragraph: the card strips tags for its preview, so two would
+          // run the title straight into the body with nothing between them.
+          content: `<p>${title} — ${body}</p>`,
+          publishDate: weekStart
+            .add(day, 'day')
+            .add(hour, 'hour')
+            .utc()
+            .format('YYYY-MM-DDTHH:mm:ss'),
+          state: 'QUEUE',
+          group: `pq-tour-demo-${index}`,
+          integration: {
+            id: `pq-tour-demo-integration-${index}`,
+            name: title,
+            picture: null,
+            providerIdentifier: provider,
+          },
+          tags: [],
+        } as any)
+    );
+  }, [realPosts, demo, filters.startDate]);
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
   // List view data

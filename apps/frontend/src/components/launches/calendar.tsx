@@ -1145,7 +1145,13 @@ const CalendarItem: FC<{
             />
           </span>
           <span className="shrink-0 text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
-            {newDayjs(post.publishDate)
+            {/* `dayjs.utc(...).local()`, the same reading the cell above uses to
+                decide which hour row this card belongs in. `newDayjs(x)` parses
+                the stored UTC string as local, so the card printed the UTC hour
+                while sitting in the local one — a post scheduled for 07:00 read
+                "04:00" to anyone three hours off UTC. */}
+            {dayjs
+              .utc(post.publishDate)
               .local()
               .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </span>

@@ -134,6 +134,128 @@ const useSteps = (): Step[] => {
   );
 };
 
+/**
+ * The tour's demo calendar.
+ *
+ * Step one talks about the calendar, and on a new account the calendar is
+ * empty, so there is nothing to point at. The design fills it with eight posts
+ * that appear one at a time. They exist only while that step is on screen, are
+ * never persisted, and are suppressed the moment the account has a real post —
+ * writing fixtures over somebody's actual week would be indefensible.
+ */
+const DEMO_REVEAL_MS = 300;
+
+/** [day of the visible week, hour, provider icon, title key, body key] */
+const DEMO_ROWS: Array<[number, number, string, string, string]> = [
+  [0, 7, 'x', 'tour_demo_1_title', 'tour_demo_1_body'],
+  [0, 9, 'discord', 'tour_demo_2_title', 'tour_demo_2_body'],
+  [1, 8, 'bluesky', 'tour_demo_3_title', 'tour_demo_3_body'],
+  [1, 9, 'linkedin', 'tour_demo_4_title', 'tour_demo_4_body'],
+  [2, 7, 'instagram', 'tour_demo_5_title', 'tour_demo_5_body'],
+  [2, 9, 'youtube', 'tour_demo_6_title', 'tour_demo_6_body'],
+  [3, 7, 'mastodon', 'tour_demo_7_title', 'tour_demo_7_body'],
+  [3, 8, 'facebook', 'tour_demo_8_title', 'tour_demo_8_body'],
+];
+
+export interface TourDemoPost {
+  day: number;
+  hour: number;
+  provider: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * The demo posts that are currently on screen, already translated. Empty
+ * whenever the tour is not on its first step, which is what switches the whole
+ * thing off.
+ */
+export const useTourDemo = (): TourDemoPost[] => {
+  const t = useT();
+  const { running, step } = useTourStore(
+    useShallow((state) => ({ running: state.running, step: state.step }))
+  );
+  const onCalendarStep = running && step === 0;
+  const [revealed, setRevealed] = useState(0);
+
+  useEffect(() => {
+    if (!onCalendarStep) {
+      setRevealed(0);
+      return;
+    }
+    // Everything at once for anyone who asked for less motion; the point is a
+    // full calendar, the staggering is decoration.
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setRevealed(DEMO_ROWS.length);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setRevealed((n) => {
+        if (n >= DEMO_ROWS.length) {
+          window.clearInterval(id);
+          return n;
+        }
+        return n + 1;
+      });
+    }, DEMO_REVEAL_MS);
+    return () => window.clearInterval(id);
+  }, [onCalendarStep]);
+
+  // The demo sits at 07:00-09:00 and the grid opens at midnight, so without
+  // this the posts appear below the fold and the step describes an empty
+  // calendar. The design scrolls the same rows into view.
+  useEffect(() => {
+    if (!onCalendarStep) return;
+    let tries = 0;
+    const settle = () => {
+      const grid = document.querySelector('[data-tour="cal-grid"]');
+      const cell = grid?.querySelector('[data-cell]') as HTMLElement | null;
+      if (grid && cell?.offsetHeight) {
+        const firstHour = Math.min(...DEMO_ROWS.map(([, hour]) => hour));
+        grid.scrollTop = Math.max(0, (firstHour - 1) * cell.offsetHeight);
+        return;
+      }
+      if (tries++ < 40) requestAnimationFrame(settle);
+    };
+    settle();
+  }, [onCalendarStep]);
+
+  return useMemo(() => {
+    if (!onCalendarStep) return [];
+    /* prettier-ignore */
+    const copy: Record<string, string> = {
+      tour_demo_1_title: t('tour_demo_1_title', 'Launch teaser'),
+      tour_demo_1_body: t('tour_demo_1_body', 'The story behind the rebuild, in five frames.'),
+      tour_demo_2_title: t('tour_demo_2_title', 'Community update'),
+      tour_demo_2_body: t('tour_demo_2_body', 'Everything the team shipped this week.'),
+      tour_demo_3_title: t('tour_demo_3_title', 'Weekly build thread'),
+      tour_demo_3_body: t('tour_demo_3_body', 'Every change that landed, in one thread.'),
+      tour_demo_4_title: t('tour_demo_4_title', 'Weekend recap'),
+      tour_demo_4_body: t('tour_demo_4_body', 'Three things the team learned this week.'),
+      tour_demo_5_title: t('tour_demo_5_title', 'Customer story'),
+      tour_demo_5_body: t('tour_demo_5_body', 'How one team plans a month in an afternoon.'),
+      tour_demo_6_title: t('tour_demo_6_title', 'Sixty second demo'),
+      tour_demo_6_body: t('tour_demo_6_body', 'A minute with the new scheduler.'),
+      tour_demo_7_title: t('tour_demo_7_title', 'AMA announcement'),
+      tour_demo_7_body: t('tour_demo_7_body', 'Ask the team anything about scheduling.'),
+      tour_demo_8_title: t('tour_demo_8_title', 'Team spotlight'),
+      tour_demo_8_body: t('tour_demo_8_body', 'Meet the two people behind the calendar.'),
+    };
+    return DEMO_ROWS.slice(0, revealed).map(
+      ([day, hour, provider, titleKey, bodyKey]) => ({
+        day,
+        hour,
+        provider,
+        title: copy[titleKey],
+        body: copy[bodyKey],
+      })
+    );
+  }, [onCalendarStep, revealed, t]);
+};
+
 interface Rect {
   t: number;
   l: number;
