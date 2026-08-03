@@ -221,6 +221,32 @@ export class PostsRepository {
     }, [] as any[]);
   }
 
+  /**
+   * How many posts a single channel has in each state. One grouped query rather
+   * than three counts, and scoped to the org so a channel id from elsewhere
+   * cannot be used to read another organisation's numbers.
+   */
+  async countPostsByState(orgId: string, integrationId: string) {
+    const rows = await this._post.model.post.groupBy({
+      by: ['state'],
+      where: {
+        organizationId: orgId,
+        integrationId,
+        deletedAt: null,
+      },
+      _count: { _all: true },
+    });
+
+    const of = (state: State) =>
+      rows.find((row) => row.state === state)?._count._all || 0;
+
+    return {
+      scheduled: of(State.QUEUE),
+      draft: of(State.DRAFT),
+      published: of(State.PUBLISHED),
+    };
+  }
+
   async getPostsList(orgId: string, query: GetPostsListDto) {
     const page = query.page || 0;
     const limit = query.limit || 20;

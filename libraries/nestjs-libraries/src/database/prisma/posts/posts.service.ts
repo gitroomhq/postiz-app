@@ -339,6 +339,10 @@ export class PostsService {
     });
   }
 
+  countPostsByState(orgId: string, integrationId: string) {
+    return this._postRepository.countPostsByState(orgId, integrationId);
+  }
+
   async getPostsList(orgId: string, query: GetPostsListDto) {
     return minifyPostsList(
       await this._postRepository.getPostsList(orgId, query)

@@ -8,6 +8,8 @@ import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 /**
  * The Channels page.
@@ -18,12 +20,50 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
  * new capability, which is why it reuses `menu.tsx` and `time.table.tsx` rather
  * than reimplementing either.
  *
- * The design also puts Scheduled / Drafts / Published counters at the top. They
- * are not here: `GetPostsListDto` filters by customer and state, not by
- * integration, so a per-channel count would need a new endpoint. Three numbers
- * derived from whatever week happens to be loaded would look authoritative and
- * be wrong.
+ * The Scheduled / Drafts / Published counters read `GET /posts/count`, added
+ * for exactly this: the list endpoint filters by customer and state, never by
+ * integration. Deriving them from whichever week happened to be loaded would
+ * have looked authoritative and been wrong.
  */
+
+const ChannelCounts: FC<{ integrationId: string }> = ({ integrationId }) => {
+  const t = useT();
+  const fetch = useFetch();
+  // The key stays on one line on purpose: ui-migration-check's api collector
+  // matches `useSWR(` immediately followed by the path, so a wrapped call is
+  // invisible to it — the same trap the i18n collector had with prettier-split
+  // `t()` calls, and the reason this endpoint did not show up as +1 at first.
+  /* prettier-ignore */
+  const { data } = useSWR(`/posts/count?integration=${integrationId}`,
+    async (path: string) => (await (await fetch(path)).json()) as Record<string, number>,
+    { revalidateOnFocus: false }
+  );
+
+  const cells: Array<[string, number]> = [
+    [t('scheduled', 'Scheduled'), data?.scheduled ?? 0],
+    [t('drafts', 'Drafts'), data?.draft ?? 0],
+    [t('published', 'Published'), data?.published ?? 0],
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-[10px]">
+      {cells.map(([label, value]) => (
+        <div
+          key={label}
+          data-channel-count={label}
+          className="rounded-pqMd border border-pqBorder p-[14px]"
+        >
+          <div className="text-[11px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+            {label}
+          </div>
+          <div className="mt-[4px] text-[24px] font-[600]">
+            {data ? value : '—'}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 export const ChannelsComponent: FC = () => {
   const t = useT();
   const { data: integrations, mutate } = useIntegrationList();
@@ -163,6 +203,8 @@ export const ChannelsComponent: FC = () => {
               onChange={() => mutate()}
             />
           </div>
+
+          <ChannelCounts integrationId={current.id} />
 
           <div className="flex flex-wrap gap-[8px]">
             <Link

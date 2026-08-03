@@ -81,6 +81,7 @@
 /posts/${postId}/missing
 /posts/${postId}/release-id
 /posts/${postId}/statistics
+/posts/count
 /posts/find-slot
 /posts/find-slot/${integration.id}
 /posts/generator
