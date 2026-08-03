@@ -99,10 +99,12 @@ const useSteps = (): Step[] => {
         /* prettier-ignore */ text: t('tour_calendar_text', 'Write, generate and schedule for 30+ platforms here, without ever opening a social app.'),
       },
       {
-        key: 'cal-views',
+        // Now the design's own target: the posts panel exists. It pointed at
+        // the view switcher before, because there was no panel to point at.
+        key: 'posts-panel',
         path: '/launches',
         /* prettier-ignore */ title: t('tour_views_title', 'Every post in one queue'),
-        /* prettier-ignore */ text: t('tour_views_text', 'Switch between day, week and month, or use List to see everything scheduled in one place.'),
+        /* prettier-ignore */ text: t('tour_views_text', 'Scheduled, drafts and published, always right here.'),
       },
       {
         key: 'channels-column',

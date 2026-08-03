@@ -1,6 +1,7 @@
 'use client';
 
 import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import { PostsPanel } from '@gitroom/frontend/components/launches/posts.panel';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
@@ -648,6 +649,7 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
+        <PostsPanel />
         <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
           <Filters />
           <div className="flex-1 flex">

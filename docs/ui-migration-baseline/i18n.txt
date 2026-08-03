@@ -374,6 +374,7 @@ disconnect
 documentation
 download_invoice
 draft
+drafts
 drag_n_drop_some_files_here
 drop_files_here_to_upload
 duplicate_post
@@ -497,6 +498,7 @@ help
 help_and_resources
 hide
 hide_key
+hide_posts
 hour
 i_understand_continue
 import
@@ -590,6 +592,7 @@ no_media_found
 no_notifications
 no_original_urls
 no_posts
+no_posts_here
 no_published_posts
 no_short_link_results
 no_statistics_available
@@ -634,6 +637,8 @@ post_on_next_available_slot
 post_preview
 post_save_failed
 post_statistics
+posted
+posts
 preview_post
 previous
 privacy
@@ -719,6 +724,7 @@ shortlink_settings
 shortlink_yes
 show_less
 show_more
+show_posts
 sign_in
 sign_in_1
 sign_in_with

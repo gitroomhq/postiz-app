@@ -78,6 +78,10 @@ export const CalendarContext = createContext({
   >,
   listPage: 0,
   listTotalPages: 0,
+  postsPanelOpen: true,
+  setPostsPanelOpen: (open: boolean) => {
+    /** empty **/
+  },
   setListPage: (page: number) => {
     /** empty **/
   },
@@ -151,7 +155,18 @@ export const CalendarWeekProvider: FC<{
 
   // List view state
   const [listPage, setListPage] = useState(0);
-  const [listState, setListStateRaw] = useState<ListStateFilter>('all');
+  // Scheduled, not all: the posts panel opens on it and the design has no
+  // "All" tab. The list view's own filter still offers All.
+  const [listState, setListStateRaw] = useState<ListStateFilter>('scheduled');
+  // The design keeps a posts panel beside the calendar, and lets you hide it.
+  // Its data is the list view's, so the list query has to run when the panel is
+  // open as well — and stop when it is hidden, which is the point of a toggle.
+  const [postsPanelCookie, setPostsPanelCookie] = useCookie('postsPanel', '1');
+  const postsPanelOpen = postsPanelCookie !== '0';
+  const setPostsPanelOpen = useCallback(
+    (open: boolean) => setPostsPanelCookie(open ? '1' : '0', { days: 365 }),
+    [setPostsPanelCookie]
+  );
   const setListState = useCallback((next: ListStateFilter) => {
     setListStateRaw(next);
     setListPage(0);
@@ -233,7 +248,9 @@ export const CalendarWeekProvider: FC<{
     isLoading: listIsLoading,
     mutate: mutateList,
   } = useSWR(
-    filters.display === 'list' ? `/posts-list-${listParams}` : null,
+    filters.display === 'list' || postsPanelOpen
+      ? `/posts-list-${listParams}`
+      : null,
     loadListData,
     {
       refreshInterval: 3600000,
@@ -392,6 +409,8 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        postsPanelOpen,
+        setPostsPanelOpen,
       }}
     >
       {children}
