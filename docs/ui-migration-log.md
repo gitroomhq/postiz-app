@@ -26,7 +26,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
-| 9 · Onboarding + tour | **not started.** New feature, not a restyle |
+| 9 · Onboarding + tour | tour built and photographed; the existing onboarding modal is unchanged apart from Get Started now starting the tour |
 | 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
 
 Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 607** (i18n moved
@@ -803,3 +803,97 @@ pointed at `--line`. 63 replacements, and the label/description hierarchy reads 
 themes for the first time.
 
 **Checks:** types 0 · api 134 · i18n 607 · routes 27 — unchanged.
+
+### Step 9 · The product tour — done
+
+Doc 04's six-step spotlight, rebuilt against this repo. `tour.tsx` is a fixed
+overlay that reads `getBoundingClientRect()` off `[data-tour="…"]`; nothing is
+re-parented, because every target sits inside a scrollable column.
+
+**Four of the design's six targets do not exist here.** Mapped to what does:
+
+| design | here | why |
+| --- | --- | --- |
+| `cal-grid` | the calendar grid | same thing |
+| `posts-panel` | the view switcher | we have no side panel. "Every post in one queue" is the **List** view (`calendar.context.tsx:61`), so the copy says so |
+| `connect-pq` | Settings → MCP config block | the MCP surface is `PublicComponent` in Settings, not an `aiagents` page |
+| `connections-page` | Settings → MCP client list | as above |
+| `nav-channels` | the channels column | **our rail has no Channels entry** — channels are a column on the calendar page |
+| `platform-grid` | the Add Channel button | the design opens the connect pane; the tour does not open modals (see below) |
+
+Reordered to 1-2-5-6-3-4 so the calendar steps run together: **one** navigation
+instead of the design's three, same six steps, same story. Steps 5 and 6
+deep-link `/settings?tab=api` — the tabs already support it
+(`settings.component.tsx:83`) — so the step's "am I on the right page" test
+compares query params, not just the pathname.
+
+**Deliberate deviations from the prototype:**
+
+*It has no way out.* `tourSkipDisplay` is computed in `setupVals()` and
+hardcoded to `'none'` — a fourth "computed and never rendered" value, alongside
+`openExtension`, `openCommand` and `usageMeters`. An overlay that covers the
+whole app with no exit is not shippable, and doc 06 §E asks for Esc anyway. Esc
+leaves, the scrim is clickable, and Skip is a real button.
+
+*It polls.* `setupVals()` runs `setInterval(() => this.syncTour(), 240)` and
+never clears it. This uses `ResizeObserver` + `requestAnimationFrame`, with a
+250 ms settle pass that runs **only while a step is live** and tears down on
+unmount — as doc 06 §E asks.
+
+*It drives app state.* Each prototype step patches `page`, `drawer`, `sheet`,
+`chAdd`. Here the tour changes **the route and nothing else**. It does not open
+modals or panels on the user's behalf: `useModals` has 104 call sites and a
+tour that reaches into them is a tour that can leave the app in a state the
+user did not ask for. Step 6 therefore points at the Add Channel button rather
+than forcing the connect pane open.
+
+*Card placement for a large target.* The prototype always centres the card
+**inside** the target, on top of the content it is describing. This tries to
+the right first, then below, and only centres when neither fits. `cal-grid`
+keeps the design's 54% / 30% offset — the grid is mostly empty, so a card
+inside it hides nothing.
+
+**The ghost demo (`startCalDemo` / `runGhost`) was not built.** Doc 04 marks it
+optional and says to drop it if it fights the real drag layer. It would drive
+`dragId` through `react-dnd`'s state to fake a drag; that is exactly the kind
+of reaching-into-app-state the paragraph above rules out. The auto-scroll it
+existed to provide is kept.
+
+**A bug the screenshot alone would not have caught.** The first render looked
+plausible but the app behind the spotlight was not dimmed at all. Probing the
+live ring reported:
+
+```
+shadow: "rgba(124, 58, 237, 0.082) 0px 0px 0px 1.46891px, …"
+```
+
+— not the `0 0 0 9999px var(--tourScrim)` that was set inline. `pqTick` animates
+`box-shadow` to make the ring pulse, and **a CSS animation beats an inline
+style**, so the ring and the scrim silently fought over one property and the
+scrim lost. The scrim is four rects around the hole now, and the ring keeps its
+pulse. This is why `--probe` was extended to report `boxShadow`, `zIndex`,
+`backgroundColor` and the element's rect.
+
+**One thing the design's rule cannot fix.** On step 5 the card still overlaps
+its target at 1440×900. The MCP block is 903×416 and is the **last card on the
+page**, so `scrollIntoView({block:'center'})` cannot centre it — there is
+nothing below to scroll past — and 176px of card does not fit above or below it.
+The prototype has the identical constraint. Left as is and recorded rather than
+special-cased.
+
+**Persistence is `localStorage`, not a column.** `pq-tour-seen`. Dismissing a
+tour is a per-browser UI preference; it does not justify a Prisma migration on
+a production database, and the enum work in step 7a is a reminder of what that
+costs. It is wrapped in try/catch — Safari private mode throws.
+
+Entry points: **Help → Replay tour**, onboarding's **Get Started**, and
+`?tour=true` (the same shape as the existing `?onboarding=true`, so support can
+link someone straight into it — and so the tour is screenshot-testable at all).
+
+**Checks:** types 0 · api 134 · routes 27 unchanged. **i18n 613 → 628** — fifteen
+new keys, all of them tour copy (`tour_*`, `skip`, `next`, `finish`,
+`replay_tour`), none removed. Baseline updated for that reason.
+
+**Photographed:** step 1 at 420 / 1440 in both themes, step 5 and step 6 at 1440
+dark. Step 6 is the `dim` step and correctly shows no ring with a full scrim.
+
