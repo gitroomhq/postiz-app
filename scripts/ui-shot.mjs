@@ -17,6 +17,14 @@
  * Env:
  *   PQ_AUTH    session cookie value (optional; without it you get the login screen)
  *   PQ_HOST    cookie domain, default localhost
+ *   PQ_COOKIES extra cookies, "name=value;name=value" — for chrome that keeps its
+ *              state in one, e.g. PQ_COOKIES='railCollapsed=1'
+ *
+ * --click takes one or more selectors separated by |, clicked in order after the
+ * page settles, for states that only exist after an interaction:
+ *
+ *   --click '[aria-label="Menu"]'                      the phone drawer, open
+ *   --click '[aria-label="Account menu"]'              the user menu, open
  */
 import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -34,7 +42,7 @@ function arg(name, fallback) {
 const url = arg('url');
 const out = arg('out');
 if (!url || !out) {
-  console.error('usage: ui-shot.mjs --url <url> --out <path-without-extension> [--width 420,900,1440] [--theme dark|light|both] [--full]');
+  console.error('usage: ui-shot.mjs --url <url> --out <path-without-extension> [--width 420,900,1440] [--theme dark|light|both] [--full] [--click "sel|sel"]');
   process.exit(2);
 }
 const widths = String(arg('width', '1440')).split(',').map((w) => parseInt(w, 10));
@@ -43,6 +51,16 @@ const themes = themeArg === 'both' ? ['light', 'dark'] : [themeArg];
 const height = parseInt(arg('height', '900'), 10);
 const fullPage = process.argv.includes('--full');
 const host = process.env.PQ_HOST || 'localhost';
+// Anything that only exists after a click — an open menu, the phone drawer, a
+// dialog and the blur behind it, a toast — was simply unphotographable before
+// this. Selectors are applied in order, each followed by a settle.
+const clicks = String(arg('click', '')).split('|').filter(Boolean);
+const probe = arg('probe', '');
+// --tab N presses Tab N times before probing. Real key events, not el.focus(),
+// because `:focus-visible` — the thing that decides whether a focus ring is
+// drawn at all — only matches keyboard-initiated focus. Doc 06 §E asks for the
+// keyboard path to be verified; this is how.
+const tabs = parseInt(arg('tab', '0'), 10) || 0;
 
 const freePort = () =>
   new Promise((res) => {
@@ -180,11 +198,20 @@ async function settle() {
 }
 
 const results = [];
+const redirects = [];
 try {
   for (const theme of themes) {
     const cookies = [{ name: 'mode', value: theme, domain: host, path: '/' }];
     if (process.env.PQ_AUTH) {
       cookies.push({ name: 'auth', value: process.env.PQ_AUTH, domain: host, path: '/' });
+    }
+    // Several pieces of chrome remember their state in a cookie rather than in
+    // the URL — the collapsed rail, the calendar's collapsed channel column —
+    // so without this there is no way to photograph them at all.
+    for (const pair of (process.env.PQ_COOKIES || '').split(';')) {
+      const [name, ...rest] = pair.split('=');
+      if (!name.trim()) continue;
+      cookies.push({ name: name.trim(), value: rest.join('='), domain: host, path: '/' });
     }
     await cdp.send('Network.setCookies', { cookies });
 
@@ -199,18 +226,85 @@ try {
       });
 
       inflight.clear();
-      await cdp.send('Page.navigate', { url });
-      const { timedOut, elapsed } = await settle();
+      const nav = await cdp.send('Page.navigate', { url });
+      // A dev server that dies mid-run answers with a connection error, and
+      // Chrome's error page loads instantly and sits perfectly still — so the
+      // idle check below is happy with it and the run writes a screenshot of
+      // "This site can't be reached". That has already happened once. Refuse
+      // it here rather than let it become somebody's reference image.
+      if (nav.errorText) {
+        throw new Error(`${url} did not load: ${nav.errorText}`);
+      }
+      let { timedOut, elapsed } = await settle();
+
+      for (const selector of clicks) {
+        const { result: clicked } = await cdp.send('Runtime.evaluate', {
+          expression: `(() => { const el = document.querySelector(${JSON.stringify(
+            selector
+          )}); if (!el) return false; el.click(); return true; })()`,
+          returnByValue: true,
+        });
+        // A selector that matches nothing would otherwise photograph the page
+        // in its resting state and read as "the menu never opens".
+        if (!clicked.value) {
+          throw new Error(`--click selector matched nothing: ${selector}`);
+        }
+        const after = await settle();
+        timedOut = timedOut || after.timedOut;
+      }
 
       // A skeleton that survives a quiet network is a real render, but one that
       // survives a *timeout* means the shot is probably of a half-loaded page.
       // Say so rather than writing a file that silently misrepresents the app.
       const { result } = await cdp.send('Runtime.evaluate', {
         expression:
-          'JSON.stringify({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth })',
+          'JSON.stringify({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, href: location.href })',
         returnByValue: true,
       });
-      const { sw, cw } = JSON.parse(result.value);
+      const { sw, cw, href } = JSON.parse(result.value);
+
+      // A redirect is a *successful* navigation, so nothing above notices it —
+      // and the screenshot is then of a page nobody asked for. The step-0
+      // baseline captured the signup screen three times under the name
+      // "billing" because /billing bounces when billing is disabled, and every
+      // later comparison was quietly comparing signup pages.
+      const landed = new URL(href).pathname;
+      const asked = new URL(url).pathname;
+      if (landed !== asked) redirects.push({ file: `${out}-${width}-${theme}`, asked, landed });
+
+      for (let i = 0; i < tabs; i++) {
+        for (const type of ['rawKeyDown', 'keyUp']) {
+          await cdp.send('Input.dispatchKeyEvent', {
+            type,
+            key: 'Tab',
+            code: 'Tab',
+            windowsVirtualKeyCode: 9,
+            nativeVirtualKeyCode: 9,
+          });
+        }
+        await sleep(40);
+      }
+      if (tabs) {
+        const { result: f } = await cdp.send('Runtime.evaluate', {
+          expression:
+            "(() => { const el = document.activeElement; if (!el) return 'none'; const cs = getComputedStyle(el); return JSON.stringify({ tag: el.tagName, label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40), outline: cs.outlineStyle === 'none' ? 'none' : `${cs.outlineStyle} ${cs.outlineWidth} ${cs.outlineColor}`, ring: cs.boxShadow.slice(0, 60) }); })()",
+          returnByValue: true,
+        });
+        console.log(`  after ${tabs} Tab: ${f.value}`);
+      }
+
+      // --probe <selector>: print what the live DOM says about an element.
+      // Reading a screenshot is guesswork when the question is "did this
+      // attribute apply?"; this answers it.
+      if (probe) {
+        const { result: p } = await cdp.send('Runtime.evaluate', {
+          expression: `(() => { const el = document.querySelector(${JSON.stringify(
+            probe
+          )}); if (!el) return 'no match'; const cs = getComputedStyle(el); return JSON.stringify({ text: el.textContent.trim().slice(0, 30), cls: el.className, dirAttr: el.getAttribute('dir'), direction: cs.direction, outline: cs.outlineStyle === 'none' ? 'none' : cs.outlineStyle + ' ' + cs.outlineWidth + ' ' + cs.outlineColor }); })()`,
+          returnByValue: true,
+        });
+        console.log(`  probe ${probe}: ${p.value}`);
+      }
 
       const shot = await cdp.send('Page.captureScreenshot', {
         format: 'png',
@@ -247,5 +341,18 @@ for (const r of results) {
     `${r.width.toString().padStart(4)}px ${r.theme.padEnd(5)} → ${r.file}` +
       (flags.length ? `  ${flags.join('  ')}` : '')
   );
+}
+// Reported, not failed. Some redirects are the app working as intended
+// (/agents sends you to /agents/new) and some mean the shot is worthless
+// (/billing bounces to /auth when billing is off, which is how three baselines
+// ended up with the signup page filed under "billing"). Only a human can tell
+// those apart, so say it loudly and let them judge — a check that cries wolf is
+// a check people learn to scroll past, which is what let the billing shot
+// survive in the first place.
+if (redirects.length) {
+  console.log('');
+  for (const r of redirects) {
+    console.log(`⚠ ${r.asked} redirected to ${r.landed} — ${r.file}.png is that page, not ${r.asked}`);
+  }
 }
 if (bad) process.exitCode = 1;

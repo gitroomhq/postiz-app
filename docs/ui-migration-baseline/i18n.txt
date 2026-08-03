@@ -114,6 +114,7 @@ billing_with_postqueen_line
 billing_yearly
 billing_your_7_day_trial_is
 branded_content_policy
+browser_extension
 calendar
 can_t_show_analytics_yet
 cancel
@@ -151,6 +152,7 @@ client_id
 client_secret
 close
 code_sent_to
+collapse_sidebar
 comments
 configure_your_channel
 confirm_delete
@@ -164,6 +166,7 @@ connect_your_channels
 connect_your_repository
 connected
 connected_channels
+contact_support
 content
 continue
 continue_with
@@ -198,6 +201,7 @@ customer_updated
 customers
 date
 day
+day_streak
 debug_choose_copy
 debug_info
 debug_json_copied
@@ -223,6 +227,7 @@ didnt_receive_email
 disable_channel
 disable_channel_title
 disconnect
+documentation
 download_invoice
 draft
 drag_n_drop_some_files_here
@@ -241,6 +246,7 @@ enter_email
 error
 error_details
 error_occurred
+expand_sidebar
 extension_not_available_title
 facebook_background_none
 failed_to_resend
@@ -270,6 +276,8 @@ get_started
 global_settings
 go_back_to_login
 google
+help
+help_and_resources
 hide
 hour
 i_understand_continue
@@ -291,8 +299,8 @@ integrations
 internal_edit
 invalid_or_expired_code
 invitation_link_sent
-invite
 just_update_post_details
+keyboard_shortcuts
 label_auto_add_music
 label_branded_content
 label_comments
@@ -322,6 +330,7 @@ login
 login_instead
 logout_from
 long_post
+main_navigation
 manage_billing
 mcp_client
 mcp_client_configuration
@@ -332,6 +341,7 @@ media_imported_successfully
 media_library
 media_settings
 member_added
+menu
 merge_comments_into_one_post
 minutes
 moltbook_claim_instructions
@@ -373,6 +383,7 @@ onboarding
 open_claim_page
 open_wizard
 or
+organizations
 original_date
 original_link
 output_format
@@ -431,6 +442,7 @@ remove
 remove_from_customer
 repeat_post_every
 repeat_post_every_label
+report_a_bug
 repository
 reschedule_post
 researching_your_content
@@ -473,6 +485,7 @@ separate_post
 sets
 settings
 settings_updated
+setup_tour
 share_with_a_client
 short_link
 short_links_statistics
@@ -506,6 +519,14 @@ stop
 streak_emails
 style
 submolt
+subtitle_agents
+subtitle_analytics
+subtitle_billing
+subtitle_calendar
+subtitle_integrations
+subtitle_media
+subtitle_plugs
+subtitle_settings
 success_emails
 super_admin
 supported
@@ -522,6 +543,7 @@ terms
 terms_of_service
 thank_you_for_registering
 that_a_wrap
+theme
 three_days
 tiktok_video_features
 time_table_slots

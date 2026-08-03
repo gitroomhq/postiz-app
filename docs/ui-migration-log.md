@@ -13,6 +13,36 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 
 ---
 
+## Where this stands
+
+| Milestone | State |
+| --- | --- |
+| 0 · Prep and baseline | done |
+| 1 · Token layer | done (1a additive, 1b repointed) |
+| 2 · Shell | done — rail, header, drawer, user menu, org switcher, modal shell, toaster |
+| 3 · Calendar | done — grid, cells, post card, toolbar, month view |
+| 4 · Composer | restyled; **not screenshot-verified** (needs a connected channel) |
+| 5 · Channels + inline connect | Add Channel restyled and photographed; the provider **grouping** and the modal→inline-pane conversion are not done — Open questions 5 |
+| 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
+| 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
+| 8 · Feature-gating audit | done — no gate has drifted |
+| 9 · Onboarding + tour | **not started.** New feature, not a restyle |
+| 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
+
+Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 607** (i18n moved
+585 → 607 once, in step 2, for the strings the design adds; every step since has left it alone).
+
+**Two surfaces cannot be verified on this install and were not marked verified:** the composer needs
+a connected channel, and every billing screen needs `billingEnabled`. `/billing` redirects to the
+login screen here — and has since before the migration, which is why three baselines filed the
+signup page under `billing-*.png` without anyone noticing.
+
+**Five decisions are waiting** in *Open questions* below. Each has a working position taken in the
+meantime, so nothing is blocked; all five are about money, stored data or product categories rather
+than pixels.
+
+---
+
 ## How a step is verified
 
 ```
@@ -125,6 +155,17 @@ this repo. **Read the `*Vals()` method, not the doc.** Verified during the surve
 | 05 | app runs on :3000 | `next dev -p 4200` |
 | 06 §D9 | `import-debug-post.modal.tsx` is dead code | **live** via `layout/impersonate.tsx` — do not delete |
 | README | the two checkout files are one design | they have **drifted**; the App v2 embedded paywall wins |
+| 02 | rail order is logo · org switcher · search · Compose · nav · usage meter · plan chip · user menu | pin/collapse row · hairline · primary button · nav groups · [org switcher · Settings · Upgrade]. Logo and user menu are in the **header** |
+| 02 | nav groups are Publish / Grow / More | **two** groups — one unlabelled, one "More" (`chromeVals():5611`) |
+| 02 | header is title · streak · Help · notifications · language · theme · avatar | hamburger (mobile) · logo cell · title **+ subtitle** · lifetime chip · panel button (mobile) · streak · Help · notifications · avatar. No language, no theme |
+| 02 | toasts are 56px / min-w 319 / radius 8 / `#6CE9A6` / ellipse glow | that is **this repo's** `toaster.tsx`. The prototype's own toast is radius 12 on `--pop` with `--e3` + an inset hairline and a 22px tinted icon badge (template 2877). Same 4200 ms |
+| 06 §C | the Chrome extension's header entry point is designed | `openExtension` exists in `chromeVals():6425` but is **never rendered** — the design has no entry point for it |
+| 02 | the dragged post card goes fully transparent, not 40% | the prototype is `opacity: dragId === p.id ? '.4' : '1'` (`calendarVals():6884`) — **40%** |
+| 02 | the calendar grid is 24 hourly rows | true of *this repo* (`calendar.tsx:89`); the prototype's own grid is 08:00–20:00, 12 rows. Take the row's look from the design and the hours from the code |
+
+Three more `chromeVals()` values are computed and never rendered, the same way doc 04's setup
+panel is: `openCommand` (the ⌘K search), `usageMeters` and `channelUsage`. The rail has no search
+box and no usage meters. Do not build them from the doc.
 
 Gaps in the design itself, to be filled rather than copied:
 
@@ -133,6 +174,57 @@ Gaps in the design itself, to be filled rather than copied:
   with a red icon (`var(--warn)`). Needs a real amber token pair.
 - The checkout trust row is `flex-wrap:nowrap` and plan-feature labels are `white-space:nowrap`;
   both overflow under German and French, which run ~35% longer than the mock's English.
+
+---
+
+## Open questions for the owner
+
+Written down rather than asked, at the owner's instruction, so work could continue overnight. Each
+has a decision taken in the meantime so nothing is blocked; none of them is hard to reverse.
+
+**1. Renaming the tiers is a data migration, not a restyle.** The design sells CREATOR / GROWTH /
+PRO / AGENCY at \$20 / \$33 / \$49 / \$99. This repo has STANDARD / TEAM / PRO / ULTIMATE at
+29 / 39 / 49 / 99 in `libraries/nestjs-libraries/.../subscriptions/pricing.ts`, and those names are
+**stored values**: `Subscription.subscriptionTier` in the database, the `user.tier` object every gate
+reads, and the identifiers Stripe's price objects map to. Renaming them in `pricing.ts` would leave
+every existing subscriber pointing at a tier that no longer exists — `pricing[user.tier]` returns
+`undefined` and every feature gate in the app fails open or closed at random.
+
+*Taken in the meantime:* the billing screens are restyled to the design and the **displayed** prices
+and plan names come from `pricing.ts` as they do today. No tier was renamed, no price changed. Doing
+it properly needs new Stripe price IDs, a `subscriptionTier` migration with a mapping table, and a
+decision about subscribers mid-period — which is the API work doc 06 §B says needs product sign-off,
+not something to do while you are asleep.
+
+**2. CREATOR yearly is \$132 — 6.6× the monthly, where every other tier is exactly 8×.** Doc 06 §B
+already flags this as possibly a typo. Unresolved; nothing depends on it until prices actually move.
+
+**3. The lifetime *purchase* flow does not exist.** The design's \$49 one-time offer, its 24-hour
+countdown and its "37 of 200 left" seat counter are invented (doc 06 §B). What this repo has is a
+**code redemption**: `POST /billing/lifetime` takes a code and stacks the user one tier up. There is
+no purchase endpoint, no countdown, no inventory.
+
+*Taken in the meantime:* every real `isLifetime` behaviour is kept and restyled — the hidden Billing
+entry, the hidden rail Upgrade, the `{Tier} tier` line, the redirect away from `/billing` — and the
+redemption UI wears the design's founding-member surface. The countdown and the seat counter are
+**not** built: a timer counting down to nothing is a lie in the UI, not a visual detail.
+
+**4. Trial copy that the backend cannot honour.** The design writes "4 months free" where the repo's
+string is `billing_20_percent_off`. The discount is a Stripe coupon; the copy has to match whatever
+the coupon actually is or customers are told something untrue.
+
+*Taken in the meantime:* the trial and discount surfaces are restyled, the strings stay the repo's.
+
+**5. Grouping the provider grid needs a mapping this repo does not have.** The design sorts Add
+Channel into Social / Chat & communities / Video & streaming / Business & portfolio / Blogs &
+newsletters. The grid is built at runtime from `/integrations/list` — correctly, per doc 06 §D3 —
+and nothing in the repo says which category a provider belongs to. Authoring that map by hand means
+that the day a provider is added and nobody updates the map, it silently disappears from the only
+screen that can connect it.
+
+*Taken in the meantime:* the grid stays one list, restyled, with every provider visible. The
+grouping is a twenty-minute change once someone confirms the categories — it is the *maintenance*
+risk that made it wrong to guess at.
 
 ---
 
@@ -283,3 +375,409 @@ the redesign's token set and step 5 restyles them properly: `--new-back-drop` (t
 used under `opacity-60`, where routing through an already-transparent token would compound the
 alpha), `--border-preview` and `--preview-box-shadow`. The `--color-custom1..55` family is untouched
 for the same reason — 108 usages, no design equivalents, retired per screen.
+
+---
+
+### Step 2 · Shell — done
+
+The frame the whole app sits in. Before this the rail was an 80px purple gradient column running the
+full height with the header inside the content beside it; there was no collapsed state, no phone
+behaviour at all, and the org switcher was a globe icon with a hover-only menu that could not be
+reached from the keyboard.
+
+**What changed structurally.** The header is now a 56px bar across the whole window, with a logo
+cell on its left sized to the rail so the cell's edge continues the rail's own hairline. Under it
+sit the rail and the page. The rail is 236px, collapses to 60px icons (cookie `railCollapsed`, the
+same idiom the calendar's own column already uses), and below 760px becomes a 264px overlay drawer
+opened from a hamburger. Nav is two groups — an unlabelled one and a collapsible **More** — matching
+the design.
+
+| Piece | Where it went |
+| --- | --- |
+| Logo | rail top → **header**, left cell |
+| Org switcher | header icon → **rail footer**, click-to-open panel |
+| Theme toggle | header icon → **user menu**, as a segmented light/dark control |
+| Chrome extension link | header icon → **Help menu** |
+| Sentry "report a bug" | header icon → **Help menu** |
+| Billing | rail nav row → the rail's **Upgrade row** (and a gated row in the user menu) |
+| Invite | rail footer → **removed**; Settings → Teams already owns inviting (`teams.component.tsx`, "Add Member" + invitation link). This was a shortcut to `/settings?tab=teams`, not a capability of its own |
+| Plugs, Affiliate | first nav list → **More**, Affiliate last |
+| Create Post | unchanged — still portalled into the header slot by `launches.component.tsx` |
+
+**Every gate was carried over verbatim,** including two that are arguably bugs and were left as
+bugs because fixing them is a behaviour change, not a restyle:
+
+- `f.name === 'Billing' && user?.isLifetime` compares the **translated** label, so the lifetime
+  exclusion only fires in English.
+- The old "hide the whole first menu" condition is `user?.orgId && (user.tier !== 'FREE' || …)`, and
+  `user.tier` is a `PricingInnerInterface` object — the comparison is always true at runtime. It now
+  travels per item as `requireOrg`, because Affiliate moved into a group whose other members carry
+  it and Affiliate never did. Same result, same two `@ts-ignore`s.
+
+The rail's Upgrade row keeps `billingEnabled && !user?.isLifetime`, which is a strict superset of the
+old Billing nav entry's gate — merging them reaches nothing new. `useMenuFilter()` is now the single
+definition of the per-item gate and the user menu applies it too, so that menu cannot reach a screen
+the rail hides.
+
+**Toaster and modal shell.** The toast moves to the prototype's own design — `--pop` surface,
+12px radius, `--e3` plus an inset hairline, a 22px tinted icon badge — and keeps its EventEmitter
+API, its 4200 ms life, its singleton rule and its `success`/`warning` types untouched (104 call
+sites). Its warning icon uses `--amber`, not `--warn`: the design paints an orange badge and then
+reaches for the red token, which is the gap already recorded above and the reason `--amber` exists.
+The modal shell only gained a shadow, the display font on its title and a real close button in place
+of the leftover Mantine class names — the store, `useModals()`, `askClose`, Escape, the
+`removeLayout`/`fullScreen` paths and the `.blurMe` blur are all as they were.
+
+**Two things the class-name coupling forced.** `new-modal.tsx` and `check.payment.tsx` find the
+surfaces to blur with `querySelectorAll('.blurMe')`, and `header-slot.tsx` finds its portal target
+with `getElementById('pq-header-action')`. Both survived the restructure; renaming either would have
+broken silently.
+
+**New tokens:** `--navActive` and `--navRowHover`, the rail's two states. The prototype writes them
+as literals and uses the same value in both themes, so they are one pair here. `--navRowHover` is
+applied as an inset ring rather than a background, so it tints whatever the row sits on.
+
+`.brand-rail` was deleted from `global.scss` — the rail is a neutral `--rail` surface now and
+nothing else used the gradient. `layout/chrome.extension.component.tsx` was deleted too; its
+condition (`billingEnabled && extensionStoreUrl`) moved intact into the Help menu row.
+
+**What the design asks for that this repo cannot answer** — flagged, not built:
+
+- **Setup tour, Documentation, Keyboard shortcuts** in the Help menu. Setup tour is real here — it
+  opens the existing onboarding modal via `/launches?onboarding=true`, which is where `<Onboarding/>`
+  is mounted. The other two have no target and render at the design's own locked opacity with
+  `aria-disabled` and no handler, so the menu reads complete without a row pretending to work.
+  Wiring them is follow-up work.
+- **The streak popover** (7-day grid, "Longest: N days"). The repo has `user.streakSince` and
+  nothing else — no best streak, no per-day data. The existing tooltip stays.
+- **Posts, Channels, Social Sets, Signatures, Auto Post, Webhooks as nav rows.** They are Settings
+  tabs here, not pages.
+- **The rail's primary button ("Connect PostQueen").** It opens a Connections directory that does
+  not exist in this repo. The button lands with that screen in step 3 rather than pointing at a 404.
+- **The "Billing & invoices" and "Founding member" variants of the Upgrade row.** There is no AGENCY
+  tier here, and lifetime users have no billing row at all — both branches are unreachable.
+
+**Checks:** types 0 errors · api **134 unchanged** · routes **27 unchanged** · i18n **585 → 607**.
+
+The i18n baseline was rewritten deliberately. 23 keys added: the eight page subtitles the design puts
+under the title, the Help menu's labels, `theme`, `organizations`, `day_streak`, `menu`,
+`main_navigation`, and the two sidebar collapse labels. One key removed: `invite`, with the rail
+button it belonged to. English fallbacks come from the prototype; the other 13 languages fall back to
+English until they are translated.
+
+Worth knowing for later steps: `ui-migration-check.sh` finds keys with a **line-scoped** grep, so a
+`t(` call that Prettier wraps across lines becomes invisible to the guard. Four of the subtitles were
+written wrapped at first and the guard silently did not see them. They now sit one per line behind a
+`prettier-ignore`, and any future step should keep `t('key', 'English')` on one line.
+
+**Visual:** the eight baseline screens at 420 / 900 / 1440 in both themes, plus the collapsed rail,
+the phone drawer open, the user menu open, the Help menu open, and `/launches` and `/settings` under
+Hebrew for RTL. Read against the prototype rather than counted — this step is *supposed* to change
+every pixel of the frame.
+
+The frame matches: 56px header on `--rail` with the logo cell sized to the rail and its edge
+continuing the rail's hairline, title over subtitle, Help · notifications · avatar to the right; the
+rail's two groups with **More** collapsible; the footer's Settings row taking the active tint on
+`/settings`; 60px icon-only collapse with tooltips. RTL mirrors cleanly — rail on the right,
+hamburger on the right, drawer entering from the right, no overflow.
+
+Three things this install cannot show, all correct behaviour rather than bugs: **Affiliate** is
+absent (`affiliateUrl` unset), the **Upgrade row** is absent (`billingEnabled` off), and the **org
+switcher** is absent (one organisation). For the same reason the Help menu here has only *Setup
+tour* live — *Contact support*, *Report a bug* and *Browser extension* each need their own variable
+(`isChatBase`, `sentryDsn`, `extensionStoreUrl`) and none is set locally.
+
+**One real bug, found by the screenshots and fixed.** The drawer was `absolute` inside the chrome
+row so it would sit correctly under the impersonation bar and the announcement banner. But a page
+taller than the window makes that row grow, and the drawer grew with it — hanging its own footer
+(Settings, org switcher, Upgrade) below the fold, unreachable, on exactly the pages where the
+content is long. It is now `fixed` and measures the row for its top edge instead of assuming 56px,
+so it stays viewport-bounded whatever is stacked above the header. The parked drawer also sits a
+full width outside the viewport, which in RTL is off the *right* edge and does widen the page, so it
+renders inside a clipping layer.
+
+**Not captured, and why:** the calendar at 420 has its channel column and day headers overlapping.
+That is **not** this step — step-1b's own baseline shows the identical overlap, and the shell change
+gives the page more room, not less. It belongs to the calendar's screen step. The "N" disc in the
+bottom-left corner of every shot is the Next dev-tools badge, not the app.
+
+**Three gaps in the screenshot tool closed on the way**, each of which had made a state
+unverifiable:
+
+- `PQ_COOKIES` — cookie-driven chrome (the collapsed rail; later, the calendar's collapsed channel
+  column) could not be photographed at all, because the tool only ever set `auth` and `mode`.
+- `--click` — nothing that needs an interaction could be reached: menus, the drawer, a dialog and
+  the blur behind it, a toast. Selectors are clicked in order after the page settles, and a selector
+  that matches nothing is an error rather than a photograph of the resting page.
+- **A dead server is now an error.** The dev server died mid-run and the tool wrote six screenshots
+  of Chrome's *"This site can't be reached"* — that page loads instantly and then sits perfectly
+  still, so the network-idle check was entirely happy with it. `Page.navigate`'s `errorText` is now
+  checked. This is the same failure the flat-3.5s timer had in step 1a, in a new disguise: the
+  harness has to say when it is lying, because a screenshot that looks plausible will otherwise
+  become the reference.
+
+**Three defects found reviewing this step afterwards, fixed before the calendar started:**
+
+- The `railCollapsed` cookie had no expiry, so `react-use-cookie`'s 7-day default applied and the
+  collapsed rail sprang back open a week later. This is the *same* trap `mode.component.tsx` already
+  records against the theme cookie, written down and then walked into anyway. The calendar's own
+  `collapseMenu` cookie has it too and is fixed in step 3, where that file is open regardless.
+- **A frame of the desktop layout on phones.** `use.viewport.tsx` measures in `useEffect` and the
+  server has no width, so it renders at 1440: the browser painted the 236px rail and only then
+  snapped to the drawer. The mechanism landed in step 1 but nothing consumed it until now, so the
+  flash is this step's to own. Both effects are now isomorphic layout effects, which run before
+  paint.
+- **The drawer was a dialog to the eye only.** Opening it left focus behind the scrim, Escape did
+  nothing, and closing it dropped focus at the document root. It now takes focus on open, closes on
+  Escape, restores focus to whatever opened it, and carries `role="dialog"` + `aria-modal` while
+  open. No focus trap — the scrim and Escape are exit enough, and trapping is a larger change than
+  this step should carry.
+
+**Also worth writing down, since it explains a piece of chrome that looks broken and is not:** there
+is no way to name an organisation. The name comes from the *Company* field at registration
+(`auth/register.tsx:176` → `organization.repository.ts:277`) and nothing in the app or the API can
+change it afterwards; there is no create-organisation endpoint either. A second organisation only
+appears when somebody invites you from Settings → Teams. So the rail's org switcher is invisible to
+most accounts by design, and `layout/organization.selector.tsx` is the only file in the frontend that
+touches `/user/organizations` or `/user/change-org`. Naming and creating organisations is real
+missing product, not a migration task.
+
+---
+
+### Step 3 · Calendar — done
+
+The app's landing screen, and the largest one. Before this it was a grid of rounded tiles separated
+by 4px gaps, with each post card wearing a coloured bar of actions across its top.
+
+**What changed.** The grid is hairlines now: a 72px hour column and seven day columns that draw the
+lines with their own borders, 54px sticky day headers with the current day as a brand pill (plus the
+month chip at a month boundary), 108px cells, and past hours filled with a diagonal hatch and
+`cursor: not-allowed`. The post card lost the top bar — it is a `--pop` surface with a channel-tinted
+accent stripe, one line of channel · time · tag · status, two lines of content, and the actions
+floating bottom-right on hover. Month view follows the same language. The toolbar's three switches
+became the design's segmented control: a `--settings` trough with a raised `--inner` pill.
+
+Cell states — empty-vs-filled hover, the "+ 14:00" invitation, the scroll-on-hover for a stacked
+cell — are CSS on `[data-cell]` attributes rather than React state. Dragging the pointer across a
+7×24 grid would otherwise re-render it on every move, and it is how the design expresses them too.
+
+**Behaviour is untouched:** `useCalendar()`, every SWR key, `react-dnd`'s drag and its
+"this post was already published — reschedule or just update?" dialog, the post actions and their
+gates (statistics hidden for X when `disableXAnalytics`, `releaseId === 'missing'` routing to the
+missing-release dialog, debug JSON for superadmins only), `find-slot`, `SetSelectionModal`, the
+creation-method badge, and the customer selector.
+
+**Three things the screenshots caught, all fixed:**
+
+- Taking the design's `minmax(132px, 1fr)` literally **lost Sunday at 1440**. The design's calendar
+  has no channel column beside it; ours does, and seven 132px columns no longer fit. The floor is
+  84px — still enough to stop the collapse, small enough to get out of the way.
+- A 62px hour column **wrapped "12:00 AM" onto two lines** in a 12-hour locale. 72px.
+- **The 420px overlap is gone** — and it was two separate faults, not one. The grid used
+  `minmax(0, 1fr)`, so columns collapsed to nothing and the day headers printed on top of each other;
+  and the channels column was `w-[260px]` with no `shrink-0`, so in a squeezed row it spilled its own
+  centred text out of both sides of its box. The grid now has a floor and scrolls sideways, and below
+  760 the channels column is always the 100px icon rail. This defect predates the migration — step
+  1b's baseline has it too.
+
+Also fixed here: the calendar's `collapseMenu` cookie had the same missing expiry as the rail's.
+
+**Deliberately not built.** The **Queue panel** — Drafts / Scheduled / Posted over the same posts —
+is the design's headline for this screen, and it occupies the slot this repo gives to the channels
+column. Moving it now would strand channel management (Add Channel, and the per-channel menu:
+preview, settings, time slots, bot picture, disable, delete) with nowhere to live, because the design
+keeps channels on a Channels page that arrives in milestone 5. The Queue panel lands with it. The
+design's **channel filter chips** are new behaviour with no counterpart here and are not built. **Touch
+drag** stays undesigned and unbuilt: `react-dnd`'s HTML5 backend is mouse-only, and adding a touch
+backend is a new dependency plus a scroll-gesture conflict, which is not a restyle.
+
+One deviation worth naming: the design's card shows only the platform icon. This one keeps the
+account avatar with the platform as a small badge, because with two accounts on the same platform
+the avatar is the card's most important fact.
+
+**Checks:** types 0 · api 134 · i18n 607 · routes 27 — all unchanged. No new strings: the whole
+screen was restyled without inventing a word of copy.
+
+---
+
+### Step 4 · The old brand palette, and the composer — done
+
+**The larger finding.** 135 hex literals were still hardcoded in components, and the biggest group
+was the *old* brand purple: `#612BD3` in 47 places across backgrounds, borders and text, plus its
+hover `#5520CB` and the old accents `#FC69FF` / `#D82D7E` / `#AA0FA4`. Step 1b moved the token layer
+to the redesign's `#7c3aed`, but none of these went with it — so the composer's submit button, the
+"Post now" button, the agent page's primary action and two dozen other controls were still painting
+the previous brand next to a UI that had moved on. Nobody would have caught this from the token
+diff; it only shows up screen by screen.
+
+105 of them are now tokens (`pqBrand`, `pqBrandHover`, `pqPink`, `pqWarn`, `pqSoft`, `pqFocused`,
+`pqOk`). What is deliberately left as a literal: platform colours (X's `#1d9bf0`), gradient stops,
+and a handful of one-offs on screens the redesign has not reached yet.
+
+**Composer.** Restyle only, and conservatively, because this install has no connected channels and
+the composer therefore cannot be opened here — it is verified by reading, not by screenshot. The
+frame takes the design's 24px modal radius on `--inner` with a real elevation, the two 65px headers
+become hairline-separated bars in the display face, and three `text-white` labels that sat on
+neutral surfaces were fixed — those were **invisible in the light theme**. Provider settings,
+character limits, previews, TipTap and CopilotKit are untouched, as doc 05 requires.
+
+**Empty states.** `plugs.tsx` and `platform.analytics.tsx` set their empty-state headline at
+`text-[48px]` — three times anything in the redesign's scale, and it read as a broken page rather
+than a quiet one. Both are now a constrained illustration, an 18px display heading and a muted
+supporting line. Same strings, same button, same behaviour.
+
+**Checks:** types 0 · api 134 · i18n 607 · routes 27 — all unchanged.
+
+**Two things this install cannot show, recorded so the gap is not mistaken for completion:** the
+composer (needs a connected channel) and every billing screen (`billingEnabled` is off here, so
+`/billing` redirects to the auth screen). Both were restyled by reading the code. They need a pass
+with seed data and billing switched on before anyone calls them verified.
+
+---
+
+### Steps 5 & 6 · Add Channel, Media, Integrations — in progress
+
+**Add Channel now photographs.** The dialog cannot be reached by URL, so it had never been checked;
+`data-pq="add-channel"` on its button plus the tool's new `--click` gets a screenshot of it. It
+confirms the modal shell from step 2 doing its job on a real dialog: 24px radius on `--inner`, the
+display face on the title, the new close button, and the chrome blurred behind it. All 34 providers
+render.
+
+The design's **grouping** of that grid is deliberately not built — see Open question 5. The risk is
+not the work, it is that a hand-written provider→category map silently drops a provider from the one
+screen that can connect it the first time someone adds a provider and forgets the map.
+
+**Media** and the **Integrations** page came through the palette sweep correctly; Media's empty state
+joined the others at the design's type scale (18px display heading, 13.5px muted body) instead of a
+20px heading with a 16px body at 60% opacity.
+
+**Checks:** types 0 · api 134 · i18n 607 · routes 27 — unchanged.
+
+**A full responsive sweep** — 7 screens × 420 / 900 / 1440 × both themes, 42 shots — reports
+**zero horizontal overflow**, which is what the step-0 baseline claimed and what the migration has to
+keep true.
+
+It also surfaced a defect the migration did not cause and has not fully fixed: **the AI agent page
+is unusable at phone widths.** It is three columns — channels 260px, chat, threads 260px — so at
+420 the two fixed columns take everything and the chat is squeezed to nothing. Step-1b's baseline
+shows the same page equally broken (worse, in fact: the old 80px rail took another slice), so this
+predates the redesign.
+
+Half-fixed here: below 760 the channel column now collapses to its 100px icon rail, the same rule
+the calendar got, which gives the chat back 160px. That is not enough on its own — the threads
+column is still 260px with no collapsed mode, so the chat has roughly 60px. The real answer is the
+design's own: side panels become off-canvas drawers below 760, opened from a header button
+(`panelTransform` / `togglePanelDrawer` in `chromeVals()`). The drawer mechanism already exists from
+step 2 and can be reused, but wiring a second one into a chat surface that cannot be exercised on
+this install — the copilot endpoint 503s locally with no model key — is not something to do blind.
+Recorded rather than guessed at.
+
+---
+
+### Step 8 · Feature-gating audit — done
+
+Doc 03's gate table walked against the code after the shell moved everything around. **Nothing has
+drifted.** The four lifetime rules are all intact and in their new homes: the rail's Upgrade row
+still carries `billingEnabled && !user?.isLifetime` (`rail.tsx:133`); the Billing entry is still
+filtered by `f.name === 'Billing' && user?.isLifetime`, now from `useMenuFilter()`, which the user
+menu applies too; the channels column still prints `{Tier} tier` only for lifetime users
+(`launches.component.tsx:618`); and `main.billing.component.tsx:448` still redirects them away.
+
+The Settings tabs match the table exactly — Teams on `team_members && isGeneral && isOrgAdmin`,
+Webhooks on `webhooks`, Auto Post on `autoPost`, Sets and Signatures on `tier.current !== 'FREE'`,
+Developers on `public_api && isGeneral && showLogout && isOrgAdmin`.
+
+Doc 06 §D1 calls the editor's AI Image / AI Video pair "the gate that was wrong longest" and says
+they are gated by `tier.ai` **together**, not by `image_generator` / `generate_videos`. Confirmed:
+`media.component.tsx:743` and `:858` are both `!!user?.tier?.ai`. The doc is right and the code is
+the authority, so it stays.
+
+### The baseline's "billing" screenshot was never the billing screen
+
+`/billing` bounces to `/auth` on this install — the page's two endpoints are ADMIN-gated, the local
+backend rejects them with billing disabled, and `layout.context.tsx` then clears the session and
+sends you to the login screen. It has done this since before the migration: **step-0, step-1a and
+step-1b all captured the signup page under the name `billing-*.png`**, and every comparison since
+has been quietly comparing signup pages to signup pages. They matched, so nothing complained.
+
+Same shape as the "This site can't be reached" screenshots, one level subtler: a redirect is a
+*successful* navigation, so neither the idle check nor the new `errorText` check has anything to
+object to. `ui-shot.mjs` now compares the landing pathname with the requested one and fails the run
+when they differ:
+
+```
+⚠ /billing redirected to /auth — billing-1440-dark.png is not the screen you asked for
+```
+
+The general lesson, now three times over: **this harness has to say when it is lying.** Every check
+added so far came from a screenshot that looked perfectly plausible and was not what it claimed — a
+loading skeleton, an error page, and now a redirect. The baseline's "8 screens" is really 7 screens
+plus one that has never rendered here.
+
+The redirect check **warns, it does not fail the run**, and that distinction was earned within a
+minute of writing it: the first thing it caught was `/agents → /agents/new`, which is the app
+working as designed. Only a person can tell that apart from `/billing → /auth`. A check that cries
+wolf is a check people learn to scroll past — which is precisely how the billing screenshot survived
+three baselines.
+
+### RTL: the app could not display a date range correctly, and it was CSS
+
+Checking the new calendar grid under Hebrew found two things reading backwards: hour labels as
+"AM 0:00", and — worse — the week 03/08–09/08 rendered as **"09/08/2026 - 03/08/2026"**. The range
+was showing its end before its start, which is not cosmetic; it names the wrong week.
+
+Both are bidi: a clock time and a date range are left-to-right tokens, not prose, so they need
+`dir="ltr"`. Adding it changed nothing, which is where a screenshot stops being able to help — the
+markup looked right and the pixels looked wrong, with no way to tell which end was lying.
+
+So `ui-shot.mjs` gained `--probe <selector>`, which prints what the live DOM actually says. One run:
+
+```
+probe [dir="ltr"]: {"text":"03/08/2026 - 09/08/2026","dirAttr":"ltr","direction":"rtl", …}
+```
+
+The text was in the right order and the attribute *was* applied — and the computed direction was
+still `rtl`. `global.scss` carried this:
+
+```scss
+html[dir='rtl'] [dir='ltr'] { direction: rtl !important; }
+```
+
+A rule that forces every element asking to be left-to-right back to right-to-left — the exact
+opposite of what `dir="ltr"` means, and it applies to dates, times, URLs, code and phone numbers
+alike. It predates the migration, nothing in the app sets `dir="ltr"` for it to have been protecting,
+and while it was there **no markup could have fixed the reversed range**. Removed, with the reasoning
+left in its place.
+
+Worth saying plainly: this was invisible to every method used so far. It survived the type checker,
+all four guard checks, and a screenshot review in two themes — the range looked like a plausible
+date range. It took asking the DOM.
+
+### Keyboard focus: it worked, and it was the wrong colour everywhere
+
+Doc 06 §E asks for the keyboard path to be verified and nobody had. `ui-shot.mjs` gained `--tab N`,
+which presses Tab with real key events — `el.focus()` would not do, because `:focus-visible` (the
+thing that decides whether a ring is drawn at all) only matches keyboard-initiated focus. It then
+reports what `document.activeElement` is and what ring it has.
+
+The tab order is sound: logo → Help → notifications → avatar → collapse → Calendar → Agent →
+Analytics → Media, in the order they appear. Nothing is skipped and nothing is trapped.
+
+But every ring was **Chrome's default blue**, `rgb(0, 95, 204)` — legible, and a colour that appears
+nowhere else in the product. The token layer shipped `--ring` for precisely this in step 1 and
+nothing had ever used it. It does now, globally, at 2px with a 2px offset.
+
+Eight of the first nine tab stops now draw `rgba(167, 139, 250, 0.5)`. The ninth — the avatar button
+— keeps a near-white `2.5px` ring from somewhere that is not our CSS and not Mantine. It is left
+alone deliberately: the fix would be `!important` on a global focus rule, which would then stomp any
+component that legitimately styles its own focus. One inconsistent ring is the smaller cost.
+
+### One more palette finding
+
+`text-customColor18` was on **50** descriptions — the grey line under a settings label. Its token is
+`#aaaaaa` in dark and **`#000` in light**, so in the light theme every description was rendering as
+loud as the label it explains. It is `--muted` now, along with 13 `border-customColor6` that already
+pointed at `--line`. 63 replacements, and the label/description hierarchy reads correctly in both
+themes for the first time.
+
+**Checks:** types 0 · api 134 · i18n 607 · routes 27 — unchanged.
