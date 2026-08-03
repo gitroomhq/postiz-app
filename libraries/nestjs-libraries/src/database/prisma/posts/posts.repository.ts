@@ -182,6 +182,11 @@ export class PostsRepository {
         group: true,
         creationMethod: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -294,6 +299,11 @@ export class PostsRepository {
           group: true,
           creationMethod: true,
           tags: {
+            where: {
+              tag: {
+                deletedAt: null,
+              },
+            },
             select: {
               tag: true,
             },
@@ -353,6 +363,11 @@ export class PostsRepository {
       include: {
         integration: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -378,6 +393,11 @@ export class PostsRepository {
           ? {
               integration: true,
               tags: {
+                where: {
+                  tag: {
+                    deletedAt: null,
+                  },
+                },
                 select: {
                   tag: true,
                 },
@@ -598,6 +618,7 @@ export class PostsRepository {
           const tagsList = await this._tags.model.tags.findMany({
             where: {
               orgId: orgId,
+              deletedAt: null,
               name: {
                 in: tags.map((tag) => tag.label).filter((f) => f),
               },
@@ -838,8 +859,8 @@ export class PostsRepository {
     });
   }
 
-  deleteTag(id: string, orgId: string) {
-    return this._tags.model.tags.update({
+  async deleteTag(id: string, orgId: string) {
+    const tag = await this._tags.model.tags.update({
       where: {
         id,
         orgId,
@@ -848,6 +869,14 @@ export class PostsRepository {
         deletedAt: new Date(),
       },
     });
+
+    await this._tagsPosts.model.tagsPosts.deleteMany({
+      where: {
+        tagId: tag.id,
+      },
+    });
+
+    return tag;
   }
 
   createComment(
