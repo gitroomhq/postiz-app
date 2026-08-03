@@ -567,6 +567,10 @@ export const AddProviderComponent: FC<{
   // that is not a Business account, an X session on the wrong login — only
   // surfaced after a round trip through somebody else's OAuth screen.
   const [step, setStep] = useState<(typeof social)[number] | null>(null);
+  // Which of the two ways in is active. It arrives as a prop because the
+  // channels column has a button for each, but the design lets you switch
+  // without closing — picking the wrong one used to mean reopening the dialog.
+  const [inviteMode, setInviteMode] = useState(!!props.invite);
   const { guides, fallback } = useProviderGuides();
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
@@ -837,7 +841,7 @@ export const AddProviderComponent: FC<{
   // disappearing from the only screen that can connect it.
   const groups = useMemo(() => {
     const visible = social.filter((item) =>
-      !props.invite
+      !inviteMode
         ? true
         : !item.isExternal &&
           !item.isWeb3 &&
@@ -866,7 +870,7 @@ export const AddProviderComponent: FC<{
         ),
       },
     ].filter((group) => group.items.length);
-  }, [social, props.invite, t]);
+  }, [social, inviteMode, t]);
 
   if (step) {
     const guide = guides[step.identifier] || fallback(capitalize(step.name));
@@ -876,7 +880,7 @@ export const AddProviderComponent: FC<{
         guide={guide}
         onBack={() => setStep(null)}
         onConnect={getSocialLink(
-          props.invite,
+          inviteMode,
           step.identifier,
           step.isExternal,
           step.isWeb3,
@@ -889,6 +893,29 @@ export const AddProviderComponent: FC<{
 
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
+      {!onboarding && (
+        <div className="flex w-fit items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+          {[
+            [false, t('connect_myself', 'Connect myself')] as const,
+            [true, t('invite_by_link', 'Invite by link')] as const,
+          ].map(([mode, label]) => (
+            <button
+              key={label}
+              type="button"
+              data-connect-mode={mode ? 'invite' : 'self'}
+              onClick={() => setInviteMode(mode)}
+              className={clsx(
+                'h-[30px] rounded-[6px] px-[14px] text-[12.5px] transition-colors',
+                inviteMode === mode
+                  ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
+                  : 'font-[500] text-pqSoft hover:text-pqText'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex flex-col">
         {groups.map((group) => (
         <div key={group.key} className="flex flex-col">

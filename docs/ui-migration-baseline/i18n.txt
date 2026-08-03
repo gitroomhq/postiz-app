@@ -300,6 +300,7 @@ conn_zapier_step_out
 conn_zapier_step_out_detail
 connect
 connect_channels
+connect_myself
 connect_post
 connect_postqueen
 connect_telegram
@@ -521,6 +522,7 @@ integrations
 internal_edit
 invalid_or_expired_code
 invitation_link_sent
+invite_by_link
 just_update_post_details
 keyboard_shortcuts
 label_auto_add_music
