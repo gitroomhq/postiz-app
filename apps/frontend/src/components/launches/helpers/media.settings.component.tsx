@@ -427,7 +427,7 @@ export const MediaComponentInner: FC<{
                 <div className="flex justify-start">
                   <button
                     onClick={() => setIsEditingThumbnail(false)}
-                    className="text-textColor hover:text-white transition-colors flex items-center space-x-2"
+                    className="text-textColor hover:text-pqText transition-colors flex items-center space-x-2"
                   >
                     <svg
                       width="16"

@@ -476,7 +476,7 @@ export const Tour: FC = () => {
             type="button"
             data-tour-action="next"
             onClick={() => (last ? finish() : next())}
-            className="rounded-pqSm bg-pqBrand px-[14px] py-[6px] text-[13px] font-[500] text-pqUpgradeFg hover:bg-pqBrandHover"
+            className="rounded-pqSm bg-pqBrand px-[14px] py-[6px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover"
           >
             {last ? t('finish', 'Finish') : t('next', 'Next')}
           </button>

@@ -35,6 +35,7 @@ module.exports = {
         pqBrand: 'var(--brand)',
         pqBrandHover: 'var(--brandHover)',
         pqBrandSoft: 'var(--brandSoft)',
+        pqOnBrand: 'var(--onBrand)',
         pqBrandFaint: 'var(--brandFaint)',
         pqPink: 'var(--pink)',
         pqFocused: 'var(--focused)',

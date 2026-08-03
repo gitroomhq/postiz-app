@@ -375,7 +375,7 @@ export const EditorWrapper: FC<{
               </div>
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
-            <div className="text-[14px] font-[600] text-white">
+            <div className="text-[14px] font-[600] text-pqText">
               {t(
                 'cant_edit_networks_when_creating_set',
                 "You can't edit networks when creating a set"
@@ -400,7 +400,7 @@ export const EditorWrapper: FC<{
               </div>
               <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
             </div>
-            <div className="text-[14px] font-[600] text-white">
+            <div className="text-[14px] font-[600] text-pqText">
               {t(
                 'click_to_exit_global_editing',
                 'Click this button to exit global editing and customize the post for this channel'

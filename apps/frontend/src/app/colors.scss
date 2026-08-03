@@ -41,6 +41,10 @@
     --upgradeHover: rgba(139, 92, 246, 0.16);
     --brand: #7c3aed;
     --brandHover: #8b5cf6;
+    // Text and icons sitting ON a brand-filled surface. `--upgradeFg` is not
+    // this: it is the rail's Upgrade label, drawn on the rail, and in the light
+    // theme it is #6d28d9 — which on #7c3aed is 1.36:1 and unreadable.
+    --onBrand: #ffffff;
     --brandSoft: rgba(124, 58, 237, 0.16);
     --pink: #e0189e;
     --navOn: rgba(255, 255, 255, 0.075);
@@ -150,6 +154,9 @@
     --upgradeHover: rgba(124, 58, 237, 0.1);
     --brand: #7c3aed;
     --brandHover: #6d28d9;
+    // Brand is the same #7c3aed in both themes, so this is too — see the note
+    // in the dark block.
+    --onBrand: #ffffff;
     --brandSoft: rgba(124, 58, 237, 0.1);
     --pink: #e0189e;
     --navOn: rgba(9, 9, 11, 0.055);

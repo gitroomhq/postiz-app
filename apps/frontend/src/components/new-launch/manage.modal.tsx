@@ -102,7 +102,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return (
         <div className="flex items-center gap-[10px]">
           <div className="relative">
-            <SettingsIcon size={15} className="text-white" />
+            <SettingsIcon size={15} className="text-pqText" />
           </div>
           <div>Settings</div>
         </div>
@@ -529,7 +529,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <div>
                       <ChevronDownIcon
                         rotated={showSettings}
-                        className="text-white"
+                        className="text-pqText"
                       />
                     </div>
                   </div>
