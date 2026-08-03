@@ -22,7 +22,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 2 · Shell | done — rail, header, drawer, user menu, org switcher, modal shell, toaster |
 | 3 · Calendar | done — grid, cells, post card, toolbar, month view |
 | 4 · Composer | restyled; **not screenshot-verified** (needs a connected channel) |
-| 5 · Channels + inline connect | Add Channel restyled and photographed; the provider **grouping** and the modal→inline-pane conversion are not done — Open questions 5 |
+| 5 · Channels + inline connect | Add Channel restyled, photographed and **grouped** (34 tiles, counted); the modal→inline-pane conversion is still open |
 | 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
@@ -765,9 +765,19 @@ confirms the modal shell from step 2 doing its job on a real dialog: 24px radius
 display face on the title, the new close button, and the chrome blurred behind it. All 34 providers
 render.
 
-The design's **grouping** of that grid is deliberately not built — see Open question 5. The risk is
-not the work, it is that a hand-written provider→category map silently drops a provider from the one
-screen that can connect it the first time someone adds a provider and forgets the map.
+~~The design's **grouping** of that grid is deliberately not built~~ — **superseded.** The grouping
+landed with the category work: the risk described here was a hand-written provider→category map, and
+the category now comes from the provider class itself, so a provider added without one falls into
+**Other** rather than vanishing from the only screen that can connect it.
+
+It is now verified by counting rather than by looking, because "did a provider quietly fall out" is
+a counting question. `--count [data-provider]` reports **34**, which is exactly what
+`GET /integrations` serves. The 35th class declaring a category is `mastodon-custom`, whose
+registration is commented out at `integration.manager.ts:76` — upstream, not us. Groups render as
+SOCIAL / CHAT & COMMUNITIES / VIDEO & STREAMING / BUSINESS & PORTFOLIO / BLOGS & NEWSLETTERS, and
+the heading is suppressed in the onboarding variant, which uses a 9-column grid.
+
+Still open from this step: the design's **modal → inline pane** conversion for the connect flow.
 
 **Media** and the **Integrations** page came through the palette sweep correctly; Media's empty state
 joined the others at the design's type scale (18px display heading, 13.5px muted body) instead of a
@@ -971,6 +981,46 @@ invalid input value for enum "SubscriptionTier": "CREATOR"
 — which is an ordering constraint rather than a defect: `pm2-run` runs `prisma-apply` before starting
 anything, so a normal deploy adds the values first. The script documents it as a prerequisite. Run it
 **after** a deploy, never before.
+### The `text-white` audit — and one I had just written myself
+
+95 uses. The interesting one was mine: the tour's Next button was `bg-pqBrand` with
+`text-pqUpgradeFg`, and `--upgradeFg` is **not** a text-on-brand token — it is the rail's Upgrade
+label, drawn on the rail, which is why the light theme sets it to `#6d28d9`. Probed:
+
+```
+light   fg #6d28d9  on  bg #7c3aed    ≈ 1.36:1
+dark    fg #b9a8fb  on  bg #7c3aed    ≈ 2.3:1
+```
+
+Unreadable in light, poor in dark, and invisible in a screenshot until the tool was taught to report
+`color` at all. There was no token for "text on a brand-filled surface", so `--onBrand` was added —
+`#ffffff` in both blocks, because `--brand` is `#7c3aed` in both. Now 255,255,255 on 124,58,237 in
+both themes.
+
+The other 94 split three ways, and **most of them are correct**:
+
+- **55** sit on a permanently coloured surface — brand buttons, `bg-forth` pagination (`--color-forth`
+  *is* `--brand`), the logo crown, badges handed a colour, one deliberate `mix-blend-difference`.
+- **33** are on fixed greys, gradients, or the public preview page's own dark canvas.
+- **6** were genuinely broken: `text-white` with no background of its own, inheriting a surface that
+  flips with the theme.
+
+| file | what |
+| --- | --- |
+| `media.settings.component.tsx:430` | back button, `hover:text-white` with **no hover background** — hovering made it vanish |
+| `top.title.component.tsx:48,50` | expand / collapse icons |
+| `manage.modal.tsx:105,532` | settings icon and settings chevron |
+| `editor.tsx:378,403` | the create-set lock overlay, sitting on `--settings` = **`#e9e9ef`** in light |
+
+All six are `text-pqText` now. The four composer-internal ones are reasoned from the token graph
+(`bg-newSettings` → `--new-settings` → `--settings`), **not photographed** — that surface still needs
+a connected channel, same as step 4.
+
+Deliberately **not** done: renaming the 55 legitimate ones to a token. `text-white` is a utility, not
+a hex literal; the rule the migration actually keeps is "no hex literals in components", and a
+55-site rename buys no user-visible change while adding a regression surface.
+
+**Checks:** types 0 · api 134 · i18n 628 · routes 27 — unchanged.
 
 ### Step 9 · The product tour — done
 
