@@ -105,11 +105,18 @@ const LayoutSkeleton = () => (
  */
 const AppChrome = ({ children }: { children: ReactNode }) => {
   const t = useT();
-  const { mobile } = useViewport();
+  const { mobile, tablet } = useViewport();
   // Same cookie idiom as the calendar's own collapsible column.
   const [railCookie, setRailCookie] = useCookie('railCollapsed', '0');
   const collapsed = railCookie === '1';
   const [drawer, setDrawer] = useState(false);
+  /**
+   * True while the rail is collapsed because the window is narrow rather than
+   * because anybody asked. Without it, dragging a window below 1180 and back
+   * would silently discard the user's own choice — the design tracks the same
+   * thing (`_autoRail`).
+   */
+  const autoCollapsed = useRef(false);
   // The drawer measures this row to find its own top edge.
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +125,21 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!mobile) setDrawer(false);
   }, [mobile]);
+
+  // Below 1180 there is not room for a 236px rail beside a page; collapse it,
+  // and put it back only if this is the one that collapsed it.
+  useEffect(() => {
+    if (mobile) return;
+    if (tablet && !collapsed) {
+      autoCollapsed.current = true;
+      setRailCookie('1', { days: 365 });
+      return;
+    }
+    if (!tablet && autoCollapsed.current) {
+      autoCollapsed.current = false;
+      setRailCookie('0', { days: 365 });
+    }
+  }, [mobile, tablet, collapsed, setRailCookie]);
 
   const closeDrawer = useCallback(() => setDrawer(false), []);
 

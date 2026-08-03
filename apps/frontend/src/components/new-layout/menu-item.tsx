@@ -36,16 +36,19 @@ export const MenuItem: FC<{
       >
         {icon}
       </span>
-      {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
+      {/* Always in the DOM, hidden by CSS when the rail is collapsed. The
+          collapsed rail expands on hover (see `[data-sb]` in global.scss) and a
+          label React has not rendered cannot appear on hover. */}
+      <span data-sbl="1" className="min-w-0 flex-1 truncate">
+        {label}
+      </span>
     </>
   );
 
-  // Collapsed to icons, the label has to come back as a tooltip or the rail is
-  // unreadable. `tooltip` is the single react-tooltip instance mounted by the
-  // layout.
-  const tip = collapsed
-    ? { 'data-tooltip-id': 'tooltip', 'data-tooltip-content': label }
-    : {};
+  // No tooltip in the collapsed rail: hovering it widens the rail and shows the
+  // real label, so a tooltip would put the same word on screen twice. `title`
+  // still carries the name for anything that cannot hover.
+  const tip = {};
 
   if (onClick) {
     return (

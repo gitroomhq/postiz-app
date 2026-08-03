@@ -1098,3 +1098,55 @@ html[dir='rtl'] .lbox {
     animation: none !important;
   }
 }
+
+// ---------------------------------------------------------------------------
+// The collapsed rail expands on hover
+//
+// Ported from the design, which does this in CSS rather than in state — so it
+// costs no re-render and cannot get out of step with React. `data-hov` is only
+// "1" when the rail is collapsed on desktop; expanded, there is nothing to
+// reveal, and on mobile the rail is a drawer.
+//
+// Gated on a real pointer. On a touch screen `:hover` sticks after a tap, so
+// the rail would stay open until you touched something else.
+// ---------------------------------------------------------------------------
+[data-sb][data-hov='1'] [data-sbl='1'],
+[data-sb][data-hov='1'] [data-sbh='1'] {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-sb][data-hov='1']:hover {
+    width: 236px;
+    box-shadow: var(--e3);
+    z-index: 45;
+  }
+
+  [data-sb][data-hov='1']:hover [data-sbl='1'] {
+    display: block;
+  }
+
+  // Rows that are flex containers rather than plain text, so `block` would
+  // collapse their layout. The design splits them the same way.
+  [data-sb][data-hov='1']:hover [data-sbh='1'] {
+    display: flex;
+  }
+
+  // The rows centre their icon while collapsed; once the labels are back they
+  // have to read as a list again.
+  [data-sb][data-hov='1']:hover button,
+  [data-sb][data-hov='1']:hover a {
+    justify-content: flex-start;
+  }
+
+  // The collapse toggle is chrome, not navigation — it only appears once you
+  // are already pointing at the rail.
+  [data-sb] [data-sb-toggle='1'] {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  [data-sb]:hover [data-sb-toggle='1'] {
+    opacity: 1;
+  }
+}

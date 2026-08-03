@@ -158,9 +158,16 @@ export const Rail: FC<RailProps> = ({
           that is off the *right* edge, which does widen the page. This clips
           it — the layer is inert, the rail inside it is not. */}
       <MobileLayer active={mobile} top={drawerTop}>
+      {/* On desktop the nav is absolute inside a fixed-width slot, so the
+          collapsed rail can widen on hover *over* the page instead of shoving
+          it sideways — which is what the design's z-index:45 and drop shadow
+          are for. */}
+      <DesktopSlot active={!mobile} width={rc ? 60 : 236}>
       <nav
         ref={navRef}
         onClick={onRailClick}
+        data-sb="1"
+        data-hov={!mobile && rc ? '1' : '0'}
         aria-label={t('main_navigation', 'Main navigation')}
         {...(mobile && drawerOpen && { role: 'dialog', 'aria-modal': true })}
         className={clsx(
@@ -170,7 +177,7 @@ export const Rail: FC<RailProps> = ({
                 'pointer-events-auto absolute inset-y-0 start-0 w-[264px] shadow-pqE3',
                 !drawerOpen && '-translate-x-[104%] rtl:translate-x-[104%]'
               )
-            : clsx('relative shrink-0', rc ? 'w-[60px]' : 'w-[236px]')
+            : clsx('absolute inset-y-0 start-0', rc ? 'w-[60px]' : 'w-[236px]')
         )}
       >
         {!mobile && (
@@ -178,6 +185,7 @@ export const Rail: FC<RailProps> = ({
             <button
               type="button"
               data-keepdrawer="1"
+              data-sb-toggle="1"
               onClick={onToggleCollapse}
               aria-label={
                 rc
@@ -208,11 +216,9 @@ export const Rail: FC<RailProps> = ({
                 />
                 <path d="M9.5 4v16" stroke="currentColor" strokeWidth="1.6" />
               </svg>
-              {!rc && (
-                <span className="truncate">
-                  {t('collapse_sidebar', 'Collapse sidebar')}
-                </span>
-              )}
+              <span data-sbl="1" className="truncate">
+                {t('collapse_sidebar', 'Collapse sidebar')}
+              </span>
             </button>
             <div className="mt-[8px] h-[1px] shrink-0 bg-pqRailLine" />
           </>
@@ -221,8 +227,11 @@ export const Rail: FC<RailProps> = ({
         <div className="mt-[10px] flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto overflow-x-hidden">
           {groups.map((group) => (
             <div key={group.key} className="flex flex-col gap-[1px]">
-              {!!group.label && !rc && (
-                <div className="mb-[2px] flex h-[26px] items-center rounded-pqSm pe-[4px] ps-[6px] transition-colors hover:bg-pqHover">
+              {!!group.label && (
+                <div
+                  data-sbh="1"
+                  className="mb-[2px] flex h-[26px] items-center rounded-pqSm pe-[4px] ps-[6px] transition-colors hover:bg-pqHover"
+                >
                   <button
                     type="button"
                     data-keepdrawer="1"
@@ -286,10 +295,6 @@ export const Rail: FC<RailProps> = ({
             <Link
               href="/billing"
               title={t('upgrade', 'Upgrade')}
-              {...(rc && {
-                'data-tooltip-id': 'tooltip',
-                'data-tooltip-content': t('upgrade', 'Upgrade'),
-              })}
               className={clsx(
                 'flex h-[34px] w-full items-center gap-[10px] rounded-[9px] px-[9px] text-[13px] font-[500] transition-colors',
                 rc ? 'justify-center' : 'justify-start',
@@ -314,22 +319,24 @@ export const Rail: FC<RailProps> = ({
                   strokeLinejoin="round"
                 />
               </svg>
-              {!rc && (
-                <>
-                  <span className="min-w-0 flex-1 truncate">
-                    {t('upgrade', 'Upgrade')}
+              <span
+                data-sbh="1"
+                className="flex min-w-0 flex-1 items-center gap-[10px]"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {t('upgrade', 'Upgrade')}
+                </span>
+                {!!user?.tier?.current && (
+                  <span className="shrink-0 text-[10px] font-[700] tracking-[0.04em] text-pqSoft">
+                    {user.tier.current}
                   </span>
-                  {!!user?.tier?.current && (
-                    <span className="shrink-0 text-[10px] font-[700] tracking-[0.04em] text-pqSoft">
-                      {user.tier.current}
-                    </span>
-                  )}
-                </>
-              )}
+                )}
+              </span>
             </Link>
           )}
         </div>
       </nav>
+      </DesktopSlot>
       </MobileLayer>
     </>
   );
@@ -340,6 +347,23 @@ export const Rail: FC<RailProps> = ({
  * phone it renders its child unwrapped, so the desktop rail stays a plain flex
  * item in the chrome row.
  */
+/** Holds the rail's place in the flex row while the nav itself floats. */
+const DesktopSlot: FC<{
+  active: boolean;
+  width: number;
+  children: ReactNode;
+}> = ({ active, width, children }) => {
+  if (!active) return <>{children}</>;
+  return (
+    <div
+      style={{ width }}
+      className="relative shrink-0 transition-[width] duration-200 ease-out"
+    >
+      {children}
+    </div>
+  );
+};
+
 const MobileLayer: FC<{
   active: boolean;
   top: number;

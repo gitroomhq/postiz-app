@@ -56,6 +56,11 @@ const host = process.env.PQ_HOST || 'localhost';
 // this. Selectors are applied in order, each followed by a settle.
 const clicks = String(arg('click', '')).split('|').filter(Boolean);
 const probe = arg('probe', '');
+// --hover <selector>: park a real mouse over an element before probing and
+// shooting. `el.click()` cannot stand in for this — a CSS `:hover` rule only
+// matches a genuine pointer, so a hover-driven layout is unphotographable
+// without it.
+const hover = arg('hover', '');
 // --count <selector>: how many match. "Did the regrouping drop a provider?" is
 // a counting question, and counting tiles in a screenshot is how you miss one.
 const count = arg('count', '');
@@ -252,6 +257,27 @@ try {
         if (!clicked.value) {
           throw new Error(`--click selector matched nothing: ${selector}`);
         }
+        const after = await settle();
+        timedOut = timedOut || after.timedOut;
+      }
+
+      if (hover) {
+        const { result: box } = await cdp.send('Runtime.evaluate', {
+          expression: `(() => { const el = document.querySelector(${JSON.stringify(
+            hover
+          )}); if (!el) return ''; const r = el.getBoundingClientRect(); return JSON.stringify({ x: r.left + Math.min(r.width / 2, 20), y: r.top + Math.min(r.height / 2, 20) }); })()`,
+          returnByValue: true,
+        });
+        if (!box.value) {
+          throw new Error(`--hover selector matched nothing: ${hover}`);
+        }
+        const { x, y } = JSON.parse(box.value);
+        await cdp.send('Input.dispatchMouseEvent', {
+          type: 'mouseMoved',
+          x,
+          y,
+          buttons: 0,
+        });
         const after = await settle();
         timedOut = timedOut || after.timedOut;
       }
