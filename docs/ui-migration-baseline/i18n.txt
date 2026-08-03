@@ -41,6 +41,7 @@ agent_name
 agent_starting
 agent_welcome_message
 ai
+ai_copilot
 all
 all_channels
 all_integrations
@@ -300,6 +301,7 @@ conn_zapier_step_out_detail
 connect
 connect_channels
 connect_post
+connect_postqueen
 connect_telegram
 connect_your_accounts
 connect_your_channels

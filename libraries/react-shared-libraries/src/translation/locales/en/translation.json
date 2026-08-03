@@ -752,6 +752,8 @@
   "hide_posts": "Hide posts",
   "show_posts": "Show posts",
   "no_posts_here": "Nothing here yet.",
+  "ai_copilot": "AI Copilot",
+  "connect_postqueen": "Connect PostQueen",
   "billing_months_free_upto": "Up to {{n}} months free",
   "billing_months_free": "{{n}} months free",
   "billing_per_month_short": "/mo",

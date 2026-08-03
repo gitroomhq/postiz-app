@@ -224,6 +224,39 @@ export const Rail: FC<RailProps> = ({
           </>
         )}
 
+        {/* The design's most prominent rail item, and the entry point to
+            everything in Connections — MCP, the agents, the API, the chat
+            bridge. It deep-links to the Settings tab rather than owning a
+            route, so there is one Connections and not two. */}
+        <Link
+          href="/settings?tab=connections"
+          title={t('connect_postqueen', 'Connect PostQueen')}
+          className={clsx(
+            'mt-[8px] flex h-[38px] shrink-0 items-center gap-[10px] rounded-pqSm bg-pqBrand px-[9px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+            rc ? 'justify-center' : 'justify-start'
+          )}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <path
+              d="M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1.2 1.2M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1.2-1.2"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span data-sbl="1" className="truncate">
+            {t('connect_postqueen', 'Connect PostQueen')}
+          </span>
+        </Link>
+
         <div className="mt-[10px] flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto overflow-x-hidden">
           {groups.map((group) => (
             <div key={group.key} className="flex flex-col gap-[1px]">

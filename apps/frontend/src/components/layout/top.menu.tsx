@@ -73,6 +73,17 @@ export const useMenuItem = () => {
       requireOrg: true,
     },
     {
+      // The design has a Posts entry beside the calendar. It opens the same
+      // data as the panel, in the list view we already have — a second page
+      // would be a third rendering of one endpoint.
+      name: t('posts', 'Posts'),
+      icon: (
+        <NavIcon d="M4.5 5.5h15M4.5 12h15M4.5 18.5h9" />
+      ),
+      path: '/launches?display=list',
+      requireOrg: true,
+    },
+    {
       // The design puts Channels in the rail rather than only as a column on
       // the calendar. Both stay: the column is for picking who a post goes to,
       // the page is for managing the channel itself.
@@ -84,7 +95,7 @@ export const useMenuItem = () => {
       requireOrg: true,
     },
     {
-      name: 'Agent',
+      name: t('ai_copilot', 'AI Copilot'),
       icon: (
         <NavIcon
           d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7L12 3.5Z"
@@ -122,6 +133,33 @@ export const useMenuItem = () => {
   // shortcuts to Settings tabs, which are not pages in this repo — so this is
   // where the two entries the design's rail has no room for live instead.
   const moreMenu = [
+    // The design surfaces these four in the rail. They are Settings tabs here
+    // and stay Settings tabs — the rail deep-links to the same place rather
+    // than growing four routes that render what `?tab=` already renders.
+    {
+      name: t('sets', 'Sets'),
+      icon: <NavIcon d="M4 7.5h16M4 12h16M4 16.5h10" d2="M17.5 15v6M14.5 18h6" />,
+      path: '/settings?tab=sets',
+      requireOrg: true,
+    },
+    {
+      name: t('signatures', 'Signatures'),
+      icon: <NavIcon d="M3 18.5c4-1 5.5-13 8.5-13s1.5 11 4 11c1.5 0 2.5-2 5.5-2" />,
+      path: '/settings?tab=signatures',
+      requireOrg: true,
+    },
+    {
+      name: t('auto_post', 'Auto Post'),
+      icon: <NavIcon d="M5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 5a14 14 0 0 1 14 14M5 10.5A8.5 8.5 0 0 1 13.5 19" />,
+      path: '/settings?tab=autopost',
+      requireOrg: true,
+    },
+    {
+      name: t('webhooks_1', 'Webhooks'),
+      icon: <NavIcon d="M9 11.5 6.5 16a3.5 3.5 0 1 0 3 5M15 11.5 17.5 16a3.5 3.5 0 1 1-3 5M12 8.5A3.5 3.5 0 1 0 9 3.2" />,
+      path: '/settings?tab=webhooks',
+      requireOrg: true,
+    },
     {
       name: t('integrations', 'Integrations'),
       icon: (
