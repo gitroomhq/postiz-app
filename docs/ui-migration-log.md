@@ -1648,3 +1648,67 @@ marker, `discount`, `canceling`, `payment_failed`, `ended`, `lifetime_trial`), t
 Due-today and lapsed modes — which is where `riseIn` and `dropIn` live — the lifetime purchase
 (`mode: 'payment'` plus its webhook branch, no counter and no countdown), and Settings' Plan &
 invoices.
+
+### Does the tour actually work? A table, not an opinion
+
+The honest answer needed measuring every step, not clicking through once. `data-tour-ring` makes the
+spotlight countable; the matrix is six steps × two widths × the posts-panel preference both ways.
+
+**Before:**
+
+```
+step               panel open    panel collapsed
+                   420 1440      420 1440
+cal-grid            1   1         1   1
+posts-panel         1   1         0   0     ← the defect
+connect-pq          1   1         1   1
+mcp-clients         1   1         1   1
+channels-column     1   1         1   1
+channel-connect     1   1         1   1
+```
+
+Collapsing the posts panel is a preference that lives in a cookie for **a year**
+(`calendar.context.tsx:164`), and `posts.panel.tsx` returns early when it is collapsed — the
+`data-tour` anchor only exists in the open branch. So anyone who ever collapsed that panel got a step
+titled *"Every post in one queue"* pointing at nothing, permanently. The card still appeared, centred,
+with the full scrim: it never looked broken, which is why only counting found it.
+
+**The fix is the prototype's, without the side effect.** The design's step carries
+`panelCollapsed: false`. Here the step declares `needs: 'posts-panel'`, the panel asks
+`useTourNeeds('posts-panel')` and renders open while that step is on screen. **The cookie is never
+written** — so there is no preference to restore, and no way to leave someone's panel changed after
+the tour. Verified: with the tour off and the cookie collapsed, the anchor count is back to 0.
+
+After the fix every cell is 1. Step metadata and step copy are now separate (`STEPS` beside
+`useSteps()`), because a selector outside the component needs to ask what step N requires without
+dragging translations along.
+
+**Mobile was a false alarm.** I expected phone widths to lose targets to drawers. They do not: 420
+finds a target for all six. Written down so it is not re-investigated.
+
+### Connections had no way in — and the entry I added first pointed at the wrong tab
+
+The design keeps Connections in the rail. Here the page — seventeen documented integrations — was
+reachable only by opening Settings and happening to find the tab. The menu already has the pattern:
+Sets, Signatures, Auto Post and Webhooks are all entries whose `path` is a Settings tab
+(`top.menu.tsx:140–160`). Connections is one now.
+
+**My first version pointed at `/settings?tab=api` and I nearly shipped it.** That is the older Public
+API tab; the Connections page is `tab === 'connections'` (`layout/settings.component.tsx:255`).
+Counting is what caught it:
+
+```
+/settings?tab=api          [data-connector] → 0
+/settings?tab=connections  [data-connector] → 17
+```
+
+A screenshot of `tab=api` shows a settings page with content on it. It looks fine. It is the wrong
+page.
+
+Worth noting for later: the tour's `connect-pq` and `mcp-clients` steps also point at
+`/settings?tab=api`, and their anchors genuinely live there (`public.component.tsx`), so those steps
+work. But the design's equivalent steps are about the Connections page. Whether to move them is a
+content decision, not a defect, and it is written down rather than done quietly.
+
+**Checks:** `types 0 · api 148 · i18n 1047 · routes 28 · gates 12` — every one unchanged. No new
+route (a tab is not a route), and `connections` was already a translation key.

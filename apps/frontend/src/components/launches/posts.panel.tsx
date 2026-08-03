@@ -9,6 +9,7 @@ import {
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useTourNeeds } from '@gitroom/frontend/components/onboarding/tour';
 
 /**
  * The posts panel — the design's permanent column beside the calendar.
@@ -38,7 +39,13 @@ export const PostsPanel: FC = () => {
     [t]
   );
 
-  if (!postsPanelOpen) {
+  // The tour has a step about this panel. Collapsing it is a preference that
+  // lives in a cookie for a year, and while it was collapsed that step pointed
+  // at nothing. Rendering it open for the length of the step is enough; the
+  // cookie is never written, so the panel goes back to collapsed by itself.
+  const tourNeedsPanel = useTourNeeds('posts-panel');
+
+  if (!postsPanelOpen && !tourNeedsPanel) {
     return (
       <div className="flex w-[44px] shrink-0 flex-col items-center bg-pqInner py-[16px]">
         <button
@@ -69,9 +76,7 @@ export const PostsPanel: FC = () => {
       className="flex w-[320px] shrink-0 flex-col gap-[12px] overflow-hidden bg-pqInner p-[16px]"
     >
       <div className="flex items-center gap-[8px]">
-        <h2 className="flex-1 text-[19px] font-[500]">
-          {t('posts', 'Posts')}
-        </h2>
+        <h2 className="flex-1 text-[19px] font-[500]">{t('posts', 'Posts')}</h2>
         <button
           type="button"
           data-posts-toggle="1"

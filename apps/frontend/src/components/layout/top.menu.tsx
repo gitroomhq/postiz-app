@@ -77,9 +77,7 @@ export const useMenuItem = () => {
       // data as the panel, in the list view we already have — a second page
       // would be a third rendering of one endpoint.
       name: t('posts', 'Posts'),
-      icon: (
-        <NavIcon d="M4.5 5.5h15M4.5 12h15M4.5 18.5h9" />
-      ),
+      icon: <NavIcon d="M4.5 5.5h15M4.5 12h15M4.5 18.5h9" />,
       path: '/launches?display=list',
       requireOrg: true,
     },
@@ -138,26 +136,50 @@ export const useMenuItem = () => {
     // than growing four routes that render what `?tab=` already renders.
     {
       name: t('sets', 'Sets'),
-      icon: <NavIcon d="M4 7.5h16M4 12h16M4 16.5h10" d2="M17.5 15v6M14.5 18h6" />,
+      icon: (
+        <NavIcon d="M4 7.5h16M4 12h16M4 16.5h10" d2="M17.5 15v6M14.5 18h6" />
+      ),
       path: '/settings?tab=sets',
       requireOrg: true,
     },
     {
       name: t('signatures', 'Signatures'),
-      icon: <NavIcon d="M3 18.5c4-1 5.5-13 8.5-13s1.5 11 4 11c1.5 0 2.5-2 5.5-2" />,
+      icon: (
+        <NavIcon d="M3 18.5c4-1 5.5-13 8.5-13s1.5 11 4 11c1.5 0 2.5-2 5.5-2" />
+      ),
       path: '/settings?tab=signatures',
       requireOrg: true,
     },
     {
       name: t('auto_post', 'Auto Post'),
-      icon: <NavIcon d="M5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 5a14 14 0 0 1 14 14M5 10.5A8.5 8.5 0 0 1 13.5 19" />,
+      icon: (
+        <NavIcon d="M5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 5a14 14 0 0 1 14 14M5 10.5A8.5 8.5 0 0 1 13.5 19" />
+      ),
       path: '/settings?tab=autopost',
       requireOrg: true,
     },
     {
       name: t('webhooks_1', 'Webhooks'),
-      icon: <NavIcon d="M9 11.5 6.5 16a3.5 3.5 0 1 0 3 5M15 11.5 17.5 16a3.5 3.5 0 1 1-3 5M12 8.5A3.5 3.5 0 1 0 9 3.2" />,
+      icon: (
+        <NavIcon d="M9 11.5 6.5 16a3.5 3.5 0 1 0 3 5M15 11.5 17.5 16a3.5 3.5 0 1 1-3 5M12 8.5A3.5 3.5 0 1 0 9 3.2" />
+      ),
       path: '/settings?tab=webhooks',
+      requireOrg: true,
+    },
+    {
+      // The design keeps Connections in the rail, with a sub-entry per client.
+      // Here it is a Settings tab, and until now the only way to reach it was
+      // to open Settings and find it — seventeen documented integrations behind
+      // a tab nobody is told about. This is the pattern Sets, Signatures, Auto
+      // Post and Webhooks above already use: a menu entry whose path is a tab.
+      name: t('connections', 'Connections'),
+      icon: (
+        <NavIcon
+          d="M10.2 13.8a4.2 4.2 0 0 0 6.3.45l2.4-2.4a4.2 4.2 0 0 0-5.95-5.95l-1.4 1.4"
+          d2="M13.8 10.2a4.2 4.2 0 0 0-6.3-.45l-2.4 2.4a4.2 4.2 0 0 0 5.95 5.95l1.4-1.4"
+        />
+      ),
+      path: '/settings?tab=connections',
       requireOrg: true,
     },
     {

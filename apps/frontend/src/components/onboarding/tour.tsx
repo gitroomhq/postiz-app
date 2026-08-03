@@ -22,8 +22,9 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
  * It never re-parents anything: targets sit inside scrollable columns, so the
  * overlay reads `getBoundingClientRect()` off the live element and paints
  * beside it. The only app state it drives is the route — it will navigate to
- * the page a step lives on, and nothing else. It does not open modals or
- * panels on the user's behalf.
+ * the page a step lives on. It opens no modals, and the one panel it needs
+ * visible it asks for through `useTourNeeds()` without touching the stored
+ * preference, so nothing it does outlives the tour.
  */
 
 const CARD_W = 320;
@@ -78,86 +79,104 @@ const markSeen = () => {
   }
 };
 
-interface Step {
+interface StepMeta {
   key: string;
-  title: string;
-  text: string;
   /** Where the target lives. May carry a query — settings tabs are deep-linked. */
   path: string;
   /** Skips the ring and dims the whole screen — for a step about a whole page. */
   dim?: boolean;
+  /**
+   * Something that has to be on screen for this step's target to exist.
+   *
+   * The panel a step describes can be collapsed — that preference lives in a
+   * cookie for a year — and then the step explained a panel while pointing at
+   * nothing. Measured before this existed: ring 1 with the panel open, ring 0
+   * with it collapsed, same step, same words.
+   *
+   * The component that owns the thing asks `useTourNeeds()` and renders it
+   * open while the step is on screen. Nothing writes the user's cookie, so
+   * there is no preference to restore afterwards and no way to leave it
+   * changed — the prototype's `panelCollapsed: false`, without the side effect.
+   */
+  needs?: 'posts-panel';
 }
+
+interface Step extends StepMeta {
+  title: string;
+  text: string;
+}
+
+/** Metadata only. `useSteps()` adds the copy. */
+const STEPS: StepMeta[] = [
+  { key: 'cal-grid', path: '/launches' },
+  { key: 'posts-panel', path: '/launches', needs: 'posts-panel' },
+  { key: 'connect-pq', path: '/settings?tab=api' },
+  { key: 'mcp-clients', path: '/settings?tab=api', dim: true },
+  { key: 'channels-column', path: '/launches' },
+  { key: 'channel-connect', path: '/channels' },
+];
+
+/**
+ * Whether the running tour currently needs this thing visible.
+ *
+ * Read by whichever component owns it. Returns false whenever the tour is not
+ * running, so outside the tour nothing behaves differently.
+ */
+export const useTourNeeds = (need: NonNullable<StepMeta['needs']>) =>
+  useTourStore((state) => state.running && STEPS[state.step]?.needs === need);
 
 const useSteps = (): Step[] => {
   const t = useT();
-  return useMemo(
-    () => [
-      {
-        key: 'cal-grid',
-        path: '/launches',
+  return useMemo(() => {
+    // Order is the design's: the two Connections steps come before the channel
+    // ones, and the tour ends on the connect dialog — where the person is meant
+    // to do something — rather than on a list of MCP clients to read.
+    const copy: Record<string, { title: string; text: string }> = {
+      'cal-grid': {
         title: t('tour_calendar_title', 'One calendar for every account'),
         text: t(
           'tour_calendar_text',
           'Write, generate and schedule for 30+ platforms here, without ever opening a social app.'
         ),
       },
-      {
-        // Now the design's own target: the posts panel exists. It pointed at
-        // the view switcher before, because there was no panel to point at.
-        key: 'posts-panel',
-        path: '/launches',
+      'posts-panel': {
         title: t('tour_views_title', 'Every post in one queue'),
         text: t(
           'tour_views_text',
           'Scheduled, drafts and published, always right here.'
         ),
       },
-      // The design's order, which this did not follow: the two Connections
-      // steps come before the channel ones, and the tour ends on the connect
-      // dialog — where the person is meant to *do* something — rather than on
-      // a list of MCP clients to read.
-      {
-        key: 'connect-pq',
-        path: '/settings?tab=api',
+      'connect-pq': {
         title: t('tour_connect_title', 'Connect your AI to PostQueen'),
         text: t(
           'tour_connect_text',
           'Claude, ChatGPT, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
         ),
       },
-      {
-        key: 'mcp-clients',
-        path: '/settings?tab=api',
-        dim: true,
+      'mcp-clients': {
         title: t('tour_clients_title', 'Works with the tools you already use'),
         text: t(
           'tour_clients_text',
           'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'
         ),
       },
-      {
-        key: 'channels-column',
-        path: '/launches',
+      'channels-column': {
         title: t('tour_channels_title', 'Your accounts live here'),
         text: t(
           'tour_channels_text',
           'Connect them once and set the hours each one publishes.'
         ),
       },
-      {
-        // Ends on /channels, which the design also does. It could not before:
-        // the page did not exist, and then it had no connect button of its own.
-        key: 'channel-connect',
-        path: '/channels',
+      'channel-connect': {
         title: t('tour_add_channel_title', 'Post everywhere at once'),
         text: t(
           'tour_add_channel_text',
           'Write it once and it goes out to every channel you picked.'
         ),
       },
-    ],
-    [t]
-  );
+    };
+    return STEPS.map((step) => ({ ...step, ...copy[step.key] }));
+  }, [t]);
 };
 
 /**
@@ -625,6 +644,7 @@ export const Tour: FC = () => {
       {spot && rect && (
         <div
           aria-hidden="true"
+          data-tour-ring="1"
           className="pq-loop pointer-events-none absolute rounded-pqMd border border-pqBrand animate-pqTick"
           style={{
             top: rect.t - RING_PAD,
