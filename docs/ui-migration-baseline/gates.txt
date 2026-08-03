@@ -1,0 +1,12 @@
+allowTrial 6
+billingEnabled 27
+isTrailing 5
+tier.ai 4
+tier.autoPost 2
+tier.current 17
+tier.image_generator 2
+tier.public_api 3
+tier.team_members 3
+tier.webhooks 3
+trialLocked 5
+user.isLifetime 6

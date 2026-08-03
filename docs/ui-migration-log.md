@@ -1520,3 +1520,58 @@ step 6  (/channels)                            [data-tour-caret] → 1
 and the last step reached at 420 and 1440 in both themes, no overflow. `types 0 · api 148 ·
 i18n 1036 · routes 28` — all unchanged, which is right: the steps were reordered, not rewritten, and
 the copy keys moved with them.
+
+### The gate inventory, and the sweep that had never seen half the app
+
+**`collect_gates`.** Doc 03 lists about fifteen feature gates. They were walked by hand once, in
+step 8, and nothing has protected them since: a restyle that dropped `tier?.autoPost` would hand
+every account a paid tab, and `api`, `i18n` and `routes` would all still read *unchanged*, because
+none of them can see a condition. Twelve entries now, **counted**:
+
+```
+allowTrial 6      tier.ai 4              tier.public_api 3    trialLocked 5
+billingEnabled 27 tier.autoPost 2        tier.team_members 3  user.isLifetime 6
+isTrailing 5      tier.current 17        tier.webhooks 3
+tier.image_generator 2
+```
+
+Counted rather than merely named, because a gate falling from two call sites to one is the
+half-removal this exists to catch and a set alone would miss it. `tier?.x` and `tier.x` collapse to
+one entry — optional chaining coming or going is not a gate change.
+
+**Shown to work, not asserted.** One gate was deliberately deleted —
+`user?.tier?.ai` on the Generate Posts button, `launches.component.tsx:600` — and the check went red
+with `tier.ai 4 → 3`. Restored, green again. After last week, a guard that has not been seen
+catching something is not a guard.
+
+**`scripts/ui-sweep.sh`.** The sweep lived in a scratch directory and covered seven screens. It never
+included `channels` — a page added *during* this migration — nor either billing screen, so every
+"zero horizontal overflow" it printed was a claim about half the app. It is in the repo now, covers
+ten signed-in screens plus three auth screens (which need the *opposite* of a session, since the
+middleware bounces a signed-in visitor away from `/auth`), and names the four it skips —
+`/p/[id]`, `/oauth/authorize`, `/admin/stats`, `/admin/errors` — so the gap is visible beside the
+coverage instead of being invisible.
+
+### What it found on its first run: opening Billing logs you out
+
+Not an overflow. `/billing` and `/billing/lifetime` both end on `/auth`.
+
+The chain, verified endpoint by endpoint rather than inferred:
+
+1. SSR returns **200** for `/billing` — the redirect is client-side.
+2. `billing.component.tsx` calls `/user/subscription/tiers` because `role` is `SUPERADMIN` and its
+   `isOrgAdmin` test passes.
+3. That route is `@CheckPolicies([Create, ADMIN])` and answers **401** for this account.
+4. `layout.context.tsx:83` treats *any* 401 as a session ending: it clears `auth`, `showorg` and
+   `impersonate`, then sends the browser to `/`. The middleware bounces that to `/auth`.
+
+So an organization admin who opens Billing is **signed out**. Both halves predate this branch —
+`layout.context.tsx:83` comes from `74d66569` and the ADMIN policy on tiers from `0ef84a9a`, both on
+`origin/main` — and the restyle neither caused it nor could have caught it, because the screen was
+not in the sweep.
+
+**Not fixed here, deliberately.** The blunt fix — stop treating 401 as a logout — changes how every
+request in the app behaves when a session really has expired, and that is not a change to make at the
+end of a long session on a screen that cannot be exercised without Stripe keys anyway. It is written
+down as a defect with its exact chain, and it goes in the same pile as the billing work: the keys
+arrive, the screen becomes reachable, and this gets fixed with the states around it.

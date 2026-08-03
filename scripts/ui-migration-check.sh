@@ -65,6 +65,27 @@ collect_api() {
     | sed 's#/$##' | grep -v '^$' | sort -u > "$WORK/api.txt"
 }
 
+collect_gates() {
+  # Which feature gates the frontend still applies.
+  #
+  # Doc 03 lists about fifteen. They were walked by hand once, in step 8, and
+  # nothing has protected them since — a restyle that dropped `tier?.autoPost`
+  # would hand every user a paid tab and no list here would have moved, because
+  # the api/i18n/routes lists cannot see a condition.
+  #
+  # Counted, not just named. A gate falling from two call sites to one is the
+  # half-removal this is meant to catch, and a set alone would miss it. Benign
+  # movement (extracting a shared condition) therefore needs --update and a line
+  # in the log, which is the same discipline the other three lists already have.
+  #
+  # `tier?.x` and `tier.x` collapse to one entry: optional chaining coming or
+  # going is not a gate change.
+  scan_calls "tier\??\.[a-zA-Z_]+|user\??\.isLifetime|isTrailing|allowTrial|billingEnabled|trialLocked" \
+    | sed -E 's/\?\./\./g' \
+    | sort | uniq -c | sed -E 's/^ *([0-9]+) +(.*)$/\2 \1/' \
+    | sort > "$WORK/gates.txt"
+}
+
 collect_i18n() {
   # The key is the first argument of t(); the second is only the English
   # fallback. Copy may be restyled around it, but the key set must not move.
@@ -86,6 +107,7 @@ collect_routes() {
 collect_api
 collect_i18n
 collect_routes
+collect_gates
 
 # --- types ------------------------------------------------------------------
 
@@ -119,7 +141,7 @@ done
 FAILED=0
 [ "$TYPES_OK" -eq 1 ] || FAILED=1
 
-for name in api i18n routes; do
+for name in api i18n routes gates; do
   current="$WORK/$name.txt"
   baseline="$BASE/$name.txt"
   count="$(wc -l < "$current" | tr -d ' ')"
