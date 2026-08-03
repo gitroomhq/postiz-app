@@ -21,6 +21,10 @@ const mcpClients = [
   'Codex',
   'Gemini CLI',
   'Warp',
+  // In the design's command table but missing from its own picker list, which
+  // is why they were missing here too — this list was ported from the picker.
+  'OpenClaw',
+  'Hermes',
 ] as const;
 
 type McpClient = (typeof mcpClients)[number];
@@ -78,6 +82,16 @@ const getMcpConfig = (
           config: json({ mcpServers: { postqueen: { url: urlWithKey } } }),
           hint: 'Add to ~/.gemini/settings.json',
         };
+      case 'OpenClaw':
+        return {
+          config: `openclaw mcp add postqueen --transport http --url "${urlWithKey}"`,
+          hint: 'Run this command in your terminal, then `openclaw mcp list` to check it.',
+        };
+      case 'Hermes':
+        return {
+          config: `hermes tools add postqueen --mcp "${urlWithKey}"`,
+          hint: 'Hermes lists postqueen under available tools once this succeeds.',
+        };
       case 'Warp':
         return {
           config: json({ postqueen: { url: urlWithKey } }),
@@ -125,6 +139,16 @@ const getMcpConfig = (
           },
         }),
         hint: 'Add to ~/.codeium/windsurf/mcp_config.json',
+      };
+    case 'OpenClaw':
+      return {
+        config: `openclaw mcp add postqueen --transport http --url ${urlBase} --header "Authorization: ${bearer}"`,
+        hint: 'Run this command in your terminal, then `openclaw mcp list` to check it.',
+      };
+    case 'Hermes':
+      return {
+        config: `hermes tools add postqueen --mcp ${urlBase} --auth "${bearer}"`,
+        hint: 'Hermes lists postqueen under available tools once this succeeds.',
       };
     case 'Amp':
       return {
