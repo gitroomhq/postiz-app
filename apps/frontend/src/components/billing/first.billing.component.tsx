@@ -220,8 +220,12 @@ export const FirstBillingComponent = () => {
         <div className="flex-1 flex items-center text-textColor">
           <LogoTextComponent />
         </div>
-        <div className="flex items-center">
-          <div className="flex gap-[20px] text-textItemBlur">
+        <div className="flex min-w-0 items-center">
+          {/* 20px between six icons and two separators is 140px of gap alone,
+              which is what pushed this header 7px past a 420 viewport — the
+              only horizontal overflow this migration has found, on the first
+              screen a new customer sees. */}
+          <div className="flex gap-[20px] mobile:gap-[10px] text-textItemBlur">
             <OrganizationSelector />
             <div className="hover:text-newTextColor">
               <ModeComponent />

@@ -287,10 +287,32 @@ try {
       // Say so rather than writing a file that silently misrepresents the app.
       const { result } = await cdp.send('Runtime.evaluate', {
         expression:
-          'JSON.stringify({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, href: location.href })',
+          // Reporting *that* a page overflows tells you to go hunting; the
+          // widest element that starts inside the viewport and ends outside it
+          // tells you where. Walks every element once and keeps the worst
+          // offender, described well enough to find in the source.
+          `JSON.stringify((() => {
+            const de = document.documentElement;
+            const cw = de.clientWidth;
+            let worst = null;
+            if (de.scrollWidth > cw) {
+              for (const el of document.querySelectorAll('*')) {
+                const r = el.getBoundingClientRect();
+                if (!r.width || r.right <= cw + 0.5) continue;
+                const over = Math.round(r.right - cw);
+                if (!worst || over > worst.over) {
+                  const cls = typeof el.className === 'string' ? el.className.slice(0, 70) : '';
+                  worst = { over, tag: el.tagName.toLowerCase(), cls,
+                            id: el.id || '', w: Math.round(r.width), left: Math.round(r.left) };
+                }
+              }
+            }
+            return { sw: de.scrollWidth, cw, href: location.href, worst };
+          })())`,
         returnByValue: true,
       });
-      const { sw, cw, href } = JSON.parse(result.value);
+      const { sw, cw, href, worst } = JSON.parse(result.value);
+      if (worst) console.log(`  widest overflowing element: <${worst.tag}${worst.id ? '#' + worst.id : ''}> +${worst.over}px  w=${worst.w} left=${worst.left}  class="${worst.cls}"`);
 
       // A redirect is a *successful* navigation, so nothing above notices it —
       // and the screenshot is then of a page nobody asked for. The step-0
