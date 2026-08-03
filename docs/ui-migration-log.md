@@ -215,6 +215,17 @@ the coupon actually is or customers are told something untrue.
 
 *Taken in the meantime:* the trial and discount surfaces are restyled, the strings stay the repo's.
 
+**6. `text-white` on neutral surfaces — a latent light-theme bug with no safe blind fix.** Three of
+these were found and fixed in the composer, where a label sat white on `--inner` and was invisible
+in the light theme. A sweep finds **43 more** candidates. Most are legitimate — the logo crown on its
+purple tile, tag chips, the creation-method badge, anything inside `mix-blend-difference`, the public
+preview page which brings its own dark background. The rest cannot be judged without knowing what
+each one sits on, and several are on surfaces this install cannot render.
+
+*Taken in the meantime:* nothing. Fixing these by pattern-matching is how you turn a latent bug into
+a visible one somewhere else. The right method is to render each surface in the light theme and
+check contrast — cheap once there is seed data and billing is on, and speculative before that.
+
 **5. Grouping the provider grid needs a mapping this repo does not have.** The design sorts Add
 Channel into Social / Chat & communities / Video & streaming / Business & portfolio / Blogs &
 newsletters. The grid is built at runtime from `/integrations/list` — correctly, per doc 06 §D3 —
