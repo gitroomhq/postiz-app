@@ -1232,3 +1232,113 @@ the thing itself was broken.
 **Checks:** types 0 · api 134 · i18n 613 · routes 27 — unchanged. `api` staying at 134 while a
 backend route was added is expected, per the paragraph above; the plan's prediction that E would move
 the baseline was wrong about which side the collector reads.
+
+---
+
+## Steps A–D · Connections, Channels, Posts, the rail — 2026-08-02/03
+
+Eighteen commits, `8783e0e3` → `4584de69`. Grouped by what they were, not by the order they landed.
+
+### The rail, and the two columns beside it
+
+The design collapses the rail and expands it on hover; a narrow window collapses it on its own. Both
+behaviours are in the prototype and both are **CSS**, not JavaScript — which is why my first grep for
+`mouseenter` found nothing and I reported the hover as "not in the design". It was. The rules are now
+in `global.scss` under `[data-sb][data-hov='1']:hover`, ported rather than reinvented.
+
+The same collapse/expand applies to the two other columns the design treats this way. Four routes the
+design's rail shows were **not** added: they would render nothing this app does not already have a
+page for. Three the design's rail does *not* show — Plugs, Affiliate, Create Post — stay, per the
+non-negotiable about never deleting a capability the design happens not to draw.
+
+### Connections — seventeen ways in, and two that do not exist
+
+`connections.component.tsx` groups MCP, CLI, public API, webhooks, Zapier, Make, n8n and the chat
+bridges into one page organised by *what you want to connect*, not by protocol. Zapier and Make ship
+with a "coming soon" badge, as agreed.
+
+Each of the seventeen was checked against its own vendor documentation. **Two shipped wrong first:**
+I took the MCP commands for two clients straight from the design's `MCP_CMDS` map and they were
+invented — neither client takes a command of that shape; both reach PostQueen through Agent Skills.
+Removed in `ef44803d`. The design being wrong about our own integration surface is exactly the case
+the handoff rule anticipates, and I had waved it through because it looked plausible.
+
+OpenClaw and Hermes are given real depth here rather than a logo and a line, per your note that this
+is what people actually reach for.
+
+### Channels and Posts
+
+`51b6bd81` gives channels a page. Nothing in it is new: time slots, move to a group, custom URL, copy
+channel ID, disable, reconnect all already existed behind a three-dot menu on a 260px column. The
+page reuses `menu.tsx` and `time.table.tsx` instead of reimplementing either.
+
+`f2e0a4b5` adds per-provider setup guides — what a provider requires *before* you are sent to its
+OAuth screen. `b1c4f1ae` adds the posts panel the design keeps beside the calendar; it is the list
+view's existing `all | scheduled | draft | published` query, and it stops querying when hidden.
+
+`4584de69` lifts publishing options out of the menu into their own row, reading `additionalSettings`
+off the integration and opening the same `SettingsModal`.
+
+### A clock the calendar was reading two ways
+
+`b82c6cae`. The tour's demo calendar exposed it: the post **card** rendered `newDayjs(publishDate)`
+while the **cell** it sat in rendered `dayjs.utc(publishDate).local()`. On any machine not on UTC the
+card and its own cell disagreed. Pre-existing, not introduced by the restyle, and fixed to match the
+cell.
+
+### The guard was reporting "unchanged" for code it had never read
+
+This is the one worth reading twice.
+
+`f1ffcfed` added `GET /posts/count` and the api counter **did not move**. The endpoint was fine; the
+collector was not. It matched a path literal only when it sat immediately after `useSWR(` or
+`fetch(` — and prettier wraps any call whose arguments are long. Every wrapped call was invisible.
+
+Measured before fixing anything:
+
+| collector | seen | actually there | blind |
+|---|---|---|---|
+| api  | 135 | 148  | 13 endpoints |
+| i18n | 873 | 1024 | **151 keys — 17% of the copy** |
+
+Among the unseen api entries: `/analytics`, `/analytics/trending`, `/posts/old`,
+`/third-party/function/:id/listMedia` and the OAuth reconnect paths. Among the unseen i18n keys:
+most of the billing copy, every TikTok disclosure string, the whole password-reset flow.
+
+So every green `i18n 873 · unchanged` printed in this document was silent about a sixth of the copy,
+and had a restyle dropped one of those keys, the guard would have said nothing. This is the fifth
+time this session a check passed while the thing it checks was broken, and the first time the broken
+thing was the check.
+
+`325fa565` fixes both: the scan now joins an opening paren to what follows, so a call means the same
+thing whether or not prettier split it. Two decisions inside that:
+
+- **Each of the 13 new api entries was verified against its call site by hand.** Reading the fixed
+  collector's own output to confirm the fix would leave the fix unverified.
+- **A trailing bare `${` is trimmed; a truncated one is not.** The first attempt trimmed any
+  unterminated interpolation and silently rewrote four *existing* baseline entries
+  (`/analytics-${integration` → `/analytics-`). Caught by diffing for removals, which is why the diff
+  is run in both directions.
+
+Known and accepted: a few SWR **cache keys** now ride along (`/billing-${tier}-${period}`). This
+guard detects changes to the set of strings handed to fetch/useSWR; a cache key moving is also worth
+being told about.
+
+**The proof.** Twenty-four `prettier-ignore` directives had accumulated across six files, put there
+by me to keep calls on one line so the broken collectors could see them. They are gone and the files
+are formatted normally — prettier rewrapped all six, and both lists came back byte-identical. That is
+the test: the collectors are now format-independent, demonstrated rather than asserted.
+
+### Checks
+
+`types 0 · api 148 · i18n 1027 · routes 28`.
+
+Both baseline jumps are the guard learning to see, not behaviour moving: **api 135 → 148** and
+**i18n 873 → 1024** are the collector fix, itemised above; **i18n 1024 → 1027** is three keys for the
+publishing-options row. `routes 27 → 28` is the channels page.
+
+### Still not seen with real data
+
+The channel detail, the posts panel and the calendar have all been written and none has been viewed
+with a connected channel — the same gate the composer has been behind since step 4. Counting is what
+separates "empty and correct" from "broken render", and counting is all that has been done here.
