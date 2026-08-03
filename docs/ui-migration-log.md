@@ -1342,3 +1342,16 @@ publishing-options row. `routes 27 → 28` is the channels page.
 The channel detail, the posts panel and the calendar have all been written and none has been viewed
 with a connected channel — the same gate the composer has been behind since step 4. Counting is what
 separates "empty and correct" from "broken render", and counting is all that has been done here.
+
+### Where the work sits — five stacked draft PRs
+
+```
+main ← pr1  #5  the visual migration + the harness
+     ← pr2  #6  prices, the rename, the lifetime route
+     ← pr3  #7  four defects the migration uncovered
+     ← pr7  #8  Connections, and the two invented MCP commands
+     ← pr10 #9  Channels, the posts panel, the guard fix
+```
+
+Each stacks on the one above, so review top-down; a PR's own diff is only its own commits.
+`pr4`, `pr5`, `pr6` ride inside #8; `pr8`, `pr9` ride inside #9.
