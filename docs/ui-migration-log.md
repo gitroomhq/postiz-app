@@ -1750,3 +1750,31 @@ for a FREE tier, which needed billing switched on, which needed these keys. Not 
 recorded with its measurements so the fix starts from a number rather than a guess.
 
 **Checks:** `types 0 · api 148 · i18n 1047 · routes 28 · gates 12`, all unchanged.
+
+### The lifetime window — and the page the offer's audience could not reach
+
+The owner supplied the rule that was missing: the founding-member offer is open for **24 hours from
+registration**. That changes an earlier decision and it should be said plainly — a lifetime countdown
+was declined during step E on the grounds that it counted down to nothing. That objection was about a
+*fabricated* deadline. This one is derived from `User.createdAt`, so it is a fact, and it is built.
+
+`lifetimeWindow()` lives in `pricing.ts` beside `nextLifetimeTier()`, because the screen that draws
+the clock and the route that takes the money have to agree about when the offer closed. A clock the
+frontend owns alone is a clock the backend eventually disagrees with. Bad or missing `createdAt`
+reads as **closed** — that withholds an offer rather than granting one on bad data.
+
+`POST /billing/lifetime` refuses with `410 Gone` once the window shuts. Same reasoning as the trial
+lock: a countdown the server does not enforce is decoration.
+
+**Then the page turned out to be unreachable by the people the offer is for.**
+`new-layout/layout.component.tsx:279` replaces the *entire shell* with the checkout paywall whenever
+`tier === 'FREE' && isGeneral && billingEnabled` — every route, including `/billing/lifetime`. So the
+founding-member page was visible only to accounts that had already subscribed, which is precisely the
+wrong half of the audience. That route is now exempt, and only that route.
+
+**Verified from real data:** the page renders for this FREE account and the countdown reads *"The
+founding-member offer closed 24 hours after you signed up"* — correct, since it registered on
+17 July, eighteen days ago. The **open** branch has not been seen: it needs an account less than a
+day old, and inventing one to photograph would be inventing the evidence too.
+
+`types 0 · api 148 · routes 28 · gates 12` unchanged; `i18n 1047 → 1049`.

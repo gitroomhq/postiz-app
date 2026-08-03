@@ -628,6 +628,8 @@ label_your_brand
 language
 last_github_trending
 launches
+lifetime_window_closed
+lifetime_window_open
 link
 link_copied_to_clipboard
 links_will_be_removed_from

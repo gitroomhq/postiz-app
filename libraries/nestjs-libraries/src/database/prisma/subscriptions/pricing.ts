@@ -270,3 +270,33 @@ export const monthsFree = (tier: string) => {
     (plan.month_price * 12 - plan.year_price) / plan.month_price
   );
 };
+
+/**
+ * How long the founding-member offer stays open after somebody signs up.
+ *
+ * The offer is genuinely time-boxed — twenty-four hours from registration — so
+ * a countdown here is a fact rather than the scarcity theatre this migration
+ * refused to build earlier. That refusal stands for a fabricated deadline; this
+ * one is derived from `User.createdAt` and enforced below.
+ */
+export const LIFETIME_WINDOW_HOURS = 24;
+
+/**
+ * The founding-member window for an account, from its registration date.
+ *
+ * Shared rather than computed in the UI, because the screen that draws the
+ * countdown and the route that takes the money have to agree about when the
+ * offer closed. A clock the frontend owns alone is a clock the backend will
+ * eventually disagree with.
+ */
+export const lifetimeWindow = (createdAt?: string | Date | null) => {
+  const started = createdAt ? new Date(createdAt).getTime() : NaN;
+  if (!started || Number.isNaN(started)) {
+    // No registration date means no window to be inside of. Closed is the safe
+    // reading: it withholds an offer rather than granting one on bad data.
+    return { endsAt: null, msLeft: 0, open: false };
+  }
+  const endsAt = new Date(started + LIFETIME_WINDOW_HOURS * 60 * 60 * 1000);
+  const msLeft = endsAt.getTime() - Date.now();
+  return { endsAt, msLeft: Math.max(0, msLeft), open: msLeft > 0 };
+};

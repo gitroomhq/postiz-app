@@ -966,5 +966,7 @@
   "plan_ai_copilots": "AI copilots",
   "plan_picture_editor": "Advanced Picture Editor",
   "plan_n_ai_images": "{{count}} AI Images per month",
-  "plan_n_ai_videos": "{{count}} AI Videos per month"
+  "plan_n_ai_videos": "{{count}} AI Videos per month",
+  "lifetime_window_open": "left to claim founding-member pricing. The offer closes 24 hours after you sign up.",
+  "lifetime_window_closed": "The founding-member offer closed 24 hours after you signed up."
 }

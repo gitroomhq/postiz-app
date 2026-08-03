@@ -14,7 +14,7 @@ import { HeaderActionSlot } from '@gitroom/frontend/components/new-layout/header
 
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
@@ -233,6 +233,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -275,7 +276,16 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               <ContinueProvider />
               <div className="flex flex-col min-h-screen w-full text-newTextColor">
                 <div>{user?.admin ? <Impersonate /> : <div />}</div>
-                {user.tier === 'FREE' && isGeneral && billingEnabled ? (
+                {/* The paywall replaces the whole shell for a FREE tier — every
+                    route, including the lifetime page. That page is the one
+                    surface a FREE account is *supposed* to reach: the
+                    founding-member offer is aimed at people who have not
+                    subscribed, and it closes 24 hours after they sign up. So it
+                    is let through, and only it. */}
+                {user.tier === 'FREE' &&
+                isGeneral &&
+                billingEnabled &&
+                !pathname.startsWith('/billing/lifetime') ? (
                   ['ADMIN', 'SUPERADMIN'].includes(user?.role!) ? (
                     <FirstBillingComponent />
                   ) : (

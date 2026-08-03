@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpException, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Req } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { lifetimeWindow } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { LifetimeDto } from '@gitroom/nestjs-libraries/dtos/billing/lifetime.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
@@ -245,9 +246,22 @@ export class BillingController {
   @Post('/lifetime')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async lifetime(
+    @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization,
     @Body() body: LifetimeDto
   ) {
+    // The founding-member offer closes 24 hours after registration, and the
+    // screen draws a countdown to that moment. A countdown the server does not
+    // enforce is decoration — the same lesson as the trial lock: the rule lives
+    // where the money moves, or it is not a rule. Both sides read
+    // `lifetimeWindow()` so they cannot drift.
+    if (!lifetimeWindow(user.createdAt).open) {
+      throw new HttpException(
+        { success: false, message: 'The founding-member offer has closed.' },
+        HttpStatus.GONE
+      );
+    }
+
     return this._stripeService.lifetimeDeal(org.id, body.code);
   }
 
