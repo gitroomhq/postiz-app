@@ -243,6 +243,42 @@ rung.
 **Checks:** types 0 · api 134 · i18n 613 · routes 27. The local `Subscription` table is empty, so
 there was nothing here to migrate — the phasing is for production, not for this machine.
 
+## Running the backend from source here — and the bug that stopped it
+
+The API can now be exercised locally, which is what makes any of the backend work verifiable. Three
+things were in the way and all three are worth writing down.
+
+**Postgres and Redis are not published to the host.** The running stack comes from
+`docker-compose.yaml` (production topology), which exposes only the app on 4007. Rather than
+recreate the user's containers, two throwaway `alpine/socat` bridges attach to the existing network
+and forward 5432 → 15432 and 6379 → 16379. Nothing of theirs is touched and `docker rm` undoes it:
+
+```
+docker run -d --rm --name pq-pg-bridge --network postqueen-docker-compose_postqueen-network \
+  -p 15432:5432 alpine/socat tcp-listen:5432,fork,reuseaddr tcp-connect:postqueen-postgres:5432
+```
+
+Then the API runs from source with `DATABASE_URL`/`REDIS_URL` pointed at the bridges and
+`NEXT_PUBLIC_BACKEND_URL=http://localhost:3000` — the container sets that to the relative `/api`,
+which `start.mcp.ts:50` feeds to `new URL()` and which only resolves behind the frontend's proxy.
+
+**A real bug: the server cannot boot on Node 25 with Sentry disabled.**
+`initialize.sentry.ts` imported `@sentry/profiling-node` at the top of the file while checking the
+DSN *inside* the function. The import pulls a prebuilt native binding, there is none for Node 25, and
+the process died before Nest started — on an install with no Sentry configured at all, which is most
+self-hosted ones. The require is now inside the DSN check and wrapped, so a missing binding costs
+profiling rather than the server. This is the second thing this migration has found that nothing
+else could have: it is invisible to the type checker and to every screenshot.
+
+**The token had to be re-signed.** The session cookie was signed with the *container's* `JWT_SECRET`,
+which is not the value in `.env`; the source API rejects it. `dotenv -e .env -- node -e "…sign(…,
+process.env.JWT_SECRET)"` mints one without the secret ever appearing in a command or in a transcript.
+
+With that up, **provider categories are verified end to end**: `/integrations` returns a category on
+all 34 providers (16 social, 6 chat, 5 publishing, 4 video, 3 business) and the Add Channel grid
+renders the design's five groups. The fallback was proven too — before the API knew about
+categories, the same grid rendered as one ungrouped list with every provider present.
+
 ## The local backend runs from an image, not from source
 
 Worth knowing before anyone plans backend work here: the `postqueen` container mounts only
