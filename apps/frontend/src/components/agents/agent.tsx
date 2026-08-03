@@ -4,7 +4,9 @@ import React, {
   createContext,
   FC,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   ReactNode,
 } from 'react';
@@ -74,9 +76,10 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
 
   const { mobile } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
-  // Below 760 the channel column is always the icon rail, as on the calendar:
-  // two 260px columns beside the chat leave it nothing at phone widths.
-  const channelsCollapsed = mobile || collapseMenu === '1';
+  // Below 760 this column lives in a drawer (see `Agent`), where it gets the
+  // full 264px and should be the expanded list, not the icon rail. The rail is
+  // only for the desktop collapse toggle.
+  const channelsCollapsed = !mobile && collapseMenu === '1';
 
   const { data } = useSWR('integrations', load, {
     revalidateOnFocus: false,
@@ -113,7 +116,11 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     <div
       className={clsx(
         'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        channelsCollapsed ? 'group sidebar w-[100px]' : 'w-[260px]'
+        mobile
+          ? 'w-full'
+          : channelsCollapsed
+          ? 'group sidebar w-[100px]'
+          : 'w-[260px]'
       )}
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
@@ -121,11 +128,16 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
           <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
             {t('select_channels', 'Select Channels')}
           </h2>
+          {/* The collapse toggle only means anything on desktop — in the mobile
+              drawer there is no narrow state to collapse to. */}
           <div
             onClick={() =>
               setCollapseMenu(collapseMenu === '1' ? '0' : '1', { days: 365 })
             }
-            className="-mt-3 group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+            className={clsx(
+              '-mt-3 group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none',
+              mobile && 'hidden'
+            )}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -206,13 +218,139 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
 export const PropertiesContext = createContext({ properties: [] });
 export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
+  const t = useT();
+  const { mobile } = useViewport();
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [panel, setPanel] = useState<'channels' | 'threads' | null>(null);
+  const [drawerTop, setDrawerTop] = useState(0);
+
+  // Below 760 both side columns leave the chat about 200px — two or three
+  // words a line, and a message box the shape of a bookmark. They become
+  // off-canvas drawers instead, the same move the rail makes, so the chat gets
+  // the full width. The design does this from a header button; here the two
+  // toggles sit above the chat, because the header slot already carries the
+  // page action.
+  const asDrawer = mobile;
+
+  useEffect(() => {
+    if (!asDrawer) {
+      setPanel(null);
+      return;
+    }
+    // The drawers open *below* the app chrome rather than over it, so their top
+    // is measured rather than assumed — same reason as in `rail.tsx`.
+    const measure = () =>
+      setDrawerTop(
+        Math.max(0, rowRef.current?.getBoundingClientRect().top ?? 0)
+      );
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [asDrawer]);
+
+  useEffect(() => {
+    if (!panel) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPanel(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [panel]);
+
+  const toggle = (which: 'channels' | 'threads', label: string) => (
+    <button
+      type="button"
+      data-pq={`agent-${which}`}
+      onClick={() => setPanel((p) => (p === which ? null : which))}
+      aria-expanded={panel === which}
+      className="h-[32px] rounded-pqSm border border-pqBorder bg-pqInner px-[12px] text-[12.5px] font-[500] text-pqText"
+    >
+      {label}
+    </button>
+  );
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <AgentList onChange={setProperties} />
-      <div className="bg-newBgColorInner flex flex-1">{children}</div>
-      <Threads />
+      <div ref={rowRef} className="flex flex-1 min-w-0">
+        {asDrawer && panel && (
+          <div
+            onClick={() => setPanel(null)}
+            style={{ top: drawerTop }}
+            className="fixed inset-x-0 bottom-0 z-[72] bg-pqPopup"
+          />
+        )}
+        <AgentDrawer
+          active={asDrawer}
+          open={panel === 'channels'}
+          side="start"
+          top={drawerTop}
+          label={t('select_channels', 'Select Channels')}
+        >
+          <AgentList onChange={setProperties} />
+        </AgentDrawer>
+
+        <div className="bg-newBgColorInner flex flex-1 flex-col min-w-0">
+          {asDrawer && (
+            <div className="flex shrink-0 items-center gap-[8px] border-b border-pqLine px-[12px] py-[8px]">
+              {toggle('channels', t('select_channels', 'Select Channels'))}
+              {toggle('threads', t('conversations', 'Conversations'))}
+            </div>
+          )}
+          <div className="flex flex-1 min-w-0">{children}</div>
+        </div>
+
+        <AgentDrawer
+          active={asDrawer}
+          open={panel === 'threads'}
+          side="end"
+          top={drawerTop}
+          label={t('conversations', 'Conversations')}
+        >
+          <Threads />
+        </AgentDrawer>
+      </div>
     </PropertiesContext.Provider>
+  );
+};
+
+/**
+ * Off-canvas wrapper for one of the agent page's side columns. Inactive it is
+ * a passthrough, so the desktop layout is byte-identical to before. Active, it
+ * clips the parked drawer — a panel parked a full width outside the viewport
+ * widens the page in RTL otherwise, which is the bug `rail.tsx` hit.
+ */
+const AgentDrawer: FC<{
+  active: boolean;
+  open: boolean;
+  side: 'start' | 'end';
+  top: number;
+  label: string;
+  children: ReactNode;
+}> = ({ active, open, side, top, label, children }) => {
+  if (!active) return <>{children}</>;
+  return (
+    <div
+      style={{ top }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[78] overflow-hidden"
+    >
+      <div
+        {...(open ? { role: 'dialog', 'aria-modal': true } : {})}
+        aria-label={label}
+        aria-hidden={!open}
+        className={clsx(
+          'pointer-events-auto absolute inset-y-0 flex w-[264px] shadow-pqE3 transition-transform duration-200 ease-out',
+          side === 'start'
+            ? clsx('start-0', !open && '-translate-x-[104%] rtl:translate-x-[104%]')
+            : clsx('end-0', !open && 'translate-x-[104%] rtl:-translate-x-[104%]')
+        )}
+      >
+        {children}
+      </div>
+    </div>
   );
 };
 
@@ -230,14 +368,14 @@ const Threads: FC = () => {
   const { mobile } = useViewport();
 
   return (
-    // Below 760 this drops to the same 100px strip the channel column uses.
-    // Two fixed 260px columns beside the chat left it nothing at phone widths —
-    // the page rendered with no conversation area at all, and did so before the
+    // Below 760 this lives in a drawer (see `Agent`) and fills it. Two fixed
+    // 260px columns beside the chat left it nothing at phone widths — the page
+    // rendered with no usable conversation area at all, and did so before the
     // migration too.
     <div
       className={clsx(
         'trz bg-newBgColorInner flex shrink-0 flex-col gap-[15px] transition-all relative',
-        mobile ? 'group sidebar w-[100px]' : 'w-[260px]'
+        mobile ? 'w-full' : 'w-[260px]'
       )}
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">

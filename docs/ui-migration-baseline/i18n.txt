@@ -180,6 +180,7 @@ continue_with_email
 continue_with_google
 continue_without_channels
 continue_without_set
+conversations
 copy
 copy_all
 copy_debug_json
