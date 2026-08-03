@@ -12,6 +12,8 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+import { buildNostrRepostEvent } from '@gitroom/nestjs-libraries/integrations/social/nostr.repost';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -94,6 +96,34 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     }
 
     return {};
+  }
+
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add Nostr accounts to repost your note',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const originalEvent = await pool.get(list, {
+      ids: [postId],
+      limit: 1,
+    });
+    if (!originalEvent) return;
+
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+    const repostEvent = finalizeEvent(
+      buildNostrRepostEvent(originalEvent),
+      password
+    );
+
+    await this.publish(integration.internalId, repostEvent);
   }
 
   private async publish(pubkey: string, event: any) {
