@@ -211,6 +211,7 @@ export const MediaBox: FC<{
   // driven by the `type` prop the picker passes; on the standalone page nothing
   // was passing it, so the whole library was the only view available.
   const [tab, setTab] = useState<'all' | 'image' | 'video'>('all');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const activeType = standalone ? (tab === 'all' ? undefined : tab) : type;
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 300);
@@ -232,6 +233,20 @@ export const MediaBox: FC<{
     loadMedia
   );
   const [selected, setSelected] = useState([]);
+  // Both layouts show the same files; only the arrangement differs, so the
+  // type filter is applied once here rather than in each branch.
+  const visibleMedia: any[] = useMemo(
+    () =>
+      (data?.results || []).filter((f: any) => {
+        if (activeType === 'video') {
+          return hasExtension(f.path, 'mp4');
+        } else if (activeType === 'image') {
+          return !hasExtension(f.path, 'mp4');
+        }
+        return true;
+      }),
+    [data, activeType]
+  );
   const t = useT();
   const uploaderRef = useRef<any>(null);
   const mediaDirectory = useMediaDirectory();
@@ -413,21 +428,24 @@ export const MediaBox: FC<{
         ) : (
           <PlusIcon size={14} />
         )}
-        <div className={loading ? 'invisible' : undefined}>{t('upload', 'Upload')}</div>
+        <div className={loading ? 'invisible' : undefined}>
+          {t('upload', 'Upload')}
+        </div>
       </button>
     );
   }, [t, loading]);
 
   return (
-    <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
+    <DropFiles
+      disabled={loading}
+      className="flex flex-col flex-1"
+      onDrop={dragAndDrop}
+    >
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
             'flex items-center gap-[12px]',
-            !isLoading &&
-              !data?.results?.length &&
-              !debouncedSearch &&
-              'hidden'
+            !isLoading && !data?.results?.length && !debouncedSearch && 'hidden'
           )}
         >
           <div className="flex-1">
@@ -488,10 +506,7 @@ export const MediaBox: FC<{
                 <NoMediaIcon />
                 <div className="font-display text-[18px] font-[600] -tracking-[0.015em] text-pqText">
                   {debouncedSearch
-                    ? t(
-                        'no_media_match_search',
-                        'No media matches your search'
-                      )
+                    ? t('no_media_match_search', 'No media matches your search')
                     : t(
                         'you_dont_have_any_media_yet',
                         "You don't have any media yet"
@@ -529,41 +544,58 @@ export const MediaBox: FC<{
               </>
             )}
             {standalone && (
-              <div className="mb-[12px] flex w-full items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px] w-fit">
-                {(
-                  [
-                    ['all', t('all', 'All')],
-                    ['image', t('images', 'Images')],
-                    ['video', t('video', 'Video')],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    data-media-tab={value}
-                    onClick={() => setTab(value)}
-                    className={clsx(
-                      'h-[30px] rounded-[6px] px-[16px] text-[12.5px] transition-colors',
-                      tab === value
-                        ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
-                        : 'font-[500] text-pqSoft hover:text-pqText'
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="mb-[12px] flex w-full items-center justify-between gap-[10px]">
+                <div className="flex w-fit items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+                  {(
+                    [
+                      ['all', t('all', 'All')],
+                      ['image', t('images', 'Images')],
+                      ['video', t('video', 'Video')],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      data-media-tab={value}
+                      onClick={() => setTab(value)}
+                      className={clsx(
+                        'h-[30px] rounded-[6px] px-[16px] text-[12.5px] transition-colors',
+                        tab === value
+                          ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
+                          : 'font-[500] text-pqSoft hover:text-pqText'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex w-fit items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+                  {(
+                    [
+                      ['grid', t('grid', 'Grid')],
+                      ['list', t('list', 'List')],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      data-media-view={value}
+                      onClick={() => setView(value)}
+                      className={clsx(
+                        'h-[30px] rounded-[6px] px-[14px] text-[12.5px] transition-colors',
+                        view === value
+                          ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
+                          : 'font-[500] text-pqSoft hover:text-pqText'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            {data?.results
-              ?.filter((f: any) => {
-                if (activeType === 'video') {
-                  return hasExtension(f.path, 'mp4');
-                } else if (activeType === 'image') {
-                  return !hasExtension(f.path, 'mp4');
-                }
-                return true;
-              })
-              .map((media: any) => (
+            {view === 'grid' &&
+              visibleMedia.map((media: any) => (
                 <div
                   className={clsx(
                     'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
@@ -590,7 +622,9 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
-                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
+                    <div className="absolute bottom-[10px] end-[10px] z-[100]">
+                      {media.originalName}
+                    </div>
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
@@ -626,6 +660,72 @@ export const MediaBox: FC<{
                   </div>
                 </div>
               ))}
+            {view === 'list' && (
+              <div className="flex w-full flex-col gap-[1px] clear-both">
+                {visibleMedia.map((media: any) => {
+                  const isVideo = hasExtension(media.path, 'mp4');
+                  const position = selected.findIndex(
+                    (z: any) => z.id === media.id
+                  );
+                  return (
+                    <div
+                      key={media.id}
+                      data-media-row={media.id}
+                      onClick={addRemoveSelected(media)}
+                      className={clsx(
+                        'group flex items-center gap-[12px] rounded-pqSm p-[8px] transition-colors',
+                        position > -1 ? 'bg-pqNavActive' : 'hover:bg-pqHover',
+                        !standalone && 'cursor-pointer'
+                      )}
+                    >
+                      <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-[6px] bg-newSep">
+                        {isVideo ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            className="h-full w-full object-cover"
+                            src={mediaDirectory.set(media.path)}
+                            alt="media"
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13.5px] font-[500]">
+                          {media.originalName || media.name}
+                        </div>
+                        <div className="mt-[2px] text-[12px] text-pqMuted">
+                          {isVideo ? t('video', 'Video') : t('image', 'Image')}
+                          {/* 0 means the size was never recorded — older rows
+                              predate the column's default. Saying "0 B" would
+                              be a measurement we never took. */}
+                          {media.fileSize > 0
+                            ? ` · ${(media.fileSize / 1024 / 1024).toFixed(
+                                1
+                              )} MB`
+                            : ''}
+                        </div>
+                      </div>
+                      {position > -1 && (
+                        <div className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-pqBrand text-[12px] font-[500] text-pqOnBrand">
+                          {position + 1}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={maximize(media)}
+                        className="shrink-0 rounded-pqSm px-[10px] py-[5px] text-[12px] font-[500] text-pqMuted transition-colors hover:bg-pqBtnSimple hover:text-pqText"
+                      >
+                        {t('preview', 'Preview')}
+                      </button>
+                      <DeleteCircleIcon
+                        className="shrink-0 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={deleteImage(media)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
         {(data?.pages || 0) > 1 && (
@@ -799,57 +899,60 @@ export const MultiMediaComponent: FC<{
               handle=".dragging"
             >
               {currentMedia.map((media, index) => (
-                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
-                    <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
+                <div
+                  key={media.id}
+                  className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all"
+                >
+                  <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
-                    <div className="w-full h-full relative group">
-                      <div
-                        onClick={async () => {
-                          modals.openModal({
-                            title: t('media_settings', 'Media Settings'),
-                            children: (close) => (
-                              <MediaComponentInner
-                                media={media as any}
-                                onClose={close}
-                                onSelect={(value: any) => {
-                                  onChange({
-                                    target: {
-                                      name: 'upload',
-                                      value: currentMedia.map((p) => {
-                                        if (p.id === media.id) {
-                                          return {
-                                            ...p,
-                                            ...value,
-                                          };
-                                        }
-                                        return p;
-                                      }),
-                                    },
-                                  });
-                                }}
-                              />
-                            ),
-                          });
-                        }}
-                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
-                      >
-                        <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
-                      </div>
-                      {hasExtension(media?.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media?.path)} />
-                      ) : (
-                        <img
-                          className="w-full h-full object-cover rounded-[4px]"
-                          src={mediaDirectory.set(media?.path)}
-                        />
-                      )}
+                  <div className="w-full h-full relative group">
+                    <div
+                      onClick={async () => {
+                        modals.openModal({
+                          title: t('media_settings', 'Media Settings'),
+                          children: (close) => (
+                            <MediaComponentInner
+                              media={media as any}
+                              onClose={close}
+                              onSelect={(value: any) => {
+                                onChange({
+                                  target: {
+                                    name: 'upload',
+                                    value: currentMedia.map((p) => {
+                                      if (p.id === media.id) {
+                                        return {
+                                          ...p,
+                                          ...value,
+                                        };
+                                      }
+                                      return p;
+                                    }),
+                                  },
+                                });
+                              }}
+                            />
+                          ),
+                        });
+                      }}
+                      className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
+                    >
+                      <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                     </div>
-
-                    <CloseCircleIcon
-                      onClick={clearMedia(index)}
-                      className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
-                    />
+                    {hasExtension(media?.path, 'mp4') ? (
+                      <VideoFrame url={mediaDirectory.set(media?.path)} />
+                    ) : (
+                      <img
+                        className="w-full h-full object-cover rounded-[4px]"
+                        src={mediaDirectory.set(media?.path)}
+                      />
+                    )}
                   </div>
+
+                  <CloseCircleIcon
+                    onClick={clearMedia(index)}
+                    className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
+                  />
+                </div>
               ))}
             </ReactSortable>
           )}

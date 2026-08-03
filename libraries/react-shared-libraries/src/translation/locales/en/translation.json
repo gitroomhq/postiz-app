@@ -947,5 +947,8 @@
   "post_save_failed": "Could not save the post, please try again",
   "publishing_options": "Publishing options",
   "n_publishing_options": "{count} publishing options",
-  "no_publishing_options": "This channel has no extra publishing options"
+  "no_publishing_options": "This channel has no extra publishing options",
+  "grid": "Grid",
+  "list": "List",
+  "image": "Image"
 }

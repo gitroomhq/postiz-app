@@ -498,6 +498,7 @@ global_settings
 go_back_to_login
 go_to_the_calendar_to_add_channels
 google
+grid
 guide_bluesky
 guide_bluesky_f_identifier
 guide_bluesky_f_password
@@ -576,6 +577,7 @@ hide_key
 hide_posts
 hour
 i_understand_continue
+image
 images
 import
 import_as_draft
@@ -628,6 +630,7 @@ launches
 link
 link_copied_to_clipboard
 links_will_be_removed_from
+list
 load_your_github_repository_from_settings_to_see_analytics
 loading
 locally
@@ -745,6 +748,7 @@ post_save_failed
 post_statistics
 posted
 posts
+preview
 preview_post
 previous
 privacy

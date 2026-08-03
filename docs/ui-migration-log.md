@@ -1355,3 +1355,28 @@ main ← pr1  #5  the visual migration + the harness
 
 Each stacks on the one above, so review top-down; a PR's own diff is only its own commits.
 `pr4`, `pr5`, `pr6` ride inside #8; `pr8`, `pr9` ride inside #9.
+
+### Media · the grid/list switch, and the one column it needed
+
+The design offers Media as a grid or a list. The grid was all we had, and the list needs something
+the grid never showed: a size. `getMedia`'s `select` returned id, name, originalName, path,
+thumbnail, alt and thumbnailTimestamp — no `fileSize`, though the column has existed on `Media` all
+along. One line added to the select; nothing else on the backend moved.
+
+`fileSize` defaults to `0`, so rows written before the column was populated have no size. The row
+shows nothing rather than "0 B" — a default is not a measurement.
+
+Per-file **dimensions** (`PNG · 1600×1600` in the design) remain undoable and this is the second time
+it is being written down: width and height are stored nowhere, and filling them in honestly would
+mean reading every image on every list request.
+
+Both layouts read one filtered list, so the type tabs cannot drift between them.
+
+**Verified by probe, not by looking:** the List button goes from `text-pqSoft` /
+`rgb(110,110,120)` to `bg-pqInner font-[600]` / `rgb(237,237,240)` with the raised shadow — the
+switch changes state, at 420 and 1440, both themes, no overflow. **The rows themselves have not been
+seen:** this database's media library is empty, `[data-media-row]` counts 0 at every width. That is a
+correct empty render, not a verified one, and it joins the channel detail and the posts panel in the
+bucket waiting on real data.
+
+`types 0 · api 148 · routes 28` unchanged. `i18n 1027 → 1031`: grid, list, image, preview.
