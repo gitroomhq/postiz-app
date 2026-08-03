@@ -65,7 +65,7 @@ export class PeerTubeProvider extends SocialAbstract implements SocialProvider {
         key: "username",
         label: "Username",
         defaultValue: "",
-        validation: `^[a-z0-9._]+$/`,   // regex applied from PeerTube official docs: https://docs.joinpeertube.org/api-rest-reference.html#tag/Session/operation/getOAuthToken 
+        validation: `/^[a-z0-9._]+$/`,   // regex applied from PeerTube official docs: https://docs.joinpeertube.org/api-rest-reference.html#tag/Session/operation/getOAuthToken 
         type: "text" as const,
         hint: "Username of your Peertube instance",
       },
