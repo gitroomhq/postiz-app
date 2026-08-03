@@ -28,19 +28,28 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 8 · Feature-gating audit | done — no gate has drifted |
 | 9 · Onboarding + tour | tour built and photographed; the existing onboarding modal is unchanged apart from Get Started now starting the tour |
 | E · Lifetime redemption | route added — it was missing entirely, see the finding below. Purchase flow still open |
+| D · Prices and tier rename | done in code and schema. Live rows move with `scripts/migrate-tiers.mjs`, **run by the owner after a deploy has pushed the schema** |
 | 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
 
-Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 607** (i18n moved
-585 → 607 once, in step 2, for the strings the design adds; every step since has left it alone).
+Five checks are green after every step: **types (frontend) 0 · types (backend) 0 · api 134 ·
+routes 27 · i18n 628**.
+
+`api` and `routes` have not moved once. `i18n` has moved three times, each in a step that was meant
+to add strings and each recorded where it happened: **585 → 607** (step 2, the shell), **607 → 613**
+(step 7a, tier labels), **613 → 628** (step 9, the tour). Nothing was ever removed.
+
+The backend type check was added late, when the migration stopped being frontend-only — the tier
+rename, the lifetime route and the provider categories all live in `libraries/` and `apps/backend`,
+and a guard that only compiled the frontend waved every one of them through.
 
 **Two surfaces cannot be verified on this install and were not marked verified:** the composer needs
 a connected channel, and every billing screen needs `billingEnabled`. `/billing` redirects to the
 login screen here — and has since before the migration, which is why three baselines filed the
 signup page under `billing-*.png` without anyone noticing.
 
-**Five decisions are waiting** in *Open questions* below. Each has a working position taken in the
-meantime, so nothing is blocked; all five are about money, stored data or product categories rather
-than pixels.
+**Two decisions are waiting** in *Open questions* below, plus three things raised since. Nothing is
+blocked on any of them: each has a position taken in the meantime, and the two originals are about
+wording and a price, not code.
 
 ---
 
@@ -247,65 +256,61 @@ exercised — and this migration's whole discipline is that unexercised is not v
 
 ## Open questions for the owner
 
-Written down rather than asked, at the owner's instruction, so work could continue overnight. Each
-has a decision taken in the meantime so nothing is blocked; none of them is hard to reverse.
+Written down rather than asked, at the owner's instruction, so work could continue overnight. Four of
+the original six are now closed by decisions the owner gave; the two still open are both about
+wording and money, not code.
 
-**1. Renaming the tiers is a data migration, not a restyle.** The design sells CREATOR / GROWTH /
-PRO / AGENCY at \$20 / \$33 / \$49 / \$99. This repo has STANDARD / TEAM / PRO / ULTIMATE at
-29 / 39 / 49 / 99 in `libraries/nestjs-libraries/.../subscriptions/pricing.ts`, and those names are
-**stored values**: `Subscription.subscriptionTier` in the database, the `user.tier` object every gate
-reads, and the identifiers Stripe's price objects map to. Renaming them in `pricing.ts` would leave
-every existing subscriber pointing at a tier that no longer exists — `pricing[user.tier]` returns
-`undefined` and every feature gate in the app fails open or closed at random.
+### Still open
 
-*Taken in the meantime:* the billing screens are restyled to the design and the **displayed** prices
-and plan names come from `pricing.ts` as they do today. No tier was renamed, no price changed. Doing
-it properly needs new Stripe price IDs, a `subscriptionTier` migration with a mapping table, and a
-decision about subscribers mid-period — which is the API work doc 06 §B says needs product sign-off,
-not something to do while you are asleep.
+**A. CREATOR yearly is \$132 — 6.6× the monthly, where every other tier is exactly 8×.** Doc 06 §B
+flags it as possibly a typo. The design's figure was taken as authoritative and is live in
+`pricing.ts`; if it was a typo the fix is one number. Nothing else depends on it.
 
-**2. CREATOR yearly is \$132 — 6.6× the monthly, where every other tier is exactly 8×.** Doc 06 §B
-already flags this as possibly a typo. Unresolved; nothing depends on it until prices actually move.
+**B. Trial copy the backend cannot honour.** The design writes "4 months free" where the repo's
+string is `billing_20_percent_off`. The discount is a Stripe coupon, so the copy has to match
+whatever the coupon actually is or customers are told something untrue. *Taken in the meantime:* the
+trial and discount surfaces are restyled, the strings stay the repo's.
 
-**3. The lifetime *purchase* flow does not exist — and neither did the redemption route.** The
-design's \$49 one-time offer, its 24-hour countdown and its "37 of 200 left" seat counter are
-invented (doc 06 §B). ~~What this repo has is a **code redemption**: `POST /billing/lifetime`~~ —
-this, which doc 06 §B and my own earlier entries both asserted, was **wrong**. See *The lifetime
-route the frontend has always called did not exist* below. **Resolved and closed.**
+### Raised since, and waiting on you
 
-*Decided:* every real `isLifetime` behaviour is kept and restyled — the hidden Billing entry, the
-hidden rail Upgrade, the `{Tier} tier` line, the redirect away from `/billing` — and the redemption
-UI wears the design's founding-member surface. The countdown and the seat counter are **not** built:
-a timer counting down to nothing is a lie in the UI, not a visual detail. The owner confirmed both
-halves of this — *"satın alma evet, sayaç hayır"*.
+**C. `apps/commands` cannot boot, and predates this branch.** `agent.run.ts` calls
+`AgentGraphService.createGraph`, which no longer exists, so the app fails to build; and
+`CommandModule` imports no Temporal module, so `DatabaseModule`'s `NotificationService` cannot be
+injected. Nothing here touched it. It matters because a one-off job like the tier migration belongs
+there; `scripts/migrate-tiers.mjs` exists instead and says so.
 
-**4. Trial copy that the backend cannot honour.** The design writes "4 months free" where the repo's
-string is `billing_20_percent_off`. The discount is a Stripe coupon; the copy has to match whatever
-the coupon actually is or customers are told something untrue.
+**D. The agent's greeting still says "from the left menu" / "from the right menu".** True on desktop,
+no longer true on a phone, where both are drawers now. It is the agent's own copy and rewriting copy
+during a restyle is the thing this migration has refused to do everywhere else.
 
-*Taken in the meantime:* the trial and discount surfaces are restyled, the strings stay the repo's.
+**E. The design's modal → inline connect pane is declined, not deferred.** It needs a channels page
+this repo does not have — channels are a column on the calendar. Reasoning in full below.
 
-**6. `text-white` on neutral surfaces — a latent light-theme bug with no safe blind fix.** Three of
-these were found and fixed in the composer, where a label sat white on `--inner` and was invisible
-in the light theme. A sweep finds **43 more** candidates. Most are legitimate — the logo crown on its
-purple tile, tag chips, the creation-method badge, anything inside `mix-blend-difference`, the public
-preview page which brings its own dark background. The rest cannot be judged without knowing what
-each one sits on, and several are on surfaces this install cannot render.
+### Closed
 
-*Taken in the meantime:* nothing. Fixing these by pattern-matching is how you turn a latent bug into
-a visible one somewhere else. The right method is to render each surface in the light theme and
-check contrast — cheap once there is seed data and billing is on, and speculative before that.
+**1. Renaming the tiers is a data migration, not a restyle.** *Decided: full rename, and the design's
+prices.* Done in three parts. The schema gained CREATOR / GROWTH / AGENCY beside the old values;
+`pricing.ts` carries the design's \$20 / \$33 / \$49 / \$99 with the old tiers marked `retired`;
+and the code was finished off — a team-member gate that had silently stopped applying, a `?plan=`
+list that was dropping the new tiers, and three places still naming ULTIMATE. Live rows are moved by
+`scripts/migrate-tiers.mjs`, which the owner runs. **The old enum values are permanent** — `db push`
+cannot drop one without taking the column with it, and `retired: true` already stops them being sold.
 
-**5. Grouping the provider grid needs a mapping this repo does not have.** The design sorts Add
-Channel into Social / Chat & communities / Video & streaming / Business & portfolio / Blogs &
-newsletters. The grid is built at runtime from `/integrations/list` — correctly, per doc 06 §D3 —
-and nothing in the repo says which category a provider belongs to. Authoring that map by hand means
-that the day a provider is added and nobody updates the map, it silently disappears from the only
-screen that can connect it.
+**2. The lifetime purchase flow does not exist — and neither did the redemption route.** *Decided:
+build the purchase, not the scarcity counter.* The redemption half turned out to be the real story:
+`POST /billing/lifetime` was a 404 the UI mistranslated into "invalid code". Route added. The
+purchase half is blocked on Stripe keys. The countdown and the "37 of 200 left" counter are **not**
+built and will not be: a timer counting down to nothing is a lie in the UI, not a visual detail.
 
-*Taken in the meantime:* the grid stays one list, restyled, with every provider visible. The
-grouping is a twenty-minute change once someone confirms the categories — it is the *maintenance*
-risk that made it wrong to guess at.
+**3. Grouping the provider grid needs a mapping this repo does not have.** *Closed by building the
+mapping in the right place.* The category lives on the provider class, not in a hand-kept list, so a
+provider added without one lands in **Other** rather than vanishing. Verified by counting, not by
+looking: `--count [data-provider]` reports **34**, exactly what `GET /integrations` serves.
+
+**4. `text-white` on neutral surfaces.** *Closed by auditing all 95, not by pattern-matching.* Six
+were genuinely broken in the light theme and are fixed; 88 are correct as they are. The one that
+mattered most was written during this migration — the tour's Next button at 1.36:1 — and it was
+invisible until the screenshot tool was taught to report `color`.
 
 ---
 
@@ -862,6 +867,74 @@ pointed at `--line`. 63 replacements, and the label/description hierarchy reads 
 themes for the first time.
 
 **Checks:** types 0 · api 134 · i18n 607 · routes 27 — unchanged.
+
+### Finishing the tier rename — a gate that had silently stopped applying
+
+Step 7a renamed the tiers in the schema and in `pricing.ts` and stopped there. The half left behind
+had three consequences, and **none of them tripped the guard**, because `ui-migration-check.sh` only
+ever compiled the frontend. It compiles the backend too now
+(`apps/backend/tsconfig.build.json` — the config the backend actually builds with; its
+`tsconfig.json` is stricter and reports seven pre-existing errors in files nothing here touches).
+
+**A feature gate lapsed.** `organization.repository.ts` blocked adding a team member when the org was
+on `STANDARD`. STANDARD is retired, so a **CREATOR** org — the entry plan that replaced it — walked
+straight through a gate written to stop exactly that, and could invite team members it does not pay
+for. It reads `pricing`'s `team_members` flag now rather than naming a plan, so the next tier change
+cannot reopen it. The guard on a subscription row *existing* is deliberate: that is what naming
+STANDARD did, and it is the only reason a FREE org is not newly caught.
+
+**`?plan=creator` was being dropped.** `utm.saver.tsx` kept a hardcoded list of the four old tiers, so
+a visitor arriving from the marketing site having chosen one of the three new plans lost that choice
+without a trace. Derived from `pricing` now, retired tiers excluded — a link offering a plan that is
+not for sale should not work.
+
+**Three places still named ULTIMATE.** Two are read-time fallbacks for a self-hosted install with no
+Stripe keys (`organization.service.ts`, `users.controller.ts`); one actually writes it
+(`organization.repository.ts`, the seeded lifetime org). All three are AGENCY now — both are 100
+channels, so nothing changes except that the plan named is one that can still be bought.
+
+The stale unions (`user.context`, `public.controller`, two Stripe webhook metadata casts, six in
+`main.billing.component`) now come from two exported types in `pricing.ts`: `PaidTier`, what a
+subscription row can hold, retired included; and `AnyTier`, that plus FREE.
+
+### Moving the live rows — and why it is a script
+
+`scripts/migrate-tiers.mjs`. STANDARD → CREATOR, TEAM → GROWTH, ULTIMATE → AGENCY; PRO kept its name.
+
+**Not a Prisma migration**, because the owner confirmed the deploy path is
+`prisma db push --accept-data-loss`. Nothing in `migrations/` ever runs, so a migration file would
+look right, be committed, and silently never execute. This also **cancels phase 3** of the plan: an
+enum value cannot be dropped without recreating the type, which under `--accept-data-loss` takes
+`Subscription.subscriptionTier` with it. The retired values are permanent, and the schema comment
+says so instead of implying somebody will get round to it.
+
+**Not a `nestjs-command` task either**, which is where one-off jobs belong here — because that app
+cannot boot. Two independent reasons, both older than this branch: `agent.run.ts` calls
+`AgentGraphService.createGraph`, which no longer exists, so it fails to build; and `CommandModule`
+imports no Temporal module, so `DatabaseModule`'s `NotificationService` cannot be injected. A fix for
+the second was written and then reverted — repairing an unrelated broken app is not this migration's
+scope, and shipping an unverified fix to it would be worse than leaving it.
+
+**Rehearsed against the dev database inside a transaction that was rolled back:**
+
+```
+seeded:  { STANDARD: 1, TEAM: 1 }
+  moved 1 × STANDARD -> PRO
+after:   { TEAM: 1, PRO: 1 }
+rolled back. subscriptions now: 0, probe orgs left: 0
+```
+
+The rehearsal moves STANDARD → PRO rather than the real pairs because of what it turned up: **the
+expand step edited `schema.prisma` but no database has had it applied.** Postgres still rejects the
+new values outright —
+
+```
+invalid input value for enum "SubscriptionTier": "CREATOR"
+```
+
+— which is an ordering constraint rather than a defect: `pm2-run` runs `prisma-apply` before starting
+anything, so a normal deploy adds the values first. The script documents it as a prerequisite. Run it
+**after** a deploy, never before.
 
 ### Step 9 · The product tour — done
 
