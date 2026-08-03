@@ -225,8 +225,12 @@ conn_group_automation
 conn_group_chat
 conn_group_coding
 conn_group_developer
+conn_hermes_example
 conn_hermes_intro
+conn_hermes_note
 conn_hermes_short
+conn_hermes_try
+conn_hermes_try_detail
 conn_make_intro
 conn_make_short
 conn_make_step_auth_detail
@@ -250,10 +254,13 @@ conn_oauth_step_create
 conn_oauth_step_create_detail
 conn_oauth_step_token
 conn_oauth_step_token_detail
+conn_openclaw_example
 conn_openclaw_intro
 conn_openclaw_link
 conn_openclaw_note
 conn_openclaw_short
+conn_openclaw_try
+conn_openclaw_try_detail
 conn_openclaw_verify
 conn_sdk_intro
 conn_sdk_name

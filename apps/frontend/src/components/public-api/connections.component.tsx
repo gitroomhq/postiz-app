@@ -191,22 +191,25 @@ export const ConnectionsComponent: FC = () => {
           },
           {
             id: 'openclaw', name: 'OpenClaw', glyph: 'OC', tint: '#ef5b25', kind: 'SKILL',
-            short: t('conn_openclaw_short', 'Give your OpenClaw agent social publishing.'),
-            intro: t('conn_openclaw_intro', 'OpenClaw reads the Agent Skills package rather than MCP. Install it once and every PostQueen command becomes available to the agent.'),
-            note: t('conn_openclaw_note', 'OpenClaw also bridges WhatsApp, Slack, Discord and other chat apps — see "Chat with your agent" below.'),
+            short: t('conn_openclaw_short', 'A personal agent that can post for you — from your terminal or your phone.'),
+            intro: t('conn_openclaw_intro', 'OpenClaw is an open-source agent you run yourself. It reads the Agent Skills package rather than MCP, which means it loads PostQueen\'s commands on demand instead of carrying a whole tool schema in every prompt — cheaper, and it leaves room for the rest of your context.'),
+            note: t('conn_openclaw_note', 'The same install also powers the chat bridge below: once OpenClaw has this skill, anything that can reach your agent can publish through it. Keep a human in the loop before anything goes out.'),
             link: { label: t('conn_openclaw_link', 'OpenClaw documentation'), href: 'https://docs.openclaw.ai/' },
             steps: [
               ...skillInstall,
-              { title: t('conn_step_verify', 'Check it worked'), detail: t('conn_openclaw_verify', 'Ask the agent to list your social accounts.') },
+              { title: t('conn_step_verify', 'Check it worked'), detail: t('conn_openclaw_verify', 'Ask the agent to list your social accounts. It should name every channel you have connected.') },
+              { title: t('conn_openclaw_try', 'Then try a real one'), detail: t('conn_openclaw_try_detail', 'In your own words — it works out the channels, the media and the timing.'), code: t('conn_openclaw_example', 'Post the blog cover to LinkedIn and X tomorrow at 9am, and draft a thread for Bluesky') },
             ],
           },
           {
             id: 'hermes', name: 'Hermes', glyph: 'H', tint: '#3b82f6', kind: 'SKILL',
             short: t('conn_hermes_short', 'Register PostQueen as a Hermes tool provider.'),
-            intro: t('conn_hermes_intro', 'Hermes is an open-source agent framework. It picks PostQueen up through the same Agent Skills package the other CLI agents use.'),
+            intro: t('conn_hermes_intro', 'Hermes is Nous Research\'s open-source agent framework. It picks PostQueen up through the same Agent Skills package the other CLI agents use, so one install covers every agent on the machine.'),
+            note: t('conn_hermes_note', 'Hermes can run tools on a schedule from its own config, which is a neat fit for recurring publishing — a weekly digest, say. Whatever you automate, keep a human in the loop before it publishes.'),
             steps: [
               ...skillInstall,
               { title: t('conn_step_verify', 'Check it worked'), code: 'hermes tools list' },
+              { title: t('conn_hermes_try', 'Then try a real one'), detail: t('conn_hermes_try_detail', 'Hermes discovers your channels first, then schedules.'), code: t('conn_hermes_example', 'Schedule my latest post to every connected channel for Monday morning') },
             ],
           },
           {
