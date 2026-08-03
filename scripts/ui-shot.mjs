@@ -56,6 +56,9 @@ const host = process.env.PQ_HOST || 'localhost';
 // this. Selectors are applied in order, each followed by a settle.
 const clicks = String(arg('click', '')).split('|').filter(Boolean);
 const probe = arg('probe', '');
+// --count <selector>: how many match. "Did the regrouping drop a provider?" is
+// a counting question, and counting tiles in a screenshot is how you miss one.
+const count = arg('count', '');
 // --tab N presses Tab N times before probing. Real key events, not el.focus(),
 // because `:focus-visible` — the thing that decides whether a focus ring is
 // drawn at all — only matches keyboard-initiated focus. Doc 06 §E asks for the
@@ -304,6 +307,16 @@ try {
           returnByValue: true,
         });
         console.log(`  probe ${probe}: ${p.value}`);
+      }
+
+      if (count) {
+        const { result: c } = await cdp.send('Runtime.evaluate', {
+          expression: `document.querySelectorAll(${JSON.stringify(
+            count
+          )}).length`,
+          returnByValue: true,
+        });
+        console.log(`  count ${count}: ${c.value}`);
       }
 
       const shot = await cdp.send('Page.captureScreenshot', {

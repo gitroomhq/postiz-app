@@ -715,7 +715,7 @@ export const AddProviderComponent: FC<{
   }, [social, props.invite, t]);
 
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
+    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
       <div className="flex flex-col">
         {groups.map((group) => (
         <div key={group.key} className="flex flex-col">
@@ -736,6 +736,7 @@ export const AddProviderComponent: FC<{
             .map((item) => (
               <div
                 key={item.identifier}
+                data-provider={item.identifier}
                 onClick={getSocialLink(
                   props.invite,
                   item.identifier,
