@@ -1380,3 +1380,61 @@ correct empty render, not a verified one, and it joins the channel detail and th
 bucket waiting on real data.
 
 `types 0 · api 148 · routes 28` unchanged. `i18n 1027 → 1031`: grid, list, image, preview.
+
+### The locked states need real keys after all — measured, not assumed
+
+The plan for this step said the gates were blocked on *account state*, not on Stripe, and that
+placeholder keys would be enough because "drawing a gate makes no Stripe network call". The first
+half was right. The second half was wrong, and the experiment is worth recording so nobody runs it
+again.
+
+**What was right.** `users.controller.ts:99–108` never reads the tier from the database when billing
+is off:
+
+```ts
+totalChannels: !isBillingEnabled() ? 10000 : …
+tier: organization?.subscription?.subscriptionTier || (!isBillingEnabled() ? 'AGENCY' : 'FREE')
+```
+
+`isBillingEnabled()` is *both Stripe keys being non-empty* (`billing.enabled.ts:17`), and neither is
+set here. So every account on this install reports AGENCY with 10000 channels — **seeding a FREE user
+would have changed nothing.** Good thing to have measured before writing the seed script.
+
+Starting the API and the frontend with two placeholder values flipped it immediately:
+
+```
+before   tier: AGENCY  totalChannels: 10000  isTrailing: false
+after    tier: FREE    totalChannels: 0      isTrailing: true
+```
+
+`isTrailing: true` is real data — this organization is mid-trial in the database and the flag was
+being suppressed, not absent.
+
+**What was wrong.** The app never finished loading. The backend log:
+
+```
+StripeAuthenticationError: Invalid API Key provided: sk_test_****************tion   (×10)
+```
+
+The shell's billing lookup (`GET /billing/`) calls Stripe during page load. A key Stripe will not
+authenticate 401s there, the request never resolves, and every screen sits on its loading skeleton
+forever. So the locked states cannot be photographed with a fake key — they need keys Stripe accepts,
+which is exactly the test keys the owner is providing.
+
+**Conclusion:** the gate work moves to the same bucket as the rest of billing — written now,
+verified when the keys arrive. Nothing was left switched on: the placeholders were passed on the
+process command line rather than written to `.env`, so restoring meant restarting the two servers,
+and `/user/self` reports `AGENCY / 10000 / isTrailing false` again.
+
+**Two things I broke and fixed on the way, recorded because they cost more than the experiment did.**
+
+Running `nest start` from the repository root instead of `apps/backend` picks up the wrong tsconfig:
+5950 errors, and it wrote **1484 compiled `.js`/`.js.map` files into the source tree** before failing.
+One of them was `apps/frontend/src/proxy.js`, sitting beside `proxy.ts` — Next.js reported
+*"Duplicate page detected"* and served the stale copy, which is why every screenshot redirected to
+`/auth` for a while and sent me looking at cookies. `git clean` on `*.js`/`*.js.map` removed all 1484;
+the tree is clean and every one of them was mine, not the repo's.
+
+I also edited `ui-shot.mjs` to scope cookies by URL instead of by domain, on a theory about
+`localhost` cookies. It did not fix the redirect — the stale `proxy.js` had — so it is reverted. An
+unproven change to the tool that verifies everything else is worse than no change.
