@@ -32,17 +32,16 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
 
 Five checks are green after every step: **types (frontend) 0 · types (backend) 0 · api 134 ·
-routes 27 · i18n 628**.
+routes 27 · i18n 629**.
 
-`api` and `routes` have not moved once. `i18n` has moved three times, each in a step that was meant
-to add strings and each recorded where it happened: **585 → 607** (step 2, the shell), **607 → 613**
-(step 7a, tier labels), **613 → 628** (step 9, the tour). Nothing was ever removed.
+`api` and `routes` have not moved once. `i18n` has moved four times, each in a step that was meant to
+add strings and each recorded where it happened: **585 → 607** (step 2, the shell), **607 → 613**
+(step 7a, tier labels), **613 → 628** (step 9, the tour), **628 → 629** (the agent drawers). Nothing
+was ever removed.
 
 The backend type check was added late, when the migration stopped being frontend-only — the tier
 rename, the lifetime route and the provider categories all live in `libraries/` and `apps/backend`,
 and a guard that only compiled the frontend waved every one of them through.
-Four checks are green after every step: **types 0 · api 134 · routes 27 · i18n 629** (i18n moved
-585 → 607 once, in step 2, for the strings the design adds; every step since has left it alone).
 
 **Two surfaces cannot be verified on this install and were not marked verified:** the composer needs
 a connected channel — precisely, `launches.component.tsx:522` renders `<NewPost />` only behind
@@ -985,6 +984,7 @@ invalid input value for enum "SubscriptionTier": "CREATOR"
 — which is an ordering constraint rather than a defect: `pm2-run` runs `prisma-apply` before starting
 anything, so a normal deploy adds the values first. The script documents it as a prerequisite. Run it
 **after** a deploy, never before.
+
 ### Regression sweep after the tour, the colour fixes and the agent drawers
 
 7 screens × 420 / 900 / 1440 × both themes — 42 shots — **zero horizontal overflow**, no redirects,
