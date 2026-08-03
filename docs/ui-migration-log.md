@@ -1438,3 +1438,48 @@ the tree is clean and every one of them was mine, not the repo's.
 I also edited `ui-shot.mjs` to scope cookies by URL instead of by domain, on a theory about
 `localhost` cookies. It did not fix the redirect — the stale `proxy.js` had — so it is reverted. An
 unproven change to the tool that verifies everything else is worse than no change.
+
+### The X trial lock — built on both sides, and honest about what was tested
+
+The design locks X while an organization is trialing: three perks, *"End free trial to unlock X"*,
+and a dated line *"X unlocks on 7 Aug 2026"*. **The repo had no such rule.** Its only real trial gate
+is `media.service.ts:86` — `!video.trial && org.isTrailing` — for video generators. So this was the
+design implying behaviour, it was raised, and the owner chose to make it real, backend included.
+
+**Generic, per CLAUDE.md.** `trialLocked` is a field on the provider
+(`social.integrations.interface.ts`), `true` on `x.provider.ts`, and
+`IntegrationService.assertConnectAllowed()` reads it. A second locked provider is one field on that
+provider and no change anywhere else — the same reasoning that put `category` there. Nothing in
+generic code names X.
+
+**Both doors, because they are different doors.** `GET /integrations/social/:integration` turns a
+locked provider away before the consent screen, so the reason is visible early;
+`POST /integrations/social-connect/:integration` checks again because it is the one that actually
+creates the channel, and a state issued before the trial began must not still buy a connection.
+
+**Three deliberate escapes:** billing off (self-hosted, every gate open); an organization that is not
+trialing; and `refresh`, which is an existing channel reconnecting. A connected X channel is never
+cut off — the lock stops *new* connections only. Silencing a channel someone already publishes
+through would punish the wrong person.
+
+**The dated line is not built.** `Organization` has `isTrailing` and `allowTrial`, both booleans, and
+**no trial end date** — the date in the design comes from a Stripe subscription's `trial_end`. The
+copy says the same thing without naming a day it cannot know: *"Or wait — X unlocks by itself when
+your free trial ends."*
+
+**What was actually verified, and what was not.**
+
+- ✅ Billing off: `GET /integrations/social/x` returns the pre-existing `{"err":true}` (X credentials
+  are not configured here) — **not** the lock message. The gate correctly stays out of the way.
+- ✅ Types clean on both apps.
+- ❌ **The locked path itself is unexercised.** With billing on, this organization is FREE with a
+  zero channel allowance, so the pre-existing `@CheckPolicies([Create, CHANNEL])` guard answers
+  `402 "You have reached the maximum number of channels"` for **every** provider before the handler
+  runs. The lock only becomes reachable for an organization that has channel allowance *and* is
+  trialing — a paid plan mid-trial, which needs a real Stripe subscription.
+
+That last point is worth keeping: the design's scenario is a *paid* trial, and the state this install
+can reach is a *free* one. The rule is written and typed; it has not yet refused anything.
+
+`types 0 · api 148 · routes 28` unchanged. `i18n 1031 → 1036`: the three perks, the CTA and the
+undated footnote.

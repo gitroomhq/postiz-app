@@ -251,6 +251,36 @@ export class IntegrationService {
     }
   }
 
+  /**
+   * Providers a trialing organization cannot connect yet.
+   *
+   * Reads `trialLocked` off the provider rather than testing an identifier, so
+   * a second provider joining the rule is one field on that provider and no
+   * change here — the same reason `category` lives there.
+   *
+   * Three ways out, all deliberate: billing off means self-hosted, where every
+   * gate is open; an organization that is not trialing was never locked; and a
+   * refresh is an *existing* channel reconnecting, which must keep working —
+   * cutting off a channel someone already publishes through would punish the
+   * wrong person.
+   */
+  assertConnectAllowed(
+    provider: { trialLocked?: boolean; name: string },
+    org: { isTrailing?: boolean },
+    refresh?: string
+  ) {
+    if (!isBillingEnabled() || !provider.trialLocked) {
+      return;
+    }
+    if (!org?.isTrailing || refresh) {
+      return;
+    }
+
+    throw new Error(
+      `${provider.name} unlocks when your free trial ends. End the trial to connect it now.`
+    );
+  }
+
   async disableChannel(org: string, id: string) {
     return this._integrationRepository.disableChannel(org, id);
   }

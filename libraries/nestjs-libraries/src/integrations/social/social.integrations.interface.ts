@@ -181,6 +181,19 @@ export interface SocialProvider
     | 'video'
     | 'business'
     | 'publishing';
+  /**
+   * Whether connecting this provider is held back until the trial ends.
+   *
+   * It sits on the provider for the same reason `category` does: the check that
+   * uses it is generic, and a list of locked identifiers kept somewhere else is
+   * a list that goes stale. A provider that says nothing is not locked.
+   *
+   * Only ever applied when billing is on and the organization is actually
+   * trialing, and only to *new* connections — an already connected channel
+   * keeps working, because silencing a channel someone is publishing through is
+   * a worse outcome than letting one trial account keep it.
+   */
+  trialLocked?: boolean;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];

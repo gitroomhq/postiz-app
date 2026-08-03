@@ -950,5 +950,10 @@
   "no_publishing_options": "This channel has no extra publishing options",
   "grid": "Grid",
   "list": "List",
-  "image": "Image"
+  "image": "Image",
+  "x_lock_perk_publish": "Publish and thread straight to {{name}}",
+  "x_lock_perk_plugs": "Auto-plugs and reply automations",
+  "x_lock_perk_analytics": "Analytics — impressions, engagement, follows",
+  "end_trial_to_unlock": "End free trial to unlock {{name}}",
+  "or_wait_until_trial_ends": "Or wait — {{name}} unlocks by itself when your free trial ends."
 }

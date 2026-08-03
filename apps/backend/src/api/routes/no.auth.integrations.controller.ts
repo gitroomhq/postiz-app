@@ -89,6 +89,15 @@ export class NoAuthIntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    // The route above turns a locked provider away before the consent screen;
+    // this is the one that actually creates the channel, so it checks too. A
+    // state issued before the trial started must not still buy a connection.
+    this._integrationService.assertConnectAllowed(
+      integrationProvider,
+      org,
+      refresh || undefined
+    );
+
     const onboarding = await ioRedis.get(`onboarding:${body.state}`);
     if (onboarding) {
       await ioRedis.del(`onboarding:${body.state}`);

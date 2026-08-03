@@ -447,6 +447,7 @@ editor
 email_address
 email_notifications
 enable_channel
+end_trial_to_unlock
 enter_details
 enter_email
 error
@@ -704,6 +705,7 @@ onboarding
 open_claim_page
 open_wizard
 or
+or_wait_until_trial_ends
 organizations
 original_date
 original_link
@@ -1003,6 +1005,9 @@ would_you_mind_shortly_tell_us_what_we_could_have_done_better
 write_anything
 write_something
 write_your_post_placeholder
+x_lock_perk_analytics
+x_lock_perk_plugs
+x_lock_perk_publish
 yearly
 yes
 yes_cancel_subscription

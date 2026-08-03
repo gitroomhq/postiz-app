@@ -34,6 +34,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   category = 'social' as const;
   name = 'X';
+  trialLocked = true;
   isBetweenSteps = false;
   scopes = [] as string[];
   stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
