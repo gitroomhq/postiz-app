@@ -407,10 +407,11 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
         defaultValue: 'AI auto-complete',
       });
       list.push({ key: 'billing_ai_copilots', defaultValue: 'AI copilots' });
-      list.push({
-        key: 'billing_ai_autocomplete',
-        defaultValue: 'AI Autocomplete',
-      });
+      // `billing_ai_autocomplete` — "AI Autocomplete" — used to be pushed here,
+      // one line below "AI auto-complete". The same feature spelled twice, on
+      // the checkout screen, in every plan. Its twin in main.billing.component
+      // was removed with it; the key stays in the catalogues, unused, because
+      // deleting a translation key is not this migration's business.
     }
     list.push({
       key: 'billing_advanced_picture_editor',

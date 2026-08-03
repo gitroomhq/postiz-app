@@ -1712,3 +1712,41 @@ content decision, not a defect, and it is written down rather than done quietly.
 
 **Checks:** `types 0 · api 148 · i18n 1047 · routes 28 · gates 12` — every one unchanged. No new
 route (a tab is not a route), and `connections` was already a translation key.
+
+### The keys arrived, and the screen nobody could see turned out to work
+
+The owner put real Stripe **test** keys in `.env`. Restarted both servers and measured rather than
+assumed:
+
+```
+/user/self                  tier FREE · totalChannels 0 · isTrailing true   (gates live)
+/user/subscription/tiers    200 {}                                          (no 401, no logout)
+StripeAuthenticationError   0 in the whole boot log
+```
+
+`{}` from tiers is correct, not a failure: `getPackages()` looks up `standard_monthly`,
+`standard_yearly`, `pro_monthly`, `pro_yearly`, and a fresh test account has no such prices. The
+point is it **authenticated** — the 401 that used to sign people out is gone for the right reason
+now, not just because the call was skipped.
+
+**The checkout paywall renders end to end.** Real Stripe Elements mount (card, expiry, CVC, the
+Stripe badge), the trial line computes a genuine date — *"Your 7-day trial is 100% free ending
+August 11, 2026"* — and the plan cards come out **Creator $20 · Growth $33 · Pro $49 · Agency $99**,
+so the `pricing.ts` reorder holds on this screen too. This is doc 03's `not_started` state, and it
+has been unreachable for the entire migration.
+
+**Two things it showed that nothing else could.**
+
+**1 · The duplicate feature was in two places, not one.** I removed `AI Autocomplete` from
+`main.billing.component.tsx` and thought that was it. `first.billing.component.tsx` has its **own**
+`BillingFeatures` list with the same pair — `billing_ai_auto_complete` and `billing_ai_autocomplete`,
+one line apart — and it is the checkout screen, so every prospective customer read it twice. Removed.
+The translation key stays in the catalogues, unused; deleting keys is not this migration's business.
+
+**2 · The paywall overflows horizontally at 420** — `+9px` light, `+7px` dark. **This is the first
+horizontal overflow this migration has found**, after dozens of clean sweeps, and it is on the screen
+a new customer sees before anything else. It could not have been caught earlier: the page only exists
+for a FREE tier, which needed billing switched on, which needed these keys. Not fixed in this pass —
+recorded with its measurements so the fix starts from a number rather than a guess.
+
+**Checks:** `types 0 · api 148 · i18n 1047 · routes 28 · gates 12`, all unchanged.
