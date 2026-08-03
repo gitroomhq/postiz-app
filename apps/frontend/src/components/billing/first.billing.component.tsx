@@ -51,7 +51,9 @@ export const FirstBillingComponent = () => {
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
-  const [tier, setTier] = useState('STANDARD');
+  // The entry tier. STANDARD is retired and no longer listed, so defaulting to
+  // it would open the paywall with nothing selected.
+  const [tier, setTier] = useState('CREATOR');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
   const modals = useModals();
@@ -68,7 +70,13 @@ export const FirstBillingComponent = () => {
   // the server render stays deterministic.
   useEffect(() => {
     const selectedPlan = localStorage.getItem('selectedPlan');
-    if (selectedPlan && pricing[selectedPlan]) {
+    // A plan stashed by the marketing site before registration. Ignore it if it
+    // names a tier that is no longer for sale.
+    if (
+      selectedPlan &&
+      pricing[selectedPlan] &&
+      !pricing[selectedPlan].retired
+    ) {
       setTier(selectedPlan);
     }
 
@@ -122,7 +130,10 @@ export const FirstBillingComponent = () => {
   );
 
   const price = useMemo(
-    () => Object.entries(pricing).filter(([key, value]) => key !== 'FREE'),
+    () =>
+      Object.entries(pricing).filter(
+        ([key, value]) => key !== 'FREE' && !value.retired
+      ),
     []
   );
 

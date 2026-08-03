@@ -908,10 +908,19 @@ enum State {
 }
 
 enum SubscriptionTier {
+  // Retired for new signups, kept because live subscriptions still hold them.
+  // Postgres can add enum values safely; removing one requires recreating the
+  // type, and the default deploy path is `prisma db push --accept-data-loss`
+  // (package.json), which would take the column with it. So these stay until
+  // somebody deliberately migrates the rows behind a real migration file.
   STANDARD
-  PRO
   TEAM
   ULTIMATE
+  // Current.
+  CREATOR
+  GROWTH
+  PRO
+  AGENCY
 }
 
 enum Period {

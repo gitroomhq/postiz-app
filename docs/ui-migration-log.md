@@ -177,6 +177,61 @@ Gaps in the design itself, to be filled rather than copied:
 
 ---
 
+### Step 7a · Prices and tiers — expand only
+
+The owner chose the design's tier names and prices. Looking at the two tables side by side changed
+how it had to be done: **the capability sets are identical, pair for pair.** STANDARD and CREATOR
+are both 5 channels / 20 images / 3 videos / 2 webhooks / no team; TEAM and GROWTH match; ULTIMATE
+and AGENCY match. Nothing about what a customer *gets* moves. Only the price does.
+
+So this is not a rename, it is a new price list. Done as **expand only**:
+
+- `CREATOR / GROWTH / PRO / AGENCY` added with the design's prices — 20 / 33 / 49 / 99.
+- `STANDARD / TEAM / ULTIMATE` **kept, at their existing prices**, marked `retired: true`.
+- The enum grew; nothing was removed.
+
+The obvious-looking alternative — aliasing STANDARD to CREATOR — would have shown an existing
+subscriber "CREATOR · \$20" while Stripe charged them the \$29 their subscription actually holds.
+Stripe never reprices a live subscription retroactively. Keeping the old entry at the old number
+means an existing customer sees what their invoice says, and only new subscriptions use the new
+list.
+
+`retired` is a flag on the pricing entry rather than a deletion because two different things read
+this table: screens that **offer plans** must skip retired tiers, screens that **look up a
+subscriber's tier** must not. Three places offer plans (`first.billing.component.tsx`,
+`main.billing.component.tsx`, `impersonate.tsx`) — the first two now filter; the impersonation tool
+deliberately still lists everything, since an admin may need to put someone on a legacy tier.
+
+That reframing also means the enum's **contract phase may never be needed**. Retiring a tier for new
+signups costs nothing. Dropping the value costs a data migration against live subscriptions, on a
+deploy path that defaults to `prisma db push --accept-data-loss`.
+
+**Writes still use the old values.** `organization.repository.ts:30` and `organization.service.ts:105`
+give Stripe-less self-hosted installs `ULTIMATE`, and they still do. Reads understand both names
+already; switching the write is the second phase, after the new code is known-good in production —
+otherwise a rollback meets a database row its code has never heard of.
+
+**Three numbers worth a second look, all recorded in the code where they live:**
+
+- **CREATOR yearly is \$132**, 6.6× the monthly where the other three are exactly 8×. Doc 06 §B
+  flags it as possibly a typo; taken from the design as instructed.
+- **AGENCY keeps 100 channels, not "unlimited."** Doc 06 §B calls unlimited a new product decision,
+  and a channel is recurring API load rather than a label. One number, whenever somebody owns it.
+- **PRO's yearly moves 470 → 396.** PRO is the one tier that keeps its name, so unlike the other
+  three there is nowhere to park the legacy price: an existing yearly PRO subscriber will see 396
+  while Stripe keeps charging 470 until they change plan. It is the single place in this change
+  where a displayed number can differ from an invoice.
+
+**A bug caught on the way:** the paywall defaulted to `useState('STANDARD')`. With STANDARD retired
+and filtered out of the plan list, it would have opened with a selection that was not on screen —
+and the same for a plan stashed in `localStorage` by the marketing site. Both now fall back to
+CREATOR. The lifetime code's "one tier up" ladder was also a two-branch conditional that only knew
+STANDARD and PRO; it is now an explicit ladder that places a legacy subscriber on the equivalent
+rung.
+
+**Checks:** types 0 · api 134 · i18n 613 · routes 27. The local `Subscription` table is empty, so
+there was nothing here to migrate — the phasing is for production, not for this machine.
+
 ## The local backend runs from an image, not from source
 
 Worth knowing before anyone plans backend work here: the `postqueen` container mounts only

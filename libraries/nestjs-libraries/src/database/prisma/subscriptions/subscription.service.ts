@@ -61,7 +61,7 @@ export class SubscriptionService {
   async modifySubscriptionByOrg(
     organizationId: string,
     totalChannels: number,
-    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'
+    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE' | 'CREATOR' | 'GROWTH' | 'AGENCY'
   ) {
     if (!organizationId) {
       return false;
@@ -110,7 +110,7 @@ export class SubscriptionService {
   async modifySubscription(
     customerId: string,
     totalChannels: number,
-    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE'
+    billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE' | 'CREATOR' | 'GROWTH' | 'AGENCY'
   ) {
     if (!customerId) {
       return false;

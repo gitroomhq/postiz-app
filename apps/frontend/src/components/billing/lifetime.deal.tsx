@@ -41,11 +41,21 @@ export const LifetimeDeal = () => {
     }
     setCode('');
   }, [code]);
+  // A lifetime code stacks the org one tier up. The ladder has to name the
+  // tiers on sale today and still understand a legacy subscriber, who sits at
+  // the equivalent rung: STANDARD ~ CREATOR, TEAM ~ GROWTH, ULTIMATE ~ AGENCY.
   const nextPackage = useMemo(() => {
-    if (user?.tier?.current === 'STANDARD') {
-      return 'PRO';
-    }
-    return 'STANDARD';
+    const next: Record<string, string> = {
+      FREE: 'CREATOR',
+      CREATOR: 'GROWTH',
+      STANDARD: 'GROWTH',
+      GROWTH: 'PRO',
+      TEAM: 'PRO',
+      PRO: 'AGENCY',
+      AGENCY: 'AGENCY',
+      ULTIMATE: 'AGENCY',
+    };
+    return next[user?.tier?.current || 'FREE'] || 'CREATOR';
   }, [user?.tier]);
   const features = useMemo(() => {
     if (!user?.tier) {
@@ -138,13 +148,7 @@ export const LifetimeDeal = () => {
       <div className="border border-pqLine bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
         <div className="text-[30px]">
           {t('next_package', 'Next Package:')}
-          {user?.tier?.current === 'PRO'
-            ? 'EXTRA'
-            : !user?.tier?.current
-            ? 'FREE'
-            : user?.tier?.current === 'STANDARD'
-            ? 'PRO'
-            : 'STANDARD'}
+          {nextPackage}
         </div>
 
         <div className="flex flex-col gap-[10px] justify-center text-[16px] text-pqMuted">

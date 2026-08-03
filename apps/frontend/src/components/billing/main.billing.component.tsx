@@ -465,7 +465,7 @@ export const MainBillingComponent: FC<{
       {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
-          .filter((f) => !isGeneral || f[0] !== 'FREE')
+          .filter((f) => (!isGeneral || f[0] !== 'FREE') && !f[1].retired)
           .map(([name, values]) => (
             <div
               key={name}
