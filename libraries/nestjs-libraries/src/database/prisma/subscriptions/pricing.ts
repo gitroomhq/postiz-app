@@ -213,6 +213,10 @@ export const pricing: PricingInterface = {
  * The redemption endpoint and the screen that previews it both read this, so
  * the tier the UI promises is the tier the backend actually grants.
  */
+/**
+ * Every tier a *subscription row* can hold — retired ones included, because
+ * live subscriptions still hold them and the code has to be able to read one.
+ */
 export type PaidTier =
   | 'STANDARD'
   | 'TEAM'
@@ -221,6 +225,9 @@ export type PaidTier =
   | 'CREATOR'
   | 'GROWTH'
   | 'AGENCY';
+
+/** What a *user* can be on, which includes having no subscription at all. */
+export type AnyTier = 'FREE' | PaidTier;
 
 export const lifetimeLadder: { [key: string]: PaidTier } = {
   FREE: 'CREATOR',

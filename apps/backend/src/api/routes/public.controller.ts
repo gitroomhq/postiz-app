@@ -21,7 +21,10 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  AnyTier,
+  pricing,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { Readable, pipeline } from 'stream';
 import { promisify } from 'util';
 import { OnlyURL } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
@@ -134,7 +137,7 @@ export class PublicController {
     try {
       const load = AuthService.verifyJWT(params) as {
         orgId: string;
-        billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE';
+        billing: AnyTier;
       };
 
       if (!load || !load.orgId || !load.billing || !pricing[load.billing]) {

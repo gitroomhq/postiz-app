@@ -11,7 +11,11 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  AnyTier,
+  PaidTier,
+  pricing,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -31,7 +35,7 @@ import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.comp
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
-  pack: 'STANDARD' | 'PRO';
+  pack: PaidTier;
 }> = (props) => {
   const { period, pack } = props;
   const t = useT();
@@ -76,7 +80,7 @@ export const Prorate: FC<{
   );
 };
 export const Features: FC<{
-  pack: 'FREE' | 'STANDARD' | 'PRO';
+  pack: AnyTier;
 }> = (props) => {
   const { pack } = props;
   const features = useMemo(() => {
@@ -270,7 +274,7 @@ export const MainBillingComponent: FC<{
     return subscription?.subscriptionTier;
   }, [subscription, initialChannels, monthlyOrYearly, period]);
   const moveToCheckout = useCallback(
-    (billing: 'STANDARD' | 'PRO' | 'FREE', reactivate = false) =>
+    (billing: AnyTier, reactivate = false) =>
       async () => {
         if (reactivate) {
           setLoading(true);
@@ -513,7 +517,7 @@ export const MainBillingComponent: FC<{
                         '!bg-red-500'
                     )}
                     onClick={moveToCheckout(
-                      name.toUpperCase() as 'STANDARD' | 'PRO'
+                      name.toUpperCase() as PaidTier
                     )}
                   >
                     {currentPackage === name.toUpperCase()
@@ -539,12 +543,12 @@ export const MainBillingComponent: FC<{
                   !!name && (
                     <Prorate
                       period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                      pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
+                      pack={name.toUpperCase() as PaidTier}
                     />
                   )}
               </div>
               <Features
-                pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
+                pack={name.toUpperCase() as AnyTier}
               />
             </div>
           ))}

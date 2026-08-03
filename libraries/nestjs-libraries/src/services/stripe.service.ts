@@ -8,6 +8,7 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { groupBy } from 'lodash';
 import {
   nextLifetimeTier,
+  PaidTier,
   pricing,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -113,7 +114,10 @@ export class StripeService {
       billing,
       period,
     } = event.data.object.metadata as {
-      billing: 'STANDARD' | 'PRO';
+      // Stripe hands this back as whatever was written when the subscription
+      // was created, so it has to name every tier that can be sold, not the
+      // two that could when this was written.
+      billing: PaidTier;
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };
@@ -143,7 +147,10 @@ export class StripeService {
       billing,
       period,
     } = event.data.object.metadata as {
-      billing: 'STANDARD' | 'PRO';
+      // Stripe hands this back as whatever was written when the subscription
+      // was created, so it has to name every tier that can be sold, not the
+      // two that could when this was written.
+      billing: PaidTier;
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };

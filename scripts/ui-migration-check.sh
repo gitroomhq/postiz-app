@@ -69,16 +69,30 @@ collect_routes
 
 # --- types ------------------------------------------------------------------
 
-echo "› types"
-TYPE_OUT="$WORK/tsc.txt"
-if "$ROOT/node_modules/.bin/tsc" --noEmit -p "$ROOT/apps/frontend/tsconfig.json" > "$TYPE_OUT" 2>&1; then
-  TYPES_OK=1
-  echo "  ok — 0 errors"
-else
-  TYPES_OK=0
-  echo "  FAIL — tsc reported errors:"
-  sed 's/^/    /' "$TYPE_OUT" | head -40
-fi
+# Both apps, because the migration stopped being frontend-only: the tier rename,
+# the lifetime route and the provider categories all live in libraries/ and
+# apps/backend, and a guard that only compiles the frontend would have waved
+# every one of them through.
+#
+# The backend is checked with `tsconfig.build.json`, which is what it actually
+# builds with. Its `tsconfig.json` is stricter than the build and reports seven
+# pre-existing errors in files nothing here touches; gating on those would mean
+# the check is red before anyone starts.
+TYPES_OK=1
+for target in "frontend:apps/frontend/tsconfig.json" \
+              "backend:apps/backend/tsconfig.build.json"; do
+  name="${target%%:*}"
+  conf="${target#*:}"
+  echo "› types ($name)"
+  TYPE_OUT="$WORK/tsc-$name.txt"
+  if "$ROOT/node_modules/.bin/tsc" --noEmit -p "$ROOT/$conf" > "$TYPE_OUT" 2>&1; then
+    echo "  ok — 0 errors"
+  else
+    TYPES_OK=0
+    echo "  FAIL — tsc reported errors:"
+    sed 's/^/    /' "$TYPE_OUT" | head -40
+  fi
+done
 
 # --- list comparisons -------------------------------------------------------
 
