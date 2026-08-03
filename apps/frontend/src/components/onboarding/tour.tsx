@@ -112,24 +112,10 @@ const useSteps = (): Step[] => {
           'Scheduled, drafts and published, always right here.'
         ),
       },
-      {
-        key: 'channels-column',
-        path: '/launches',
-        title: t('tour_channels_title', 'Your accounts live here'),
-        text: t(
-          'tour_channels_text',
-          'Connect them once and set the hours each one publishes.'
-        ),
-      },
-      {
-        key: 'add-channel',
-        path: '/launches',
-        title: t('tour_add_channel_title', 'Post everywhere at once'),
-        text: t(
-          'tour_add_channel_text',
-          'Write it once and it goes out to every channel you picked.'
-        ),
-      },
+      // The design's order, which this did not follow: the two Connections
+      // steps come before the channel ones, and the tour ends on the connect
+      // dialog — where the person is meant to *do* something — rather than on
+      // a list of MCP clients to read.
       {
         key: 'connect-pq',
         path: '/settings?tab=api',
@@ -147,6 +133,26 @@ const useSteps = (): Step[] => {
         text: t(
           'tour_clients_text',
           'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'
+        ),
+      },
+      {
+        key: 'channels-column',
+        path: '/launches',
+        title: t('tour_channels_title', 'Your accounts live here'),
+        text: t(
+          'tour_channels_text',
+          'Connect them once and set the hours each one publishes.'
+        ),
+      },
+      {
+        // Ends on /channels, which the design also does. It could not before:
+        // the page did not exist, and then it had no connect button of its own.
+        key: 'channel-connect',
+        path: '/channels',
+        title: t('tour_add_channel_title', 'Post everywhere at once'),
+        text: t(
+          'tour_add_channel_text',
+          'Write it once and it goes out to every channel you picked.'
         ),
       },
     ],
@@ -625,6 +631,25 @@ export const Tour: FC = () => {
             left: rect.l - RING_PAD,
             width: rect.w + RING_PAD * 2,
             height: rect.h + RING_PAD * 2,
+          }}
+        />
+      )}
+
+      {/* The caret the design draws from the card back to what it is pointing
+          at. Only when the card ended up to the *right* of the target — that is
+          the one case where the gap between them reads as ambiguous, and it is
+          the only case the prototype draws it in either. */}
+      {spot && rect && pos && pos.l > rect.l + rect.w && (
+        <div
+          aria-hidden="true"
+          data-tour-caret="1"
+          className="pointer-events-none absolute h-[16px] w-[16px] rotate-45 border-b border-s border-pqBorder bg-pqPop"
+          style={{
+            left: pos.l - 8,
+            top: Math.max(
+              pos.t + 22,
+              Math.min(pos.t + 136, rect.t + rect.h / 2 - 8)
+            ),
           }}
         />
       )}

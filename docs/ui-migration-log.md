@@ -1483,3 +1483,40 @@ can reach is a *free* one. The rule is written and typed; it has not yet refused
 
 `types 0 · api 148 · routes 28` unchanged. `i18n 1031 → 1036`: the three perks, the CTA and the
 undated footnote.
+
+### The tour ended in the wrong place, and the caret was never drawn
+
+Reading the prototype's `tourSteps()` beside ours: both have six steps, but the order differs and the
+ending differs.
+
+```
+design   calendar → calendar+panel → aiagents(nav) → aiagents → calendar(nav) → channels + connect
+ours     calendar → panel → channels → add-channel → connections → mcp clients
+```
+
+The design finishes on the **connect dialog** — where the person is meant to do something. Ours
+finished on a list of MCP clients to read. The two Connections steps now come before the channel
+ones, and the last step is on `/channels`.
+
+That last step could not exist until now, twice over: the page did not exist, and once it did it had
+**no connect button of its own** — its empty state sent you to `/launches` to find one. The design
+keeps a connect affordance on the channels page (`chAddDisplay`), so it has one now: the same
+`useAddProvider` hook the calendar column uses, in the list header and in the empty state. No new
+dialog, no second code path.
+
+The **caret** — the pointed tab the design draws from the card back to its target — was missing.
+`setupVals()` draws it only when the card ended up to the *right* of the target
+(`bl > r.l + r.w`), which is the one placement where the gap between card and target reads as
+ambiguous. Same condition here, same vertical clamp.
+
+**Verified by counting and probing, not by looking:**
+
+```
+step 1  (card sits inside the calendar grid)   [data-tour-caret] → 0
+step 5  (channels column, card to the side)    rect 501,467,23,23 · bg rgb(27,27,32)
+step 6  (/channels)                            [data-tour-caret] → 1
+```
+
+and the last step reached at 420 and 1440 in both themes, no overflow. `types 0 · api 148 ·
+i18n 1036 · routes 28` — all unchanged, which is right: the steps were reordered, not rewritten, and
+the copy keys moved with them.

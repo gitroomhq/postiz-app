@@ -13,6 +13,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
+import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 
 /**
  * The Channels page.
@@ -153,6 +154,7 @@ export const ChannelsComponent: FC = () => {
   const t = useT();
   const { data: integrations, mutate } = useIntegrationList();
   const [selected, setSelected] = useState<string>('');
+  const addChannel = useAddProvider(mutate);
 
   const list = useMemo(() => integrations || [], [integrations]);
   const current = useMemo(
@@ -169,12 +171,14 @@ export const ChannelsComponent: FC = () => {
         <div className="max-w-[380px] text-[13.5px] text-pqMuted">
           {t('connect_your_accounts')}
         </div>
-        <Link
-          href="/launches"
+        <button
+          type="button"
+          data-tour="channel-connect"
+          onClick={addChannel}
           className="mt-[6px] rounded-pqSm bg-pqBrand px-[16px] py-[9px] text-[13.5px] font-[600] text-pqOnBrand"
         >
           {t('add_channel', 'Add Channel')}
-        </Link>
+        </button>
       </div>
     );
   }
@@ -190,6 +194,25 @@ export const ChannelsComponent: FC = () => {
             {list.length}
           </span>
         </div>
+        {/* The design keeps a connect affordance on this page rather than only
+            on the calendar's channel column. Same dialog, same hook — the page
+            that manages channels can also add one. */}
+        <button
+          type="button"
+          data-tour="channel-connect"
+          onClick={addChannel}
+          className="mb-[6px] flex h-[34px] items-center justify-center gap-[6px] rounded-pqSm bg-pqBtnSimple text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+            <path
+              d="M12 5v14M5 12h14"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+          {t('add_channel', 'Add Channel')}
+        </button>
         {list.map((integration: any) => (
           <button
             key={integration.id}
