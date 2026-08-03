@@ -25,20 +25,30 @@ export const Title = () => {
   // English comes from the prototype. Only routes this app actually has are
   // listed — the prototype's map also covers screens that are Settings tabs
   // here, and inventing pages for them would be the design driving behaviour.
-  // Each key stays on one line on purpose: `ui-migration-check.sh` finds
-  // translation keys with a line-scoped grep, and a wrapped `t(` is a key it
-  // cannot see — so it would stop protecting these the moment the file is
-  // reformatted.
-  // prettier-ignore
   const SUBTITLES: Record<string, string> = {
-    '/launches': t('subtitle_calendar', 'Plan and publish across every channel'),
-    /* prettier-ignore */ '/channels': t('subtitle_channels', 'Connect and manage your social accounts'),
-    '/agents': t('subtitle_agents', 'Draft, generate and schedule with the agent'),
+    '/launches': t(
+      'subtitle_calendar',
+      'Plan and publish across every channel'
+    ),
+    '/channels': t(
+      'subtitle_channels',
+      'Connect and manage your social accounts'
+    ),
+    '/agents': t(
+      'subtitle_agents',
+      'Draft, generate and schedule with the agent'
+    ),
     '/analytics': t('subtitle_analytics', 'How your channels are performing'),
     '/media': t('subtitle_media', 'Every asset in one place'),
     '/plugs': t('subtitle_plugs', 'Automations that run after publishing'),
-    '/third-party': t('subtitle_integrations', 'Extend PostQueen with other tools'),
-    '/settings': t('subtitle_settings', 'Workspace, publishing and developer options'),
+    '/third-party': t(
+      'subtitle_integrations',
+      'Extend PostQueen with other tools'
+    ),
+    '/settings': t(
+      'subtitle_settings',
+      'Workspace, publishing and developer options'
+    ),
     '/billing': t('subtitle_billing', 'Plan, usage and invoices'),
   };
 

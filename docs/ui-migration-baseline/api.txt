@@ -1,7 +1,9 @@
+/analytics
 /analytics-${integration
 /analytics/${integration.id}
 /analytics/post/${postId}
 /analytics/stars
+/analytics/trending
 /announcements
 /announcements/${id}
 /api/teams
@@ -10,11 +12,13 @@
 /auth/oauth/GENERIC
 /auth/oauth/GITHUB
 /auth/oauth/GOOGLE
+/auth/oauth/WALLET
 /auth/resend-activation
 /autopost
 /autopost/${data.id}
 /autopost/${data.id}/active
 /autopost/send
+/billing-${tier}-${period}
 /billing/add-subscription
 /billing/apply-discount
 /billing/cancel
@@ -48,6 +52,7 @@
 /integrations/${plug.providerId}/plugs
 /integrations/${props.integration.id}/nickname
 /integrations/${props.integration.id}/time
+/integrations/${selectedIntegration.integration.identifier}/internal-plugs
 /integrations/${settings.providerId}/plugs
 /integrations/customers
 /integrations/disable
@@ -57,9 +62,15 @@
 /integrations/mentions
 /integrations/moltbook/register
 /integrations/moltbook/status
+/integrations/plug/list
 /integrations/plugs/${data
 /integrations/provider/${continueId}/connect
 /integrations/social-connect/${provider}
+/integrations/social/${identifier}
+/integrations/social/${identifier}${params
+/integrations/social/${integration.identifier}
+/integrations/social/${integrationData.identifier}
+/integrations/telegram/updates
 /media
 /media/${media.id}
 /media/generate-image
@@ -88,6 +99,7 @@
 /posts/group/${post.group}
 /posts/group/${post.group}/debug-export
 /posts/list
+/posts/old
 /posts/separate-posts
 /posts/should-shortlink
 /posts/tags
@@ -114,6 +126,7 @@
 /third-party/${id}
 /third-party/${integration.id}/import
 /third-party/${thirdParty.id}/submit
+/third-party/function/${integration.id}/listMedia
 /third-party/function/${thirdParty.id}/${functionName}
 /third-party/list
 /user/api-key/rotate

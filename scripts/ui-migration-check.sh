@@ -38,21 +38,41 @@ scan() { grep -rEoh --include='*.ts' --include='*.tsx' "$1" "$SRC" 2>/dev/null; 
 # --- collectors -------------------------------------------------------------
 # Each writes a sorted, deduplicated list to $WORK/<name>.txt.
 
+# Same as `scan`, but joins a call that wraps straight after its opening paren.
+# Without this the patterns below only match `useSWR('/x'` written on one line,
+# and eighteen real calls in this repo are written across two — so the api list
+# was silently short by about 12% and reported "unchanged" for endpoints it had
+# never seen. A wrapped call and an inline one are the same call.
+scan_calls() {
+  find "$SRC" \( -name '*.ts' -o -name '*.tsx' \) -type f -print0 \
+    | xargs -0 perl -0777 -pe 's/\(\s*\n\s*/(/g' 2>/dev/null \
+    | grep -Eo "$1"
+}
+
 collect_api() {
   # Endpoints reached through the custom fetch wrapper and through raw SWR keys.
   # Query strings are stripped: '/posts?week=3' and '/posts?day=1' are one
   # endpoint, and the redesign is expected to keep passing different params.
+  #
+  # A few SWR *cache keys* land in here too ('/billing-<tier>-<period>'). That is
+  # acceptable: this guard detects changes to the set of strings handed to
+  # fetch/useSWR, and a cache key changing is also worth being told about.
   {
-    scan "fetch\(['\"\`]/[^'\"\`?]*"
-    scan "useSWR(Mutation)?\(['\"\`]/[^'\"\`?]*"
+    scan_calls "fetch\(['\"\`]/[^'\"\`?]*"
+    scan_calls "useSWR(Mutation)?\(['\"\`]/[^'\"\`?]*"
   } | sed -E "s/^(fetch|useSWR|useSWRMutation)\(['\"\`]//" \
+    | sed -E 's/[[:space:]]+$//' | sed -E 's/\$\{$//' \
     | sed 's#/$##' | grep -v '^$' | sort -u > "$WORK/api.txt"
 }
 
 collect_i18n() {
   # The key is the first argument of t(); the second is only the English
   # fallback. Copy may be restyled around it, but the key set must not move.
-  scan "\bt\('[a-zA-Z0-9_.-]+'" \
+  #
+  # `scan_calls`, not `scan`: prettier wraps any t() whose English fallback is
+  # long, and a line-at-a-time scan sees none of those. That was 151 keys — 17%
+  # of the set — reported as "unchanged" without ever having been read.
+  scan_calls "\bt\('[a-zA-Z0-9_.-]+'" \
     | sed -E "s/^t\('//; s/'$//" \
     | sort -u > "$WORK/i18n.txt"
 }

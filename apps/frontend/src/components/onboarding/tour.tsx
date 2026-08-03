@@ -95,41 +95,59 @@ const useSteps = (): Step[] => {
       {
         key: 'cal-grid',
         path: '/launches',
-        /* prettier-ignore */ title: t('tour_calendar_title', 'One calendar for every account'),
-        /* prettier-ignore */ text: t('tour_calendar_text', 'Write, generate and schedule for 30+ platforms here, without ever opening a social app.'),
+        title: t('tour_calendar_title', 'One calendar for every account'),
+        text: t(
+          'tour_calendar_text',
+          'Write, generate and schedule for 30+ platforms here, without ever opening a social app.'
+        ),
       },
       {
         // Now the design's own target: the posts panel exists. It pointed at
         // the view switcher before, because there was no panel to point at.
         key: 'posts-panel',
         path: '/launches',
-        /* prettier-ignore */ title: t('tour_views_title', 'Every post in one queue'),
-        /* prettier-ignore */ text: t('tour_views_text', 'Scheduled, drafts and published, always right here.'),
+        title: t('tour_views_title', 'Every post in one queue'),
+        text: t(
+          'tour_views_text',
+          'Scheduled, drafts and published, always right here.'
+        ),
       },
       {
         key: 'channels-column',
         path: '/launches',
-        /* prettier-ignore */ title: t('tour_channels_title', 'Your accounts live here'),
-        /* prettier-ignore */ text: t('tour_channels_text', 'Connect them once and set the hours each one publishes.'),
+        title: t('tour_channels_title', 'Your accounts live here'),
+        text: t(
+          'tour_channels_text',
+          'Connect them once and set the hours each one publishes.'
+        ),
       },
       {
         key: 'add-channel',
         path: '/launches',
-        /* prettier-ignore */ title: t('tour_add_channel_title', 'Post everywhere at once'),
-        /* prettier-ignore */ text: t('tour_add_channel_text', 'Write it once and it goes out to every channel you picked.'),
+        title: t('tour_add_channel_title', 'Post everywhere at once'),
+        text: t(
+          'tour_add_channel_text',
+          'Write it once and it goes out to every channel you picked.'
+        ),
       },
       {
         key: 'connect-pq',
         path: '/settings?tab=api',
-        /* prettier-ignore */ title: t('tour_connect_title', 'Connect your AI to PostQueen'),
-        /* prettier-ignore */ text: t('tour_connect_text', 'Claude, ChatGPT, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'),
+        title: t('tour_connect_title', 'Connect your AI to PostQueen'),
+        text: t(
+          'tour_connect_text',
+          'Claude, ChatGPT, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
+        ),
       },
       {
         key: 'mcp-clients',
         path: '/settings?tab=api',
         dim: true,
-        /* prettier-ignore */ title: t('tour_clients_title', 'Works with the tools you already use'),
-        /* prettier-ignore */ text: t('tour_clients_text', 'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'),
+        title: t('tour_clients_title', 'Works with the tools you already use'),
+        text: t(
+          'tour_clients_text',
+          'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'
+        ),
       },
     ],
     [t]
@@ -244,24 +262,47 @@ export const useTourDemo = (): TourDemoPost[] => {
 
   return useMemo(() => {
     if (!onCalendarStep) return [];
-    /* prettier-ignore */
     const copy: Record<string, string> = {
       tour_demo_1_title: t('tour_demo_1_title', 'Launch teaser'),
-      tour_demo_1_body: t('tour_demo_1_body', 'The story behind the rebuild, in five frames.'),
+      tour_demo_1_body: t(
+        'tour_demo_1_body',
+        'The story behind the rebuild, in five frames.'
+      ),
       tour_demo_2_title: t('tour_demo_2_title', 'Community update'),
-      tour_demo_2_body: t('tour_demo_2_body', 'Everything the team shipped this week.'),
+      tour_demo_2_body: t(
+        'tour_demo_2_body',
+        'Everything the team shipped this week.'
+      ),
       tour_demo_3_title: t('tour_demo_3_title', 'Weekly build thread'),
-      tour_demo_3_body: t('tour_demo_3_body', 'Every change that landed, in one thread.'),
+      tour_demo_3_body: t(
+        'tour_demo_3_body',
+        'Every change that landed, in one thread.'
+      ),
       tour_demo_4_title: t('tour_demo_4_title', 'Weekend recap'),
-      tour_demo_4_body: t('tour_demo_4_body', 'Three things the team learned this week.'),
+      tour_demo_4_body: t(
+        'tour_demo_4_body',
+        'Three things the team learned this week.'
+      ),
       tour_demo_5_title: t('tour_demo_5_title', 'Customer story'),
-      tour_demo_5_body: t('tour_demo_5_body', 'How one team plans a month in an afternoon.'),
+      tour_demo_5_body: t(
+        'tour_demo_5_body',
+        'How one team plans a month in an afternoon.'
+      ),
       tour_demo_6_title: t('tour_demo_6_title', 'Sixty second demo'),
-      tour_demo_6_body: t('tour_demo_6_body', 'A minute with the new scheduler.'),
+      tour_demo_6_body: t(
+        'tour_demo_6_body',
+        'A minute with the new scheduler.'
+      ),
       tour_demo_7_title: t('tour_demo_7_title', 'AMA announcement'),
-      tour_demo_7_body: t('tour_demo_7_body', 'Ask the team anything about scheduling.'),
+      tour_demo_7_body: t(
+        'tour_demo_7_body',
+        'Ask the team anything about scheduling.'
+      ),
       tour_demo_8_title: t('tour_demo_8_title', 'Team spotlight'),
-      tour_demo_8_body: t('tour_demo_8_body', 'Meet the two people behind the calendar.'),
+      tour_demo_8_body: t(
+        'tour_demo_8_body',
+        'Meet the two people behind the calendar.'
+      ),
     };
     const shown = DEMO_ROWS.slice(0, revealed).map(
       ([day, hour, provider, titleKey, bodyKey]) => ({
@@ -280,8 +321,11 @@ export const useTourDemo = (): TourDemoPost[] => {
         day: 4,
         hour: dropped ? 10 : 11,
         provider: 'x',
-        /* prettier-ignore */ title: t('tour_demo_drag_title', 'Feature drop'),
-        /* prettier-ignore */ body: t('tour_demo_drag_body', 'Drag to reschedule — no reload, and a calendar that keeps up.'),
+        title: t('tour_demo_drag_title', 'Feature drop'),
+        body: t(
+          'tour_demo_drag_body',
+          'Drag to reschedule — no reload, and a calendar that keeps up.'
+        ),
       });
     }
     return shown;
@@ -378,7 +422,9 @@ export const Tour: FC = () => {
   // `?tour=true`, the same shape as the existing `?onboarding=true`. Support
   // can link someone straight into it. The ref keeps a finished tour from
   // restarting itself while the query is still on the URL.
-  const { start } = useTourStore(useShallow((state) => ({ start: state.start })));
+  const { start } = useTourStore(
+    useShallow((state) => ({ start: state.start }))
+  );
   useEffect(() => {
     if (!query.get('tour') || urlStarted.current) return;
     urlStarted.current = true;
@@ -537,7 +583,12 @@ export const Tour: FC = () => {
       {spot &&
         rect &&
         [
-          { top: 0, left: 0, width: '100%', height: Math.max(0, rect.t - RING_PAD) },
+          {
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: Math.max(0, rect.t - RING_PAD),
+          },
           {
             top: rect.t + rect.h + RING_PAD,
             left: 0,
@@ -605,7 +656,10 @@ export const Tour: FC = () => {
         </div>
 
         <div className="mt-[16px] flex items-center gap-[10px]">
-          <div className="flex flex-1 items-center gap-[5px]" aria-hidden="true">
+          <div
+            className="flex flex-1 items-center gap-[5px]"
+            aria-hidden="true"
+          >
             {steps.map((s, i) => (
               <div
                 key={s.key}
@@ -613,7 +667,10 @@ export const Tour: FC = () => {
                   'h-[5px] rounded-[999px] transition-all',
                   i === step
                     ? 'w-[18px] bg-pqBrand'
-                    : clsx('w-[5px]', i < step ? 'bg-pqBrandSoft' : 'bg-pqBorder')
+                    : clsx(
+                        'w-[5px]',
+                        i < step ? 'bg-pqBrandSoft' : 'bg-pqBorder'
+                      )
                 )}
               />
             ))}

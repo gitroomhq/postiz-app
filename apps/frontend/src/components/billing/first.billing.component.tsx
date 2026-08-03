@@ -300,8 +300,9 @@ export const FirstBillingComponent = () => {
                       months, the rest four. The exact figure per plan is on the
                       card below. */}
                   <div className="bg-pqOkSoft text-pqOk px-[8px] rounded-[4px] text-[13px] font-[700] mobile:hidden">
-                    {/* prettier-ignore */}
-                    {t('billing_months_free_upto', 'Up to {{n}} months free', { n: bestMonthsFree })}
+                    {t('billing_months_free_upto', 'Up to {{n}} months free', {
+                      n: bestMonthsFree,
+                    })}
                   </div>
                 </div>
               </div>
@@ -339,8 +340,9 @@ export const FirstBillingComponent = () => {
                       <div className="text-[13px] text-pqMuted">
                         ${effectiveMonthly(key)}
                         {t('billing_per_month_short', '/mo')} ·{' '}
-                        {/* prettier-ignore */}
-                        {t('billing_months_free', '{{n}} months free', { n: monthsFree(key) })}
+                        {t('billing_months_free', '{{n}} months free', {
+                          n: monthsFree(key),
+                        })}
                       </div>
                     )}
                   </div>

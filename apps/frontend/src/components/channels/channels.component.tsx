@@ -29,13 +29,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 const ChannelCounts: FC<{ integrationId: string }> = ({ integrationId }) => {
   const t = useT();
   const fetch = useFetch();
-  // The key stays on one line on purpose: ui-migration-check's api collector
-  // matches `useSWR(` immediately followed by the path, so a wrapped call is
-  // invisible to it — the same trap the i18n collector had with prettier-split
-  // `t()` calls, and the reason this endpoint did not show up as +1 at first.
-  /* prettier-ignore */
-  const { data } = useSWR(`/posts/count?integration=${integrationId}`,
-    async (path: string) => (await (await fetch(path)).json()) as Record<string, number>,
+  const { data } = useSWR(
+    `/posts/count?integration=${integrationId}`,
+    async (path: string) =>
+      (await (await fetch(path)).json()) as Record<string, number>,
     { revalidateOnFocus: false }
   );
 
