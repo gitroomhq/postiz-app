@@ -101,14 +101,39 @@ export const pricing: PricingInterface = {
     autoPost: true,
     generate_videos: 10,
   },
+  PRO: {
+    current: 'PRO',
+    month_price: 49,
+    // 470 -> 396, the design's number, which is the 8x that makes the yearly
+    // badge honest. PRO is the one tier that keeps its name, so unlike the
+    // other three there is nowhere to park the legacy price: an existing
+    // yearly PRO subscriber will see 396 while Stripe keeps charging them 470
+    // until they change plan. Called out in the log.
+    year_price: 396,
+    channel: 30,
+    posts_per_month: 1000000,
+    image_generation_count: 300,
+    community_features: true,
+    team_members: true,
+    featured: true,
+    ai: true,
+    import_from_channels: true,
+    image_generator: true,
+    public_api: true,
+    webhooks: 30,
+    autoPost: true,
+    generate_videos: 30,
+  },
   AGENCY: {
     current: 'AGENCY',
     month_price: 99,
     year_price: 792,
-    // The design says "unlimited". Left at this repo's 100 deliberately: doc 06
-    // §B calls unlimited "a new product decision", and a channel is recurring
-    // API load, not a label. One number to change once somebody owns that call.
-    channel: 100,
+    // Unlimited, decided by the owner on 2026-08-04. It was left at 100 while
+    // nobody owned the call, because a channel is recurring API load and not a
+    // label — unlimited channels means unlimited recurring background work.
+    // Same very-large-number idiom as posts_per_month, so the display's
+    // "> 10000 -> Unlimited" branch renders it without a special case.
+    channel: 1000000,
     posts_per_month: 1000000,
     image_generation_count: 500,
     community_features: true,
@@ -161,29 +186,6 @@ export const pricing: PricingInterface = {
     webhooks: 10,
     autoPost: true,
     generate_videos: 10,
-  },
-  PRO: {
-    current: 'PRO',
-    month_price: 49,
-    // 470 -> 396, the design's number, which is the 8x that makes the yearly
-    // badge honest. PRO is the one tier that keeps its name, so unlike the
-    // other three there is nowhere to park the legacy price: an existing
-    // yearly PRO subscriber will see 396 while Stripe keeps charging them 470
-    // until they change plan. Called out in the log.
-    year_price: 396,
-    channel: 30,
-    posts_per_month: 1000000,
-    image_generation_count: 300,
-    community_features: true,
-    team_members: true,
-    featured: true,
-    ai: true,
-    import_from_channels: true,
-    image_generator: true,
-    public_api: true,
-    webhooks: 30,
-    autoPost: true,
-    generate_videos: 30,
   },
   ULTIMATE: {
     current: 'ULTIMATE',

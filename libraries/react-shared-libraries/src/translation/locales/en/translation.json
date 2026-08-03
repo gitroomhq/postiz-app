@@ -955,5 +955,16 @@
   "x_lock_perk_plugs": "Auto-plugs and reply automations",
   "x_lock_perk_analytics": "Analytics — impressions, engagement, follows",
   "end_trial_to_unlock": "End free trial to unlock {{name}}",
-  "or_wait_until_trial_ends": "Or wait — {{name}} unlocks by itself when your free trial ends."
+  "or_wait_until_trial_ends": "Or wait — {{name}} unlocks by itself when your free trial ends.",
+  "plan_unlimited_channels": "Unlimited channels",
+  "plan_one_channel": "1 channel",
+  "plan_n_channels": "{{count}} channels",
+  "plan_unlimited_posts": "Unlimited posts per month",
+  "plan_n_posts": "{{count}} posts per month",
+  "plan_unlimited_team": "Unlimited team members",
+  "plan_ai_autocomplete": "AI auto-complete",
+  "plan_ai_copilots": "AI copilots",
+  "plan_picture_editor": "Advanced Picture Editor",
+  "plan_n_ai_images": "{{count}} AI Images per month",
+  "plan_n_ai_videos": "{{count}} AI Videos per month"
 }

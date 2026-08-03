@@ -60,6 +60,13 @@ export const EmbeddedBilling: FC<{
         options={{
           clientSecret: secret,
           elementsOptions: {
+            // The five hex literals in this file are the exception the token
+            // rule allows for, and they are here rather than a token because
+            // of what reads them. Stripe's Elements run in a cross-origin
+            // iframe: its appearance API takes literal colours and cannot
+            // resolve a CSS variable from this document. The other two are the
+            // Stripe wordmark and the Link glyph — brand marks, which are the
+            // one place a fixed colour is the correct one.
             appearance: {
               variables: {
                 colorText: mode === 'dark' ? '#ffffff' : '#0e0e0e',

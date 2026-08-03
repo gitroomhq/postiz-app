@@ -1590,3 +1590,61 @@ after    GET /user/subscription/tiers → 200 {} → /billing renders
 
 `/billing/lifetime` now reaches `/billing` rather than `/auth` — the app's own redirect, not a
 session loss.
+
+### Billing: the screen opened, and looking at it found four defects
+
+The fix in `79669cef` made `/billing` reachable, and reaching it changed the plan. The plan cards do
+not come from Stripe: `main.billing.component.tsx:471` and `first.billing.component.tsx:138` both
+iterate `Object.entries(pricing)`. Prices, features, the monthly/yearly switch and the FAQ have been
+renderable all along. Only *subscription state* needs a key.
+
+Then the screen itself, read rather than assumed:
+
+**1 · The cards were in the wrong order — CREATOR, GROWTH, AGENCY ($99), PRO ($49).**
+`Object.entries` follows file order, and `PRO` sat below the "retired" divider in `pricing.ts`,
+between STANDARD/TEAM and ULTIMATE, without being retired itself. The grid filters on `!retired`, so
+PRO fell to the end. Both the billing grid and the paywall walk the same object, so the entry moved
+rather than one screen sorting itself. Verified by geometry, not by looking:
+
+```
+CREATOR 256 → GROWTH 551 → PRO 846 → AGENCY 1141      ($20 → $33 → $49 → $99)
+```
+
+**2 · Every card listed the same feature twice.** `Features` pushed `AI auto-complete`,
+`AI copilots` and then `AI Autocomplete` — the first and third are one feature spelled two ways.
+Counted per card, before → after: CREATOR 7→6, GROWTH 9→8, PRO 9→8, AGENCY 9→8. Exactly one gone
+from each, which is what one duplicate removal should look like.
+
+**3 · `fill="#06ff00"`** in `main.billing.component.tsx` and twice more in `lifetime.deal.tsx` — a
+raw hex in a component, and a green belonging to no palette. Now `currentColor` under `text-pqOk`:
+`rgb(22,163,74)` light, `rgb(74,222,128)` dark, measured at all three widths.
+
+**4 · The whole feature list was hardcoded English.** Not one `t()` in `Features`, on a screen every
+paying customer sees, in an app with fourteen languages. Eleven keys now, plurals kept where the code
+already made the distinction.
+
+**A fifth, found while clearing the hex:** `faq.component.tsx` drew its **plus** icon with
+`fill="white"` — invisible against the light theme. The `text-white` audit in step 8 walked 95
+occurrences of the *class* and could not see a `fill` attribute. Fixed the same way. That is twice
+now that an audit's shape decided what it could find.
+
+**AGENCY is unlimited**, decided by the owner today. `AGENCY.channel` takes the very-large-number
+idiom `posts_per_month` already uses, so the existing `> 10000 → 'Unlimited'` branch renders it with
+no tier named in the display code. Worth restating plainly: a channel is recurring API load, not a
+label, so this is a real product commitment and not a copy change.
+
+**Left literal on purpose:** the five hex values in `embedded.billing.tsx`. Stripe's Elements run in
+a cross-origin iframe — its appearance API takes literal colours and cannot resolve a CSS variable
+from this document — and the other two are the Stripe wordmark and the Link glyph. Brand marks are
+the one place a fixed colour is the right one. Commented in the file so it does not read as an
+oversight.
+
+**Checks:** `types 0 · api 148 · routes 28 · gates 12` unchanged — `gates` mattering most here, since
+this touched the screen where every tier condition lives and moved none of them. `i18n 1036 → 1047`,
+the eleven plan strings. Sweep: thirteen screens, both themes, zero overflow.
+
+**Still on keys:** the subscription states (`trial` with its date, `active` and its Current-plan
+marker, `discount`, `canceling`, `payment_failed`, `ended`, `lifetime_trial`), the checkout paywall's
+Due-today and lapsed modes — which is where `riseIn` and `dropIn` live — the lifetime purchase
+(`mode: 'payment'` plus its webhook branch, no counter and no countdown), and Settings' Plan &
+invoices.

@@ -17,7 +17,9 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
   }, []);
 
   const checkFinished = useCallback(async () => {
-    const {finished} = await (await fetch('/billing/is-trial-finished')).json();
+    const { finished } = await (
+      await fetch('/billing/is-trial-finished')
+    ).json();
     if (!finished) {
       await timer(2000);
       return checkFinished();
@@ -66,11 +68,16 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
                 {finished && (
                   <div className="flex flex-col">
                     <div>
-                      You trial has been successfully finished and you have been charged.
+                      You trial has been successfully finished and you have been
+                      charged.
                     </div>
                     <div className="flex gap-[10px] mt-[20px]">
-                      <Button className="flex-1" onClick={() => window.close()}>Close window</Button>
-                      <Button className="flex-1" onClick={() => props.close()}>Close dialog</Button>
+                      <Button className="flex-1" onClick={() => window.close()}>
+                        Close window
+                      </Button>
+                      <Button className="flex-1" onClick={() => props.close()}>
+                        Close dialog
+                      </Button>
                     </div>
                   </div>
                 )}

@@ -720,6 +720,17 @@ payload_wizard_description
 payment_required
 personal_voice_i_am_happy_to_announce
 picture
+plan_ai_autocomplete
+plan_ai_copilots
+plan_n_ai_images
+plan_n_ai_videos
+plan_n_channels
+plan_n_posts
+plan_one_channel
+plan_picture_editor
+plan_unlimited_channels
+plan_unlimited_posts
+plan_unlimited_team
 plans
 play
 please_add
