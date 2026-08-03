@@ -1,15 +1,41 @@
 'use client';
 
-import React, { FC, useCallback, useMemo } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
-export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
-  asOpenSelect,
-}) => {
+
+interface Organization {
+  name: string;
+  id: string;
+}
+
+const initialOf = (name?: string) =>
+  (name?.trim()?.[0] || '?').toUpperCase();
+
+export const OrganizationSelector: FC<{
+  asOpenSelect?: boolean;
+  /**
+   * 'icon'  — the globe with a hover menu, still used by the billing screens.
+   * 'rail'  — the redesign's row at the bottom of the navigation rail.
+   */
+  variant?: 'icon' | 'rail';
+  collapsed?: boolean;
+}> = ({ asOpenSelect, variant = 'icon', collapsed }) => {
   const fetch = useFetch();
   const user = useUser();
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const load = useCallback(async () => {
     return await (await fetch('/user/organizations')).json();
   }, []);
@@ -22,12 +48,9 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
   });
   const current = useMemo(() => {
     return data?.find((d: any) => d.id === user?.orgId);
-  }, [data]);
-  const withoutCurrent = useMemo(() => {
-    return data?.filter((d: any) => d.id !== user?.orgId);
-  }, [current, data]);
+  }, [data, user?.orgId]);
   const changeOrg = useCallback(
-    (org: { name: string; id: string }) => async () => {
+    (org: Organization) => async () => {
       await fetch('/user/change-org', {
         method: 'POST',
         body: JSON.stringify({
@@ -38,9 +61,131 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
     },
     []
   );
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   if (isLoading || (!isLoading && data?.length === 1)) {
     return null;
   }
+
+  // The rail row. Unlike the icon variant this opens on click and closes on
+  // Escape or an outside click — the hover-only menu had no keyboard path at
+  // all.
+  if (variant === 'rail') {
+    if (!(data?.length > 1)) {
+      return null;
+    }
+    return (
+      <div ref={ref} className="relative flex items-center" data-keepdrawer="1">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          {...(collapsed && {
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content': current?.name || '',
+          })}
+          className={clsx(
+            'flex h-[34px] min-w-0 flex-1 items-center gap-[11px] rounded-pqSm px-[8px] text-start transition-colors hover:bg-pqHover',
+            collapsed ? 'justify-center' : 'justify-start',
+            open && 'bg-pqHover'
+          )}
+        >
+          <span className="grid size-[21px] shrink-0 place-items-center rounded-[6px] bg-pqBrand text-[10px] font-[700] text-white">
+            {initialOf(current?.name)}
+          </span>
+          {!collapsed && (
+            <>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-[500] text-pqMuted">
+                {current?.name}
+              </span>
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                aria-hidden="true"
+                className="shrink-0 text-pqSoft"
+              >
+                <path
+                  d="M8 10l4-4 4 4M8 14l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </>
+          )}
+        </button>
+        {open && (
+          <div
+            role="menu"
+            className="absolute bottom-[42px] start-0 z-[70] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqPop p-[5px] shadow-pq"
+          >
+            <div className="px-[9px] pb-[5px] pt-[7px] text-[10px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
+              {t('organizations', 'Organizations')}
+            </div>
+            {data?.map((org: Organization) => (
+              <button
+                key={org.id}
+                type="button"
+                role="menuitem"
+                onClick={
+                  org.id === user?.orgId
+                    ? () => setOpen(false)
+                    : changeOrg(org)
+                }
+                className={clsx(
+                  'flex w-full items-center gap-[9px] rounded-pqSm px-[9px] py-[7px] text-start text-[13px] text-pqText transition-colors hover:bg-pqHover',
+                  org.id === user?.orgId && 'bg-pqBoxFocused'
+                )}
+              >
+                <span className="grid size-[22px] shrink-0 place-items-center rounded-[6px] bg-pqBrand text-[10.5px] font-[700] text-white">
+                  {initialOf(org.name)}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{org.name}</span>
+                {org.id === user?.orgId && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    aria-hidden="true"
+                    className="shrink-0 text-pqBrand"
+                  >
+                    <path
+                      d="M5 12.5l4.5 4.5L19 7.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="hover:text-newTextColor">
@@ -72,7 +217,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
-              {data?.map((org: { name: string; id: string }) => (
+              {data?.map((org: Organization) => (
                 <div key={org.id} onClick={changeOrg(org)}>
                   {org.name}
                 </div>

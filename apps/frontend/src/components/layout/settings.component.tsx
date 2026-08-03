@@ -269,7 +269,7 @@ export const SettingsComponent = () => {
     }
     settings.openModal({
       children: (
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 bg-sixth p-[16px] w-[500px] mx-auto">
+        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-pqLine bg-sixth p-[16px] w-[500px] mx-auto">
           <SettingsPopup />
         </div>
       ),

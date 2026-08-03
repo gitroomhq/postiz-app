@@ -12,23 +12,47 @@ import {
 
 export const modeEmitter = new EventEmitter();
 
-const ModeComponent = () => {
-  const t = useT();
+/**
+ * The theme, and the two side effects that go with changing it: the cookie the
+ * server reads on the next render, and the class on `<body>` that every token
+ * in `colors.scss` resolves through.
+ *
+ * Extracted from the component because the redesign moves the control itself
+ * into the user menu, while the FREE paywall header still renders the standalone
+ * toggle below. Both have to write the same cookie and emit on the same
+ * emitter, so the logic lives here once.
+ */
+export const useThemeMode = () => {
   const [cookie, setCookie] = useCookie(THEME_COOKIE, DEFAULT_THEME);
   const mode = resolveTheme(cookie);
 
-  const changeMode = useCallback(() => {
-    const next = mode === 'dark' ? 'light' : 'dark';
-    modeEmitter.emit('mode', next);
-    // react-use-cookie defaults to a 7-day expiry; a theme preference that
-    // silently resets after a week is worse than not remembering it at all.
-    setCookie(next, { days: 365 });
-  }, [mode, setCookie]);
+  const setMode = useCallback(
+    (next: 'dark' | 'light') => {
+      if (next === mode) return;
+      modeEmitter.emit('mode', next);
+      // react-use-cookie defaults to a 7-day expiry; a theme preference that
+      // silently resets after a week is worse than not remembering it at all.
+      setCookie(next, { days: 365 });
+    },
+    [mode, setCookie]
+  );
 
   useEffect(() => {
     document.body.classList.remove('dark', 'light');
     document.body.classList.add(mode);
   }, [mode]);
+
+  return { mode, setMode };
+};
+
+const ModeComponent = () => {
+  const t = useT();
+  const { mode, setMode } = useThemeMode();
+
+  const changeMode = useCallback(() => {
+    setMode(mode === 'dark' ? 'light' : 'dark');
+  }, [mode, setMode]);
+
   return (
     <button
       type="button"

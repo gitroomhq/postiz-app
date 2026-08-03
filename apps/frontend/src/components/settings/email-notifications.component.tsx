@@ -116,7 +116,7 @@ const EmailNotificationsComponent = () => {
           <div className="text-[14px]">
             {t('success_emails', 'Success Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="text-[12px] text-pqMuted">
             {t(
               'success_emails_description',
               'Receive email notifications when posts are published successfully'
@@ -134,7 +134,7 @@ const EmailNotificationsComponent = () => {
           <div className="text-[14px]">
             {t('failure_emails', 'Failure Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="text-[12px] text-pqMuted">
             {t(
               'failure_emails_description',
               'Receive email notifications when posts fail to publish'
@@ -152,7 +152,7 @@ const EmailNotificationsComponent = () => {
           <div className="text-[14px]">
             {t('streak_emails', 'Streak Reminder Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="text-[12px] text-pqMuted">
             {t(
               'streak_emails_description',
               'Receive email reminders when your posting streak is about to end'

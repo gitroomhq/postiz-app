@@ -149,7 +149,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
         <div className="text-[24px] font-semibold">
           {t('connect_your_channels', 'Connect Your Channels')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[14px] text-pqMuted">
           {t(
             'connect_social_media_to_start',
             'Connect your social media accounts to start scheduling posts'
@@ -251,7 +251,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
         <div className="text-[24px] font-semibold">
           {t('watch_tutorial_title', 'Learn How to Use PostQueen')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[14px] text-pqMuted">
           {t(
             'watch_tutorial_description',
             'Watch this short video to learn how to get the most out of PostQueen'

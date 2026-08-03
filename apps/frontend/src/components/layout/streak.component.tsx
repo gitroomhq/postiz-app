@@ -2,9 +2,11 @@
 
 import { FC, useMemo } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const StreakComponent: FC = () => {
   const user = useUser();
+  const t = useT();
 
   const streakDays = useMemo(() => {
     if (!user?.streakSince) return 0;
@@ -32,15 +34,17 @@ export const StreakComponent: FC = () => {
 
   return (
     <div
-      className="flex items-center gap-[6px] text-orange-500 hover:text-orange-400 cursor-default"
+      data-streak="1"
+      className="flex h-[30px] shrink-0 cursor-default items-center gap-[5px] rounded-[8px] px-[8px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
       data-tooltip-id="tooltip"
       data-tooltip-content={tooltipContent}
     >
       <svg
-        width="24"
-        height="24"
+        width="13"
+        height="13"
         viewBox="0 0 22 27"
         fill="none"
+        className="shrink-0 text-orange-500"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
@@ -48,7 +52,12 @@ export const StreakComponent: FC = () => {
           fill="currentColor"
         />
       </svg>
-      <span className="text-[14px] font-semibold">{streakDays}</span>
+      <span className="text-[12.5px] font-[600] -tracking-[0.1px] text-pqText">
+        {streakDays}
+      </span>
+      <span data-hdr-label="1" className="text-[12.5px] font-[500] -tracking-[0.1px]">
+        {t('day_streak', 'day streak')}
+      </span>
     </div>
   );
 };

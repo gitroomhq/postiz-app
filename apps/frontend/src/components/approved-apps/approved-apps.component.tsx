@@ -64,7 +64,7 @@ export const ApprovedAppsComponent: FC = () => {
         <h3 className="text-[20px]">
           {t('approved_apps', 'Approved Apps')}
         </h3>
-        <div className="text-customColor18 mt-[4px]">
+        <div className="text-pqMuted mt-[4px]">
           {t(
             'apps_you_have_authorized',
             'Applications you have authorized to access your PostQueen account.'
@@ -74,7 +74,7 @@ export const ApprovedAppsComponent: FC = () => {
 
       <div className="bg-sixth border-fifth border rounded-[4px] p-[24px]">
         {!apps?.length ? (
-          <div className="text-customColor18">
+          <div className="text-pqMuted">
             {t('no_approved_apps', 'No approved apps yet.')}
           </div>
         ) : (
@@ -92,7 +92,7 @@ export const ApprovedAppsComponent: FC = () => {
                       className="w-[40px] h-[40px] rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
+                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-pqMuted">
                       {app.oauthApp?.name?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}
@@ -101,11 +101,11 @@ export const ApprovedAppsComponent: FC = () => {
                       {app.oauthApp?.name}
                     </div>
                     {app.oauthApp?.description && (
-                      <div className="text-customColor18 text-[12px]">
+                      <div className="text-pqMuted text-[12px]">
                         {app.oauthApp.description}
                       </div>
                     )}
-                    <div className="text-customColor18 text-[12px]">
+                    <div className="text-pqMuted text-[12px]">
                       {t('authorized_on', 'Authorized on')}{' '}
                       {new Date(app.createdAt).toLocaleDateString()}
                     </div>

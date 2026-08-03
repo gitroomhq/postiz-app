@@ -61,7 +61,7 @@ export const SignaturesComponent: FC<{
   return (
     <div className="flex flex-col">
       <h3 className="text-[20px]">{t('signatures', 'Signatures')}</h3>
-      <div className="text-customColor18 mt-[4px]">
+      <div className="text-pqMuted mt-[4px]">
         {t(
           'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
           'You can add signatures to your account to be used in your posts.'

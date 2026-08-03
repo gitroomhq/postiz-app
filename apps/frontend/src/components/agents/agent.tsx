@@ -22,6 +22,7 @@ import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -71,7 +72,11 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     return (await (await fetch('/integrations/list')).json()).integrations;
   }, []);
 
+  const { mobile } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  // Below 760 the channel column is always the icon rail, as on the calendar:
+  // two 260px columns beside the chat leave it nothing at phone widths.
+  const channelsCollapsed = mobile || collapseMenu === '1';
 
   const { data } = useSWR('integrations', load, {
     revalidateOnFocus: false,
@@ -108,7 +113,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     <div
       className={clsx(
         'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+        channelsCollapsed ? 'group sidebar w-[100px]' : 'w-[260px]'
       )}
     >
       <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
@@ -117,7 +122,9 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
             {t('select_channels', 'Select Channels')}
           </h2>
           <div
-            onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
+            onClick={() =>
+              setCollapseMenu(collapseMenu === '1' ? '0' : '1', { days: 365 })
+            }
             className="-mt-3 group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
           >
             <svg

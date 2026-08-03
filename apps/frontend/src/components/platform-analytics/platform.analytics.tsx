@@ -146,20 +146,25 @@ export const PlatformAnalytics = () => {
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
-        </div>
-        <div className="text-[48px]">
-          {t('can_t_show_analytics_yet', "Can't show analytics yet")}
-          <br />
-          {t(
-            'you_have_to_add_social_media_channels',
-            'You have to add Social Media channels'
-          )}
-        </div>
-        <div className="text-[20px]">
-          {t('supported', 'Supported:')}
-          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+        <img
+          src="/peoplemarketplace.svg"
+          alt=""
+          className="mb-[6px] w-full max-w-[220px]"
+        />
+        <div className="max-w-[460px] text-center">
+          <div className="font-display text-[18px] font-[600] -tracking-[0.015em] text-pqText">
+            {t('can_t_show_analytics_yet', "Can't show analytics yet")}
+          </div>
+          <div className="mt-[6px] text-[13.5px] leading-[1.55] text-pqMuted">
+            {t(
+              'you_have_to_add_social_media_channels',
+              'You have to add Social Media channels'
+            )}
+          </div>
+          <div className="mt-[10px] text-[12.5px] leading-[1.55] text-pqSoft">
+            {t('supported', 'Supported:')}
+            {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+          </div>
         </div>
         <Button onClick={() => router.push('/launches')}>
           {t(

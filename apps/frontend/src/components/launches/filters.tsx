@@ -286,14 +286,21 @@ export const Filters = () => {
     }
   }, [calendar]);
 
+  // The design draws all three of this toolbar's switches the same way: a
+  // `--settings` trough with a raised `--inner` pill on the chosen option.
+  const segment = 'flex gap-[2px] rounded-pqSm bg-pqSettings p-[2px]';
+  const segmentItem =
+    'flex h-[28px] cursor-pointer items-center justify-center rounded-[6px] px-[10px] text-center text-[12.5px] transition-colors';
+  const segmentOn = 'bg-pqInner font-[600] text-pqText shadow-pqE1';
+  const segmentOff = 'font-[500] text-pqSoft hover:text-pqText';
   return (
-    <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
+    <div className="flex select-none flex-col items-center gap-[8px] text-pqText md:flex-row">
       {!isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
+          <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
             <div
               onClick={previous}
-              className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -311,14 +318,17 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
+            <div className="flex h-full min-w-[190px] items-center justify-center text-center">
+              {/* A date range is a left-to-right token: in RTL, bidi otherwise
+                  flips "03/08 - 09/08" into "09/08 - 03/08" and the week reads
+                  backwards. */}
+              <div dir="ltr" className="px-[9px] text-[13px] font-[500]">
                 {getDisplayText()}
               </div>
             </div>
             <div
               onClick={next}
-              className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -338,10 +348,10 @@ export const Filters = () => {
             </div>
           </div>
           <div className="flex-1 text-[14px] font-[500]">
-            <div className="text-center flex h-[42px]">
+            <div className="flex h-[34px] text-center">
               <div
                 onClick={setToday}
-                className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
+                className="flex h-[34px] cursor-pointer items-center justify-center rounded-pqSm bg-pqInner px-[14px] text-[13px] font-[500] shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 {t('today', 'Today')}
               </div>
@@ -351,13 +361,13 @@ export const Filters = () => {
       )}
       {isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
+          <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
             <div
               onClick={previousPage}
               className={clsx(
-                'text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center',
+                'flex h-full items-center justify-center px-[10px] text-pqMuted transition-colors rtl:rotate-180',
                 calendar.listPage > 0
-                  ? 'cursor-pointer hover:text-textItemFocused hover:bg-boxFocused'
+                  ? 'cursor-pointer hover:bg-pqHover hover:text-pqText'
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -377,17 +387,17 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
+            <div className="flex h-full min-w-[190px] items-center justify-center text-center">
+              <div className="px-[9px] text-[13px] font-[500]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
             </div>
             <div
               onClick={nextPage}
               className={clsx(
-                'text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center',
+                'flex h-full items-center justify-center px-[10px] text-pqMuted transition-colors rtl:rotate-180',
                 calendar.listPage < calendar.listTotalPages - 1
-                  ? 'cursor-pointer hover:text-textItemFocused hover:bg-boxFocused'
+                  ? 'cursor-pointer hover:bg-pqHover hover:text-pqText'
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -408,15 +418,15 @@ export const Filters = () => {
               </svg>
             </div>
           </div>
-          <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+          <div className={segment}>
             {listStateOptions.map((option) => (
               <div
                 key={option.value}
                 onClick={setListStateFilter(option.value)}
                 className={clsx(
-                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-[6px]',
-                  calendar.listState === option.value &&
-                    'text-textItemFocused bg-boxFocused'
+                  segmentItem,
+                  'min-w-[80px]',
+                  calendar.listState === option.value ? segmentOn : segmentOff
                 )}
               >
                 {option.label}
@@ -432,11 +442,12 @@ export const Filters = () => {
         integrations={calendar.integrations}
       />
       {!isListView && (
-        <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+        <div className={segment}>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'day' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'day' ? segmentOn : segmentOff
             )}
             onClick={setDay}
           >
@@ -444,8 +455,9 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'week' ? segmentOn : segmentOff
             )}
             onClick={setWeek}
           >
@@ -453,8 +465,9 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'month' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'month' ? segmentOn : segmentOff
             )}
             onClick={setMonth}
           >
@@ -462,12 +475,13 @@ export const Filters = () => {
           </div>
         </div>
       )}
-      <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+      <div className={segment}>
         <div
           onClick={setCalendarView}
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer flex justify-center items-center w-[34px] text-center rounded-[6px]',
-            !isListView && 'text-textItemFocused bg-boxFocused'
+            segmentItem,
+            'w-[30px] px-0',
+            !isListView ? segmentOn : segmentOff
           )}
         >
           {/*calendar*/}
@@ -490,8 +504,9 @@ export const Filters = () => {
         <div
           onClick={setList}
           className={clsx(
-            'pt-[6px] pb-[5px] flex justify-center items-center cursor-pointer w-[34px] text-center rounded-[6px]',
-            isListView && 'text-textItemFocused bg-boxFocused'
+            segmentItem,
+            'w-[30px] px-0',
+            isListView ? segmentOn : segmentOff
           )}
         >
           {/*list*/}

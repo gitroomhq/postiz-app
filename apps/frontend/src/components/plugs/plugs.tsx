@@ -95,19 +95,24 @@ export const Plugs = () => {
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
-        </div>
-        <div className="text-[48px]">
-          {t(
-            'there_are_not_plugs_matching_your_channels',
-            'There are not plugs matching your channels'
-          )}
-          <br />
-          {t(
-            'you_have_to_add_x_linkedin_page_threads_or_bluesky',
-            'You have to add: X, LinkedIn Page, Threads or Bluesky'
-          )}
+        <img
+          src="/peoplemarketplace.svg"
+          alt=""
+          className="mb-[6px] w-full max-w-[220px]"
+        />
+        <div className="max-w-[420px] text-center">
+          <div className="font-display text-[18px] font-[600] -tracking-[0.015em] text-pqText">
+            {t(
+              'there_are_not_plugs_matching_your_channels',
+              'There are not plugs matching your channels'
+            )}
+          </div>
+          <div className="mt-[6px] text-[13.5px] leading-[1.55] text-pqMuted">
+            {t(
+              'you_have_to_add_x_linkedin_page_threads_or_bluesky',
+              'You have to add: X, LinkedIn Page, Threads or Bluesky'
+            )}
+          </div>
         </div>
         <Button onClick={() => router.push('/launches')}>
           {t(

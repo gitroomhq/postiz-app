@@ -359,47 +359,81 @@ export const WeekView = () => {
   }, [i18next.resolvedLanguage, startDate]);
 
   return (
-    <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
-          {localizedDays.map((day, index) => (
-            <div
-              key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
-            >
-              <div className="text-[14px] font-[500] text-newTableText">
-                {day.name}
-              </div>
+    <div className="flex flex-1 flex-col text-pqText">
+      <div className="relative flex-1">
+        {/* A floor on the day columns rather than `minmax(0, 1fr)` is what stops
+            them collapsing into each other at phone widths — below seven
+            readable columns the grid scrolls sideways instead of overlapping its
+            own headers, which is what it used to do.
+            The floor is 84px, not the design's 132px: the design's calendar has
+            no channel column beside it, and at 1440 with ours open seven 132px
+            columns no longer fit, so the week silently lost a day off the right
+            edge. 84px still fits a card and only bites below ~650px.
+            The hour column is 72px, not 62px, because a 12-hour locale writes
+            "12:00 AM" there and 62px wrapped it onto two lines. */}
+        <div className="absolute inset-0 grid content-start overflow-auto bg-pqInner [grid-template-columns:72px_repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
+          <div className="sticky top-0 z-[12] h-[54px] border-b border-pqBorder bg-pqInner" />
+          {localizedDays.map((day) => {
+            const today = day.day === newDayjs().format('L');
+            const past = day.date.endOf('day').isBefore(newDayjs());
+            return (
               <div
+                key={day.name}
                 className={clsx(
-                  'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L') &&
-                    'text-newTableTextFocused'
+                  'sticky top-0 z-[13] flex h-[54px] min-w-0 flex-col items-center justify-center gap-[2px] overflow-hidden border-b border-pqBorder px-[6px]',
+                  today ? 'bg-pqBrandFaint' : 'bg-pqInner'
                 )}
               >
-                {day.day === newDayjs().format('L') && (
-                  <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
-                )}
-                {day.day}
+                <div className="flex items-baseline gap-[4px]">
+                  <span
+                    className={clsx(
+                      'text-[12.5px] font-[600] tracking-[0.01em]',
+                      today
+                        ? 'text-pqFocused'
+                        : past
+                        ? 'text-pqSoft'
+                        : 'text-pqMuted'
+                    )}
+                  >
+                    {day.date.format('ddd')}
+                  </span>
+                  {(day.date.date() === 1 ||
+                    day.date.isSame(newDayjs(startDate), 'day')) && (
+                    <span className="rounded-[4px] bg-pqBrandSoft px-[5px] py-[1px] text-[11px] font-[700] uppercase tracking-[0.04em] text-pqBrand">
+                      {day.date.format('MMM')}
+                    </span>
+                  )}
+                </div>
+                <div
+                  className={clsx(
+                    'flex h-[27px] min-w-[27px] items-center justify-center rounded-full px-[7px] text-[15px] font-[600]',
+                    today
+                      ? 'bg-pqBrand text-white shadow-pqToday'
+                      : past
+                      ? 'text-pqSoft'
+                      : 'text-pqText'
+                  )}
+                >
+                  {day.date.date()}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
+              {/* `dir="ltr"`: a clock reading is a left-to-right token even in
+                  an RTL layout. Without it bidi reorders "0:00 AM" to "AM 0:00". */}
+              <div
+                dir="ltr"
+                className="flex min-h-[108px] -translate-y-[6px] items-start justify-end whitespace-nowrap border-e border-pqBorder px-[8px] pt-[11px] text-[11.5px] font-[500] text-pqMuted rtl:justify-start"
+              >
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {localizedDays.map((day, indexDay) => (
-                <Fragment
+              {localizedDays.map((day) => (
+                <CalendarColumn
                   key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
-                >
-                  <div className="relative">
-                    <CalendarColumn
-                      getDate={day.date.hour(hour).startOf('hour')}
-                    />
-                  </div>
-                </Fragment>
+                  getDate={day.date.hour(hour).startOf('hour')}
+                />
               ))}
             </Fragment>
           ))}
@@ -458,27 +492,25 @@ export const MonthView = () => {
   }, [startDate]);
 
   return (
-    <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+    <div className="flex flex-1 flex-col text-pqText">
+      <div className="relative flex flex-1">
+        {/* Same hairline language as the week grid: no gaps, no rounded tiles —
+            the cells draw the lines with their own borders. */}
+        <div className="absolute start-0 top-0 grid h-full w-full content-start overflow-auto bg-pqInner [grid-template-columns:repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="sticky top-0 z-[20] flex h-[54px] min-w-0 items-center justify-center overflow-hidden border-b border-pqBorder bg-pqInner px-[6px] text-[12.5px] font-[600] tracking-[0.01em] text-pqMuted"
             >
-              <div>{day}</div>
+              <span className="truncate">{day}</span>
             </div>
           ))}
           {calendarDays.map((date, index) => (
-            <div
+            <CalendarColumn
               key={index}
-              className="text-center items-center justify-center flex"
-            >
-              <CalendarColumn
-                getDate={newDayjs(date.day).endOf('day')}
-                randomHour={true}
-              />
-            </div>
+              getDate={newDayjs(date.day).endOf('day')}
+              randomHour={true}
+            />
           ))}
         </div>
       </div>
@@ -656,7 +688,7 @@ export const CalendarColumn: FC<{
       stop();
     };
   }, []);
-  const [{ canDrop }, drop] = useDrop(() => ({
+  const [{ canDrop, isTarget }, drop] = useDrop(() => ({
     accept: 'post',
     drop: async (item: any) => {
       if (isBeforeNow) return;
@@ -742,6 +774,12 @@ export const CalendarColumn: FC<{
     },
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
+      // Every legal landing place, not just the one under the cursor: the
+      // design marks them all faintly so you can see where a post may go
+      // before you get there.
+      isTarget: isBeforeNow
+        ? false
+        : !!monitor.canDrop() && !monitor.isOver(),
     }),
   }), [posts]);
 
@@ -820,32 +858,39 @@ export const CalendarColumn: FC<{
   }, [integrations, getDate, sets, signature]);
 
   const addProvider = useAddProvider();
+  const isToday = getDate.isSame(newDayjs(), 'day');
   return (
+    // The cell is the grid item now — the hairlines between cells are its own
+    // bottom and start borders, which is how the design draws the grid and
+    // what the 1px-gap trick elsewhere in the app cannot do inside a scroller.
     <div
-      className={clsx(
-        'flex flex-col w-full min-h-full relative',
-        isBeforeNow && 'repeated-strip',
-        loading && 'animate-pulse',
-        isBeforeNow
-          ? 'cursor-not-allowed'
-          : 'border border-newTextColor/5 rounded-[8px]'
-      )}
       ref={drop as any}
+      data-cell="1"
+      data-filled={postList.length ? '1' : '0'}
+      data-past={isBeforeNow ? '1' : '0'}
+      data-stack={postList.length > 1 ? '1' : '0'}
+      className={clsx(
+        'relative flex min-w-0 flex-col gap-[3px] border-b border-s border-pqLine p-[3px]',
+        display === 'month'
+          ? 'min-h-[126px]'
+          : display === 'day'
+          ? 'min-h-[108px]'
+          : 'min-h-[108px] max-h-[108px]',
+        isToday && !isBeforeNow && 'bg-pqBrandFaint',
+        isBeforeNow ? 'pq-hatch cursor-not-allowed' : 'cursor-pointer',
+        canDrop && 'shadow-[inset_0_0_0_2px_var(--brand)]',
+        isTarget && 'shadow-[inset_0_0_0_1px_var(--dropHint)]',
+        loading && 'animate-pulse'
+      )}
     >
       {display === 'month' && (
         <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
       )}
-      <div
-        className={clsx(
-          'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
-          canDrop && 'border border-[#612BD3]'
-        )}
-      >
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className={clsx(
-            'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            isBeforeNow ? 'flex-1' : 'cursor-pointer',
-            isBeforeNow && postList.length === 0 && 'col-calendar'
+            'flex w-full flex-col gap-[3px] text-[12px]',
+            isBeforeNow ? 'flex-1' : 'cursor-pointer'
           )}
         >
           {loading && (
@@ -854,45 +899,39 @@ export const CalendarColumn: FC<{
             </div>
           )}
           {list.map((post) => (
-            <div
+            <CalendarItem
               key={post.id}
-              className={clsx(
-                'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
-              )}
-            >
-              <div className="relative w-full flex flex-col items-center p-[2.5px]">
-                <CalendarItem
-                  display={display as 'day' | 'week' | 'month'}
-                  isBeforeNow={isBeforeNow}
-                  date={getDate}
-                  state={post.state}
-                  statistics={openStatistics(post.id)}
-                  missingRelease={openMissingRelease(post.id)}
-                  editPost={editPost(post, false)}
-                  duplicatePost={editPost(post, true)}
-                  copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
-                  post={post}
-                  integrations={integrations}
-                  deletePost={deletePost(post)}
-                />
-              </div>
-            </div>
+              display={display as 'day' | 'week' | 'month'}
+              isBeforeNow={isBeforeNow}
+              date={getDate}
+              state={post.state}
+              statistics={openStatistics(post.id)}
+              missingRelease={openMissingRelease(post.id)}
+              editPost={editPost(post, false)}
+              duplicatePost={editPost(post, true)}
+              copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
+              post={post}
+              integrations={integrations}
+              deletePost={deletePost(post)}
+            />
           ))}
           {!showAll && postList.length > 3 && (
-            <div
-              className="text-center hover:underline py-[5px] text-textColor"
+            <button
+              type="button"
+              className="relative z-[4] flex h-[19px] w-full shrink-0 items-center justify-center gap-[3px] whitespace-nowrap rounded-[5px] bg-pqBrandSoft px-[5px] text-[10.5px] font-[700] text-pqFocused transition-[filter] hover:brightness-110"
               onClick={showAllFunc}
             >
               {t('show_more', '+ Show more')} ({postList.length - 3})
-            </div>
+            </button>
           )}
           {showAll && postList.length > 3 && (
-            <div
-              className="text-center hover:underline py-[5px]"
+            <button
+              type="button"
+              className="relative z-[4] flex h-[19px] w-full shrink-0 items-center justify-center gap-[3px] whitespace-nowrap rounded-[5px] bg-pqBrandSoft px-[5px] text-[10.5px] font-[700] text-pqFocused transition-[filter] hover:brightness-110"
               onClick={showLessFunc}
             >
               {t('show_less', '- Show less')}
-            </div>
+            </button>
           )}
         </div>
         {!isBeforeNow && (
@@ -911,14 +950,31 @@ export const CalendarColumn: FC<{
               )}
             >
               {display !== 'day' && (
+                // Shown by the `[data-cell]:hover [data-cell-add]` rule in
+                // global.scss rather than by React, so moving the pointer
+                // across the grid does not re-render it.
                 <div
-                  className={clsx(
-                    'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
-                  )}
+                  data-cell-add="1"
+                  className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px]"
                 >
-                  <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
-                  />
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="26"
+                    height="26"
+                    fill="none"
+                    className="text-pqBrand"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="text-[11.5px] font-[600] -tracking-[0.01em] text-pqFocused">
+                    {convertTimeFormatBasedOnLocality(getDate.hour())}
+                  </span>
                 </div>
               )}
               {display === 'day' && (
@@ -1024,155 +1080,144 @@ const CalendarItem: FC<{
         date,
       },
       collect: (monitor) => ({
-        opacity: monitor.isDragging() ? 0 : 1,
+        // 40%, not invisible: the design keeps the card faintly in place so you
+        // can still see where it came from. (Doc 02 says "fully transparent" —
+        // that describes this repo before the redesign, not the prototype.)
+        opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
     []
   );
+  // The accent stripe carries the tag colour when the post has one, which is
+  // where the tag used to be visible before the actions moved off the top bar.
+  const accent = post?.tags?.[0]?.tag?.color
+    ? post.tags[0].tag.color
+    : state === 'DRAFT'
+    ? 'var(--brand)'
+    : 'var(--brand)';
+  const tagNames = post.tags.map((p) => p.tag.name).join(', ');
+  const actionButton =
+    'grid h-[18px] w-[20px] place-items-center rounded-[4px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText';
   return (
     <div
       // @ts-ignore
       ref={dragRef}
+      onClick={editPost}
       className={clsx(
-        'w-full flex h-full flex-1 flex-col group',
-        'relative',
-        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+        'group relative flex w-full min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[7px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:z-[3] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
+        state === 'ERROR' && 'ring-2 ring-red-500',
+        isBeforeNow && 'grayscale'
       )}
       style={{
         opacity,
       }}
     >
-      {state === 'ERROR' && (
-        <div
-          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
-          data-tooltip-id="tooltip"
-          data-tooltip-content={post.error || 'An error occurred while publishing this post'}
-        >
-          !
-        </div>
-      )}
+      {/* The error marker moved into the card's own top row, next to the
+          status dot, because the card no longer overflows its cell. */}
       {showCreationMethodBadge && (
-        <div className="absolute -bottom-[4px] -right-[4px] z-10">
+        <div className="absolute bottom-[3px] start-[5px] z-[4]">
           <CreationMethodBadge
             creationMethod={post.creationMethod}
-            ringColor="var(--new-bgColor)"
+            ringColor="var(--pop)"
           />
         </div>
       )}
+      <span
+        className="w-[3px] shrink-0"
+        style={{ background: accent }}
+        aria-hidden="true"
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px] py-[5px] pe-[6px] ps-[7px]">
+        <div className="flex min-w-0 items-center gap-[5px]">
+          <span className="relative size-[16px] shrink-0">
+            <img
+              className="size-[16px] rounded-full object-cover"
+              src={post.integration.picture! || '/no-picture.jpg'}
+              alt=""
+            />
+            <img
+              className="absolute -bottom-[1px] -end-[1px] size-[9px] rounded-full ring-1 ring-pqBadgeRing"
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              alt=""
+            />
+          </span>
+          <span className="shrink-0 text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
+            {newDayjs(post.publishDate)
+              .local()
+              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+          </span>
+          {!!tagNames && (
+            <span className="grid h-[14px] shrink-0 place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
+              {tagNames}
+            </span>
+          )}
+          <span className="min-w-0 flex-1" />
+          {state === 'ERROR' && (
+            <span
+              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+              data-tooltip-id="tooltip"
+              data-tooltip-content={
+                post.error ||
+                'An error occurred while publishing this post'
+              }
+            >
+              !
+            </span>
+          )}
+          {state === 'PUBLISHED' && (
+            <span className="size-[5px] shrink-0 rounded-full bg-pqOk" />
+          )}
+          {state === 'DRAFT' && (
+            <span className="shrink-0 text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqSoft">
+              {t('draft', 'Draft')}
+            </span>
+          )}
+        </div>
+        <div className="line-clamp-2 break-words text-start text-[11px] leading-[1.3] text-pqText">
+          {stripHtmlValidation('none', post.content, false, true, false) ||
+            t('no_content', 'no content')}
+        </div>
+      </div>
+      {/* The actions used to be a coloured bar across the top of every card.
+          The design floats them instead, so the card's own content is what you
+          read and the controls appear over it on hover. */}
       <div
-        className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
-        )}
-        style={{
-          backgroundColor: post?.tags?.[0]?.tag?.color,
-        }}
+        data-ci-actions="1"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-[3px] end-[3px] z-[5] flex gap-[1px] rounded-[6px] bg-pqSettings p-[2px] opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
-        <div
-          className={clsx(
-            post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
-            'group-hover:hidden cursor-pointer'
-          )}
-        >
-          {post.tags.map((p) => p.tag.name).join(', ')}
-        </div>
         {copyDebugJson && (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={copyDebugJson}
-          >
+          <button type="button" className={actionButton} onClick={copyDebugJson}>
             <CopyDebug />
-          </div>
+          </button>
         )}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={duplicatePost}
-        >
+        <button type="button" className={actionButton} onClick={duplicatePost}>
           <Duplicate />
-        </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={preview}
-        >
+        </button>
+        <button type="button" className={actionButton} onClick={preview}>
           <Preview />
-        </div>{' '}
-        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
+        </button>
+        {(post.integration.providerIdentifier === 'x' && disableXAnalytics) ||
+        !post.releaseId ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={missingRelease}
-          >
+          <button type="button" className={actionButton} onClick={missingRelease}>
             <Statistics />
-          </div>
+          </button>
         ) : post.releaseId !== 'missing' ? (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={statistics}
-          >
+          <button type="button" className={actionButton} onClick={statistics}>
             <Statistics />
-          </div>
+          </button>
         ) : (
           <></>
-        )}{' '}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
+        )}
+        <button
+          type="button"
+          className={clsx(actionButton, 'hover:text-pqWarn')}
           onClick={deletePost}
         >
           <DeletePost />
-        </div>
-      </div>
-      <div
-        onClick={editPost}
-        className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
-          'relative',
-          isBeforeNow && '!grayscale'
-        )}
-      >
-        <div className={clsx('relative min-w-[20px]')}>
-          <img
-            className="w-[20px] h-[20px] rounded-[8px]"
-            src={post.integration.picture! || '/no-picture.jpg'}
-          />
-          <img
-            className="w-[12px] h-[12px] rounded-[8px] absolute z-10 top-[10px] end-0 border border-fifth"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-          />
-        </div>
-        <div className="w-full flex-1 flex flex-col min-h-[40px]">
-          <div className="text-start">
-            {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
-          </div>
-            <div className="w-full relative">
-              <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
-                {stripHtmlValidation('none', post.content, false, true, false) ||
-                  t('no_content', 'no content')}
-              </div>
-            </div>
-        </div>
-        {showTime && (
-          <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
-          </div>
-        )}
+        </button>
       </div>
     </div>
   );

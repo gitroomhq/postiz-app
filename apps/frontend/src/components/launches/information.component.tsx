@@ -172,7 +172,7 @@ export const InformationComponent: FC<{
     <div
       className={clsx(
         'group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
-        isValid ? 'border border-newColColor' : 'bg-[#FF3F3F]'
+        isValid ? 'border border-newColColor' : 'bg-pqWarn'
       )}
     >
       {isValid ? <Valid /> : <Invalid />}
@@ -206,13 +206,13 @@ export const InformationComponent: FC<{
         <div
           className={clsx(
             'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
-            isValid ? 'border border-newColColor' : 'border border-[#FF3F3F]'
+            isValid ? 'border border-newColColor' : 'border border-pqWarn'
           )}
         >
           {!isPicture && !totalChars && (
             <div
               className={clsx(
-                'text-sm text-[#FF3F3F] whitespace-nowrap',
+                'text-sm text-pqWarn whitespace-nowrap',
                 isGlobal && selectedIntegrations.length && 'mb-[12px]'
               )}
             >
@@ -238,7 +238,7 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
+                        ? 'text-pqWarn'
                         : ''
                     )}
                   >
@@ -251,7 +251,7 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
+                        ? 'text-pqWarn'
                         : ''
                     )}
                   >
@@ -266,7 +266,7 @@ export const InformationComponent: FC<{
           {showStripLinkWarning && (
             <div
               className={clsx(
-                'text-sm text-[#FF3F3F] whitespace-nowrap',
+                'text-sm text-pqWarn whitespace-nowrap',
                 ((isGlobal && selectedIntegrations.length) ||
                   (!isPicture && !totalChars)) &&
                   'mt-[12px]'

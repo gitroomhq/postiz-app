@@ -23,6 +23,7 @@ import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
@@ -360,7 +361,11 @@ export const LaunchesComponent = () => {
   const fireEvents = useFireEvents();
   const t = useT();
   const [reload, setReload] = useState(false);
+  const { mobile } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  // One source of truth for the column's width: below 760 it is always the
+  // icon rail, whatever the cookie remembers from a desktop session.
+  const channelsCollapsed = mobile || collapseMenu === '1';
   const [mode] = useCookie('mode', 'light');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
@@ -516,10 +521,17 @@ export const LaunchesComponent = () => {
         <HeaderAction>
           {sortedIntegrations?.length > 0 && <NewPost />}
         </HeaderAction>
+        {/* Below 760 the column keeps its icon-only width whatever the cookie
+            says. At 260px it left the calendar ~160px, and a `w-[260px]` with
+            no `shrink-0` in a squeezed row let its own centred text spill out
+            of both sides of the box — which is what the overlap at 420 was.
+            The design has no channel column here at all; it lives on a Channels
+            page that arrives with milestone 5, and the proper phone treatment
+            (a drawer off the header) comes with it. */}
         <div
           className={clsx(
-            'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            'flex relative shrink-0 flex-col',
+            channelsCollapsed ? 'group sidebar w-[100px]' : 'w-[260px]'
           )}
         >
           <div
@@ -533,7 +545,10 @@ export const LaunchesComponent = () => {
               </h2>
               <div
                 onClick={() =>
-                  setCollapseMenu(collapseMenu === '1' ? '0' : '1')
+                  // Same 7-day-default trap as the rail's own cookie.
+                  setCollapseMenu(collapseMenu === '1' ? '0' : '1', {
+                    days: 365,
+                  })
                 }
                 className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
               >
@@ -564,7 +579,7 @@ export const LaunchesComponent = () => {
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">
-              {sortedIntegrations.length === 0 && collapseMenu === '0' && (
+              {sortedIntegrations.length === 0 && !channelsCollapsed && (
                 <div className="flex-1 max-h-[500px] justify-center items-center flex">
                   <div className="flex flex-col gap-[12px] text-center">
                     <img
@@ -587,7 +602,7 @@ export const LaunchesComponent = () => {
               )}
               {menuIntegrations.map((menu) => (
                 <MenuGroupComponent
-                  collapsed={collapseMenu === '1'}
+                  collapsed={channelsCollapsed}
                   changeItemGroup={changeItemGroup}
                   key={menu.name}
                   group={menu}

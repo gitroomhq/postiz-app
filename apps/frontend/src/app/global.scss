@@ -23,14 +23,74 @@ body {
   background-image: linear-gradient(145deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
-// The left rail. Only the brand purples, brand-500 down to brand-700, spread
-// across the full height of the column: the point is depth, not a change of
-// colour. .crown-gradient's pop-600 belongs on a 40px logo tile, where it is a
-// highlight; down a rail the length of the window it becomes a pink half.
-// Brand values, so the rail is the same in light and dark and only the
-// surfaces around it change.
-.brand-rail {
-  background-image: linear-gradient(180deg, #7c3aed, #6d28d9 50%, #5b21b6);
+// The redesign's responsive shell keys off the attributes `use.viewport.tsx`
+// stamps on <html>, not off media queries — most of what changes between the
+// three sizes is structural and lives in the components. What is left here is
+// the handful of purely cosmetic hides, which is also how the prototype does
+// it. The Tailwind `mobile:` / `tablet:` screens are a separate, older system
+// at different widths; both are in use and neither replaces the other.
+[data-mobile='1'] {
+  // Icon-and-number only: at phone widths the header has no room for the words
+  // next to them.
+  [data-hdr-label] {
+    display: none !important;
+  }
+
+  [data-streak] {
+    display: none !important;
+  }
+}
+
+// Calendar cell states. These are hover rules over attributes the cell already
+// sets for its own logic, which is how the design expresses them too — writing
+// them as React state would re-render the whole grid on every pointer move.
+[data-cell] {
+  overflow: hidden;
+
+  &:hover {
+    background-color: var(--hover);
+  }
+
+  // An empty future cell invites a post: brand tint plus the "+ 14:00" mark.
+  &:not([data-filled='1']):not([data-past='1']):hover {
+    background-color: var(--brandFaint);
+
+    [data-cell-add] {
+      opacity: 1;
+    }
+  }
+
+  // A full cell grows a scrollbar under the pointer rather than clipping.
+  &[data-stack='1']:hover {
+    overflow-y: auto;
+    z-index: 7;
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+}
+
+[data-cell-add] {
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+// A past hour in the calendar. Diagonal hairlines rather than a flat fill, so
+// the cell still reads as part of the grid while saying it is closed. Lives
+// here because a repeating-gradient is unreadable as a Tailwind arbitrary
+// value and it is used in three views.
+.pq-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--hatch) 0 1px,
+    transparent 1px 9px
+  );
 }
 
 // Only suppress the outline for pointer interaction; keyboard focus must stay
@@ -38,6 +98,16 @@ body {
 // removed every focus ring in the app and made it unusable without a mouse.
 body *:focus:not(:focus-visible) {
   outline: none !important;
+}
+
+// The keyboard focus ring, in the app's own palette. `--ring` was added with
+// the token layer for exactly this and nothing had used it, so every focus ring
+// was still Chrome's default blue — legible, but a colour that appears nowhere
+// else in the product. Tabbing through the rail was the giveaway.
+body *:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: inherit;
 }
 
 .box {
@@ -552,9 +622,14 @@ html[dir='rtl'] .lbox {
   direction: ltr !important;
 }
 
-html[dir='rtl'] [dir='ltr'] {
-  direction: rtl !important;
-}
+// Removed: `html[dir='rtl'] [dir='ltr'] { direction: rtl !important }`.
+//
+// It forced *every* element that asks to be left-to-right back to right-to-left,
+// which is the exact opposite of what `dir="ltr"` is for — isolating content
+// that is not prose: dates, clock times, URLs, code, phone numbers. With it in
+// place a Hebrew week of 03/08–09/08 rendered as "09/08/2026 - 09/08/2026"
+// reversed, reading as the wrong week, and no amount of markup could fix it.
+// Nothing in the app sets `dir="ltr"` for the old rule to protect.
 //
 .uppy-Dashboard-AddFiles {
   display: none !important;

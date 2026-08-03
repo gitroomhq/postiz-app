@@ -81,7 +81,7 @@ const ShortlinkPreferenceComponent = () => {
           <div className="text-[14px]">
             {t('shortlink_preference', 'Shortlink Preference')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="text-[12px] text-pqMuted">
             {t(
               'shortlink_preference_description',
               'Control how URLs in your posts are handled. Shortlinks provide click statistics.'

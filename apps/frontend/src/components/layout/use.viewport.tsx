@@ -6,6 +6,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
@@ -51,6 +52,15 @@ const SSR_WIDTH = 1440;
 const ViewportContext = createContext<Viewport>(measure(SSR_WIDTH));
 
 /**
+ * The first measurement has to land before the browser paints, or a phone shows
+ * one frame of the desktop layout — the server renders at `SSR_WIDTH`, so the
+ * 236px rail appears and then snaps to the drawer. `useLayoutEffect` runs
+ * before paint but warns during SSR, where it would do nothing anyway.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+/**
  * One listener for the whole app, and the only place the root attributes are
  * written. Mounted high enough that `[data-mobile="1"] …` descendant selectors
  * reach every surface, including portalled modals and drawers.
@@ -58,7 +68,7 @@ const ViewportContext = createContext<Viewport>(measure(SSR_WIDTH));
 export const ViewportProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [width, setWidth] = useState(SSR_WIDTH);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     // Coalesce to one update per frame: a drag-resize fires resize far faster
     // than React can usefully re-render, and every consumer of this context
     // re-renders with it.
@@ -78,7 +88,9 @@ export const ViewportProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const viewport = useMemo(() => measure(width), [width]);
 
-  useEffect(() => {
+  // Also before paint: the `[data-mobile="1"] …` rules in global.scss hide
+  // header labels, and doing it after paint would flash them too.
+  useIsomorphicLayoutEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-mobile', viewport.mobile ? '1' : '0');
     root.setAttribute('data-tablet', viewport.tablet ? '1' : '0');

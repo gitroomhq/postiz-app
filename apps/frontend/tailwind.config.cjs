@@ -41,6 +41,9 @@ module.exports = {
         pqBoxFocused: 'var(--boxFocused)',
         pqHover: 'var(--hover)',
         pqNavOn: 'var(--navOn)',
+        pqNavActive: 'var(--navActive)',
+        pqNavRowHover: 'var(--navRowHover)',
+        pqDropHint: 'var(--dropHint)',
         pqHatch: 'var(--hatch)',
         pqUpgradeFg: 'var(--upgradeFg)',
         pqUpgradeFgHover: 'var(--upgradeFgHover)',
@@ -271,6 +274,12 @@ module.exports = {
         pqE2: 'var(--e2)',
         pqE3: 'var(--e3)',
         pq: 'var(--shadow)',
+        // Elevation plus a hairline drawn as an inset ring rather than a
+        // border, so the surface keeps its exact size. The toast is the one
+        // place the design combines them.
+        pqToast: 'var(--e3), inset 0 0 0 1px var(--border)',
+        // The lift under the calendar's current-day number.
+        pqToday: 'var(--todayGlow)',
       },
       dropShadow: {
         glow: [

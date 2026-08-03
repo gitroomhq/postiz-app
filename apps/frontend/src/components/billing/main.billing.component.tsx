@@ -111,7 +111,7 @@ export const Features: FC<{
     return list;
   }, [pack]);
   return (
-    <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
+    <div className="flex flex-col gap-[10px] justify-center text-[16px] text-pqMuted">
       {features.map((feature) => (
         <div key={feature} className="flex gap-[20px]">
           <div>
@@ -469,7 +469,7 @@ export const MainBillingComponent: FC<{
           .map(([name, values]) => (
             <div
               key={name}
-              className="flex-1 bg-sixth border border-customColor6 rounded-[4px] p-[24px] gap-[16px] flex flex-col [@media(max-width:1024px)]:items-center"
+              className="flex-1 bg-sixth border border-pqLine rounded-[4px] p-[24px] gap-[16px] flex flex-col [@media(max-width:1024px)]:items-center"
             >
               <div className="text-[18px]">{name}</div>
               <div className="text-[38px] flex gap-[2px] items-center">
@@ -479,7 +479,7 @@ export const MainBillingComponent: FC<{
                     ? values.year_price
                     : values.month_price}
                 </div>
-                <div className={`text-[14px] text-customColor18`}>
+                <div className={`text-[14px] text-pqMuted`}>
                   {monthlyOrYearly === 'on' ? '/year' : '/month'}
                 </div>
               </div>

@@ -2,10 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
+import { useThemeMode } from '@gitroom/frontend/components/layout/mode.component';
+import {
+  useMenuFilter,
+  useMenuItem,
+} from '@gitroom/frontend/components/layout/top.menu';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
@@ -15,10 +21,21 @@ function initialOf(user: { name?: string; email?: string } | undefined) {
   return source ? source[0].toUpperCase() : '?';
 }
 
+const ROW =
+  'flex w-full items-center gap-[10px] rounded-pqSm px-[10px] py-[8px] text-start text-[13px] transition-colors hover:bg-pqHover';
+
+const Divider = ({ className }: { className?: string }) => (
+  <div className={clsx('h-[1px] bg-pqLine', className)} />
+);
+
 /**
- * Identity in the top-right: avatar + name that opens a menu with the user's
- * email, a link to Settings and Logout. Before this the chrome showed no user
- * at all and logout was buried at the bottom of the settings sub-nav.
+ * Identity in the top-right: avatar that opens a menu with the user's email,
+ * Settings, Billing, the theme switch and Logout.
+ *
+ * The theme control used to be its own header icon. The redesign folds it in
+ * here, so this is now the only place the app writes the `mode` cookie outside
+ * the paywall header — the cookie, the emitter and the `<body>` class are all
+ * still `mode.component.tsx`'s, reached through `useThemeMode()`.
  */
 export const UserMenu = () => {
   const t = useT();
@@ -26,6 +43,9 @@ export const UserMenu = () => {
   const router = useRouter();
   const fetch = useFetch();
   const { isGeneral, isSecured } = useVariables();
+  const { mode, setMode } = useThemeMode();
+  const { secondMenu } = useMenuItem();
+  const filter = useMenuFilter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -67,93 +87,172 @@ export const UserMenu = () => {
   const displayName = user.name?.trim() || user.email?.split('@')[0] || 'Account';
   const picture = (user as { picture?: { path?: string } }).picture?.path;
 
+  // Same gate the rail applies, so the menu cannot reach a screen the rail
+  // deliberately hides.
+  const billing = secondMenu.find((f) => f.path === '/billing');
+  const showBilling = !!billing && filter(billing);
+
+  const avatar = (size: string, text: string) => (
+    <span
+      className={clsx(
+        'grid shrink-0 place-items-center overflow-hidden rounded-full bg-pqBrand font-[600] text-white',
+        size,
+        text
+      )}
+    >
+      {picture ? (
+        <img src={picture} alt="" className="size-full object-cover" />
+      ) : (
+        initialOf(user)
+      )}
+    </span>
+  );
+
   return (
-    <div ref={ref} className="relative flex items-center">
+    <div ref={ref} className="relative flex shrink-0 items-center">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('account_menu', 'Account menu')}
-        className="grid size-[34px] place-items-center rounded-full ring-1 ring-transparent hover:ring-newBorder transition-all"
+        className="grid size-[30px] place-items-center rounded-full transition-all hover:brightness-110"
       >
-        <span className="grid size-[30px] shrink-0 place-items-center overflow-hidden rounded-full bg-btnPrimary text-[13px] font-[600] text-white">
-          {picture ? (
-            <img src={picture} alt="" className="size-full object-cover" />
-          ) : (
-            initialOf(user)
-          )}
-        </span>
+        {avatar('size-[26px]', 'text-[11px]')}
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute end-0 top-[calc(100%+8px)] z-[300] w-[240px] overflow-hidden rounded-[12px] border border-newBorder bg-newBgColorInner shadow-lg"
+          className="absolute end-0 top-[40px] z-[300] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
         >
-          <div className="flex items-center gap-[10px] border-b border-newBorder px-[14px] py-[12px]">
-            <span className="grid size-[36px] shrink-0 place-items-center overflow-hidden rounded-full bg-btnPrimary text-[15px] font-[600] text-white">
-              {picture ? (
-                <img
-                  src={picture}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                initialOf(user)
-              )}
-            </span>
-            <div className="min-w-0">
-              <div className="truncate text-[13px] font-[600] text-newTextColor">
+          <div className="flex items-center gap-[10px] px-[10px] pb-[10px] pt-[8px]">
+            {avatar('size-[32px]', 'text-[13px]')}
+            <div className="flex min-w-0 flex-1 flex-col leading-[1.3]">
+              <span className="truncate text-[13px] font-[600] text-pqText">
                 {displayName}
-              </div>
-              <div className="truncate text-[12px] text-textItemBlur">
+              </span>
+              <span className="truncate text-[11.5px] text-pqSoft">
                 {user.email}
-              </div>
+              </span>
             </div>
           </div>
-          <div className="p-[6px]">
+          <Divider className="mx-[4px] mb-[6px]" />
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              router.push('/settings');
+            }}
+            className={clsx(ROW, 'text-pqText')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t('settings', 'Settings')}
+          </button>
+
+          {showBilling && (
             <button
               type="button"
               role="menuitem"
               onClick={() => {
                 setOpen(false);
-                router.push('/settings');
+                router.push('/billing');
               }}
-              className="flex w-full items-center gap-[10px] rounded-[8px] px-[10px] py-[8px] text-[13px] text-newTextColor hover:bg-boxHover transition-colors"
+              className={clsx(ROW, 'text-pqText')}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
                 <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {t('settings', 'Settings')}
-            </button>
-          </div>
-          <div className="border-t border-newBorder p-[6px]">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={logout}
-              className="flex w-full items-center gap-[10px] rounded-[8px] px-[10px] py-[8px] text-[13px] text-red-500 hover:bg-red-500/10 transition-colors"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                  d="M2.5 9.5h19M4.5 5.5h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"
                   stroke="currentColor"
                   strokeWidth="1.7"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
-              {t('logout_from', 'Logout from')}
-              {isGeneral ? ' PostQueen' : ' PostQueen'}
+              {t('billing', 'Billing')}
             </button>
+          )}
+
+          <Divider className="mx-[4px] my-[6px]" />
+
+          <div className="flex items-center gap-[8px] px-[10px] pb-[8px] pt-[6px]">
+            <span className="flex-1 text-[13px] text-pqMuted">
+              {t('theme', 'Theme')}
+            </span>
+            <div className="flex gap-[2px] rounded-full bg-pqSettings p-[2px]">
+              {(
+                [
+                  {
+                    key: 'light' as const,
+                    label: t('switch_to_light_mode', 'Switch to light mode'),
+                    d: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
+                  },
+                  {
+                    key: 'dark' as const,
+                    label: t('switch_to_dark_mode', 'Switch to dark mode'),
+                    d: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z',
+                  },
+                ]
+              ).map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setMode(option.key)}
+                  aria-label={option.label}
+                  aria-pressed={mode === option.key}
+                  data-tooltip-id="tooltip"
+                  data-tooltip-content={option.label}
+                  className={clsx(
+                    'grid h-[24px] w-[28px] place-items-center rounded-full transition-colors',
+                    mode === option.key
+                      ? 'bg-pqInner text-pqText'
+                      : 'text-pqSoft hover:text-pqText'
+                  )}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d={option.d}
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              ))}
+            </div>
           </div>
+
+          <Divider className="mx-[4px] mb-[6px] mt-[2px]" />
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={logout}
+            className={clsx(ROW, 'text-pqWarn')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+              <path
+                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t('logout_from', 'Logout from')}
+            {isGeneral ? ' PostQueen' : ' PostQueen'}
+          </button>
         </div>
       )}
     </div>

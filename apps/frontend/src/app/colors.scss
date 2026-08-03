@@ -44,6 +44,17 @@
     --brandSoft: rgba(124, 58, 237, 0.16);
     --pink: #e0189e;
     --navOn: rgba(255, 255, 255, 0.075);
+    // The rail's own two states. The prototype writes these as literals rather
+    // than tokens and uses the same value in both themes, so they are one pair
+    // here too. `--navRowHover` is laid over the row as an inset ring, never as
+    // a background, so it tints whatever the row already sits on.
+    --navActive: rgba(124, 58, 237, 0.15);
+    --navRowHover: rgba(124, 58, 237, 0.1);
+    // Calendar grid. `--dropHint` marks every legal target while a post is in
+    // flight; the cell actually under the cursor takes a solid `--brand` ring.
+    // `--todayGlow` is the lift under the current day's number.
+    --dropHint: rgba(124, 58, 237, 0.28);
+    --todayGlow: 0 4px 12px -4px rgba(124, 58, 237, 0.7);
     --pop: #1b1b20;
     --third: #17171b;
     --tableHeader: #17171b;
@@ -138,6 +149,11 @@
     --brandSoft: rgba(124, 58, 237, 0.1);
     --pink: #e0189e;
     --navOn: rgba(9, 9, 11, 0.055);
+    // Same values as in .dark — see the notes there.
+    --navActive: rgba(124, 58, 237, 0.15);
+    --navRowHover: rgba(124, 58, 237, 0.1);
+    --dropHint: rgba(124, 58, 237, 0.28);
+    --todayGlow: 0 4px 12px -4px rgba(124, 58, 237, 0.7);
     --pop: #ffffff;
     --third: #fbfbfc;
     --tableHeader: #f5f5f8;

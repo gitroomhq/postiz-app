@@ -231,7 +231,7 @@ const McpSection = ({
           <div className="text-[15px] font-[600]">
             {t('mcp_client_configuration', 'MCP Client Configuration')}
           </div>
-          <div className="text-[13px] text-customColor18 mt-[2px]">
+          <div className="text-[13px] text-pqMuted mt-[2px]">
             {t(
               'connect_your_mcp_client_to_postqueen_to_schedule_your_posts_faster',
               'Connect PostQueen MCP server to your client (Http streaming) to schedule your posts faster.'
@@ -240,7 +240,7 @@ const McpSection = ({
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
             href="https://docs.postqueen.ai/mcp/introduction"
             target="_blank"
           >
@@ -251,7 +251,7 @@ const McpSection = ({
       </div>
       <div className="p-[20px] flex flex-col gap-[16px]">
         <div className="flex flex-col gap-[6px]">
-          <div className="text-[13px] font-[600] text-customColor18">
+          <div className="text-[13px] font-[600] text-pqMuted">
             {t('auth_method', 'Authentication')}
           </div>
           <div className="flex gap-[6px]">
@@ -262,8 +262,8 @@ const McpSection = ({
                 className={clsx(
                   'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
                   method === m
-                    ? 'bg-[#612BD3] text-white'
-                    : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                    ? 'bg-pqBrand text-white'
+                    : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
                 )}
                 onClick={() => setMethod(m)}
               >
@@ -276,7 +276,7 @@ const McpSection = ({
         </div>
         {method === 'header' && (
           <div className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] font-[600] text-pqMuted">
               {t('mcp_client', 'Client')}
             </div>
             <div className="flex flex-wrap gap-[6px]">
@@ -287,8 +287,8 @@ const McpSection = ({
                   className={clsx(
                     'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
                     activeClient === client
-                      ? 'bg-[#612BD3] text-white'
-                      : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                      ? 'bg-pqBrand text-white'
+                      : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
                   )}
                   onClick={() => setActiveClient(client)}
                 >
@@ -299,7 +299,7 @@ const McpSection = ({
           </div>
         )}
         <div className="flex flex-col gap-[8px]">
-          <div className="text-[12px] text-customColor18 font-[500]">
+          <div className="text-[12px] text-pqMuted font-[500]">
             {method === 'header'
               ? hint
               : t(
@@ -419,7 +419,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
           <div className="text-[15px] font-[600]">
             {t('cli_and_skills', 'CLI & AI Skills')}
           </div>
-          <div className="text-[13px] text-customColor18 mt-[2px]">
+          <div className="text-[13px] text-pqMuted mt-[2px]">
             {t(
               'cli_description',
               'Use the PostQueen CLI to automate posting from your terminal, or install the skill to let your AI agent schedule posts for you.'
@@ -428,7 +428,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
             href="https://docs.postqueen.ai/cli/introduction"
             target="_blank"
           >
@@ -446,8 +446,8 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
               className={clsx(
                 'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
                 mode === m
-                  ? 'bg-[#612BD3] text-white'
-                  : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                  ? 'bg-pqBrand text-white'
+                  : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
               )}
               onClick={() => setMode(m)}
             >
@@ -459,7 +459,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
         </div>
         {displaySteps.map((step, i) => (
           <div key={i} className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] font-[600] text-pqMuted">
               {i + 1}. {step.label}
             </div>
             <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
@@ -575,7 +575,7 @@ const PublicApiContent = () => {
             <div className="text-[15px] font-[600]">
               {t('api_key', 'API Key')}
             </div>
-            <div className="text-[13px] text-customColor18 mt-[2px]">
+            <div className="text-[13px] text-pqMuted mt-[2px]">
               {t(
                 'use_postqueen_api_to_integrate_with_your_tools',
                 'Use PostQueen API to integrate with your tools.'
@@ -584,7 +584,7 @@ const PublicApiContent = () => {
           </div>
           <div className="flex gap-[6px] shrink-0 pt-[2px]">
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://docs.postqueen.ai/public-api"
               target="_blank"
             >
@@ -592,7 +592,7 @@ const PublicApiContent = () => {
             {t('read_the_docs', 'Docs')}
             </a>
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://www.npmjs.com/package/n8n-nodes-postqueen"
               target="_blank"
             >
@@ -721,8 +721,8 @@ export const PublicComponent = () => {
             className={clsx(
               'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
               subTab === tab
-                ? 'bg-[#612BD3] text-white'
-                : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                ? 'bg-pqBrand text-white'
+                : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
             )}
             onClick={() => setSubTab(tab)}
           >

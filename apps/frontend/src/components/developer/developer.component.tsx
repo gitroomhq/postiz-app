@@ -234,7 +234,7 @@ export const DeveloperComponent: FC = () => {
               <div className="text-[15px] font-[600]">
                 {t('oauth_application', 'OAuth Application')}
               </div>
-              <div className="text-[13px] text-customColor18 mt-[2px]">
+              <div className="text-[13px] text-pqMuted mt-[2px]">
                 {t(
                   'create_an_oauth_application',
                   'Create an OAuth application to allow third-party integrations with PostQueen on behalf of your users.'
@@ -243,7 +243,7 @@ export const DeveloperComponent: FC = () => {
             </div>
             <div className="flex gap-[6px] shrink-0 pt-[2px]">
               <a
-                className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+                className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
                 href="https://docs.postqueen.ai/public-api/oauth"
                 target="_blank"
               >
@@ -256,7 +256,7 @@ export const DeveloperComponent: FC = () => {
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="cursor-pointer px-[20px] h-[44px] bg-[#612BD3] hover:bg-[#5520CB] transition-colors text-white rounded-[8px] text-[15px] font-[600]"
+              className="cursor-pointer px-[20px] h-[44px] bg-pqBrand hover:bg-pqBrandHover transition-colors text-white rounded-[8px] text-[15px] font-[600]"
             >
               {t('create_oauth_app', 'Create OAuth App')}
             </button>
@@ -286,7 +286,7 @@ export const DeveloperComponent: FC = () => {
             <div className="text-[15px] font-[600]">
               {t('create_oauth_app', 'Create OAuth App')}
             </div>
-            <div className="text-[13px] text-customColor18 mt-[2px]">
+            <div className="text-[13px] text-pqMuted mt-[2px]">
               {t(
                 'fill_in_the_details_for_your_oauth_application',
                 'Fill in the details for your OAuth application.'
@@ -295,7 +295,7 @@ export const DeveloperComponent: FC = () => {
           </div>
           <div className="p-[20px] flex flex-col gap-[16px]">
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('app_name', 'App Name')} *
               </label>
               <input
@@ -307,7 +307,7 @@ export const DeveloperComponent: FC = () => {
               />
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('description', 'Description')}
               </label>
               <textarea
@@ -319,7 +319,7 @@ export const DeveloperComponent: FC = () => {
               />
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('profile_picture', 'Profile Picture')}
               </label>
               <div className="flex items-center gap-[12px]">
@@ -330,7 +330,7 @@ export const DeveloperComponent: FC = () => {
                     className="w-[48px] h-[48px] rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-customColor18">
+                  <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-pqMuted">
                     ?
                   </div>
                 )}
@@ -344,7 +344,7 @@ export const DeveloperComponent: FC = () => {
               </div>
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('redirect_url', 'Redirect URL')} *
               </label>
               <input
@@ -358,7 +358,7 @@ export const DeveloperComponent: FC = () => {
               <button
                 type="button"
                 onClick={createApp}
-                className="cursor-pointer px-[20px] h-[44px] bg-[#612BD3] hover:bg-[#5520CB] transition-colors text-white rounded-[8px] text-[15px] font-[600]"
+                className="cursor-pointer px-[20px] h-[44px] bg-pqBrand hover:bg-pqBrandHover transition-colors text-white rounded-[8px] text-[15px] font-[600]"
               >
                 {t('create', 'Create')}
               </button>
@@ -397,7 +397,7 @@ export const DeveloperComponent: FC = () => {
             <div className="text-[15px] font-[600]">
               {t('oauth_application', 'OAuth Application')}
             </div>
-            <div className="text-[13px] text-customColor18 mt-[2px]">
+            <div className="text-[13px] text-pqMuted mt-[2px]">
               {t(
                 'manage_your_oauth_application',
                 'Manage your OAuth application for third-party integrations.'
@@ -406,7 +406,7 @@ export const DeveloperComponent: FC = () => {
           </div>
           <div className="flex gap-[6px] shrink-0 pt-[2px]">
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://docs.postqueen.ai/public-api/oauth"
               target="_blank"
             >
@@ -419,7 +419,7 @@ export const DeveloperComponent: FC = () => {
         {editing ? (
           <div className="p-[20px] flex flex-col gap-[16px]">
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('app_name', 'App Name')} *
               </label>
               <input
@@ -431,7 +431,7 @@ export const DeveloperComponent: FC = () => {
               />
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('description', 'Description')}
               </label>
               <textarea
@@ -443,7 +443,7 @@ export const DeveloperComponent: FC = () => {
               />
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('profile_picture', 'Profile Picture')}
               </label>
               <div className="flex items-center gap-[12px]">
@@ -454,7 +454,7 @@ export const DeveloperComponent: FC = () => {
                     className="w-[48px] h-[48px] rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-customColor18">
+                  <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-pqMuted">
                     ?
                   </div>
                 )}
@@ -468,7 +468,7 @@ export const DeveloperComponent: FC = () => {
               </div>
             </div>
             <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-customColor18">
+              <label className="text-[13px] font-[600] text-pqMuted">
                 {t('redirect_url', 'Redirect URL')} *
               </label>
               <input
@@ -482,7 +482,7 @@ export const DeveloperComponent: FC = () => {
               <button
                 type="button"
                 onClick={updateApp}
-                className="cursor-pointer px-[20px] h-[44px] bg-[#612BD3] hover:bg-[#5520CB] transition-colors text-white rounded-[8px] text-[15px] font-[600]"
+                className="cursor-pointer px-[20px] h-[44px] bg-pqBrand hover:bg-pqBrandHover transition-colors text-white rounded-[8px] text-[15px] font-[600]"
               >
                 {t('save', 'Save')}
               </button>
@@ -505,21 +505,21 @@ export const DeveloperComponent: FC = () => {
                   className="w-[48px] h-[48px] rounded-full object-cover"
                 />
               ) : (
-                <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-customColor18 text-[18px] font-[600]">
+                <div className="w-[48px] h-[48px] rounded-full bg-btnSimple flex items-center justify-center text-pqMuted text-[18px] font-[600]">
                   {app.name?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
               <div>
                 <div className="text-[15px] font-[600]">{app.name}</div>
                 {app.description && (
-                  <div className="text-customColor18 text-[13px]">
+                  <div className="text-pqMuted text-[13px]">
                     {app.description}
                   </div>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-[4px]">
-              <div className="text-[13px] font-[600] text-customColor18">
+              <div className="text-[13px] font-[600] text-pqMuted">
                 {t('redirect_url', 'Redirect URL')}
               </div>
               <div className="text-[14px]">{app.redirectUrl}</div>
@@ -547,7 +547,7 @@ export const DeveloperComponent: FC = () => {
         </div>
         <div className="p-[20px] flex flex-col gap-[16px]">
           <div className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] font-[600] text-pqMuted">
               {t('client_id', 'Client ID')}
             </div>
             <div className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
@@ -555,7 +555,7 @@ export const DeveloperComponent: FC = () => {
             </div>
           </div>
           <div className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-customColor18">
+            <div className="text-[13px] font-[600] text-pqMuted">
               {t('client_secret', 'Client Secret')}
             </div>
             <div className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
@@ -564,7 +564,7 @@ export const DeveloperComponent: FC = () => {
                   {plaintextSecret}
                 </code>
               ) : (
-                <span className="text-customColor18 text-[13px]">
+                <span className="text-pqMuted text-[13px]">
                   {t(
                     'secret_only_shown_on_creation',
                     'Secret is only shown on creation or rotation'

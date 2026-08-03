@@ -63,7 +63,7 @@ export const Webhooks: FC = () => {
       <h3 className="text-[20px]">
         {t('webhooks', 'Webhooks')} ({data?.length || 0}/{user?.tier?.webhooks})
       </h3>
-      <div className="text-customColor18 mt-[4px]">
+      <div className="text-pqMuted mt-[4px]">
         {t(
           'webhooks_are_a_way_to_get_notified_when_something_happens_in_postqueen_via_an_http_request',
           'Webhooks are a way to get notified when something happens in PostQueen via\n        an HTTP request.'

@@ -4,10 +4,19 @@ import { FC, useEffect, useRef, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 
-export const AttachToFeedbackIcon: FC = () => {
+/**
+ * Sentry's feedback widget attaches itself to an element rather than exposing a
+ * plain "open" call, so whatever button triggers it has to hand over a ref.
+ * This used to be its own header icon; it is now a row in the Help menu, and
+ * the ref is all that moved.
+ *
+ * Returns `enabled: false` when the deployment has no DSN, in which case the
+ * caller should not render the row at all.
+ */
+export const useSentryFeedback = () => {
   const { sentryDsn } = useVariables();
   const [feedback, setFeedback] = useState<any>();
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const ref = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!sentryDsn) return;
@@ -20,18 +29,29 @@ export const AttachToFeedbackIcon: FC = () => {
   }, [sentryDsn]);
 
   useEffect(() => {
-    if (feedback && buttonRef.current) {
-      const unsubscribe = feedback.attachTo(buttonRef.current);
+    if (feedback && ref.current) {
+      const unsubscribe = feedback.attachTo(ref.current);
       return unsubscribe;
     }
     return () => {};
   }, [feedback]);
 
-  if (!sentryDsn) return null;
+  return { enabled: !!sentryDsn, ref };
+};
+
+/**
+ * The standalone icon. The app chrome no longer uses it — the Help menu owns
+ * that entry point now — but the FREE paywall header still does, and that
+ * screen has its own step.
+ */
+export const AttachToFeedbackIcon: FC = () => {
+  const { enabled, ref } = useSentryFeedback();
+
+  if (!enabled) return null;
 
   return (
     <button
-      ref={buttonRef}
+      ref={ref}
       type="button"
       aria-label="Feedback"
       className="hover:text-newTextColor"
