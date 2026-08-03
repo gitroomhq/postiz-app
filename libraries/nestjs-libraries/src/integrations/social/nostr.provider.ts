@@ -7,11 +7,18 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import {
+  getPublicKey,
+  Relay,
+  finalizeEvent,
+  nip19,
+  SimplePool,
+} from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
+import { formatNostrMention } from '@gitroom/nestjs-libraries/integrations/social/nostr.mention';
 
 // @ts-ignore
 global.WebSocket = WebSocket;
@@ -94,6 +101,82 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     }
 
     return {};
+  }
+
+  override async mention(
+    token: string,
+    data: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const query = data.query.trim();
+    if (!query) return [];
+
+    let author: string | undefined;
+    if (/^[0-9a-f]{64}$/i.test(query)) {
+      author = query.toLowerCase();
+    } else if (query.toLowerCase().startsWith('npub1')) {
+      try {
+        const decoded = nip19.decode(query);
+        if (decoded.type === 'npub') author = decoded.data;
+      } catch {
+        // Fall back to a relay text search for malformed/incomplete npubs.
+      }
+    }
+
+    const events = await pool.querySync(
+      list,
+      author
+        ? { kinds: [0], authors: [author], limit: 1 }
+        : { kinds: [0], search: query, limit: 50 }
+    );
+
+    const latestByAuthor = new Map<string, (typeof events)[number]>();
+    for (const event of events) {
+      const previous = latestByAuthor.get(event.pubkey);
+      if (!previous || previous.created_at < event.created_at) {
+        latestByAuthor.set(event.pubkey, event);
+      }
+    }
+
+    const normalizedQuery = query.toLowerCase();
+    return [...latestByAuthor.values()]
+      .map((event) => {
+        try {
+          const profile = JSON.parse(event.content || '{}');
+          const label =
+            profile.display_name ||
+            profile.displayName ||
+            profile.name ||
+            nip19.npubEncode(event.pubkey).slice(0, 16);
+          const searchable = [
+            label,
+            profile.name,
+            profile.nip05,
+            nip19.npubEncode(event.pubkey),
+            event.pubkey,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          if (!author && !searchable.includes(normalizedQuery)) return null;
+
+          return {
+            id: event.pubkey,
+            label,
+            image: profile.picture || profile.image || '',
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((profile): profile is NonNullable<typeof profile> => !!profile)
+      .slice(0, 10);
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return formatNostrMention(idOrHandle, name);
   }
 
   private async publish(pubkey: string, event: any) {
