@@ -590,6 +590,8 @@ tour_demo_7_body
 tour_demo_7_title
 tour_demo_8_body
 tour_demo_8_title
+tour_demo_drag_body
+tour_demo_drag_title
 tour_views_text
 tour_views_title
 trial_reel

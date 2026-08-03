@@ -144,6 +144,8 @@ const useSteps = (): Step[] => {
  * writing fixtures over somebody's actual week would be indefensible.
  */
 const DEMO_REVEAL_MS = 300;
+/** After the eight land, the ninth waits, then moves — the reschedule beat. */
+const DEMO_DROP_MS = 1100;
 
 /** [day of the visible week, hour, provider icon, title key, body key] */
 const DEMO_ROWS: Array<[number, number, string, string, string]> = [
@@ -177,6 +179,21 @@ export const useTourDemo = (): TourDemoPost[] => {
   );
   const onCalendarStep = running && step === 0;
   const [revealed, setRevealed] = useState(0);
+  const [dropped, setDropped] = useState(false);
+
+  // The ninth post is the one the step is really about: it lands late, sits for
+  // a beat and then moves to a different hour, which is the whole "drag to
+  // reschedule" claim shown rather than written. It is a re-render into another
+  // cell, not a drag — react-dnd is never involved, so nothing here can leave
+  // the real drag layer in a half-finished state.
+  useEffect(() => {
+    if (!onCalendarStep || revealed < DEMO_ROWS.length) {
+      setDropped(false);
+      return;
+    }
+    const id = window.setTimeout(() => setDropped(true), DEMO_DROP_MS);
+    return () => window.clearTimeout(id);
+  }, [onCalendarStep, revealed]);
 
   useEffect(() => {
     if (!onCalendarStep) {
@@ -244,7 +261,7 @@ export const useTourDemo = (): TourDemoPost[] => {
       tour_demo_8_title: t('tour_demo_8_title', 'Team spotlight'),
       tour_demo_8_body: t('tour_demo_8_body', 'Meet the two people behind the calendar.'),
     };
-    return DEMO_ROWS.slice(0, revealed).map(
+    const shown = DEMO_ROWS.slice(0, revealed).map(
       ([day, hour, provider, titleKey, bodyKey]) => ({
         day,
         hour,
@@ -253,7 +270,20 @@ export const useTourDemo = (): TourDemoPost[] => {
         body: copy[bodyKey],
       })
     );
-  }, [onCalendarStep, revealed, t]);
+    if (revealed >= DEMO_ROWS.length) {
+      shown.push({
+        // Friday, late morning. The design puts this at 09:00, which here sits
+        // directly under the tour card — the one post the step is really about
+        // would be the one you cannot see.
+        day: 4,
+        hour: dropped ? 10 : 11,
+        provider: 'x',
+        /* prettier-ignore */ title: t('tour_demo_drag_title', 'Feature drop'),
+        /* prettier-ignore */ body: t('tour_demo_drag_body', 'Drag to reschedule — no reload, and a calendar that keeps up.'),
+      });
+    }
+    return shown;
+  }, [onCalendarStep, revealed, dropped, t]);
 };
 
 interface Rect {

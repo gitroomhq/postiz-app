@@ -516,6 +516,8 @@
   "billing_monthly": "Monthly",
   "billing_yearly": "Yearly",
   "billing_20_percent_off": "20% Off",
+  "tour_demo_drag_title": "Feature drop",
+  "tour_demo_drag_body": "Drag to reschedule \u2014 no reload, and a calendar that keeps up.",
   "tour_demo_1_title": "Launch teaser",
   "tour_demo_1_body": "The story behind the rebuild, in five frames.",
   "tour_demo_2_title": "Community update",
