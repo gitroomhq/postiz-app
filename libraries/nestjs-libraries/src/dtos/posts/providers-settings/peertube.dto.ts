@@ -26,6 +26,7 @@ export class PeerTubeDto {
 
 
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   privacy?: number; // 1 = public, 2 = unlisted, 3 = private
 
