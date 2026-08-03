@@ -559,14 +559,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                   hasExtension(m.path, 'mp4')
                     ? this.uploadVideoChunked(client, m.path)
                     : client.v2.uploadMedia(
-                        await sharp(await readOrFetch(m.path), {
-                          animated: lookup(m.path) === 'image/gif',
-                        })
-                          .resize({
-                            width: 1000,
-                          })
-                          .gif()
-                          .toBuffer(),
+                        Buffer.from(await readOrFetch(m.path)),
                         {
                           media_type: (lookup(m.path) || '') as any,
                         }
