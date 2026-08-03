@@ -45,7 +45,9 @@ Four checks are green after every step: **types 0 · api 134 · routes 27 · i18
 585 → 607 once, in step 2, for the strings the design adds; every step since has left it alone).
 
 **Two surfaces cannot be verified on this install and were not marked verified:** the composer needs
-a connected channel, and every billing screen needs `billingEnabled`. `/billing` redirects to the
+a connected channel — precisely, `launches.component.tsx:522` renders `<NewPost />` only behind
+`sortedIntegrations?.length > 0`, so with no channel there is no button to click and the modal has no
+entry point at all — and every billing screen needs `billingEnabled`. `/billing` redirects to the
 login screen here — and has since before the migration, which is why three baselines filed the
 signup page under `billing-*.png` without anyone noticing.
 
@@ -983,6 +985,12 @@ invalid input value for enum "SubscriptionTier": "CREATOR"
 — which is an ordering constraint rather than a defect: `pm2-run` runs `prisma-apply` before starting
 anything, so a normal deploy adds the values first. The script documents it as a prerequisite. Run it
 **after** a deploy, never before.
+### Regression sweep after the tour, the colour fixes and the agent drawers
+
+7 screens × 420 / 900 / 1440 × both themes — 42 shots — **zero horizontal overflow**, no redirects,
+no dead pages. Same result the earlier sweep gave, which is the point: that sweep is what caught the
+agent page in the first place.
+
 ### The agent page on a phone — finished, and the inline-pane question answered
 
 **Finished.** The earlier half-fix collapsed both side columns to a 100px icon rail below 760, which
