@@ -987,5 +987,6 @@
   "invoices_none_lifetime": "There are no invoices — a founding member is never billed again.",
   "view_founding_membership": "View your founding membership",
   "invoices_live_in_portal": "Invoices, receipts and your payment method live in the billing portal.",
-  "open_billing_portal": "Open billing portal"
+  "open_billing_portal": "Open billing portal",
+  "channel_connected": "Connected"
 }

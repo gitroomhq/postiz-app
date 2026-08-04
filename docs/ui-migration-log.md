@@ -2298,3 +2298,31 @@ have shown. It took one real file.
 override directory while the frontend serves `/uploads` from the container path.
 That is this machine's configuration, not the app — worth stating so it is not
 mistaken for a rendering bug later.
+
+### A channel, and the channel detail seen for the first time
+
+`scripts/seed-dev-channel.mjs` writes one placeholder Mastodon channel (owner's
+call). Its token is the literal `dev-seed-not-a-real-token` and its name is
+"Dev placeholder (not connected)", so it announces itself in the one place
+somebody will definitely look — the channel list. `--revoke` removes it and
+refuses to touch anything it did not write. Nothing schedules a post by itself,
+so nothing will try to publish through it.
+
+**The channel detail page rendered for the first time since it was built.**
+Everything is there: the header, the three counters reading `0 / 0 / 0` from the
+`/posts/count` endpoint added for exactly this, New post and Automations,
+Publishing options, and the time-table editor with its three default slots.
+
+**And it showed a copy bug in my own work.** The status badge read
+**"Connected:"** — with a trailing colon. The existing `connected` translation
+key is `"Connected:"` because elsewhere it is a *label prefix*, and I reused it
+for a status badge. Now `channel_connected`, a key of its own; the old one is
+untouched because other call sites depend on the colon.
+
+That is the third defect this session found by putting real data in front of a
+screen that had only ever been reasoned about — after the media size that was
+never recorded and the "0.0 MB" formatter. None of the three were visible in the
+source.
+
+`api 149 · routes 28 · gates 12` unchanged, `i18n` +1, sweep reports zero
+overflow across thirteen screens.

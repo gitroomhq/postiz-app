@@ -292,7 +292,10 @@ export const ChannelsComponent: FC = () => {
                 >
                   {current.refreshNeeded || current.inBetweenSteps
                     ? t('needs_reconnect', 'Needs reconnecting')
-                    : t('connected', 'Connected')}
+                    : // Not the existing `connected` key: that one is "Connected:" with a
+                      // trailing colon because it is a label prefix elsewhere, and
+                      // reusing it put a stray colon in this status badge.
+                      t('channel_connected', 'Connected')}
                 </span>
               </div>
             </div>
