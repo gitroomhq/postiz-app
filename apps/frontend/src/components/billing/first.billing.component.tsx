@@ -357,8 +357,22 @@ export const FirstBillingComponent = () => {
                         : 'border-[1.5px] border-newColColor'
                     )}
                   >
-                    <div className="text-[20px] mobile:text-[18px] font-[500]">
-                      {capitalize(key)}
+                    <div className="flex items-center gap-[8px]">
+                      <div className="flex-1 text-[20px] mobile:text-[18px] font-[500]">
+                        {capitalize(key)}
+                      </div>
+                      {/* The design puts this on one plan and names it there:
+                          `badgeDisplay: key === 'PRO' ? 'flex' : 'none'`. It is
+                          the only steer the checkout gives, so it is not
+                          decoration. */}
+                      {key === 'PRO' && (
+                        <span
+                          data-plan-popular="1"
+                          className="rounded-[6px] bg-pqBrand px-[7px] py-[2px] text-[10px] font-[700] uppercase tracking-[0.06em] text-pqOnBrand"
+                        >
+                          {t('billing_popular', 'Popular')}
+                        </span>
+                      )}
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
                       <span className="text-[44px] mobile:text-[30px] font-[600]">
@@ -417,11 +431,23 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
     const channelsOr = currentPricing.channel;
     const list: FeatureItem[] = [];
 
-    list.push({
-      key: channelsOr === 1 ? 'billing_channel' : 'billing_channels',
-      defaultValue: channelsOr === 1 ? 'channel' : 'channels',
-      prefix: channelsOr,
-    });
+    // AGENCY carries 1,000,000 channels, which is how "unlimited" is stored.
+    // The Billing screen already reads it that way; this list did not, so the
+    // checkout offered "1000000 channels" — the one number on the screen that
+    // makes the product look broken. Same key as the other screen, so the two
+    // cannot drift apart again.
+    if (channelsOr > 10000) {
+      list.push({
+        key: 'plan_unlimited_channels',
+        defaultValue: 'Unlimited channels',
+      });
+    } else {
+      list.push({
+        key: channelsOr === 1 ? 'billing_channel' : 'billing_channels',
+        defaultValue: channelsOr === 1 ? 'channel' : 'channels',
+        prefix: channelsOr,
+      });
+    }
 
     list.push({
       key: 'billing_posts_per_month',
