@@ -23,6 +23,8 @@ import {
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { Context } from '@temporalio/activity';
+import dayjs from 'dayjs';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -76,7 +78,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV106', {
+        .workflow.signalWithStart('postWorkflowV107', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -110,6 +112,91 @@ export class PostActivity {
     await this._postService.updatePost(id, postId, releaseURL);
   }
 
+  // Used by postWorkflowV107 recycles: the row keeps its original
+  // releaseURL/releaseId (and publishDate), only the state is confirmed.
+  @ActivityMethod()
+  async updatePostKeepRelease(id: string, postId: string, releaseURL: string) {
+    await this._postService.updatePostKeepRelease(id, postId, releaseURL);
+  }
+
+  // Legacy v1.0.5/v1.0.6 recycle children have a random-suffix workflowId
+  // (post_<id>_<suffix>); the plain post_<id> execution is a pending first
+  // publish and must be left alone.
+  private isLegacyRecycleChild(postId: string) {
+    try {
+      const { workflowType, workflowExecution } = Context.current().info;
+      return (
+        ['postWorkflowV105', 'postWorkflowV106'].includes(workflowType) &&
+        workflowExecution.workflowId.startsWith(`post_${postId}_`)
+      );
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // Hand a legacy recycle chain over to postWorkflowV107: start a scheduled
+  // recycle on the post's own anniversary grid, so the legacy child can
+  // complete without publishing.
+  private async handoffLegacyRecycle(post: any) {
+    if (
+      !post ||
+      post.deletedAt ||
+      post.state !== 'PUBLISHED' ||
+      !post.intervalInDays
+    ) {
+      return;
+    }
+
+    const client = this._temporalService.client.getRawClient();
+
+    // a v1.0.7 chain already owns this post's recycles
+    const running = client.workflow.list({
+      query: `postId="${post.id}" AND ExecutionStatus="Running" AND WorkflowType="postWorkflowV107"`,
+    });
+    for await (const _ of running) {
+      return;
+    }
+
+    // recycle only at publishDate + k*intervalInDays: if the legacy chain was
+    // phase-correct (fired within 2 hours after an anniversary) continue
+    // seamlessly now, otherwise wait for the next anniversary (dissolves batch
+    // bursts). Firing early when the next anniversary is close would publish
+    // twice: the recycle run arms that same anniversary as its successor.
+    const now = dayjs();
+    let next = dayjs(post.publishDate);
+    while (!next.isAfter(now)) {
+      next = next.add(post.intervalInDays, 'day');
+    }
+    const previous = next.subtract(post.intervalInDays, 'day');
+    const nearAnniversary = now.diff(previous, 'hour', true) <= 2;
+
+    await client.workflow.start('postWorkflowV107', {
+      workflowId: `post_${post.id}_recycle`,
+      taskQueue: 'main',
+      workflowIdConflictPolicy: 'USE_EXISTING',
+      args: [
+        {
+          taskQueue: post.integration.providerIdentifier
+            .split('-')[0]
+            .toLowerCase(),
+          postId: post.id,
+          organizationId: post.organizationId,
+          recycleAt: (nearAnniversary ? now : next).toISOString(),
+        },
+      ],
+      typedSearchAttributes: new TypedSearchAttributes([
+        {
+          key: postIdSearchParam,
+          value: post.id,
+        },
+        {
+          key: organizationId,
+          value: post.organizationId,
+        },
+      ]),
+    });
+  }
+
   @ActivityMethod()
   async getPost(orgId: string, postId: string) {
     if (process.env.STRIPE_SECRET_KEY) {
@@ -121,6 +208,15 @@ export class PostActivity {
       }
     }
     const post = await this._postService.getPostById(postId, orgId);
+
+    // defuse legacy buggy recycle children at fire time: hand the chain to
+    // postWorkflowV107 first, then let the legacy child take its
+    // "no post -> stop" path without publishing
+    if (this.isLegacyRecycleChild(postId)) {
+      await this.handoffLegacyRecycle(post);
+      return false;
+    }
+
     if (post.deletedAt) {
       return false;
     }
@@ -357,6 +453,13 @@ export class PostActivity {
 
   @ActivityMethod()
   async changeState(id: string, state: State, err?: any, body?: any) {
+    // a legacy recycle child failing (e.g. after the handoff returned "no
+    // post") must never mark the row as ERROR - the row belongs to the
+    // already-completed original publication
+    if (state === 'ERROR' && this.isLegacyRecycleChild(id)) {
+      return;
+    }
+
     await this._postService.changeState(id, state, err, body);
   }
 

@@ -402,6 +402,34 @@ export class PostsRepository {
     });
   }
 
+  // Recycled publications never overwrite the first publication's record.
+  async updatePostKeepRelease(id: string, postId: string, releaseURL: string) {
+    const current = await this._post.model.post.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        releaseURL: true,
+        releaseId: true,
+      },
+    });
+
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        state: 'PUBLISHED',
+        ...(current?.releaseURL || current?.releaseId
+          ? {}
+          : {
+              releaseURL,
+              releaseId: postId,
+            }),
+      },
+    });
+  }
+
   updateReleaseId(id: string, orgId: string, releaseId: string) {
     return this._post.model.post.update({
       where: {
