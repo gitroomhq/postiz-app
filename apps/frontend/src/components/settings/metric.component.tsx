@@ -1,25 +1,22 @@
 'use client';
 
-import { Select } from '@gitroom/react/form/select';
 import React, { useState } from 'react';
+import clsx from 'clsx';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import timezones from 'timezones-list';
-const dateMetrics = [
-  { label: 'AM:PM', value: 'US' },
-  { label: '24 hours', value: 'GLOBAL' },
-];
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(timezone);
 
 const MetricComponent = () => {
+  const t = useT();
   const [currentMetric, setCurrentMetric] = useState(isUSCitizen());
   const [timezone, setTimezone] = useState(
     localStorage.getItem('timezone') || dayjs.tz.guess()
   );
-  const changeMetric = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
+  const changeMetric = (value: string) => {
     setCurrentMetric(value === 'US');
     localStorage.setItem('isUS', value);
   };
@@ -31,19 +28,30 @@ const MetricComponent = () => {
     localStorage.setItem('timezone', value);
     dayjs.tz.setDefault(value);
   };
+  const dateMetrics = [
+    { label: t('date_metric_ampm', 'AM:PM'), value: 'US' },
+    { label: t('date_metric_24_hours', '24 hours'), value: 'GLOBAL' },
+  ];
   return (
-    <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">Date Metrics</div>
-      <Select name="metric" disableForm={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
+    <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[15px_16px] flex flex-col gap-[13px]">
+      <div className="text-[13.5px] font-[600]">{t('date_metrics', 'Date Metrics')}</div>
+      <div className="flex gap-[6px]">
         {dateMetrics.map((metric) => (
-          <option
+          <button
+            type="button"
             key={metric.value}
-            value={metric.value}
+            onClick={() => changeMetric(metric.value)}
+            className={clsx(
+              'h-[32px] px-[13px] rounded-pqSm text-[12.5px]',
+              (currentMetric ? 'US' : 'GLOBAL') === metric.value
+                ? 'bg-pqBrandSoft shadow-[inset_0_0_0_1px_var(--brand)] font-[600] text-pqText'
+                : 'shadow-[inset_0_0_0_1px_var(--border)] text-pqMuted hover:bg-pqHover'
+            )}
           >
             {metric.label}
-          </option>
+          </button>
         ))}
-      </Select>
+      </div>
 
       {/*<div className="mt-[4px]">Current Timezone</div>*/}
       {/*<Select*/}

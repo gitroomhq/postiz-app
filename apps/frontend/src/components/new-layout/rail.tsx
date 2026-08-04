@@ -229,7 +229,7 @@ export const Rail: FC<RailProps> = ({
             bridge. It deep-links to the Settings tab rather than owning a
             route, so there is one Connections and not two. */}
         <Link
-          href="/settings?tab=connections"
+          href="/connections"
           title={t('connect_postqueen', 'Connect PostQueen')}
           className={clsx(
             'mt-[8px] flex h-[38px] shrink-0 items-center gap-[10px] rounded-pqSm bg-pqBrand px-[9px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',

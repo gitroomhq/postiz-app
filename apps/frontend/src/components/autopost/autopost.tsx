@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
@@ -70,61 +70,110 @@ export const Autopost: FC = () => {
   );
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
-      <div className="text-pqMuted mt-[4px]">
+      <h3 className="text-[20px] font-[500]">{t('autopost', 'Autopost')}</h3>
+      <div className="mt-[4px] text-pqMuted">
         {t(
           'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
           'Autopost can automatically posts your RSS new items to social media'
         )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('title', 'Title')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              <div>{t('active', 'Active')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Slider
-                      value={p.active ? 'on' : 'off'}
-                      onChange={changeActive(p)}
-                      fill={true}
-                    />
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
+      {!!data?.length && (
+        <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+          {data?.map((p: any) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
             >
-              {t('add_an_autopost', 'Add an autopost')}
-            </Button>
-          </div>
+              <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pqSettings text-pqMuted">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 19.5h.01M5 12a7.5 7.5 0 0 1 7.5 7.5M5 5a14.5 14.5 0 0 1 14.5 14.5" />
+                </svg>
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="truncate text-[13.5px] font-[600]">
+                  {p.title}
+                </div>
+                <div className="mt-[2px] truncate font-mono text-[11.5px] text-pqSoft">
+                  {p.url}
+                </div>
+              </div>
+              <Slider
+                value={p.active ? 'on' : 'off'}
+                onChange={changeActive(p)}
+                fill={true}
+              />
+              <button
+                type="button"
+                onClick={addWebhook(p)}
+                aria-label={t('edit', 'Edit')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={deleteHook(p)}
+                aria-label={t('delete', 'Delete')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={addWebhook()}
+        className={clsx(
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
+        )}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
+        {t('add_an_autopost', 'Add an autopost')}
+      </button>
     </div>
   );
 };
@@ -357,7 +406,7 @@ export const AddOrEditWebhook: FC<{
                 <CopilotTextarea
                   disableBranding={true}
                   className={clsx(
-                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none mb-[16px] border-fifth border rounded-[4px]'
+                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner bg-pqInner outline-none mb-[16px] border-pqLine border rounded-pqSm'
                   )}
                   value={content}
                   onChange={(e) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -60,55 +60,105 @@ export const Webhooks: FC = () => {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">
+      <h3 className="text-[20px] font-[500]">
         {t('webhooks', 'Webhooks')} ({data?.length || 0}/{user?.tier?.webhooks})
       </h3>
-      <div className="text-pqMuted mt-[4px]">
+      <div className="mt-[4px] text-pqMuted">
         {t(
           'webhooks_are_a_way_to_get_notified_when_something_happens_in_postqueen_via_an_http_request',
           'Webhooks are a way to get notified when something happens in PostQueen via\n        an HTTP request.'
         )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('name', 'Name')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
+      {!!data?.length && (
+        <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+          {data?.map((p: any) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
             >
-              {t('add_a_webhook', 'Add a webhook')}
-            </Button>
-          </div>
+              <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pqSettings text-pqMuted">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10.2 13.8a4.2 4.2 0 0 0 6.3.45l2.4-2.4a4.2 4.2 0 0 0-5.95-5.95l-1.4 1.4M13.8 10.2a4.2 4.2 0 0 0-6.3-.45l-2.4 2.4a4.2 4.2 0 0 0 5.95 5.95l1.4-1.4" />
+                </svg>
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="truncate text-[13.5px] font-[600]">{p.name}</div>
+                <div className="mt-[2px] truncate font-mono text-[11.5px] text-pqSoft">
+                  {p.url}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={addWebhook(p)}
+                aria-label={t('edit', 'Edit')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={deleteHook(p)}
+                aria-label={t('delete', 'Delete')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={addWebhook()}
+        className={clsx(
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
+        )}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
+        {t('add_a_webhook', 'Add a webhook')}
+      </button>
     </div>
   );
 };

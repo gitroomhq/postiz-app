@@ -98,7 +98,7 @@ const EmailNotificationsComponent = () => {
 
   if (isLoading) {
     return (
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px]">
+      <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[15px_16px]">
         <div className="animate-pulse">
           {t('loading', 'Loading...')}
         </div>
@@ -107,16 +107,16 @@ const EmailNotificationsComponent = () => {
   }
 
   return (
-    <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">
+    <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[15px_16px] flex flex-col">
+      <div className="text-[13.5px] font-[600] pb-[6px]">
         {t('email_notifications', 'Email Notifications')}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-[500]">
             {t('success_emails', 'Success Emails')}
           </div>
-          <div className="text-[12px] text-pqMuted">
+          <div className="text-[12px] text-pqMuted mt-[2px]">
             {t(
               'success_emails_description',
               'Receive email notifications when posts are published successfully'
@@ -129,12 +129,12 @@ const EmailNotificationsComponent = () => {
           fill={true}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-[500]">
             {t('failure_emails', 'Failure Emails')}
           </div>
-          <div className="text-[12px] text-pqMuted">
+          <div className="text-[12px] text-pqMuted mt-[2px]">
             {t(
               'failure_emails_description',
               'Receive email notifications when posts fail to publish'
@@ -147,12 +147,12 @@ const EmailNotificationsComponent = () => {
           fill={true}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-[500]">
             {t('streak_emails', 'Streak Reminder Emails')}
           </div>
-          <div className="text-[12px] text-pqMuted">
+          <div className="text-[12px] text-pqMuted mt-[2px]">
             {t(
               'streak_emails_description',
               'Receive email reminders when your posting streak is about to end'

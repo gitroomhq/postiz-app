@@ -9,7 +9,6 @@ import {
 import i18next from 'i18next';
 import useCookie from 'react-use-cookie';
 import ReactCountryFlag from 'react-country-flag';
-import { List, Box, Group, Text } from '@mantine/core';
 import React, { useCallback } from 'react';
 import countries from 'i18n-iso-countries';
 
@@ -61,7 +60,12 @@ const getCountryCodeForFlag = (languageCode: string) => {
   return languageCode.toUpperCase();
 };
 
-export const ChangeLanguageComponent = () => {
+export const ChangeLanguageComponent = ({
+  hideHeader,
+}: {
+  /** The top-bar flag opens this in a modal that carries its own title. */
+  hideHeader?: boolean;
+} = {}) => {
   const currentLanguage = i18next.resolvedLanguage || fallbackLng;
   const availableLanguages = languages;
   const [_, setCookie] = useCookie(cookieName, currentLanguage || fallbackLng);
@@ -92,13 +96,23 @@ export const ChangeLanguageComponent = () => {
   }, []);
 
   return (
-    <div className="relative">
-      <div className="grid grid-cols-4 gap-2">
+    <div className="flex flex-col">
+      {!hideHeader && (
+        <>
+          <h3 className="text-[20px] font-[500]">{t('language', 'Language')}</h3>
+          <div className="mt-[4px] text-pqMuted">
+            {t('language_settings_description', 'Pick the language for the interface, emails and AI prompts.')}
+          </div>
+        </>
+      )}
+      <div className="mt-[18px] grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[8px]">
         {availableLanguages.map((language) => (
           <div
             className={clsx(
-              'flex items-center flex-col bg-newTableHeader hover:bg-newTableBorder p-[20px] cursor-pointer gap-2',
-              language === currentLanguage ? 'border border-textColor' : ''
+              'flex h-[44px] items-center gap-[9px] rounded-pqMd bg-pqPop px-[13px] text-[13px] cursor-pointer',
+              language === currentLanguage
+                ? 'shadow-[inset_0_0_0_1px_var(--brand)] font-[600]'
+                : 'shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
             )}
             key={language}
             onClick={() => handleLanguageChange(language)}
@@ -107,14 +121,19 @@ export const ChangeLanguageComponent = () => {
               countryCode={getCountryCodeForFlag(language)}
               svg
               style={{
-                width: '1.5em',
-                height: '1.5em',
+                width: '17px',
+                height: '17px',
               }}
               title={language}
             />
-            <Text weight={language === currentLanguage ? 'bold' : 'normal'}>
+            <span className="min-w-0 flex-1 truncate text-start">
               {getLanguageName(language)}
-            </Text>
+            </span>
+            {language === currentLanguage && (
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" className="shrink-0 text-pqBrand">
+                <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </div>
         ))}
       </div>
@@ -129,7 +148,7 @@ export const LanguageComponent = () => {
     modal.openModal({
       title: t('change_language', 'Change Language'),
       withCloseButton: true,
-      children: <ChangeLanguageComponent />,
+      children: <ChangeLanguageComponent hideHeader />,
     });
   };
   return (

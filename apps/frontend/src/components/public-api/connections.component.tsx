@@ -89,6 +89,34 @@ const CodeBlock: FC<{ code: string; label: string }> = ({ code, label }) => {
   );
 };
 
+/**
+ * The route-level wrapper for /connections. It carries the gate the settings
+ * tab used to hold — API access is an admin capability on plans that have it —
+ * so moving the screen out of Settings could not quietly open it up.
+ */
+export const ConnectionsPage: FC = () => {
+  const t = useT();
+  const user = useUser();
+  const { isGeneral } = useVariables();
+  const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
+  if (!user?.tier?.public_api || !isGeneral || !isOrgAdmin) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-pqInner p-[24px_28px_56px]">
+        <div className="mx-auto w-full max-w-[900px] rounded-pqMd border border-pqBorder bg-pqInner p-[24px] text-center text-[13px] text-pqMuted">
+          {t('connections_admin_only', 'Connections is available to workspace admins on plans with API access.')}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex-1 overflow-y-auto bg-pqInner p-[24px_28px_56px]">
+      <div className="mx-auto w-full max-w-[900px]">
+        <ConnectionsComponent />
+      </div>
+    </div>
+  );
+};
+
 export const ConnectionsComponent: FC = () => {
   const t = useT();
   const user = useUser();
@@ -887,11 +915,11 @@ export const ConnectionsComponent: FC = () => {
   return (
     <div className="flex flex-col gap-[20px]">
       <div className="flex flex-wrap items-end justify-between gap-[12px]">
-        <div>
-          <h2 className="text-[21px] font-[600] -tracking-[0.02em]">
+        <div data-tour="connect-pq">
+          <h2 className="text-[27px] font-[600] -tracking-[0.02em]">
             {t('connections', 'Connections')}
           </h2>
-          <div className="mt-[2px] text-[13.5px] text-pqMuted">
+          <div className="mt-[2px] text-[14px] text-pqMuted">
             {t(
               'connections_sub',
               'Work with PostQueen across your favourite tools. Everything here uses the same API key.'
@@ -919,6 +947,7 @@ export const ConnectionsComponent: FC = () => {
         </div>
       </div>
 
+      <div data-tour="mcp-clients" className="flex flex-col gap-[20px]">
       {filtered.map((group) => (
         <div key={group.id} className="flex flex-col gap-[10px]">
           <div className="flex items-baseline gap-[8px]">
@@ -985,6 +1014,7 @@ export const ConnectionsComponent: FC = () => {
           {t('conn_no_results', 'Nothing matches that.')}
         </div>
       )}
+      </div>
     </div>
   );
 };

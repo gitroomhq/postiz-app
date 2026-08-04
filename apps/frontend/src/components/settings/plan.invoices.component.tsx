@@ -53,61 +53,66 @@ export const PlanInvoicesComponent: FC = () => {
   }, [fetch, t, toast]);
 
   return (
-    <div data-plan-invoices="1" className="flex flex-col gap-[20px]">
-      <div className="flex flex-col gap-[6px] rounded-pqMd border border-pqBorder p-[20px]">
-        <div className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
-          {t('current_plan', 'Current plan')}
+    <div data-plan-invoices="1" className="flex flex-col">
+      <h3 className="text-[20px] font-[500]">
+        {t('plan_invoices', 'Plan & invoices')}
+      </h3>
+      <div className="mt-[18px] flex flex-col gap-[10px]">
+        <div className="flex flex-col gap-[6px] rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[20px]">
+          <div className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
+            {t('current_plan', 'Current plan')}
+          </div>
+          <div className="font-display text-[24px] font-[600] -tracking-[0.015em]">
+            {tier}
+          </div>
+          <div className="text-[13.5px] leading-[1.55] text-pqMuted">
+            {lifetime
+              ? t(
+                  'plan_lifetime_note',
+                  'One payment, done. Nothing renews and nothing is billed again.'
+                )
+              : t('plan_n_channels', '{{count}} channels', {
+                  count: plan?.channel ?? 0,
+                })}
+          </div>
         </div>
-        <div className="font-display text-[24px] font-[600] -tracking-[0.015em]">
-          {tier}
-        </div>
-        <div className="text-[13.5px] leading-[1.55] text-pqMuted">
-          {lifetime
-            ? t(
-                'plan_lifetime_note',
-                'One payment, done. Nothing renews and nothing is billed again.'
-              )
-            : t('plan_n_channels', '{{count}} channels', {
-                count: plan?.channel ?? 0,
-              })}
-        </div>
-      </div>
 
-      {lifetime ? (
-        <div className="flex flex-col items-start gap-[10px] rounded-pqMd border border-pqBorder p-[20px]">
-          <div className="text-[13.5px] leading-[1.55] text-pqMuted">
-            {t(
-              'invoices_none_lifetime',
-              'There are no invoices — a founding member is never billed again.'
-            )}
+        {lifetime ? (
+          <div className="flex flex-col items-start gap-[10px] rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[20px]">
+            <div className="text-[13.5px] leading-[1.55] text-pqMuted">
+              {t(
+                'invoices_none_lifetime',
+                'There are no invoices — a founding member is never billed again.'
+              )}
+            </div>
+            <Link
+              href="/billing/lifetime"
+              data-plan-invoices-link="lifetime"
+              className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+            >
+              {t('view_founding_membership', 'View your founding membership')}
+            </Link>
           </div>
-          <Link
-            href="/billing/lifetime"
-            data-plan-invoices-link="lifetime"
-            className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
-          >
-            {t('view_founding_membership', 'View your founding membership')}
-          </Link>
-        </div>
-      ) : (
-        <div className="flex flex-col items-start gap-[10px] rounded-pqMd border border-pqBorder p-[20px]">
-          <div className="text-[13.5px] leading-[1.55] text-pqMuted">
-            {t(
-              'invoices_live_in_portal',
-              'Invoices, receipts and your payment method live in the billing portal.'
-            )}
+        ) : (
+          <div className="flex flex-col items-start gap-[10px] rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[20px]">
+            <div className="text-[13.5px] leading-[1.55] text-pqMuted">
+              {t(
+                'invoices_live_in_portal',
+                'Invoices, receipts and your payment method live in the billing portal.'
+              )}
+            </div>
+            <button
+              type="button"
+              data-plan-invoices-link="portal"
+              disabled={busy}
+              onClick={openPortal}
+              className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover disabled:opacity-60"
+            >
+              {t('open_billing_portal', 'Open billing portal')}
+            </button>
           </div>
-          <button
-            type="button"
-            data-plan-invoices-link="portal"
-            disabled={busy}
-            onClick={openPortal}
-            className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover disabled:opacity-60"
-          >
-            {t('open_billing_portal', 'Open billing portal')}
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

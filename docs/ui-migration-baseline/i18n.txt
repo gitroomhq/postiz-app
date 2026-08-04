@@ -13,14 +13,13 @@ actions
 activate
 activate_your_account
 activation_email_sent
-active
 add
 add_a_signature
+add_a_social_set
 add_a_tag
 add_a_webhook
 add_an_autopost
 add_announcement
-add_another_member
 add_autopost_title
 add_channel
 add_community
@@ -58,11 +57,8 @@ announcement_description
 announcement_description_placeholder
 announcement_title
 announcement_title_placeholder
-api_auth_note_line1
-api_auth_note_line2
-api_auth_note_line3
-api_auth_note_line4
 api_key
+api_key_one_key
 api_key_rotated
 app_name
 approved_apps
@@ -84,7 +80,6 @@ are_you_sure_you_want_to_delete_this_subreddit
 are_you_sure_you_want_to_logout
 assistant_initial_message
 attachments
-auth_method
 auth_showcase_alt
 auth_showcase_body
 auth_showcase_channels
@@ -208,12 +203,8 @@ chrome_extension_warning_intro
 chrome_extension_warning_reconnect
 chrome_extension_warning_tos
 chrome_extension_warning_unstable
-ci_remote_servers
 claim
 clear
-cli_and_skills
-cli_claude_code_codex
-cli_description
 click_channel_to_add
 click_here_to_go_back_to_login
 click_to_exit_global_editing
@@ -360,6 +351,8 @@ conn_zapier_step_in_detail
 conn_zapier_step_out
 conn_zapier_step_out_detail
 connect
+connect_an_ai_agent
+connect_an_ai_agent_sub
 connect_channels
 connect_myself
 connect_post
@@ -368,14 +361,13 @@ connect_social_media_to_start
 connect_telegram
 connect_your_accounts
 connect_your_channels
-connect_your_mcp_client_to_postqueen_to_schedule_your_posts_faster
 connect_your_repository
 connected
 connected_channels
 connections
+connections_admin_only
 connections_sub
 contact_support
-content
 continue
 continue_to
 continue_with
@@ -385,13 +377,11 @@ continue_without_channels
 continue_without_set
 conversations
 copy
-copy_all
 copy_debug_json
 copy_id
 copy_link
 copy_post_id
 copy_secret
-copy_url
 could_not_add_member
 could_not_add_provider
 could_not_connect_to_platform
@@ -413,6 +403,9 @@ customer_socials_selected
 customer_updated
 customers
 date
+date_metric_24_hours
+date_metric_ampm
+date_metrics
 day
 day_streak
 debug_choose_copy
@@ -439,6 +432,7 @@ description_optional
 design_media
 developer
 developers
+developers_description
 didnt_receive_email
 disable_channel
 disable_channel_title
@@ -471,6 +465,7 @@ error
 error_details
 error_occurred
 expand_sidebar
+extend_postqueen_with_other_tools
 extension_communication_error
 extension_cookies_missing
 extension_not_available
@@ -623,6 +618,7 @@ invalid_or_expired_code
 invitation_link_sent
 invite_by_link
 invite_link
+invite_member
 invite_your_assistant_or_team_member_to_manage_your_account
 invoices_live_in_portal
 invoices_none_lifetime
@@ -648,6 +644,7 @@ label_who_can_reply_to_this_post
 label_who_can_see_this_video
 label_your_brand
 language
+language_settings_description
 last_github_trending
 launches
 lifetime_buy
@@ -659,7 +656,6 @@ links_will_be_removed_from
 list
 load_your_github_repository_from_settings_to_see_analytics
 loading
-locally
 login
 login_instead
 login_register_to_add_comments
@@ -677,9 +673,8 @@ lt_thanks_trial
 lt_you_are_founding
 main_navigation
 manage_billing
+manage_your_content_sets_for_easy_reuse_across_posts
 manage_your_oauth_application
-mcp_client
-mcp_client_configuration
 media
 media_editor
 media_import_failed
@@ -699,7 +694,6 @@ move_add_to_group
 move_to_billing
 music_usage_confirmation
 mutual_follow_friends
-n8n_node
 n_publishing_options
 name
 needs_reconnect
@@ -739,6 +733,7 @@ ok
 onboarding
 open_billing_portal
 open_claim_page
+open_connections
 open_wizard
 or
 or_wait_until_trial_ends
@@ -827,9 +822,6 @@ register_agent
 registering_agent
 registration_is_disabled
 release_id_update_failed
-remote_server_url_hint
-remote_servers
-remove
 remove_from_customer
 repeat_post_every
 repeat_post_every_label
@@ -891,7 +883,6 @@ short_links_statistics
 short_post
 shortlink_ask
 shortlink_no
-shortlink_preference
 shortlink_preference_description
 shortlink_settings
 shortlink_urls_question
@@ -966,7 +957,6 @@ tiktok_restriction_direct_video
 tiktok_restriction_upload_video
 tiktok_video_features
 time_table_slots
-title
 to_manage_all_your_social_media_channels
 to_your_telegram_group_channel_and_click_here
 today
@@ -1025,9 +1015,7 @@ upload
 upload_content_to_tiktok_without_posting
 upload_size_limit_exceeded
 uploading_pictures
-url
 use_a_different_email
-use_postqueen_api_to_integrate_with_your_tools
 use_signature
 use_this_media
 user

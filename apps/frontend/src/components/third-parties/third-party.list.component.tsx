@@ -97,6 +97,7 @@ export const ApiModal: FC<{
 export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
   const fetch = useFetch();
   const modals = useModals();
+  const t = useT();
   const { reload } = props;
 
   const integrationsList = useCallback(async () => {
@@ -126,23 +127,32 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
   );
 
   return (
-    <div className="grid grid-cols-4 gap-[10px] justify-items-center justify-center">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[12px]">
       {data?.map((p: any) => (
         <div
           onClick={addApiKey(p.title, p.identifier)}
           key={p.identifier}
-          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+          className="flex min-h-[184px] cursor-pointer flex-col rounded-[16px] bg-pqInner p-[17px] outline outline-1 -outline-offset-1 outline-pqBorder transition-colors hover:outline-pqBrand"
         >
-          <div>
+          <div className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[12px] bg-pqSettings">
             <img
-              className="w-[32px] h-[32px]"
+              className="h-[24px] w-[24px]"
               src={`/icons/third-party/${p.identifier}.png`}
             />
           </div>
-          <div className="whitespace-pre-wrap text-left text-lg">{p.title}</div>
-          <div className="whitespace-pre-wrap text-left">{p.description}</div>
-          <div className="w-full flex">
-            <Button className="w-full">Add</Button>
+          <div className="mt-[12px] text-start text-[14.5px] font-[600] tracking-[-0.01em]">
+            {p.title}
+          </div>
+          <div className="mt-[4px] line-clamp-2 whitespace-pre-wrap text-start text-[13px] text-pqMuted">
+            {p.description}
+          </div>
+          <div className="mt-auto flex items-center gap-[8px] border-t border-pqLine pt-[13px]">
+            <button
+              type="button"
+              className="flex h-[31px] items-center rounded-pqSm bg-pqBrand px-[12px] text-[12.5px] font-[600] text-white transition-colors hover:bg-pqBrandHover"
+            >
+              {t('add', 'Add')}
+            </button>
           </div>
         </div>
       ))}

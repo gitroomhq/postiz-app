@@ -3484,3 +3484,39 @@ belong. The Upgrade row is absent because this account is lifetime, which is the
 **Checks:** types 0 · api 149 · routes 28 · gates 14 unchanged. **i18n 1092 → 1093** —
 `social_sets`, the design's label. The `sets` key stays for its other call sites until the
 Settings tab takes the new label in the next step.
+
+### Settings, tab by tab — done
+
+The shell landed first (`dbe77cd7`); this step is everything inside it. All twelve tab surfaces
+now speak the design's card language — `--pop` on an inset hairline ring at radius 10, 13.5/600
+section labels, 12.5 muted sub-lines — and the pseudo-table grids (Webhooks, Autopost, Social
+Sets, Signatures) became the design's hairline list cards with 30px icon tiles, JetBrains Mono
+URLs and 28px icon-only edit/delete buttons whose delete hover is the warn token. Teams gained
+the design's row anatomy: 30px avatar, name over the actual e-mail, a role pill, and an
+invisible-not-absent remove button for rows the caller may not remove. Date Metrics and
+Shortlink swapped native `<select>`s for the design's inline chips — same values, same
+handlers. Language became the 44px horizontal tile row (and dropped this tree's last Mantine
+import); its new header hides inside the top-bar flag modal, which already has a title.
+
+**Connections became the page the design says it is.** `/connections` (routes 28 → 29), reached
+from the rail's own primary button; `?tab=connections` redirects; the tour's two steps follow it
+and their anchors moved with them. The Developers tab shrank to the design's two cards — API key
+(masked as text, not a CSS blur) and "Connect an AI agent" — while its CLI and MCP sections were
+deleted outright: the Connections directory documents every one of those clients with real
+per-client steps, which is exactly why the design keeps a page for it. Docs and the payload
+wizard stay as quiet neutral buttons; the N8N link's job is done by the n8n connector pane.
+
+**One gate almost lapsed, and the counter caught it.** Moving the tab deleted its
+`tier.public_api` condition and the new page had none — for a moment, Connections would have
+rendered for any member on any plan. `gates` went red (`tier.public_api 3 → 2`), and the page
+now carries the tab's exact gate with a quiet refusal for everyone else. This is the same
+failure shape as step 7a's team-member gate, stopped by the check that step created.
+
+**Checks:** types 0 · api 149 unchanged · **routes 28 → 29** (`/connections`) · gates 14
+unchanged. **i18n 1093 → moved in both directions**, all accounted for: the additions are the
+design's labels and descriptions (`social_sets` copy, `date_metrics` chips, `invite_member`,
+`developers_description`, `connect_an_ai_agent*`, `open_connections`, `connections_admin_only`,
+`search_settings`); the removals are the deleted Developers sections' own keys (`mcp_client*`,
+`cli_*`, `api_auth_note_line1-4`, `n8n_node`), the dropped pseudo-table headers (`title`, `url`,
+`active`, `content`), and labels the design renamed (`add_another_member` → `invite_member`,
+`remove`). Nothing was removed that a surviving surface still says.

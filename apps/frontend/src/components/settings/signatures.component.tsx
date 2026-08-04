@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useCallback } from 'react';
+import React, { FC, useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
@@ -73,95 +73,119 @@ export const SignaturesComponent: FC<{
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('signatures', 'Signatures')}</h3>
-      <div className="text-pqMuted mt-[4px]">
+      <h3 className="text-[20px] font-[500]">{t('signatures', 'Signatures')}</h3>
+      <div className="mt-[4px] text-pqMuted">
         {t(
           'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
           'You can add signatures to your account to be used in your posts.'
         )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
+      {!!data?.length && (
+        <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+          {data?.map((p: any) => (
             <div
-              className={`grid ${
-                !!appendSignature
-                  ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]'
-                  : 'grid-cols-[1fr,1fr,1fr,1fr]'
-              } w-full gap-y-[10px]`}
+              key={p.id}
+              className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
             >
-              <div>{t('content', 'Content')}</div>
-              <div className="text-center">{t('auto_add', 'Auto Add?')}</div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="truncate text-[13.5px]">
+                  {/* Was `content.slice(0, 15) + '...'` on the raw HTML, so
+                      a signature stored as `<p>— Sent with PostQueen</p>`
+                      listed itself as "<p>— Sent with ..." — a markup tag
+                      shown to the person who wrote the text, and a cut that
+                      could land inside a tag. Same helper the calendar card
+                      uses for the same job, and the ellipsis only appears
+                      when something was actually cut. */}
+                  {(() => {
+                    const plain = stripHtmlValidation(
+                      'none',
+                      p.content,
+                      false,
+                      true,
+                      false
+                    ).trim();
+                    return plain.length > 30
+                      ? plain.slice(0, 30) + '…'
+                      : plain;
+                  })()}
+                </div>
+                <div className="mt-[2px] truncate text-[12px] text-pqMuted">
+                  {t('auto_add', 'Auto add?')}{' '}
+                  {p.autoAdd ? t('yes', 'Yes') : t('no', 'No')}
+                </div>
+              </div>
               {!!appendSignature && (
-                <div className="text-center">{t('actions', 'Actions')}</div>
+                <button
+                  type="button"
+                  onClick={() => appendSignature(p.content)}
+                  className="flex h-[30px] shrink-0 items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+                >
+                  {t('use_signature', 'Use Signature')}
+                </button>
               )}
-              <div className="text-center">{t('edit', 'Edit')}</div>
-              <div className="text-center">{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="relative flex-1 me-[20px] overflow-x-hidden">
-                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
-                      {/* Was `content.slice(0, 15) + '...'` on the raw HTML, so
-                          a signature stored as `<p>— Sent with PostQueen</p>`
-                          listed itself as "<p>— Sent with ..." — a markup tag
-                          shown to the person who wrote the text, and a cut that
-                          could land inside a tag. Same helper the calendar card
-                          uses for the same job, and the ellipsis only appears
-                          when something was actually cut. */}
-                      {(() => {
-                        const plain = stripHtmlValidation(
-                          'none',
-                          p.content,
-                          false,
-                          true,
-                          false
-                        ).trim();
-                        return plain.length > 30
-                          ? plain.slice(0, 30) + '…'
-                          : plain;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center relative me-[20px]">
-                    <div className="text-center w-full absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%]">
-                      {p.autoAdd ? 'Yes' : 'No'}
-                    </div>
-                  </div>
-                  {!!appendSignature && (
-                    <div className="flex justify-center">
-                      <Button onClick={() => appendSignature(p.content)}>
-                        {t('use_signature', 'Use Signature')}
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={addSignature(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={deleteSignature(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
+              <button
+                type="button"
+                onClick={addSignature(p)}
+                aria-label={t('edit', 'Edit')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={deleteSignature(p)}
+                aria-label={t('delete', 'Delete')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+                </svg>
+              </button>
             </div>
-          )}
-          <div>
-            <Button
-              onClick={addSignature()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              {t('add_a_signature', 'Add a signature')}
-            </Button>
-          </div>
+          ))}
         </div>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={addSignature()}
+        className={clsx(
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
+        )}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
+        {t('add_a_signature', 'Add a signature')}
+      </button>
     </div>
   );
 };
@@ -211,7 +235,7 @@ const AddOrRemoveSignature: FC<{
       <form onSubmit={form.handleSubmit(callBack)}>
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
           <button
-            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-pqHover cursor-pointer mantine-Modal-close mantine-1dcetaa"
             type="button"
             onClick={() => modal.closeCurrent()}
           >
@@ -231,11 +255,11 @@ const AddOrRemoveSignature: FC<{
             </svg>
           </button>
 
-          <div className="relative bg-customColor2">
+          <div className="relative bg-pqInner">
             <CopilotTextarea
               disableBranding={true}
               className={clsx(
-                '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-bigStrip outline-none'
+                '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner bg-pqInner outline-none'
               )}
               value={text}
               onChange={(e) => {

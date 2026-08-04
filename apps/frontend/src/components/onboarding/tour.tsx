@@ -110,8 +110,8 @@ interface Step extends StepMeta {
 const STEPS: StepMeta[] = [
   { key: 'cal-grid', path: '/launches' },
   { key: 'posts-panel', path: '/launches', needs: 'posts-panel' },
-  { key: 'connect-pq', path: '/settings?tab=api' },
-  { key: 'mcp-clients', path: '/settings?tab=api', dim: true },
+  { key: 'connect-pq', path: '/connections' },
+  { key: 'mcp-clients', path: '/connections', dim: true },
   { key: 'channels-column', path: '/launches' },
   { key: 'channel-connect', path: '/channels' },
 ];

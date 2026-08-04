@@ -11,157 +11,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
 import clsx from 'clsx';
+import Link from 'next/link';
 
-const mcpClients = [
-  'Claude Code',
-  'Cursor',
-  'VS Code / Copilot',
-  'Windsurf',
-  'Amp',
-  'Codex',
-  'Gemini CLI',
-  'Warp',
-] as const;
-// OpenClaw and Hermes are deliberately absent. The design's command table has
-// `openclaw mcp add` and `hermes tools add --mcp` entries and they were added
-// here on that basis, but neither product connects over MCP: both read the
-// Agent Skills package. Their real setup lives in Settings → Connections.
-
-type McpClient = (typeof mcpClients)[number];
-
-const getMcpConfig = (
-  client: McpClient,
-  method: 'header' | 'path',
-  mcpBase: string,
-  apiKey: string
-): { config: string; hint: string } => {
-  const urlWithKey = `${mcpBase}/mcp/${apiKey}`;
-  const urlBase = `${mcpBase}/mcp`;
-  const bearer = `Bearer ${apiKey}`;
-
-  const json = (obj: object) => JSON.stringify(obj, null, 2);
-
-  if (method === 'path') {
-    switch (client) {
-      case 'Claude Code':
-        return {
-          config: `claude mcp add postqueen --transport http "${urlWithKey}"`,
-          hint: 'Run this command in your terminal.',
-        };
-      case 'Cursor':
-        return {
-          config: json({ mcpServers: { postqueen: { url: urlWithKey } } }),
-          hint: 'Add to .cursor/mcp.json in your project root.',
-        };
-      case 'VS Code / Copilot':
-        return {
-          config: json({
-            servers: { postqueen: { type: 'http', url: urlWithKey } },
-          }),
-          hint: 'Add to .vscode/mcp.json in your project root.',
-        };
-      case 'Windsurf':
-        return {
-          config: json({
-            mcpServers: { postqueen: { serverUrl: urlWithKey } },
-          }),
-          hint: 'Add to ~/.codeium/windsurf/mcp_config.json',
-        };
-      case 'Amp':
-        return {
-          config: `amp mcp add postqueen ${urlWithKey}`,
-          hint: 'Run this command in your terminal.',
-        };
-      case 'Codex':
-        return {
-          config: `# ~/.codex/config.toml\n\n[mcp_servers.postqueen]\nurl = "${urlWithKey}"`,
-          hint: 'Add to ~/.codex/config.toml',
-        };
-      case 'Gemini CLI':
-        return {
-          config: json({ mcpServers: { postqueen: { url: urlWithKey } } }),
-          hint: 'Add to ~/.gemini/settings.json',
-        };
-      case 'Warp':
-        return {
-          config: json({ postqueen: { url: urlWithKey } }),
-          hint: 'Settings > MCP Servers > + Add, then paste this config.',
-        };
-    }
-  }
-
-  switch (client) {
-    case 'Claude Code':
-      return {
-        config: `claude mcp add --transport http postqueen ${urlBase} --header "Authorization: ${bearer}"`,
-        hint: 'Run this command in your terminal.',
-      };
-    case 'Cursor':
-      return {
-        config: json({
-          mcpServers: {
-            postqueen: { url: urlBase, headers: { Authorization: bearer } },
-          },
-        }),
-        hint: 'Add to .cursor/mcp.json in your project root.',
-      };
-    case 'VS Code / Copilot':
-      return {
-        config: json({
-          servers: {
-            postqueen: {
-              type: 'http',
-              url: urlBase,
-              headers: { Authorization: bearer },
-            },
-          },
-        }),
-        hint: 'Add to .vscode/mcp.json in your project root.',
-      };
-    case 'Windsurf':
-      return {
-        config: json({
-          mcpServers: {
-            postqueen: {
-              serverUrl: urlBase,
-              headers: { Authorization: bearer },
-            },
-          },
-        }),
-        hint: 'Add to ~/.codeium/windsurf/mcp_config.json',
-      };
-    case 'Amp':
-      return {
-        config: json({
-          'amp.mcpServers': {
-            postqueen: { url: urlBase, headers: { Authorization: bearer } },
-          },
-        }),
-        hint: 'Add to your Amp settings.json',
-      };
-    case 'Codex':
-      return {
-        config: `# ~/.codex/config.toml\n\n[mcp_servers.postqueen]\nurl = "${urlBase}"\nhttp_headers = { "Authorization" = "${bearer}" }`,
-        hint: 'Add to ~/.codex/config.toml',
-      };
-    case 'Gemini CLI':
-      return {
-        config: json({
-          mcpServers: {
-            postqueen: { url: urlBase, headers: { Authorization: bearer } },
-          },
-        }),
-        hint: 'Add to ~/.gemini/settings.json',
-      };
-    case 'Warp':
-      return {
-        config: json({
-          postqueen: { url: urlBase, headers: { Authorization: bearer } },
-        }),
-        hint: 'Settings > MCP Servers > + Add, then paste this config.',
-      };
-  }
-};
 
 const CopyButton = ({
   text,
@@ -178,348 +29,18 @@ const CopyButton = ({
         copy(text);
         toaster.show(`${label} copied to clipboard`, 'success');
       }}
-      className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+      className="flex h-[30px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
     >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg>
       {label}
     </button>
   );
 };
 
-const McpSection = ({
-  user,
-  mcpBase,
-}: {
-  user: { publicApi: string };
-  mcpBase: string;
-}) => {
-  const t = useT();
-  const [activeClient, setActiveClient] = useState<McpClient>('Claude Code');
-  const [method, setMethod] = useState<'header' | 'path'>('header');
-  const [revealed, setRevealed] = useState(false);
 
-  const { config, hint } = getMcpConfig(
-    activeClient,
-    method,
-    mcpBase,
-    user.publicApi
-  );
-
-  const remoteUrl = `${mcpBase}/mcp/${user.publicApi}`;
-  const cliUrl = `${mcpBase}/mcp`;
-
-  const maskedConfig = revealed
-    ? config
-    : config.replace(new RegExp(user.publicApi.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '*'.repeat(user.publicApi.length));
-
-  const maskedRemoteUrl = revealed
-    ? remoteUrl
-    : remoteUrl.replace(user.publicApi, '*'.repeat(user.publicApi.length));
-
-  return (
-    <div
-      data-tour="connect-pq"
-      className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden"
-    >
-      <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
-        <div>
-          <div className="text-[15px] font-[600]">
-            {t('mcp_client_configuration', 'MCP Client Configuration')}
-          </div>
-          <div className="text-[13px] text-pqMuted mt-[2px]">
-            {t(
-              'connect_your_mcp_client_to_postqueen_to_schedule_your_posts_faster',
-              'Connect PostQueen MCP server to your client (Http streaming) to schedule your posts faster.'
-            )}
-          </div>
-        </div>
-        <div className="flex gap-[6px] shrink-0 pt-[2px]">
-          <a
-            className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            href="https://docs.postqueen.ai/mcp/introduction"
-            target="_blank"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-            {t('read_the_docs', 'Docs')}
-          </a>
-        </div>
-      </div>
-      <div className="p-[20px] flex flex-col gap-[16px]">
-        <div className="flex flex-col gap-[6px]">
-          <div className="text-[13px] font-[600] text-pqMuted">
-            {t('auth_method', 'Authentication')}
-          </div>
-          <div className="flex gap-[6px]">
-            {(['header', 'path'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
-                  method === m
-                    ? 'bg-pqBrand text-white'
-                    : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
-                )}
-                onClick={() => setMethod(m)}
-              >
-                {m === 'header'
-                  ? t('cli_claude_code_codex', 'CLI (Claude Code / Codex)')
-                  : t('remote_servers', 'Remote servers (ChatGPT, Claude)')}
-              </button>
-            ))}
-          </div>
-        </div>
-        {method === 'header' && (
-          <div data-tour="mcp-clients" className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-pqMuted">
-              {t('mcp_client', 'Client')}
-            </div>
-            <div className="flex flex-wrap gap-[6px]">
-              {mcpClients.map((client) => (
-                <button
-                  key={client}
-                  type="button"
-                  className={clsx(
-                    'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
-                    activeClient === client
-                      ? 'bg-pqBrand text-white'
-                      : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
-                  )}
-                  onClick={() => setActiveClient(client)}
-                >
-                  {client}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="flex flex-col gap-[8px]">
-          <div className="text-[12px] text-pqMuted font-[500]">
-            {method === 'header'
-              ? hint
-              : t(
-                  'remote_server_url_hint',
-                  'Paste this URL into your remote MCP client (ChatGPT, Claude, etc.).'
-                )}
-          </div>
-          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
-            {method === 'header' ? maskedConfig : maskedRemoteUrl}
-          </pre>
-          <div className="flex gap-[8px]">
-            <button
-              type="button"
-              onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {revealed ? (
-                  <>
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </>
-                )}
-              </svg>
-              {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-            </button>
-            <CopyButton
-              text={method === 'header' ? config : remoteUrl}
-              label={t('copy', 'Copy')}
-            />
-            {method === 'header' && (
-              <CopyButton
-                text={cliUrl}
-                label={t('copy_url', 'Copy URL')}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const localCliSteps = [
-  {
-    label: 'Install the CLI',
-    code: 'npm install -g postqueen',
-  },
-  {
-    label: 'Run: postqueen auth:login',
-    code: 'postqueen auth:login',
-  },
-  {
-    label: 'Install the PostQueen skill for your AI agent',
-    code: 'npx skills add GkhanKINAY/postqueen-agent',
-  },
-] as const;
-
-const ciCliSteps = [
-  {
-    label: 'Install the CLI',
-    code: 'npm install -g postqueen',
-  },
-  {
-    label: 'Set your API key as an environment variable',
-    code: 'export POSTQUEEN_API_KEY="{API_KEY}"',
-  },
-  {
-    label: 'Install the PostQueen skill for your AI agent',
-    code: 'npx skills add GkhanKINAY/postqueen-agent',
-  },
-] as const;
-
-const CliSection = ({ apiKey }: { apiKey: string }) => {
-  const t = useT();
-  const [mode, setMode] = useState<'local' | 'ci'>('local');
-  const [revealed, setRevealed] = useState(false);
-
-  const steps =
-    mode === 'local'
-      ? localCliSteps.map((step) => ({ ...step }))
-      : ciCliSteps.map((step) => ({
-          ...step,
-          code: step.code.replace('{API_KEY}', apiKey),
-        }));
-
-  const displaySteps =
-    mode === 'ci' && !revealed
-      ? steps.map((step) => ({
-          ...step,
-          code: step.code.replace(
-            new RegExp(apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
-            '*'.repeat(apiKey.length)
-          ),
-        }))
-      : steps;
-
-  return (
-    <div className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden">
-      <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
-        <div>
-          <div className="text-[15px] font-[600]">
-            {t('cli_and_skills', 'CLI & AI Skills')}
-          </div>
-          <div className="text-[13px] text-pqMuted mt-[2px]">
-            {t(
-              'cli_description',
-              'Use the PostQueen CLI to automate posting from your terminal, or install the skill to let your AI agent schedule posts for you.'
-            )}
-          </div>
-        </div>
-        <div className="flex gap-[6px] shrink-0 pt-[2px]">
-          <a
-            className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            href="https://docs.postqueen.ai/cli/introduction"
-            target="_blank"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-            {t('read_the_docs', 'Docs')}
-          </a>
-        </div>
-      </div>
-      <div className="p-[20px] flex flex-col gap-[16px]">
-        <div className="flex gap-[6px]">
-          {(['local', 'ci'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={clsx(
-                'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
-                mode === m
-                  ? 'bg-pqBrand text-white'
-                  : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
-              )}
-              onClick={() => setMode(m)}
-            >
-              {m === 'local'
-                ? t('locally', 'Locally')
-                : t('ci_remote_servers', 'CI / Remote servers')}
-            </button>
-          ))}
-        </div>
-        {displaySteps.map((step, i) => (
-          <div key={i} className="flex flex-col gap-[6px]">
-            <div className="text-[13px] font-[600] text-pqMuted">
-              {i + 1}. {step.label}
-            </div>
-            <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
-              {step.code}
-            </pre>
-          </div>
-        ))}
-        <div className="flex gap-[8px]">
-          {mode === 'ci' && (
-            <button
-              type="button"
-              onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {revealed ? (
-                  <>
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </>
-                )}
-              </svg>
-              {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-            </button>
-          )}
-          <CopyButton
-            text={steps.map((s) => s.code).join(' && ')}
-            label={t('copy_all', 'Copy All')}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const PublicApiContent = () => {
   const user = useUser();
-  const { backendUrl, frontEndUrl, mcpUrl } = useVariables();
+  const { frontEndUrl } = useVariables();
   const toaster = useToaster();
   const fetch = useFetch();
   const decision = useDecisionModal();
@@ -551,165 +72,82 @@ const PublicApiContent = () => {
     return null;
   }
 
-  const mcpBase = mcpUrl || backendUrl;
-
   return (
-    <div className="flex flex-col gap-[40px]">
-      <div className="text-[14px] text-textColor leading-[1.7]">
-        {t(
-          'api_auth_note_line1',
-          'Use your API Key to automate your own account.'
-        )}
-        <br />
-        {t(
-          'api_auth_note_line2',
-          'If you are building a product that schedules posts on behalf of other PostQueen users,'
-        )}
-        <br />
-        {t(
-          'api_auth_note_line3',
-          'create an OAuth App under the "Apps" tab. Your users will authorize your app via OAuth2,'
-        )}
-        <br />
-        {t(
-          'api_auth_note_line4',
-          'and you will receive a pos_ prefixed token that works with the API, MCP, and CLI — just like an API Key.'
-        )}
-      </div>
-      <div className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden">
-        <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
+    <div className="flex flex-col gap-[10px]">
+      <div className="flex flex-col gap-[12px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-start justify-between gap-[12px]">
           <div>
-            <div className="text-[15px] font-[600]">
+            <div className="text-[13.5px] font-[600]">
               {t('api_key', 'API Key')}
             </div>
-            <div className="text-[13px] text-pqMuted mt-[2px]">
-              {t(
-                'use_postqueen_api_to_integrate_with_your_tools',
-                'Use PostQueen API to integrate with your tools.'
-              )}
+            <div className="mt-[3px] text-[12.5px] text-pqMuted">
+              {t('api_key_one_key', 'One key authenticates the REST API, the MCP server, the CLI and the n8n node.')}
             </div>
           </div>
-          <div className="flex gap-[6px] shrink-0 pt-[2px]">
-            <a
-              className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-              href="https://docs.postqueen.ai/public-api"
-              target="_blank"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+          <a
+            className="flex h-[30px] shrink-0 cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+            href="https://docs.postqueen.ai/public-api"
+            target="_blank"
+          >
             {t('read_the_docs', 'Docs')}
-            </a>
-            <a
-              className="cursor-pointer px-[16px] h-[36px] bg-pqBrand hover:bg-pqBrandHover text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-              href="https://www.npmjs.com/package/n8n-nodes-postqueen"
-              target="_blank"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-              {t('n8n_node', 'N8N Node')}
-            </a>
-          </div>
+          </a>
         </div>
-        <div className="p-[20px] flex flex-col gap-[16px]">
-          <div className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
-            <code className="text-[14px] flex-1 truncate">
-              {reveal ? (
-                user.publicApi
-              ) : (
-                <span className="flex items-center">
-                  <span className="blur-sm select-none">
-                    {user.publicApi.slice(0, -5)}
-                  </span>
-                  <span>{user.publicApi.slice(-5)}</span>
-                </span>
-              )}
-            </code>
-          </div>
-          <div className="flex gap-[8px]">
-            <button
-              type="button"
-              onClick={() => setReveal(!reveal)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {reveal ? (
-                  <>
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </>
-                )}
-              </svg>
-              {reveal ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-            </button>
-            <CopyButton text={user.publicApi} label={t('copy', 'Copy')} />
-            <button
-              type="button"
-              onClick={rotateKey}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21.5 2v6h-6" />
-                <path d="M21.34 15.57a10 10 0 11-.57-8.38L21.5 8" />
-              </svg>
-              {t('rotate_key', 'Rotate Key')}
-            </button>
-            <button
-              type="button"
-              data-tooltip-id="tooltip"
-              data-tooltip-content={t(
-                'payload_wizard_description',
-                'Building a POST request to /posts can be complex. Use the wizard to schedule a post with the UI, then copy the generated payload.'
-              )}
-              onClick={() =>
-                window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
-              }
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              {t('open_wizard', 'Open Wizard')}
-            </button>
-          </div>
+        <div className="flex h-[38px] items-center gap-[8px] rounded-pqSm bg-pqBg px-[12px] font-mono text-[12.5px] shadow-[inset_0_0_0_1px_var(--border)]">
+          <code className="min-w-0 flex-1 truncate">
+            {reveal
+              ? user.publicApi
+              : `${'•'.repeat(Math.max(user.publicApi.length - 5, 8))}${user.publicApi.slice(-5)}`}
+          </code>
+        </div>
+        <div className="flex flex-wrap gap-[6px]">
+          <button
+            type="button"
+            onClick={() => setReveal(!reveal)}
+            className="flex h-[30px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+          >
+            {reveal ? t('hide', 'Hide') : t('reveal', 'Reveal')}
+          </button>
+          <CopyButton text={user.publicApi} label={t('copy', 'Copy')} />
+          <button
+            type="button"
+            onClick={rotateKey}
+            className="flex h-[30px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqWarn transition-colors hover:bg-pqHover"
+          >
+            {t('rotate_key', 'Rotate Key')}
+          </button>
+          <button
+            type="button"
+            data-tooltip-id="tooltip"
+            data-tooltip-content={t(
+              'payload_wizard_description',
+              'Building a POST request to /posts can be complex. Use the wizard to schedule a post with the UI, then copy the generated payload.'
+            )}
+            onClick={() =>
+              window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
+            }
+            className="flex h-[30px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+          >
+            {t('open_wizard', 'Open Wizard')}
+          </button>
         </div>
       </div>
 
-      <CliSection apiKey={user.publicApi} />
-
-      <McpSection user={user} mcpBase={mcpBase} />
+      <div className="flex items-center gap-[12px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-[600]">
+            {t('connect_an_ai_agent', 'Connect an AI agent')}
+          </div>
+          <div className="mt-[3px] text-[12.5px] text-pqMuted">
+            {t('connect_an_ai_agent_sub', 'Claude, ChatGPT, MCP clients, n8n and the CLI all live under Connections.')}
+          </div>
+        </div>
+        <Link
+          href="/connections"
+          className="flex h-[32px] shrink-0 items-center rounded-pqSm bg-pqBrand px-[12px] text-[12.5px] font-[600] text-white transition-colors hover:bg-pqBrandHover"
+        >
+          {t('open_connections', 'Open Connections')}
+        </Link>
+      </div>
     </div>
   );
 };
@@ -719,17 +157,25 @@ export const PublicComponent = () => {
   const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
 
   return (
-    <div className="flex flex-col gap-[20px]">
+    <div className="flex flex-col gap-[18px]">
+      <div>
+        <h3 className="text-[20px] font-[500]">
+          {t('developers', 'Developers')}
+        </h3>
+        <div className="mt-[4px] text-pqMuted">
+          {t('developers_description', 'Use the public API to schedule posts from your own systems.')}
+        </div>
+      </div>
       <div className="flex gap-[6px]">
         {(['api', 'developer'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
+              'flex h-[32px] cursor-pointer items-center rounded-pqSm px-[13px] text-[12.5px] transition-colors',
               subTab === tab
-                ? 'bg-pqBrand text-white'
-                : 'bg-btnSimple text-pqMuted hover:bg-boxHover hover:text-textColor'
+                ? 'bg-pqBrandSoft font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--brand)]'
+                : 'text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqHover'
             )}
             onClick={() => setSubTab(tab)}
           >

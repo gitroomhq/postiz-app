@@ -24,7 +24,6 @@ import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import { PlanInvoicesComponent } from '@gitroom/frontend/components/settings/plan.invoices.component';
-import { ConnectionsComponent } from '@gitroom/frontend/components/public-api/connections.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
@@ -178,7 +177,6 @@ export const SettingsPopup: FC<{
     'sets',
     'signatures',
     'api',
-    'connections',
     'approved_apps',
     'integrations',
   ];
@@ -188,6 +186,14 @@ export const SettingsPopup: FC<{
       ? requestedTab
       : 'global_settings'
   );
+  // Connections grew into its own page, where the design keeps it. The old
+  // deep link keeps working.
+  const redirectRouter = useRouter();
+  useEffect(() => {
+    if (requestedTab === 'connections') {
+      redirectRouter.replace('/connections');
+    }
+  }, [requestedTab, redirectRouter]);
 
   const t = useT();
   // Teams and Developers call ADMIN-gated endpoints as soon as they mount.
@@ -496,16 +502,6 @@ export const SettingsPopup: FC<{
                 isOrgAdmin && (
                   <div>
                     <PlanInvoicesComponent />
-                  </div>
-                )}
-
-              {tab === 'connections' &&
-                !!user?.tier?.public_api &&
-                isGeneral &&
-                showLogout &&
-                isOrgAdmin && (
-                  <div>
-                    <ConnectionsComponent />
                   </div>
                 )}
 

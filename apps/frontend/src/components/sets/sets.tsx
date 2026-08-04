@@ -1,7 +1,7 @@
 'use client';
 import 'reflect-metadata';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -167,46 +167,70 @@ export const Sets: FC = () => {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">Sets ({data?.length || 0})</h3>
-      <div className="text-pqMuted mt-[4px]">
-        Manage your content sets for easy reuse across posts.
+      <h3 className="text-[20px] font-[500]">
+        {t('social_sets', 'Social Sets')} ({data?.length || 0})
+      </h3>
+      <div className="mt-[4px] text-pqMuted">
+        {t(
+          'manage_your_content_sets_for_easy_reuse_across_posts',
+          'Manage your content sets for easy reuse across posts.'
+        )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[2fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('name', 'Name')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addSet(p)}>{t('edit', 'Edit')}</Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteSet(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addSet()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              Add a set
-            </Button>
+      {!!data?.length && (
+        <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+          <div className="flex items-center bg-pqTableHeader p-[10px_15px] text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
+            <div className="flex-1">{t('name', 'Name')}</div>
+            <div className="w-[150px]">{t('actions', 'Actions')}</div>
           </div>
+          {data?.map((p: any) => (
+            <div
+              key={p.id}
+              className="flex items-center border-t border-pqLine p-[11px_15px]"
+            >
+              <div className="min-w-0 flex-1 truncate text-[13.5px] font-[500]">
+                {p.name}
+              </div>
+              <div className="flex w-[150px] gap-[8px]">
+                <button
+                  type="button"
+                  onClick={addSet(p)}
+                  className="flex h-[30px] items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+                >
+                  {t('edit', 'Edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteSet(p)}
+                  className="flex h-[30px] items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover hover:text-pqWarn"
+                >
+                  {t('delete', 'Delete')}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={addSet()}
+        className={clsx(
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
+        )}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
+        {t('add_a_social_set', 'Add a social set')}
+      </button>
     </div>
   );
 };
