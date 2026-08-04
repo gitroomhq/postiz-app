@@ -23,6 +23,8 @@ interface StatsResponse {
   errors: StatsBlock;
   posts: StatsBlock;
   connected: StatsBlock;
+  publishingAccounts?: StatsBlock;
+  scheduledAccounts?: StatsBlock;
 }
 
 const isoDaysAgo = (days: number) => {
@@ -225,7 +227,7 @@ export const AdminStatsComponent: FC = () => {
         <div className="text-red-400">Failed to load stats.</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[12px]">
             <SummaryCard label="Total posts published" value={data.posts.total} />
             <SummaryCard
               label="Total connected accounts"
@@ -235,9 +237,21 @@ export const AdminStatsComponent: FC = () => {
               label={unknownOnly ? 'Total unknown errors' : 'Total errors'}
               value={data.errors.total}
             />
+            {data.publishingAccounts && (
+              <SummaryCard
+                label="Unique users - published (all platforms combined)"
+                value={data.publishingAccounts.total}
+              />
+            )}
+            {data.scheduledAccounts && (
+              <SummaryCard
+                label="Unique users - scheduled (all platforms combined)"
+                value={data.scheduledAccounts.total}
+              />
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[12px]">
             <PerSocialTable
               title="Posts published per social"
               block={data.posts}
@@ -252,6 +266,18 @@ export const AdminStatsComponent: FC = () => {
               }
               block={data.errors}
             />
+            {data.publishingAccounts && (
+              <PerSocialTable
+                title="Unique users - published"
+                block={data.publishingAccounts}
+              />
+            )}
+            {data.scheduledAccounts && (
+              <PerSocialTable
+                title="Unique users - scheduled"
+                block={data.scheduledAccounts}
+              />
+            )}
           </div>
         </>
       )}
