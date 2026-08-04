@@ -2045,3 +2045,28 @@ Traced what could back it, because the obvious candidate cannot:
 That is the shape, not the build: it needs a route, a tab, and two states (paid
 vs lifetime). Recorded rather than started, because half a billing tab that 400s
 for ordinary users is worse than a missing one.
+
+### Step 5, continued: the calendar's view set
+
+`gridVals()` builds from `['day', 'week', 'month']` (`…dc.html:7005`) with
+`List` alongside (`:4196`). `filters.tsx` offers `day`, `week`, `month`, `list`
+— the same four, and the toolbar renders a date range and a Today control
+beside them.
+
+Worth being precise about what that does and does not establish: the *set* of
+views matches, and the toolbar has the same controls. It says nothing yet about
+how each grid draws — hour rows, the 1px cell lines, where a post card sits
+inside its cell. Those are the next thing to compare, and they need a populated
+calendar, which is still waiting on a connected channel.
+
+**Step 5 so far**
+
+| surface | design | measured |
+|---|---|---|
+| rail, expanded / collapsed / phone | 236 / 60 / 264 | same three |
+| header | 56px | 56px, both themes |
+| logo cell hairline | on the rail edge | shares the same 236 |
+| settings tabs | nine named | eight present, **Plan & invoices missing** |
+| calendar views | day / week / month / list | same four |
+
+One gap found so far, and it is the one already known to be waiting on billing.
