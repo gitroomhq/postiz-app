@@ -3235,3 +3235,115 @@ a public URL the value has to come from the Stripe dashboard's endpoint (or from
 
 `STRIPE_DISCOUNT_ID` is `G9mLivv8`, a 50%-for-3-months coupon created in **test
 mode**. A live deployment needs a coupon made in live mode; the id will differ.
+
+---
+
+## Time was the untested dimension — 2026-08-05
+
+Every billing check so far had walked **states**: an account on trial, an account
+active, an account cancelling. All passed. What none of them touched was
+**time** — a trial running out, a cancellation arriving at the period end, a
+renewal failing. Reading the code explained why: nothing triggers any of the
+three.
+
+### A founding member's trial never ended
+
+`Organization.isTrailing` is cleared in exactly two places: Stripe's
+`customer.subscription.updated`, and the "End free trial" button. A founding
+member has **no Stripe subscription** — their entitlement is a local row — so no
+webhook is ever coming, and there is nothing scheduled anywhere in this codebase
+to notice (the orchestrator has no trial-related line at all).
+
+So somebody who bought the founding-member deal and never pressed the button
+stayed on trial **forever**: X locked, trial banner up, `is-trial-finished`
+answering false a year later.
+
+`trialWindow()` now derives the end from the registration date, exactly as
+`lifetimeWindow()` derives the 24-hour offer. No column, no cron. It is read in
+**one** place — `auth.middleware.ts`, where `req.org` is assembled — so the X
+lock, trial-only video, the trial banner and `/billing/is-trial-finished` all get
+the same answer without being patched one at a time. The middleware only reads;
+the row still records that a trial *started*, and the window says whether it is
+still running.
+
+Walked with `dev-state.mjs --created-days-ago`:
+
+| day | `isTrailing` | `/integrations/social/x` | `is-trial-finished` |
+|---|---|---|---|
+| 1 | true | **406** locked | false |
+| 6 | true | **406** locked | false |
+| 8 | **false** | **200** | **true** |
+
+**On this database it moved four organizations of five.** Three have no
+subscription at all, so nothing they see changes; the fourth is the main account,
+which was registered on 17 July and had been sitting in a trial that should have
+ended on the 24th. In production the same rule applies to anyone whose
+`isTrailing` was never cleared — for paying customers the webhook already did it,
+so the ones this reaches are the ones it was written for.
+
+### Buying the lifetime deal used to end the trial on the spot
+
+`grantLifetimeFromPayment` and `lifetimeDeal` both passed a hardcoded `false`
+for the trial flag, and the repository writes that straight onto the
+organization. The owner's rule is the opposite: buying it leaves the trial
+running, and the person becomes a founding member when it expires — or sooner,
+from the "End free trial" button the X panel and Billing both offer. Both call
+sites now ask `stillTrialing()` instead.
+
+### A failed renewal was invisible
+
+`invoice.payment_failed` had no case in `stripe.controller.ts`. A customer whose
+card stopped working saw **nothing** until Stripe gave up retrying weeks later
+and cancelled the subscription — at which point the app dropped to the paywall
+with no explanation.
+
+It is handled now: an in-app notification, and an amber strip on Billing with
+**Update payment method** wired to the Stripe portal. Deliberately it does not
+touch the subscription — Stripe retries on its own schedule and most second
+attempts succeed; cancelling here would take the plan away from somebody whose
+bank merely asked for a confirmation.
+
+One trap worth writing down: the route's `isOurs` filter reads
+`metadata.service`, and an **invoice carries none** — that lives on the
+subscription it bills. `invoice.payment_succeeded` was already exempted for
+exactly this reason; without adding `payment_failed` beside it the event is
+dropped before the switch ever sees it.
+
+### The checkout's five differences — all closed
+
+Measured on the rebuilt screen rather than described:
+
+```
+[data-checkout-label]   1     "postqueen │ Checkout" in the header
+hero                          "Your first 7 days are free"
+                              + "Add a card to unlock every channel…"
+[data-yearly-switch]          "Switch to yearly and get 5 months free — Switch"
+[data-trial-credit]           "7-day free trial   -$20.00"
+Help menu               1     the app's own, not a second one
+```
+
+Plus the logout confirmation the design asks for on this screen specifically —
+*"Your checkout is not finished — the plan you picked will not be saved."*
+`LogoutComponent` took an optional message rather than learning about checkout.
+
+The strip says the exact figure for the selected plan (**5** months on CREATOR,
+4 on the others) where the toggle badge says "up to".
+
+### Drag and drop: half of it is now proven
+
+The claim was one sentence — "drag and drop is unverified" — covering two
+separate things. Split:
+
+- **The endpoint the drop calls works.** `PUT /posts/:id/date` → 200, and
+  `publishDate` moved from `2026-08-05T02:00:00Z` to `2026-08-06T02:00:00Z` in
+  the database. Thirty seconds to run, and it had never been run.
+- **Whether the gesture reaches it is still unknown.** react-dnd's HTML5 backend
+  over CDP remains unproven, and that is still written as *not seen* rather than
+  broken.
+
+### Baseline
+
+`i18n 1084 → 1092`: eleven added for the checkout and the payment-failure strip,
+three removed with the old hero (`billing_grow_your`,
+`billing_social_presence_highlight`, `billing_with_postqueen_line`). `api`,
+`routes`, `gates` and both type checks unchanged; sweep clean.
