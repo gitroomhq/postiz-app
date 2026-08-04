@@ -180,9 +180,12 @@ export abstract class SocialAbstract {
   protected async mediaSize(path: string, identifier = ''): Promise<number> {
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request
+      // this.fetch applies to every other outbound request. identity encoding
+      // so content-length matches the bytes a later GET actually streams
+      // (fetch transparently decompresses encoded bodies).
       const head = await fetch(path, {
         method: 'HEAD',
+        headers: { 'accept-encoding': 'identity' },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
       const length = Number(head.headers.get('content-length'));
@@ -213,7 +216,10 @@ export abstract class SocialAbstract {
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
       const response = await fetch(path, {
-        headers: { Range: `bytes=${start}-${end}` },
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
       // Anything but 206 means the server ignored the Range header: buffering
@@ -250,7 +256,10 @@ export abstract class SocialAbstract {
       return createReadStream(path);
     }
 
+    // identity encoding so the streamed byte count matches the size mediaSize
+    // reported - a decompressed body would overflow any declared length.
     const response = await fetch(path, {
+      headers: { 'accept-encoding': 'identity' },
       dispatcher: getSsrfSafeDispatcher(),
     } as any);
 
@@ -287,7 +296,10 @@ export abstract class SocialAbstract {
 
       const status = err.response.status || 500;
       const data = err.response.data;
-      const json = typeof data === 'string' ? data : safeStringify(data || {});
+      // '|| {}' / "|| '{}'" match this.fetch, which never hands handleErrors
+      // an empty string.
+      const json =
+        (typeof data === 'string' ? data : safeStringify(data || {})) || '{}';
       const handleError = this.handleErrors(json, status);
 
       if (

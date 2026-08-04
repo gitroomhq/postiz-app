@@ -5,6 +5,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -543,6 +544,17 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
           },
         }
       );
+
+      // axios parses JSON silently: a non-JSON 200 (proxy/WAF page) comes
+      // back as a raw string, which would publish the post with an empty id.
+      if (!response || typeof response !== 'object' || !response.response) {
+        throw new BadBody(
+          this.identifier,
+          String(response || '{}'),
+          '{}',
+          'Tumblr did not return a valid post response'
+        );
+      }
 
       return response as TumblrCreatePostResponse;
     }, this.identifier);

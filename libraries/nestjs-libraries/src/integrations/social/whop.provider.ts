@@ -234,6 +234,8 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
       // through the whole ~9 minute status poll).
       const headResponse = await fetch(item.path, {
         method: 'HEAD',
+        // identity encoding so content-length matches the bytes the GET streams
+        headers: { 'accept-encoding': 'identity' },
         // @ts-ignore - undici-only option; blocks SSRF to internal IPs
         dispatcher: getSsrfSafeDispatcher(),
       });
@@ -270,6 +272,7 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
 
       if (createFileResponse.upload_url) {
         const fileResponse = await fetch(item.path, {
+          headers: { 'accept-encoding': 'identity' },
           // @ts-ignore - undici-only option; blocks SSRF to internal IPs
           dispatcher: getSsrfSafeDispatcher(),
         });

@@ -146,6 +146,8 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     // a consumed stream can't be replayed.
     const media = await this.runStreamedUpload<{ id: string }>(async () => {
       const fileResponse = await fetch(fileUrl, {
+        // identity encoding so content-length matches the streamed bytes
+        headers: { 'accept-encoding': 'identity' },
         // @ts-ignore - undici-only option; blocks SSRF to internal IPs
         dispatcher: getSsrfSafeDispatcher(),
       });

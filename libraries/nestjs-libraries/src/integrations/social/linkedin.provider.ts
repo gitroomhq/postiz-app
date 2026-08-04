@@ -646,7 +646,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     // GIFs pass through untouched (sharp would break animation). Videos never
     // reach this function - they are streamed by uploadPicture instead.
     if (isGif) {
-      return readOrFetch(mediaUrl);
+      // Buffer.from keeps the return type a real Buffer regardless of what
+      // readOrFetch yields - uploadPicture branches on Buffer.isBuffer.
+      return Buffer.from(await readOrFetch(mediaUrl));
     }
 
     const mime = lookup(mediaUrl);

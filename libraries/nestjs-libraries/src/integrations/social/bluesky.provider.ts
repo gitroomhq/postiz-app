@@ -79,6 +79,8 @@ async function uploadVideo(
   // and the bytes are streamed straight from the source into the upload.
   const headResponse = await fetch(videoPath, {
     method: 'HEAD',
+    // identity encoding so content-length matches the bytes the GET streams
+    headers: { 'accept-encoding': 'identity' },
     // @ts-ignore - undici-only option; blocks SSRF to internal IPs
     dispatcher: getSsrfSafeDispatcher(),
   });
@@ -93,6 +95,7 @@ async function uploadVideo(
   }
 
   const videoResponse = await fetch(videoPath, {
+    headers: { 'accept-encoding': 'identity' },
     // @ts-ignore - undici-only option; blocks SSRF to internal IPs
     dispatcher: getSsrfSafeDispatcher(),
   });
