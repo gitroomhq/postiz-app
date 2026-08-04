@@ -2225,3 +2225,36 @@ the frontend.
 looking (`NoMediaIcon`, `DeleteCircleIcon`), two left (`DragHandleIcon`,
 `SettingsIcon`), both of which need a populated media library to be seen in
 place.
+
+### Plan & invoices — the last structural gap with the design, closed
+
+`settingsVals()` names nine tabs; we had eight. This is the ninth.
+
+**Two states, because the account can genuinely be in two situations** and
+telling a founding member to "manage your subscription" would be nonsense:
+
+- **Subscribed** — the plan and its channel count, and a button into Stripe's
+  billing portal, which is where invoice history actually lives. `GET
+  /billing/portal` already existed for the Billing screen's payment-method link.
+- **Founding member** — no subscription, so no portal session to create and no
+  invoices to list. It says what is true (one payment, nothing renews) and links
+  to the lifetime page instead of offering a portal that would fail to open.
+
+`GET /billing/charges` is deliberately unused. It is superadmin-only
+(`billing.controller.ts:189`), so a tab built on it would answer 400 for every
+ordinary user — that was traced two sessions ago and is the reason this tab
+waited rather than being wired to the first plausible endpoint.
+
+Gated exactly like the Billing screen: `isGeneral && billingEnabled &&
+isOrgAdmin`. It does not appear on a self-hosted install, where there is nothing
+to bill.
+
+**Verified in both themes**: renders, picks the lifetime branch correctly for
+this account, no overflow. The **subscribed** branch has not been seen — it
+needs a real Stripe subscription, and it is marked as such rather than assumed.
+
+`i18n 1061 → 1068`.
+
+With this, every tab, page, overlay and chrome dimension the design specifies
+now exists here. What remains is not structure: two icons and the calendar grids
+need data, and a real card would exercise the purchase.

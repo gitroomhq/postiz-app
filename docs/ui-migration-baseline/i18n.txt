@@ -394,6 +394,7 @@ create_output
 create_post_title
 credentials
 current_package
+current_plan
 currently_impersonating
 custom_url
 customer_socials_selected
@@ -605,6 +606,8 @@ invitation_link_sent
 invite_by_link
 invite_link
 invite_your_assistant_or_team_member_to_manage_your_account
+invoices_live_in_portal
+invoices_none_lifetime
 join_10000_entrepreneurs_who_use_postqueen
 just_update_post_details
 keyboard_shortcuts
@@ -716,6 +719,7 @@ oauth_application
 of
 ok
 onboarding
+open_billing_portal
 open_claim_page
 open_wizard
 or
@@ -736,6 +740,8 @@ personal_voice_i_am_happy_to_announce
 picture
 plan_ai_autocomplete
 plan_ai_copilots
+plan_invoices
+plan_lifetime_note
 plan_n_ai_images
 plan_n_ai_videos
 plan_n_channels
@@ -1005,6 +1011,7 @@ user_1
 video
 video_made_with_ai
 view_errors
+view_founding_membership
 view_receipt
 view_stats
 waiting_for_claim

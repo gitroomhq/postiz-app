@@ -23,6 +23,7 @@ import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/lan
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
+import { PlanInvoicesComponent } from '@gitroom/frontend/components/settings/plan.invoices.component';
 import { ConnectionsComponent } from '@gitroom/frontend/components/public-api/connections.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
@@ -35,7 +36,7 @@ import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-app
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
-  const { isGeneral } = useVariables();
+  const { isGeneral, billingEnabled } = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -86,6 +87,7 @@ export const SettingsPopup: FC<{
   const settingsTabs = [
     'global_settings',
     'language',
+    'plan_invoices',
     'teams',
     'webhooks',
     'autopost',
@@ -115,30 +117,72 @@ export const SettingsPopup: FC<{
     const publishing = t('publishing', 'Publishing');
     const developers = t('developers', 'Developers');
 
-    arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings'), group: workspace });
-    arr.push({ tab: 'language', label: t('language', 'Language'), group: workspace });
+    arr.push({
+      tab: 'global_settings',
+      label: t('global_settings', 'Global Settings'),
+      group: workspace,
+    });
+    arr.push({
+      tab: 'language',
+      label: t('language', 'Language'),
+      group: workspace,
+    });
+    // The design names this tab and it did not exist here. Same gate as the
+    // Billing screen — only an org admin can see what the org is paying — and
+    // only where billing is switched on at all.
+    if (isGeneral && billingEnabled && isOrgAdmin) {
+      arr.push({
+        tab: 'plan_invoices',
+        label: t('plan_invoices', 'Plan & invoices'),
+        group: workspace,
+      });
+    }
     // Populate tabs based on user permissions
     if (user?.tier?.team_members && isGeneral && isOrgAdmin) {
       arr.push({ tab: 'teams', label: t('teams', 'Teams'), group: workspace });
     }
     if (user?.tier?.webhooks) {
-      arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks'), group: publishing });
+      arr.push({
+        tab: 'webhooks',
+        label: t('webhooks_1', 'Webhooks'),
+        group: publishing,
+      });
     }
     if (user?.tier?.autoPost) {
-      arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post'), group: publishing });
+      arr.push({
+        tab: 'autopost',
+        label: t('auto_post', 'Auto Post'),
+        group: publishing,
+      });
     }
     if (user?.tier.current !== 'FREE') {
       arr.push({ tab: 'sets', label: t('sets', 'Sets'), group: publishing });
     }
     if (user?.tier.current !== 'FREE') {
-      arr.push({ tab: 'signatures', label: t('signatures', 'Signatures'), group: publishing });
+      arr.push({
+        tab: 'signatures',
+        label: t('signatures', 'Signatures'),
+        group: publishing,
+      });
     }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
-      arr.push({ tab: 'api', label: t('developers', 'Developers'), group: developers });
+      arr.push({
+        tab: 'api',
+        label: t('developers', 'Developers'),
+        group: developers,
+      });
       // Same gate as Developers: both are the API key wearing different hats.
-      arr.push({ tab: 'connections', label: t('connections', 'Connections'), group: developers });
+      arr.push({
+        tab: 'connections',
+        label: t('connections', 'Connections'),
+        group: developers,
+      });
     }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps'), group: developers });
+    arr.push({
+      tab: 'approved_apps',
+      label: t('approved_apps', 'Approved Apps'),
+      group: developers,
+    });
 
     return arr;
   }, [user, isGeneral, showLogout, isOrgAdmin, t]);
@@ -213,10 +257,10 @@ export const SettingsPopup: FC<{
                 !!user?.tier?.team_members &&
                 isGeneral &&
                 isOrgAdmin && (
-                <div>
-                  <TeamsComponent />
-                </div>
-              )}
+                  <div>
+                    <TeamsComponent />
+                  </div>
+                )}
 
               {tab === 'webhooks' && !!user?.tier?.webhooks && (
                 <div>
@@ -249,6 +293,15 @@ export const SettingsPopup: FC<{
                 isOrgAdmin && (
                   <div>
                     <PublicComponent />
+                  </div>
+                )}
+
+              {tab === 'plan_invoices' &&
+                isGeneral &&
+                billingEnabled &&
+                isOrgAdmin && (
+                  <div>
+                    <PlanInvoicesComponent />
                   </div>
                 )}
 

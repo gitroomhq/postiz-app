@@ -980,5 +980,12 @@
   "lt_future_updates": "FUTURE UPDATES",
   "lt_included": "Included",
   "lt_channels": "CHANNELS",
-  "lifetime_buy": "Become a founding member — ${{price}}"
+  "lifetime_buy": "Become a founding member — ${{price}}",
+  "plan_invoices": "Plan & invoices",
+  "current_plan": "Current plan",
+  "plan_lifetime_note": "One payment, done. Nothing renews and nothing is billed again.",
+  "invoices_none_lifetime": "There are no invoices — a founding member is never billed again.",
+  "view_founding_membership": "View your founding membership",
+  "invoices_live_in_portal": "Invoices, receipts and your payment method live in the billing portal.",
+  "open_billing_portal": "Open billing portal"
 }
