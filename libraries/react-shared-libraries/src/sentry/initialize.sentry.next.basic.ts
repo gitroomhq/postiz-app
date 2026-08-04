@@ -55,15 +55,16 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
           const frames = event.exception.values.flatMap(
             (exception) => exception.stacktrace?.frames || []
           );
+          const isExtensionFrame = (frame: { filename?: string }) =>
+            !!frame.filename &&
+            (frame.filename.includes('/scripts/inpage.js') ||
+              frame.filename.startsWith('chrome-extension://') ||
+              frame.filename.startsWith('moz-extension://') ||
+              frame.filename.startsWith('safari-extension://'));
           const extensionOrigin =
-            frames.length > 0 &&
+            frames.some(isExtensionFrame) &&
             frames.every(
-              (frame) =>
-                !frame.filename ||
-                frame.filename.includes('/scripts/inpage.js') ||
-                frame.filename.startsWith('chrome-extension://') ||
-                frame.filename.startsWith('moz-extension://') ||
-                frame.filename.startsWith('safari-extension://')
+              (frame) => !frame.filename || isExtensionFrame(frame)
             );
           if (extensionOrigin) {
             event.tags = { ...event.tags, extension_origin: 'true' };
