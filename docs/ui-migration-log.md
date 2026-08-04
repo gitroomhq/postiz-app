@@ -2326,3 +2326,31 @@ source.
 
 `api 149 · routes 28 · gates 12` unchanged, `i18n` +1, sweep reports zero
 overflow across thirteen screens.
+
+### The calendar opened on the small hours
+
+With a channel in place the week grid could finally be looked at, and it opened
+at **00:00** — an empty night, with everybody's actual day below the fold. This
+account's own posting times are 05:00, 09:40 and 14:40; none of them were on
+screen.
+
+The prototype does not do this. `…dc.html:4693` scrolls the grid on mount:
+
+```js
+if (g && g.scrollHeight > g.clientHeight) { g.scrollTop = 7 * 78; return; }
+```
+
+Seven rows down — 07:00 — and it retries on animation frames until the rows
+exist, because they are not laid out when the callback first runs.
+
+Ported, with one difference: the offset is computed as `scrollHeight / 24 * 7`
+rather than multiplying by a hardcoded 78px row. The grid is twenty-four hours
+tall by construction, so seven twenty-fourths of it is 07:00 whatever the row
+height becomes. A literal would have been right today and quietly wrong after
+the next spacing change.
+
+Verified: the grid now opens showing 08:00 through 13:00.
+
+Also confirmed on the same screen, and never seen before: the channel column
+with a channel in it, the posts panel's three tabs, and **"Pro tier"** at the
+foot of the channel column — doc 03's third lifetime rule, in place.
