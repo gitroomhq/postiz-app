@@ -215,6 +215,7 @@ clicks
 client_id
 client_secret
 close
+close_window
 code_sent_to
 collapse_sidebar
 comments
@@ -437,6 +438,7 @@ disable_channel
 disable_channel_title
 disconnect
 documentation
+done
 download_invoice
 draft
 drafts
@@ -485,6 +487,8 @@ finding_popular_posts_to_match_with
 finding_the_topic
 finding_time_to_post
 finish
+finishing_trial
+finishing_trial_wait
 five_days
 follower_of_creator
 forgot_password
@@ -988,6 +992,9 @@ tour_demo_drag_body
 tour_demo_drag_title
 tour_views_text
 tour_views_title
+trial_ended_charged_body
+trial_ended_founder_body
+trial_ended_title
 trial_reel
 try_again
 turn_on_to_disclose_video_promotes

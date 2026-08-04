@@ -2927,3 +2927,171 @@ images (`pq-test-*.png`) are deleted from the Media screen.
 
 **Connecting a real channel:** remove the placeholder first, or the calendar
 keeps a row that can never publish.
+
+---
+
+## The tier × state matrix — 2026-08-04
+
+Everything in this migration had been looked at on **one account in one state**:
+lifetime CREATOR, trialing, one channel. This walked the four paid tiers across
+trial / active / lifetime and then the surfaces that only exist off the happy
+path. Every claim below is a count, an HTTP status or a database row.
+
+### What the walk proved
+
+| | settings tabs | Teams | Auto Post | generator button |
+|---|---|---|---|---|
+| CREATOR | **9** | no | no | 1 |
+| GROWTH | **11** | yes | yes | 1 |
+| PRO | **11** | yes | yes | 1 |
+| AGENCY | **11** | yes | yes | 1 |
+
+Billing's "Current Plan" landed on the right card in all twelve combinations,
+and the channel column's `{Tier} tier` line read Creator / Growth / Pro / Agency
+in the three lifetime ones and was absent in the other nine, which is correct —
+it is gated on `isLifetime`.
+
+**A correction to this session's own plan.** It predicted the composer's AI
+controls would disappear on CREATOR. They do not, and should not: `pricing.ts`
+gives CREATOR `ai: true` and only `image_generator: false`. The generator button
+is gated on `ai`, so it is present on every paid tier; what CREATOR loses is the
+picture-generator section inside the design editor (`polonto.tsx:95`). The
+prediction was wrong, the app is right.
+
+### Four things that were broken, and are not now
+
+**The X trial lock answered 500.** `assertConnectAllowed` threw a bare `Error`,
+which Nest renders as `{"statusCode":500,"message":"Internal server error"}` —
+the sentence explaining the lock never reached anyone, and the frontend showed a
+generic failure. It now throws `HttpException(…, 406)`, which is the status this
+app already uses for "blocked *because* you are on trial"
+(`media.service.ts:99`) and which `layout.context.tsx:91` already handles by
+offering to end the trial and charge now. Measured, on a GROWTH trial:
+
+```
+/integrations/social/x            406  "X unlocks when your free trial ends…"
+/integrations/social/linkedin     200  (not locked)
+/integrations/social/x?refresh=…  200  (an existing channel reconnecting)
+```
+
+Before this could be reached at all, the channel-limit policy answered first —
+six channels against CREATOR's five — which is why the lock had never once been
+seen. It needs headroom under the limit to be reachable.
+
+**The founding member was told they had been charged.** `FinishTrial` had one
+completion message: *"You trial has been successfully finished and you have been
+charged."* For a founding member nothing is charged — `billing.controller.ts:79`
+ends the trial locally precisely because there is no Stripe subscription. The
+dialog now branches: the founding-member wording carries the same amber
+FOUNDING MEMBER badge as the billing surface, and the charged wording is
+unchanged in meaning. It was also still in the pre-migration visual language;
+it is on the token layer now.
+
+Two smaller things came out of the same dialog. "Close window" only renders when
+`window.opener` exists — opened from the X panel it is an overlay on the app,
+where `window.close()` does nothing. And the user is revalidated **on close**,
+not on completion: revalidating while the dialog was open unmounted the locked
+panel, and the dialog is rendered inside it, so the thank-you appeared and
+vanished in the same frame. That regression was introduced and removed inside
+ten minutes; it is written down because the screenshot is the only reason it was
+noticed.
+
+**The default organization was whatever Postgres felt like.** This one was found
+by accident and is the most serious. `getOrgsByUserId` had no `orderBy`;
+`auth.middleware.ts:92` falls back to `organization[0]` when a request carries no
+`showorg`. With one organization that is stable by luck. The moment a second one
+existed on this account, `/user/self` began resolving to the **new, empty**
+workspace with no user action at all — and the sweep came back with the checkout
+paywall on all ten signed-in screens. Ordering is now `createdAt: 'asc'`, so the
+fallback is the organization the account started with, which is what that line
+always meant.
+
+Anyone in more than one workspace could have been dropped into a different one
+between requests. It is upstream code and predates this migration.
+
+**`ui-shot.mjs` leaked a Chrome per failed start.** The connect call sat outside
+the try/finally, so a browser that never exposed a debugging target left both the
+process and its temp profile behind — **2,935 profile directories** had piled up,
+and the pile is itself a reason the next start fails. Cleaned up and closed.
+
+### What was walked, and what it cost to see
+
+- **34 add-channel provider guides** — every one opens a step, every one renders
+  exactly one connect control, 21 carry a requirement note. One browser session,
+  one async `--eval` that clicks each tile and comes back.
+- **17 Connections panes** — all open with real copy; 15 carry a code block,
+  `webhooks` and `oauth` deliberately do not.
+- **The over-limit channel** — six channels on CREATOR's five. The sixth draws at
+  `opacity: 0.5` with "This channel is disabled, please upgrade your plan to
+  enable it.", and the composer's picker excludes it (10 images = 5 channels ×
+  avatar + badge, not 12). Never seen before this.
+- **A post written from the composer** — channel picked, text typed with real key
+  events, "Add to Calendar" pressed. `state: QUEUE`, `publishDate` matching the
+  picker, its own group id. Every post before this one was written by a script.
+- **The workspace switcher** — two organizations, the menu lists both with a tick
+  on the current one, switching lands on the second workspace's first-billing
+  checkout, which is the correct screen for an organization with no subscription.
+- **Analytics · Plugs · Third-party** — all three render their empty states on
+  the token layer. They cannot be compared against the prototype's populated
+  versions, because a Mastodon placeholder supports neither analytics nor plugs.
+  **Recorded as not compared, rather than compared and passed.**
+
+### Tooling changed here
+
+`ui-shot.mjs` gained `--eval` (async, so one expression can walk 34 tiles) and
+`--type` (a real click plus `Input.insertText`, because assigning `textContent`
+to a managed editor leaves React's state untouched and the submit button
+disabled). `--click` and `--type` now run **in command-line order** and `--click`
+may repeat; previously a second `--click` was silently dropped and typing always
+happened after every click, so the submit press landed before there was anything
+to submit and the modal simply stayed open.
+
+`scripts/dev-state.mjs` is new: it puts an organization into any (tier, trial,
+lifetime) combination and `--reset` returns it. `seed-dev-channel.mjs` gained
+`--count N`, `--disable-over K` and `--revoke --keep N`. `seed-dev-org.mjs` is
+new and gives an account a second, empty workspace.
+
+**One tooling change was tried and reverted.** The gates collector counts the
+literal `isTrailing`, so a comment *explaining* a gate reads as a use of it and
+moved the count from 6 to 7. Stripping comments before counting looked obvious;
+one perl pass over 800 files ate a regex literal here and a protocol-relative
+string there, and the i18n list lost eleven real keys while claiming to have
+found a behaviour change. The collector is unchanged and the rule is on the
+writing instead — do not name a gate in prose beside the code that uses it.
+
+### Baseline moved, on purpose
+
+`i18n 1073 → 1080`. Seven keys, all from `finish.trial.tsx`, which had none: it
+was hardcoded English before this. `gates`: `user.isLifetime` 8 → 9, the founding
+member branch in the same file. `api`, `routes` and both type checks unchanged.
+
+### `.env` on this machine no longer starts the backend
+
+Worth knowing before the next `pnpm dev`. The file now names `localhost:5432`
+and `localhost:6379`, but Postgres and Redis are reachable only through the
+`pq-pg-bridge` / `pq-redis-bridge` containers on **15432** and **16379**; and
+`NEXT_PUBLIC_BACKEND_URL="/api"` — the frontend-only setup — makes
+`start.mcp.ts:50` throw `ERR_INVALID_URL` on `new URL('/mcp-oauth', '/api')`
+before the backend ever listens. It runs here with all three overridden.
+
+Editing `.env` was refused by this environment's guard, so the values are
+**not** fixed in the file. Three lines, from `.env.example`:
+
+```
+DATABASE_URL="…@localhost:15432/postqueen-db-local"
+REDIS_URL="redis://localhost:16379"
+NEXT_PUBLIC_BACKEND_URL="http://localhost:3000"
+```
+
+### Still not seen
+
+A real card payment, and with it `payment_failed` and `discount`. Unchanged from
+before: it is the owner's to make.
+
+### Where the account was left
+
+Lifetime CREATOR, trialing, one placeholder channel, seven posts (six seeded plus
+the one written from the composer), four test images, and a second empty
+workspace named "Second workspace (dev seed)". `seed-dev-org.mjs --revoke`
+removes that last one; with the ordering fix above it is harmless to keep, and it
+is the only way the switcher renders at all.

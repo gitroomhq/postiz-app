@@ -43,6 +43,13 @@ scan() { grep -rEoh --include='*.ts' --include='*.tsx' "$1" "$SRC" 2>/dev/null; 
 # and eighteen real calls in this repo are written across two — so the api list
 # was silently short by about 12% and reported "unchanged" for endpoints it had
 # never seen. A wrapped call and an inline one are the same call.
+#
+# It reads comments too, and that is left alone deliberately. Stripping them
+# first was tried: one perl pass over 800 files ate a regex literal here and a
+# protocol-relative string there, and the i18n list lost eleven real keys while
+# claiming to have found a behaviour change. A guard that damages what it counts
+# is worse than one that occasionally counts a sentence — so the rule is on the
+# writing instead: do not name a gate in prose next to the code that uses it.
 scan_calls() {
   find "$SRC" \( -name '*.ts' -o -name '*.tsx' \) -type f -print0 \
     | xargs -0 perl -0777 -pe 's/\(\s*\n\s*/(/g' 2>/dev/null \
