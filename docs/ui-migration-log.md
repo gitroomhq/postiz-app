@@ -2678,3 +2678,40 @@ doc 03's ten states, **six have now been rendered and looked at**
 built but need a real payment (`payment_failed`, `discount`), and two need
 subscription shapes this account cannot hold at once (`member_no_plan`,
 `lifetime_trial`).
+
+### The thumbnails were never going to load, and a stale process was why
+
+`--loaded <selector>` added to `ui-shot.mjs`: of the images matching it, how many
+actually **decoded**. `--count` says an `<img>` is in the DOM; a broken thumbnail
+counts exactly the same as a working one until something asks `naturalWidth`.
+First run: **0/4**.
+
+The frontend serves uploads from its own route handler
+(`app/(app)/api/uploads/[[...path]]/route.ts`) which reads `UPLOAD_DIRECTORY` from
+the *frontend's* environment — and it was reading `/uploads`, the container path,
+despite being restarted with an override.
+
+Reading the process environment directly rather than trusting the restart:
+
+```
+pid 57671 → UPLOAD_DIRECTORY=/uploads
+```
+
+**A stale Next process was still holding port 4200.** Every "frontend restarted"
+in this session had been landing beside it, not replacing it. Killed by port
+rather than by command pattern, restarted, and the override is now in the
+environment of the process actually serving. **4/4 loaded.**
+
+Worth naming the failure: I had restarted that server perhaps a dozen times
+today and never once checked that the process answering was the process I
+started.
+
+**And with real images behind them, the white-glyph question is answered.** The
+delete badge — white ✕ in a `pqWarn` circle — and the maximize glyph both read
+clearly over a coloured photograph in the light theme. That was the open
+question about `fill="white"` on media tiles, and it is settled by looking at
+exactly the surface it was asked about.
+
+The two icons still formally undecided (`DragHandleIcon`, `MediaSettingsIcon`)
+live in the editor's inline media strip, which needs media attached to a post —
+a narrower gap than before, and the same pattern demonstrably works.

@@ -79,6 +79,8 @@ const drag = arg('drag', '');
 // --count <selector>: how many match. "Did the regrouping drop a provider?" is
 // a counting question, and counting tiles in a screenshot is how you miss one.
 const count = arg('count', '');
+// --loaded <selector>: of the images matching it, how many actually decoded.
+const loaded = arg('loaded', '');
 // --tab N presses Tab N times before probing. Real key events, not el.focus(),
 // because `:focus-visible` — the thing that decides whether a focus ring is
 // drawn at all — only matches keyboard-initiated focus. Doc 06 §E asks for the
@@ -416,6 +418,22 @@ try {
           returnByValue: true,
         });
         console.log(`  probe ${probe}: ${p.value}`);
+      }
+
+      // --loaded <selector>: how many of those images actually decoded.
+      // `count` says an <img> is in the DOM; naturalWidth says the file behind
+      // it exists and was served. A broken thumbnail counts exactly the same as
+      // a working one until you ask this.
+      if (loaded) {
+        const { result: l } = await cdp.send('Runtime.evaluate', {
+          expression: `(() => {
+            const els = [...document.querySelectorAll(${JSON.stringify(loaded)})];
+            const ok = els.filter((e) => e.naturalWidth > 0).length;
+            return ok + '/' + els.length;
+          })()`,
+          returnByValue: true,
+        });
+        console.log(`  loaded ${loaded}: ${l.value}`);
       }
 
       if (count) {
