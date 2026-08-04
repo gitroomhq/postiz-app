@@ -9,6 +9,7 @@ import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -263,6 +264,24 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         })
       ).json();
 
+      if (all?.json?.errors?.length || !all?.json?.data) {
+        const errors: string[][] = all?.json?.errors || [];
+        const message =
+          errors.map((e) => e.join(': ')).join(', ') ||
+          'Reddit did not return post data';
+
+        if (errors.some((e) => e?.[0] === 'RATELIMIT')) {
+          throw new Error(message);
+        }
+
+        throw new BadBody(
+          'reddit',
+          JSON.stringify(all),
+          new URLSearchParams(postData) as any,
+          message
+        );
+      }
+
       const {
         id: redditId,
         name,
@@ -274,6 +293,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       }>((res) => {
         if (all?.json?.data?.id) {
           res(all.json.data);
+          return;
         }
 
         const ws = new WebSocket(all.json.data.websocket_url);
