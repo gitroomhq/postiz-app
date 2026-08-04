@@ -57,7 +57,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
           );
           const isExtensionFrame = (frame: { filename?: string }) =>
             !!frame.filename &&
-            (frame.filename.includes('/scripts/inpage.js') ||
+            (frame.filename.endsWith('/scripts/inpage.js') ||
               frame.filename.startsWith('chrome-extension://') ||
               frame.filename.startsWith('moz-extension://') ||
               frame.filename.startsWith('safari-extension://'));
