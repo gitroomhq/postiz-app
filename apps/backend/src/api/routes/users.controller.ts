@@ -252,7 +252,17 @@ export class UsersController {
         organization.id
       );
 
-    return subscription ? { subscription } : { subscription: undefined };
+    if (!subscription) {
+      return { subscription: undefined };
+    }
+
+    // The retention coupon lives on the Stripe subscription and nowhere local,
+    // so without this the Billing screen cannot tell that 50% off was accepted.
+    const discount = await this._stripeService.getActiveDiscount(
+      organization.paymentId
+    );
+
+    return { subscription, discount };
   }
 
   @Get('/subscription/tiers')

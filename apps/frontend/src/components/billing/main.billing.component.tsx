@@ -241,8 +241,13 @@ const Info: FC<{
 };
 export const MainBillingComponent: FC<{
   sub?: Subscription;
+  discount?: {
+    percentOff: number;
+    endsAt: string | null;
+    months: number | null;
+  } | null;
 }> = (props) => {
-  const { sub } = props;
+  const { sub, discount } = props;
   const { isGeneral } = useVariables();
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
@@ -300,6 +305,20 @@ export const MainBillingComponent: FC<{
     }
     return subscription?.subscriptionTier;
   }, [subscription, initialChannels, monthlyOrYearly, period]);
+
+  // What the subscribed tier costs at the period the toggle is showing, and
+  // what it costs once the retention coupon is taken off it. Only the discount
+  // banner reads these; the plan cards price themselves from `pricing`.
+  const currentPrice = useMemo(() => {
+    const tier = pricing[subscription?.subscriptionTier!];
+    if (!tier) return 0;
+    return monthlyOrYearly === 'on' ? tier.year_price : tier.month_price;
+  }, [subscription, monthlyOrYearly]);
+  const discountedPrice = useMemo(() => {
+    const off = (currentPrice * (100 - (props.discount?.percentOff || 0))) / 100;
+    // Whole dollars stay whole — "$10" reads as a price, "$10.00" as a receipt.
+    return off % 1 === 0 ? off : off.toFixed(2);
+  }, [currentPrice, props.discount]);
   const moveToCheckout = useCallback(
     (billing: AnyTier, reactivate = false) =>
       async () => {
@@ -500,6 +519,61 @@ export const MainBillingComponent: FC<{
       </div>
 
       {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+
+      {/* The retention offer, once it has been accepted. The design shows it as
+          a green strip with the old price struck through beside the new one —
+          `discountShow: !!discountUntil && !cancelAt && !subEnded && !isLifetime`
+          — and hides it the moment the subscription is on its way out, which is
+          what the two conditions here are. */}
+      {!!discount && !subscription?.cancelAt && (
+        <div
+          data-discount-active="1"
+          className="flex flex-wrap items-center gap-[14px] rounded-pqLg bg-gradient-to-r from-pqOkSoft to-transparent p-[14px_16px] outline outline-1 -outline-offset-1 outline-pqOk/25"
+        >
+          <div className="grid size-[38px] shrink-0 place-items-center rounded-pqMd bg-pqOkSoft text-pqOk">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+              <path
+                d="M7 17 17 7M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div className="min-w-[220px] flex-1">
+            <div className="text-[14.5px] font-[600] -tracking-[0.01em] text-pqText">
+              {t('discount_active', '{{percent}}% discount active', {
+                percent: discount.percentOff,
+              })}
+            </div>
+            <div className="mt-[3px] text-[12.5px] text-pqMuted">
+              {discount.endsAt
+                ? t('discount_until', 'Applied to every invoice through {{date}}.', {
+                    date: dayjs
+                      .utc(discount.endsAt)
+                      .local()
+                      .format('D MMM, YYYY'),
+                  })
+                : t('discount_forever', 'Applied to every invoice from now on.')}
+            </div>
+          </div>
+          <div className="flex items-baseline gap-[8px] pe-[2px]">
+            <span className="text-[14px] text-pqSoft line-through">
+              ${currentPrice}
+            </span>
+            <span className="font-display text-[24px] font-[700] -tracking-[0.02em] text-pqOk">
+              ${discountedPrice}
+            </span>
+            <span className="text-[12.5px] text-pqMuted">
+              {monthlyOrYearly === 'on'
+                ? t('billing_per_year', '/ year')
+                : t('billing_per_month', '/ month')}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => (!isGeneral || f[0] !== 'FREE') && !f[1].retired)

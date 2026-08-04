@@ -38,5 +38,10 @@ export const BillingComponent = () => {
   if (isLoadingSubscription || isLoadingTier) {
     return <LoadingComponent />;
   }
-  return <MainBillingComponent sub={subscription?.subscription} />;
+  return (
+    <MainBillingComponent
+      sub={subscription?.subscription}
+      discount={subscription?.discount}
+    />
+  );
 };
