@@ -75,7 +75,15 @@ export const Prorate: FC<{
   }
   return (
     <div className="text-[12px] flex pt-[12px]">
-      ({t('pay_today', 'Pay Today')} ${(price < 0 ? 0 : price)?.toFixed(1)})
+      {/* `toFixed(1)` rendered every amount with one decimal — "$0.0", "$49.0" —
+          which is not how money is written anywhere. Whole dollars stay whole;
+          anything with cents keeps two. */}
+      ({t('pay_today', 'Pay Today')} $
+      {(() => {
+        const value = price < 0 ? 0 : price;
+        return value % 1 === 0 ? String(value) : value.toFixed(2);
+      })()}
+      )
     </div>
   );
 };

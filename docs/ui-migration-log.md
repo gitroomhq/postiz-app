@@ -2595,3 +2595,32 @@ after    → month: $20, $33, $49, $99 · year: $132, $264, $396, $792
 
 Three defects stacked on each other, and the outermost one hid the other two. It
 took creating real fixtures to reach any of them.
+
+### `active` and `canceling`, seen at last — and the money was printed wrong
+
+The billing screen reads the **local** subscription row, not live Stripe
+(`/user/subscription` → `getSubscriptionByOrganizationId`). So two of doc 03's
+states could be produced directly, which is a good deal cheaper than driving
+Stripe checkout and just as true to what the UI does.
+
+**`active`** — every rule in doc 03's row holds: four cards in ascending price,
+**"Current Plan"** on the subscribed tier, and the portal + Cancel row beneath.
+`AGENCY` reads **"Unlimited channels"**, which is the owner's decision rendering
+for the first time, and there is no duplicate feature line.
+
+**`canceling`** — all four of doc 03's clauses, verified together:
+
+- *"Your subscription will be canceled at 22 Aug, 2026"* ✓
+- *"You will never be charged again"* ✓
+- **Reactivate subscription** replaces the plan card's button ✓
+- the red Cancel button is gone ✓
+- and the tier is **kept**, not dropped to FREE ✓
+
+**One defect, and it was on every card of both states.** "(Pay Today $0.0)" —
+`toFixed(1)`, one decimal, which is not how money is written anywhere. Whole
+dollars now print whole and anything with cents keeps two: **"(Pay Today $0)"**.
+
+It had been on that screen since before this migration, in the one place a
+person looks hardest before paying.
+
+Account restored to lifetime CREATOR afterwards.
