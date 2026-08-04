@@ -334,8 +334,6 @@ export class StripeService {
         },
       }));
 
-    const proration_date = Math.floor(Date.now() / 1000);
-
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -351,6 +349,13 @@ export class StripeService {
         subscription: currentUserSubscription?.data?.[0]?.id,
         subscription_details: {
           proration_behavior: 'create_prorations',
+          // `proration_date` used to be passed here as well. Stripe rejects the
+          // pair — "You cannot specify `proration_date` when
+          // `billing_cycle_anchor=now`" — so **every** call threw, the catch
+          // below swallowed it, and the plan cards told everyone that every
+          // upgrade cost "(Pay Today $0)". Anchoring to now already means the
+          // proration is calculated at this moment; the date was redundant as
+          // well as fatal.
           billing_cycle_anchor: 'now',
           items: [
             {
@@ -359,7 +364,6 @@ export class StripeService {
               quantity: 1,
             },
           ],
-          proration_date: proration_date,
         },
       });
 
@@ -367,6 +371,8 @@ export class StripeService {
         price: price?.amount_remaining ? price?.amount_remaining / 100 : 0,
       };
     } catch (err) {
+      // Kept, so a Stripe outage cannot take the Billing screen down with it —
+      // but it is no longer hiding a permanent failure.
       return { price: 0 };
     }
   }
@@ -678,6 +684,61 @@ export class StripeService {
     });
 
     return { ended: true };
+  }
+
+  /**
+   * The discount currently running on a subscription, if any.
+   *
+   * `applyDiscount` puts the retention coupon on the Stripe subscription and
+   * nothing read it back, so somebody who accepted 50% off saw a toast and then
+   * a Billing screen that looked exactly as it had a moment earlier. Doc 03
+   * calls for "a visible active-discount state on Billing"; this is what the
+   * banner is drawn from.
+   *
+   * Returns null rather than throwing when billing is off or the customer has
+   * no subscription — the Billing screen must render either way.
+   */
+  async getActiveDiscount(customer?: string | null) {
+    if (!isBillingEnabled() || !customer) {
+      return null;
+    }
+
+    try {
+      const subscription = (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing');
+
+      const discount = subscription?.discounts?.[0];
+      if (!discount || typeof discount === 'string') {
+        return null;
+      }
+
+      // The coupon hangs off `source` in this API version, and expansion only
+      // reaches one level in — so it arrives as an id about as often as an
+      // object, and both have to be handled.
+      const source = discount.source?.coupon;
+      const coupon =
+        typeof source === 'string' ? await stripe.coupons.retrieve(source) : source;
+
+      const percentOff = coupon?.percent_off ?? null;
+      if (!percentOff) {
+        return null;
+      }
+
+      return {
+        percentOff,
+        // Stripe reports the end of a repeating coupon as a timestamp; a
+        // `forever` one has none, and the banner says so by leaving it out.
+        endsAt: discount.end ? new Date(discount.end * 1000).toISOString() : null,
+        months: coupon?.duration_in_months ?? null,
+      };
+    } catch (err) {
+      return null;
+    }
   }
 
   async checkDiscount(customer: string) {
