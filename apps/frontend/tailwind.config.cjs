@@ -79,6 +79,8 @@ module.exports = {
         pqLtChipBg: 'var(--ltChipBg)',
         pqLtTick: 'var(--ltTick)',
         pqLtTickFg: 'var(--ltTickFg)',
+        pqLtCardOn: 'var(--ltCardOn)',
+        pqLtCardOff: 'var(--ltCardOff)',
         // --- end redesign token layer ---------------------------------------
 
         primary: 'var(--color-primary)',

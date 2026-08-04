@@ -231,7 +231,7 @@ const McpSection = ({
   return (
     <div
       data-tour="connect-pq"
-      className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden"
+      className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden"
     >
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
@@ -420,7 +420,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
       : steps;
 
   return (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+    <div className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden">
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
           <div className="text-[15px] font-[600]">
@@ -576,7 +576,7 @@ const PublicApiContent = () => {
           'and you will receive a pos_ prefixed token that works with the API, MCP, and CLI — just like an API Key.'
         )}
       </div>
-      <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+      <div className="bg-pqPop rounded-[12px] border border-newBorder overflow-hidden">
         <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
           <div>
             <div className="text-[15px] font-[600]">

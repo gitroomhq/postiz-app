@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
-const ReactLoading = ({ color = '#fff', width = 20, height = 20 }: { type?: string; color?: string; width?: number; height?: number }) => {
+const ReactLoading = ({ color = 'currentColor', width = 20, height = 20 }: { type?: string; color?: string; width?: number; height?: number }) => {
   const size = Math.min(width, height);
   const borderWidth = Math.max(2, Math.round(size / 8));
   return (
@@ -67,7 +67,7 @@ export const Button: FC<
     outline:
       'bg-transparent border border-newBorder text-newTextColor hover:bg-boxHover',
     ghost: 'bg-transparent text-newTextColor hover:bg-boxHover',
-    danger: 'bg-red-500 text-white hover:opacity-90',
+    danger: 'bg-pqWarn text-white hover:opacity-90',
   }[resolved];
   const sizeClass = {
     sm: 'h-[34px] px-[16px] text-[13px]',
@@ -94,7 +94,6 @@ export const Button: FC<
         <div className="absolute inset-0 flex items-center justify-center">
           <ReactLoading
             type="spin"
-            color="#fff"
             width={height! / 2}
             height={height! / 2}
           />
