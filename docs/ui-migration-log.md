@@ -2258,3 +2258,43 @@ needs a real Stripe subscription, and it is marked as such rather than assumed.
 With this, every tab, page, overlay and chrome dimension the design specifies
 now exists here. What remains is not structure: two icons and the calendar grids
 need data, and a real card would exercise the purchase.
+
+### Media, seen with files in it for the first time — and two real defects
+
+Three test images uploaded (the owner's call, left in place). Grid: **3 tiles**.
+List: **3 rows**. Both layouts render; the list view had been written and never
+once seen.
+
+Uploading them turned up something the source-run backend hides: `UPLOAD_DIRECTORY`
+is `/uploads`, an absolute path that exists inside the container and nowhere on
+a Mac, so `upload-simple` answered 500 with `ENOENT: mkdir '/uploads/2026/08/04'`.
+An environment mismatch rather than a bug, fixed with a runtime override beside
+the `DATABASE_URL` one that was already there.
+
+**Defect 1: nothing ever recorded a file's size.** `Media.fileSize` has existed
+with `@default(0)` since before this migration and `saveFile()` never took a size
+argument, so every row read as zero. The list view's size line — written to show
+nothing when the size was unknown — was therefore dead code that could never
+display anything. The uploader has the number all along; it is now threaded
+through both upload routes, the service and the repository.
+
+Proved by before and after in one list:
+
+```
+pq-test-2.png → fileSize 956     (uploaded after the fix)
+pq-test-3.png → fileSize 0       (before)
+```
+
+**Defect 2, mine, caught by the first real number.** The size line divided
+straight to MB, so 956 bytes rendered as **"0.0 MB"** — and small files are most
+of a media library. Now bytes below a kilobyte, whole kilobytes below a megabyte,
+one decimal above. The row reads `Image · 956 B`.
+
+Note the shape of this: the size formatter had been written, reviewed and
+committed weeks of work ago and was wrong in a way no amount of reading would
+have shown. It took one real file.
+
+**Still open here:** thumbnails do not load, because the images live in the
+override directory while the frontend serves `/uploads` from the container path.
+That is this machine's configuration, not the app — worth stating so it is not
+mistaken for a rendering bug later.

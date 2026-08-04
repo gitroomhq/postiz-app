@@ -200,6 +200,19 @@ export const showMediaBox = (
 };
 const CHUNK_SIZE = 1024 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
+/**
+ * A file size a person can read.
+ *
+ * Dividing straight to MB turned every small file into "0.0 MB", and small
+ * files are most of a media library — the first upload that ever recorded a
+ * size was 956 bytes.
+ */
+const formatSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
@@ -699,9 +712,7 @@ export const MediaBox: FC<{
                               predate the column's default. Saying "0 B" would
                               be a measurement we never took. */}
                           {media.fileSize > 0
-                            ? ` · ${(media.fileSize / 1024 / 1024).toFixed(
-                                1
-                              )} MB`
+                            ? ` · ${formatSize(media.fileSize)}`
                             : ''}
                         </div>
                       </div>

@@ -6,7 +6,13 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 export class MediaRepository {
   constructor(private _media: PrismaRepository<'media'>) {}
 
-  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
+  saveFile(
+    org: string,
+    fileName: string,
+    filePath: string,
+    originalName?: string,
+    fileSize?: number
+  ) {
     return this._media.model.media.create({
       data: {
         organization: {
@@ -17,6 +23,11 @@ export class MediaRepository {
         name: fileName,
         path: filePath,
         originalName: originalName || null,
+        // The column has existed with a default of 0 since before this
+        // migration and nothing ever wrote to it, so every row read as "size
+        // unknown" and the Media list view's size line was dead code. The
+        // uploader has the number; it just was not being passed along.
+        ...(fileSize ? { fileSize } : {}),
       },
       select: {
         id: true,
