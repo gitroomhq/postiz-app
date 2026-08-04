@@ -2740,3 +2740,28 @@ caught by twice.
 
 **Drag and drop remains the one interaction in this migration that is built,
 present in the DOM, and unverified.**
+
+### Final comparison, with everything in place
+
+The sweep now runs against an account that has a subscription, a channel, six
+posts and four images whose thumbnails load:
+
+```
+13 screens · 3 widths · 2 themes · 78 shots
+paywall shots: 0     horizontal overflow: 0
+```
+
+The only two ⚠ lines left are the app's own redirects — `/agents → /agents/new`
+and `/billing → /launches`, the latter being doc 03's lifetime rule doing its
+job.
+
+Settings checked in both themes, since it was named specifically: three groups,
+nine tabs including the **Plan & invoices** added today, Teams correctly absent
+on a CREATOR plan (`tier.team_members`), toggles on brand, the column hairline
+and spacing intact, and text at `rgb(24,24,27)` light / `rgb(237,237,240)` dark.
+
+**This is the state the owner will open the app into**, and it is worth being
+plain about what that means: every screen the design specifies renders with real
+data in it, at every width, in both themes, with nothing overflowing. What is
+*not* claimed is that every interaction has been exercised — drag and drop
+specifically has not, and says so.
