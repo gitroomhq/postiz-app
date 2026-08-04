@@ -2561,3 +2561,37 @@ And the lifetime ladder now runs on real names: `grant-lifetime.mjs` without
 **What this closes:** the item that has sat in "waiting on the owner" longest,
 and the one I called the largest remaining risk in this migration. It is neither
 now.
+
+### Stripe had nothing to sell, and two reasons why went unnoticed
+
+The test account held one price. `getPackages()` returned `{}` and every
+subscription state was unreachable. Two separate causes, both stale since before
+this migration:
+
+**1 · The subscribe flow matches on `nickname`.** `stripe.service.ts:304` finds a
+price with `p.nickname === body.billing + ' ' + body.period` — `"CREATOR MONTHLY"`.
+No such price existed, so **no subscription could ever be created**, which is why
+doc 03's six subscription states had never been seen by anybody.
+`scripts/stripe-test-fixtures.mjs` creates the eight (four tiers × two periods)
+with amounts read from `pricing.ts`. It refuses to run unless the key starts
+`sk_test`, and that check is first, before anything is read.
+
+**2 · `getPackages()` asked for retired tiers.** Its `lookup_keys` were
+`standard_monthly`, `standard_yearly`, `pro_monthly`, `pro_yearly` — and STANDARD
+was retired by the rename. Two of four keys named a plan nobody can buy. Now
+built from `pricing`, filtered to what is on sale, so the next rename cannot
+leave it behind.
+
+**3 · And then it still returned nothing, which found a third.** With the keys
+right, every package came back with `price: null`: the amount was read only as
+`p.tiers[0].unit_amount`, which exists on a *tiered* price. An ordinary flat
+price — the normal shape, and what any straightforward Stripe setup produces —
+had no amount at all. It falls back to `unit_amount` now.
+
+```
+before   GET /user/subscription/tiers → {}
+after    → month: $20, $33, $49, $99 · year: $132, $264, $396, $792
+```
+
+Three defects stacked on each other, and the outermost one hid the other two. It
+took creating real fixtures to reach any of them.

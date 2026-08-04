@@ -249,19 +249,28 @@ export class StripeService {
     const products = await stripe.prices.list({
       active: true,
       expand: ['data.tiers', 'data.product'],
-      lookup_keys: [
-        'standard_monthly',
-        'standard_yearly',
-        'pro_monthly',
-        'pro_yearly',
-      ],
+      // Built from the tiers actually on sale rather than a hardcoded list.
+      // It asked for `standard_monthly` and `standard_yearly` until now —
+      // STANDARD was retired by the rename, so two of the four keys named a
+      // plan nobody can buy, and nothing noticed because this endpoint returns
+      // whatever it finds.
+      lookup_keys: Object.entries(pricing)
+        .filter(([name, plan]) => name !== 'FREE' && !plan.retired)
+        .flatMap(([name]) => [
+          `${name.toLowerCase()}_monthly`,
+          `${name.toLowerCase()}_yearly`,
+        ]),
     });
 
     const productsList = groupBy(
       products.data.map((p) => ({
         name: (p.product as Stripe.Product)?.name,
         recurring: p?.recurring?.interval!,
-        price: p?.tiers?.[0]?.unit_amount! / 100,
+        // Tiered prices keep the amount on the first tier; a flat price keeps
+        // it on the price itself. This read only handled the first, so an
+        // ordinary flat price came back with no amount at all — which is what
+        // the whole packages list did until the fixtures exposed it.
+        price: (p?.tiers?.[0]?.unit_amount ?? p?.unit_amount ?? 0) / 100,
       })),
       'recurring'
     );
