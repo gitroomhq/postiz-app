@@ -112,6 +112,7 @@ billing_cancel
 billing_cancel_anytime
 billing_cancel_anytime_short
 billing_cancel_notice
+billing_card_declined
 billing_choose_plan
 billing_coupon_applied
 billing_coupon_expires
@@ -138,6 +139,7 @@ billing_pay_0_start_trial
 billing_pay_nothing_7_days
 billing_pay_now
 billing_payment
+billing_payment_method_required
 billing_per_month
 billing_per_month_short
 billing_per_year

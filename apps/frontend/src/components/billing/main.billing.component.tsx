@@ -445,10 +445,16 @@ export const MainBillingComponent: FC<{
         }
         if (portal) {
           if (
+            // doc 03's payment_failed state, word for word — and untranslated
+            // until now, on a dialog that only ever appears to somebody whose
+            // card was just declined, in an app with fourteen languages.
             await deleteDialog(
-              'We could not charge your credit card, please update your payment method',
-              'Update',
-              'Payment Method Required'
+              t(
+                'billing_card_declined',
+                'We could not charge your credit card, please update your payment method'
+              ),
+              t('update', 'Update'),
+              t('billing_payment_method_required', 'Payment Method Required')
             )
           ) {
             window.open(portal);

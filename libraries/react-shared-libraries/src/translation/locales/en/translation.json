@@ -991,5 +991,7 @@
   "channel_connected": "Connected",
   "billing_pick_up_where": "Pick up where you",
   "billing_left_off_highlight": "left off",
-  "billing_with_postqueen_again": "with PostQueen"
+  "billing_with_postqueen_again": "with PostQueen",
+  "billing_card_declined": "We could not charge your credit card, please update your payment method",
+  "billing_payment_method_required": "Payment Method Required"
 }

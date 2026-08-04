@@ -2653,3 +2653,28 @@ the lifetime footnote: the sentence that can be true is written, the one that
 would need an invented date is not.
 
 Account restored to lifetime CREATOR.
+
+### `payment_failed` and `discount`: built, and one of them untranslated
+
+**`payment_failed` exists and matches doc 03 word for word** —
+`main.billing.component.tsx:446` handles the `portal` response from
+`/billing/subscribe` and raises *"We could not charge your credit card, please
+update your payment method"* / *"Update"* / *"Payment Method Required"*.
+
+All three strings were **hardcoded English**. The same class as the plan feature
+list fixed earlier today, and on a worse surface: this dialog only ever appears
+to somebody whose card was just declined, which is the moment a person least
+wants to read a language they do not speak. Now translated.
+
+**`discount` cannot be reached here at all**, and honestly: `checkDiscount()`
+returns `false` immediately unless `STRIPE_DISCOUNT_ID` is set, and then lists
+the customer's *charges* — so it needs both a coupon configured and a payment
+history. Neither exists on this account.
+
+**Both remaining states need a completed checkout with a card**, which is the
+one thing deliberately left to the owner. They are built; they are not seen. Of
+doc 03's ten states, **six have now been rendered and looked at**
+(`not_started`, `trial`, `active`, `canceling`, `ended`, `lifetime`), two are
+built but need a real payment (`payment_failed`, `discount`), and two need
+subscription shapes this account cannot hold at once (`member_no_plan`,
+`lifetime_trial`).
