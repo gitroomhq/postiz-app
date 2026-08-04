@@ -13,6 +13,7 @@ export const setSentryUser = (
       Sentry.setTag('organization.id', user.orgId);
     } else {
       Sentry.setUser(null);
+      Sentry.setTag('organization.id', undefined);
     }
   } catch (err) {
     /* never let telemetry break the app */
