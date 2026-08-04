@@ -110,28 +110,81 @@ export const TagsComponentInner: FC<{
     async (tag: any, e: React.MouseEvent) => {
       setAllowClose(false);
       e.stopPropagation();
-      const val: string | undefined = await new Promise((resolve) => {
-        modals.openModal({
-          title: t('edit_tag', 'Edit Tag'),
-          onClose: () => resolve(undefined),
-          children: (close) => (
-            <ShowModal
-              tag={tag.name}
-              color={tag.color}
-              id={tag.id}
-              close={close}
-              resolve={resolve}
-            />
-          ),
+      try {
+        const val: string | undefined = await new Promise((resolve) => {
+          modals.openModal({
+            title: t('edit_tag', 'Edit Tag'),
+            onClose: () => resolve(undefined),
+            children: (close) => (
+              <ShowModal
+                tag={tag.name}
+                color={tag.color}
+                id={tag.id}
+                close={close}
+                resolve={resolve}
+              />
+            ),
+          });
         });
-      });
 
-      const newValues = await mutate();
+        const newValues = await mutate();
 
-      if (val) {
-        const updated = newValues.tags.find((p: any) => p.id === tag.id);
-        if (updated && tagValue.find((a) => a.id === tag.id)) {
-          const modify = tagValue.map((a) => (a.id === tag.id ? updated : a));
+        if (val) {
+          const updated = newValues.tags.find((p: any) => p.id === tag.id);
+          if (updated && tagValue.find((a) => a.id === tag.id)) {
+            const modify = tagValue.map((a) =>
+              a.id === tag.id ? updated : a
+            );
+            setTagValue(modify);
+            onChange({
+              target: {
+                value: modify.map((p: any) => ({
+                  label: p.name,
+                  value: p.name,
+                })),
+                name,
+              },
+            });
+          }
+        }
+      } finally {
+        setTimeout(() => {
+          setAllowClose(true);
+        }, 500);
+      }
+    },
+    [tagValue, name, onChange, mutate, modals, t]
+  );
+
+  const deleteTag = useCallback(
+    async (tag: any, e: React.MouseEvent) => {
+      setAllowClose(false);
+      e.stopPropagation();
+      try {
+        const confirmed: boolean = await new Promise((resolve) => {
+          modals.openModal({
+            title: t('delete_tag', 'Delete Tag'),
+            children: (close) => (
+              <ConfirmDeleteModal
+                tagName={tag.name}
+                close={close}
+                resolve={resolve}
+              />
+            ),
+          });
+        });
+
+        if (!confirmed) {
+          return;
+        }
+
+        await fetch(`/posts/tags/${tag.id}`, {
+          method: 'DELETE',
+        });
+
+        // Remove the tag from current selection if it was selected
+        const modify = tagValue.filter((a) => a.id !== tag.id);
+        if (modify.length !== tagValue.length) {
           setTagValue(modify);
           onChange({
             target: {
@@ -143,63 +196,13 @@ export const TagsComponentInner: FC<{
             },
           });
         }
-      }
 
-      setTimeout(() => {
-        setAllowClose(true);
-      }, 500);
-    },
-    [tagValue, name, onChange, mutate, modals, t]
-  );
-
-  const deleteTag = useCallback(
-    async (tag: any, e: React.MouseEvent) => {
-      setAllowClose(false);
-      e.stopPropagation();
-      const confirmed: boolean = await new Promise((resolve) => {
-        modals.openModal({
-          title: t('delete_tag', 'Delete Tag'),
-          children: (close) => (
-            <ConfirmDeleteModal
-              tagName={tag.name}
-              close={close}
-              resolve={resolve}
-            />
-          ),
-        });
-      });
-
-      if (!confirmed) {
+        await mutate();
+      } finally {
         setTimeout(() => {
           setAllowClose(true);
         }, 500);
-        return;
       }
-
-      await fetch(`/posts/tags/${tag.id}`, {
-        method: 'DELETE',
-      });
-
-      // Remove the tag from current selection if it was selected
-      const modify = tagValue.filter((a) => a.id !== tag.id);
-      if (modify.length !== tagValue.length) {
-        setTagValue(modify);
-        onChange({
-          target: {
-            value: modify.map((p: any) => ({
-              label: p.name,
-              value: p.name,
-            })),
-            name,
-          },
-        });
-      }
-
-      await mutate();
-
-      setTimeout(() => {
-        setAllowClose(true);
-      }, 500);
     },
     [tagValue, name, onChange, mutate, fetch, modals, t]
   );
