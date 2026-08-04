@@ -2018,3 +2018,30 @@ coincidence of two numbers that happen to match: both read the same 236.
 
 **Still to compare:** the user menu, Settings (`settingsVals`), the calendar
 toolbar and grids, the non-calendar pages, and the overlays.
+
+### Step 5, continued: Settings — one tab genuinely missing
+
+`settingsVals()` names: Global Settings, Language, Team Members, **Plan &
+invoices**, Integrations, Autopost, Signatures, Developers, Approved Apps.
+
+Ours: `global_settings`, `language`, `teams`, `autopost`, `signatures`, `api`
+(Developers), `approved_apps` — plus `sets`, `webhooks` and `connections`, which
+the design does not name and which stay, per the rule about never deleting a
+capability the design happens not to draw.
+
+**The gap is one tab: Plan & invoices.**
+
+Traced what could back it, because the obvious candidate cannot:
+
+- `GET /billing/charges` **is superadmin-only** (`billing.controller.ts:189`).
+  It is the impersonation tool's charge list, not a customer-facing invoice
+  feed. Wiring a settings tab to it would 400 for every ordinary user.
+- The realistic source is `GET /billing/portal`, which exists and is what Stripe
+  expects to be used for invoice history.
+- **For a founding member neither applies.** There is no Stripe subscription, so
+  no portal session and no invoices — the tab would show the plan and say there
+  is nothing to renew, which is also what the design's lifetime copy says.
+
+That is the shape, not the build: it needs a route, a tab, and two states (paid
+vs lifetime). Recorded rather than started, because half a billing tab that 400s
+for ordinary users is worse than a missing one.
