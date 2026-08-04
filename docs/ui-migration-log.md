@@ -2137,3 +2137,24 @@ the genuinely-wrong ones to `currentColor` under a token, exactly as the three
 billing ones were. That is a session's work on its own and it is written down
 rather than half-done — a bulk replace here would turn white icons invisible on
 dark grounds, which is the same bug in the other direction.
+
+### The white-fill audit cannot be automated, and the attempt is worth recording
+
+Tried to sort the 42 hardcoded white fills by looking for a coloured background
+class within fourteen lines of each. It returned **41 suspicious, 1 safe**,
+which is obviously wrong: five of the files are provider *previews*
+(`linkedin.preview`, `facebook.preview`, `tiktok.preview`) where the white is
+part of a brand logo and correct by definition.
+
+The heuristic fails because a coloured ground is often not a class near the
+`fill` — it can be an inline style, a parent several components up, or an image
+behind the icon. A search that cannot see the ground cannot judge the figure.
+
+So the position stands: **42 found, counted, and located; verdicts require
+looking at each site.** The largest cluster is `ui/icons/index.tsx` with 14,
+and that file is the one worth fixing regardless of verdict — it hardcodes the
+colour inside each icon, so no caller can theme one even when it should.
+
+Recording the failed attempt because the alternative was to publish 41 findings
+that a first glance would have refuted, and this migration has already been
+caught once by a search whose shape decided its answer.
