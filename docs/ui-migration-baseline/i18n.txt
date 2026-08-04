@@ -814,7 +814,6 @@ provider
 public_to_everyone
 publication_date
 published
-publishing
 publishing_options
 reactivate_subscription
 read_the_docs
@@ -858,6 +857,7 @@ schedule
 scheduled
 scheduled_times
 search_media_by_name
+search_settings
 secret_only_shown_on_creation
 select
 select_1
@@ -882,7 +882,6 @@ send_invitation_via_email
 send_password_reset_email
 send_test
 separate_post
-sets
 settings
 settings_updated
 setup_tour

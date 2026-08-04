@@ -37,11 +37,85 @@ import {
   useMenuFilter,
   useMenuItem,
 } from '@gitroom/frontend/components/layout/top.menu';
+import { useRouter } from 'next/navigation';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
+
+/**
+ * The design's settings sub-nav draws a 16px stroked glyph on every row
+ * (`SETTINGS_ICONS`, prototype). Path data is lifted verbatim; Plugs and
+ * Affiliate reuse the glyphs their rail rows carried.
+ */
+const SETTINGS_NAV_ICONS: Record<string, string[]> = {
+  global_settings: [
+    'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  ],
+  language: [
+    'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18',
+  ],
+  teams: [
+    'M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.9',
+  ],
+  webhooks: [
+    'M9 8.5a3 3 0 1 1 4.6 2.5l2.2 4M8.4 11a3 3 0 1 0 3.1 5M14.5 16.5a3 3 0 1 0 3-3h-5.2',
+  ],
+  autopost: [
+    'M5 19.5h.01M5 12a7.5 7.5 0 0 1 7.5 7.5M5 5a14.5 14.5 0 0 1 14.5 14.5',
+  ],
+  plan_invoices: [
+    'M3 9.5h18M5 5.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2ZM6.5 14h3',
+  ],
+  sets: [
+    'M9 9V5.5A1.5 1.5 0 0 1 10.5 4h8A1.5 1.5 0 0 1 20 5.5v8a1.5 1.5 0 0 1-1.5 1.5H15M5.5 9h8A1.5 1.5 0 0 1 15 10.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 4 18.5v-8A1.5 1.5 0 0 1 5.5 9Z',
+  ],
+  integrations: [
+    'M4.5 4.5h6v6h-6v-6ZM13.5 4.5h6v6h-6v-6ZM4.5 13.5h6v6h-6v-6ZM13.5 13.5h6v6h-6v-6Z',
+  ],
+  signatures: [
+    'M4 17.5c3.5 0 4-11 7-11s2.4 8 4.8 8c1.6 0 2.6-1.1 4.2-1.4M4 21h16',
+  ],
+  api: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
+  approved_apps: [
+    'M9 12.5l2.5 2.5 5-5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+  ],
+  plugs: ['M13.2 2.5 5 13.6h6.2l-1 7.9 8.2-11.3h-6.1l1-7.7Z'],
+  affiliate: [
+    'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+    'M19 8v6M22 11h-6',
+  ],
+};
+
+const SettingsNavIcon: FC<{ icon: string }> = ({ icon }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="16"
+    height="16"
+    fill="none"
+    className="block shrink-0"
+    aria-hidden="true"
+  >
+    {(SETTINGS_NAV_ICONS[icon] || SETTINGS_NAV_ICONS.global_settings).map(
+      (d) => (
+        <path
+          key={d}
+          d={d}
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )
+    )}
+  </svg>
+);
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
+  /** Route context passes a router-back closure; the FREE-tier modal keeps
+   *  the modal system's own close. */
+  onClose?: () => void;
 }> = (props) => {
   const { isGeneral, billingEnabled } = useVariables();
-  const { getRef } = props;
+  const { getRef, onClose } = props;
   const fetch = useFetch();
   const toast = useToaster();
   const swr = useSWRConfig();
@@ -63,6 +137,8 @@ export const SettingsPopup: FC<{
   // their rows live here now, filtered by the same gates they always had.
   const { extraMenu } = useMenuItem();
   const menuFilter = useMenuFilter();
+  const { mobile } = useViewport();
+  const [query, setQuery] = useState('');
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
@@ -104,6 +180,7 @@ export const SettingsPopup: FC<{
     'api',
     'connections',
     'approved_apps',
+    'integrations',
   ];
   const requestedTab = url.get('tab');
   const [tab, setTab] = useState(
@@ -119,27 +196,41 @@ export const SettingsPopup: FC<{
   const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
   // `group` only sorts the sub-nav into sections; which tabs exist, what they
   // are called and what they open are all unchanged.
+  // The design's three groups, in the design's order — Workspace / More /
+  // Developers — with the repo-only rows (Plan & invoices, Plugs, Affiliate)
+  // slotted at the end of their group. Every gate is unchanged.
   const list = useMemo(() => {
     const arr: {
       tab: string;
       label: string;
       group: string;
+      icon: string;
       href?: string;
     }[] = [];
     const workspace = t('workspace', 'Workspace');
-    const publishing = t('publishing', 'Publishing');
+    const more = t('more', 'More');
     const developers = t('developers', 'Developers');
 
     arr.push({
       tab: 'global_settings',
       label: t('global_settings', 'Global Settings'),
       group: workspace,
+      icon: 'global_settings',
     });
     arr.push({
       tab: 'language',
       label: t('language', 'Language'),
       group: workspace,
+      icon: 'language',
     });
+    if (user?.tier?.team_members && isGeneral && isOrgAdmin) {
+      arr.push({
+        tab: 'teams',
+        label: t('teams', 'Teams'),
+        group: workspace,
+        icon: 'teams',
+      });
+    }
     // The design names this tab and it did not exist here. Same gate as the
     // Billing screen — only an org admin can see what the org is paying — and
     // only where billing is switched on at all.
@@ -148,42 +239,54 @@ export const SettingsPopup: FC<{
         tab: 'plan_invoices',
         label: t('plan_invoices', 'Plan & invoices'),
         group: workspace,
+        icon: 'plan_invoices',
       });
     }
-    // Populate tabs based on user permissions
-    if (user?.tier?.team_members && isGeneral && isOrgAdmin) {
-      arr.push({ tab: 'teams', label: t('teams', 'Teams'), group: workspace });
-    }
-    if (user?.tier?.webhooks) {
+    if (user?.tier.current !== 'FREE') {
       arr.push({
-        tab: 'webhooks',
-        label: t('webhooks_1', 'Webhooks'),
-        group: publishing,
+        tab: 'sets',
+        label: t('social_sets', 'Social Sets'),
+        group: more,
+        icon: 'sets',
+      });
+    }
+    if (user?.tier.current !== 'FREE') {
+      arr.push({
+        tab: 'signatures',
+        label: t('signatures', 'Signatures'),
+        group: more,
+        icon: 'signatures',
       });
     }
     if (user?.tier?.autoPost) {
       arr.push({
         tab: 'autopost',
         label: t('auto_post', 'Auto Post'),
-        group: publishing,
+        group: more,
+        icon: 'autopost',
       });
     }
-    if (user?.tier.current !== 'FREE') {
-      arr.push({ tab: 'sets', label: t('sets', 'Sets'), group: publishing });
-    }
-    if (user?.tier.current !== 'FREE') {
+    if (user?.tier?.webhooks) {
       arr.push({
-        tab: 'signatures',
-        label: t('signatures', 'Signatures'),
-        group: publishing,
+        tab: 'webhooks',
+        label: t('webhooks_1', 'Webhooks'),
+        group: more,
+        icon: 'webhooks',
       });
     }
+    arr.push({
+      tab: 'integrations',
+      label: t('integrations', 'Integrations'),
+      group: more,
+      icon: 'integrations',
+    });
     for (const item of extraMenu.filter(menuFilter)) {
       arr.push({
         tab: item.path,
         label: item.name,
-        group: publishing,
+        group: more,
         href: item.path,
+        icon: item.path === '/plugs' ? 'plugs' : 'affiliate',
       });
     }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
@@ -191,18 +294,14 @@ export const SettingsPopup: FC<{
         tab: 'api',
         label: t('developers', 'Developers'),
         group: developers,
-      });
-      // Same gate as Developers: both are the API key wearing different hats.
-      arr.push({
-        tab: 'connections',
-        label: t('connections', 'Connections'),
-        group: developers,
+        icon: 'api',
       });
     }
     arr.push({
       tab: 'approved_apps',
       label: t('approved_apps', 'Approved Apps'),
       group: developers,
+      icon: 'approved_apps',
     });
 
     return arr;
@@ -219,27 +318,95 @@ export const SettingsPopup: FC<{
     return groups;
   }, [list]);
 
+  // The design's "Search settings" field filters the rows; a group with no
+  // match disappears with them.
+  const visibleGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return groupedList;
+    return groupedList
+      .map((g) => ({
+        ...g,
+        items: g.items.filter((i) => i.label.toLowerCase().includes(q)),
+      }))
+      .filter((g) => g.items.length);
+  }, [groupedList, query]);
+
   useEffect(() => {
     loadProfile();
   }, []);
 
   return (
-    <>
-      <div className="bg-newBgColorInner p-[16px] flex flex-col transition-all w-[260px]">
-        <nav className="flex flex-1 flex-col gap-[20px]">
-          {groupedList.map(({ group, items }) => (
-            <div key={group} className="flex flex-col gap-[2px]">
-              <div className="px-[10px] pb-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-textItemBlur">
+    <div
+      className={clsx(
+        'relative flex overflow-hidden bg-pqPop shadow-[var(--e3),inset_0_0_0_1px_var(--border)] animate-pqPop',
+        mobile
+          ? 'h-full w-full flex-col'
+          : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
+      )}
+    >
+      <button
+        type="button"
+        onClick={onClose || close}
+        aria-label={t('close', 'Close')}
+        className="absolute end-[16px] top-[14px] z-[2] flex h-[30px] w-[30px] items-center justify-center rounded-[8px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+      >
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6 6 18"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <div
+        className={clsx(
+          'flex flex-col bg-pqBg',
+          mobile
+            ? 'max-h-[132px] w-full shrink-0 border-b border-pqLine'
+            : 'w-[236px] shrink-0 border-e border-pqLine'
+        )}
+      >
+        <div className="shrink-0 p-[14px_12px_10px]">
+          <div className="relative">
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              aria-hidden="true"
+              className="pointer-events-none absolute start-[10px] top-[10px] text-pqSoft"
+            >
+              <path
+                d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20.5 20.5 16 16"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('search_settings', 'Search settings')}
+              className="h-[34px] w-full rounded-pqSm bg-pqInner pe-[11px] ps-[31px] text-[13px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus-visible:shadow-[inset_0_0_0_1px_var(--brand)]"
+            />
+          </div>
+        </div>
+        <nav className="flex flex-1 flex-col gap-[16px] overflow-y-auto p-[0_8px_14px]">
+          {visibleGroups.map(({ group, items }) => (
+            <div key={group} className="flex flex-col gap-[1px]">
+              <div className="px-[9px] pb-[5px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
                 {group}
               </div>
-              {items.map(({ tab: tabKey, label, href }) =>
+              {items.map(({ tab: tabKey, label, href, icon }) =>
                 href ? (
                   <Link
                     key={tabKey}
                     href={href}
-                    className="flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors text-textItemBlur hover:bg-boxHover hover:text-newTextColor"
+                    className="flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
                   >
-                    {label}
+                    <SettingsNavIcon icon={icon} />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
                   </Link>
                 ) : (
                   <button
@@ -248,13 +415,14 @@ export const SettingsPopup: FC<{
                     onClick={() => setTab(tabKey)}
                     aria-current={tabKey === tab ? 'page' : undefined}
                     className={clsx(
-                      'flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors',
+                      'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-colors',
                       tabKey === tab
-                        ? 'bg-boxFocused font-[600] text-textItemFocused'
-                        : 'text-textItemBlur hover:bg-boxHover hover:text-newTextColor'
+                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused hover:bg-[rgba(124,58,237,.2)]'
+                        : 'text-pqMuted hover:bg-pqHover hover:text-pqText'
                     )}
                   >
-                    {label}
+                    <SettingsNavIcon icon={icon} />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
                   </button>
                 )
               )}
@@ -262,18 +430,13 @@ export const SettingsPopup: FC<{
           ))}
         </nav>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+      <div className="flex flex-1 flex-col overflow-y-auto bg-pqInner p-[26px_28px_34px]">
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(submit)}>
             {!!getRef && (
               <button type="submit" className="hidden" ref={getRef}></button>
             )}
-            <div
-              className={clsx(
-                'w-full mx-auto gap-[24px] flex flex-col relative',
-                !getRef && 'rounded-[4px]'
-              )}
-            >
+            <div className="relative flex w-full max-w-[920px] flex-col gap-[24px]">
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />
@@ -351,11 +514,38 @@ export const SettingsPopup: FC<{
                   <ApprovedAppsComponent />
                 </div>
               )}
+
+              {tab === 'integrations' && (
+                <div>
+                  <ThirdPartyComponent />
+                </div>
+              )}
             </div>
           </form>
         </FormProvider>
       </div>
-    </>
+    </div>
+  );
+};
+
+/**
+ * The /settings route renders the design's settings modal: the card floats on
+ * a scrim over the app chrome. Closing walks back to wherever the person came
+ * from, or to the calendar when the URL was opened directly.
+ */
+export const SettingsPage = () => {
+  const router = useRouter();
+  const back = useCallback(() => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/launches');
+    }
+  }, [router]);
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0">
+      <SettingsPopup onClose={back} />
+    </div>
   );
 };
 export const SettingsComponent = () => {
@@ -367,12 +557,12 @@ export const SettingsComponent = () => {
     }
     settings.openModal({
       children: (
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-pqLine bg-sixth p-[16px] w-[500px] mx-auto">
+        <div className="flex h-[min(680px,90vh)] flex-1 items-center justify-center">
           <SettingsPopup />
         </div>
       ),
       classNames: {
-        modal: 'bg-transparent text-textColor',
+        modal: 'bg-transparent',
       },
       withCloseButton: false,
       size: '100%',

@@ -1,4 +1,4 @@
-import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.component';
+import { SettingsPage } from '@gitroom/frontend/components/layout/settings.component';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
@@ -12,5 +12,5 @@ export default async function Index(props: {
   }>;
 }) {
   const searchParams = await props.searchParams;
-  return <SettingsPopup />;
+  return <SettingsPage />;
 }

@@ -174,7 +174,9 @@ export const useMenuItem = () => {
           d2="M4.5 13.5h6v6h-6v-6ZM13.5 13.5h6v6h-6v-6Z"
         />
       ),
-      path: '/third-party',
+      // Integrations is a Settings tab in the design; the rail deep-links to
+      // it the way Social Sets and Webhooks above already do.
+      path: '/settings?tab=integrations',
       requireOrg: true,
     },
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
