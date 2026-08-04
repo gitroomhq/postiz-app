@@ -307,11 +307,17 @@ try {
                 }
               }
             }
-            return { sw: de.scrollWidth, cw, href: location.href, worst };
+            return { sw: de.scrollWidth, cw, href: location.href, worst,
+                     paywall: !!document.querySelector('[data-pq-paywall]') };
           })())`,
         returnByValue: true,
       });
-      const { sw, cw, href, worst } = JSON.parse(result.value);
+      const { sw, cw, href, worst, paywall } = JSON.parse(result.value);
+      // A FREE tier renders the checkout paywall on every route, so a sweep can
+      // come back clean having photographed one screen ten times. Say so.
+      if (paywall && !href.includes('/billing')) {
+        console.log(`  ⚠ this is the checkout paywall, not ${new URL(href).pathname} — the account's tier replaces the shell`);
+      }
       if (worst) console.log(`  widest overflowing element: <${worst.tag}${worst.id ? '#' + worst.id : ''}> +${worst.over}px  w=${worst.w} left=${worst.left}  class="${worst.cls}"`);
 
       // A redirect is a *successful* navigation, so nothing above notices it —

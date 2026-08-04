@@ -215,7 +215,14 @@ export const FirstBillingComponent = () => {
   };
 
   return (
-    <div className="blurMe flex flex-1 flex-col bg-newBgColorInner pb-[60px] mobile:pb-[100px]">
+    <div
+      // A FREE tier replaces the whole shell with this screen on every route,
+      // so a screenshot of /media is a screenshot of the paywall. The tool
+      // reports that now instead of counting it as coverage — the same reason
+      // it reports redirects.
+      data-pq-paywall="1"
+      className="blurMe flex flex-1 flex-col bg-newBgColorInner pb-[60px] mobile:pb-[100px]"
+    >
       <div className="h-[92px] px-[80px] tablet:px-[32px] mobile:!px-[16px] py-[20px] flex border-b border-newColColor">
         <div className="flex-1 flex items-center text-textColor">
           <LogoTextComponent />
