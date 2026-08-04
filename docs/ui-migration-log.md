@@ -2202,3 +2202,26 @@ The billing tick had `text-pqOk` waiting for it; this has nothing.
 So this is a token gap, not a component fix: `--danger` needs to exist in
 `colors.scss` for both themes before `#FF3535` can go anywhere. Recorded as
 that, rather than pointed at the nearest amber and called done.
+
+### The red went to the token layer, and there was already a token for it
+
+`#FF3535` appeared twice in `ui/icons/index.tsx` — `DeleteCircleIcon` and
+`CloseCircleIcon`. My first note called this a missing token and said `--danger`
+would have to be invented. **That was wrong**, and checking the design settled
+it: `tokens.css:45` has `--warn:#f87171` and uses it for exactly this role. The
+palette has no separate danger colour because it does not need one.
+
+Ours already resolves it per theme — `#f87171` dark, `#dc2626` light — which the
+fixed `#FF3535` never did. So both marks now take `fill="currentColor"` under
+`text-pqWarn`, and the icons are theme-aware for the first time.
+
+The white ellipse behind the mark **stays white**, with a comment saying why: it
+is a backing plate for legibility over a photograph, not a fill.
+
+Two hex literals gone, no new token, and `#FF3535` no longer appears anywhere in
+the frontend.
+
+**White-fill audit so far:** 42 occurrences → 4 icon components → two cleared by
+looking (`NoMediaIcon`, `DeleteCircleIcon`), two left (`DragHandleIcon`,
+`SettingsIcon`), both of which need a populated media library to be seen in
+place.
