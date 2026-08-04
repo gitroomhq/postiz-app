@@ -263,6 +263,13 @@ export class IntegrationService {
    * refresh is an *existing* channel reconnecting, which must keep working —
    * cutting off a channel someone already publishes through would punish the
    * wrong person.
+   *
+   * 406 is the status the rest of the app already uses for "this is blocked
+   * *because* you are on trial" — `media.service.ts:99` throws it for
+   * trial-locked video. The frontend has a handler for exactly that code
+   * (`layout.context.tsx:91`): it opens a dialog offering to finish the trial
+   * and charge now, which is the way out this lock is supposed to point at.
+   * Thrown as a plain Error it became a 500 and the message never arrived.
    */
   assertConnectAllowed(
     provider: { trialLocked?: boolean; name: string },
@@ -276,8 +283,9 @@ export class IntegrationService {
       return;
     }
 
-    throw new Error(
-      `${provider.name} unlocks when your free trial ends. End the trial to connect it now.`
+    throw new HttpException(
+      `${provider.name} unlocks when your free trial ends. End the trial to connect it now.`,
+      406
     );
   }
 
