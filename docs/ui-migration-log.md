@@ -3095,3 +3095,124 @@ the one written from the composer), four test images, and a second empty
 workspace named "Second workspace (dev seed)". `seed-dev-org.mjs --revoke`
 removes that last one; with the ordering fix above it is harmless to keep, and it
 is the only way the switcher renders at all.
+
+---
+
+## The card path, and three things it was hiding — 2026-08-04
+
+`payment_failed` and `discount` had been "waiting on the owner's card" since the
+beginning. They were not. Stripe **test mode** is a card — `pm_card_visa` — and
+the only reason the path had never run is that nothing could deliver a webhook.
+
+**`STRIPE_SIGNING_KEY` was not set at all.** `stripe.controller.ts:25` validates
+every delivery with it, so with no value the `/stripe` route could not accept a
+single event. No subscription could ever have been written from Stripe on this
+machine, and none had been. The Stripe CLI is not installed either, and a hosted
+endpoint cannot reach localhost — so `stripe-test-drive.mjs` makes the call for
+real, pulls the resulting event back out of `stripe.events.list()`, and posts it
+to `/stripe` signed with `generateTestHeaderString`. The events are Stripe's own;
+only the transport is local.
+
+### Every state, walked
+
+| state | how | result |
+|---|---|---|
+| `trial` with a card | real subscription, `trial_period_days: 7` | local row `CREATOR · 5 ch`, org `isTrailing` |
+| `active` | the app's own **End free trial** → Stripe → `customer.subscription.updated` | trial cleared, subscription active |
+| `canceling` | cancel at period end | `cancelAt` set; the card swaps Current Plan for **Reactivate subscription** |
+| back to `active` | reactivate | `cancelAt` null again |
+| `discount` | the app's three-step cancel chain, accepting the offer | 50% coupon on the Stripe subscription |
+| `ended` | cancel now | local row deleted, paywall in lapsed mode |
+
+The cancel chain reads exactly as doc 03 describes it: *"Are you sure you want to
+cancel your subscription?"* → *"Before you cancel — Would you accept 50% discount
+for 3 months instead? 🙏🏻"* → feedback. Reaching the offer at all needs
+`STRIPE_DISCOUNT_ID`, which was also unset; without it `checkDiscount` returns
+false on its first line and the offer never appears.
+
+### Three defects, all on money
+
+**Every upgrade said "(Pay Today $0)".** `prorate()` passed `proration_date`
+*and* `billing_cycle_anchor: 'now'`, and Stripe rejects the pair — *"You cannot
+specify `proration_date` when `billing_cycle_anchor=now`"*. The call therefore
+threw **every time**, for every customer, and the `catch` returned `{price: 0}`.
+The plan cards printed that as fact. With the parameter removed:
+
+```
+GROWTH  (Pay Today $0)        credit exceeds the cost — genuinely nothing
+PRO     (Pay Today $4.51)
+AGENCY  (Pay Today $29.51)
+```
+
+Anyone upgrading from Creator to Agency was told it was free today.
+
+**Accepting 50% off left no trace.** The coupon went onto the Stripe
+subscription and nothing ever read it back, so the toast was the only evidence
+it had worked; a reload and the screen looked untouched. Doc 03 asks for "a
+visible active-discount state on Billing", and the prototype draws it as a green
+strip with the old price struck through beside the new one. That is now what it
+is: `getActiveDiscount()` on the service, carried on the existing
+`/user/subscription` response, rendered as `[data-discount-active]`.
+
+**The checkout offered "1000000 channels".** AGENCY stores unlimited as a very
+large number. `main.billing.component.tsx:104` already read it that way; the
+checkout's own feature list did not, so the fix had been applied to one of the
+two screens that share the same wording. Both say "Unlimited channels" now.
+
+**And the Pro card had no POPULAR badge** — `badgeDisplay: key === 'PRO'` in the
+checkout prototype, the only steer that screen gives. Added.
+
+### Compared against the checkout's own prototype
+
+`design/handoff/design/PostQueen Checkout (First Billing).dc.html` had never been
+opened in this migration. Rendered side by side, with `allowTrial` on, the two
+agree on the things that matter: *"Pay $0 Today – Start your free trial!"*, `Due
+today $0.00`, *"Then $20.00 on August 11, 2026"*, the cancel-anytime line, the
+FAQ's first entry appearing only with a trial, and the sticky bar. The feature
+lists match the prototype's `feats()` condition for condition.
+
+Where they differ, and these are **not** built:
+
+- the design's header carries a "Checkout" label and a Help menu; ours has
+  neither
+- the hero reads *"Your first 7 days are free"* with a supporting line; ours
+  reads *"Grow your social presence with PostQueen"*
+- the design offers *"Switch to yearly and get 4 months free — Switch"* as a
+  strip with an action; ours puts "Up to 5 months free" on the toggle
+- the design's order summary shows the trial credit as its own `-$49` line
+- log-out from checkout is confirmed in the design (*"Your checkout is not
+  finished"*); ours logs straight out
+
+### Two gaps in `ended`, recorded rather than half-built
+
+Doc 03 wants the lapsed paywall to carry an amber *"Your subscription ended
+on…"* and to offer the saved card with *"Use another card"*. Neither is there.
+Both need the end date, and `deleteSubscriptionByCustomerId` is a **hard**
+delete — the row is gone, so nothing local knows when it happened. Doing it
+properly means either soft-deleting (a schema change on a live system) or
+reading the cancellation back from Stripe on the paywall. That is a decision
+about production data, not a restyle, so it is written down instead of guessed.
+
+`payment_failed` is still unreached: it needs `/billing/subscribe` to answer
+`{portal}`, which happens when Stripe refuses to update a subscription whose card
+has failed. The dialog it opens exists and is wired
+(`main.billing.component.tsx:465-479`); it has not been seen.
+
+### `.env` needs two more keys
+
+Neither is set, and both are silent when missing:
+
+```
+STRIPE_SIGNING_KEY="whsec_…"    # from `stripe listen`, or the webhook endpoint
+STRIPE_DISCOUNT_ID="…"          # the 50% retention coupon id
+```
+
+Without the first, no Stripe event can ever be accepted. Without the second, the
+retention offer in the cancel chain never appears.
+
+### Baseline
+
+`i18n 1080 → 1084` (`billing_popular`, `discount_active`, `discount_until`,
+`discount_forever`). `gates 12 → 14` — `tier.month_price` and `tier.year_price`,
+both from the discount banner working out what the old price was. `api`,
+`routes` and both type checks unchanged; sweep clean across 13 screens.

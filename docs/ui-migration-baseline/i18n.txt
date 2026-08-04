@@ -144,6 +144,7 @@ billing_per_month
 billing_per_month_short
 billing_per_year
 billing_pick_up_where
+billing_popular
 billing_powered_by_stripe
 billing_remove
 billing_see_the_power
@@ -437,6 +438,9 @@ didnt_receive_email
 disable_channel
 disable_channel_title
 disconnect
+discount_active
+discount_forever
+discount_until
 documentation
 done
 download_invoice

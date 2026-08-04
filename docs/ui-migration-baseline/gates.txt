@@ -5,8 +5,10 @@ tier.ai 4
 tier.autoPost 2
 tier.current 19
 tier.image_generator 2
+tier.month_price 1
 tier.public_api 3
 tier.team_members 3
 tier.webhooks 3
+tier.year_price 1
 trialLocked 5
 user.isLifetime 9
