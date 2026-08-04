@@ -968,5 +968,16 @@
   "plan_n_ai_images": "{{count}} AI Images per month",
   "plan_n_ai_videos": "{{count}} AI Videos per month",
   "lifetime_window_open": "left to claim founding-member pricing. The offer closes 24 hours after you sign up.",
-  "lifetime_window_closed": "The founding-member offer closed 24 hours after you signed up."
+  "lifetime_window_closed": "The founding-member offer closed 24 hours after you signed up.",
+  "founding_member": "Founding member",
+  "lt_you_are_founding": "You are a founding member",
+  "lt_thanks_trial": "Thank you for backing PostQueen this early.",
+  "lt_thanks_paid": "Thank you for backing PostQueen early.",
+  "lt_hero_sub_trial": "Nothing has been charged yet. Everything in {{plan}} is already unlocked while your trial runs.",
+  "lt_hero_sub_paid": "One payment, done. You keep PostQueen {{plan}} and everything we build for it, with nothing to renew.",
+  "lt_renews": "RENEWS",
+  "lt_never": "Never",
+  "lt_future_updates": "FUTURE UPDATES",
+  "lt_included": "Included",
+  "lt_channels": "CHANNELS"
 }

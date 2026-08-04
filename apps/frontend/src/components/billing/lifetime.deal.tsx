@@ -85,6 +85,106 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
   );
 };
 
+/**
+ * What a founding member sees instead of the claim form.
+ *
+ * Copy is the design's, verbatim from `ltThanksText`, `ltHeroSub`, `ltHeroPrice`
+ * and the facts row — including the split the prototype makes between someone
+ * still inside their trial ("Nothing has been charged yet") and someone who has
+ * paid ("One payment, done"). Getting that backwards would tell a person they
+ * had been charged when they had not.
+ *
+ * The plan named is the one on the account, not a fixed 'PRO' — the prototype
+ * hardcodes a fallback because it has no account to read.
+ */
+const FoundingMember: FC<{ tier: string; trialing: boolean }> = ({
+  tier,
+  trialing,
+}) => {
+  const t = useT();
+  const plan = pricing[tier] ? tier : 'PRO';
+  const channels = pricing[plan]?.channel ?? 0;
+
+  const facts: Array<[string, string, boolean]> = [
+    [t('lt_renews', 'RENEWS'), t('lt_never', 'Never'), true],
+    [
+      t('lt_future_updates', 'FUTURE UPDATES'),
+      t('lt_included', 'Included'),
+      false,
+    ],
+    [
+      t('lt_channels', 'CHANNELS'),
+      channels > 10000
+        ? t('plan_unlimited_channels', 'Unlimited channels')
+        : t('plan_n_channels', '{{count}} channels', { count: channels }),
+      false,
+    ],
+  ];
+
+  return (
+    <div
+      data-founding-member="1"
+      className="flex flex-col gap-[18px] rounded-pqLg border border-pqLtAmber/40 bg-pqInner p-[24px]"
+    >
+      <span
+        data-founding-badge="1"
+        className="w-fit rounded-[6px] bg-pqLtAmber/15 px-[10px] py-[4px] text-[11px] font-[800] uppercase tracking-[0.05em] text-pqLtAmber"
+      >
+        {t('founding_member', 'Founding member')}
+      </span>
+
+      <div className="flex flex-col gap-[6px]">
+        <div className="text-[13px] font-[600] text-pqLtAmber">
+          {trialing
+            ? t(
+                'lt_thanks_trial',
+                'Thank you for backing PostQueen this early.'
+              )
+            : t('lt_thanks_paid', 'Thank you for backing PostQueen early.')}
+        </div>
+        <div className="font-display text-[28px] font-[600] -tracking-[0.015em]">
+          {t('lt_you_are_founding', 'You are a founding member')}
+        </div>
+        <div className="max-w-[560px] text-[13.5px] leading-[1.55] text-pqMuted">
+          {trialing
+            ? t(
+                'lt_hero_sub_trial',
+                'Nothing has been charged yet. Everything in {{plan}} is already unlocked while your trial runs.',
+                { plan }
+              )
+            : t(
+                'lt_hero_sub_paid',
+                'One payment, done. You keep PostQueen {{plan}} and everything we build for it, with nothing to renew.',
+                { plan }
+              )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-[10px] mobile:grid-cols-1">
+        {facts.map(([label, value, amber]) => (
+          <div
+            key={label}
+            data-founding-fact={label}
+            className="rounded-pqMd border border-pqBorder p-[14px]"
+          >
+            <div className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
+              {label}
+            </div>
+            <div
+              className={
+                'mt-[4px] text-[16px] font-[600] ' +
+                (amber ? 'text-pqLtAmber' : 'text-pqText')
+              }
+            >
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const LifetimeDeal = () => {
   const t = useT();
   const fetch = useFetch();
@@ -180,7 +280,14 @@ export const LifetimeDeal = () => {
   }
   return (
     <div className="flex flex-col gap-[20px]">
-      <LifetimeCountdown createdAt={user?.createdAt} />
+      {user?.isLifetime ? (
+        <FoundingMember
+          tier={user?.tier?.current || 'PRO'}
+          trialing={!!user?.isTrailing}
+        />
+      ) : (
+        <LifetimeCountdown createdAt={user?.createdAt} />
+      )}
       <div className="flex gap-[30px]">
         <div className="border border-pqLine bg-sixth p-[24px] flex flex-col gap-[20px] flex-1 rounded-[4px]">
           <div className="text-[30px]">

@@ -484,6 +484,7 @@ follower_of_creator
 forgot_password
 forgot_password_1
 forks
+founding_member
 four_days
 frequently_asked_questions
 generate
@@ -642,6 +643,16 @@ login_instead
 login_register_to_add_comments
 logout_from
 long_post
+lt_channels
+lt_future_updates
+lt_hero_sub_paid
+lt_hero_sub_trial
+lt_included
+lt_never
+lt_renews
+lt_thanks_paid
+lt_thanks_trial
+lt_you_are_founding
 main_navigation
 manage_billing
 manage_your_oauth_application
