@@ -63,18 +63,20 @@ const probe = arg('probe', '');
 const hover = arg('hover', '');
 // --drag "<from>|<to>": press on one element, move to another in steps, release.
 //
-// KNOWN LIMIT, measured rather than assumed: this dispatches *pointer* events,
-// and the calendar uses react-dnd's **HTML5 backend**, which listens for
-// `dragstart`/`drop` — a different event family entirely. Dragging a seeded post
-// with this moved nothing and changed no publishDate, which says the harness is
-// wrong, not the calendar. Exercising HTML5 drag over CDP needs
-// `Input.setInterceptDrags` plus `Input.dispatchDragEvent`; until that is here,
-// **the calendar's drag and drop remains unverified** and should not be reported
-// as working.
+// It now uses the right event family: `Input.setInterceptDrags` asks Chrome to
+// hand back the drag payload instead of performing the drag, and the payload is
+// then dropped on the target with `Input.dispatchDragEvent`. That is what
+// react-dnd's HTML5 backend listens for; plain pointer events never reach it.
 //
-// It is still useful for anything driven by pointer events, and it is left in
-// place so the next attempt starts from a working mouse rather than from
-// nothing.
+// STILL UNPROVEN against the calendar. Pressing and moving on a post card does
+// not make Chrome fire `Input.dragIntercepted`, so there is no payload to drop
+// and `publishDate` does not change. Whether that is the gesture, the element
+// under the press, or something about how react-dnd binds, has not been run to
+// ground.
+//
+// It says so out loud — "drag was not intercepted" — rather than completing
+// quietly and letting an unchanged database read as a passing test. **The
+// calendar's drag and drop is still unverified.**
 const drag = arg('drag', '');
 // --count <selector>: how many match. "Did the regrouping drop a provider?" is
 // a counting question, and counting tiles in a screenshot is how you miss one.
@@ -318,23 +320,44 @@ try {
           throw new Error(`--drag selectors matched nothing: ${drag}`);
         }
         const { x1, y1, x2, y2 } = JSON.parse(pts.value);
-        const send = (type, x, y, buttons) =>
+
+        // The calendar uses react-dnd's HTML5 backend, which listens for
+        // dragstart/drop rather than pointer events — so pressing and moving a
+        // mouse moves nothing, however faithfully it is simulated. Chrome can
+        // hand the drag payload back instead of performing the drag; then the
+        // drop is dispatched at the target as a real drag event.
+        let payload = null;
+        cdp.on('Input.dragIntercepted', ({ data }) => {
+          payload = data;
+        });
+        await cdp.send('Input.setInterceptDrags', { enabled: true });
+
+        const mouse = (type, x, y, buttons) =>
           cdp.send('Input.dispatchMouseEvent', {
             type, x, y, buttons,
             ...(type === 'mousePressed' || type === 'mouseReleased'
               ? { button: 'left', clickCount: 1 }
               : {}),
           });
-        await send('mouseMoved', x1, y1, 0);
-        await send('mousePressed', x1, y1, 1);
-        // Several small moves, not one jump: a drag library that debounces or
-        // requires a threshold will ignore a single teleport and report nothing
-        // happened, which reads as "drag is broken" when it is the test that is.
-        for (let i = 1; i <= 12; i++) {
-          await send('mouseMoved', x1 + ((x2 - x1) * i) / 12, y1 + ((y2 - y1) * i) / 12, 1);
-          await sleep(16);
+        await mouse('mouseMoved', x1, y1, 0);
+        await mouse('mousePressed', x1, y1, 1);
+        for (let i = 1; i <= 6 && !payload; i++) {
+          await mouse('mouseMoved', x1 + i * 4, y1 + i * 4, 1);
+          await sleep(30);
         }
-        await send('mouseReleased', x2, y2, 0);
+
+        if (!payload) {
+          console.log('  ⚠ drag was not intercepted — nothing to drop');
+          await mouse('mouseReleased', x1, y1, 0);
+        } else {
+          for (const type of ['dragEnter', 'dragOver', 'drop']) {
+            await cdp.send('Input.dispatchDragEvent', {
+              type, x: x2, y: y2, data: payload,
+            });
+            await sleep(40);
+          }
+        }
+        await cdp.send('Input.setInterceptDrags', { enabled: false });
         const after = await settle();
         timedOut = timedOut || after.timedOut;
       }

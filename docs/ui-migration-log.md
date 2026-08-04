@@ -2715,3 +2715,28 @@ exactly the surface it was asked about.
 The two icons still formally undecided (`DragHandleIcon`, `MediaSettingsIcon`)
 live in the editor's inline media strip, which needs media attached to a post —
 a narrower gap than before, and the same pattern demonstrably works.
+
+### Drag and drop, second attempt: right events, still no proof
+
+`--drag` now does what it should have done the first time:
+`Input.setInterceptDrags` makes Chrome hand back the drag payload rather than
+performing the drag, and `Input.dispatchDragEvent` drops that payload on the
+target. That is the event family react-dnd's HTML5 backend actually listens for.
+
+It also found that my first target was wrong — the drop was aimed at another
+post card. The real drop zone is `[data-cell="1"]` (`calendar.tsx:745`,
+`ref={drop}`), and it carries `data-filled` so an empty cell can be picked.
+
+**And it still does not move anything.** Chrome never fires
+`Input.dragIntercepted` for a press-and-move on a post card, so there is no
+payload to drop and no `publishDate` changes. Whether that is the gesture, the
+element under the press, or how react-dnd binds its source has not been run to
+ground.
+
+What is better than yesterday: it **says** "drag was not intercepted" instead of
+completing quietly. An unchanged database after a silent run reads exactly like
+a passing test, and that is the shape of failure this project has already been
+caught by twice.
+
+**Drag and drop remains the one interaction in this migration that is built,
+present in the DOM, and unverified.**
