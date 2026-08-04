@@ -2109,3 +2109,31 @@ invented out of a bad search.
 Still ahead: how each grid *draws* (hour rows, cell hairlines, card placement),
 which needs a populated calendar, and the light-theme pass over the pages now
 that they are reachable.
+
+### A class of light-theme bug the earlier audit could not see
+
+Step 8 audited `text-white` — 95 occurrences, six genuinely broken. That audit
+walked a *class name*. It could not see a `fill` attribute, which is how the
+FAQ's plus icon stayed invisible on the light theme until it turned up by
+accident while clearing hex literals.
+
+Searched properly this time: **42 hardcoded `fill="white"` / `stroke="white"` /
+`#fff`** across the frontend, in `ui/icons/index.tsx` (a shared icon set),
+`signature.tsx`, `information.component.tsx`, `generator.tsx` and others.
+
+**Not 42 bugs, and not bulk-replaceable.** White is correct for an icon sitting
+on a brand-coloured or dark ground, which many of these are — the `text-white`
+audit found the same ratio, 6 broken out of 95. Deciding needs each call site's
+background, and `ui/icons/index.tsx` is the awkward one: it hardcodes the colour
+inside the icon, so a caller cannot recolour it for a theme even if it wanted to.
+
+Attempted to verify one live (`signature.tsx`'s icon on the Signatures tab) and
+it does not render without a saved signature, so it could not be caught either
+way. That is the honest state: **the class is identified and counted, the
+individual verdicts are not made.**
+
+Doing it properly means auditing 42 call sites for their background and moving
+the genuinely-wrong ones to `currentColor` under a token, exactly as the three
+billing ones were. That is a session's work on its own and it is written down
+rather than half-done — a bulk replace here would turn white icons invisible on
+dark grounds, which is the same bug in the other direction.
