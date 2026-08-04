@@ -1351,7 +1351,14 @@ main ← pr1  #5  the visual migration + the harness
      ← pr3  #7  four defects the migration uncovered
      ← pr7  #8  Connections, and the two invented MCP commands
      ← pr10 #9  Channels, the posts panel, the guard fix
+     ← pr11 #10 billing and lifetime, once the keys arrived
+     ← pr12 #11 the design compared, and what real data found
 ```
+
+**Split on 2026-08-04.** #9 had grown from about ten commits to forty-five and
+its title described maybe a fifth of them — unreviewable. Split by moving branch
+pointers rather than rewriting history, so every commit hash is unchanged and
+the three ranges are contiguous: 12 · 16 · 17.
 
 Each stacks on the one above, so review top-down; a PR's own diff is only its own commits.
 `pr4`, `pr5`, `pr6` ride inside #8; `pr8`, `pr9` ride inside #9.
