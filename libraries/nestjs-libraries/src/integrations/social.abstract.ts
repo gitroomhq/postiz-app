@@ -5,6 +5,7 @@ import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
+import { createReadStream, statSync } from 'fs';
 
 export type ValidityMedia = {
   path: string;
@@ -171,6 +172,122 @@ export abstract class SocialAbstract {
       await readOrFetch(url)
     ).metadata();
     return { width, height };
+  }
+
+  // Resolves the total byte size of the media without loading it into memory:
+  // a HEAD request for remote URLs, statSync for local files.
+  protected async mediaSize(path: string, identifier = ''): Promise<number> {
+    if (path.indexOf('http') === 0) {
+      // the media path is user-influenced, keep the SSRF-safe dispatcher that
+      // this.fetch applies to every other outbound request
+      const head = await fetch(path, {
+        method: 'HEAD',
+        dispatcher: getSsrfSafeDispatcher(),
+      } as any);
+      const length = head.headers.get('content-length');
+      // A failed HEAD can still carry a content-length (of the error body),
+      // which would register the media with a garbage size downstream.
+      if (!head.ok || !length) {
+        throw new BadBody(
+          identifier,
+          '{}',
+          Buffer.from('{}'),
+          'Could not determine the media size for upload'
+        );
+      }
+      return Number(length);
+    }
+
+    return statSync(path).size;
+  }
+
+  // Reads a single [start, end] byte range into memory. Used by providers whose
+  // chunked-upload APIs require a Buffer per segment: only one small chunk is
+  // resident at a time, never the whole file.
+  protected async mediaChunk(
+    path: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    if (path.indexOf('http') === 0) {
+      const response = await fetch(path, {
+        headers: { Range: `bytes=${start}-${end}` },
+        dispatcher: getSsrfSafeDispatcher(),
+      } as any);
+      // Anything but 206 means the server ignored the Range header: buffering
+      // response.body here would silently load the whole file into memory and
+      // upload corrupted chunks.
+      if (response.status !== 206) {
+        throw new BadBody(
+          '',
+          '{}',
+          Buffer.from('{}'),
+          `Media server did not honor the range request (status ${response.status})`
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      createReadStream(path, { start, end })
+        .on('data', (chunk) => chunks.push(chunk as Buffer))
+        .on('end', () => resolve(Buffer.concat(chunks)))
+        .on('error', reject);
+    });
+  }
+
+  // Streamed request bodies can't be replayed by this.fetch's retry, so
+  // providers wrap streamed uploads in a factory that rebuilds the request
+  // (re-opening its source streams) on every attempt. Errors carrying a
+  // `response` (axios errors, or a thrown { response: { status, data } })
+  // go through the same retry and handleErrors classification rules as
+  // this.fetch; anything else is rethrown untouched so Temporal keeps its
+  // usual retry behavior.
+  protected async runStreamedUpload<T>(
+    func: () => Promise<T>,
+    identifier = '',
+    totalRetries = 0
+  ): Promise<T> {
+    try {
+      return await func();
+    } catch (err: any) {
+      if (!err?.response) {
+        throw err;
+      }
+
+      const status = err.response.status || 500;
+      const data = err.response.data;
+      const json = typeof data === 'string' ? data : safeStringify(data || {});
+      const handleError = this.handleErrors(json, status);
+
+      if (
+        totalRetries <= 2 &&
+        (status === 429 ||
+          (status === 500 && !handleError) ||
+          handleError?.type === 'retry' ||
+          json.includes('rate_limit_exceeded') ||
+          json.includes('Rate limit'))
+      ) {
+        await timer(5000);
+        return this.runStreamedUpload(func, identifier, totalRetries + 1);
+      }
+
+      if (
+        (status === 401 &&
+          (handleError?.type === 'refresh-token' || !handleError)) ||
+        handleError?.type === 'refresh-token'
+      ) {
+        throw new RefreshToken(identifier, json, '{}', handleError?.value);
+      }
+
+      throw new BadBody(
+        identifier,
+        json,
+        '{}',
+        handleError?.value || 'Unknown Error'
+      );
+    }
   }
 
   public async mention(

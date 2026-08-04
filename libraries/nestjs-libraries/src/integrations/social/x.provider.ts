@@ -10,7 +10,6 @@ import {
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { createReadStream, statSync } from 'fs';
 import {
   BadBody,
   SocialAbstract,
@@ -421,173 +420,118 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
-  // Same INIT / APPEND / FINALIZE flow as client.v2.uploadMedia, but the
-  // video is never held in memory whole: total_bytes comes from a HEAD
-  // request (statSync for local files) and each 1MB segment is fetched with
-  // a ranged GET right before its APPEND. client.v2.uploadMedia only accepts
-  // a Buffer, which is why the loop is replicated here.
-  private async uploadVideoChunked(client: TwitterApi, path: string) {
-    const size = await this.videoSize(path);
-    const chunkSize = 1024 * 1024;
+  // X's v2 chunked upload requires a Buffer per APPEND segment, so we read one
+  // ranged chunk at a time (mediaChunk) instead of buffering the whole video.
+  // 1MB is the exact chunk size client.v2.uploadMedia used in production, so
+  // it is proven against X's APPEND limits; larger chunks are documented but
+  // unproven here.
+  private static readonly X_UPLOAD_CHUNK_SIZE = 1024 * 1024;
 
-    const initResponse = await client.v2.post<{ data: { id: string } }>(
+  private async uploadVideoInChunks(client: TwitterApi, path: string) {
+    const totalBytes = await this.mediaSize(path, this.identifier);
+    const mediaType = String(lookup(path) || 'video/mp4');
+
+    const init = await client.v2.post<{ data: { id: string } }>(
       'media/upload/initialize',
       {
-        media_type: lookup(path) || 'video/mp4',
-        total_bytes: size,
+        media_type: mediaType,
+        total_bytes: totalBytes,
         media_category: 'tweet_video',
       }
     );
-    const mediaId = initResponse.data.id;
+    const mediaId = init.data.id;
 
-    for (let i = 0; i < size; i += chunkSize) {
-      const end = Math.min(i + chunkSize, size) - 1;
+    const chunkSize = XProvider.X_UPLOAD_CHUNK_SIZE;
+    const totalChunkCount = Math.ceil(totalBytes / chunkSize);
+    for (let i = 0; i < totalChunkCount; i++) {
+      const start = i * chunkSize;
+      const end = Math.min(start + chunkSize, totalBytes) - 1;
       await client.v2.post(
         `media/upload/${mediaId}/append`,
         {
-          segment_index: i / chunkSize,
-          media: await this.videoChunk(path, i, end),
+          segment_index: i,
+          media: await this.mediaChunk(path, start, end),
         },
         { forceBodyMode: 'form-data' }
       );
     }
 
-    const finalizeResponse = await client.v2.post<{
-      data: { processing_info?: object };
+    const finalize = await client.v2.post<{
+      data: {
+        id: string;
+        processing_info?: { state: string; check_after_secs?: number };
+      };
     }>(`media/upload/${mediaId}/finalize`);
-    if (finalizeResponse.data.processing_info) {
-      await this.waitForMediaProcessing(client, mediaId);
+
+    let processing = finalize.data.processing_info;
+    let attempts = 0;
+    const maxAttempts = 100; // X drives the pace via check_after_secs (~1-5s each)
+    while (processing && processing.state !== 'succeeded') {
+      if (processing.state === 'failed' || attempts >= maxAttempts) {
+        throw new BadBody(
+          this.identifier,
+          JSON.stringify(processing),
+          Buffer.from('{}'),
+          `X failed to process the uploaded video${
+            (processing as any)?.error?.message
+              ? `: ${(processing as any).error.message}`
+              : ''
+          }`
+        );
+      }
+
+      await timer((processing.check_after_secs || 1) * 1000);
+      const status = await client.v2.get<{
+        data: {
+          processing_info?: { state: string; check_after_secs?: number };
+        };
+      }>('media/upload', { command: 'STATUS', media_id: mediaId });
+      processing = status.data.processing_info;
+      attempts++;
     }
 
     return mediaId;
-  }
-
-  // Mirrors the private client.v2.waitForMediaProcessing.
-  private async waitForMediaProcessing(client: TwitterApi, mediaId: string) {
-    const response = await client.v2.get<{
-      data: {
-        processing_info?: {
-          state: string;
-          check_after_secs?: number;
-          error?: { message?: string };
-        };
-      };
-    }>('media/upload', { command: 'STATUS', media_id: mediaId });
-
-    const info = response.data.processing_info;
-    if (!info || info.state === 'succeeded') {
-      return;
-    }
-    if (info.state === 'failed') {
-      throw new BadBody(
-        'x-error-upload',
-        JSON.stringify(response.data),
-        Buffer.from('{}'),
-        `X media processing failed: ${info.error?.message || 'unknown error'}`
-      );
-    }
-    await timer((info.check_after_secs || 1) * 1000);
-    await this.waitForMediaProcessing(client, mediaId);
-  }
-
-  // Resolves the total byte size of the video without loading it into memory:
-  // a HEAD request for remote URLs, statSync for local files.
-  private async videoSize(path: string): Promise<number> {
-    if (path.indexOf('http') === 0) {
-      const head = await fetch(path, { method: 'HEAD' });
-      const length = head.headers.get('content-length');
-      if (!length) {
-        throw new BadBody(
-          'x-error-upload',
-          '{}',
-          Buffer.from('{}'),
-          'Could not determine the video size for X upload'
-        );
-      }
-      return Number(length);
-    }
-
-    return statSync(path).size;
-  }
-
-  // Returns only the [start, end] byte window of the video as a Buffer (a
-  // ranged GET for remote URLs, a ranged read for local files), so memory is
-  // bounded by the segment size.
-  private async videoChunk(
-    path: string,
-    start: number,
-    end: number
-  ): Promise<Buffer> {
-    if (path.indexOf('http') === 0) {
-      const response = await fetch(path, {
-        headers: { Range: `bytes=${start}-${end}` },
-      });
-      // A 200 means the origin ignored the Range header and is sending the
-      // whole file: uploading it as this segment would silently corrupt the
-      // video, so fail loudly instead.
-      if (response.status !== 206) {
-        throw new BadBody(
-          'x-error-upload',
-          '{}',
-          Buffer.from('{}'),
-          `Media server ignored the ranged request (status ${response.status}); it must support HTTP Range requests for chunked X uploads`
-        );
-      }
-      return Buffer.from(await response.arrayBuffer());
-    }
-
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      createReadStream(path, { start, end })
-        .on('data', (chunk) => chunks.push(chunk as Buffer))
-        .on('end', () => resolve(Buffer.concat(chunks)))
-        .on('error', reject);
-    });
   }
 
   private async uploadMedia(
     client: TwitterApi,
     postDetails: PostDetails<any>[]
   ) {
-    return (
-      await Promise.all(
-        postDetails.flatMap((p) =>
-          p?.media?.flatMap(async (m) => {
-            return {
-              id: await this.runInConcurrent(
-                async () =>
-                  hasExtension(m.path, 'mp4')
-                    ? this.uploadVideoChunked(client, m.path)
-                    : client.v2.uploadMedia(
-                        await sharp(await readOrFetch(m.path), {
-                          animated: lookup(m.path) === 'image/gif',
-                        })
-                          .resize({
-                            width: 1000,
-                          })
-                          .gif()
-                          .toBuffer(),
-                        {
-                          media_type: (lookup(m.path) || '') as any,
-                        }
-                      ),
-                true
-              ),
-              postId: p.id,
-            };
-          })
-        )
-      )
-    ).reduce((acc, val) => {
-      if (!val?.id) {
-        return acc;
+    // Media is uploaded sequentially on purpose: uploading everything with
+    // Promise.all holds every file in memory at the same time.
+    const media = {} as Record<string, string[]>;
+    for (const p of postDetails) {
+      for (const m of p?.media || []) {
+        const id = await this.runInConcurrent(
+          async () =>
+            hasExtension(m.path, 'mp4')
+              ? this.uploadVideoInChunks(client, m.path)
+              : client.v2.uploadMedia(
+                  await sharp(await readOrFetch(m.path), {
+                    animated: lookup(m.path) === 'image/gif',
+                  })
+                    .resize({
+                      width: 1000,
+                    })
+                    .gif()
+                    .toBuffer(),
+                  {
+                    media_type: (lookup(m.path) || '') as any,
+                  }
+                ),
+          true
+        );
+
+        if (!id) {
+          continue;
+        }
+
+        media[p.id] = media[p.id] || [];
+        media[p.id].push(id);
       }
+    }
 
-      acc[val.postId] = acc[val.postId] || [];
-      acc[val.postId].push(val.id);
-
-      return acc;
-    }, {} as Record<string, string[]>);
+    return media;
   }
 
   async post(
