@@ -54,7 +54,28 @@ const host = process.env.PQ_HOST || 'localhost';
 // Anything that only exists after a click — an open menu, the phone drawer, a
 // dialog and the blur behind it, a toast — was simply unphotographable before
 // this. Selectors are applied in order, each followed by a settle.
-const clicks = String(arg('click', '')).split('|').filter(Boolean);
+//
+// --click and --type are read **in the order they were written on the command
+// line**, and both may appear more than once. That matters: filling the
+// composer is click, click, type, click — and while --click alone took a
+// pipe-separated list, a second --click used to be silently dropped and a
+// --type always ran after every click. The submit press landed before there
+// was anything to submit, the modal stayed open, and nothing said why.
+const actions = [];
+for (let i = 0; i < process.argv.length; i++) {
+  if (process.argv[i] === '--click') {
+    for (const sel of String(process.argv[i + 1] || '')
+      .split('|')
+      .filter(Boolean)) {
+      actions.push({ kind: 'click', value: sel });
+    }
+  }
+  // --type "<selector>|<text>" — one selector, then everything after the first
+  // pipe is the text, so the text may itself contain pipes.
+  if (process.argv[i] === '--type') {
+    actions.push({ kind: 'type', value: String(process.argv[i + 1] || '') });
+  }
+}
 const probe = arg('probe', '');
 // --hover <selector>: park a real mouse over an element before probing and
 // shooting. `el.click()` cannot stand in for this — a CSS `:hover` rule only
@@ -81,6 +102,14 @@ const drag = arg('drag', '');
 // --count <selector>: how many match. "Did the regrouping drop a provider?" is
 // a counting question, and counting tiles in a screenshot is how you miss one.
 const count = arg('count', '');
+// --eval "<expression>": run it in the page and print what it returns.
+//
+// `--probe` answers one fixed set of questions about one element. Half of what
+// the tier matrix needs is a different question each time — the *labels* of the
+// settings tabs, the opacity of the sixth channel, which billing card carries
+// "Current Plan" — and phrasing those as a screenshot to squint at is how a
+// missing tab gets called present.
+const evalExpr = arg('eval', '');
 // --loaded <selector>: of the images matching it, how many actually decoded.
 const loaded = arg('loaded', '');
 // --tab N presses Tab N times before probing. Real key events, not el.focus(),
@@ -172,7 +201,21 @@ const chrome = spawn(
   { stdio: 'ignore' }
 );
 
-const cdp = connect(await chromeTarget(port));
+// If Chrome never answers, the process and its profile directory have to go
+// with it. They used to leak: this line sat outside the try/finally below, so
+// every failed start left a running Chrome and a temp profile behind — 2900 of
+// them accumulated over one session, and the pile is itself a reason the next
+// start fails.
+let target;
+try {
+  target = await chromeTarget(port);
+} catch (err) {
+  chrome.kill();
+  await rm(profile, { recursive: true, force: true }).catch(() => {});
+  throw err;
+}
+
+const cdp = connect(target);
 await cdp.ready;
 await cdp.send('Page.enable');
 await cdp.send('Network.enable');
@@ -264,17 +307,50 @@ try {
       }
       let { timedOut, elapsed } = await settle();
 
-      for (const selector of clicks) {
-        const { result: clicked } = await cdp.send('Runtime.evaluate', {
-          expression: `(() => { const el = document.querySelector(${JSON.stringify(
-            selector
-          )}); if (!el) return false; el.click(); return true; })()`,
-          returnByValue: true,
-        });
-        // A selector that matches nothing would otherwise photograph the page
-        // in its resting state and read as "the menu never opens".
-        if (!clicked.value) {
-          throw new Error(`--click selector matched nothing: ${selector}`);
+      for (const action of actions) {
+        if (action.kind === 'click') {
+          const { result: clicked } = await cdp.send('Runtime.evaluate', {
+            expression: `(() => { const el = document.querySelector(${JSON.stringify(
+              action.value
+            )}); if (!el) return false; el.click(); return true; })()`,
+            returnByValue: true,
+          });
+          // A selector that matches nothing would otherwise photograph the page
+          // in its resting state and read as "the menu never opens".
+          if (!clicked.value) {
+            throw new Error(`--click selector matched nothing: ${action.value}`);
+          }
+        } else {
+          // Click into the element and type into it for real. Assigning
+          // `textContent` on the composer does nothing useful — it is a managed
+          // editor, and the React state behind the Add-to-calendar button never
+          // hears about a value the editor did not produce. So this presses
+          // into the element and hands the text to Chrome's input pipeline,
+          // which is indistinguishable from a person typing.
+          const cut = action.value.indexOf('|');
+          const selector = cut === -1 ? action.value : action.value.slice(0, cut);
+          const text = cut === -1 ? '' : action.value.slice(cut + 1);
+          const { result: box } = await cdp.send('Runtime.evaluate', {
+            expression: `(() => { const el = document.querySelector(${JSON.stringify(
+              selector
+            )}); if (!el) return ''; el.scrollIntoView({block:'center'}); const r = el.getBoundingClientRect(); return JSON.stringify({ x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 24) }); })()`,
+            returnByValue: true,
+          });
+          if (!box.value) {
+            throw new Error(`--type selector matched nothing: ${selector}`);
+          }
+          const { x, y } = JSON.parse(box.value);
+          for (const type of ['mousePressed', 'mouseReleased']) {
+            await cdp.send('Input.dispatchMouseEvent', {
+              type,
+              x,
+              y,
+              button: 'left',
+              clickCount: 1,
+            });
+          }
+          await sleep(150);
+          await cdp.send('Input.insertText', { text });
         }
         const after = await settle();
         timedOut = timedOut || after.timedOut;
@@ -431,6 +507,37 @@ try {
           returnByValue: true,
         });
         console.log(`  loaded ${loaded}: ${l.value}`);
+      }
+
+      if (evalExpr) {
+        const { result: e, exceptionDetails } = await cdp.send(
+          'Runtime.evaluate',
+          {
+            // Statements only when it *starts* like one. A first cut asked
+            // whether the text contained "return" anywhere, which is true of
+            // any expression with an arrow function in it — those all came
+            // back `undefined` with nothing to say why.
+            // async, so an expression may await: walking 34 provider tiles
+            // means clicking one, waiting for React, reading, and going back,
+            // 34 times — and that is one expression, not 34 runs of this tool.
+            expression: `(async () => { ${
+              /^\s*(return|const|let|var|if|for|while|\{)\b/.test(evalExpr)
+                ? evalExpr
+                : `return (${evalExpr})`
+            } })()`,
+            returnByValue: true,
+            awaitPromise: true,
+          }
+        );
+        console.log(
+          `  eval: ${
+            exceptionDetails
+              ? `threw — ${exceptionDetails.exception?.description?.split('\n')[0]}`
+              : typeof e.value === 'string'
+                ? e.value
+                : JSON.stringify(e.value)
+          }`
+        );
       }
 
       if (count) {
