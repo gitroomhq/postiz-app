@@ -128,6 +128,37 @@ export class UsersRepository {
     });
   }
 
+  // AgentOnboard session tokens verify to the user's AgentOnboard login email.
+  // Email is the join key to a Postiz account: prefer the LOCAL account (the
+  // canonical email/password identity, same as getUserByEmail) and fall back
+  // to any activated account (covers users who registered via Google/GitHub).
+  async getAgentUserByEmail(email: string) {
+    const local = await this._user.model.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        providerName: Provider.LOCAL,
+        activated: true,
+      },
+    });
+
+    if (local) {
+      return local;
+    }
+
+    return this._user.model.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        activated: true,
+      },
+    });
+  }
+
   getUserWithActiveSubscriptionByEmail(email: string, excludeUserId: string) {
     return this._user.model.user.findFirst({
       where: {

@@ -20,6 +20,10 @@ export class UsersService {
     return this._usersRepository.getUserByEmail(email);
   }
 
+  getAgentUserByEmail(email: string) {
+    return this._usersRepository.getAgentUserByEmail(email);
+  }
+
   getUserById(id: string) {
     return this._usersRepository.getUserById(id);
   }
