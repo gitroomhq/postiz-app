@@ -2523,3 +2523,41 @@ is written into the flag's own comment so the next person does not read a green
 run as a passing one — a harness that reports success for something it cannot
 reach is the exact failure the api and i18n collectors already taught this
 project once.
+
+### The tier rename finally ran, and `db push` was the wrong way to get there
+
+With database authority granted, the obvious move was `prisma db push`. Diffed it
+first. The three enum values this needs require **no** drops — but the push
+carries **22 more statements that do**, every one against `mastra_ai_spans` and
+`mastra_scorers`: tables the AI agent framework creates at runtime and which
+`schema.prisma` does not describe, so Prisma wants them gone.
+
+So three targeted statements instead, and nothing else touched:
+
+```sql
+ALTER TYPE "SubscriptionTier" ADD VALUE IF NOT EXISTS 'CREATOR';  -- + GROWTH, AGENCY
+```
+
+**Then `scripts/migrate-tiers.mjs` ran for the first time since it was written.**
+It has been the migration's largest single risk — it moves live subscriptions off
+retired tier names — and it could never be executed, because its target values
+did not exist in this database. First run reported "Nothing to move", correctly,
+since the only row was PRO and PRO keeps its name. So a row was deliberately set
+to `STANDARD` to give it work:
+
+```
+[dry] would move 1 × STANDARD -> CREATOR
+      moved 1 × STANDARD -> CREATOR
+after: CREATOR 1 — 1 subscriptions, all accounted for
+```
+
+Verified in the database, not from the script's own output.
+
+And the lifetime ladder now runs on real names: `grant-lifetime.mjs` without
+`--tier` gives **FREE → CREATOR, 5 channels**, and `/user/self` reports
+`CREATOR`. Until an hour ago that path threw
+`invalid input value for enum "SubscriptionTier": "CREATOR"`.
+
+**What this closes:** the item that has sat in "waiting on the owner" longest,
+and the one I called the largest remaining risk in this migration. It is neither
+now.
