@@ -1967,3 +1967,31 @@ must not be lost by ending a trial.
 Note for whoever reads the screenshots next: this account is no longer trialing,
 so the founding-member block now shows its *paid* copy ("One payment, done")
 rather than the trial copy. Both variants have been seen.
+
+### Step 5 begins: the chrome, measured against `chromeVals()`
+
+The design comparison can finally run against real screens. Starting with the
+chrome, because it is on every one of them.
+
+`chromeVals()` at `…dc.html:5274` gives the rail three widths:
+
+```
+v.mobile ? '264px' : (s.railCollapsed ? '60px' : '236px')
+```
+
+Measured here, by probing `[data-sb]` rather than by looking:
+
+| state | design | measured |
+|---|---|---|
+| expanded, 1440 | 236px | **236px** |
+| collapsed (`railCollapsed=1`) | 60px | **60px** |
+| phone drawer, 420 | 264px | **264px** (at y=56, under the header) |
+
+Three for three. This is the part of the migration that was done earliest and it
+has held.
+
+Still to compare in this step: header and user menu (`chromeVals`), Settings
+(`settingsVals`), the calendar toolbar and grids (`calendarVals`/`gridVals`),
+the non-calendar pages (`pagesVals`), and every overlay (`overlayVals`) — with
+the owner's list in mind: lines, panels, centring, scrolling, both themes,
+profile and settings.
