@@ -484,7 +484,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       'create local post'
     );
 
-    const postData = await response.json();
+    const postData = await response.json().catch(() => ({}));
 
     if (postData?.state === 'REJECTED') {
       throw new BadBody(
