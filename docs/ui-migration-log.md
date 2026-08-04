@@ -2845,3 +2845,31 @@ both themes, no overflow.
 
 Getting this wrong would have told somebody mid-trial that they had already been
 charged — which is why the branch reads `isTrailing` rather than assuming.
+
+### `member_no_plan`, the last state that could be reached
+
+It needed a second person in the organization, and there had only ever been one.
+`scripts/seed-dev-member.mjs` adds one with role `USER` — no password, an
+address on the reserved `.invalid` TLD, and a `--revoke` that takes both the
+membership and the user away. Its token was minted with the app's own
+`JWT_SECRET` so nothing about the session is special-cased.
+
+With the subscription removed and the app viewed as that member, doc 03's row
+holds:
+
+- *"A subscription is needed"* ✓
+- *"This workspace does not have an active plan. Only an admin … please ask them
+  to take a look."* ✓
+- **no plan picker and no pay bar** — `[data-plan-card]` counts **0**, which is
+  the part that distinguishes this from the paywall a member must never be shown
+- Logout in the header ✓
+
+The org switcher doc 03 also lists is absent, correctly: this member belongs to
+one organization, so there is nothing to switch between.
+
+**Doc 03's ten states are now all accounted for.** Eight have been rendered and
+looked at — `not_started`, `trial`, `active`, `canceling`, `ended`, `lifetime`,
+`lifetime_trial`, `member_no_plan`. The two left, `payment_failed` and
+`discount`, both need a completed card payment, which is the owner's to make.
+
+Member removed and the account restored to lifetime CREATOR.
