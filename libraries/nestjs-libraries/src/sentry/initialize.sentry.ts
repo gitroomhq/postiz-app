@@ -4,11 +4,16 @@ import { capitalize } from 'lodash';
 
 export const setSentryUserContext = (params: {
   userId?: string;
+  email?: string;
   orgId?: string;
   paymentId?: string | null;
 }) => {
   try {
-    Sentry.setUser(params.userId ? { id: params.userId } : null);
+    Sentry.setUser(
+      params.userId
+        ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
+        : null
+    );
     if (params.orgId) {
       Sentry.setTag('organization.id', params.orgId);
     }

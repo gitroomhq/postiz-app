@@ -69,7 +69,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    setSentryUser(user ? { id: user.id, orgId: user.orgId } : null);
+    setSentryUser(
+      user ? { id: user.id, email: user.email, orgId: user.orgId } : null
+    );
   }, [user]);
 
   if (!user) return null;
