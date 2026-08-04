@@ -185,10 +185,10 @@ export abstract class SocialAbstract {
         method: 'HEAD',
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
-      const length = head.headers.get('content-length');
+      const length = Number(head.headers.get('content-length'));
       // A failed HEAD can still carry a content-length (of the error body),
-      // which would register the media with a garbage size downstream.
-      if (!head.ok || !length) {
+      // and a zero/NaN size would poison chunk-count math downstream.
+      if (!head.ok || !Number.isFinite(length) || length <= 0) {
         throw new BadBody(
           identifier,
           '{}',
@@ -196,7 +196,7 @@ export abstract class SocialAbstract {
           'Could not determine the media size for upload'
         );
       }
-      return Number(length);
+      return length;
     }
 
     return statSync(path).size;

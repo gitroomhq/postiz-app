@@ -96,7 +96,7 @@ async function uploadVideo(
     // @ts-ignore - undici-only option; blocks SSRF to internal IPs
     dispatcher: getSsrfSafeDispatcher(),
   });
-  if (!videoResponse.ok) {
+  if (!videoResponse.ok || !videoResponse.body) {
     throw new Error(`Failed to fetch video: ${videoResponse.statusText}`);
   }
 

@@ -464,10 +464,13 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }>(`media/upload/${mediaId}/finalize`);
 
     let processing = finalize.data.processing_info;
-    let attempts = 0;
-    const maxAttempts = 100; // X drives the pace via check_after_secs (~1-5s each)
+    // X drives the pace via check_after_secs; cap on accumulated wait time
+    // (long videos can legitimately process for many minutes) instead of an
+    // attempt count, but never poll forever.
+    let waitedMs = 0;
+    const maxWaitMs = 30 * 60 * 1000;
     while (processing && processing.state !== 'succeeded') {
-      if (processing.state === 'failed' || attempts >= maxAttempts) {
+      if (processing.state === 'failed' || waitedMs >= maxWaitMs) {
         throw new BadBody(
           this.identifier,
           JSON.stringify(processing),
@@ -480,14 +483,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         );
       }
 
-      await timer((processing.check_after_secs || 1) * 1000);
+      const waitMs = (processing.check_after_secs || 1) * 1000;
+      await timer(waitMs);
+      waitedMs += waitMs;
       const status = await client.v2.get<{
         data: {
           processing_info?: { state: string; check_after_secs?: number };
         };
       }>('media/upload', { command: 'STATUS', media_id: mediaId });
       processing = status.data.processing_info;
-      attempts++;
     }
 
     return mediaId;
