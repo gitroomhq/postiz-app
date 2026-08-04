@@ -3216,3 +3216,22 @@ retention offer in the cancel chain never appears.
 `discount_forever`). `gates 12 → 14` — `tier.month_price` and `tier.year_price`,
 both from the discount banner working out what the old price was. `api`,
 `routes` and both type checks unchanged; sweep clean across 13 screens.
+
+### Both keys are in `.env` now — and one of them is a placeholder
+
+Verified by starting the backend with **no overrides at all** and running a full
+cycle from the file: a PRO subscription created in test mode, its real
+`customer.subscription.created` accepted (201), the local row written
+(`PRO · 30 ch`), `check-discount` returning the signed offer, and proration
+answering `$50` for PRO → AGENCY.
+
+`STRIPE_SIGNING_KEY` is the literal string `whsec_...`. That is enough here,
+because the replay harness signs with the same value and `constructEvent` only
+asks that both sides agree — so every local test above is real. It is **not**
+enough the moment Stripe itself delivers: Stripe signs with the secret its own
+webhook endpoint was issued, and anything else is rejected. Before this reaches
+a public URL the value has to come from the Stripe dashboard's endpoint (or from
+`stripe listen`, which prints one for local forwarding).
+
+`STRIPE_DISCOUNT_ID` is `G9mLivv8`, a 50%-for-3-months coupon created in **test
+mode**. A live deployment needs a coupon made in live mode; the id will differ.
