@@ -40,6 +40,29 @@ export class StripeController {
 
     try {
       switch (event.type) {
+        // A lifetime purchase is `mode: 'payment'`, which emits none of the
+        // subscription events below — it emits this one. Without the case the
+        // money arrives and nothing is granted, so this branch exists before
+        // anything can create such a session.
+        case 'checkout.session.completed': {
+          // @ts-ignore — the session shape is narrower than Stripe.Event
+          const session = event.data.object as any;
+          if (session?.mode !== 'payment') {
+            return { ok: true };
+          }
+          const organizationId = session?.metadata?.organizationId;
+          if (!organizationId) {
+            // Nothing to grant it to. Loud rather than silent: a paid session
+            // with no organization is a bug in whatever created it.
+            throw new Error(
+              'checkout.session.completed with mode=payment and no organizationId'
+            );
+          }
+          return this._stripeService.grantLifetimeFromPayment(
+            organizationId,
+            session.id
+          );
+        }
         case 'invoice.payment_succeeded':
           return this._stripeService.paymentSucceeded(event);
         case 'customer.subscription.created':

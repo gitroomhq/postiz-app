@@ -1213,6 +1213,54 @@ export class StripeService {
     };
   }
 
+  /**
+   * Grants a lifetime entitlement that was paid for rather than redeemed.
+   *
+   * Deliberately the *same* effect as `lifetimeDeal` — same ladder, same
+   * `createOrUpdateSubscription` call — so there is one way to become a
+   * founding member and not two that can drift apart.
+   *
+   * `paymentRef` stands in for the redemption code. The repository derives
+   * `isLifetime` from that argument being present, and using the Stripe session
+   * id means the row records which payment granted it. A generated placeholder
+   * would set the flag just as well and tell nobody anything.
+   *
+   * Idempotent by the same route redemption is: a session id already stored as
+   * a used code is a webhook Stripe delivered twice, and it grants nothing the
+   * second time.
+   */
+  async grantLifetimeFromPayment(organizationId: string, paymentRef: string) {
+    const existing = await this._subscriptionService.getCode(paymentRef);
+    if (existing) {
+      return { success: true, duplicate: true };
+    }
+
+    const getCurrentSubscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+
+    const currentTier = getCurrentSubscription?.subscriptionTier;
+    const nextPackage = nextLifetimeTier(currentTier);
+    const findPricing = pricing[nextPackage];
+
+    await this._subscriptionService.createOrUpdateSubscription(
+      false,
+      makeId(10),
+      organizationId,
+      currentTier && nextPackage === currentTier
+        ? getCurrentSubscription!.totalChannels + 5
+        : findPricing.channel!,
+      nextPackage,
+      'MONTHLY',
+      null,
+      paymentRef,
+      organizationId
+    );
+
+    return { success: true, tier: nextPackage };
+  }
+
   async lifetimeDeal(organizationId: string, code: string) {
     const getCurrentSubscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(
