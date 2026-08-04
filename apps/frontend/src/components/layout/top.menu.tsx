@@ -82,17 +82,6 @@ export const useMenuItem = () => {
       requireOrg: true,
     },
     {
-      // The design puts Channels in the rail rather than only as a column on
-      // the calendar. Both stay: the column is for picking who a post goes to,
-      // the page is for managing the channel itself.
-      name: t('channels', 'Channels'),
-      icon: (
-        <NavIcon d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM15.5 12v1.75a2.25 2.25 0 0 0 4.5 0V12" />
-      ),
-      path: '/channels',
-      requireOrg: true,
-    },
-    {
       name: t('ai_copilot', 'AI Copilot'),
       icon: (
         <NavIcon
@@ -101,6 +90,17 @@ export const useMenuItem = () => {
         />
       ),
       path: '/agents',
+      requireOrg: true,
+    },
+    {
+      // The design puts Channels in the rail rather than only as a column on
+      // the calendar. Both stay: the column is for picking who a post goes to,
+      // the page is for managing the channel itself.
+      name: t('channels', 'Channels'),
+      icon: (
+        <NavIcon d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM15.5 12v1.75a2.25 2.25 0 0 0 4.5 0V12" />
+      ),
+      path: '/channels',
       requireOrg: true,
     },
     {
@@ -135,7 +135,7 @@ export const useMenuItem = () => {
     // and stay Settings tabs — the rail deep-links to the same place rather
     // than growing four routes that render what `?tab=` already renders.
     {
-      name: t('sets', 'Sets'),
+      name: t('social_sets', 'Social Sets'),
       icon: (
         <NavIcon d="M4 7.5h16M4 12h16M4 16.5h10" d2="M17.5 15v6M14.5 18h6" />
       ),
@@ -167,22 +167,6 @@ export const useMenuItem = () => {
       requireOrg: true,
     },
     {
-      // The design keeps Connections in the rail, with a sub-entry per client.
-      // Here it is a Settings tab, and until now the only way to reach it was
-      // to open Settings and find it — seventeen documented integrations behind
-      // a tab nobody is told about. This is the pattern Sets, Signatures, Auto
-      // Post and Webhooks above already use: a menu entry whose path is a tab.
-      name: t('connections', 'Connections'),
-      icon: (
-        <NavIcon
-          d="M10.2 13.8a4.2 4.2 0 0 0 6.3.45l2.4-2.4a4.2 4.2 0 0 0-5.95-5.95l-1.4 1.4"
-          d2="M13.8 10.2a4.2 4.2 0 0 0-6.3-.45l-2.4 2.4a4.2 4.2 0 0 0 5.95 5.95l1.4-1.4"
-        />
-      ),
-      path: '/settings?tab=connections',
-      requireOrg: true,
-    },
-    {
       name: t('integrations', 'Integrations'),
       icon: (
         <NavIcon
@@ -193,6 +177,13 @@ export const useMenuItem = () => {
       path: '/third-party',
       requireOrg: true,
     },
+  ] satisfies MenuItemInterface[] as MenuItemInterface[];
+
+  // Capabilities the design's rail does not draw. They are not deleted — the
+  // Settings sub-nav renders them as link rows, and `Title` still names their
+  // pages from `all`. Connections needs no entry at all: the rail's primary
+  // button and the Developers tab both open it.
+  const extraMenu = [
     {
       name: t('plugs', 'Plugs'),
       icon: <NavIcon d="M13.2 2.5 5 13.6h6.2l-1 7.9 8.2-11.3h-6.1l1-7.7Z" />,
@@ -251,9 +242,10 @@ export const useMenuItem = () => {
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
   return {
-    all: [...mainMenu, ...moreMenu, ...secondMenu],
+    all: [...mainMenu, ...moreMenu, ...extraMenu, ...secondMenu],
     mainMenu,
     moreMenu,
+    extraMenu,
     secondMenu,
   };
 };

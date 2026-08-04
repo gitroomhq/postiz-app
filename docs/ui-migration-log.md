@@ -3439,3 +3439,48 @@ for exactly this job — and the list reads `— Sent with PostQueen`.
 
 Everything created for this was deleted afterwards, which exercised the four
 delete paths as well.
+
+---
+
+## The fidelity pass — 2026-08-05
+
+The owner put the app next to the prototype and said it does not look like the design — naming
+the sidebar, Settings, Posts, Billing and AI Copilot. They were right, and the reason is worth
+writing down: everything this log verified so far was measured — dimensions, counts, states —
+and almost nothing was *read side by side*. Three screens were audited against the prototype's
+own markup line by line and produced **~200 concrete visual deltas**: billing + checkout 87,
+settings 78, AI Copilot 35. The full lists live in `docs/ui-fidelity-audit/` and are the
+checklists this pass works through. The AI Copilot finding is the bluntest: its desktop surface
+was entirely legacy tokens or CopilotKit defaults — the grey SDK input pill, a white user
+bubble — with `pq*` tokens appearing only in the mobile drawers.
+
+**Two standing rules changed, by the owner, this session:**
+
+1. **The rail matches the design's inventory exactly.** "Never delete a capability the design
+   does not draw" had accumulated three extra rows. Connections' row is gone — the rail's own
+   primary button opens the same place. Plugs and Affiliate left the rail and became link rows
+   in the Settings sub-nav, same gates, same targets; `Title` still names their pages.
+2. **Visible labels and headings come from the design**, as translation keys with English
+   fallbacks — "Social Sets", not "Sets". Error/validation strings stay the repo's.
+
+### Primitives — done
+
+The design's toggle replaces the 57×34 knob (`slider.tsx`): 40×22 on `--brand`/`--border`,
+16px white knob, the prototype's own 3→23px travel. Button's `danger` variant moves off
+`bg-red-500` onto the warn token, and its spinner follows `currentColor` instead of being
+white on every variant. `--ltCardOn`/`--ltCardOff` gained the Tailwind aliases they never had.
+And `bg-newBgColorInnerInner` — a class that resolves to nothing — was painting no background
+under the API-key, CLI and MCP cards; they sit on `--pop` now. That one was a live visual bug
+on the Developers tab, found by the audit, not by any check.
+
+### The rail — done
+
+Order is the design's: Calendar, Posts, **AI Copilot, Channels** (ours had them swapped),
+Analytics, Media; More holds exactly Social Sets, Signatures, Auto Post, Webhooks,
+Integrations. Verified by reading the rendered rows back with `--eval`, not by eye: sixteen
+rows, in the design's order, with the org switcher and Settings in the footer where they
+belong. The Upgrade row is absent because this account is lifetime, which is the gate working.
+
+**Checks:** types 0 · api 149 · routes 28 · gates 14 unchanged. **i18n 1092 → 1093** —
+`social_sets`, the design's label. The `sets` key stays for its other call sites until the
+Settings tab takes the new label in the next step.

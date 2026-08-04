@@ -33,6 +33,10 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import {
+  useMenuFilter,
+  useMenuItem,
+} from '@gitroom/frontend/components/layout/top.menu';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -55,6 +59,10 @@ export const SettingsPopup: FC<{
   }, []);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
+  // Plugs and Affiliate left the rail when it took the design's inventory;
+  // their rows live here now, filtered by the same gates they always had.
+  const { extraMenu } = useMenuItem();
+  const menuFilter = useMenuFilter();
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
@@ -112,7 +120,12 @@ export const SettingsPopup: FC<{
   // `group` only sorts the sub-nav into sections; which tabs exist, what they
   // are called and what they open are all unchanged.
   const list = useMemo(() => {
-    const arr: { tab: string; label: string; group: string }[] = [];
+    const arr: {
+      tab: string;
+      label: string;
+      group: string;
+      href?: string;
+    }[] = [];
     const workspace = t('workspace', 'Workspace');
     const publishing = t('publishing', 'Publishing');
     const developers = t('developers', 'Developers');
@@ -165,6 +178,14 @@ export const SettingsPopup: FC<{
         group: publishing,
       });
     }
+    for (const item of extraMenu.filter(menuFilter)) {
+      arr.push({
+        tab: item.path,
+        label: item.name,
+        group: publishing,
+        href: item.path,
+      });
+    }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
       arr.push({
         tab: 'api',
@@ -185,7 +206,7 @@ export const SettingsPopup: FC<{
     });
 
     return arr;
-  }, [user, isGeneral, showLogout, isOrgAdmin, t]);
+  }, [user, isGeneral, showLogout, isOrgAdmin, t, extraMenu, menuFilter]);
 
   /** The same items, in the same order, bucketed by their group label. */
   const groupedList = useMemo(() => {
@@ -211,22 +232,32 @@ export const SettingsPopup: FC<{
               <div className="px-[10px] pb-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-textItemBlur">
                 {group}
               </div>
-              {items.map(({ tab: tabKey, label }) => (
-                <button
-                  key={tabKey}
-                  type="button"
-                  onClick={() => setTab(tabKey)}
-                  aria-current={tabKey === tab ? 'page' : undefined}
-                  className={clsx(
-                    'flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors',
-                    tabKey === tab
-                      ? 'bg-boxFocused font-[600] text-textItemFocused'
-                      : 'text-textItemBlur hover:bg-boxHover hover:text-newTextColor'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
+              {items.map(({ tab: tabKey, label, href }) =>
+                href ? (
+                  <Link
+                    key={tabKey}
+                    href={href}
+                    className="flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors text-textItemBlur hover:bg-boxHover hover:text-newTextColor"
+                  >
+                    {label}
+                  </Link>
+                ) : (
+                  <button
+                    key={tabKey}
+                    type="button"
+                    onClick={() => setTab(tabKey)}
+                    aria-current={tabKey === tab ? 'page' : undefined}
+                    className={clsx(
+                      'flex h-[38px] items-center rounded-[8px] px-[10px] text-start text-[14px] transition-colors',
+                      tabKey === tab
+                        ? 'bg-boxFocused font-[600] text-textItemFocused'
+                        : 'text-textItemBlur hover:bg-boxHover hover:text-newTextColor'
+                    )}
+                  >
+                    {label}
+                  </button>
+                )
+              )}
             </div>
           ))}
         </nav>
