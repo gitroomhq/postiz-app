@@ -1924,3 +1924,46 @@ difference between "both correct" and "one correct, one dead".
 The tier label gained `data-lifetime-tier` so it could be counted at all — the
 same reason the tour's ring and the plan cards gained theirs. A rule with no
 handle is a rule that gets verified by squinting.
+
+### "End free trial" never ended anything for a founding member
+
+The owner's rule: someone who ends their trial from the X lock or AI Copilot
+becomes a lifetime member immediately. Traced, it did the opposite — silently.
+
+`finishTrial` listed the customer's Stripe subscriptions, filtered to
+`trialing`, and indexed `list[0].id`. **A founding member has no Stripe
+subscription at all** — a lifetime entitlement is a local row — so that threw.
+The controller wrapped it in `try {} catch {}` and returned `{finish: true}`
+regardless. The dialog then polled `/billing/is-trial-finished`, which answers
+`!org.isTrailing`, and nothing had cleared that flag. So:
+
+```
+finish-trial      → {"finish": true}     (a lie, politely)
+is-trial-finished → {"finished": false}  (forever)
+```
+
+`finish.trial.tsx` retries every two seconds. The dialog never closed.
+
+**Fixed at both ends.** `finishTrial` now returns `{ ended }` — `false` means
+Stripe had nothing to end, which is information the caller needs, not a
+failure. A real API error still throws, because "the call failed" and "there was
+no trial" must not look the same to whoever is about to clear somebody's trial
+flag. The controller clears it locally on `ended: false` only, through a new
+`OrganizationService.endTrial` (DTO → Controller → Service → Repository, as the
+project requires).
+
+**Verified on the account that was actually broken:**
+
+```
+before  PRO · isLifetime true · isTrailing true
+POST /billing/finish-trial      → {"finish": true}
+GET  /billing/is-trial-finished → {"finished": true}   ← was false forever
+after   PRO · isLifetime TRUE  · isTrailing false
+```
+
+Lifetime survives, which was the other half of the question: a paid entitlement
+must not be lost by ending a trial.
+
+Note for whoever reads the screenshots next: this account is no longer trialing,
+so the founding-member block now shows its *paid* copy ("One payment, done")
+rather than the trial copy. Both variants have been seen.

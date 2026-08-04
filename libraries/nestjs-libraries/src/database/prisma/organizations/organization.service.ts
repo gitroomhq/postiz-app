@@ -38,6 +38,10 @@ export class OrganizationService {
     return this._organizationRepository.createMaxUser(id, name, saasName, email);
   }
 
+  endTrial(orgId: string) {
+    return this._organizationRepository.endTrial(orgId);
+  }
+
   addUserToOrg(
     userId: string,
     id: string,

@@ -634,16 +634,41 @@ export class StripeService {
     return { url };
   }
 
+  /**
+   * Ends a Stripe trial early, and says whether there was one.
+   *
+   * It used to index `list[0].id` unconditionally, which throws when the
+   * customer has no trialing subscription — and a founding member has none at
+   * all, because a lifetime entitlement is a local row rather than a Stripe
+   * subscription. The controller swallowed the throw and reported success, so
+   * the caller polled `is-trial-finished` forever against a flag nothing had
+   * cleared. The spinner never stopped.
+   *
+   * `ended: false` is not a failure. It means Stripe had nothing to end, which
+   * the caller needs in order to finish the job locally. An actual error still
+   * throws, because "the API call failed" and "there was no trial" must not
+   * look the same to whoever decides to clear somebody's trial flag.
+   */
   async finishTrial(paymentId: string) {
+    if (!paymentId) {
+      return { ended: false };
+    }
+
     const list = (
       await stripe.subscriptions.list({
         customer: paymentId,
       })
     ).data.filter((f) => f.status === 'trialing');
 
-    return stripe.subscriptions.update(list[0].id, {
+    if (!list.length) {
+      return { ended: false };
+    }
+
+    await stripe.subscriptions.update(list[0].id, {
       trial_end: 'now',
     });
+
+    return { ended: true };
   }
 
   async checkDiscount(customer: string) {

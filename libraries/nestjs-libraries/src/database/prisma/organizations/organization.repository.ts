@@ -15,6 +15,20 @@ export class OrganizationRepository {
     private _user: PrismaRepository<'user'>
   ) {}
 
+  /**
+   * Clears the trial flag without going through Stripe.
+   *
+   * For an organization Stripe has no trialing subscription for — a founding
+   * member, whose entitlement is a local row — this is the only thing that can
+   * end the trial. Nothing else writes the flag on this path.
+   */
+  endTrial(id: string) {
+    return this._organization.model.organization.update({
+      where: { id },
+      data: { isTrailing: false },
+    });
+  }
+
   createMaxUser(id: string, name: string, saasName: string, email: string) {
     return this._organization.model.organization.create({
       select: {

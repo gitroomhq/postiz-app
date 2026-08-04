@@ -4,6 +4,7 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { lifetimeWindow } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { LifetimeDto } from '@gitroom/nestjs-libraries/dtos/billing/lifetime.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -25,7 +26,8 @@ export class BillingController {
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
     private _notificationService: NotificationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _organizationService: OrganizationService
   ) {}
 
   private async assertNoOtherSubscribedAccount(user: User) {
@@ -62,8 +64,23 @@ export class BillingController {
 
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
+    // Two ways a trial ends, and the caller polls `is-trial-finished` until the
+    // organization's flag clears either way.
+    //
+    // When Stripe has a trialing subscription, ending it there is enough: the
+    // webhook clears the flag. When it has none — a founding member, whose
+    // entitlement is a local row and never a Stripe subscription — no webhook
+    // is ever coming, so the flag is cleared here. Without this the caller
+    // polled forever and the "End free trial" dialog never closed.
+    //
+    // The error is still swallowed, as before, so a Stripe outage cannot leave
+    // somebody stuck in a dialog. But `ended: false` is not an error, and only
+    // that specific answer clears the flag locally.
     try {
-      await this._stripeService.finishTrial(org.paymentId);
+      const { ended } = await this._stripeService.finishTrial(org.paymentId);
+      if (!ended) {
+        await this._organizationService.endTrial(org.id);
+      }
     } catch (err) {}
     return {
       finish: true,
