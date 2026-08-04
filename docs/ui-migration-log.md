@@ -2825,3 +2825,23 @@ feature that is broken produce identical evidence.
 
 Ten of the eleven interactions and states this migration has chased are now
 verified against real data. The last is the card payment, which is the owner's.
+
+### `lifetime_trial`, which the account was already in
+
+No state to produce — the account is lifetime *and* trialing, which is exactly
+doc 03's `lifetime_trial` row. It only needed looking at, and looking at it
+settles the half of the founding-member copy that had never rendered:
+
+```
+[data-founding-member] → "Founding member … Thank you for b…"
+subtitle               → "Nothing has been charged yet."
+facts                  → 3
+```
+
+That subtitle is the **trial** branch. The paid branch ("One payment, done") was
+seen earlier today; both variants of that block have now rendered, and the
+account that saw each was genuinely in the state that selects it. Three widths,
+both themes, no overflow.
+
+Getting this wrong would have told somebody mid-trial that they had already been
+charged — which is why the branch reads `isTrailing` rather than assuming.
