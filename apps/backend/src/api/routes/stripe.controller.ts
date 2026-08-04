@@ -34,7 +34,14 @@ export class StripeController {
     const service = event?.data?.object?.metadata?.service;
     const isOurs = service === SUBSCRIPTION_SERVICE_TAG;
 
-    if (!isOurs && event.type !== 'invoice.payment_succeeded') {
+    // An invoice carries no `metadata.service` — that lives on the subscription
+    // it bills — so both invoice events have to be exempted from the check
+    // above or they are dropped before the switch ever sees them. That is why
+    // `payment_succeeded` was already listed here; `payment_failed` joins it
+    // for the same reason.
+    const INVOICE_EVENTS = ['invoice.payment_succeeded', 'invoice.payment_failed'];
+
+    if (!isOurs && !INVOICE_EVENTS.includes(event.type)) {
       return { ok: true };
     }
 
@@ -65,6 +72,12 @@ export class StripeController {
         }
         case 'invoice.payment_succeeded':
           return this._stripeService.paymentSucceeded(event);
+        // A renewal that could not be charged. Unhandled until now, so the only
+        // thing a customer with a dead card saw was nothing at all — until
+        // Stripe gave up weeks later and cancelled the subscription, at which
+        // point the app went to the paywall with no explanation.
+        case 'invoice.payment_failed':
+          return this._stripeService.paymentFailed(event);
         case 'customer.subscription.created':
           return this._stripeService.createSubscription(event);
         case 'customer.subscription.updated':

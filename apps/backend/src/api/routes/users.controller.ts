@@ -256,13 +256,15 @@ export class UsersController {
       return { subscription: undefined };
     }
 
-    // The retention coupon lives on the Stripe subscription and nowhere local,
-    // so without this the Billing screen cannot tell that 50% off was accepted.
-    const discount = await this._stripeService.getActiveDiscount(
-      organization.paymentId
-    );
+    // Both facts live in Stripe and nowhere local, so without them the Billing
+    // screen cannot tell that 50% off was accepted, or that the last renewal
+    // was refused.
+    const [discount, paymentFailed] = await Promise.all([
+      this._stripeService.getActiveDiscount(organization.paymentId),
+      this._stripeService.hasFailedPayment(organization.paymentId),
+    ]);
 
-    return { subscription, discount };
+    return { subscription, discount, paymentFailed };
   }
 
   @Get('/subscription/tiers')

@@ -12,8 +12,10 @@ import {
   nextLifetimeTier,
   PaidTier,
   pricing,
+  trialWindow,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
@@ -34,7 +36,10 @@ export class StripeService {
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    // For `paymentFailed` — a failed renewal has to reach the customer, and
+    // this is the same service the cancellation email already goes through.
+    private _notificationService: NotificationService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
@@ -1063,6 +1068,61 @@ export class StripeService {
     return { ok: true };
   }
 
+  /**
+   * A renewal Stripe could not charge.
+   *
+   * Nothing handled this before, so the customer's first sign that anything was
+   * wrong was the app dropping to the paywall weeks later, when Stripe gave up
+   * retrying and cancelled the subscription. Now they are told, and the Billing
+   * screen has something to draw (`hasFailedPayment` below).
+   *
+   * Deliberately does not touch the subscription: Stripe retries a failed
+   * invoice on its own schedule and most of them succeed on the second attempt.
+   * Cancelling here would take the plan away from somebody whose bank simply
+   * asked for a confirmation.
+   */
+  async paymentFailed(event: Stripe.InvoicePaymentFailedEvent) {
+    const customer = event.data.object.customer as string;
+    if (!customer) {
+      return { ok: true };
+    }
+
+    const org = await this._organizationService.getOrgByCustomerId(customer);
+    if (!org) {
+      return { ok: true };
+    }
+
+    await this._notificationService.inAppNotification(
+      org.id,
+      'Payment failed',
+      "We could not charge your card for PostQueen. Update your payment method from Billing and we'll try again — nothing is cancelled yet.",
+      true
+    );
+
+    return { ok: true };
+  }
+
+  /**
+   * Whether the most recent invoice on this customer failed to be paid.
+   *
+   * Read from Stripe rather than stored, for the same reason the active
+   * discount is: the fact lives there, and a copy here is a copy that goes
+   * stale the moment Stripe's own retry succeeds.
+   */
+  async hasFailedPayment(customer?: string | null) {
+    if (!isBillingEnabled() || !customer) {
+      return false;
+    }
+
+    try {
+      const invoices = await stripe.invoices.list({ customer, limit: 1 });
+      const latest = invoices.data[0];
+      return latest?.status === 'open' && (latest?.attempt_count ?? 0) > 0;
+    } catch (err) {
+      return false;
+    }
+  }
+
   async getCharges(organizationId: string) {
     const org = await this._organizationService.getOrgById(organizationId);
     if (!org?.paymentId) {
@@ -1380,6 +1440,20 @@ export class StripeService {
    * a used code is a webhook Stripe delivered twice, and it grants nothing the
    * second time.
    */
+  /**
+   * Whether this organization's free trial is still running.
+   *
+   * Both lifetime grants below used to hardcode `false` here, which ended the
+   * trial the instant somebody bought the founding-member deal. The owner's
+   * rule is the opposite: buying it leaves the trial running, and the person
+   * becomes a founding member when it expires — or sooner, from the "End free
+   * trial" button that the X panel and the Billing screen both offer.
+   */
+  private async stillTrialing(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    return !!org?.isTrailing && trialWindow(org.createdAt).open;
+  }
+
   async grantLifetimeFromPayment(organizationId: string, paymentRef: string) {
     const existing = await this._subscriptionService.getCode(paymentRef);
     if (existing) {
@@ -1396,7 +1470,7 @@ export class StripeService {
     const findPricing = pricing[nextPackage];
 
     await this._subscriptionService.createOrUpdateSubscription(
-      false,
+      await this.stillTrialing(organizationId),
       makeId(10),
       organizationId,
       currentTier && nextPackage === currentTier
@@ -1435,7 +1509,9 @@ export class StripeService {
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
-        false,
+        // Same rule as the paid grant above: redeeming a code does not cut a
+        // running trial short.
+        await this.stillTrialing(organizationId),
         makeId(10),
         organizationId,
         // At the top of the ladder a further code can no longer raise the tier,
