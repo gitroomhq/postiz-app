@@ -61,6 +61,21 @@ const probe = arg('probe', '');
 // matches a genuine pointer, so a hover-driven layout is unphotographable
 // without it.
 const hover = arg('hover', '');
+// --drag "<from>|<to>": press on one element, move to another in steps, release.
+//
+// KNOWN LIMIT, measured rather than assumed: this dispatches *pointer* events,
+// and the calendar uses react-dnd's **HTML5 backend**, which listens for
+// `dragstart`/`drop` — a different event family entirely. Dragging a seeded post
+// with this moved nothing and changed no publishDate, which says the harness is
+// wrong, not the calendar. Exercising HTML5 drag over CDP needs
+// `Input.setInterceptDrags` plus `Input.dispatchDragEvent`; until that is here,
+// **the calendar's drag and drop remains unverified** and should not be reported
+// as working.
+//
+// It is still useful for anything driven by pointer events, and it is left in
+// place so the next attempt starts from a working mouse rather than from
+// nothing.
+const drag = arg('drag', '');
 // --count <selector>: how many match. "Did the regrouping drop a provider?" is
 // a counting question, and counting tiles in a screenshot is how you miss one.
 const count = arg('count', '');
@@ -278,6 +293,46 @@ try {
           y,
           buttons: 0,
         });
+        const after = await settle();
+        timedOut = timedOut || after.timedOut;
+      }
+
+      if (drag) {
+        const [fromSel, toSel] = drag.split('|');
+        const { result: pts } = await cdp.send('Runtime.evaluate', {
+          expression: `(() => {
+            const a = document.querySelector(${JSON.stringify(fromSel)});
+            const b = document.querySelector(${JSON.stringify(toSel)});
+            if (!a || !b) return '';
+            const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+            return JSON.stringify({
+              x1: ra.left + ra.width / 2, y1: ra.top + ra.height / 2,
+              x2: rb.left + rb.width / 2, y2: rb.top + rb.height / 2,
+            });
+          })()`,
+          returnByValue: true,
+        });
+        if (!pts.value) {
+          throw new Error(`--drag selectors matched nothing: ${drag}`);
+        }
+        const { x1, y1, x2, y2 } = JSON.parse(pts.value);
+        const send = (type, x, y, buttons) =>
+          cdp.send('Input.dispatchMouseEvent', {
+            type, x, y, buttons,
+            ...(type === 'mousePressed' || type === 'mouseReleased'
+              ? { button: 'left', clickCount: 1 }
+              : {}),
+          });
+        await send('mouseMoved', x1, y1, 0);
+        await send('mousePressed', x1, y1, 1);
+        // Several small moves, not one jump: a drag library that debounces or
+        // requires a threshold will ignore a single teleport and report nothing
+        // happened, which reads as "drag is broken" when it is the test that is.
+        for (let i = 1; i <= 12; i++) {
+          await send('mouseMoved', x1 + ((x2 - x1) * i) / 12, y1 + ((y2 - y1) * i) / 12, 1);
+          await sleep(16);
+        }
+        await send('mouseReleased', x2, y2, 0);
         const after = await settle();
         timedOut = timedOut || after.timedOut;
       }

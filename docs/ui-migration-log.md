@@ -2498,3 +2498,28 @@ the others.
 `--revoke` and each refuses to touch anything it did not write. The channel is
 named "Dev placeholder (not connected)" and carries an invalid token; the images
 are `pq-test-*.png`. Nothing about them is subtle, on purpose.
+
+### Drag and drop: the test was wrong, not the calendar
+
+The plan said drag would be verified with a real mouse, so `ui-shot.mjs` gained
+`--drag`: press, twelve interpolated moves, release. Dragged a seeded post to a
+different cell and checked the database.
+
+**Nothing moved.** Every `publishDate` was unchanged.
+
+The tempting conclusion is that drag and drop is broken. It is not what the
+evidence says. The calendar uses **react-dnd's HTML5 backend** (`useDrag`,
+`react-dnd-html5-backend`), which listens for `dragstart`/`drop` — a different
+event family from the pointer events CDP's `dispatchMouseEvent` produces. The
+two never meet, so the harness could not have moved anything regardless of
+whether the feature works.
+
+Exercising HTML5 drag over CDP needs `Input.setInterceptDrags` and
+`Input.dispatchDragEvent`. That is not built here.
+
+**So the honest state is: drag and drop is still unverified**, and this is the
+one item in the migration where a test exists and proves nothing. The limitation
+is written into the flag's own comment so the next person does not read a green
+run as a passing one — a harness that reports success for something it cannot
+reach is the exact failure the api and i18n collectors already taught this
+project once.
