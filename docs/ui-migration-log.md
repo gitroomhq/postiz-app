@@ -1778,3 +1778,28 @@ founding-member offer closed 24 hours after you signed up"* — correct, since i
 day old, and inventing one to photograph would be inventing the evidence too.
 
 `types 0 · api 148 · routes 28 · gates 12` unchanged; `i18n 1047 → 1049`.
+
+### The lifetime purchase — the map, before the change
+
+Traced rather than guessed, so the next pass starts from facts:
+
+- **Checkout is created** in `stripe.service.ts`, `mode: 'subscription'` at lines 539 and 610. A
+  lifetime purchase is a one-off, so it needs `mode: 'payment'` — a different session shape, not a
+  flag on the existing one.
+- **The webhook lands** at `stripe.controller.ts:21` and switches on `event.type` at :41. The
+  branches are `invoice.payment_succeeded`, `customer.subscription.{created,updated,deleted}`.
+  **A `mode: 'payment'` session emits none of these** — it emits `checkout.session.completed`, and
+  there is no case for it. Without one the money arrives and nothing is granted.
+- **The ownership guard** at :33 drops any event whose `data.object.metadata.service` is not
+  `SUBSCRIPTION_SERVICE_TAG`. A lifetime session has to carry that tag or its own webhook is
+  discarded by the app that created it.
+- **What to grant** already exists: `subscription.repository.ts` writes `isLifetime: !!code` and
+  `StripeService.lifetimeDeal` runs the ladder through `nextLifetimeTier()`. The purchase branch
+  should reuse that path, not open a second way to become a lifetime member.
+
+So the change is four connected pieces: a payment-mode session carrying the service tag, a
+`checkout.session.completed` case, a grant that reuses `lifetimeDeal`'s effect, and the button.
+
+**Not started, deliberately.** It is the one path in this migration where stopping half-way is worse
+than not starting: a session that takes money with no branch to grant the entitlement charges someone
+and gives them nothing. It needs to be written and verified in one piece.
