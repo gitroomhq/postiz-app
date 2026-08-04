@@ -12,6 +12,7 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Select } from '@gitroom/react/form/select';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
@@ -42,7 +43,19 @@ export const SignaturesComponent: FC<{
           t(
             'are_you_sure_you_want_to_delete',
             `Are you sure you want to delete?`,
-            { name: data.content.slice(0, 15) + '...' }
+            // Same reason as the list cell below: the confirmation named the
+            // signature with its markup showing.
+            {
+              name: stripHtmlValidation(
+                'none',
+                data.content,
+                false,
+                true,
+                false
+              )
+                .trim()
+                .slice(0, 30),
+            }
           )
         )
       ) {
@@ -88,7 +101,25 @@ export const SignaturesComponent: FC<{
                 <Fragment key={p.id}>
                   <div className="relative flex-1 me-[20px] overflow-x-hidden">
                     <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
-                      {p.content.slice(0, 15) + '...'}
+                      {/* Was `content.slice(0, 15) + '...'` on the raw HTML, so
+                          a signature stored as `<p>— Sent with PostQueen</p>`
+                          listed itself as "<p>— Sent with ..." — a markup tag
+                          shown to the person who wrote the text, and a cut that
+                          could land inside a tag. Same helper the calendar card
+                          uses for the same job, and the ellipsis only appears
+                          when something was actually cut. */}
+                      {(() => {
+                        const plain = stripHtmlValidation(
+                          'none',
+                          p.content,
+                          false,
+                          true,
+                          false
+                        ).trim();
+                        return plain.length > 30
+                          ? plain.slice(0, 30) + '…'
+                          : plain;
+                      })()}
                     </div>
                   </div>
                   <div className="flex flex-col justify-center relative me-[20px]">

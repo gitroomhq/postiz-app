@@ -3408,3 +3408,34 @@ a regression fixture. **All ten states have now been reached and measured**, but
 the 28 screenshots were not taken and no Playwright fixture was wired. That is
 documentation of what already passes, not verification of something unknown —
 which is why it is last, and why it is written down rather than quietly dropped.
+
+### The Settings tabs, exercised rather than looked at
+
+Every tab had been *rendered* during this migration. None had been **used** —
+nothing was ever created, listed and deleted through one. On GROWTH, so all
+eleven exist at once:
+
+| tab | create | listed | delete |
+|---|---|---|---|
+| Webhooks | 201 | `Webhooks (1/10)` with the row | 200 |
+| Auto Post | 201 | title, URL, Active | 200 |
+| Sets | 201 | `Sets (1)` with the row | 200 |
+| Signatures | 201 | content, Auto Add? = Yes | 200 |
+
+The webhook URL guard was worth the trip on its own: `http://localhost:3000/x`
+is refused with **400** and both messages — *"url must be a URL address"* and
+*"Webhook URL must be a public HTTPS URL and cannot point to internal network
+addresses"*. The same validator protects the autopost URL.
+
+**One defect, in the signatures list.** The content column read
+`p.content.slice(0, 15) + '...'` — of the **raw HTML**. A signature stored as
+`<p>— Sent with PostQueen</p>` listed itself as `<p>— Sent with ...`: a markup
+tag shown to the person who wrote the text, with a cut that could land inside a
+tag, and an ellipsis appended whether or not anything was actually cut. The
+delete confirmation named it the same way.
+
+Both now use `stripHtmlValidation` — the helper the calendar card already uses
+for exactly this job — and the list reads `— Sent with PostQueen`.
+
+Everything created for this was deleted afterwards, which exercised the four
+delete paths as well.
