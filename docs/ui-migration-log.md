@@ -2354,3 +2354,23 @@ Verified: the grid now opens showing 08:00 through 13:00.
 Also confirmed on the same screen, and never seen before: the channel column
 with a channel in it, the posts panel's three tabs, and **"Pro tier"** at the
 foot of the channel column — doc 03's third lifetime rule, in place.
+
+### The composer, opened for the first time
+
+`Create Post` had no handle, so the composer could not be photographed even
+after a channel existed — the dialog cannot be reached by URL. It has
+`data-pq="create-post"` now, for the same reason add-channel does.
+
+Opened, it is the design's two-pane shape: Create Post beside Post Preview, the
+editor with its toolbar, tag and repeat controls, the date, Save as draft, and
+the CTA. All of it renders at 1440 with no overflow.
+
+**Two bright magenta elements looked wrong and are not.** The AI button and
+"Add comment / post" use `bg-pqPink`, and `tokens.css` in the handoff defines
+`--pink:#e0189e` — ours is the same value in both themes, and `--new-ai-btn`
+points at it. The design chose that colour; it is not a survivor of the old
+brand.
+
+That is the third suspicion this session settled by looking rather than
+reasoning — after `NoMediaIcon` and `DeleteCircleIcon`. All three would have
+been "fixed" into breakage by a confident pattern match.

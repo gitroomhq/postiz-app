@@ -78,6 +78,9 @@ export const NewPost = () => {
     // Sized for the header, where this now lives. It used to be a block in the
     // Channels column, hence the flex-1 / 44px / collapsed-sidebar variants.
     <button
+      // The composer cannot be reached by URL, so the screenshot tool needs a
+      // handle on the one control that opens it — same reason add-channel has one.
+      data-pq="create-post"
       onClick={createAPost}
       className="flex h-[36px] shrink-0 items-center gap-[6px] rounded-[8px] bg-btnPrimary ps-[12px] pe-[16px] text-[14px] font-[500] text-white outline-none transition-opacity hover:opacity-90"
     >
