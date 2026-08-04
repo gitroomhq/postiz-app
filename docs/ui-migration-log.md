@@ -1803,3 +1803,27 @@ So the change is four connected pieces: a payment-mode session carrying the serv
 **Not started, deliberately.** It is the one path in this migration where stopping half-way is worse
 than not starting: a session that takes money with no branch to grant the entitlement charges someone
 and gives them nothing. It needs to be written and verified in one piece.
+
+### The lifetime purchase stops here, on a question only the owner can answer
+
+Two of the four pieces are in (`7c561e5e`): the grant and the webhook branch. The third — the
+`mode: 'payment'` checkout session — needs one thing that does not exist anywhere in this repository:
+
+**What does a lifetime deal cost?**
+
+`pricing.ts` has no lifetime price. `stripe.service.ts` has none. The design shows `$49`, but that is
+`ltPaid: 49` in the prototype's demo state (`…dc.html:4618`), sitting beside `ltPaid: 0` for the
+trial variant — it is stage dressing reusing the PRO monthly figure, not a price list. Doc 03's
+pricing table has four monthly and four yearly numbers and no lifetime row.
+
+A checkout session has to name an amount. Inventing one would mean this migration set a price, which
+is the one thing it has refused to do everywhere else — and unlike a label, a wrong number here takes
+the wrong amount of money from a real person.
+
+**Recorded rather than guessed, and this is the question:** what is the lifetime price, and is it one
+price or one per tier? The ladder grants CREATOR → GROWTH → PRO → AGENCY depending on what the
+account already has, so "one payment" could reasonably mean one figure or four.
+
+Everything else for lifetime is ready and waiting on that number: the grant, the webhook, the
+24-hour window with its server-side `410`, the founding-member surface, and the page being reachable
+by a FREE account.
