@@ -9,6 +9,7 @@ import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { timer } from '@gitroom/helpers/utils/timer';
 import { groupBy } from 'lodash';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -201,9 +202,22 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       headers: upload.getHeaders(),
     });
 
-    return [
-      ...(d.data as string).matchAll(/<Location>(.*?)<\/Location>/g),
-    ][0][1];
+    // S3 only echoes a <Location> body when the POST succeeds with 201; guard
+    // the parse so an empty/unexpected body fails with a clear error instead
+    // of a TypeError.
+    const location = [
+      ...String(d.data || '').matchAll(/<Location>(.*?)<\/Location>/g),
+    ][0]?.[1];
+    if (!location) {
+      throw new BadBody(
+        this.identifier,
+        String(d.data || '{}'),
+        Buffer.from('{}'),
+        'Reddit media upload did not return a location'
+      );
+    }
+
+    return location;
   }
 
   async post(
