@@ -165,9 +165,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       let index = 0;
       for (const item of media || []) {
         const fileSize = await this.mediaSize(item.path, this.identifier);
-        const { data: stream } = await axios.get(item.path, {
-          responseType: 'stream',
-        });
+        const stream = await this.mediaStream(item.path, this.identifier);
         form.append(`files[${index}]`, stream, {
           filename: item.path.split('/').pop(),
           knownLength: fileSize,

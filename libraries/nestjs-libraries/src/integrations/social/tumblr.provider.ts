@@ -524,10 +524,8 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
         const mediaUrl = this.getMediaUrl(item.path);
         const mimeType = this.getMimeType(item.path);
         const fileSize = await this.mediaSize(mediaUrl, this.identifier);
-        const { data } = await axios.get(mediaUrl, {
-          responseType: 'stream',
-        });
-        formData.append(`media-${index}`, data, {
+        const stream = await this.mediaStream(mediaUrl, this.identifier);
+        formData.append(`media-${index}`, stream, {
           filename: item.path.split('/').pop() || `media-${index}`,
           contentType: mimeType,
           knownLength: fileSize,

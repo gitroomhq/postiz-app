@@ -256,7 +256,7 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
       if (!fileResponse.ok || !fileResponse.body) {
         throw new Error(`Failed to fetch media: ${fileResponse.statusText}`);
       }
-      await fetch(createFileResponse.write_url, {
+      const uploadResponse = await fetch(createFileResponse.write_url, {
         method: 'PUT',
         headers: {
           'Content-Type': createFileResponse.content_type,
@@ -267,6 +267,16 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
         // Required by undici when streaming a request body.
         duplex: 'half',
       } as any);
+      // A rejected PUT would otherwise publish the post with an empty
+      // attachment - the file id exists but no bytes were stored.
+      if (!uploadResponse.ok) {
+        throw new BadBody(
+          this.identifier,
+          await uploadResponse.text().catch(() => '{}'),
+          '{}',
+          'Failed to upload the media file'
+        );
+      }
 
       fileIds.push(createFileResponse.file.id);
     }

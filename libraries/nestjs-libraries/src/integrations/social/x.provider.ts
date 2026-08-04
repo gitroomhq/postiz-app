@@ -450,7 +450,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         `media/upload/${mediaId}/append`,
         {
           segment_index: i,
-          media: await this.mediaChunk(path, start, end),
+          media: await this.mediaChunk(path, start, end, this.identifier),
         },
         { forceBodyMode: 'form-data' }
       );

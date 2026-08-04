@@ -333,7 +333,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           : await this.mediaChunk(
               picture.path,
               i,
-              Math.min(i + chunkSize, fileSizeBytes) - 1
+              Math.min(i + chunkSize, fileSizeBytes) - 1,
+              this.identifier
             );
 
         const upload = await this.fetch(

@@ -181,9 +181,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     // Stream the file into Reddit's S3 form instead of buffering it in memory.
     // S3 requires the exact part length, which comes from a HEAD request.
     const fileSize = await this.mediaSize(path, this.identifier);
-    const { data } = await axios.get(path, {
-      responseType: 'stream',
-    });
+    const stream = await this.mediaStream(path, this.identifier);
 
     const upload = (fields as { name: string; value: string }[]).reduce(
       (acc, value) => {
@@ -193,7 +191,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       new FormDataUpload()
     );
 
-    upload.append('file', data, {
+    upload.append('file', stream, {
       filename: path.split('/').pop(),
       contentType: (mimeType as string) || 'application/octet-stream',
       knownLength: fileSize,

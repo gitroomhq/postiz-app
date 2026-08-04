@@ -276,7 +276,7 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
         if (!fileResponse.ok || !fileResponse.body) {
           throw new Error(`Failed to fetch media: ${fileResponse.statusText}`);
         }
-        await fetch(createFileResponse.upload_url, {
+        const uploadResponse = await fetch(createFileResponse.upload_url, {
           method: 'PUT',
           headers: {
             // Whop's own upload_headers win if they ever include a length.
@@ -287,6 +287,16 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
           // Required by undici when streaming a request body.
           duplex: 'half',
         } as any);
+        // A rejected PUT leaves the file pending forever - fail fast instead
+        // of burning the ~9 minute status poll below.
+        if (!uploadResponse.ok) {
+          throw new BadBody(
+            this.identifier,
+            await uploadResponse.text().catch(() => '{}'),
+            '{}',
+            'Failed to upload the media file'
+          );
+        }
 
         let uploadStatus = 'pending';
         let attempts = 0;
