@@ -1343,6 +1343,11 @@ The channel detail, the posts panel and the calendar have all been written and n
 with a connected channel — the same gate the composer has been behind since step 4. Counting is what
 separates "empty and correct" from "broken render", and counting is all that has been done here.
 
+> **Superseded, 2026-08-04.** All four have since been seen, with a seeded channel and six seeded
+> posts, and looking at them found three defects that counting had passed as fine: a status badge
+> reading "Connected:", three broken avatars, and a calendar that opened at midnight. The sentence
+> above was the right thing to write at the time and the wrong thing to leave standing.
+
 ### Where the work sits — five stacked draft PRs
 
 ```
@@ -2066,6 +2071,12 @@ how each grid draws — hour rows, the 1px cell lines, where a post card sits
 inside its cell. Those are the next thing to compare, and they need a populated
 calendar, which is still waiting on a connected channel.
 
+> **Done later the same day.** Six seeded posts made the grid judgeable: cards
+> sit in their hour cells, the panel and the grid agree on the time, and
+> `/posts/count` returned `{"scheduled":4,"draft":2,"published":0}` — matching
+> the seed row for row, the first time that endpoint was checked against
+> anything but zeros.
+
 **Step 5 so far**
 
 | surface | design | measured |
@@ -2439,3 +2450,51 @@ That fix is confirmed in place.
 two undecided and blocked on a working uploads path rather than on any code
 question. Written down as undecided instead of quietly resolved, because the
 whole point of the exercise was to stop reasoning about colours nobody had seen.
+
+---
+
+## Where this stands
+
+Every tab, page, overlay, chrome dimension and calendar view the design specifies
+now exists here, and the four the log once listed as unverified — the
+founding-member surface, the four lifetime rules, the Media list rows and the
+composer — have been seen.
+
+**What the last day actually taught, since it changed how the rest was done:**
+putting real data in front of a screen found **five defects** that reading the
+source could not, and cleared **three suspicions** that reading the source had
+raised.
+
+| found by looking | cleared by looking |
+|---|---|
+| `Media.fileSize` was never recorded by anything | `NoMediaIcon` — white glyphs on lilac, correct |
+| the size formatter rendered 956 B as "0.0 MB" | `DeleteCircleIcon` — white disc is a backing plate |
+| the status badge read "Connected:" | the composer's magenta is the design's own `--pink` |
+| three avatars broke when a channel had no picture | |
+| the calendar opened at midnight | |
+
+None of the five were visible in the source, and none of the three would have
+survived a confident pattern match.
+
+### Open, and what each waits on
+
+**The owner:** `prisma db push` — this database's enum does not know
+`CREATOR`/`GROWTH`/`AGENCY`, which is why the lifetime seed had to pass
+`--tier PRO`. Until it runs, the entire tier rename is untestable locally, and
+that is the largest single risk left in this migration. Then a real card, for the
+one path deliberately never exercised.
+
+**A working uploads path:** two of the 42 white fills sit on media thumbnails
+that do not load on this machine, so they are recorded as undecided rather than
+reasoned about.
+
+**A real Stripe subscription:** `active`, `canceling`, `payment_failed`, `ended`
+and `discount`. The account is lifetime, which is the one state that cannot show
+the others.
+
+### Seeded data, left in place
+
+`grant-lifetime.mjs`, `seed-dev-channel.mjs` and `seed-dev-posts.mjs` each have
+`--revoke` and each refuses to touch anything it did not write. The channel is
+named "Dev placeholder (not connected)" and carries an invalid token; the images
+are `pq-test-*.png`. Nothing about them is subtle, on purpose.
