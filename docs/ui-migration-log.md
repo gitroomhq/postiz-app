@@ -3347,3 +3347,64 @@ separate things. Split:
 three removed with the old hero (`billing_grow_your`,
 `billing_social_presence_highlight`, `billing_with_postqueen_line`). `api`,
 `routes`, `gates` and both type checks unchanged; sweep clean.
+
+### Stripe test clocks — and the bug that only time could find
+
+The three time-based paths were finally run, not reasoned about. Stripe's **test
+clocks** let a customer, its subscription and its invoices live on a clock this
+repo can advance; every webhook emitted along the way is real.
+`stripe-test-drive.mjs --clock` starts one, `--advance N` moves it, and
+`--drop-clock` deletes it with everything on it.
+
+| advanced | Stripe emitted | result here |
+|---|---|---|
+| **8 days** | `trial_will_end`, `customer.subscription.updated` | trialing → **active**, `isTrailing` false |
+| **35 days** after cancelling | `updated`, `customer.subscription.deleted` | local row **gone**, paywall |
+| **32 days** with a refusing card | two `updated`, two `invoice.payment_failed` | subscription **past_due** |
+
+**A failed renewal put the customer back on trial.** `createSubscription` and
+`updateSubscription` both passed `status !== 'active'` as the organization's
+trial flag. That is true of `past_due`, `unpaid`, `incomplete` and `paused` as
+well as `trialing` — so the moment a card was refused, a customer who had been
+paying for a month was written into a **trial they were not on**: X re-locked,
+trial banner up, trial-only video limits applied. Only one status is a trial, and
+that is what it reads now.
+
+Nothing but moving the clock could have found this. It is the fourth defect this
+session that was invisible in the source and obvious the moment something real
+happened.
+
+**The replay filter was also missing the invoice events.** An invoice points at
+its subscription through `parent.subscription_details.subscription`, not
+`invoice.subscription`, so both `payment_succeeded` and `payment_failed` had been
+filtered out of every replay — which is why the first failed renewal looked like
+it emitted nothing but subscription updates. Fixed, and the handler then answered
+201 twice as Stripe retried.
+
+`payment_failed` was the last of doc 03's ten states with nothing behind it. All
+ten have now been reached: the amber strip renders, the in-app notification
+lands, and `Update payment method` opens the Stripe portal.
+
+### Plugs, with a channel that supports them
+
+The empty state was all this migration had seen, because the only channel was
+Mastodon. With a Bluesky placeholder — one of the four providers in the design's
+`plugSupported` — the page renders exactly the two the prototype's `PLUGS` array
+defines: **Auto Repost Posts** and **Auto plug post**. Analytics still shows its
+empty state, correctly: Bluesky is not in the design's `ANALYTICS` map either.
+
+The placeholder was removed afterwards. To see it again:
+
+```
+node -e "…prisma.integration.create({ providerIdentifier: 'bluesky', … })"
+```
+
+or seed any of `x`, `linkedin-page`, `threads`, `bluesky`.
+
+### Not done, and named
+
+Doc 03's test matrix asks for its 14 combinations photographed in both themes as
+a regression fixture. **All ten states have now been reached and measured**, but
+the 28 screenshots were not taken and no Playwright fixture was wired. That is
+documentation of what already passes, not verification of something unknown —
+which is why it is last, and why it is written down rather than quietly dropped.
