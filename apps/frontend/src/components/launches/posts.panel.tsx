@@ -131,7 +131,7 @@ export const PostsPanel: FC = () => {
               <span className="relative shrink-0">
                 <ImageWithFallback
                   fallbackSrc={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-                  src={post.integration?.picture}
+                  src={post.integration?.picture || '/no-picture.jpg'}
                   alt=""
                   width={24}
                   height={24}

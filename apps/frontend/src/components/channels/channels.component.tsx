@@ -229,7 +229,7 @@ export const ChannelsComponent: FC = () => {
             <span className="relative shrink-0">
               <ImageWithFallback
                 fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-                src={integration.picture}
+                src={integration.picture || '/no-picture.jpg'}
                 alt={integration.identifier}
                 width={32}
                 height={32}
@@ -270,7 +270,7 @@ export const ChannelsComponent: FC = () => {
           <div className="flex items-center gap-[14px]">
             <ImageWithFallback
               fallbackSrc={`/icons/platforms/${current.identifier}.png`}
-              src={current.picture}
+              src={current.picture || '/no-picture.jpg'}
               alt={current.identifier}
               width={52}
               height={52}

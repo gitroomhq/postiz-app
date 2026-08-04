@@ -2374,3 +2374,38 @@ brand.
 That is the third suspicion this session settled by looking rather than
 reasoning — after `NoMediaIcon` and `DeleteCircleIcon`. All three would have
 been "fixed" into breakage by a confident pattern match.
+
+### Six posts, and the calendar finally judged with something on it
+
+`scripts/seed-dev-posts.mjs` writes six posts — four QUEUE, two DRAFT — spread
+across the working week at hours somebody would actually pick, so the grid is
+judged on a realistic distribution rather than six cards in one column. They
+attach to the placeholder channel, whose token is invalid, so none can publish.
+
+**`GET /posts/count` verified against real rows for the first time.** It was
+added during this migration specifically for the channel counters and had only
+ever been seen returning zeros:
+
+```
+{"scheduled":4,"draft":2,"published":0}     — exactly the six seeded
+```
+
+**The calendar populated correctly**: cards in their hour cells with time and
+content, the posts panel listing four scheduled rows, and the times agreeing
+between panel and grid — which is the clock bug fixed back at the tour, still
+holding with real rows.
+
+**And it showed a defect in my posts panel.** The avatars rendered as broken
+images while the calendar's own cards were fine. The difference is one
+expression: `calendar.tsx:1200` writes
+`src={post.integration.picture! || '/no-picture.jpg'}`, and my panel wrote
+`src={post.integration?.picture}`. A channel with no picture — which is every
+channel until someone sets one — left `src` empty, and the element broke before
+any fallback could help.
+
+Fixed in the panel and in both avatars on the channels page, which I had written
+the same way. `/no-picture.jpg` has been in `public/` all along; I simply had
+not used it.
+
+Worth noting what caught this: not the count, which was right, and not the
+types. Only looking at it.
