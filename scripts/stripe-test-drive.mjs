@@ -79,7 +79,16 @@ async function replaySince(since, subscriptionId) {
   const mine = list.data
     .filter((e) => {
       const o = e.data?.object;
-      return o?.id === subscriptionId || o?.subscription === subscriptionId;
+      return (
+        o?.id === subscriptionId ||
+        o?.subscription === subscriptionId ||
+        // An invoice points at its subscription through `parent` in this API
+        // version. Without this line the two invoice events — the ones that
+        // say a renewal was paid or refused — were filtered out of every
+        // replay, which is why the first failed renewal looked like it emitted
+        // nothing but subscription updates.
+        o?.parent?.subscription_details?.subscription === subscriptionId
+      );
     })
     .reverse();
   if (!mine.length) {
@@ -87,6 +96,63 @@ async function replaySince(since, subscriptionId) {
   }
   for (const e of mine) await deliver(e);
   return mine.length;
+}
+
+/**
+ * A customer on a **test clock**, so time can be moved instead of waited out.
+ *
+ * The three things nothing in this migration had ever seen — a trial reaching
+ * its last day, a cancellation landing at the period end, a renewal being
+ * refused — are all "seven days from now" events. A test clock is Stripe's own
+ * answer to that: the customer, its subscription and its invoices all live on a
+ * clock this script advances, and every webhook Stripe emits along the way is
+ * real.
+ *
+ * A clock customer cannot be an existing one — Stripe refuses to attach a clock
+ * to a customer that already has history — so this makes a fresh one and points
+ * the organization at it. `--drop-clock` puts the original back and deletes the
+ * clock with everything on it.
+ */
+async function clockCustomerFor(org) {
+  const clock = await stripe.testHelpers.testClocks.create({
+    frozen_time: Math.floor(Date.now() / 1000),
+    name: `postqueen dev ${org.id.slice(0, 8)}`,
+  });
+  const created = await stripe.customers.create({
+    name: `${org.name} (test clock)`,
+    email: `dev+clock-${org.id.slice(0, 8)}@postqueen.invalid`,
+    test_clock: clock.id,
+  });
+  await prisma.organization.update({
+    where: { id: org.id },
+    data: { paymentId: created.id },
+  });
+  console.log(`  clock ${clock.id}, customer ${created.id}`);
+  return created.id;
+}
+
+/** Move the clock forward and wait for Stripe to finish replaying the world. */
+async function advance(customer, days) {
+  const c = await stripe.customers.retrieve(customer);
+  const clockId = typeof c.test_clock === 'string' ? c.test_clock : c.test_clock?.id;
+  if (!clockId) {
+    throw new Error('This customer is not on a test clock — start with --clock.');
+  }
+  const clock = await stripe.testHelpers.testClocks.retrieve(clockId);
+  const to = clock.frozen_time + days * 86400;
+  console.log(
+    `advancing ${days} day(s) to ${new Date(to * 1000).toISOString().slice(0, 16)}`
+  );
+  // The clock id is a positional argument, not an option — passing it in the
+  // options bag makes Stripe complain that `test_clock` is an object.
+  await stripe.testHelpers.testClocks.advance(clockId, { frozen_time: to });
+  for (let i = 0; i < 120; i++) {
+    const now = await stripe.testHelpers.testClocks.retrieve(clockId);
+    if (now.status === 'ready') return now.frozen_time;
+    if (now.status === 'internal_failure') throw new Error('test clock failed');
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error('test clock did not settle');
 }
 
 async function customerFor(org) {
@@ -176,8 +242,38 @@ async function main() {
     where: { organizationId: orgId },
     orderBy: { createdAt: 'asc' },
   });
-  const customer = await customerFor(org);
-  const since = Math.floor(Date.now() / 1000) - 5;
+
+  if (has('drop-clock')) {
+    const c = org.paymentId
+      ? await stripe.customers.retrieve(org.paymentId).catch(() => null)
+      : null;
+    const clockId =
+      c && !c.deleted
+        ? typeof c.test_clock === 'string'
+          ? c.test_clock
+          : c.test_clock?.id
+        : null;
+    if (!clockId) {
+      console.log('This organization is not on a test clock — nothing to drop.');
+      return show();
+    }
+    console.log(`deleting clock ${clockId} and everything on it`);
+    await stripe.testHelpers.testClocks.del(clockId);
+    await prisma.organization.update({
+      where: { id: orgId },
+      data: { paymentId: null },
+    });
+    await prisma.subscription.deleteMany({ where: { organizationId: orgId } });
+    return show();
+  }
+
+  const customer = has('clock')
+    ? await clockCustomerFor(org)
+    : await customerFor(org);
+  // `--replay` re-delivers what a previous run emitted, so it has to look
+  // further back than the few seconds an action of its own needs.
+  const since =
+    Math.floor(Date.now() / 1000) - (has('replay') ? 3600 : 5);
 
   if (has('start')) {
     const existing = await currentSubscription(customer);
@@ -212,6 +308,17 @@ async function main() {
     console.log(`  ${sub.id} ${sub.status}`);
     await new Promise((r) => setTimeout(r, 2500));
     await replaySince(since, sub.id);
+    return show();
+  }
+
+  if (has('advance')) {
+    const days = parseFloat(arg('advance') || '8');
+    const sub = await currentSubscription(customer);
+    await advance(customer, days);
+    // Stripe emits the whole week's worth at once and takes a moment to finish.
+    await new Promise((r) => setTimeout(r, 4000));
+    const n = await replaySince(since, sub?.id);
+    console.log(`  ${n} event(s) replayed`);
     return show();
   }
 
