@@ -1827,3 +1827,40 @@ account already has, so "one payment" could reasonably mean one figure or four.
 Everything else for lifetime is ready and waiting on that number: the grant, the webhook, the
 24-hour window with its server-side `410`, the founding-member surface, and the page being reachable
 by a FREE account.
+
+### Granting lifetime, and eight screens seen for the first time
+
+The paywall replaces the whole shell for a FREE tier, so eight of the ten
+signed-in screens had never been photographed — 48 of 78 shots were one screen
+over and over. `scripts/grant-lifetime.mjs` writes the same subscription row
+`grantLifetimeFromPayment` writes, so this is not a third way to become a
+lifetime member; `--revoke` puts it back, and it refuses to touch a row it did
+not write.
+
+**It failed on the first real run, informatively:**
+
+```
+invalid input value for enum "SubscriptionTier": "CREATOR"
+```
+
+The ladder gives FREE → CREATOR, and this database's enum does not have CREATOR
+— `prisma db push` has never run here. That is the prerequisite `migrate-tiers.mjs`
+documents at the top, now demonstrated rather than described. Rather than push a
+schema change to the owner's dev database as a side effect of wanting a
+screenshot, the script gained `--tier`, and PRO — a value the enum has always
+had — was used instead.
+
+**What that immediately bought:**
+
+- The **founding-member block** rendered for the first time. It was written
+  three commits ago and had never been seen: badge, thanks line, and three
+  facts (4 elements counted). It picked the trial variant, correct for an
+  account that is lifetime *and* trialing.
+- The sweep reports **zero paywall shots** — thirteen screens, three widths,
+  both themes, all rendering their own content, **no overflow anywhere**.
+- `/billing` redirects to `/launches`, which is doc 03's fourth lifetime rule
+  (`main.billing.component.tsx:448`) working. It has been in the code the whole
+  migration and this is the first time anything confirmed it.
+
+The remaining `⚠` lines are the app's own redirects: `/agents → /agents/new`
+and the lifetime billing redirect above.
