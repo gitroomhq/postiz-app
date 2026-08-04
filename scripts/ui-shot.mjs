@@ -303,61 +303,35 @@ try {
 
       if (drag) {
         const [fromSel, toSel] = drag.split('|');
-        const { result: pts } = await cdp.send('Runtime.evaluate', {
+        // react-dnd's HTML5 backend listens for DOM drag events, so the drag is
+        // performed in the page with a single DataTransfer carried across
+        // dragstart → dragover → drop. CDP's own drag interception was tried
+        // first and never fired for these cards; this is the route testing
+        // libraries take, and it exercises the same listeners the browser would.
+        const { result: r } = await cdp.send('Runtime.evaluate', {
           expression: `(() => {
-            const a = document.querySelector(${JSON.stringify(fromSel)});
-            const b = document.querySelector(${JSON.stringify(toSel)});
-            if (!a || !b) return '';
-            const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-            return JSON.stringify({
-              x1: ra.left + ra.width / 2, y1: ra.top + ra.height / 2,
-              x2: rb.left + rb.width / 2, y2: rb.top + rb.height / 2,
-            });
+            const from = document.querySelector(${JSON.stringify(fromSel)});
+            const to = document.querySelector(${JSON.stringify(toSel)});
+            if (!from) return 'no source';
+            if (!to) return 'no target';
+            const dt = new DataTransfer();
+            const at = (el) => {
+              const r = el.getBoundingClientRect();
+              return { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+            };
+            const fire = (el, type, pt) => el.dispatchEvent(
+              new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, ...pt })
+            );
+            fire(from, 'dragstart', at(from));
+            fire(to, 'dragenter', at(to));
+            fire(to, 'dragover', at(to));
+            fire(to, 'drop', at(to));
+            fire(from, 'dragend', at(from));
+            return 'dispatched';
           })()`,
           returnByValue: true,
         });
-        if (!pts.value) {
-          throw new Error(`--drag selectors matched nothing: ${drag}`);
-        }
-        const { x1, y1, x2, y2 } = JSON.parse(pts.value);
-
-        // The calendar uses react-dnd's HTML5 backend, which listens for
-        // dragstart/drop rather than pointer events — so pressing and moving a
-        // mouse moves nothing, however faithfully it is simulated. Chrome can
-        // hand the drag payload back instead of performing the drag; then the
-        // drop is dispatched at the target as a real drag event.
-        let payload = null;
-        cdp.on('Input.dragIntercepted', ({ data }) => {
-          payload = data;
-        });
-        await cdp.send('Input.setInterceptDrags', { enabled: true });
-
-        const mouse = (type, x, y, buttons) =>
-          cdp.send('Input.dispatchMouseEvent', {
-            type, x, y, buttons,
-            ...(type === 'mousePressed' || type === 'mouseReleased'
-              ? { button: 'left', clickCount: 1 }
-              : {}),
-          });
-        await mouse('mouseMoved', x1, y1, 0);
-        await mouse('mousePressed', x1, y1, 1);
-        for (let i = 1; i <= 6 && !payload; i++) {
-          await mouse('mouseMoved', x1 + i * 4, y1 + i * 4, 1);
-          await sleep(30);
-        }
-
-        if (!payload) {
-          console.log('  ⚠ drag was not intercepted — nothing to drop');
-          await mouse('mouseReleased', x1, y1, 0);
-        } else {
-          for (const type of ['dragEnter', 'dragOver', 'drop']) {
-            await cdp.send('Input.dispatchDragEvent', {
-              type, x: x2, y: y2, data: payload,
-            });
-            await sleep(40);
-          }
-        }
-        await cdp.send('Input.setInterceptDrags', { enabled: false });
+        console.log(`  drag: ${r.value}`);
         const after = await settle();
         timedOut = timedOut || after.timedOut;
       }

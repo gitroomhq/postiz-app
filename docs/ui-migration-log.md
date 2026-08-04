@@ -2765,3 +2765,32 @@ plain about what that means: every screen the design specifies renders with real
 data in it, at every width, in both themes, with nothing overflowing. What is
 *not* claimed is that every interaction has been exercised — drag and drop
 specifically has not, and says so.
+
+### Drag and drop: three mechanisms tried, none proved it
+
+For completeness, because "unverified" is a weaker statement than the work
+behind it:
+
+1. **Pointer events** (`Input.dispatchMouseEvent`, press + interpolated moves +
+   release). Moved nothing. react-dnd's HTML5 backend listens for
+   `dragstart`/`drop`, not pointer events, so these never reached it.
+2. **CDP drag interception** (`Input.setInterceptDrags` +
+   `Input.dispatchDragEvent`). Chrome never fired `Input.dragIntercepted` for a
+   press-and-move on a post card, so there was no payload to drop.
+3. **DOM drag events in the page** — a single `DataTransfer` carried across
+   `dragstart → dragenter → dragover → drop → dragend`, which is how testing
+   libraries drive react-dnd. Events dispatched; no `publishDate` moved.
+
+The drop zone was found correctly along the way — `[data-cell="1"]` at
+`calendar.tsx:745`, carrying `data-filled` and `data-past`. The last attempt
+aimed at a future empty cell and the selector matched nothing, which suggests
+`data-past` does not render the value I assumed, and is where a fourth attempt
+should start.
+
+**Left as the one interaction that is built, present in the DOM, and
+unverified.** The tool keeps the DOM-event version, which is the closest of the
+three and reports what it dispatched, so the next attempt begins further along
+than this one did.
+
+What is *not* claimed anywhere: that drag and drop works. It may well; nothing
+here has shown it.
