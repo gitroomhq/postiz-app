@@ -139,7 +139,14 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status !== 'active',
+      // This argument is the organization's trial flag, and it used to read
+      // `status !== 'active'` — which is true of `past_due`, `unpaid`,
+      // `incomplete` and `paused` as well as `trialing`. A test clock caught it:
+      // advancing to a renewal the card refused left the subscription
+      // `past_due`, and the customer was written back into a **trial they were
+      // not on** — re-locking X and putting the trial banner in front of
+      // somebody who had been paying for a month. Only one status is a trial.
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -148,6 +155,7 @@ export class StripeService {
       event.data.object.cancel_at
     );
   }
+
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
     const {
       uniqueId,
@@ -168,7 +176,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status !== 'active',
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
