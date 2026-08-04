@@ -802,6 +802,8 @@ export class PostsService {
     } catch (err) {}
   }
 
+  // Returns false when a running workflow may have survived - the caller must
+  // not arm a replacement then, or the post would have two concurrent chains.
   private async terminatePostWorkflows(postId: string) {
     try {
       const workflows = this._temporalService.client
@@ -821,9 +823,15 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) {
+          return false;
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      return false;
+    }
+
+    return true;
   }
 
   private async hasRunningPostWorkflow(postId: string) {
@@ -834,7 +842,7 @@ export class PostsService {
           query: `postId="${postId}" AND ExecutionStatus="Running"`,
         });
 
-      for await (const executionInfo of workflows) {
+      for await (const _ of workflows) {
         return true;
       }
     } catch (err) {}
@@ -863,7 +871,12 @@ export class PostsService {
     }
 
     if (scheduleChanged) {
-      await this.terminatePostWorkflows(after.id);
+      // if termination failed, keep the old chain instead of arming a second
+      // one: v1.0.7 sleepers re-read the row at wake, and a later save
+      // self-heals onto the new schedule
+      if (!(await this.terminatePostWorkflows(after.id))) {
+        return;
+      }
       await this.startRecycleWorkflow(
         taskQueue,
         after.id,

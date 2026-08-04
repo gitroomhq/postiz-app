@@ -217,7 +217,7 @@ export class PostActivity {
       return false;
     }
 
-    if (post.deletedAt) {
+    if (!post || post.deletedAt) {
       return false;
     }
 
