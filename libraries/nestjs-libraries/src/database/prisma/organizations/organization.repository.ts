@@ -192,6 +192,16 @@ export class OrganizationRepository {
           },
         },
       },
+      // `auth.middleware.ts:92` falls back to `organization[0]` when the request
+      // carries no `showorg`, and without an order Postgres is free to return
+      // these in any order it likes. With one organization that never showed;
+      // the moment a second one existed here, a signed-in account resolved to
+      // the *new, empty* workspace on its own and every screen turned into the
+      // checkout paywall. Oldest first makes the default the one the account
+      // started with, which is what the fallback was always assumed to mean.
+      orderBy: {
+        createdAt: 'asc',
+      },
       include: {
         users: {
           where: {
