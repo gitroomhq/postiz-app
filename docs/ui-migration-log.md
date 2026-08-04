@@ -2873,3 +2873,57 @@ looked at — `not_started`, `trial`, `active`, `canceling`, `ended`, `lifetime`
 `discount`, both need a completed card payment, which is the owner's to make.
 
 Member removed and the account restored to lifetime CREATOR.
+
+---
+
+## Running this from source — four things `.env` does not tell you
+
+Every one of these cost time in this session, so they are written as what
+happened rather than as advice.
+
+**`nest start` must run from `apps/backend`.** From the repository root it picks
+up the wrong tsconfig, reports 5950 errors, and — before failing — writes **1484
+compiled `.js`/`.js.map` files into the source tree**. One of them was
+`apps/frontend/src/proxy.js`, sitting beside `proxy.ts`; Next served the stale
+copy, the auth middleware stopped seeing the session cookie, and an hour went
+into blaming cookies.
+
+**`UPLOAD_DIRECTORY` must be overridden, for both apps.** `.env` sets `/uploads`,
+which exists inside the container and nowhere on a Mac. The backend answers 500
+with `ENOENT: mkdir '/uploads/…'`, and the frontend serves uploads from its own
+route handler reading the same variable — so both need it or thumbnails silently
+fail to decode while every `<img>` still counts as present.
+
+**`DATABASE_URL` must be overridden.** `.env` points at the container network;
+from source it is `localhost:15432`.
+
+**Check the port, not the process.** A stale Next server can hold 4200 while
+`pkill -f "next dev"` reports success, and every restart lands beside it. This
+went unnoticed across about twelve restarts. `lsof -ti:4200` is the honest check.
+
+## The seeded data, and how to remove it
+
+Four scripts, each with `--dry` and `--revoke`, each refusing to touch anything
+it did not write:
+
+| script | what it left |
+|---|---|
+| `grant-lifetime.mjs` | a lifetime CREATOR subscription |
+| `seed-dev-channel.mjs` | "Dev placeholder (not connected)", invalid token |
+| `seed-dev-posts.mjs` | six posts, one of them moved by the drag test |
+| `stripe-test-fixtures.mjs` | eight prices, Stripe **test mode** only |
+
+To clear everything, in this order:
+
+```
+node scripts/seed-dev-posts.mjs   --org <id> --revoke
+node scripts/seed-dev-channel.mjs --org <id> --revoke
+node scripts/grant-lifetime.mjs   --org <id> --revoke
+node scripts/stripe-test-fixtures.mjs --revoke      # archives, never deletes
+```
+
+Run each with `--dry` first; they say what they would remove. The three test
+images (`pq-test-*.png`) are deleted from the Media screen.
+
+**Connecting a real channel:** remove the placeholder first, or the calendar
+keeps a row that can never publish.
