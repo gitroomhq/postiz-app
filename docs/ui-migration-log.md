@@ -2158,3 +2158,27 @@ colour inside each icon, so no caller can theme one even when it should.
 Recording the failed attempt because the alternative was to publish 41 findings
 that a first glance would have refuted, and this migration has already been
 caught once by a search whose shape decided its answer.
+
+### One of the four suspects cleared, by looking at it
+
+The 42 white fills live in only four icon components inside
+`ui/icons/index.tsx`: `SettingsIcon`, `DeleteCircleIcon`, `DragHandleIcon`,
+`NoMediaIcon`. That is a far smaller problem than fourteen scattered sites.
+
+`NoMediaIcon` was the strongest suspect — an empty-state illustration, white
+fill, transparent ground, and the light theme behind it. Exactly the shape of
+the FAQ plus-icon bug.
+
+**It is correct.** Screenshotted at 1440 in the light theme: the illustration
+draws as lilac rounded squares with white picture glyphs *inside* them. White on
+purple. Had I trusted the heuristic and "fixed" it, I would have made a working
+illustration invisible against its own background.
+
+The other three are all on media tiles or in a modal, where a white glyph over a
+photograph is the usual and correct choice — but they have not been looked at,
+and after this they will be looked at rather than reasoned about.
+
+Also confirmed incidentally, since the screenshot shows the whole page: the
+light theme of the Media screen — rail, nav, tabs, the Grid/List switch, the
+Upload button — reads correctly. This is the first time that page has been seen
+in the light theme since billing was switched on.
