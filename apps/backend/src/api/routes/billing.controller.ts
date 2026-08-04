@@ -153,6 +153,11 @@ export class BillingController {
     return this._stripeService.prorate(org.id, body);
   }
 
+  @Get('/invoices')
+  async getInvoices(@GetOrgFromRequest() org: Organization) {
+    return this._stripeService.getCharges(org.id);
+  }
+
   @Get('/charges')
   async getCharges(
     @GetUserFromRequest() user: User,

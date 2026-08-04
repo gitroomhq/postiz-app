@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Evet, kuponu iptal et",
   "cancel_coupon_title": "Kupon İptal Edilsin mi?",
   "cancel_coupon_failed": "Kupon iptal edilemedi",
-  "cancel_coupon_success": "Kupon iptal edildi"
+  "cancel_coupon_success": "Kupon iptal edildi",
+  "invoices": "Faturalar"
 }

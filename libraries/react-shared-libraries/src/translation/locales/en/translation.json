@@ -732,5 +732,6 @@
   "yes_cancel_coupon": "Yes, cancel coupon",
   "cancel_coupon_title": "Cancel Coupon?",
   "cancel_coupon_failed": "Could not cancel the coupon",
-  "cancel_coupon_success": "Coupon cancelled"
+  "cancel_coupon_success": "Coupon cancelled",
+  "invoices": "Invoices"
 }

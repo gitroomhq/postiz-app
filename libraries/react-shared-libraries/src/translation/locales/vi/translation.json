@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Đúng, hủy mã giảm giá",
   "cancel_coupon_title": "Hủy mã giảm giá?",
   "cancel_coupon_failed": "Không thể hủy mã giảm giá",
-  "cancel_coupon_success": "Đã hủy mã giảm giá"
+  "cancel_coupon_success": "Đã hủy mã giảm giá",
+  "invoices": "Hóa đơn"
 }
