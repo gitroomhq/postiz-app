@@ -1903,3 +1903,24 @@ does not depend on the screen.
 **Not exercised:** the open window and a real payment. That needs an account
 younger than a day and a card, and a test purchase against the owner's Stripe
 account is theirs to make, not mine.
+
+### doc 03's four lifetime rules, verified at last
+
+They have been in the code since before this migration and step 8 checked them
+by *reading*. With a lifetime account they can be counted:
+
+| rule | where | measured |
+|---|---|---|
+| Rail's Upgrade row hidden | `rail.tsx:133` | `a[href="/billing"]` → **0** |
+| Billing filtered from the menu | `top.menu.tsx:290` | same count, same 0 |
+| `{Tier} tier` on the channels column | `launches.component.tsx:641` | `"Pro tier"`, count **1** |
+| Billing redirects a lifetime user away | `main.billing.component.tsx:448` | sweep: `/billing → /launches` |
+
+The first two share a measurement because they share a symptom: with both
+applied there is no link to `/billing` anywhere in the chrome. If either had
+lapsed the count would be 1, and step 8's reading could not have told the
+difference between "both correct" and "one correct, one dead".
+
+The tier label gained `data-lifetime-tier` so it could be counted at all — the
+same reason the tour's ring and the plan cards gained theirs. A rule with no
+handle is a rule that gets verified by squinting.

@@ -639,7 +639,9 @@ export const LaunchesComponent = () => {
             </div>
             <div className="mt-[5px] text-center flex flex-col">
               {billingEnabled && user?.isLifetime && (
-                <div>{capitalize(user?.tier?.current || '')} tier</div>
+                <div data-lifetime-tier="1">
+                  {capitalize(user?.tier?.current || '')} tier
+                </div>
               )}
               <div>
                 {process.env.NEXT_PUBLIC_VERSION
