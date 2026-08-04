@@ -2070,3 +2070,42 @@ calendar, which is still waiting on a connected channel.
 | calendar views | day / week / month / list | same four |
 
 One gap found so far, and it is the one already known to be waiting on billing.
+
+### Step 5, continued: the pages and every overlay
+
+**Pages.** `/analytics`, `/media`, `/plugs`, `/third-party`, `/settings` all
+render their own heading — Analytics, Media, Plugs, Integrations, Settings —
+with no overflow at 1440. These are the screens that were behind the paywall
+until the lifetime grant; this is the first time any of them has been looked at
+since billing was switched on.
+
+**Overlays.** `overlayVals()` enumerates twenty:
+
+```
+rename · alttext · feedback · support · extension · member · webhook · autopost
+set · signature · apikey · upload · library · design · oauthapp · wizard
+botpicture · customer · timetable · customurl
+```
+
+**All twenty exist here.** Four came back missing on the first pass —
+`apikey`, `design`, `botpicture`, `customurl` — and all four were my grep
+patterns being too narrow, not absences: they are `ApiKeyDto`/reveal,
+`Polonto`/`designMedia`, `BotPicture`/`canChangeProfilePicture`, and the custom
+URL entry on the channel menu. Worth writing down that the first answer was
+wrong, because "four overlays missing" would have been four pieces of work
+invented out of a bad search.
+
+**Step 5 status**
+
+| surface | result |
+|---|---|
+| rail, three states | matches (236 / 60 / 264) |
+| header | matches (56px, both themes) |
+| settings tabs | one gap: **Plan & invoices** |
+| calendar views | matches (day / week / month / list) |
+| non-calendar pages | all render, headings match, no overflow |
+| overlays | all twenty present |
+
+Still ahead: how each grid *draws* (hour rows, cell hairlines, card placement),
+which needs a populated calendar, and the light-theme pass over the pages now
+that they are reachable.
