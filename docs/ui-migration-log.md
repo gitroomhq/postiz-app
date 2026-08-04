@@ -1995,3 +1995,26 @@ Still to compare in this step: header and user menu (`chromeVals`), Settings
 the non-calendar pages (`pagesVals`), and every overlay (`overlayVals`) — with
 the owner's list in mind: lines, panels, centring, scrolling, both themes,
 profile and settings.
+
+### Step 5, continued: the header
+
+`…dc.html:181` and `:185` give the header `height:56px`. Probed here at 1440 in
+both themes:
+
+```
+dark   rect 0,0,1440,56   bg rgb(11, 11, 13)
+light  rect 0,0,1440,56   bg rgb(248, 248, 250)
+```
+
+56px in both, full width, and the background follows the theme rather than
+being fixed — which is the thing the `.dark`/`.light` body-class approach exists
+to get right, since there are no `dark:` utilities anywhere in this app.
+
+The logo cell beside it is `w-[236px]` with `border-e border-pqRailLine`
+(`layout.component.tsx:74`), so the vertical hairline under the logo lines up
+with the rail's edge rather than floating near it. That is the alignment the
+owner asked to be careful about, and it is structural here rather than a
+coincidence of two numbers that happen to match: both read the same 236.
+
+**Still to compare:** the user menu, Settings (`settingsVals`), the calendar
+toolbar and grids, the non-calendar pages, and the overlays.
