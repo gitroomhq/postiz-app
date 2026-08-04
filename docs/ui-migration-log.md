@@ -2624,3 +2624,32 @@ It had been on that screen since before this migration, in the one place a
 person looks hardest before paying.
 
 Account restored to lifetime CREATOR afterwards.
+
+### `ended`: the behaviour was right, the words were never written
+
+Doc 03 asks for a lapsed paywall — *"Pick up where you left off"*, no trial
+checkmarks, full price due today. Searched for it: **zero occurrences** of that
+copy anywhere in the frontend. The state had never been built.
+
+But half of it already worked. `first.billing.component.tsx:184` gates the three
+trial checkmarks on `user.allowTrial`, so an account that has already used its
+trial correctly sees none — nobody was being offered a trial they cannot have.
+What never followed that signal was the **headline**, which said "Grow your
+social presence" to a returning subscriber who has already grown one.
+
+It follows it now:
+
+```
+allowTrial  true  → "Grow your social presence with PostQueen"
+allowTrial  false → "Pick up where you left off with PostQueen"
+```
+
+Verified by producing the state — subscription deleted, `allowTrial` false — and
+reading the rendered headline back.
+
+**Not built: the amber "Your subscription ended on…".** In this state the
+subscription row is gone, so nothing on the client knows the date. Same rule as
+the lifetime footnote: the sentence that can be true is written, the one that
+would need an invented date is not.
+
+Account restored to lifetime CREATOR.

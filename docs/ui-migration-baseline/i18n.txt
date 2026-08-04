@@ -126,6 +126,7 @@ billing_features
 billing_grow_your
 billing_have_discount_coupon
 billing_invalid_coupon
+billing_left_off_highlight
 billing_monthly
 billing_months_free
 billing_months_free_upto
@@ -140,6 +141,7 @@ billing_payment
 billing_per_month
 billing_per_month_short
 billing_per_year
+billing_pick_up_where
 billing_powered_by_stripe
 billing_remove
 billing_see_the_power
@@ -147,6 +149,7 @@ billing_social_presence_highlight
 billing_subscription
 billing_then
 billing_unlimited
+billing_with_postqueen_again
 billing_with_postqueen_line
 billing_yearly
 billing_your_7_day_trial_is

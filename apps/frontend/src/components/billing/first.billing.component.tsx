@@ -152,11 +152,37 @@ export const FirstBillingComponent = () => {
     return (
       <>
         <div className="text-[46px] font-[600] leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
-          {t('billing_grow_your', 'Grow your')}{' '}
-          <span className="text-pqPink">
-            {t('billing_social_presence_highlight', 'social presence')}
-          </span>{' '}
-          {t('billing_with_postqueen_line', 'with PostQueen')}
+          {/* Doc 03 asks for a different headline once somebody has subscribed
+              before — its `ended` state, "Pick up where you left off". This
+              screen said "Grow your social presence" to everybody, including a
+              lapsed subscriber who has already grown one.
+
+              `allowTrial` is the signal already available and already correct:
+              it gates the three trial checkmarks below, so a lapsed account
+              rightly does not see a trial it cannot have. The headline simply
+              never followed it.
+
+              The design also wants an amber "Your subscription ended on…". No
+              date is written for that: the subscription row is gone in this
+              state, so there is nothing here that knows when. */}
+          {user?.allowTrial ? (
+            <>
+              {t('billing_grow_your', 'Grow your')}{' '}
+              <span className="text-pqPink">
+                {t('billing_social_presence_highlight', 'social presence')}
+              </span>
+            </>
+          ) : (
+            <>
+              {t('billing_pick_up_where', 'Pick up where you')}{' '}
+              <span className="text-pqPink">
+                {t('billing_left_off_highlight', 'left off')}
+              </span>
+            </>
+          )}{' '}
+          {user?.allowTrial
+            ? t('billing_with_postqueen_line', 'with PostQueen')
+            : t('billing_with_postqueen_again', 'with PostQueen')}
         </div>
 
         {!!onboardingVideoUrl && (

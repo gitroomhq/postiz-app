@@ -1,4 +1,4 @@
-allowTrial 6
+allowTrial 9
 billingEnabled 30
 isTrailing 6
 tier.ai 4
