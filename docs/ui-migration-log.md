@@ -2182,3 +2182,23 @@ Also confirmed incidentally, since the screenshot shows the whole page: the
 light theme of the Media screen — rail, nav, tabs, the Grid/List switch, the
 Upload button — reads correctly. This is the first time that page has been seen
 in the light theme since billing was switched on.
+
+### `DeleteCircleIcon`: not a bug either, but it hides a real one
+
+Second of the four looked at rather than reasoned about. It is a **white ellipse
+with a red `#FF3535` mark on top** (`ui/icons/index.tsx:613–614`), sitting at the
+corner of a media tile, revealed on hover.
+
+The white is a backing disc — it exists so the mark stays legible over a
+photograph, which is where this icon spends its life. On the light page
+background the disc simply blends, and the red mark still carries the meaning.
+**Not a bug.** Two of four suspects now cleared by looking.
+
+**But the red is a raw hex in a component**, twice in that file, and the
+non-negotiable about colour says otherwise. Worse, there is no token to move it
+to: the palette has `pqWarn` and the amber family, and **nothing for danger**.
+The billing tick had `text-pqOk` waiting for it; this has nothing.
+
+So this is a token gap, not a component fix: `--danger` needs to exist in
+`colors.scss` for both themes before `#FF3535` can go anywhere. Recorded as
+that, rather than pointed at the nearest amber and called done.
