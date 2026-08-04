@@ -629,6 +629,7 @@ label_your_brand
 language
 last_github_trending
 launches
+lifetime_buy
 lifetime_window_closed
 lifetime_window_open
 link

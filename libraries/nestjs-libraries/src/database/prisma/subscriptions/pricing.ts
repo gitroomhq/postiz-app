@@ -282,6 +282,20 @@ export const monthsFree = (tier: string) => {
 export const LIFETIME_WINDOW_HOURS = 24;
 
 /**
+ * What the founding-member offer costs, in whole dollars.
+ *
+ * One figure for everybody, decided by the owner on 2026-08-04. The *tier* it
+ * grants still comes from `lifetimeLadder` — FREE buys CREATOR, a CREATOR buys
+ * GROWTH, and at the top a further purchase buys channels instead — so the same
+ * payment is worth more to an account that already pays. That is the ladder's
+ * existing behaviour and predates this price.
+ *
+ * Here rather than in the checkout code because the screen that shows the price
+ * and the session that charges it must not be able to disagree.
+ */
+export const LIFETIME_PRICE = 49;
+
+/**
  * The founding-member window for an account, from its registration date.
  *
  * Shared rather than computed in the UI, because the screen that draws the

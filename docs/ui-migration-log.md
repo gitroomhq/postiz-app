@@ -1864,3 +1864,42 @@ had — was used instead.
 
 The remaining `⚠` lines are the app's own redirects: `/agents → /agents/new`
 and the lifetime billing redirect above.
+
+### The lifetime purchase, finished
+
+`LIFETIME_PRICE = 49` — one figure for everybody, the owner's call. It lives in
+`pricing.ts` beside everything else about what a plan costs, so the screen that
+shows the price and the session that charges it read the same constant. The
+*tier* still comes from the ladder, so the same $49 is worth more to an account
+that already pays; that is the ladder's existing behaviour and predates the
+price.
+
+`createLifetimeCheckout` is `mode: 'payment'`, and two consequences of that are
+load-bearing rather than incidental:
+
+- The metadata goes on the **session**, not `subscription_data`, because there
+  is no subscription to hang it from — and `stripe.controller.ts:33` drops any
+  event whose `metadata.service` is not ours, so without the tag the app would
+  discard its own webhook.
+- It emits `checkout.session.completed`, which is why that branch was written
+  three commits *before* this method. At no point could a session exist that
+  took money with nothing to answer it.
+
+`price_data` rather than a stored Stripe price: a price object created by hand
+in a dashboard is one more place for the number to drift from `pricing.ts`.
+
+**Verified end to end on the closed-window case**, which is the state this
+account is actually in:
+
+```
+POST /billing/lifetime-checkout  → 410  "The founding-member offer has closed."
+POST /billing/lifetime           → 410  same
+```
+
+Both doors, one rule. The button is only rendered inside the open branch of the
+countdown, but that is a UI decision — the refusal above is the rule, and it
+does not depend on the screen.
+
+**Not exercised:** the open window and a real payment. That needs an account
+younger than a day and a card, and a test purchase against the owner's Stripe
+account is theirs to make, not mine.

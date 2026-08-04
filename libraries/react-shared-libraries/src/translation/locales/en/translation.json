@@ -979,5 +979,6 @@
   "lt_never": "Never",
   "lt_future_updates": "FUTURE UPDATES",
   "lt_included": "Included",
-  "lt_channels": "CHANNELS"
+  "lt_channels": "CHANNELS",
+  "lifetime_buy": "Become a founding member — ${{price}}"
 }

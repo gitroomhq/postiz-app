@@ -243,6 +243,24 @@ export class BillingController {
     return refund;
   }
 
+  @Post('/lifetime-checkout')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async lifetimeCheckout(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    // Same window as redemption, same 410. The button is hidden once the offer
+    // closes, but a hidden button is a UI decision and this is the rule.
+    if (!lifetimeWindow(user.createdAt).open) {
+      throw new HttpException(
+        { success: false, message: 'The founding-member offer has closed.' },
+        HttpStatus.GONE
+      );
+    }
+
+    return this._stripeService.createLifetimeCheckout(org);
+  }
+
   @Post('/lifetime')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async lifetime(

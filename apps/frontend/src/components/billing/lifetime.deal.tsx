@@ -5,6 +5,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  LIFETIME_PRICE,
   lifetimeWindow,
   nextLifetimeTier,
   pricing,
@@ -75,13 +76,62 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
       >
         {parts.join(':')}
       </span>
-      <span className="text-[13px] leading-[1.45] text-pqText">
+      <span className="flex-1 text-[13px] leading-[1.45] text-pqText">
         {t(
           'lifetime_window_open',
           'left to claim founding-member pricing. The offer closes 24 hours after you sign up.'
         )}
       </span>
+      <BuyLifetime />
     </div>
+  );
+};
+
+/**
+ * The purchase itself.
+ *
+ * Only ever rendered inside the open branch above, so it cannot offer a closed
+ * deal — and the route refuses anyway, because a hidden button is a UI decision
+ * and the window is a rule.
+ *
+ * The price comes from `pricing.ts`, the same constant the checkout session
+ * charges. Reading it here rather than writing "$49" in the markup is what
+ * stops the screen and the charge from disagreeing.
+ */
+const BuyLifetime: FC = () => {
+  const t = useT();
+  const fetch = useFetch();
+  const toast = useToaster();
+  const [busy, setBusy] = useState(false);
+
+  const buy = useCallback(async () => {
+    setBusy(true);
+    try {
+      const { url } = await (
+        await fetch('/billing/lifetime-checkout', { method: 'POST' })
+      ).json();
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      toast.show(t('something_went_wrong', 'Something went wrong'), 'warning');
+    } finally {
+      setBusy(false);
+    }
+  }, [fetch, t, toast]);
+
+  return (
+    <button
+      type="button"
+      data-lifetime-buy="1"
+      disabled={busy}
+      onClick={buy}
+      className="shrink-0 rounded-pqSm bg-pqBrand px-[16px] py-[9px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-60"
+    >
+      {t('lifetime_buy', 'Become a founding member — ${{price}}', {
+        price: LIFETIME_PRICE,
+      })}
+    </button>
   );
 };
 

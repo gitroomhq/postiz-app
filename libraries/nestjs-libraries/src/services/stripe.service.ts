@@ -8,6 +8,7 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { groupBy } from 'lodash';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
 import {
+  LIFETIME_PRICE,
   nextLifetimeTier,
   PaidTier,
   pricing,
@@ -1211,6 +1212,61 @@ export class StripeService {
       currency: preview.currency,
       subscriptionCancelled: preview.subscriptionIds.length > 0,
     };
+  }
+
+  /**
+   * A one-off checkout session for the founding-member offer.
+   *
+   * `mode: 'payment'`, not `'subscription'` — there is nothing to renew, which
+   * is the whole product. Two consequences follow and both are load-bearing:
+   *
+   * - The metadata goes on the **session**, not on `subscription_data`, because
+   *   there is no subscription to hang it from. `stripe.controller.ts` reads
+   *   `data.object.metadata.service` to decide whether an event is ours and
+   *   drops anything else, so without the tag this app would discard its own
+   *   webhook.
+   * - It emits `checkout.session.completed` rather than any of the
+   *   `customer.subscription.*` events. That branch exists already; it was
+   *   written before this method so a half-finished state could never take
+   *   money with nothing to answer it.
+   *
+   * `price_data` rather than a stored price: the amount lives in `pricing.ts`
+   * next to everything else about what a plan costs, and a Stripe price object
+   * created by hand is one more place for the number to drift.
+   */
+  async createLifetimeCheckout(organization: Organization) {
+    const customer = await this.createOrGetCustomer(organization);
+
+    const { url } = await stripe.checkout.sessions.create({
+      customer,
+      mode: 'payment',
+      cancel_url: process.env['FRONTEND_URL'] + '/billing/lifetime?cancel=true',
+      success_url:
+        process.env['FRONTEND_URL'] + '/billing/lifetime?purchased=true',
+      automatic_tax: { enabled: true },
+      customer_update: { address: 'auto' },
+      billing_address_collection: 'required',
+      metadata: {
+        service: SUBSCRIPTION_SERVICE_TAG,
+        organizationId: organization.id,
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'usd',
+            unit_amount: LIFETIME_PRICE * 100,
+            product_data: {
+              name: 'PostQueen — founding member',
+              description:
+                'One payment. Your plan stays unlocked with nothing to renew.',
+            },
+          },
+        },
+      ],
+    });
+
+    return { url };
   }
 
   /**
