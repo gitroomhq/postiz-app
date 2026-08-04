@@ -5,8 +5,14 @@
 //
 //   node scripts/dev-state.mjs --org <id> --tier GROWTH --trial --dry
 //   node scripts/dev-state.mjs --org <id> --tier CREATOR --lifetime
+//   node scripts/dev-state.mjs --org <id> --created-days-ago 8
 //   node scripts/dev-state.mjs --org <id> --show
 //   node scripts/dev-state.mjs --org <id> --reset
+//
+// `--created-days-ago N` moves the organization's registration date, which is
+// the only thing `trialWindow()` reads. It is how the seventh day is reached
+// without waiting a week: day 1 and day 6 are inside the trial, day 8 is past
+// it, and the app has to agree at each point.
 //
 // Why it exists: every screen in this migration had been looked at on one
 // account, in one state. The tiers differ in ways that are visible —
@@ -41,21 +47,33 @@ const IDENTIFIER = 'dev-granted-lifetime';
 
 const prisma = new PrismaClient();
 
+const TRIAL_DAYS = 7;
+
 async function show() {
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { name: true, isTrailing: true, allowTrial: true },
+    select: { name: true, isTrailing: true, allowTrial: true, createdAt: true },
   });
   const sub = await prisma.subscription.findUnique({
     where: { organizationId: orgId },
     select: { subscriptionTier: true, totalChannels: true, isLifetime: true, cancelAt: true },
   });
+  const age = org?.createdAt
+    ? (Date.now() - org.createdAt.getTime()) / 86400000
+    : NaN;
   console.log(
     `  ${org?.name}: ${sub ? sub.subscriptionTier : 'no subscription'}` +
       `${sub ? ` · ${sub.totalChannels} channels` : ''}` +
       `${sub?.isLifetime ? ' · lifetime' : ''}` +
       `${sub?.cancelAt ? ' · cancelling' : ''}` +
       ` · trial=${org?.isTrailing} · allowTrial=${org?.allowTrial}`
+  );
+  // The stored flag and the derived one, side by side — they disagree once the
+  // seventh day passes, and that disagreement is the whole point.
+  console.log(
+    `  created ${age.toFixed(1)} days ago · trial window ${
+      age < TRIAL_DAYS ? `open, ${(TRIAL_DAYS - age).toFixed(1)} days left` : 'closed'
+    }`
   );
 }
 
@@ -64,6 +82,21 @@ async function main() {
     console.error('--org <id> is required.');
     process.exitCode = 2;
     return;
+  }
+
+  const daysAgo = arg('created-days-ago');
+  if (daysAgo !== undefined) {
+    const when = new Date(Date.now() - parseFloat(daysAgo) * 86400000);
+    console.log(
+      `${dry ? '[dry] would move' : 'moving'} registration to ${when.toISOString()}`
+    );
+    if (!dry) {
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: { createdAt: when },
+      });
+    }
+    if (!has('tier') && !has('reset') && !has('none')) return show();
   }
 
   if (has('show')) return show();

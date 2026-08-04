@@ -314,3 +314,38 @@ export const lifetimeWindow = (createdAt?: string | Date | null) => {
   const msLeft = endsAt.getTime() - Date.now();
   return { endsAt, msLeft: Math.max(0, msLeft), open: msLeft > 0 };
 };
+
+/** How long a free trial runs, from the organization's registration. */
+export const TRIAL_DAYS = 7;
+
+/**
+ * The free-trial window for an organization, from its registration date.
+ *
+ * `Organization.isTrailing` records that a trial **started**. Nothing recorded
+ * that one had ended: the flag is cleared in exactly two places — Stripe's
+ * `customer.subscription.updated`, and the "End free trial" button. A founding
+ * member has no Stripe subscription, so no webhook is ever coming for them, and
+ * nothing is scheduled anywhere in this codebase to notice. Somebody who bought
+ * the lifetime deal and never pressed the button therefore stayed on trial
+ * forever, with X locked and the trial banner up.
+ *
+ * So the end is derived, the same way `lifetimeWindow` derives the 24-hour
+ * offer: the row says a trial began, this says whether it is still running. No
+ * column, no cron, and nothing to drift.
+ *
+ * Read in one place — `auth.middleware.ts`, where `req.org` is assembled — so
+ * every consumer downstream (the X lock, trial-only video, the trial banner,
+ * `/billing/is-trial-finished`) gets the same answer without being patched
+ * individually.
+ */
+export const trialWindow = (createdAt?: string | Date | null) => {
+  const started = createdAt ? new Date(createdAt).getTime() : NaN;
+  if (!started || Number.isNaN(started)) {
+    // Unlike the lifetime offer, the safe reading here is *open*: a missing
+    // registration date must not cut somebody's trial short.
+    return { endsAt: null, msLeft: 0, open: true };
+  }
+  const endsAt = new Date(started + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  const msLeft = endsAt.getTime() - Date.now();
+  return { endsAt, msLeft: Math.max(0, msLeft), open: msLeft > 0 };
+};
