@@ -42,6 +42,7 @@ export const BillingComponent = () => {
     <MainBillingComponent
       sub={subscription?.subscription}
       discount={subscription?.discount}
+      paymentFailed={subscription?.paymentFailed}
     />
   );
 };

@@ -246,8 +246,9 @@ export const MainBillingComponent: FC<{
     endsAt: string | null;
     months: number | null;
   } | null;
+  paymentFailed?: boolean;
 }> = (props) => {
-  const { sub, discount } = props;
+  const { sub, discount, paymentFailed } = props;
   const { isGeneral } = useVariables();
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
@@ -519,6 +520,43 @@ export const MainBillingComponent: FC<{
       </div>
 
       {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+
+      {/* A renewal Stripe could not charge. Stripe retries on its own schedule,
+          so this says what is true — nothing is cancelled — rather than
+          threatening. The design puts `payFailShow` in this position, above the
+          plan grid and below the trial banner. */}
+      {!!paymentFailed && !subscription?.cancelAt && (
+        <div
+          data-payment-failed="1"
+          className="flex flex-wrap items-center gap-[14px] rounded-pqLg bg-gradient-to-r from-pqLtAmber/15 to-transparent p-[14px_16px] outline outline-1 -outline-offset-1 outline-pqLtAmber/30"
+        >
+          <div className="grid size-[38px] shrink-0 place-items-center rounded-pqMd bg-pqLtAmber/15 text-pqLtAmber">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+              <path
+                d="M12 8v5M12 16.5h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div className="min-w-[220px] flex-1">
+            <div className="text-[14.5px] font-[600] -tracking-[0.01em] text-pqText">
+              {t('payment_failed_title', 'We could not charge your card')}
+            </div>
+            <div className="mt-[3px] text-[12.5px] text-pqMuted">
+              {t(
+                'payment_failed_body',
+                'Update your payment method and we will try again. Nothing is cancelled yet.'
+              )}
+            </div>
+          </div>
+          <Button onClick={updatePayment} className="!h-[38px]">
+            {t('update_payment_method', 'Update payment method')}
+          </Button>
+        </div>
+      )}
 
       {/* The retention offer, once it has been accepted. The design shows it as
           a green strip with the old price struck through beside the new one —

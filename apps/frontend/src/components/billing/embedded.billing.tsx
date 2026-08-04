@@ -14,6 +14,7 @@ import useCookie from 'react-use-cookie';
 import { Button } from '@gitroom/react/form/button';
 import dayjs from 'dayjs';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { TRIAL_DAYS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const EmbeddedBilling: FC<{
@@ -275,6 +276,24 @@ const PriceBreakdown: FC = () => {
                 ? `-${discountDisplay.amount}`
                 : t('billing_applied', 'Applied')}
             </span>
+          </div>
+        )}
+
+        {/* Trial credit. The design shows the trial as its own line — "7-day
+            free trial  -$49" — rather than only as a zero at the bottom. Two
+            numbers that explain each other read as an invoice; one number that
+            contradicts the price above it reads as a mistake. */}
+        {!!recurring?.trial?.trialEnd && (
+          <div
+            data-trial-credit="1"
+            className="flex items-center justify-between text-pqOk"
+          >
+            <span className="font-[500]">
+              {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+                n: TRIAL_DAYS,
+              })}
+            </span>
+            <span className="font-[500]">-{unitAmount}</span>
           </div>
         )}
 

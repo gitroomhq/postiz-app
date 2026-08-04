@@ -15,6 +15,7 @@ import {
   effectiveMonthly,
   monthsFree,
   pricing,
+  TRIAL_DAYS,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { capitalize } from 'lodash';
 import clsx from 'clsx';
@@ -31,6 +32,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import useCookie from 'react-use-cookie';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import { HelpMenu } from '@gitroom/frontend/components/new-layout/help.menu';
 import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
 
 const ModeComponent = dynamic(
@@ -166,10 +168,15 @@ export const FirstBillingComponent = () => {
               date is written for that: the subscription row is gone in this
               state, so there is nothing here that knows when. */}
           {user?.allowTrial ? (
+            // The checkout prototype leads with the offer, not the product:
+            // "Your first 7 days are free". It is the one line that answers
+            // what somebody looking at a card form wants to know.
             <>
-              {t('billing_grow_your', 'Grow your')}{' '}
+              {t('billing_your_first', 'Your first')}{' '}
               <span className="text-pqPink">
-                {t('billing_social_presence_highlight', 'social presence')}
+                {t('billing_days_are_free', '{{n}} days are free', {
+                  n: TRIAL_DAYS,
+                })}
               </span>
             </>
           ) : (
@@ -177,13 +184,20 @@ export const FirstBillingComponent = () => {
               {t('billing_pick_up_where', 'Pick up where you')}{' '}
               <span className="text-pqPink">
                 {t('billing_left_off_highlight', 'left off')}
-              </span>
+              </span>{' '}
+              {t('billing_with_postqueen_again', 'with PostQueen')}
             </>
-          )}{' '}
-          {user?.allowTrial
-            ? t('billing_with_postqueen_line', 'with PostQueen')
-            : t('billing_with_postqueen_again', 'with PostQueen')}
+          )}
         </div>
+
+        {user?.allowTrial && (
+          <div className="mt-[14px] max-w-[520px] text-[16px] leading-[1.5] text-pqMuted tablet:text-[15px]">
+            {t(
+              'billing_trial_hero_sub',
+              'Add a card to unlock every channel, the AI editor and analytics. Nothing is charged until your trial ends.'
+            )}
+          </div>
+        )}
 
         {!!onboardingVideoUrl && (
           <div className="flex" onClick={showYouTube}>
@@ -250,8 +264,18 @@ export const FirstBillingComponent = () => {
       className="blurMe flex flex-1 flex-col bg-newBgColorInner pb-[60px] mobile:pb-[100px]"
     >
       <div className="h-[92px] px-[80px] tablet:px-[32px] mobile:!px-[16px] py-[20px] flex border-b border-newColColor">
-        <div className="flex-1 flex items-center text-textColor">
+        <div className="flex-1 flex items-center gap-[14px] text-textColor">
           <LogoTextComponent />
+          {/* The design names the screen in its own header — `postqueen v3.1.7
+              │ Checkout` — which is the only thing telling somebody mid-signup
+              where they are. Hidden on phones, where the logo already fills the
+              row. */}
+          <div className="flex items-center gap-[14px] mobile:hidden">
+            <div className="h-[20px] w-[1px] bg-blockSeparator" />
+            <div data-checkout-label="1" className="text-[15px] font-[600]">
+              {t('billing_checkout', 'Checkout')}
+            </div>
+          </div>
         </div>
         <div className="flex min-w-0 items-center">
           {/* 20px between six icons and two separators is 140px of gap alone,
@@ -267,11 +291,21 @@ export const FirstBillingComponent = () => {
             <LanguageComponent />
             <div className="w-[1px] h-[20px] bg-blockSeparator" />
             <AttachToFeedbackIcon />
+            {/* The design's checkout header carries Help. It is the same menu
+                the app uses, not a second one — documentation, support and bug
+                report are the same three places from here. */}
+            <HelpMenu />
             <DeveloperIconComponent />
             {/*<NotificationComponent />*/}
             <div className="hover:text-newTextColor">
               {user?.tier.current === 'FREE' && (
-                <LogoutComponent isIcon={true} />
+                <LogoutComponent
+                  isIcon={true}
+                  confirmMessage={t(
+                    'checkout_not_finished_logout',
+                    'Your checkout is not finished — the plan you picked will not be saved.'
+                  )}
+                />
               )}
             </div>
           </div>
@@ -401,6 +435,41 @@ export const FirstBillingComponent = () => {
                 []
               )}
             </div>
+            {/* The design puts the yearly saving here as a strip with an
+                action, not only as a badge on the toggle: "Switch to yearly and
+                get 4 months free — Switch". The badge says "up to"; this says
+                the exact figure for the plan that is actually selected. */}
+            {period === 'MONTHLY' && (
+              <div
+                data-yearly-switch="1"
+                className="mt-[16px] flex flex-wrap items-center gap-[10px] rounded-pqMd bg-pqOkSoft p-[10px_14px] text-[13.5px] text-pqOk"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" className="shrink-0">
+                  <path
+                    d="M7 17 17 7M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <div className="min-w-0 flex-1">
+                  {t(
+                    'billing_switch_to_yearly',
+                    'Switch to yearly and get {{n}} months free',
+                    { n: monthsFree(tier) }
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPeriod('YEARLY')}
+                  className="font-[600] underline underline-offset-2 hover:no-underline"
+                >
+                  {t('billing_switch', 'Switch')}
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-col mt-[54px] gap-[24px] tablet:mt-[40px]">
               <div className="text-[24px] font-[700]">
                 {t('billing_features', 'Features')}
