@@ -2794,3 +2794,34 @@ than this one did.
 
 What is *not* claimed anywhere: that drag and drop works. It may well; nothing
 here has shown it.
+
+### Drag and drop, fourth attempt: it moved
+
+```
+before  2026-08-06T05:15  Weekly build thread
+after   2026-08-04T21:00  Weekly build thread
+```
+
+A real `publishDate`, rewritten in the database by a drag. **The calendar's
+central interaction is verified**, and it is the last thing in this migration
+that was built, present and unproven.
+
+Nothing about the mechanism changed from the third attempt — DOM drag events
+with a shared `DataTransfer` were already right. **Both selectors were wrong.**
+
+- The target was `[data-past="false"]`. `calendar.tsx:933` writes
+  `data-past={isBeforeNow ? '1' : '0'}`, so the correct value is `"0"` and my
+  selector had been matching nothing at all. Counted before trying this time:
+  **123** empty future cells.
+- The source was `[draggable]`, which matches any element carrying the
+  attribute. `useDrag`'s ref sits on one specific element; `[draggable="true"]`
+  finds it. **6** cards.
+
+So three of the four attempts failed on things that had nothing to do with drag
+and drop, and the second was a real dead end (CDP interception). The lesson is
+narrower than "verify by looking": **count what your selector matches before
+concluding anything from what it does.** A selector matching zero elements and a
+feature that is broken produce identical evidence.
+
+Ten of the eleven interactions and states this migration has chased are now
+verified against real data. The last is the card payment, which is the owner's.
