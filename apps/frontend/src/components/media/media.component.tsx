@@ -972,6 +972,10 @@ export const MultiMediaComponent: FC<{
           {!mediaNotAvailable && (
             <div className="flex py-[10px] b2 items-center gap-[4px]">
               <div
+                // The media picker opens from here and nowhere else, so the
+                // screenshot tool needs a handle on it. The icons inside it had
+                // never been seen for exactly this reason.
+                data-pq="insert-media"
                 onClick={showModal}
                 className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
               >

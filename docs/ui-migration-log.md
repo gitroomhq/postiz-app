@@ -2409,3 +2409,26 @@ not used it.
 
 Worth noting what caught this: not the count, which was right, and not the
 types. Only looking at it.
+
+### The last two icons cannot be judged on this machine, and that is the answer
+
+`DragHandleIcon` and `MediaSettingsIcon` live in the media *picker*, not on the
+`/media` page — which is why they never appeared in any earlier count. The
+picker opens from one control and had no handle; it has `data-pq="insert-media"`
+now, and opened for the first time.
+
+What it shows settles less than hoped. Both icons sit over a media thumbnail,
+and **on this machine the thumbnails do not load** — the files are in the
+override upload directory while the frontend serves the container path. There is
+no photograph behind them, so "is white right over a photograph" cannot be
+answered by looking here. Anything I said about them would be reasoning dressed
+as observation.
+
+What the same screenshot *does* settle: the `DeleteCircleIcon` mark, moved to
+`pqWarn` earlier today, reads clearly as red against the light theme's picker.
+That fix is confirmed in place.
+
+**Position:** two of four white-fill icons cleared by looking, one fix confirmed,
+two undecided and blocked on a working uploads path rather than on any code
+question. Written down as undecided instead of quietly resolved, because the
+whole point of the exercise was to stop reasoning about colours nobody had seen.
