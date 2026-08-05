@@ -29,6 +29,8 @@ extend(weekOfYear);
 
 export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
 
+const LIST_PAGE_SIZE = 100;
+
 export const CalendarContext = createContext({
   startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
   endDate: newDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
@@ -216,7 +218,7 @@ export const CalendarWeekProvider: FC<{
   const listParams = useMemo(() => {
     return new URLSearchParams({
       page: listPage.toString(),
-      limit: '100',
+      limit: String(LIST_PAGE_SIZE),
       customer: filters?.customer?.toString() || '',
       state: listState,
     }).toString();
@@ -232,7 +234,7 @@ export const CalendarWeekProvider: FC<{
       Array.from({ length: listPage + 1 }, async (_, page) => {
         const pageParams = new URLSearchParams({
           page: page.toString(),
-          limit: '100',
+          limit: String(LIST_PAGE_SIZE),
           customer: filters?.customer?.toString() || '',
           state: listState,
         }).toString();
@@ -241,7 +243,6 @@ export const CalendarWeekProvider: FC<{
       })
     );
     return {
-      ...pages[pages.length - 1],
       posts: pages.flatMap((page: any) => page?.posts || []),
       total: pages[0]?.total || 0,
     };
@@ -320,10 +321,10 @@ export const CalendarWeekProvider: FC<{
       setFilters(newFilters);
       setInternalData([]);
 
-      // Reset page when switching to list view
-      if (newFilters.display === 'list') {
-        setListPage(0);
-      }
+      // Reset paging on every display switch, not just into list: the posts
+      // panel shares the list query, so a page count left behind by the list
+      // view would make the panel fetch the whole stack of pages.
+      setListPage(0);
 
       const path = [
         `startDate=${newFilters.startDate}`,
