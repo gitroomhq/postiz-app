@@ -66,10 +66,13 @@ Chat/mesajlar:
 - [ ] 8 mesaj tipografisi 13.5/1.65
 - [ ] 9 mesaj kolonu max-w 840px merkez pad 24 gap 16
 - [ ] 10 kolon hairline'ları (chat border-right, rail border-left)
-- [ ] 11 plan/draft kartı ("Open the composer") — davranış bağlamı: ajan cevabı formatına bağlı;
-      görsel bileşen hazırlanır, tetiği mevcut cevap akışına bağlanabiliyorsa bağlanır, yoksa
-      log'a raise
-- [ ] 12 AI-lock overlay görseli — gate işlevi owner'a raise (davranış); yüzey hazır olur
+- [ ] 11 plan/draft kartı ("Open the composer") — **Raise (Batch E):** repo has no
+      reply-format / `chatHasPlan` hook. `manualPosting` auto-opens `AddEditModal` with a
+      plain "Opening the composer…" wait state (`agent.chat.tsx` OpenModal). Do not fake a
+      draft card on top of that — needs a product decision to insert a card step before the
+      modal (or change the Copilot action render).
+- [x] 12 AI-lock overlay — **Done (screenshot pass):** `user.isTrailing` gates agents;
+      shared `TrialLockCard` overlay + FinishTrial / Billing CTAs.
 
 Composer:
 - [ ] 13 composer --pop kartı r14 inset+e1 (SDK #2c2c2c pill yerine)
@@ -82,7 +85,9 @@ Composer:
 - [ ] 19 Generate image/video birinci sınıf butonlar (gate: tier.ai aynen korunur — buton görünümü
       eşit ağırlıkta, gate render'ı değiştirmez)
 - [ ] 20 "Posting to" çip satırı
-- [ ] 21 58×58 ek küçük resimleri + kırmızı çarpı ("Attachments" etiketi kalkar)
+- [x] 21 58×58 ek küçük resimleri + kırmızı çarpı ("Attachments" etiketi kalkar) —
+      ghost thumbs in `media.component.tsx`; placed above textarea via `attachments` slot
+      in `agent.input.tsx` + `MediaPortal part="thumbs"|"toolbar"`
 - [ ] 22 "Powered by CopilotKit" hook'u kalkar (agent.input:69-71)
 
 Sol kanal kolonu:
@@ -92,8 +97,10 @@ Sol kanal kolonu:
 - [ ] 26 seçili-değil opacity .2 → .6
 - [ ] 27 seçili durum: brandSoft zemin + 3px brand çubuk + 16px tik rozeti
 - [ ] 28 avatar 32×32 r9 + 17px rozet --inner ring
-- [ ] 29 meta ikinci satır + 3-nokta menü (menü mevcut channel menüsünü açar — calendar
-      kolonundaki menu.tsx yeniden kullanılır)
+- [x] 29 meta ikinci satır + 3-nokta menü — Menu reused with optional
+      `integrations` / `reloadCalendarView` props (no `CalendarWeekProvider` on agents;
+      calendar call sites unchanged). Agent rows pass list SWR data + Channels-style
+      reconnect.
 - [ ] 30 satır kutusu padding+radius+brand hover tint
 
 Sağ Chats rail:
@@ -117,3 +124,12 @@ media.component.tsx:971-1013 + ai.image.tsx:150: bg-newColColor pill'ler (compos
 global.scss: 809-836 CopilotKit override'ları yeniden yazılır; 414-453 ölü yorumlu blok silinir.
 SDK devralınan hex'ler: #2c2c2c, rgb(45,45,45), rgb(28,28,28), #808080 — hepsi
 --copilot-kit-* değişkenleri token'lara bağlanarak ezilir.
+
+## E) Batch E leftovers (2026-08-05)
+
+| Item | Status |
+| --- | --- |
+| 21 · 58×58 attachment thumbs + warn × | **Fixed** — ghost thumbs above textarea |
+| 29 · Channel 3-dot menu | **Fixed** — Menu props extract; no calendar weld |
+| 11 · Draft-plan card | **Raise** — no reply-format / `chatHasPlan` hook; `manualPosting` opens modal directly |
+| 12 · AI-lock overlay | **Done** — `isTrailing` + `TrialLockCard` (screenshot pass) |

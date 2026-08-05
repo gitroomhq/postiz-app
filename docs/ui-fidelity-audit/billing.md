@@ -4,6 +4,10 @@ Source: side-by-side read of `design/handoff/design/PostQueen App v2.dc.html` (b
 2291–2541, vals 5687–5810 + 8019–8128; paywall markup 3524–3845, vals 5401–5620) against the
 `pr14/live-matrix` implementation. **87 deltas.** Check off as closed.
 
+**Photo fixture (Batch C):** shoot the 14-state × light/dark matrix — checklist in
+[`billing-photo-fixture.md`](./billing-photo-fixture.md). CREATOR yearly \$132 and “months free”
+copy are **Raise (product)**; lifetime scarcity counter is **Intentional skip**.
+
 ## A) Prototype — billing page visual inventory (DOM order)
 
 Root `:2292` — `background:var(--inner); flex:1; overflow-y:auto; padding:24px 28px 48px`; inner
@@ -81,58 +85,51 @@ rail `:2293` `max-width:1080px; margin:0 auto; flex-direction:column; gap:24px`.
 
 ## C) Delta checklist — billing page
 
-- [ ] 1. [design-has/code-lacks] max-width:1080px centred column (page.tsx:11 vs proto :2293)
-- [ ] 2. "Plans" heading 26px display/600/-.02em (main.billing:512)
-- [ ] 3. Period control: knob `<Slider>` → segmented pill (main.billing:513-519, proto :2386-2391)
-- [ ] 4. Green "{n} months free" pill in Yearly toggle (proto :2390)
-- [ ] 5. planMeta line + border-top divider row (proto :2378-2380, :5767)
-- [ ] 6. Lifetime upsell strip for trial users (proto :2302-2319)
-- [ ] 7. Trial banner with "End free trial" CTA (proto :2338-2345)
-- [ ] 8. Payment-failed strip: amber → red (`rgba(239,68,68,…)`, #ef4444) (main.billing:531-542)
-- [ ] 9. Payment-failed CTA h36 r10 #ef4444 (proto :2330)
-- [ ] 10. Plan card radius 4px → 16px (main.billing:622)
-- [ ] 11. Plan card bg-sixth → var(--inner) (main.billing:622)
-- [ ] 12. Plan card border → outline 1px var(--border) offset -1 (main.billing:622)
-- [ ] 13. Current-plan ring 1.5px var(--brand) (proto :8054)
-- [ ] 14. AGENCY gradient + rgba(124,58,237,.4) ring (proto :8053-8054)
-- [ ] 15. MOST POPULAR badge on PRO (proto :2403)
-- [ ] 16. LIFETIME badge variant (proto :2404)
-- [ ] 17. flex → grid repeat(auto-fit,minmax(238px,1fr)) (main.billing:615)
-- [ ] 18. Grid gap 16 → 13 (main.billing:615)
-- [ ] 19. Price text-[38px] → 29px display/600 (main.billing:625)
-- [ ] 20. Plan name 14px/600/.02em + state colour progression (main.billing:624)
-- [ ] 21. Yearly "$33/mo · save $192 a year" line (proto :2411, :8035)
-- [ ] 22. Prorate above CTA, 12.5/600, colour-coded, min-h 17, + "Renews {date}"/"Never renews"
-      (main.billing:77, :688-691; proto :2412, :8037-8050)
-- [ ] 23. 1px divider between CTA and features (proto :2415)
-- [ ] 24. Feature ticks: 24px circle-check pqOk → 17×17 r5 brand tile + white check
-      (main.billing:148-161)
-- [ ] 25. Feature list 13px/1.5 gap-9 (main.billing:145-147)
-- [ ] 26. "Unlimited channels" --focused/600/pqunlim (proto :8063-8066)
-- [ ] 27. Portal/cancel: two centred buttons → full-width card row + title + sub
-      (main.billing:698-716; proto :2509-2516)
-- [ ] 28. Cancel button bg-red-500 → ghost transparent/soft, hover warn (main.billing:708, :663)
-- [ ] 29. "Open billing portal" h38 bg settings (main.billing:700-705)
-- [ ] 30. Cancel notice: plain text → orange gradient strip + chip + Reactivate button
-      (main.billing:717-730; proto :2364-2375)
-- [ ] 31. FAQ heading restored, 22px display (faq.component:130-132)
-- [ ] 32. FAQ item radius 8 → 14 (faq.component:67)
-- [ ] 33. FAQ surface bg-sixth/tableBorder → --inner + brand-on-open outline (faq.component:67)
-- [ ] 34. FAQ padding 24 → 19px 22px
-- [ ] 35. FAQ question 20px → 15.5px/600 (faq.component:70)
-- [ ] 36. FAQ plus/minus → rotating chevron in 26px tinted r8 square (faq.component:73-103)
-- [ ] 37. FAQ answer 14px/1.7 muted pr-38 (faq.component:116)
-- [ ] 38. FAQ list rhythm gap 9 (faq.component:133)
-- [ ] 39. [code-has] LogoutComponent at page bottom (main.billing:732-734) — design lacks; keep?
-      → design'a göre kalkar, log'a not
-- [ ] 40. Non-admin fallback unstyled sentence (billing.component:28-37) → design idiom
-- [ ] 41. Lifetime surface on /billing itself (redirect at main.billing:505-508 kalkar)
-- [ ] 42. Current/Next package cards → --inner r14 + kicker + 24px display name
-      (lifetime.deal:342,371)
-- [ ] 43. Next-package 1.5px brand ring + brand kicker (proto :2485-2486)
-- [ ] 44. Founding facts row inside hero w/ border-top ltLine2, 4 cells incl. MEMBER SINCE
-      (lifetime.deal:213-233; proto :2453-2460)
-- [ ] 45. [code-has] countdown+purchase on /billing/lifetime — repo-only feature, kalır (log'a not)
+- [x] 1. max-width:1080px centred column (`billing/page.tsx`)
+- [x] 2. "Plans" heading 26px display/600/-.02em
+- [x] 3. Period control: knob `<Slider>` → segmented pill (main.billing); owner override 2026-08-05: inactive Monthly/Yearly use `text-pqText` (was too grey in light)
+- [x] 4. Green "{n} months free" pill in Yearly toggle (shot CREATOR active)
+- [x] 5. planMeta line + period control row (shot: PostQueen CREATOR + Monthly/Yearly)
+- [x] 6. Lifetime upsell strip for trial users (proto :2302-2319) — 110deg ltSoft gradient
+- [x] 7. Trial banner with "End free trial" CTA (proto :2338-2345) — FinishTrial sheet matched 2026-08-05
+- [x] 8. Payment-failed strip → `pqDanger*` gradient (code; cell 09 not shootable without Stripe fail)
+- [x] 9. Payment-failed CTA h36 r10 `bg-pqDanger`
+- [x] 10. Plan card radius 16px
+- [x] 11. Plan card bg-sixth → var(--inner) (main.billing plan cards `bg-pqInner`)
+- [x] 12. Plan card outline 1px --border offset -1
+- [x] 13. Current-plan brand ring (shot CREATOR)
+- [x] 14. AGENCY gradient + violet ring (code path on AGENCY current)
+- [x] 15. MOST POPULAR badge on PRO (shot)
+- [x] 16. LIFETIME badge variant (lifetime surface code)
+- [x] 17. grid auto-fit minmax(238px,1fr)
+- [x] 18. Grid gap 13
+- [x] 19. Price 29px display/600
+- [x] 20. Plan name 14px/600 + state colours
+- [x] 21. Yearly per-mo / save line (repo pricing; CREATOR $132 Raise)
+- [x] 22. Prorate / renew meta above CTA (code)
+- [x] 23. 1px divider between CTA and features
+- [x] 24. Feature ticks brand tile + white check (shot)
+- [x] 25. Feature list 13px rhythm
+- [x] 26. Unlimited channels focused treatment (shot AGENCY card)
+- [x] 27. Portal/cancel full-width card row (shot)
+- [x] 28. Cancel ghost soft / hover warn
+- [x] 29. Open billing portal h38 bg-pqSettings
+- [x] 30. Cancel notice amber gradient + Reactivate (code; cell 06 not shootable)
+- [x] 31. FAQ heading restored, 22px display (faq.component)
+- [x] 32. FAQ item radius 8 → 14 (faq.component)
+- [x] 33. FAQ surface bg-sixth/tableBorder → --inner + brand-on-open outline
+- [x] 34. FAQ padding 24 → 19px 22px
+- [x] 35. FAQ question 20px → 15.5px/600
+- [x] 36. FAQ plus/minus → rotating chevron in 26px tinted r8 square
+- [x] 37. FAQ answer 14px/1.7 muted pr-38
+- [x] 38. FAQ list rhythm gap 9
+- [x] 39. LogoutComponent — removed / not on billing page (design)
+- [x] 40. Non-admin fallback design idiom (billing.component centred card)
+- [x] 41. Lifetime surface on /billing itself (redirect gone; FoundingMember + packages)
+- [x] 42. Current/Next package cards → --inner r14 + kicker + 24px display name
+- [x] 43. Next-package 1.5px brand ring + brand kicker (proto :2485-2486)
+- [x] 44. Founding facts row inside hero w/ border-top ltLine2, 4 cells incl. MEMBER SINCE
+- [x] 45. [code-has] countdown+purchase on /billing/lifetime — amber founding card + 1080 shell (2026-08-05); scarcity chip still Intentional skip
 
 ## D) Prototype — paywall/checkout inventory
 
@@ -177,9 +174,9 @@ Body `:3598` `gap:56px; padding:56px 40px 40px`.
 
 ## Delta checklist — paywall/checkout
 
-- [ ] 46. Header h92 px-80 → h68 padding:0 40px sticky (first.billing:266)
-- [ ] 47. Version chip beside wordmark (proto :3533) — gerçek sürümle, yoksa çıkar (invent etme)
-- [ ] 48. Header actions: icon row → gap:2px labelled Help/Developers text buttons
+- [x] 46. Header h68 px-40 sticky
+- [x] 47. Version chip beside wordmark (NEXT_PUBLIC_APP_VERSION)
+- [x] 48. Header Help via HelpMenu (Developers capability elsewhere)
       (first.billing:285-300)
 - [ ] 49. [code-has] AttachToFeedbackIcon in checkout header (first.billing:293) — kalır (repo
       capability), tasarım idiomunda
@@ -227,6 +224,18 @@ Body `:3598` `gap:56px; padding:56px 40px 40px`.
 - [ ] 86. Pay bar → h92 flat padding:0 40px + two-line right block (embedded.billing:640-663)
 - [ ] 87. Admin-required → in-paywall centred state + 56px circle icon
       (billing.admin.required:22-46)
+
+## Cancel retention dialog (`billingDlg`) — 2026-08-05
+
+| Step | App | Status |
+| --- | --- | --- |
+| Confirm + Keep my plan / Yes, cancel | `BillingCancelDialog` | Match |
+| Amber team-removal note on confirm | when downgrading from team plan | Match |
+| Before you cancel + Apply 50% | when `check-discount` + not lifetime trial | Match |
+| Feedback ≥20 chars → cancel | same APIs | Match |
+| Lifetime trial skips 50% | owner override | Match (intentional) |
+| Lifetime trial $24.50 retention | — | Raise (not in this pass) |
+| Confusing “No, cancel!” | removed on this path | Match |
 
 ## E) Legacy styling to clear (billing tree)
 

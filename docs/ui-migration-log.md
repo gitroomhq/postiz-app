@@ -326,6 +326,10 @@ during a restyle is the thing this migration has refused to do everywhere else.
 **Superseded (2026-08-05):** `/channels` landed in PR #9; the Channels page now opens Add Channel
 inline (same `AddProviderComponent` as the modal). Calendar no longer hosts a channel column.
 
+**F. Create Post header vs calendar toolbar (2026-08-05).** Design header has no Create Post;
+`chromeVals` handlers are dead. Blank/AI split now sits on the calendar toolbar so the
+capability stays reachable. Confirm toolbar vs cells/Channels-only.
+
 ### Closed
 
 **1. Renaming the tiers is a data migration, not a restyle.** *Decided: full rename, and the design's
@@ -3633,8 +3637,16 @@ Closed against the prototype after the Channels page existed:
 - List foot uses `showing_x_of_y`.
 - Mobile: posts panel auto-collapses and opens as an overlay drawer so the grid keeps width.
 
-Still intentional / named elsewhere: lifetime scarcity counter, Plugs in Settings `extraMenu`,
-AI Copilot draft-plan / AI-lock, `ended` dated strip, 14-case photo fixture.
+Still intentional / named elsewhere: lifetime scarcity counter, AI Copilot draft-plan /
+AI-lock, `ended` dated strip, 14-case photo fixture.
+
+### Settings inventory — design-exact (2026-08-05)
+
+Supersedes the fidelity-pass note that kept Plugs and Affiliate as Settings `extraMenu`
+link rows. The prototype Settings nav has neither; plugs UX is Channels → **Automations**
+(`chPlugs`), with the dedicated page titled **Auto-Plugs**. Affiliate keeps the same
+URL/billing/role gates in the **user menu**. Settings More no longer navigates to `/plugs`.
+`pageOnlyMenu` still names `/plugs` for `Title`. Channels Automations links “Open Auto-Plugs”.
 
 **Checks (`scripts/ui-migration-check.sh --update`):** types 0. **routes 29** unchanged.
 **api** moved with the Channels/calendar IA: removed calendar-only
@@ -3647,3 +3659,1454 @@ now also referenced from the Channels page). **i18n** adds design labels
 drops the word-composed `showing` / `of` list foot. **gates:** `billingEnabled` and
 `tier.ai` rose because Create Post's AI menu shares the Generator gate; calendar
 column lifetime chip removal dropped `user.isLifetime` / `tier.current` by one each.
+
+### Batch D spot — calendar/channels token polish
+
+Spot check after the gap pass (no calendar channel column restored):
+
+- Confirmed `channel.automations.tsx` already has the **Automations** header and
+  **Open Auto-Plugs** → `/plugs` link from Phase 1.
+- `channels.component.tsx` has no leftover Links to `/plugs` labeled “Plugs” or
+  “Automations” that bypass the Channels detail Automations block.
+- `channels/*.tsx` had no leftover `newBg*` / `bg-sixth` classes.
+- Token renames only (alias → `pq*`) in eight calendar-path `launches` files:
+  `launches.component.tsx`, `calendar.tsx`, `menu/menu.tsx`, `time.table.tsx`,
+  `add.provider.component.tsx`, `helpers/top.title.component.tsx`,
+  `select.customer.tsx`, `comments/comment.component.tsx`
+  (`bg-newBgColorInner` → `bg-pqInner`, `bg-newBgColor` / track → `bg-pqBg` /
+  `scrollbar-track-pqBg`, `border-newBgLineColor` → `border-pqLine`,
+  `bg-sixth` → `bg-pqTableHeader`).
+
+### Full design fidelity campaign (2026-08-05)
+
+Master inventory: [`docs/ui-fidelity-audit/MASTER.md`](docs/ui-fidelity-audit/MASTER.md).
+
+| Phase | What shipped |
+| --- | --- |
+| Settings inventory | Plugs/Affiliate out of Settings; Affiliate → user menu; Auto-Plugs title; Channels Automations + Open Auto-Plugs; FREE nested settings modal removed |
+| Shell / Settings | Scrim card 1040×680, nav 236, shared tab title/desc; Language/Teams/Plan cards polish; Integrations embed = card grid |
+| AI Copilot | 58×58 attachment thumbs; channel 3-dot via Menu prop overrides. **Raise:** draft-plan card, AI-lock overlay |
+| Tokens | Legacy `bg-sixth` / `newBg*` / auth / form primitives → `pq*` |
+| Billing docs | [`billing-photo-fixture.md`](docs/ui-fidelity-audit/billing-photo-fixture.md) — 14×2 @ 1440. Raise: CREATOR $132, months-free copy. Intentional: scarcity counter |
+| Composer docs | [`composer.md`](docs/ui-fidelity-audit/composer.md) + token renames in manage.modal/editor; screenshot verify still owed |
+
+**Still Delta / Raise (not silently “fixed”):** Settings per-tab nits (Developers pills, Sets table header, Integrations connected-state), composer screenshot matrix, billing photo capture, AI draft-plan/AI-lock product hooks, Milestone 10.
+
+**Checks (`scripts/ui-migration-check.sh --update`):** types 0. **routes 29** unchanged. **api 152**, **i18n 1165**, **gates 14** baselines rewritten for this tip (Plugs Settings rows gone; `auto_plugs` / `open_auto_plugs` / `plan_invoices_description` and agent/media keys among the delta; Settings pane title uses existing `auto_post` so orphan `autopost` key dropped).
+
+### Screenshot-driven fidelity fixes (2026-08-05)
+
+Against owner screenshots of the prototype:
+
+1. **Rail pin/hover** — Visible **Pin sidebar / Unpin sidebar** (not Collapse). Removed
+   `data-sb-toggle` opacity hide so the pin row stays painted. Collapsed resting uses 34px
+   centered Connect/nav squares; hover expands with `!important` label reveal. Org name kept
+   in DOM via `data-sbl` for hover. Connect `h-36` / `mt-12`.
+2. **User menu** — **Billing & invoices**, **Sign out** (confirm dialog kept as WORK).
+3. **Trial lock** — Shared `trial-lock-card.tsx` for X Add-channel + AI Copilot overlay when
+   `user.isTrailing` (supersedes prior AI-lock Raise). Secondary CTA → `/billing`. No invented
+   trial-end date.
+4. **Channels detail** — Automations **Set up plug** / **Off**; platform options accordion
+   (`chOpts`); avatar r15 + platform badge.
+5. **Integrations** — Content pane is grid-only; Settings tab rail is intentional (design).
+
+**Checks:** types 0; routes 29; api 152; **i18n 1178**; gates 14.
+
+### Product tour = design first-run (2026-08-05)
+
+- Removed the old fullscreen onboarding modal; register/activate → `?tour=true`
+  starts the design tour only (`layout.context` + `Tour`).
+- Steps match `tourSteps()`: cal-grid → posts-panel → connect-pq (rail) →
+  connections-page (dim + card glow) → nav-channels (rail) → platform-grid
+  (Add Channel open). Finish lands on `/channels?add=1`.
+- Demo posts fill calendar **and** Posts queue for the whole tour on empty accounts;
+  Posts panel forced open on calendar steps.
+- Help “Setup tour” replays the same tour (duplicate Replay row removed).
+
+### Settings card size + nav inventory (2026-08-05)
+
+Owner screenshots: Settings looked tiny and resized per tab; Workspace showed
+**Plan & invoices** though the prototype's `settingsTabs` is only Global Settings /
+Language / Teams (+ More / Developers).
+
+- Root cause of shrink: a shrink-wrap wrapper around `SettingsPopup` made
+  `w-[min(1040px,100%)]` resolve to content width. Card is now a direct scrim
+  child with fixed `min(1040×680, 100%)` (prototype); `stopPropagation` on the card.
+- Removed Plan & invoices from Settings nav. Billing stays on `/billing` and user
+  menu **Billing & invoices**. Deep link `?tab=plan_invoices` → `/billing`.
+
+**Checks (`scripts/ui-migration-check.sh --update`):** types 0; routes 29; api 152.
+**i18n** drops `plan_invoices` / `plan_invoices_description` (Settings tab header only;
+component file kept but unmounted — `/billing` is the design surface). **gates**
+`billingEnabled` count falls with the Settings Workspace row gone.
+
+### Posts rail + list fidelity (2026-08-05)
+
+- **Posts click:** sync `searchParams.display` → calendar filters (rail Link no longer
+  a no-op while already on `/launches`). Calendar rail uses `?display=week`.
+- **Active / title:** MenuItem + Title read `display=list` → Posts /
+  “Everything scheduled, drafted and published”.
+- **List toolbar:** date-range chip (All dates / Today / week / next3 / past /
+  day chip) + Oldest/Newest; status segment removed from list (queue-only).
+- **See all N posts** / week day header → `openPostsForDay` → list + `listDay`.
+- **Queue panel** hidden when `display=list`.
+- **UI demo fixture** (`ui-demo-posts.ts`): design seed rows when the account is
+  empty in development (or `?uiDemo=1`). Soft method pills on list cards.
+
+### Modal / popup fidelity (2026-08-05)
+
+Owner complaint: Add API key (Settings → Integrations) missing **Cancel** and **X**;
+popups looked legacy. Plan + inventory: [`docs/ui-fidelity-audit/modals.md`](docs/ui-fidelity-audit/modals.md).
+
+- **Shared shell** (`new-modal.tsx`): card `bg-pqInner` (design `--inner`), gap 16,
+  title clearance for X; exported `ModalFormActions` (primary + outline Cancel);
+  `DecisionModal` matches confirm footer (brand/danger + `btnSimple` Cancel);
+  `deleteDialog` → danger primary.
+- **Add API key** (`third-party.list.component.tsx`): X on, size 420, **Add Integration**
+  + **Cancel**, design labels via `t()`.
+- **Settings forms** with Cancel footers: webhooks, teams, signatures, autopost
+  (handlers unchanged). Removed leftover Mantine close inside signature form.
+- **Still Delta:** Media/composer/billing/channel form bodies (sibling ownership);
+  Connected “Update key” CTA on Integrations cards (Settings Delta / Raise).
+
+**Open locally:** Settings → Integrations → click a provider card (e.g. Reel.Farm).
+
+**Checks (`scripts/ui-migration-check.sh`):** types 0 (fe+be); routes 29; api 152; gates 14
+unchanged. **i18n FAIL** from sibling Media keys already in the tree (`upload_media`,
+`change_alt_text`, `showing_x_of_y_files`, …) — not introduced by this modal pass; title
+reuses existing `top_title_add_api_key_for`. **Did not `--update`.**
+
+**Checks (`scripts/ui-migration-check.sh --update`):** types 0; routes 29; api 152.
+**i18n** adds Posts list labels (`all_dates`, `see_all_n_posts`, `subtitle_posts`,
+sort keys, …); drops in-cell `show_more` / `show_less`. **gates** tip drift from
+billing/trial copy elsewhere on the branch.
+
+### Channels centering + reconnect fidelity (2026-08-05)
+
+Owner: detail / add / invite were full-bleed; disconnected Reddit detail looked
+unbuilt. Audit: [`docs/ui-fidelity-audit/channels-reconnect.md`](ui-fidelity-audit/channels-reconnect.md).
+
+**Layout (prototype `:1720` / `:1861` / `:1774`):**
+- Add + detail panes: `max-width:760px; margin:0 auto` inside pad `20/24/40`.
+- Connect / invite step: `max-width:460px` (`ProviderSetupStep`).
+- Platform grid: 4 columns, gap 12, tile h104 r12 inset ring (was 5-col stretch).
+
+**Reconnect LOOK (WORK unchanged — existing OAuth refresh URL):**
+- List: warn truncated *"Channel disconnected, click to reconnect"*; red `!`.
+- Detail: avatar opacity .5; clickable disconnect meta; pill **"Needs reconnect"**
+  (`bg-pqAmberSoft` / `text-pqWarn`); action Reconnect; amber lost-connection banner.
+- **Channel / Access** settings groups (`chDetailGroups`) wired to Menu APIs
+  (time slots modal, group, copy ID, credentials/reconnect, disable, delete).
+- Time slots: action + group open TimeTable **modal** (design sheet); inline
+  full-width card removed so width matches centered column.
+
+**Raises:** Custom URL row only when `customFields` (design always lists it);
+prototype reconnect toasts, repo redirects OAuth.
+
+**Checks (`scripts/ui-migration-check.sh --update`):** channels files clean.
+Frontend `tsc` FAIL is **sibling Media** (`MediaBox` missing in
+`media.component.tsx`) — not Channels. Backend types 0; **routes 29**; **api 152**;
+**i18n** baseline rewritten (~1208, reconnect / Channel–Access keys); **gates 14**.
+
+### Billing / trial / lifetime LOOK fidelity (2026-08-05)
+
+Owner complaint: End free trial + lifetime screens did not match the handoff. Side-by-side
+against `finishTrialOpen` (~3090–3141) and billing lifetime / upsell markup (~2302–2507).
+
+**What was wrong**
+- `FinishTrial` was a left-aligned "Your trial is over" / Done card — not the design's
+  centred 440px `--pop` sheet (spinner pending → check/crown success, charged/renews box,
+  Back to billing + Close).
+- `/billing/lifetime` had no Plans-column chrome (padding / 1080 max-width) and the purchase
+  offer was a purple brandSoft countdown bar, not the amber founding upsell card.
+- Rail Upgrade hid lifetime users and ignored AGENCY / founding variants (heart + Founding
+  member, card + Billing & invoices). User-menu filter still dropped Billing for lifetime.
+
+**Fixed (LOOK only; Stripe/finish-trial POST unchanged)**
+- `finish.trial.tsx` — prototype sheet; charged amount from tier / `LIFETIME_PRICE`; renew
+  date not invented (Never / Active).
+- `lifetime/page.tsx` + `lifetime.deal.tsx` — shell + amber purchase card + countdown.
+- `main.billing.component.tsx` — upsell gradient 110deg; passes charged/period into FinishTrial.
+- `rail.tsx`, `top.menu.tsx`, `user.menu.tsx` — design Upgrade / Lifetime deal labels.
+
+**Raises (unchanged / named)**
+- Trial-end / renew calendar dates still live in Stripe — banners stay dateless.
+- CREATOR yearly $132 and months-free vs coupon honesty (product).
+- Lifetime scarcity "N of 200" chip — intentional skip.
+- Design confirm dialog `billingDlg: finishTrial` before charge is unused by the prototype's
+  own banner CTA (`openFinishTrial` goes straight to the sheet) — matched that path.
+
+**Checks:** `scripts/ui-migration-check.sh` → types 0 · api 152 · routes 29 · gates 14.
+i18n at tip shows a concurrent sibling rename (`add_api_key_for` → `top_title_add_api_key_for`)
+unrelated to billing — not `--update`'d here. Billing keys themselves are stable.
+
+**Verify locally:** grant a trialing org (`isTrailing`) → /billing → End free trial sheet;
+`scripts/grant-lifetime.mjs` for founding hero; FREE + open `lifetimeWindow` → /billing/lifetime.
+
+
+### Media page fidelity (2026-08-05)
+
+Owner screenshots: empty-state centered with filters at the **bottom**; no top
+toolbar, search, dashed drop zone, or “ALL FILES N” card grid. Prototype
+`isMedia` block (~2144–2254) + lightbox (~2570) + library sheet (~3226) win on LOOK.
+
+**What changed (LOOK; upload/SWR/delete handlers kept)**
+- `/media` toolbar **top**: All / Images / Video · search “Search by file name” ·
+  grid/list icons · brand Upload (up-arrow).
+- Dashed brand drop zone: “Drop files here, paste or browse” / 1 GB copy.
+- Section label `All files` + count; 4:3 cards (filename + meta); video duration
+  badge; ⋯ menu (Preview / Download / Change alt text / Delete).
+- Click → design lightbox (image + controllable video). Drag overlay matches
+  brandFaint; paste wired to the same Uppy enqueue path as drop/browse.
+- Create Post **Insert media** picker: search + Upload, 6-col select grid,
+  Cancel / Add selected media (44px) — design `libraryOpen`.
+- **UI demo fixtures** (`ui-demo-media.ts`): prototype `MEDIA` seed (v32-hero.png,
+  demo-60s.mp4, …) when the library is empty and UI demo is on (dev default or
+  `?uiDemo=1` / `localStorage pq-ui-demo`). Not persisted; not insertable into
+  real posts.
+
+**Raises**
+- **Rename** appears in the design media menu; there is no rename API — omitted
+  from the menu (not invented).
+- **Pixel dimensions** (`PNG · 1600×1600`) are not on `Media`; real rows show
+  `EXT · size` when `fileSize` is known. Demo rows keep the prototype meta.
+- Design **Upload** sheet (`uploaderOpen`) is not a separate modal on `/media` —
+  browse/drop/paste go straight to the existing Uppy uploader (same capability).
+- Demo video enlarge uses a public MDN CC0 sample URL (not uploaded).
+
+**Checks:** types (frontend/backend) 0; api 152; routes 29; gates 14.
+i18n: Media keys already in baseline; tip still fails on concurrent sibling
+rename `add_api_key_for` → `top_title_add_api_key_for` (modals fidelity) — not
+`--update`'d here.
+
+**See dummy media:** empty library + frontend in development, or `/media?uiDemo=1`.
+Disable with `?uiDemo=0`.
+
+
+## Parallel fidelity wave baseline (2026-08-05)
+
+Baseline rewrite via `scripts/ui-migration-check.sh --update` after parallel UI fidelity agents (Posts, Media, Billing, Channels reconnect, Modals). Types, API paths, routes, and gates unchanged. i18n delta was intentional key rename/additions from the fidelity wave (notably `add_api_key_for` → `top_title_add_api_key_for`; other Posts/Media/Billing/Channels copy keys already aligned or captured in this rewrite).
+
+### Calendar card actions + multi-post overflow (2026-08-05)
+
+Owner: calendar cards clipped when stacked; Edit missing; queue had no actions;
+hover-only clusters unreachable on touch.
+
+**Week overflow (prototype `gridVals`):** if N>2 show **one** card + **See all N posts**
+→ `openPostsForDay`; if N=2 show both with `line-clamp-1`. Week no longer uses
+`data-stack` hover-scroll. Month: up to 3 + **+N more**.
+
+**Actions:** Calendar/list clusters add **Edit** (hidden when Published); week/day
+omit Statistics (list keeps it). Queue: click-to-edit + Edit / Duplicate / Delete.
+`data-ci` + mobile / `hover:none` force `[data-ci-actions]` visible (`global.scss`).
+Client demo posts (`pq-ui-demo-*` / `pq-tour-demo-*`) block API actions with a
+warning toast + demo tooltip (same idea as demo media read-only) — not a silent
+no-op. Real posts still use `usePostActions` (edit / duplicate / preview /
+delete) on calendar, list, and queue.
+
+**Raises unchanged:** `groupCell` multi-channel merge; month 24px chips restyle.
+
+**Checks (`--update`):** types 0; api 152; routes 29; gates 14; i18n adds
+`edit_post`, `n_more`.
+
+### Modal / Create Post / Calendar close + billing contrast (2026-08-05)
+
+Continuation pass after prior agents left a dirty tree. Audits:
+[`docs/ui-fidelity-audit/modals.md`](docs/ui-fidelity-audit/modals.md),
+[`docs/ui-fidelity-audit/create-post-copilot.md`](docs/ui-fidelity-audit/create-post-copilot.md).
+
+**A — Modals:** Signature/autopost/plug CopilotTextarea field chrome (`--tableHeader`);
+removed API-key `size: 420`; PlugPop + Channels Automations get X + `ModalFormActions`.
+**B — Create Post / Copilot:** Select channels + `none yet` / N selected; Let AI write
+banner → `/connections` (Raise: no Claude/ChatGPT product write path); Copilot
+`none yet` + Posting to pills.
+**C — Calendar:** past slot hover `Date passed` via `[data-cell-past-label]` + i18n
+(owner override; replaces dead `.col-calendar` CSS).
+**D — Close-confirm:** Scheduled Times / TimeTable no longer ask; Create Post keeps
+confirm; close discards dirty slot state on unmount.
+**E — Autoplug:** Recommend stay per-channel on Channels Automations + modal edit
+(already aligned); no inline rewrite.
+**F — Billing:** plan titles + Monthly/Yearly inactive use `text-pqText` (light contrast).
+
+### Rail footer pin + Media lightbox (2026-08-05)
+
+Owner: Settings / Upgrade rode page scroll; Media click opened a sparse lightbox with
+an empty / glyph stage instead of the demo or real preview.
+
+**Rail:** chrome row `items-stretch`; only `[data-sb-scroll]` scrolls; `[data-sb-foot]`
+is `mt-auto shrink-0` (org / Settings / Upgrade). Mobile drawer already viewport-fixed.
+
+**Media:** Lightbox stage always has pixels — gradient underlay + data-URI still /
+sample video; grid demo thumbs use the same gradient underlay. Download / Delete /
+Close kept; **Rename** still Raise (no API).
+
+Fidelity: [`docs/ui-fidelity-audit/rail-pin-media-lightbox.md`](docs/ui-fidelity-audit/rail-pin-media-lightbox.md).
+
+**Checks:** `ui-migration-check` PASS (types 0/0, api 152, i18n 1217, routes 29, gates 14).
+
+### Rail menus vanished + hover bleed (2026-08-05)
+
+Owner: main/more nav missing (Connect / Settings / Upgrade only); collapsed
+hover-expand let Posts “Next 3 days” paint through “Pin sidebar”.
+
+**Cause:** (1) `DesktopSlot` `h-full` on an abspos-only flex item resolved the
+slot/nav to 0 height — `[data-sb-scroll]` (`flex-1` + `overflow-y-auto`) clipped
+menus while shrink-0 chrome still painted. (2) `z-45` on the nav alone could not
+beat the next flex sibling; page toolbars stacked over the expanded rail.
+
+**Fix:** slot = `self-stretch` + `z-[45]` (no `h-full`); nav height from
+`inset-y-0`; page column `relative z-0` to trap stickies/toolbars; hover CSS keeps
+width/shadow only. Footer pin intent unchanged.
+
+### Connections chrome — owner overrides (2026-08-05)
+
+- **No Reveal key** on `/connections` header (security). Key stays masked in
+  snippets; manage/reveal remains Settings → Developers / Public API only.
+- **No FLOW badge** on the n8n Automation card (noise). Zapier/Make still show
+  SOON.
+
+### Calendar past-slot "Date passed" (2026-08-05)
+
+Owner: hovering a past week cell with posts painted `Date passed` across the
+card face and See all chip (broken stacking).
+
+**Fix:** `[data-cell-past-label]` only mounts when the cell is past **and empty**
+(`postList.length === 0`); CSS hover mirrors that with
+`[data-past='1']:not([data-filled='1'])`. Cards keep `z-[2]` + actions; See all
+gets `cursor-pointer` so it does not inherit the cell's `cursor-not-allowed`.
+Same `CalendarColumn` path covers week / day / month.
+
+### Cancel subscription retention flow (2026-08-05)
+
+Owner: cancel showed a plain `deleteDialog` (“No, cancel!”) and often skipped the
+50% offer; design is confirm → Before you cancel → feedback.
+
+**LOOK:** `BillingCancelDialog` (`data-pq="billing-cancel-dlg"`) matches prototype
+`billingDlg` chrome — icon chip, amber team-removal note on confirm, Keep my plan /
+Yes cancel, then Apply 50% / Cancel my subscription, then feedback + 20-char hint.
+
+**WORK:** Same APIs (`GET /billing/check-discount`, `POST /billing/apply-discount`,
+`POST /billing/cancel`). Discount step only when `offerCoupon` and **not** lifetime
+trial (`isLifetime && isTrailing`). Prefetch check before confirm.
+
+**Raises:** Design lifetime-trial $24.50 retention not implemented (owner skip).
+Yearly / no charge / missing `STRIPE_DISCOUNT_ID` still skip coupon (backend).
+
+**Checks (`--update`):** intentional i18n keys for cancel dialog copy
+(`before_you_cancel`, `keep_my_plan`, `apply_50_discount_3_months`, etc.).
+
+### Posts list actions looked dead on demo rows (2026-08-05)
+
+Owner screenshot (list, Wed Aug 5, 4 Scheduled): hover showed Edit / Duplicate /
+Preview / Delete but clicks did nothing.
+
+**Verdict: dummy, not a real-post wiring bug.** Rows were `pq-ui-demo-*` seeds
+(empty calendar + UI demo on). Handlers were already wired to `usePostActions`;
+demo IDs silently returned + `disabled` buttons with “Edit” tooltips.
+
+**Fix:** `useDemoPostAction` toast + demo tooltip (media read-only pattern) on
+calendar / list / queue. Real posts unchanged — Edit → compose, Duplicate →
+clone compose, Preview → `/p/{id}?share=true`, Delete → confirm + DELETE.
+
+### Popovers overflow viewport right edge (2026-08-05)
+
+Owner: Posts list **All channels** panel clipped off the right (search + Select
+all truncated). Same class of bug on other absolute menus near the trailing edge.
+
+**Root cause:** panels used `absolute start-0` (or unclamped `fixed` left) with a
+fixed width; no flip/shift against the viewport. Not parent `overflow:hidden`.
+
+**Fix:** shared `useAnchoredPopover` (`layout/use.anchored.popover.ts`) on
+`@floating-ui/dom` (same stack as mention suggestions) — `fixed` + `flip` +
+`shift` + `size` max-width; `bottom-start` / `bottom-end` / `top-start` follow
+`dir` for RTL.
+
+**Menus wired:** Channel filter, list date-range, Create Post chevron, Help,
+User, Notifications, org rail switcher, Select Customer, third-party ⋮, Delay
+comment. Channel ⋮ (`launches/menu`) already fixed — now clamps X as well as Y.
+Media more-menu already clamped — unchanged.
+
+### Header chrome + Generate Posts modal (2026-08-05)
+
+Owner screenshots: design Billing header = logo · title · **streak** · Help ·
+bell · avatar (no Create Post). App Posts header had Create Post, missing streak;
+Generate Posts modal bled the list through and duplicated “Output format”.
+
+**Why the header diverged:** Create Post was portalled into `HeaderActionSlot` by
+`launches.component.tsx` (gap-pass). Design header template has **zero** Create
+Post — `chromeVals` `newBlankPost` / `newAiPost` / `toggleNewMenu` are dead
+(same class as `openCommand`). Streak exists (`StreakComponent`) but returned
+`null` when `user.streakSince` was unset, so chrome inventory dropped it.
+
+**Fixes:**
+- Streak always renders in header chrome (0 when no `streakSince`); still hidden
+  on phone via `[data-mobile="1"] [data-streak]`.
+- Create Post removed from header; Blank/AI split moved to calendar toolbar
+  (`Filters`). Compose also stays on calendar cells + Channels → New post.
+- Generate Posts modal: drop `bg-transparent` / invalid `size: 'xl'`; opaque
+  `pqInner` card at 640px + close X. Second select label → **Tone** (prototype
+  also duplicates “Output format” — Raise).
+
+**Raises:**
+- **Create Post placement:** CLAUDE.md previously said header slot; owner +
+  design header inventory win. Parked on calendar toolbar — design has no
+  toolbar Create either; confirm or prefer cells/Channels only.
+- **Generator Tone label:** prototype template `:2908` says “Output format” for
+  `genTone`; app uses Tone.
+- Rail restore is another agent — this pass did not fight `rail.tsx` menus.
+
+### Language picker polish — owner override (2026-08-05)
+
+Owner: Language modal/tab looked unstandardized — `Intl.DisplayNames` mixed
+lowercase autonyms (`français`, `español`, `русский`) with title-case ones
+(`English`, `Deutsch`).
+
+**LOOK (override beyond design fidelity):** Canonical autonym map matching
+prototype `LANGUAGES` casing (Français / Español / Português / Italiano /
+Русский / …; non-Latin עברית 中文 日本語 한국어 العربية unchanged). Tiles:
+48px equal height, 10px gap, `minmax(158px,1fr)`, selected `bg-pqBrandFaint` +
+1.5px brand ring + check, hover `bg-pqHover`. Header modal adds muted subtitle
+(shared `language_settings_description`). Modal chrome already `bg-pqInner` /
+r24 from `new-modal`.
+
+**WORK:** Unchanged — same 14 locale codes, cookie + `i18next.changeLanguage` +
+`dir` for he/ar.
+
+### Global Settings silent autosave (2026-08-05)
+
+Owner: changing Global Settings (AM:PM / 24h, email toggles, shortlink chips)
+gave no feedback that anything persisted.
+
+**Verdict:** Saves already worked. Date Metrics writes `localStorage.isUS`; email
+and shortlink POST `/user/email-notifications` and `/settings/shortlink`. Email
+and shortlink already called `useToaster` success, but Date Metrics had none —
+and API failures were silent (no rollback / error toast).
+
+**Fix:** All three show `settings_updated` / “Settings updated” on success
+(reuse existing i18n key; prototype uses “Date metric saved” / “Saved” /
+“Shortlink preference saved”). Email + shortlink check `response.ok`, roll back
+optimistic UI, and toast `something_went_wrong` on failure. Skip no-op re-clicks
+on metric/shortlink chips. Language tab untouched.
+
+**Raises:** Prototype-specific toast copy not used (one consistent key). Date
+Metrics remains browser-local only (pre-existing).
+
+### Copilot empty channel chip — owner polish (2026-08-05)
+
+Owner: AI Copilot empty channel row showed weak plain **none yet** (screenshot).
+
+**Design vs app:** Compose sheet (`composeSelLabel`) uses pill `none yet` — still
+correct in `manage.modal.tsx`. Copilot agent composer (`chatPostingLabel`) is
+soft text **No channel selected** when empty, **Posting to** when selected — a
+prior fidelity pass wrongly reused compose `none yet` for Copilot.
+
+**Shipped (LOOK polish, WORK unchanged):** Muted h26 pill
+`No channels selected · Select channels` (`t('no_channels_selected')` +
+`t('select_channels')`); click opens mobile channels drawer or expands/scrolls
+the desktop left `AgentList`. Selection still only via left list →
+`PropertiesContext`.
+
+Fidelity: [`docs/ui-fidelity-audit/create-post-copilot.md`](docs/ui-fidelity-audit/create-post-copilot.md).
+
+### Settings fidelity — rail active + inline forms (2026-08-05)
+
+Owner: More rail lit every Settings tab; Add webhook / nested forms widened the Settings
+card and stacked blur; preferred **inline** editors over nested modals.
+
+**Fixes (LOOK override; WORK unchanged):**
+- `MenuItem`: `/settings?tab=X` active only when `searchParams.tab === X`; bare `/settings`
+  still marks footer Settings.
+- More NavIcon paths aligned to prototype `navItem()` inventory.
+- Nested modal under Settings: `html.pq-modal-open` + `scrollbar-gutter: stable`; skip
+  `.blurMe` blur when `[data-settings-scrim]` is present.
+- `SettingsPaneEditor` (Back + title): Webhooks, Autopost, Signatures (Settings path),
+  Teams invite, Integrations API-key form — list ↔ edit in the same card (no `openModal`).
+- Composer signature picker still uses modal. Social Sets stays modal (**Raise** — heavy
+  channel picker).
+
+Fidelity: [`docs/ui-fidelity-audit/modals.md`](docs/ui-fidelity-audit/modals.md),
+[`docs/ui-fidelity-audit/settings.md`](docs/ui-fidelity-audit/settings.md).
+
+### Settings fidelity + inline forms (2026-08-05)
+
+Owner: Settings felt small/washed when nested modals opened; More rail lit every
+row on `/settings`; CRUD forms stacked as second modals.
+
+**LOOK / stability**
+- Rail active: `/settings?tab=X` only when tab matches; footer Settings for any
+  settings visit (`menu-item.tsx`).
+- Rail icons aligned for Posts / Channels / Webhooks.
+- Nested modal: `scrollbar-gutter: stable` + skip `.blurMe` blur when
+  `[data-settings-scrim]` so the settings card does not jump or wash out.
+
+**WORK (owner override):** Design uses a stacked form overlay; owner asked for
+in-pane editors. `SettingsPaneEditor` + list↔edit for Webhooks, Signatures
+(Settings), Autopost, Teams invite, Integrations API key. APIs unchanged.
+Delete/rotate confirms stay dialogs. Social Sets / Create Post / billing /
+channel connect stay modal (**Raise** for Social Sets).
+
+Fidelity: [`docs/ui-fidelity-audit/settings.md`](docs/ui-fidelity-audit/settings.md),
+[`docs/ui-fidelity-audit/modals.md`](docs/ui-fidelity-audit/modals.md).
+
+**Checks:** `scripts/ui-migration-check.sh` PASS — types 0/0 · api 152 · i18n
+1235 · routes 29 · gates 14 (unchanged).
+
+### Add Channel — Invite by link Copy UI (2026-08-05)
+
+Owner: Invite by link still showed **Continue** after picking a platform;
+design (`stepInviteDisplay`) shows the invite URL + **Copy link** + Back.
+
+**LOOK:** `InviteLinkStep` — All platforms, platform row, muted tip, inset card
+with one-hour copy, monospace URL field, brand Copy link, Back. Segmented
+control gains design icons. Channels subtitle switches to the invite line when
+mode is invite.
+
+**WORK:** Same `GET /integrations/social/${identifier}` URL as before; copy +
+toast only (no auto-close / no Continue). Connect myself unchanged.
+
+**i18n:** +5 → 1240 (`all_platforms`, `copy_a_link_that_works_for_one_hour`,
+`invite_link_copied_to_clipboard`, `invite_link_unavailable`,
+`send_this_invite_link`) — baseline `--update`.
+
+### Theme contrast audit — light/dark (2026-08-05)
+
+Owner: light theme left labels/sections unreadable (screenshot: Move / add to
+group → **Select Customer** light-on-light).
+
+**Root cause:** Hardcoded `text-white` on Mantine Autocomplete label in
+`customer.modal.tsx`; older form primitives and one-offs still used
+`text-inputText` / Tailwind greys / SVG `fill="#fff"` on light surfaces.
+
+**Fixes:** Select Customer label → `text-pqMuted` + themed Autocomplete chrome;
+shared Canonical / CustomSelect / MultiSelect / Total / ColorPicker + Button
+`text-pqOnBrand`; preview page, comments, statistics, date picker, AI image,
+media alt-text, autopost/provider labels, continue-provider greys, analytics
+hex → tokens. Detail:
+[`docs/ui-fidelity-audit/theme-contrast.md`](docs/ui-fidelity-audit/theme-contrast.md).
+
+**Raises:** Billing / lifetime pay paths need `billingEnabled` to screenshot;
+composer provider panels need connected channels. Settings.component left alone
+(sibling agents).
+
+**Checks:** No i18n key changes — skipped `--update`.
+
+### Channels list collapse + streak popover (2026-08-05)
+
+Owner: Channels list missing Collapse; streak was a plain tooltip vs design
+hover card; rail Unpin hairline vs CHANNELS header should share a rhythm.
+
+**Channels LOOK:** Copilot-style column — header `p-[16px_14px_12px]` +
+`border-b`, 26×26 collapse, 260→100 (`collapseMenu` cookie shared with
+Copilot/plugs/analytics), Add h36 (brand when empty/adding), filters hidden
+when collapsed, tablet auto-collapse like design `_autoSide`. Empty state
+keeps the list column (CHANNELS 0). Rail symmetry via spacing recipe, not JS
+lock.
+
+**Streak LOOK:** `--streak` / `--streakSoft` tokens; design flame; hover
+popover w270 with week grid + hint. **Raise:** omit Longest (no
+`streakBest`). Week from continuous `streakSince`.
+
+Fidelity: [`docs/ui-fidelity-audit/channels-reconnect.md`](docs/ui-fidelity-audit/channels-reconnect.md),
+[`docs/ui-fidelity-audit/streak.md`](docs/ui-fidelity-audit/streak.md).
+
+**i18n:** +4 → 1244 (`expand`, `n_day_posting_streak`,
+`post_today_to_start_your_streak`,
+`publish_at_least_one_post_today_to_keep_the_streak_alive`) — baseline
+`--update`. Types/api/routes/gates unchanged.
+
+### Dev workspace seed + Channels collapse / Copilot kebab (2026-08-05)
+
+**NOT FOR PRODUCTION.** `scripts/seed-dev-workspace.mjs` fills a local org
+with marker `dev-seed-ws*` — 10 placeholder channels (fake token
+`dev-seed-not-a-real-token`), QUEUE/DRAFT/PUBLISHED posts, Redis analytics
+stubs for allowlist providers, webhook/signatures/sets/autopost, a HeyGen
+third-party row, and an optional user avatar Media. Revoke with `--revoke`.
+Lifetime is separate: `node scripts/grant-lifetime.mjs --org <id>` when the
+org has no subscription.
+
+```
+node scripts/seed-dev-workspace.mjs --email you@example.com
+node scripts/seed-dev-workspace.mjs --org <orgId>
+node scripts/seed-dev-workspace.mjs --email … --avatar /path/to/me.png
+node scripts/seed-dev-workspace.mjs --email … --revoke
+```
+
+Avatar and seeded channel pictures share one file under `UPLOAD_DIRECTORY`,
+served at `FRONTEND_URL/uploads/…` (pass `--avatar`; defaults to
+`apps/frontend/public/no-picture.jpg`).
+
+**Collapse fix:** Channels + Copilot `AgentList` no longer set `data-crhov`
+(design's channels panel does not hover-expand — only the Chats rail does).
+Hard widths `260` / `100` via `flex-[0_0_*]`. Tablet `_autoSide` depends on
+viewport only so expanding on tablet is not immediately re-collapsed.
+
+**Copilot kebab:** `TrialLockCard` overlay scoped to the chat column so Select
+Channels (and the ⋮ Menu) stay clickable during trial lock.
+
+**Settings → Integrations:** Connected rows from `GET /third-party` with
+disconnect (`ThirdPartyMenuComponent`) above the catalog.
+
+**Channels empty right pane (2026-08-05):** The large dark-grey hole was not a
+wrong token — it was bare `bg-pqLine` (1px hairline color) with no content
+column. Cause: SWR `fallbackData: []` made mount look empty → `adding=true`
+without loading the catalog → neither Add nor detail mounted. Fix: wait for
+list settle; zero channels → `openAdd()`; channels present → clear stuck
+`adding` and select first; loading/add-pending shells use `bg-pqInner`.
+Design always fills `--inner`; do not recolor `--line`. Plugs/analytics do
+not share this list+detail empty hole.
+
+**i18n:** +1 → 1245 (`available`) — baseline `--update` for that key only.
+Types/api/routes/gates unchanged.
+
+### Analytics channels column chrome (2026-08-05)
+
+**Root cause:** `platform.analytics.tsx` still used the pre-migration ghost
+list — unselected rows got `opacity-20 hover:opacity-100`, so seeded channels
+looked blank beside the selected one. Design `chromeVals` channels panel (shared
+with Channels / Copilot / plugs) uses selected `navActive` + brand rail and only
+mild opacity for agent multi-select (`.6`) / locked (`.5`), not `.20`.
+
+**LOOK:** Same recipe as Channels `listPane` / Copilot `AgentList` — uppercase
+CHANNELS + count, 26×26 collapse, hard `260`/`100` via `flex-[0_0_*]` (no
+`data-crhov`), Add Channel, 32px avatar + platform badge + name/meta, selected
+`bg-pqNavActive` + 3px brand rail, `hover:bg-pqHover`. Auto-select first
+analytics channel when none/stale. Cookie expiry + tablet `_autoSide` match
+Channels. Seed data untouched.
+
+### Channels declutter + media/analytics/panel DnD (2026-08-05)
+
+Owner plan: list chrome, channel ⋮, media lightbox/alt text, approved-apps
+seed, panel→calendar schedule, Copilot/Analytics Add Channel, Analytics header.
+
+**Channels LOOK:** Removed All/Connected/Needs attention chips and the attention
+banner (owner override vs design inventory). List meta for broken channels is
+`Needs reconnect`; detail reconnect copy unchanged. Channel ⋮ anchors with
+design `left-12` / `bottom+6`, stroke `MENU_ICONS`, Delete `text-pqWarn`.
+
+**Media:** Lightbox portals to `document.body` with `--mediaScrim`
+(`rgba(9,9,11,.86)`) so the rail is covered. Alt-text modal title
+“Change alt text”, textarea + `ModalFormActions` (no grey Cancel).
+
+**Calendar WORK:** Panel `QueueCard` drags `type: 'post'`. Schedule always sets
+`QUEUE` (draft→scheduled). Success toast `Scheduled for {ddd · HH:mm}`.
+
+**Copilot / Analytics Add Channel:** Navigate `/channels?add=1` (not the
+provider modal). Hover uses `hover:bg-pqHover`.
+
+**Analytics LOOK:** Header avatar+badge+name+`@meta · last N days` with 7d/30d/90d
+chips; metric cards match design order (label/trend/value/chart) on `pqPop`.
+Seed Redis stubs return ~6 series for denser demo.
+
+**Seed:** Approved Apps — Claude / n8n / Zapier OAuthApp+Authorization (vendor
+orgs for the OAuthApp unique constraint).
+
+**Raises unchanged:** fake seed tokens; live analytics count = provider API;
+lightbox Rename has no API; design Approved Apps gate on `public_api`.
+
+**i18n:** intentional key churn — added alt-text / range / schedule toast /
+analytics summary / `channel_menu`; removed filter + attention-banner +
+`media_settings` keys. Baseline updated via
+`scripts/ui-migration-check.sh --update`. Types/api/routes/gates clean.
+
+### Settings fidelity — Integrations Match (2026-08-05)
+
+Settings → Integrations is a single card grid (`GET /third-party/list` +
+`GET /third-party` by identifier): Connected / Not connected status, **Add API
+key** or **Update key** + **Disconnect** footers; no CONNECTED/AVAILABLE split
+or kebab on this surface. API-key form stays in-pane via `SettingsPaneEditor`.
+Media-library import unchanged.
+
+### Settings overlay — keep page visible under scrim (2026-08-05)
+
+Owner: Settings replaced the main column with a solid gray panel instead of
+dimming the live page underneath (prototype `rgba(0,0,0,.55)` scrim).
+
+**Root cause:** `/settings` was a full route swap — `{children}` unmounted the
+calendar (etc.), so the translucent scrim only covered the empty layout shell.
+
+**Fix:** Next.js parallel + intercept route `@modal/(.)settings` renders
+`SettingsPage` in an `overlay` slot outside `.blurMe` / `overflow-hidden`;
+soft navigation keeps the previous page mounted under the scrim. Hard URL
+`/settings` still renders the full-page route (no prior page to preserve).
+
+**Routes:** +1 intercept page (`@modal/(.)settings/page.tsx`); run
+`scripts/ui-migration-check.sh --update` when merging.
+
+### Chrome titles / subtitles fidelity (2026-08-05)
+
+Owner audit: Calendar, Media, Billing chrome matched the prototype; **Connections**
+header was blank and **Settings** mis-resolved to Social Sets when visiting
+`/settings?tab=…` (More-menu deep-links share the `/settings` prefix).
+
+**Fix:**
+- `pageOnlyMenu`: `/connections` entry (title-only, same pattern as Auto-Plugs).
+- `SUBTITLES['/connections']` → *Connect Claude, ChatGPT, MCP clients and more*
+  (`subtitle_connections`).
+- `title.tsx`: pathname under `/settings` always resolves h1 to Settings +
+  `subtitle_settings`; tab titles stay in the settings sheet.
+- In-page Connections overview subtitle → *Work with PostQueen across your
+  favorite tools.* (`connections_sub`).
+
+**Checks:** run `scripts/ui-migration-check.sh --update` for `subtitle_connections`.
+**Smoke:** `/connections` h1+subtitle; `/settings` and `?tab=webhooks` h1 Settings
+(not Social Sets); Calendar/Media unchanged.
+
+### Connections detail fidelity (2026-08-05)
+
+Owner: list view was OK; connector **detail** lacked design depth (prompt hero,
+Your API key card, How to connect chrome). Reverses the earlier **No Reveal on
+`/connections`** override — detail now shares Reveal / Copy / Rotate with
+Developers (`api-key-card.tsx` + `POST /user/api-key/rotate`).
+
+**LOOK:** gradient `@PostQueen` prompt pills, info blurb, shared API key card,
+numbered steps inside a bordered “How to connect” card; inline copy on code blocks.
+
+**WORK / accuracy:** per-connector prompts and steps stay repo-verified — no
+design-invented `openclaw mcp add`, no official Zapier app; OpenClaw/Hermes keep
+Agent Skills path; Zapier/Make stay SOON + HTTP/webhook.
+
+**Chatbase:** `#chatbase-bubble-button` / `#chatbase-bubble-window` pinned
+bottom-right in `global.scss` so the rail Settings / Upgrade footer stays visible.
+
+**Checks:** run `scripts/ui-migration-check.sh --update` for new `conn_*` i18n keys.
+**Smoke:** Claude / ChatGPT / n8n detail — prompts + key Reveal/Copy/Rotate +
+How to connect; OpenClaw still skills; Zapier still SOON; page header unchanged
+(`subtitle_connections` already in baseline from chrome-titles pass).
+
+### Settings CTA hover — brightness washout (2026-08-05)
+
+**Bug:** Connected Integrations **Update key** (`bg-pqSettings` on `bg-pqInner`
+card) used `hover:brightness-110`, which brightens toward white in light theme —
+hover vanished on white cards. Same anti-pattern on Channels **Add Channel**
+when the list is non-empty.
+
+**Design:** Prototype `settingsVals` tpCards CTA still shows
+`filter:brightness(1.12)`; `design-change-log.md` (2026-08-02) replaced brightness
+with a constant-strength `--hover` overlay tint. Doc 01: *never `filter:brightness()`*.
+
+**Fix:** `hover:bg-pqBrandSoft` (`--brandSoft`) + `transition-colors` on
+`bg-pqSettings` rest (Integrations **Update key**, Channels **Add Channel**
+secondary). Avoid `hover:bg-pqHover` as a full fill replace on solid
+`bg-pqSettings` — it washes toward white. Channels brand primary:
+`hover:bg-pqBrandHover` instead of brightness.
+
+**Tokens:** `--brandSoft` → `pqBrandSoft`; `--brandHover` → `pqBrandHover`.
+
+### DEV billing stage switcher — REMOVED (2026-08-05 remaining pass)
+
+Temporary localhost billing-state switcher deleted:
+`dev-billing-stage*.ts(x)`, layout/billing/`FinishTrial` `dryRun` call sites.
+Use real Stripe/account state for billing QA. Drop
+`NEXT_PUBLIC_DEV_BILLING_STAGE` from env if still set.
+
+### Channels list column width parity (2026-08-05)
+
+**Root cause:** Copilot `AgentList` and `/plugs` still diverged from Channels
+`listPane` — missing `shrink-0` / `inset-0` shell, Add button stayed full-width
+when collapsed, Plugs kept pre-migration `p-[20px]` column without
+`flex-[0_0_*]` or shared header/row recipe.
+
+**Fix:** All left channel columns now use hard **260 / 100** via
+`flex-[0_0_*]`, header `p-[16px_14px_12px]`, Add h36 (36×36 icon when
+collapsed), list `px-[8px] pb-[12px]` + row `py-[7px] ps-[9px] pe-[6px]`.
+Copilot kebab stays off (`showKebab` default false); Channels detail ⋮ and
+Analytics list ⋮ unchanged. App rail **236 / 60** untouched; Copilot Chats rail
+**232 / 56** untouched.
+
+**Files:** `agent.tsx`, `plugs.tsx`, `platform.analytics.tsx` (mobile
+`max-w-full` only).
+
+### Panel collapse / pin tooltips (2026-08-05)
+
+**Problem:** Left-column double-chevron collapse buttons carried `data-tip` (no
+CSS/JS handler) and generic Expand/Collapse copy. Main-rail pin and Copilot Chats
+pin lacked hover labels when icon-only.
+
+**Fix:** Wire `data-tooltip-id="tooltip"` + `data-tooltip-content` (existing
+`react-tooltip` host in `layout.component.tsx`). Channel columns toggle
+`show_channels` / `hide_channels`; icon-only Add Channel gets `add_channel`;
+main rail pin keeps `pin_sidebar` / `unpin_sidebar`; Copilot Chats rail pin keeps
+`pin_chats` / `unpin_chats`; collapsed New chat link gets `new_chat`.
+
+**Checks:** run `scripts/ui-migration-check.sh --update` for `show_channels`,
+`hide_channels` i18n keys.
+
+### Billing payment-failed strip — danger token (2026-08-05)
+
+**Problem:** The payFail banner and its "Update payment method" CTA used `pqWarn`
+(`--warn`: `#f87171` dark / `#dc2626` light). In dark mode that reads pink/coral;
+the prototype hardcodes `#ef4444` / `rgba(239,68,68,…)` for the strip, icon chip,
+outline, and CTA (`billingVals()` :2322–2330).
+
+**Fix:** Added `--danger` / `--dangerSoft` / `--dangerLine` / `--dangerChip`
+(same `#ef4444` base in both themes) and switched the payment-failed strip to
+`pqDanger*`. `--warn` stays for disconnect badges and other warning surfaces.
+
+### Checkout Stripe mount + error UI (2026-08-05)
+
+**Diagnosis:** Order summary and sticky Pay bar were already implemented but gated
+on Stripe Checkout `success` + PaymentElement `onReady`. When `POST /billing/embedded`
+failed or CheckoutProvider stayed loading/error, `FormWrapper` returned `null` —
+Payment details looked empty and plan selection felt broken. Local Stripe keys
+(`pk_test_51Tu…` / `sk_test_51Tu…`) create `client_secret` successfully; mismatch
+or missing keys is the usual env failure mode.
+
+**Fix:** `embedded.billing.tsx` — visible loading skeleton + error panel inside
+Payment details (no silent null); shell stays mounted while secret/theme swaps
+(no blank Payment details card); Order summary / SubmitBar still Stripe-gated.
+`first.billing.component.tsx` — embed `!res.ok` throws into SWR so API errors
+show; missing `client_secret` surfaces in-card.
+
+**Lapsed LOOK (design `subEnded`):** headline is now “Pick up **where you left
+off**” (brand highlight on the full phrase, no trailing “with PostQueen”);
+amber banner uses warn-dot chrome + body *Nothing will go out until you
+subscribe again.*; title stays dateless (subscription row hard-deleted — no
+client end date). Sticky bar for non-trial: “$X due today” + plan subline +
+**Resubscribe to {plan} – $X** (was bare “Pay Now”). Order-summary cancel
+blurb splits trial vs lapsed tails per design `pwCancelTail`.
+
+### AI Copilot — block reconnect channel select (2026-08-05)
+
+**Prototype delta:** The Agent rail (`agentVals()`) lets every channel row toggle
+on/off, including disconnected ones with the red `!` badge. **Product decision:**
+match Analytics / Plugs / Channels WORK — channels with `refreshNeeded` or
+`inBetweenSteps` cannot be selected for Copilot scheduling.
+
+**Implemented (WORK safety; LOOK unchanged except cursor):**
+- `agent.tsx` — `setIntegration` toast + return on add; deselect still allowed;
+  `cursor-not-allowed` on blocked rows; no selected tick when blocked; prune
+  `selected` / `properties` after list mutate when a channel falls into
+  `needsAttention`.
+- `agent.chat.tsx` — filter `needsAttention` out of CopilotKit `properties.integrations`
+  and `[--integrations--]` on send so stale picks do not reach the model.
+- `integration.schedule.post.ts` — reject `disabled` / `refreshNeeded` /
+  `inBetweenSteps` after `getIntegrationById`.
+- `integration.list.tool.ts` — exclude those integrations from the scheduleable list.
+
+**Toast copy:** `channel_disconnected_click_to_reconnect` (same key as Channels list).
+No OAuth redirect from Copilot — user reconnects from Channels.
+
+**Checks:** re-run `scripts/ui-migration-check.sh --update` after i18n key adds.
+
+### Shell / chrome fidelity sweep (2026-08-05)
+
+Owner sweep: rail, header title/subtitles, Help menu, pin/unpin, Chatbase vs rail
+footer, logo version chip, Create Post placement, Settings intercept overlay.
+
+**Fixed (LOOK):**
+- **Create Post → header** (owner override): Blank/AI split portalled back into
+  `HeaderActionSlot` from `launches.component.tsx`; removed from calendar
+  `Filters` toolbar. Button tokens → `bg-pqBrand` / `text-pqOnBrand`.
+- **Founding member header chip:** `ltHeaderDisplay` analogue — amber pill with
+  heart before streak when `user.isLifetime || user.isTrailing` (desktop only);
+  tokens `pqLtChipBg` / `pqLtAmber` / `--ltOutline`.
+- **Settings scrim:** `bg-black/55` → `bg-pqPopup` (`--popup`) to match prototype
+  `settingsOpen` overlay.
+- **Help menu Setup tour icon:** play glyph → prototype check-circle path
+  (`helpMenu[0].icon`).
+- **Logo version chip:** `tabular-nums` on `appVersionLabel` (prototype `data-num`).
+- **Chatbase bubble:** bottom-trailing pin uses `inset-inline-*` + explicit RTL
+  override so the rail Settings / Upgrade footer stays reachable in both directions.
+
+**Already matched (no code change):**
+- Rail pin/unpin row + collapsed hover-expand (`rail.tsx`, `[data-sb]` in
+  `global.scss`).
+- Header h1 + subtitles (`title.tsx` — Connections/Settings fixes from prior pass).
+- Settings intercept `@modal/(.)settings` keeps prior page under scrim.
+- Pin tooltips wired via `react-tooltip`.
+
+**Raises (unchanged):**
+- **Create Post vs design inventory:** prototype header has no Create Post;
+  owner places it in the header anyway — calendar cells + Channels → New post
+  remain alternate entry points.
+- **Keyboard shortcuts** in Help menu — locked row, no WORK behind it (Intentional).
+- **Streak “Longest: N days”** — no `streakBest` in schema.
+- **`chromeVals` dead handlers** — `openCommand`, `usageMeters`, `newBlankPost`
+  in vals but not rendered in prototype template; do not build from docs alone.
+- **Generator Tone label** — prototype duplicates “Output format”; app uses Tone.
+
+**Checks:** `scripts/ui-migration-check.sh` — types clean; i18n/gates deltas are
+from other in-flight steps (analytics/plugs copy), not this shell pass.
+
+### Main product screens fidelity sweep (2026-08-05)
+
+Scope: Calendar/Posts, Channels, AI Copilot (did not touch `setIntegration` /
+reconnect-select WORK), Analytics, Media (alt/lightbox), Connections detail,
+Plugs/Auto-Plugs. Design LOOK / repo WORK; `colors.scss` tokens only.
+
+**Fixed (CRITICAL LOOK):**
+- **Auto-Plugs detail** (`plug.tsx`): legacy `bg-newTableHeader` 300px tiles →
+  design card grid (`minmax(320px,1fr)`, `--pop` inset ring, bolt tile, channel
+  meta line, `Set up plug` / `Edit plug`, toggle tooltips). Pane padding
+  `18/22/40`, max-width 1000.
+- **Plugs + Analytics empty states:** prototype copy + icon tile + brand
+  **Connect a channel** → `/channels?add=1` (not calendar redirect). Plugs
+  reconnect toast → `channel_disconnected_click_to_reconnect`.
+- **Calendar/Posts:** publish-error badge `bg-red-500` → `pqDanger`; today
+  pill `text-pqOnBrand`; See-all chip hover `brightness` → `pqBrandFaint`;
+  queue reconnect overlay → `pqWarn` + `pqBrand/60`.
+- **Channels list:** warn `!` badge `text-white` → `text-pqOnBrand`.
+- **Hover tokens:** Media Upload, Copilot New chat + send, Connections code
+  copy, Add Channel continue — `hover:brightness*` → `pqBrandHover` /
+  `pqHover` (doc 01 anti-pattern).
+- **Media alt modal:** video thumbnail actions → `pqBrand` / `pqSettings` /
+  `pqDanger*` (was `bg-forth` / `bg-red-600`).
+- **Channel filter** selected pill `text-pqOnBrand`.
+
+**Already matched (no change this pass):**
+- Header subtitles for Calendar, Media, Connections, Agents, Plugs, Analytics.
+- Copilot empty hero, PQ avatar, composer `--pop` frame, trial lock overlay,
+  channel column chrome, Chats rail, Connections detail (prompt hero + API key
+  card) from prior passes.
+
+**Remaining gaps by severity:**
+
+| Severity | Surface | Gap |
+| --- | --- | --- |
+| **Raise** | AI Copilot | Draft-plan card before composer — no `chatHasPlan` hook (`ai-copilot.md` #11) |
+| **Raise** | Composer | Screenshot matrix still owed (connected channel) |
+| **Delta** | Media | Rename menu item — no API; SDK thumbnail ceiling |
+| **Delta** | Billing | Photo matrix + plan-card nits (out of scope but listed in MASTER) |
+| **Delta** | Settings / Developers | Access pills, Sets table chrome (out of scope) |
+| **Intentional** | Help | Keyboard shortcuts locked row |
+| **Intentional** | Plugs layout | Repo keeps channel column + per-channel plug grid; prototype `isPlugs` block is grid-only when panel hidden — both capabilities preserved |
+
+**Checks:** `scripts/ui-migration-check.sh` — types 0/0 · api 152 · routes 30.
+**i18n** intentional adds: `connect_a_channel`, `no_analytics_yet`,
+`analytics_empty_connect_hint`, `no_plugs_for_these_channels`,
+`auto_plugs_supported_channels`, `edit_plug`, `turn_on`, `turn_off` — run
+`--update` when merging. **gates** tip drift unrelated to this pass.
+
+### Billing + Settings + Checkout fidelity sweep (2026-08-05)
+
+Compared `settingsVals()` (Integrations cards, Webhooks/Signatures list +
+form chrome), billing page banners (`payFailShow`, trial/discount/cancel strips),
+and checkout paywall (`pwHead*`, order summary, sticky CTA) against repo. Stripe
+CheckoutProvider / PaymentElement / `checkout.confirm()` untouched.
+
+**Fixed (LOOK):**
+- **Settings dual-back:** in-pane editors (Webhooks, Autopost, Signatures,
+  Integrations API key) hid the sheet-level h3/desc while `SettingsPaneEditor` is
+  open — no more stacked “Webhooks” + Back/“Update webhook”.
+- **Settings tab titles:** Webhooks → `Webhooks (n/limit)` from live list +
+  `user.tier.webhooks`; Sets → `Social Sets (n)`; Autopost tab title →
+  **Autopost** (design `settingsVals` TAB, nav row stays “Auto Post”).
+- **Settings h3 chrome:** `font-display`, `-tracking`, token colours on sheet
+  title (prototype h3 20/500).
+- **Checkout sticky CTA:** non-trial Stripe sessions on **first** checkout now
+  **Pay Now** (`billing_pay_now`); **Resubscribe to {plan} – $X** only when
+  `!user.allowTrial` (lapsed / `subEnded`). Trial sessions unchanged
+  (`Pay $0 Today – Start your free trial!`). Order summary + bar still gated on
+  Checkout `success` + PaymentElement `onReady`.
+- **Payment-failed strip:** already on `pqDanger*` tokens from prior pass —
+  verified against prototype `#ef4444` gradient/outline/CTA.
+
+**Already matched (no code):** first-checkout hero (“Your first **n days are
+free**” / lapsed “Pick up **where you left off**” + amber ended banner);
+Integrations card grid (Connected dot, Add/Update key + Disconnect, 31px CTAs);
+Webhooks/Signatures list rows + `ModalFormActions` form footers; billing Plans h2,
+lifetime/trial/discount/cancel banners; checkout header “Checkout” label + order
+summary portaled to `#pq-order-summary`.
+
+**i18n:** +2 keys — `webhooks_quota_title`, `social_sets_count`. Baseline
+updated (`1293` keys). **gates** snapshot refreshed (dev billing switcher
+overrides in local QA).
+
+**Raises (behaviour / data the design fakes — not implemented):**
+- **Lapsed checkout banner date:** design `pwLapsedTitle` names end date; client
+  has no reliable `cancelAt`/period end once subscription row is hard-deleted —
+  title stays dateless (“Your subscription ended.”).
+- **Billing payment-failed body:** prototype invents “Last attempt failed on … /
+  Publishing pauses in N days”; repo keeps Stripe-accurate copy (“Update… we will
+  try again. Nothing is cancelled yet.”) — no invented retry deadline.
+- **Sets editor:** design uses in-sheet forms; repo still opens full-screen
+  `AddEditModal` for set compose — capability preserved, chrome differs.
+- **Checkout screenshot matrix:** still owed on this install (`billingEnabled` +
+  Stripe keys); DEV billing switcher covers LOOK states only — Pay bar still hits
+  real Stripe when clicked.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — i18n/routes/gates/api
+baselines written; frontend types fail on pre-existing `agent.chat.tsx` narrow
+type (unrelated). Stripe embed path not exercised in CI.
+
+### Remaining UI work pass (2026-08-05)
+
+**LOOK shipped (no handler/API rewrites):**
+- Settings Developers compact `ApiKeyCard` + Open Connections; Access/Apps kept;
+  Apps OAuth chrome → `--pop` / 30px pills; Sets header/pills/CTA; Signatures CSS
+  truncate + Auto add? line; Approved Apps Revoke pill.
+- Compose sheet: r20, `--bg` headers, 30×30 close, settings accordion
+  `--tableHeader`, Schedule split + click Post Now; editor legacy → `pq*`.
+- Calendar month: 24px `data-mpost` chips + day pill / count.
+- Billing residual legacy tokens: already clear in `billing/*` (FAQ/plan cards
+  on `pq*`) — checklist reconciled; no Stripe/price inventing.
+
+**Cleanup:** DEV billing stage switcher removed (files + call sites + `dryRun`).
+Seed revoke attempted; use local `DATABASE_URL` on `:5432` when Postgres is up:
+`node scripts/seed-dev-workspace.mjs --email … --revoke`.
+
+**Raises unchanged (documented, no fake WORK):** CREATOR $132; months-free vs
+coupon; Copilot draft-plan; Sets fullscreen modal; Media Rename; Streak Longest;
+Custom URL always; Claude/ChatGPT write picker; Compose “Edit Post” title;
+in-sheet AI FAB; groupCell merge; lapsed/payFail invented dates; Generator Tone;
+Help shortcuts locked; lifetime $24.50 retention skip.
+
+**Photo QA debt (process, not code):** billing 14×2 matrix
+(`billing-photo-fixture.md`); compose @ 420/900/1440 light+dark with a connected
+channel. Flip MASTER photo rows only after screenshots.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — gates delta from removing
+dev billing `allowTrial`/`isTrailing` override sites; types/api/i18n/routes clean.
+
+### Photo QA close pass (2026-08-05)
+
+**Env:** FE `:4200` + BE `:3000`; re-seeded
+`gokhan@gokhankinay.com` (channels/posts); JWT via local `JWT_SECRET` → `PQ_AUTH`.
+
+**Compose (6/6):** `docs/ui-shots/compose-qa/compose-{420,900,1440}-{light,dark}.png`
+after Create Post → Continue without set (`data-pq="continue-without-set"` added for
+the shot tool). Chrome Match vs prototype; no LOOK code change required.
+
+**Billing matrix:** only **#03 CREATOR × active** shootable on this account
+(`03-creator-active-1440-{light,dark}.png`). Cells 01–02, 04–14 **blocked** (no DEV
+billing switcher; `/billing/lifetime` redirects to `/billing`). Live `/billing` HTML
+has no `bg-sixth`/`newBg*`. FAQ + Plans + MOST POPULAR + portal row confirmed.
+`billing.md` §C historical `[ ]` reconciled to `[x]` where code+shot prove Match.
+
+**Raises unchanged.** Product states for the other 13 billing cells need real
+Stripe/account fixtures if a full 14×2 matrix is required later.
+
+### Next leftovers pass (2026-08-05)
+
+**LOOK:** Compose title toggles to **Edit Post** when `existingData.integration`
+(`manage.modal.tsx` + `edit_post_title` key).
+
+**Media thumbs Delta:** not an SDK/LOOK bug — seed default copied
+`public/no-picture.jpg` (silhouette) into uploads. Seed now generates a branded
+NW PNG via `sharp` when `--avatar` is omitted. Shots:
+`docs/ui-shots/media-qa/media-1440-{light,dark}.png`,
+`compose-thumbs-1440-dark.png` (channel circles show NW).
+
+**Design vs app Raises** logged in `MASTER.md` (Sets modal, draft-plan, Rename,
+Streak Longest, CREATOR/$132, Help shortcuts, AI FAB, aiagents picker, groupCell,
+lapsed dates, billing cells blocked). No fake WORK.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — i18n +1 key
+`edit_post_title`; types/api/routes/gates clean.
+
+
+### Responsive fidelity (2026-08-05)
+
+Structural responsive pass keyed off `useViewport()` (mobile <760 / tablet 760–1179 / desktop ≥1180). Tailwind `mobile:`/`tablet:` screens (1025/1300) left untouched.
+
+**Phase 1 — Channels / Analytics / Plugs drawers**
+- Shared `TwoColumnDetailDrawer` (`layout/two-column-detail-drawer.tsx`): passthrough ≥760; phone = full-bleed off-canvas detail with `bg-pqPopup` scrim, `shadow-pqE3`, z 72/78, measured top below chrome (Agent tokens). Back + Escape + scrim close.
+- Removed dead `max-mobile:hidden` from Channels + Analytics detail (was hiding detail through ≤1025).
+- Phone starts on list; tapping a channel opens the drawer. Auto-select does not open it. Channels Add pane uses the same drawer surface.
+- Desktop/tablet keep two-column + existing `_autoSide` cookie collapse.
+
+**Phase 2 — Compose stack**
+- `manage.modal.tsx`: under 760, editor + preview `flex-col`; preview `max-h-[340px]` / full width (no fixed `w-[580px]` row). Legacy `mobile:p-0` / `tablet:p-[16px]` pad kept. No provider-settings rewrite.
+
+**Phase 3 — Checkout breakpoints**
+- `first.billing.component.tsx`: stack + side `w-full` via `useViewport` at <1180; H1 34 / 42 / 54 at mobile / tablet / desktop (drops `mobile:!text-[34px]` winning in the 760–1025 band). Stripe WORK unchanged. Subscribed `/billing` Plans page photographed instead of unpaid checkout on this seed.
+
+**Phase 4 — Soft outs (intentional)**
+- Settings: left as Match; no change.
+- Media: left legacy grid (no Tailwind screen cut).
+- Auth login: **document only — no redesign** (shots under `docs/ui-shots/responsive/auth-login-*` for reference).
+- DEV billing switcher: **not restored**.
+- Calendar week @420: horizontal clip still visible in shots; not auto-switched to Day (no product Raise / behaviour invent). Compose footer crowding @420 pre-existing outside the editor/preview stack change.
+
+**Checks:** `scripts/ui-migration-check.sh` — **PASS** (types 0/0, api 152, i18n 1294, routes 30, gates 14). No baseline update.
+
+**Shots:** `docs/ui-shots/responsive/` — 420 / 900 / 1440 × light/dark for launches, channels (+ `channels-detail-420`), analytics (+ `analytics-detail-420`), plugs, agents, media, settings, billing, connections, auth-login, compose. Auth via `PQ_AUTH` JWT (`gokhan@gokhankinay.com`) + `PQ_HOST=localhost`.
+
+### Post-redesign regression audit (2026-08-05)
+
+**Verdict:** Responsive redesign did **not** break WORK (drawers/compose/checkout/select/add/reconnect stay wired; no false-alarm “fixes”).
+
+**Success feeling closed:** Time Table save now toasts `settings_updated` after the existing POST/mutate/closeAll (`time.table.tsx`). Design said “Updated”; Channels-surface peers use the same key.
+
+**Left as pre-existing silents (not redesign removals):** plug on/off toggle; media alt-text / settings save (modal close only). No toast invent for those.
+
+**Soft verify compose @420:** skipped — FE not up (`localhost:4200` unreachable). No unreachable-action fix applied.
+
+### Teams Settings — inline upgrade lock (2026-08-06)
+
+**Owner:** Keep Teams in Settings Workspace for org admins even when the plan
+lacks `team_members`. Do **not** mount `TeamsComponent` (no `GET /settings/team`)
+so the global 402 “Payment Required” dialog never fires; show `TeamsUpgradeLock`
+inline with billing CTA instead. USER role still hidden. Non-admin member list
+(view-only + disabled Invite) deferred — needs backend GET policy change.
+
+**Checks:** i18n key `subscription_does_not_include_team_members`; gates
+`tier.team_members` call-site count −1 (nav no longer gated); other gate churn
+from concurrent WIP baselines refreshed with `--update`.
+
+**Follow-up (same day):** Global 402 handler still opened “Payment Required” when
+`TeamsComponent` mounted despite the nav gate — e.g. DEV billing-stage override
+claims GROWTH+ while the real sub is CREATOR. Fix: skip the dialog for
+`GET /settings/team` 402 in `layout.context.tsx`; `TeamsComponent` renders
+`TeamsUpgradeLock` on that status. POST/DELETE team still use the global dialog.
+
+### Calendar → Posts panel: convert to DRAFT (2026-08-06)
+
+**Owner request:** Drag Scheduled/Drafts from the calendar onto the left Posts
+panel to **really** set `state=DRAFT` (Temporal stopped). Not in the design.
+
+- App `PUT /posts/:id/status` (DTO → controller → existing `changePostStatus`);
+  rejects PUBLISHED/ERROR; draft clears `releaseId`/`releaseURL`; idempotent DRAFT.
+- Panel `useDrop` on Scheduled/Drafts list only; Posted rejects; cell
+  `PUT /:id/date` reschedule untouched. Toast `moved_to_drafts`; `publishDate`
+  kept (Drafts list still needs `publishDate >= now`).
+
+**Follow-up:** Owner — DRAFT must **leave the calendar grid** (panel only).
+`getPosts` now `state: { not: DRAFT }`; `calendarPosts` also filters DRAFT
+(demo/stale). Design still paints drafts on Day — owner overrides.
+`publishDate` still kept so Drafts panel list stays populated.
+
+**Checks:** `scripts/ui-migration-check.sh` PASS after draft-hide follow-up
+(api 155, i18n 1314, routes 30, gates 14). Cell reschedule still
+`PUT /posts/:id/date` only.
+
+### Checkout fidelity — Order Summary, Lifetime, layout (2026-08-06)
+
+**Owner:** Checkout felt empty vs design (Order summary / coupon / pay bar);
+Lifetime redirected away; copy said Creator not Pro; lifetime gradient banded.
+
+**Fixes:**
+- Lifetime selectable in-place (`checkoutMode`); card on/off + Pro features;
+  pay bar → `POST /billing/lifetime-checkout` with honest **$49 due today** (not
+  design’s fake $0 lifetime trial — raised).
+- Order summary always visible: subscription fallback while Stripe loads;
+  Lifetime static summary; coupon chrome on monthly.
+- Right column `560px`; `--ltCardOn/Off` no longer fade to bare transparent.
+- `grantLifetimeFromPayment` floors ladder at **PRO**; code redemption unchanged.
+
+**Raise:** Design prototypes Lifetime + $0 trial then charge later; repo charges
+immediately via hosted Checkout — keep WORK honest until deferred charge exists.
+
+**Checks:** `scripts/ui-migration-check.sh --update` PASS (i18n 1299→1313 new
+checkout keys; api/routes/gates unchanged).
+
+### Confirm CTA coral → brand / danger (2026-08-05)
+
+**Problem:** Compose “Yes, close it!” used coral/pink in dark — not brand purple. Cause: `deleteDialog` always passed `danger: true`, and `DecisionModal` painted danger with `bg-pqWarn` (`--warn` `#f87171` in dark).
+
+**Fix:**
+- `DecisionModal` + `Button` `danger` → `bg-pqDanger` (`#ef4444`), not `pqWarn`
+- Close confirms (`manage.modal` askClose, `modal.wrapper`, chrome `askClose`) pass `danger: false` → `bg-pqBrand`
+- Billing cancel filled CTAs + media lightbox delete hover → `pqDanger`
+- Reconnect `!` badges keep `pqWarn` (status chips, not primary CTA fill)
+- Design `--pink` / `pqPink` (Post Now magenta) untouched — different token
+
+**Verify:** `scripts/ui-migration-check.sh` PASS (types / api / i18n / routes / gates).
+
+### Channel ⋮ + media ⋯ anchor + Auto Post nav (2026-08-05)
+
+**Problem:** Channel ⋮ menu opened far from the trigger (manual `fixed` left/top). Channels list rows lacked ⋮ while calendar peers had it. Settings More / rail hid Auto Post behind `tier.autoPost` (CREATOR/STANDARD — Social Sets/Signatures/Webhooks still visible).
+
+**Fix:**
+- Channel `Menu` + media more-menu → `useAnchoredPopover` (`bottom-end`, portal to `document.body`)
+- Channels list rows get the same ⋮ as detail / calendar column
+- Auto Post always in Settings More + rail for non-FREE (label `Auto Post`); pane renders without `autoPost` capability gate
+
+**Checks:** `scripts/ui-migration-check.sh` PASS. Gates baseline refreshed: `tier.autoPost` nav/pane gates dropped (4→1 residual elsewhere); `tier.current` +2 for Auto Post joining Sets/Signatures FREE gate.
+
+### Notifications popover (2026-08-05)
+
+**Problem:** Header bell panel painted every unread row solid purple (`bg-seventh` → `--brandHover`), so unread vs read was unclear; header lacked design’s “Mark all read”.
+
+**Design (`chromeVals` / template ~256–275):** panel `--inner` + border + shadow; rows `padding 11×16`, unread = `--brandSoft` tint + 6px `--brand` dot + weight 600; read = transparent + no dot; header “Mark all read”.
+
+**Fix (`notification.component.tsx`):**
+- Surface: `bg-pqInner` / `border-pqBorder` / `shadow-pq` / `rounded-pqLg` / `animate-pqPop` (was `bg-third` + solid seventh rows)
+- Unread: `bg-pqBrandSoft` + brand dot + `font-[600]`; read: transparent row, no solid purple
+- Removed `animate-newMessages` (keyed off solid `--color-seventh`)
+- Bell badge: `bg-pqPink` token (no hex); button chrome matches design hit target
+
+**Mark all read — wired (not Raise):**
+- Design shows the control. No dedicated POST endpoint exists.
+- Existing WORK: `GET /notifications/list` already advances `lastReadNotifications` when the panel opens.
+- Button clears unread LOOK locally + existing toaster (“All notifications marked as read”); does not invent backend.
+
+**Root cause note (channel ⋮):** `.trz { transform: translateZ(0) }` on channel
+columns made `position: fixed` coords resolve against the column, not the
+viewport — portal to `document.body` is required. Gates baseline refreshed:
+`tier.autoPost` 4→1 (nav no longer hides Auto Post on that flag); `tier.current`
+21→23 (Auto Post + pane use paid-tier check like Sets/Signatures).
+
+### Autopost form hairlines + Add Channel double back (2026-08-06)
+
+**Problems:** Add Autopost showed light horizontal rules through the form and a
+tiny text Back next to a large title. Add Channel connect step had two backs —
+title-adjacent chevron plus boxed All platforms.
+
+**Root cause (hairlines):** Form wrapper used `border border-pqLine`. On dark,
+`--line` / `pqLine` is `rgba(255,255,255,0.07)` — reads as unintended white
+rules. Webhooks already omitted that box.
+
+**Fixes (LOOK only; WORK unchanged):**
+- Autopost form: drop outer `pqLine` border; stack fields with `gap-[16px]` like
+  Webhooks.
+- `SettingsPaneEditor` Back → Channels-style boxed pill (`bg-pqSettings`,
+  chevron + label) — covers Autopost, Webhooks, Signatures, Teams invite,
+  Integrations API key.
+- Add Channel: `onStepChange` from `AddProviderComponent`; hide parent title
+  chevron while connect step shows boxed All platforms (design `connect-step`).
+
+**Checks:** `scripts/ui-migration-check.sh` — api 155 · i18n 1299 · routes 30 ·
+gates 14 · backend types 0 — all unchanged. Frontend types FAIL is ambient
+`Integrations` narrowing across channels/launches/plugs/sets (pre-existing;
+none of the edited symbols in settings-pane-editor / autopost /
+add.provider / channels `onStepChange` path).
+
+### Connected channel order (platform importance) (2026-08-06)
+
+**Problem:** Channels list, calendar channel filter, and other connected-channel
+panels each showed a different order (API/DB order vs alphabetical
+`identifier`).
+
+**Canonical order:** `socialIntegrationList` in
+`libraries/nestjs-libraries/src/integrations/integration.manager.ts` (same
+order Add Channel already uses via `/integrations/social`). Mirrored as
+`PROVIDER_DISPLAY_ORDER` in
+`apps/frontend/src/components/launches/helpers/sort.integrations.ts`.
+
+**Fix (client-side only; API untouched):**
+- Shared `sortIntegrationsByProviderImportance` — enabled first, then provider
+  rank, then account `name`, then `id`
+- Applied via `useIntegrationList` + panel `sortedIntegrations` (calendar,
+  agents, plugs, analytics) and PickPlatforms in autopost/webhooks
+- Add Channel grid left as-is (already registry order within categories)
+
+**Checks:** `scripts/ui-migration-check.sh` PASS (types 0 · api 155 · i18n 1300 ·
+routes 30 · gates 14).
+
+### Calendar Day view fidelity (+ Week/Month audit) (2026-08-06)
+
+**Design methods:** `calendarVals()` / `gridVals()`; templates `showDay` /
+`dayRows` (~1433–1474), `showWeek` / `weekRows` (~1302–1351), `showMonth` /
+`monthCells` (~1477–1510).
+
+**Problem (Day):** Day still used the pre-migration layout — rows built from
+`integrations.time` autopost minutes + posts, centered purple/brand-faint bands
+of greyscale channel icons, white hairlines from cell `border-pqLine` on that
+band chrome. No hourly clickable empty slots. Looked nothing like the Posts list
+/ prototype day timeline.
+
+**Day fix (`calendar.tsx` + `global.scss`):**
+- `DayView` → 24 hour rows, 76px time gutter, `border-t` / `border-e` hairlines
+  (`--line`), scroll opens at 07:00 like week
+- Hour bucketing for posts (same as week); drop / `PUT /posts/:id/date` /
+  compose-from-slot unchanged
+- Empty slots: always-visible chip “Add a post at HH:00” / “Date passed”
+  (`add_a_post_at` i18n); whole slot clickable when future
+- Day cards: max 560px, content-first, channel name + status chip/dot + time,
+  accent stripe (status colours), actions top-end — list-adjacent per prototype
+- Removed autopost icon bands; day cells no longer draw week-style borders /
+  hatch (parent owns hairlines) — kills the white lines
+- `[data-dayslot]` overflow visible so stacked posts are not clipped
+
+**Week audit:** Already matches `weekRows` (hour grid, hatch past, today tint,
+See all >2, cell cards, drop rings). Intentional outs kept: 72px hour column
+(12h locale), 84px day floor (channel column beside grid). No code change.
+
+**Month audit / small LOOK:**
+- Out-of-month cells `bg-pqTableHeader` + soft day number (prototype)
+- Sticky DOW headers get `border-s` hairline like design
+
+**Raises (behaviour design has / we do not invent):**
+- Prototype month DOW headers call `onOpenDay` into a demo weekday list filter —
+  our headers are labels; day open stays on “See all” / overflow chips
+- Design day does **not** surface channel publishing-time rows; time slots stay
+  in channel ⋮ → Time table (WORK preserved, LOOK removed from Day)
+- Design day cards omit list-style status pills / tags — compact day card wins
+  over copying the Posts list row 1:1
+
+**Checks:** `scripts/ui-migration-check.sh` PASS. i18n **1300** (+`add_a_post_at`).
+api 155 · routes 30 · gates 14 unchanged.
+
+### Day view — centered reading column (2026-08-06)
+
+**Owner:** Day timeline felt stuck left / sparse in the wide app shell. Wanted
+Posts-list calm centering without losing hour slots.
+
+**Fix:** Wrap Day hour rows in `mx-auto max-w-[700px] px-[16px]` (76 + 560 + pad);
+slightly taller time gutter `py-[14px]`. Keep gutter / chips / DnD / day cards.
+Intentional divergence from prototype full-bleed Day — documented.
+
+**Also:** Calendar `getPosts` excludes `DRAFT` (completes drafts-leave-calendar).
+
+### Tour — Channels shows Add Channel; finish card stays up (2026-08-06)
+
+**Owner:** Step “Your accounts live here” still showed calendar; last card
+scrolled the page to the bottom of the platform grid.
+
+**Fix:**
+- `nav-channels` step → `/channels` + `needs: 'channel-add'` (Add Channel open)
+- `platform-grid`: `scrollIntoView({ block: 'start' })` + pane `scrollTop = 0`;
+  not treated as `huge`; card placed near top of grid
+
+### Invite by link stuck on Loading (2026-08-06)
+
+**Cause:** `customFetch` returned an **unresolved Promise** when `afterRequest`
+returned false (user dismissed 402 Payment Required / 406 trial dialog). Invite
+UI awaited that fetch → eternal “Loading…”. Original invite still used the same
+`GET /integrations/social/:id` — WORK was fine; the hang was global.
+
+**Fix:** Synthetic `{ err: true }` Response instead of hanging; InviteLinkStep
+clears loading, shows unavailable + Retry.
+
+### Teams Settings — locked empty state polish (2026-08-06)
+
+**Owner:** Locked Teams pane looked sparse — narrow left-aligned block, redundant
+“Teams” heading under “Team Members”, weak “Move to billing” CTA, no lock visual.
+
+**Fix (`TeamsUpgradeLock`):** Full-width inset card (analytics empty / TrialLockCard
+language) — brand-soft lock tile, “Unlock team members” title, existing body
+copy, CTA **Upgrade plan** → `/billing` (unchanged route). Dropped nested
+“Teams” heading (pane chrome already titles the tab).
+
+**Design gap (raised, not implemented):** Prototype `settingsVals()` **hides**
+the Teams tab when `!caps().team_members` — there is no locked empty state in
+`PostQueen App v2.dc.html`. Repo keeps the tab + inline lock (owner earlier
+same day). CTA wording matches design rail `upgradeCta: 'Upgrade plan'`. Do
+**not** say “Upgrade to Pro” — seats unlock at **Growth** (`pricing.ts`).
+
+**i18n:** +`unlock_team_members`, +`upgrade_plan` (baseline `--update` when
+running the migration check).
+
+### Settings Upgrade plan left scrim open (2026-08-06)
+
+**Cause:** Settings is `@modal/(.)settings`. `TeamsUpgradeLock` used
+`<Link href="/billing">` — page slot became Plans, intercepting overlay stayed.
+
+**Fix:** CTA dismisses like the X (`onClose` / `router.back()`), then
+`queueMicrotask` → `router.push('/billing')`. Same for `?tab=billing` /
+`plan_invoices` redirect. `onClose` wired through `TeamsComponent` 402 lock too.
+
+### Add Channel — remove title chevron (2026-08-06)
+
+**Problem:** Platform-grid / Connect myself / Invite-by-link header showed a
+left chevron beside “Add a channel”. Design `platform-grid` has title +
+subtitle only; back belongs on nested connect / continue steps.
+
+**Prior partial fix:** `onStepChange` hid the title chevron only while a
+provider connect step was open (double-back on connect). Chevron still
+appeared on the primary Add Channel surface.
+
+**Fix (LOOK only):** Drop the title-row chevron and `closeAdd` from Channels;
+remove unused `providerStepOpen` / `onStepChange` plumbing. Nested
+“All platforms” pills and invite-card “Back” in `AddProviderComponent` stay
+(design `connect-step` / invite). Phone drawer Back via
+`TwoColumnDetailDrawer` stays. Closing Add Channel: pick a channel in the
+list, or mobile drawer Back / scrim.
+
+### Copilot inset + Generate video always visible (2026-08-06)
+
+**Owner:** Copilot composer felt edge-flush; Generate video vanished when
+`/media/video-options` was empty (no provider keys).
+
+**LOOK (intentional vs design 24px):** `.copilotKitInputContainer` side padding
+**24 → 40** desktop; mobile (`[data-mobile=1]`) stays **24**. Empty-thread hero
+aligned to 40 / 24. `max-w-[840px]` unchanged.
+
+**WORK:** `AiVideo` no longer `return null` on empty/loading-empty options.
+Still mounted only under `tier.ai` (Create Post + Copilot via
+`media.component`). Empty options → disabled chrome + toast
+`video_providers_are_not_configured`; generate handlers / credits /
+`generate_videos` quota untouched.
+
+**Raise:** installs without video provider keys show a muted control until
+configured — better than invisible.
+
+**Checks:** `scripts/ui-migration-check.sh --update` then plain check — **PASS**.
+i18n **1317** (+`video_providers_are_not_configured`). api 155 · routes 30 · gates 14 unchanged.
+
+### Channels right-pane layout shift (2026-08-06)
+
+**Problem:** Opening/closing Add Channel (or a provider connect step) moved the
+right-pane origin — “Add a channel” / headers no longer aligned with the prior
+panel.
+
+**Cause:** Design Channels column (`:1719`) uses
+`overflow-y:scroll; scrollbar-gutter:stable` and resets `scrollTop` when
+`chAdd` / `addStep` / `addContinue` change. Our `TwoColumnDetailDrawer` desktop
+path had neither overflow nor a stable gutter, so scrollbar appear/disappear
+and retained scroll offset shifted the centered `max-w-[760px]` column.
+
+**Fix (LOOK only):**
+- Drawer: `min-h-0 overflow-y-auto [scrollbar-gutter:stable]` (desktop + phone
+  scroll body); optional `scrollResetKey` → `scrollTop = 0`.
+- Channels: `scrollResetKey` from add vs detail + provider step; wire
+  `AddProviderComponent.onStepChange` for connect-step resets only (no title
+  chevron).
+
+### Media drop zone dashed border softened (2026-08-06)
+
+**Owner:** Idle dashed edge (`border-pqBrand/40`) read bright/jagged on dark.
+
+**Fix:** Idle `border-pqBorder`; hover still `border-pqBrand` + `bg-pqBrandSoft`.
+Dashed drop-zone language unchanged (`media.box.tsx`).
+
+### Day view → Posts list template (2026-08-06)
+
+**Owner:** Day still felt like left timeline + narrow chips; wanted Posts look
+with hours between.
+
+**Fix:** `DayView` uses Posts `max-w-[860]` column; per-hour headers (date-row
+pattern); `ListItem` cards (+ drag wrapper); full-width Add / Date passed rows.
+Compose-from-hour + `PUT /posts/:id/date` drop kept. Week/Month unchanged.
+Supersedes centered 700px timeline; prototype left gutter / compact day cards
+are intentional outs.
+
+### Select a Set modal restyle (2026-08-06)
+
+**Owner:** Legacy `tableBorder` / duplicate heading looked off-brand.
+
+**Fix:** `SetSelectionModal` — list rows as `pqPop` + inset border (Channels/Posts
+density); drop duplicate body title (chrome already says Select a Set); footer
+secondary **Continue without set**. Handlers unchanged.
+
+### Channels detail chrome trim (2026-08-06)
+
+**Owner:** Publishing options / Time slots header buttons redundant; New post
+should sit right of identity; Published green card strained the eye.
+
+**Fix:** Removed those two buttons (`openPublishing` gone). Identity left +
+New post / Reconnect / ⋮ right; Bot name stays secondary when needed. Time
+slots via ⋮; publishing accordion still below. Published count card neutral
+like Scheduled/Drafts (ok accent dot kept). Design chrome buttons = owner out.
+
+### Remaining UI audit — mobile Channels + deferred leftovers (2026-08-06)
+
+**Channels detail @phone:** Identity + New post + Reconnect + ⋮ was one
+non-wrapping row and crowded the drawer. Now `mobile` stacks: identity + ⋮ on
+row 1; full-width New post (+ Reconnect) on row 2. Desktop unchanged (identity
+left / CTAs right).
+
+**Responsive smoke (code + layout review):** Day `max-w-[860]` list fills phone;
+Teams lock full-width; Copilot `[data-mobile]` 24px inset; Settings Upgrade
+dismisses scrim then `/billing`. Soft outs kept: week @420 clip, compose footer
+@420 crowding.
+
+**i18n baseline `--update`:** dropped unused `choose_set_or_continue`,
+`publishing_options`, `time_slots` (chrome removed; accordion still uses
+`n_publishing_options` / `edit_time_slots`). Check PASS — i18n **1314**.
+
+**Deferred (optional later, not this pass):**
+- Milestone 7 billing photo matrix when `billingEnabled` on install
+- Milestone 10 admin + error page restyle
+
+### Settings leave (Upgrade / Connections) only closed scrim (2026-08-06)
+
+**Cause:** `router.back()` + `queueMicrotask(push)` raced — Settings closed,
+destination never opened.
+
+**Fix:** Shared `leaveSettingsFor()` — while `[data-settings-scrim]` is present,
+`window.location.assign(path)` (clears `@modal/(.)settings`). Used by Teams
+Upgrade, Open Connections, and `?tab=` redirects.
+
+

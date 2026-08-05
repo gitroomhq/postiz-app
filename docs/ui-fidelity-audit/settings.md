@@ -36,7 +36,7 @@ Source: side-by-side read of `design/handoff/design/PostQueen App v2.dc.html` (s
 
 ### Tab titles/descriptions (`:6588-6600`)
 global_settings "Global Settings" · language "Language"/"Pick the language for the interface,
-emails and AI prompts." · teams "Team Members" · billing "Plan & invoices" · integrations
+emails and AI prompts." · teams "Team Members" · integrations
 "Integrations"/"Extend PostQueen with other tools" · webhooks "Webhooks (3/N)" · autopost
 "Autopost" · sets "Social Sets (3)" · signatures "Signatures" · api "Developers"/"Use the public
 API to schedule posts from your own systems." · approved_apps "Approved Apps"
@@ -94,98 +94,118 @@ API to schedule posts from your own systems." · approved_apps "Approved Apps"
 
 ## C) Delta checklist
 
-Shell: 
-- [ ] 1 modal sunum (scrim+kart) — repo bare route (settings/page.tsx:15)
-- [ ] 2 kart çerçevesi 1040×680 r16 --pop e3+ring
-- [ ] 3 pqpop animasyonu
-- [ ] 4 kapatma X butonu
-- [ ] 5 mobil/tablet kuralları (100%, nav 132px üst şerit)
-- [ ] 6 içerik max-width:920px
-- [ ] 7 pane padding 26/28/34
-- [ ] 8 pane bg: --inner pane on --pop card (repo ikisi de aynı renk)
-- [ ] 9 FREE-tier `SettingsComponent` w-[500px] kutusu (settings.component:330-349) düzelt
+Shell (Batch B 2026-08-05 — verified / fixed live against prototype `:2591-2623`):
+- [x] 1 modal sunum (scrim+kart) — `SettingsPage` fixed inset-0 z-90 `bg-black/55`,
+      padding 44/24 (tablet 20, mobile 0); scrim click closes + card `stopPropagation`
+- [x] 2 kart çerçevesi `min(1040px)` × `min(680px)` r16 `--pop` e3+ring
+- [x] 3 pqpop animasyonu (`animate-pqPop`)
+- [x] 4 kapatma X butonu — absolute top 14 / end 16, 30×30 r8, soft→hover, stroke 1.9; sits on
+      content column (not nav)
+- [x] 5 mobil/tablet kuralları (100%/100% r0 column; nav max-h 132px üst şerit + border-b)
+- [x] 6 içerik max-width:920px
+- [x] 7 pane padding 26/28/34
+- [x] 8 pane bg: `--inner` pane on `--pop` card
+- [x] 9 FREE-tier nested modal gone — `SettingsComponent` is a Link to `/settings` only
 
-Sub-nav:
-- [ ] 10 Search settings kutusu
-- [ ] 11 satır ikonları (proto :5134-5146 path'leri verbatim)
-- [ ] 12 rail border-right hairline
-- [ ] 13 rail bg --bg (tonal adım)
-- [ ] 14 genişlik 260→236
-- [ ] 15 padding 14/12/10 + 0/8/14
-- [ ] 16 satır h38→34
-- [ ] 17 satır 14→13px
-- [ ] 18 satır padding 0 9px
-- [ ] 19 item gap 1px
-- [ ] 20 grup gap 16px
-- [ ] 21 grup başlığı 10.5px soft
-- [ ] 22 hover tint seçili satırda da
-- [ ] 23 grup adı "More" + "Social Sets" (owner kararı: tasarım metni; design-change-log:194
-      aksini söylüyor ama owner bu oturumda tasarımı seçti)
-- [ ] 24 [code-has] Plan & invoices satırı — kalır (Workspace), tasarım idiomunda (log'a not)
-- [ ] 25 [code-has] Connections satırı — kalkar; Developers'taki "Open Connections" + rail butonu
-- [ ] 26 Integrations satırı More grubuna gelir
-- [ ] (owner kararı) Plugs + Affiliate More grubuna repo-only satır olarak eklenir (rail'den
-      taşınıyor; gate'ler aynen)
+Sub-nav (Batch B — shell look aligned; inventory intentional):
+- [x] 10 Search settings kutusu (h34, r-sm, `--inner` + inset border, magnifier 15 @ 10/10,
+      wrapper pad 14/12/10; path matches proto `:2597`)
+- [x] 11 satır ikonları (16px stroked SVG, opacity .85; path map from proto)
+- [x] 12 rail border-e hairline (`border-pqLine`)
+- [x] 13 rail bg `--bg` (`bg-pqBg`)
+- [x] 14 genişlik 236px
+- [x] 15 padding 14/12/10 + 0/8/14
+- [x] 16 satır h34
+- [x] 17 satır 13px
+- [x] 18 satır padding 0 9px
+- [x] 19 item gap 1px
+- [x] 20 grup gap 16px
+- [x] 21 grup başlığı 10.5px/600 uppercase .07em soft
+- [x] 22 hover tint (purple inset wash) on every row including selected
+- [x] 23 grup adı "More" + "Social Sets" (owner: design copy)
+- [x] 24 Plan & invoices — **removed from Settings nav** (design has none); `/billing` + user menu **Billing & invoices**; `?tab=plan_invoices` redirects to `/billing`
+- [x] 25 Connections satırı yok; deep link `?tab=connections` → `/connections`
+- [x] 26 Integrations More grubunda
+- [x] **Inventory (supersedes earlier repo-only note):** Plugs + Affiliate are **not** in
+      Settings nav. Prototype has neither. Plugs → Channels Automations + `/plugs`
+      (Auto-Plugs). Affiliate → user menu. `extraMenu` empty. Do not re-add.
 
-Content-pane:
-- [ ] 27 tek paylaşılan başlık/desc bloğu shell'de; Language/Plan&invoices/Developers'ta eksik
-- [ ] 28 başlık 20px/500
-- [ ] 29 desc muted 14 mt4 her sekmede
-- [ ] 30 blok ritmi mt18 + gap10
+Content-pane (Batch B 2026-08-05 — shared header in `settings.component.tsx`):
+- [x] 27 tek paylaşılan başlık/desc bloğu shell'de (`tabHeader` from settingsVals TAB)
+- [x] 28 başlık 20px/500
+- [x] 29 desc muted 14 mt4 (hidden when empty — Global Settings)
+- [x] 30 blok ritmi mt18 + gap10 on tab bodies
 
-Primitifler:
-- [ ] 31 kart bg-sixth → --pop
-- [ ] 32 border → inset ring --border
-- [ ] 33 radius 4 → r-md 10
-- [ ] 34 padding 24 → 15/16
-- [ ] 35 iç gap 24 → 13
-- [ ] 36 section label 13.5/600
-- [ ] 37 hairline list-card modeli (webhooks/autopost/sets/signatures/approved-apps)
-- [ ] 38 30×30 r9 satır ikon tile'ları
-- [ ] 39 mono URL (JetBrains 11.5 soft)
-- [ ] 40 28px ikon-buton Edit/Delete (delete hover warn)
-- [ ] 41 h34 artı-ikonlu birincil CTA
-- [ ] 42 toggle 57×34 customColor → 40×22 brand/border (slider.tsx — global etki)
+Primitifler (Batch B — verified live / already on --pop recipe):
+- [x] 31 kart bg-sixth → --pop
+- [x] 32 border → inset ring --border
+- [x] 33 radius 4 → r-md 10
+- [x] 34 padding 24 → 15/16 (Plan & invoices cards included)
+- [x] 35 iç gap 24 → 13 (metric/shortlink cards)
+- [x] 36 section label 13.5/600
+- [x] 37 hairline list-card modeli (webhooks/autopost/sets/signatures/approved-apps)
+- [x] 38 30×30 r9 satır ikon tile'ları
+- [x] 39 mono URL (JetBrains 11.5 soft)
+- [x] 40 28px ikon-buton Edit/Delete (delete hover warn)
+- [x] 41 h34 artı-ikonlu birincil CTA
+- [x] 42 toggle 57×34 customColor → 40×22 brand/border (slider.tsx)
 
 Per-tab:
-- [ ] 43 Date Metrics: select → 2 chip
-- [ ] 44 Shortlink: select → 3 chip
-- [ ] 45 Shortlink fazladan iç etiket satırı kalkar
-- [ ] 46 e-posta satırları arası hairline
-- [ ] 47 e-posta satır adı 13/500
-- [ ] 48 Language yatay 44px satır tile
-- [ ] 49 Language seçili: brand ring + tik + 600
-- [ ] 50 Language grid auto-fill 150px
-- [ ] 51 Language tile r-md + --pop
-- [ ] 52 Mantine <Text> kalkar (language.component:12,115)
-- [ ] 53 Teams avatar
-- [ ] 54 Teams e-posta satırı (isim olarak local-part hack'i yerine)
-- [ ] 55 Teams rol pill'i
-- [ ] 56 Teams satır düzeni (avatar+isim bloğu+pill+ikon)
-- [ ] 57 Teams remove → 28px trash ikon (super-admin visibility:hidden)
-- [ ] 58 Teams CTA "Invite member"
-- [ ] 59 Sets tablo başlık şeridi (--tableHeader 11/700)
-- [ ] 60 Sets aksiyonları 30px settings pill
-- [ ] 61 Sets CTA "Add a social set"
-- [ ] 62 4 sekmede grid-pseudo-table → hairline list-card
-- [ ] 63 Signature "Auto add?" ikinci satır olarak
-- [ ] 64 Signature absolute-truncation hack'i kalkar
-- [ ] 65 Developers "Connect an AI agent" kartı + Open Connections
-- [ ] 66 [code-has] Access/Apps alt-sekme pill'leri — Apps içeriği korunur; sunum tasarım
-      idiomunda sadeleşir (log'a not)
-- [ ] 67 [code-has] 4 satırlık açıklama paragrafı — desc'e iner
-- [ ] 68 CLI + MCP blokları Developers'tan Connections sayfasına
-- [ ] 69 Docs/N8N/Open Wizard butonları — capability korunur, tasarım idiomunda (log'a not)
-- [ ] 70 API key alanı h38 --bg inset mono; blur-sm maskesi yerine maskeli string
-- [ ] 71 Developers kart reçetesi düz --pop
-- [ ] 72 Developers butonları 30px nötr; Rotate warn
-- [ ] 73 Approved Apps hairline list
-- [ ] 74 Approved Apps avatar --settings
-- [ ] 75 Revoke 30px settings pill hover warn
-- [ ] 76 [code-has] boş durum "No approved apps yet." — kalır (doğru davranış)
-- [ ] 77 Integrations settings sekmesi (320px grid, 184px kart, r16, durum noktası, footer);
-      /third-party → /settings?tab=integrations redirect (routes baseline gerekçeli güncellenir)
-- [ ] 78 Plan & invoices: h3/desc eklenir; border → inset ring idiomu
+- [x] 43 Date Metrics: select → 2 chip
+- [x] 44 Shortlink: select → 3 chip
+- [x] 45 Shortlink fazladan iç etiket satırı kalkar
+- [x] 46 e-posta satırları arası hairline
+- [x] 47 e-posta satır adı 13/500
+- [x] 48 Language yatay 44px satır tile
+- [x] 49 Language seçili: brand ring + tik + 600
+- [x] 50 Language grid auto-fill 150px
+- [x] 51 Language tile r-md + --pop
+- [x] 52 Mantine <Text> kalkar (language.component:12,115)
+- [x] 53 Teams avatar
+- [x] 54 Teams e-posta satırı (isim olarak local-part hack'i yerine)
+- [x] 55 Teams rol pill'i
+- [x] 56 Teams satır düzeni (avatar+isim bloğu+pill+ikon)
+- [x] 57 Teams remove → 28px trash ikon (super-admin visibility:hidden)
+- [x] 58 Teams CTA "Invite member"
+- [x] 59 Sets tablo başlık şeridi (--tableHeader 11/700)
+- [x] 60 Sets aksiyonları 30px settings pill
+- [x] 61 Sets CTA "Add a social set"
+- [x] 62 4 sekmede grid-pseudo-table → hairline list-card
+- [x] 63 Signature "Auto add?" ikinci satır olarak
+- [x] 64 Signature absolute-truncation hack'i kalkar (CSS truncate)
+- [x] 65 Developers "Connect an AI agent" kartı + Open Connections
+- [x] 66 [code-has] Access/Apps alt-sekme pill'leri — Apps OAuth chrome → --pop / 30px pills
+- [x] 67 [code-has] açıklama — tab `desc` + kart hint; uzun 4-satır blok Apps'ta kısa
+- [x] 68 CLI + MCP blokları Developers'tan Connections sayfasına
+- [x] 69 Docs/Open Wizard — Settings Access'te gizli; Connections kartında capability
+- [x] 70 API key alanı h38 --bg inset mono; masked string (no blur-sm)
+- [x] 71 Developers kart reçetesi düz --pop (`ApiKeyCard` compact)
+- [x] 72 Developers butonları 30px nötr; Rotate warn
+- [x] 73 Approved Apps hairline list
+- [x] 74 Approved Apps avatar --settings
+- [x] 75 Revoke 30px settings pill hover warn
+- [x] 76 [code-has] boş durum "No approved apps yet." — kalır (doğru davranış)
+- [x] 77 Integrations content = card grid only. Settings **tab rail** is design-correct (not a
+      second Integrations window). `/third-party` redirects here; Connected footer nits may remain.
+- [x] 78 Plan & invoices: shell h3/desc + --pop inset ring + p 15/16 (portal logic untouched)
+
+## E) Shell stability + inline editors (2026-08-05)
+
+**Rail active:** `menu-item.tsx` special-cases `/settings` — footer Settings lights for any
+`/settings` visit; More deep-links (`?tab=`) light only the matching tab. Never the whole More
+group.
+
+**Rail icons:** Posts / Channels / Webhooks (and Settings sub-nav) match prototype `navItem`
+ICONS paths at 18px / stroke 1.7.
+
+**Width jump / blur:** Nested `openModal` used to hide the scrollbar and blur `.blurMe` (Settings
+lives under page chrome). Fix: `html.pq-modal-open { scrollbar-gutter: stable }` and skip adding
+`blur-xs` to `.blurMe` while `[data-settings-scrim]` is present so the settings card stays sharp
+and width-stable.
+
+**Inline CRUD (owner override vs design stacked overlay):** List ↔ editor in the same content
+pane via `SettingsPaneEditor` — Webhooks, Signatures (Settings only), Autopost, Teams invite,
+Integrations API key. Delete/rotate stays `deleteDialog`. Social Sets stays modal (**Raise**).
 
 ## D) Legacy to clear (settings tree)
 

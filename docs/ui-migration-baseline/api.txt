@@ -71,6 +71,7 @@
 /integrations/social/${current.identifier}
 /integrations/social/${identifier}
 /integrations/social/${identifier}${params
+/integrations/social/${integration.identifier}
 /integrations/social/${integrationData.identifier}
 /integrations/telegram/updates
 /media
@@ -84,11 +85,14 @@
 /media/video-options
 /media/video/function
 /notifications
+/notifications/dev-test
 /notifications/list
+/notifications/read
 /oauth/authorize
 /posts
 /posts/${existingData.group}
 /posts/${item.id}/date
+/posts/${item.id}/status
 /posts/${post.group}
 /posts/${postId}/comments
 /posts/${postId}/missing
@@ -121,7 +125,7 @@
 /settings/team/${toRemove.user.id}
 /settings/team/add
 /signatures
-/signatures/${data.id}
+/signatures/${row.id}
 /signatures/default
 /switch-search-${name}
 /third-party
@@ -147,5 +151,5 @@
 /user/self
 /user/switch
 /webhooks
-/webhooks/${data.id}
+/webhooks/${row.id}
 /webhooks/send
