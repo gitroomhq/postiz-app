@@ -104,7 +104,7 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
           </div>
         ) : lifetime ? (
           <div data-finish-trial="founder" className="flex flex-col gap-[12px]">
-            <span className="w-fit rounded-[6px] bg-pqLtAmber/15 px-[10px] py-[4px] text-[11px] font-[800] uppercase tracking-[0.05em] text-pqLtAmber">
+            <span className="w-fit rounded-[6px] bg-pqLtChipBg px-[10px] py-[4px] text-[11px] font-[800] uppercase tracking-[0.05em] text-pqLtAmber">
               {t('founding_member', 'Founding member')}
             </span>
             <div className="text-[13.5px] leading-[1.55] text-pqMuted">
