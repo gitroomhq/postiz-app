@@ -59,7 +59,10 @@ module.exports = {
         pqTourScrim: 'var(--tourScrim)',
         pqOk: 'var(--ok)',
         pqOkSoft: 'var(--okSoft)',
+        pqOkLine: 'var(--okLine)',
         pqWarn: 'var(--warn)',
+        pqWarnSoft: 'var(--warnSoft)',
+        pqWarnLine: 'var(--warnLine)',
         pqAmber: 'var(--amber)',
         pqAmberSoft: 'var(--amberSoft)',
         pqAmberLine: 'var(--amberLine)',
@@ -77,10 +80,10 @@ module.exports = {
         pqLtLine2: 'var(--ltLine2)',
         pqLtRowBg: 'var(--ltRowBg)',
         pqLtChipBg: 'var(--ltChipBg)',
+        pqLtSoft: 'var(--ltSoft)',
+        pqLtOutline: 'var(--ltOutline)',
         pqLtTick: 'var(--ltTick)',
         pqLtTickFg: 'var(--ltTickFg)',
-        pqLtCardOn: 'var(--ltCardOn)',
-        pqLtCardOff: 'var(--ltCardOff)',
         // --- end redesign token layer ---------------------------------------
 
         primary: 'var(--color-primary)',
@@ -198,6 +201,12 @@ module.exports = {
       backgroundImage: {
         loginBox: 'url(/auth/login-box.png)',
         loginBg: 'url(/auth/bg-login.png)',
+        // The lifetime card surfaces. These tokens are linear-gradients, so
+        // they must be background-image aliases: registered under `colors`
+        // they would generate `background-color: var(--ltCardOn)`, which is
+        // invalid CSS and renders as nothing. Same `bg-` prefix either way.
+        pqLtCardOn: 'var(--ltCardOn)',
+        pqLtCardOff: 'var(--ltCardOff)',
       },
       // Published as CSS variables by src/app/fonts.ts on <body>. This used to
       // read ['Helvetica Neue'], contradicting the font actually applied to

@@ -27,11 +27,29 @@ export const BillingComponent = () => {
   );
   if (!isOrgAdmin) {
     return (
-      <div className="p-[24px] text-[16px]">
-        {t(
-          'billing_admin_only',
-          'Only a workspace admin can manage billing. Please ask an admin of this workspace.'
-        )}
+      <div className="flex flex-1 items-center justify-center p-[56px_24px]">
+        <div className="flex max-w-[520px] flex-col items-center gap-[16px] text-center">
+          <span className="grid size-[56px] place-items-center rounded-full bg-pqSettings text-pqSoft">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
+              <path
+                d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.9"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <h1 className="font-display text-[24px] font-[700] -tracking-[0.02em] text-pqText">
+            {t('billing_admin_only_title', 'Billing is managed by admins')}
+          </h1>
+          <p className="text-[16px] leading-[1.6] text-pqMuted">
+            {t(
+              'billing_admin_only',
+              'Only a workspace admin can manage billing. Please ask an admin of this workspace.'
+            )}
+          </p>
+        </div>
       </div>
     );
   }

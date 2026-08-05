@@ -3520,3 +3520,65 @@ design's labels and descriptions (`social_sets` copy, `date_metrics` chips, `inv
 `cli_*`, `api_auth_note_line1-4`, `n8n_node`), the dropped pseudo-table headers (`title`, `url`,
 `active`, `content`), and labels the design renamed (`add_another_member` → `invite_member`,
 `remove`). Nothing was removed that a surviving surface still says.
+
+### Billing and the checkout take the design — done
+
+The 87-delta checklist in `docs/ui-fidelity-audit/billing.md` is worked through. The page is the
+design's 1080px rail: 26px display "Plans", the segmented period pill with a live "{n} months
+free" figure, the plan-meta line, and a real CSS grid of radius-16 cards — current-plan brand
+ring, AGENCY's gradient composed from tokens via color-mix, MOST POPULAR on PRO, 29px display
+prices, colour-coded prorate above the CTA, brand tick tiles, `pqunlim` on "Unlimited channels".
+The strips arrived with it: trial banner wired to the existing FinishTrial state, the lifetime
+upsell gated on the same `lifetimeWindow()` the backend enforces with a 410, payment-failed in
+the warn family, cancel-notice with its in-banner Reactivate. Portal/cancel became the design's
+card row; the FAQ got its heading back and the rotating tinted chevron, plus a `scale` prop so
+the checkout draws the same FAQ one size up.
+
+**The lifetime redirect is gone — deliberately.** Doc 03's fourth lifetime rule sent founding
+members away from `/billing`; the prototype's own billing page has a lifetime variant, and the
+prototype outranks the docs. A founding member now sees the amber hero (with MEMBER SINCE read
+from `subscription.createdAt`), the facts row, and the Current/Next package cards shared with
+`/billing/lifetime` instead of being bounced. `gates` recorded the change honestly:
+`user.isLifetime` 9 → 18, every move additive.
+
+The checkout followed its own half of the list: h68 sticky header with the "Checkout" label, the
+54px/800 hero on `--brand` (pqPink retired), the lifetime card with the real countdown and an
+"OR SUBSCRIBE" divider, the plan picker in its radius-22 card with radio dots and per-plan
+months-free, the order summary moved to the right column through a portal slot (it must stay
+inside CheckoutProvider), the h56 shadowed Pay button on a flat h92 bar. Stripe's Appearance
+literals now mirror named tokens, commented.
+
+**A platform finding that had been silently eating styles:** Tailwind alpha modifiers on
+`var()`-backed colors (`bg-pqWarn/15`, `outline-pqOk/25`) generate **no CSS at all** — verified
+by compiling. Six such classes existed from earlier steps and none had ever rendered; all are
+replaced with real tokens or color-mix arbitraries, and the token layer gained the soft/line
+pairs the strips needed (`--okLine`, `--warnSoft/Line`, `--ltSoft/Outline`;
+`pqLtCardOn/Off` moved to `backgroundImage` where gradients belong).
+
+Deliberate copy honesty over the design's stage dressing, all noted in code: the upsell names
+the tier the ladder actually grants, the lifetime footer says "One payment · no renewal" because
+the session is `mode:'payment'`, the lapsed strip is dateless because the row is hard-deleted,
+and there is no version chip because no real version exists to show.
+
+### The AI Copilot page stops being an unthemed SDK — done
+
+Every `--copilot-kit-*` variable is bound to the token layer, so the grey `#2c2c2c` input pill
+and the white user bubble are gone: user messages are brand with the design's 14/14/5/14 corner,
+assistant messages are bare 13.5px/1.65 text with a 26px "PQ" tile, and the thread runs in a
+centred 840px column. The composer is the design's `--pop` card with the toolbar *inside* it —
+ghost buttons, gates untouched, a 32×32 brand send that dims when empty — and the design's
+placeholder. The empty state is the hero ("What are we posting today?") with the "Prefer your
+own AI tool?" card linking to /connections; the five-paragraph greeting is retired with the
+owner's copy decision. The channel column takes the design's selection language (opacity .6,
+brandSoft + tick when selected, Add Channel via the same `useAddProvider` hook) and the chats
+rail is the design's 232/56px pinned rail. Message regenerate/copy/thumbs stay, as quiet ghosts.
+
+Not built, named: the draft-plan card and the AI-lock overlay (product decisions), the channel
+3-dot menu (its component is welded to `useCalendar()`), and the in-composer 58px attachment
+thumbnails (shared markup with the post composer).
+
+**Checks after both steps:** types 0 · api 149 · routes 29 · gates 14 (counts moved additively,
+recorded above) · **i18n 1137**, adds being the design's billing/agent copy and removals the
+retired greeting, "Features"-era labels and never-interpolating variants. One interpolation bug
+was caught by the screenshot: the months-free pill rendered a literal `{{n}}` because two call
+sites disagreed on the parameter name.

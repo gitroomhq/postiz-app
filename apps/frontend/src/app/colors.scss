@@ -83,7 +83,14 @@
     --r-xl: 18px;
     --ok: #4ade80;
     --okSoft: rgba(74, 222, 128, 0.13);
+    // Soft fills and hairlines for the ok / warn roles, used by the billing
+    // strips. The design writes these as rgba literals; Tailwind cannot put an
+    // alpha modifier on a var() colour (`bg-pqWarn/15` generates no CSS at
+    // all), so they are tokens the way --okSoft already is.
+    --okLine: rgba(74, 222, 128, 0.26);
     --warn: #f87171;
+    --warnSoft: rgba(248, 113, 113, 0.13);
+    --warnLine: rgba(248, 113, 113, 0.28);
     --unlimA: #a78bfa;
     --unlimB: #fff;
     --avatarBg: #101014;
@@ -102,6 +109,10 @@
     --ltText: rgba(255, 244, 228, 0.92);
     --ltLine: rgba(245, 158, 11, 0.18);
     --ltChipBg: rgba(245, 158, 11, 0.14);
+    // The lifetime upsell strip's gradient start, and the outline drawn around
+    // lifetime gradient surfaces (the upsell strip, the founding-member hero).
+    --ltSoft: rgba(245, 158, 11, 0.15);
+    --ltOutline: rgba(245, 158, 11, 0.34);
     --ltTick: rgba(245, 158, 11, 0.85);
     --ltTickFg: #1a1205;
     // Post previews. Themed rather than the platforms' brand hexes, so light
@@ -188,7 +199,11 @@
     --r-xl: 18px;
     --ok: #16a34a;
     --okSoft: rgba(21, 128, 61, 0.1);
+    // As in .dark, on the light theme's darker ok / warn bases.
+    --okLine: rgba(21, 128, 61, 0.26);
     --warn: #dc2626;
+    --warnSoft: rgba(220, 38, 38, 0.1);
+    --warnLine: rgba(220, 38, 38, 0.28);
     --unlimA: #6d28d9;
     --unlimB: #a855f7;
     --avatarBg: #eceae6;
@@ -206,6 +221,10 @@
     --ltText: #3b2606;
     --ltLine: rgba(217, 119, 6, 0.2);
     --ltChipBg: rgba(245, 158, 11, 0.15);
+    // The chip keeps the bright base even on light (like --ltChipBg above);
+    // the outline shifts to the darker base the light lt family uses.
+    --ltSoft: rgba(245, 158, 11, 0.15);
+    --ltOutline: rgba(217, 119, 6, 0.34);
     --ltTick: #d97706;
     --ltTickFg: #fffaf2;
     --linkedinBg: #ffffff;
