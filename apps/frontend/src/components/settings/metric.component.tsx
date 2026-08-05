@@ -3,30 +3,23 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
-import timezones from 'timezones-list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-dayjs.extend(timezone);
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const MetricComponent = () => {
   const t = useT();
+  const toaster = useToaster();
   const [currentMetric, setCurrentMetric] = useState(isUSCitizen());
-  const [timezone, setTimezone] = useState(
-    localStorage.getItem('timezone') || dayjs.tz.guess()
-  );
   const changeMetric = (value: string) => {
-    setCurrentMetric(value === 'US');
+    const nextIsUS = value === 'US';
+    if (nextIsUS === currentMetric) {
+      return;
+    }
+    setCurrentMetric(nextIsUS);
     localStorage.setItem('isUS', value);
-  };
-
-  const changeTimezone = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    console.log(value);
-    setTimezone(value);
-    localStorage.setItem('timezone', value);
-    dayjs.tz.setDefault(value);
+    // Client-only preference (no API) — same success toast as server-backed
+    // Global Settings controls so the owner gets clear persist feedback.
+    toaster.show(t('settings_updated', 'Settings updated'), 'success');
   };
   const dateMetrics = [
     { label: t('date_metric_ampm', 'AM:PM'), value: 'US' },
@@ -52,24 +45,6 @@ const MetricComponent = () => {
           </button>
         ))}
       </div>
-
-      {/*<div className="mt-[4px]">Current Timezone</div>*/}
-      {/*<Select*/}
-      {/*  name="timezone"*/}
-      {/*  disableForm={true}*/}
-      {/*  label=""*/}
-      {/*  onChange={changeTimezone}*/}
-      {/*>*/}
-      {/*  {timezones.map((metric) => (*/}
-      {/*    <option*/}
-      {/*      key={metric.name}*/}
-      {/*      value={metric.tzCode}*/}
-      {/*      selected={metric.tzCode === timezone}*/}
-      {/*    >*/}
-      {/*      {metric.label}*/}
-      {/*    </option>*/}
-      {/*  ))}*/}
-      {/*</Select>*/}
     </div>
   );
 };

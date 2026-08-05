@@ -13,22 +13,32 @@ import React, {
 import clsx from 'clsx';
 import useCookie from 'react-use-cookie';
 import useSWR from 'swr';
-import { orderBy } from 'lodash';
-import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
-import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useWaitForClass } from '@gitroom/helpers/utils/use.wait.for.class';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-card';
+
+const needsAttention = (integration: {
+  refreshNeeded?: boolean;
+  inBetweenSteps?: boolean;
+}) => !!(integration.refreshNeeded || integration.inBetweenSteps);
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
   value: string;
+  // Thumbs sit above the textarea; toolbar buttons stay in the controls row.
+  part?: 'thumbs' | 'toolbar';
   setMedia: (event: {
     target: {
       name: string;
@@ -41,7 +51,7 @@ export const MediaPortal: FC<{
       }[];
     };
   }) => void;
-}> = ({ media, setMedia, value }) => {
+}> = ({ media, setMedia, value, part = 'toolbar' }) => {
   const waitForClass = useWaitForClass('copilotKitMessages');
   if (!waitForClass) return null;
   // Rendered inside the composer frame (agent.input.tsx), where the design
@@ -49,6 +59,7 @@ export const MediaPortal: FC<{
   return (
     <MultiMediaComponent
       ghost={true}
+      ghostPart={part}
       allData={[{ content: value }]}
       text={value}
       label=""
@@ -63,23 +74,61 @@ export const MediaPortal: FC<{
   );
 };
 
-export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
-  onChange,
-}) => {
+export const AgentList: FC<{
+  onChange: (arr: any[]) => void;
+  /** Bumped when the composer empty CTA asks to focus this column. */
+  expandNonce?: number;
+  /** Channel ⋮ menu — same Menu as Channels; stopPropagation keeps row select. */
+  showKebab?: boolean;
+}> = ({ onChange, expandNonce = 0, showKebab = true }) => {
   const fetch = useFetch();
   const t = useT();
+  const toast = useToaster();
+  const router = useRouter();
   const [selected, setSelected] = useState([]);
+  const colRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     return (await (await fetch('/integrations/list')).json()).integrations;
   }, []);
 
-  const { mobile } = useViewport();
+  const { mobile, tablet } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   // Below 760 this column lives in a drawer (see `Agent`), where it gets the
   // full 264px and should be the expanded list, not the icon rail. The rail is
   // only for the desktop collapse toggle.
   const channelsCollapsed = !mobile && collapseMenu === '1';
+  const autoCollapsed = useRef(false);
+
+  // Design `_autoSide`: collapse under 1180 on viewport transitions only.
+  // `collapseMenu` must stay out of the deps — otherwise expanding on tablet
+  // immediately re-fires this and forces the rail shut again.
+  useEffect(() => {
+    if (mobile) return;
+    if (tablet) {
+      autoCollapsed.current = true;
+      setCollapseMenu('1', { days: 365 });
+      return;
+    }
+    if (autoCollapsed.current) {
+      autoCollapsed.current = false;
+      setCollapseMenu('0', { days: 365 });
+    }
+  }, [mobile, tablet, setCollapseMenu]);
+
+  const toggleCollapse = useCallback(() => {
+    autoCollapsed.current = false;
+    setCollapseMenu(collapseMenu === '1' ? '0' : '1', { days: 365 });
+  }, [collapseMenu, setCollapseMenu]);
+
+  useEffect(() => {
+    if (!expandNonce) return;
+    if (collapseMenu === '1') {
+      autoCollapsed.current = false;
+      setCollapseMenu('0', { days: 365 });
+    }
+    colRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [expandNonce, collapseMenu, setCollapseMenu]);
 
   const { data, mutate } = useSWR('integrations', load, {
     revalidateOnFocus: false,
@@ -91,44 +140,127 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     fallbackData: [],
   });
 
-  // The same add-channel dialog every other surface opens — not a copy.
-  const addProvider = useAddProvider(() => mutate());
+  const openAddChannel = useCallback(() => {
+    router.push('/channels?add=1');
+  }, [router]);
+
+  const pruneSelected = useCallback(
+    (
+      prev: Integrations[],
+      fresh: Array<
+        Integrations & {
+          refreshNeeded?: boolean;
+          inBetweenSteps?: boolean;
+        }
+      >
+    ) => {
+      const next = prev.filter((p) => {
+        const row = fresh.find((d) => d.id === p.id);
+        return row && !needsAttention(row);
+      });
+      if (next.length !== prev.length) {
+        onChange(next);
+      }
+      return next;
+    },
+    [onChange]
+  );
 
   const setIntegration = useCallback(
-    (integration: Integration) => () => {
+    (integration: Integrations) => () => {
       if (selected.some((p) => p.id === integration.id)) {
         onChange(selected.filter((p) => p.id !== integration.id));
         setSelected(selected.filter((p) => p.id !== integration.id));
-      } else {
-        onChange([...selected, integration]);
-        setSelected([...selected, integration]);
+        return;
       }
+      if (needsAttention(integration)) {
+        toast.show(
+          t(
+            'channel_disconnected_click_to_reconnect',
+            'Channel disconnected, click to reconnect.'
+          ),
+          'warning'
+        );
+        return;
+      }
+      onChange([...selected, integration]);
+      setSelected([...selected, integration]);
     },
-    [selected]
+    [selected, onChange, toast, t]
   );
 
   const sortedIntegrations = useMemo(() => {
-    return orderBy(
-      data || [],
-      ['type', 'disabled', 'identifier'],
-      ['desc', 'asc', 'asc']
-    );
+    return sortIntegrationsByProviderImportance(data || []) as Array<
+      Integrations & {
+        refreshNeeded?: boolean;
+        internalId?: string;
+      }
+    >;
   }, [data]);
+
+  // Same OAuth reconnect the Channels page uses — Menu needs a factory that
+  // returns the click handler for the row's integration.
+  const refreshChannel = useCallback(
+    (
+      integration: Integration & {
+        identifier: string;
+        internalId?: string;
+      }
+    ) =>
+      () => {
+        void (async () => {
+          const { url } = await (
+            await fetch(
+              `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+              { method: 'GET' }
+            )
+          ).json();
+          if (!url) {
+            toast.show(
+              t(
+                'could_not_connect_platform',
+                'Could not connect to the platform, please try again later'
+              ),
+              'warning'
+            );
+            return;
+          }
+          window.location.href = url;
+        })();
+      },
+    [fetch, t, toast]
+  );
+
+  useEffect(() => {
+    if (!data?.length) return;
+    setSelected((prev) => pruneSelected(prev, data));
+  }, [data, pruneSelected]);
+
+  const onMenuChange = useCallback(
+    (shouldReload: boolean) => {
+      void mutate().then((fresh) => {
+        if (!shouldReload || !fresh) return;
+        setSelected((prev) => pruneSelected(prev, fresh));
+      });
+    },
+    [mutate, pruneSelected]
+  );
 
   return (
     <div
+      ref={colRef}
+      data-pq="agent-channel-col"
       data-cr="1"
-      data-crhov={!mobile && channelsCollapsed ? '1' : '0'}
       className={clsx(
-        'trz bg-pqInner flex flex-col transition-all relative',
+        'trz relative flex shrink-0 flex-col bg-pqInner transition-all',
         mobile
-          ? 'w-full'
+          ? 'w-full max-w-full'
           : channelsCollapsed
-          ? 'group sidebar w-[100px]'
-          : 'w-[260px]'
+          ? 'group sidebar w-[100px] flex-[0_0_100px]'
+          : 'w-[260px] flex-[0_0_260px]'
       )}
     >
-      <div className="absolute top-0 start-0 flex h-full w-full flex-col">
+      <div className="absolute inset-0 flex flex-col">
         <div className="flex shrink-0 items-center gap-[8px] border-b border-pqLine p-[16px_14px_12px]">
           <div
             data-crl="1"
@@ -141,14 +273,22 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
               {sortedIntegrations.length}
             </span>
           </div>
-          {/* The collapse toggle only means anything on desktop — in the mobile
-              drawer there is no narrow state to collapse to. */}
-          <div
-            onClick={() =>
-              setCollapseMenu(collapseMenu === '1' ? '0' : '1', { days: 365 })
+          <button
+            type="button"
+            data-tooltip-id="tooltip"
+            data-tooltip-content={
+              channelsCollapsed
+                ? t('show_channels', 'Show channels')
+                : t('hide_channels', 'Hide channels')
+            }
+            onClick={toggleCollapse}
+            aria-label={
+              channelsCollapsed
+                ? t('show_channels', 'Show channels')
+                : t('hide_channels', 'Hide channels')
             }
             className={clsx(
-              'flex h-[26px] w-[26px] shrink-0 cursor-pointer select-none items-center justify-center rounded-[7px] text-pqSoft hover:bg-pqHover hover:text-pqText group-[.sidebar]:mx-auto group-[.sidebar]:rotate-180',
+              'grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText group-[.sidebar]:mx-auto group-[.sidebar]:rotate-180',
               mobile && 'hidden'
             )}
           >
@@ -167,13 +307,30 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                 strokeLinecap="round"
               />
             </svg>
-          </div>
+          </button>
         </div>
-        <div className="shrink-0 p-[12px_12px_10px]">
+        <div
+          className={clsx(
+            'flex shrink-0 items-center gap-[7px] p-[12px_12px_10px]',
+            channelsCollapsed ? 'flex-col' : 'flex-row'
+          )}
+        >
           <button
+            type="button"
             data-pq="agent-add-channel"
-            onClick={addProvider}
-            className="flex h-[36px] w-full items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText hover:brightness-110"
+            {...(channelsCollapsed && {
+              'data-tooltip-id': 'tooltip',
+              'data-tooltip-content': t('add_channel', 'Add Channel'),
+              'aria-label': t('add_channel', 'Add Channel'),
+            })}
+            onClick={openAddChannel}
+            className={clsx(
+              'flex h-[36px] items-center justify-center gap-[7px] rounded-[9px] text-[12.5px] font-[600] transition-colors',
+              channelsCollapsed ? 'w-[36px] shrink-0' : 'min-w-0 flex-1',
+              !sortedIntegrations.length
+                ? 'bg-pqBrand text-pqOnBrand shadow-[0_6px_18px_-8px_rgba(124,58,237,.9)] hover:bg-pqBrandHover'
+                : 'bg-pqSettings text-pqText hover:bg-pqBrandSoft'
+            )}
           >
             <svg
               viewBox="0 0 24 24"
@@ -197,27 +354,27 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
             </span>
           </button>
         </div>
-        <div className="flex flex-1 flex-col gap-[2px] overflow-y-auto overflow-x-hidden p-[0_8px_12px] scrollbar nBorder scrollbar-track-pqInner">
+        <div className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-y-auto overflow-x-hidden px-[8px] pb-[12px]">
           {sortedIntegrations.map((integration) => {
-            const isSelected = selected.some((p) => p.id === integration.id);
+            const blocked = needsAttention(integration);
+            const isSelected =
+              !blocked && selected.some((p) => p.id === integration.id);
             return (
               <div
                 onClick={setIntegration(integration)}
                 key={integration.id}
+                title={integration.name}
                 className={clsx(
-                  'relative flex cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] transition-[background-color,opacity] hover:opacity-100 hover:shadow-[inset_0_0_0_999px_var(--brandFaint)] group-[.sidebar]:justify-center',
-                  isSelected ? 'bg-pqBrandSoft' : 'opacity-60'
+                  'relative flex items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:justify-center group-[.sidebar]:px-0',
+                  blocked
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'cursor-pointer',
+                  isSelected
+                    ? 'bg-pqBrandSoft'
+                    : !blocked && 'opacity-60 hover:bg-pqHover hover:opacity-100'
                 )}
               >
-                {isSelected && (
-                  <span className="absolute -start-[8px] bottom-[8px] top-[8px] w-[3px] rounded-e-[4px] bg-pqBrand" />
-                )}
-                <div
-                  className={clsx(
-                    'relative h-[32px] w-[32px] shrink-0',
-                    integration.disabled && 'opacity-50'
-                  )}
-                >
+                <span className="relative h-[32px] w-[32px] shrink-0">
                   {isSelected && (
                     <span className="absolute -start-[4px] -top-[4px] z-[2] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-pqBrand text-pqOnBrand">
                       <svg viewBox="0 0 24 24" width="10" height="10" fill="none">
@@ -233,45 +390,68 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                   )}
                   <ImageWithFallback
                     fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-                    src={integration.picture}
-                    className="rounded-[9px]"
+                    src={integration.picture || '/no-picture.jpg'}
+                    className="rounded-full"
                     alt={integration.identifier}
                     width={32}
                     height={32}
                   />
-                  <SafeImage
+                  <img
                     src={`/icons/platforms/${integration.identifier}.png`}
-                    className="absolute -bottom-[4px] -end-[5px] z-10 rounded-full shadow-[0_0_0_1.5px_var(--inner)]"
-                    alt={integration.identifier}
-                    width={17}
-                    height={17}
+                    alt=""
+                    className="absolute -bottom-[2px] -end-[2px] h-[15px] w-[15px] rounded-full border border-pqInner"
                   />
                   {(integration.inBetweenSteps ||
                     integration.refreshNeeded) && (
-                    <span className="absolute -start-[4px] -top-[4px] z-[3] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqWarn text-[10px] text-pqOnBrand">
+                    <span className="absolute -start-[2px] -top-[2px] z-[3] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqWarn text-[10px] font-[700] text-pqOnBrand">
                       !
                     </span>
                   )}
-                </div>
-                <div
+                </span>
+                <span
                   data-crl="1"
-                  className={clsx(
-                    'min-w-0 flex-1 leading-[1.3] group-[.sidebar]:hidden',
-                    integration.disabled && 'opacity-50'
-                  )}
+                  className="min-w-0 flex-1 group-[.sidebar]:hidden"
                 >
-                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px]">
+                  <span className="block truncate text-[14px]">
                     {integration.name}
-                  </div>
-                  <div
+                  </span>
+                  <span
                     className={clsx(
-                      'overflow-hidden text-ellipsis whitespace-nowrap text-[12px]',
-                      integration.refreshNeeded ? 'text-pqWarn' : 'text-pqMuted'
+                      'block truncate text-[12px]',
+                      integration.refreshNeeded || integration.inBetweenSteps
+                        ? 'text-pqWarn'
+                        : 'text-pqMuted'
                     )}
                   >
-                    {integration.identifier}
+                    {integration.refreshNeeded || integration.inBetweenSteps
+                      ? t('needs_reconnect', 'Needs reconnect')
+                      : integration.identifier}
+                  </span>
+                </span>
+                {showKebab && (
+                  <div
+                    data-crl="1"
+                    className="shrink-0 group-[.sidebar]:hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Menu
+                      id={integration.id}
+                      canEnable={!!integration.disabled}
+                      canDisable={!integration.disabled}
+                      canChangeProfilePicture={!!integration.changeProfilePicture}
+                      canChangeNickName={!!integration.changeNickName}
+                      refreshChannel={refreshChannel}
+                      mutate={() => {
+                        void mutate();
+                      }}
+                      onChange={onMenuChange}
+                      integrations={sortedIntegrations}
+                      reloadCalendarView={() => {
+                        void mutate();
+                      }}
+                    />
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -281,14 +461,21 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   );
 };
 
-export const PropertiesContext = createContext({ properties: [] });
+export const PropertiesContext = createContext<{
+  properties: any[];
+  openChannels: () => void;
+}>({ properties: [], openChannels: () => {} });
 export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
   const t = useT();
+  const user = useUser();
   const { mobile } = useViewport();
   const rowRef = useRef<HTMLDivElement>(null);
   const [panel, setPanel] = useState<'channels' | 'threads' | null>(null);
   const [drawerTop, setDrawerTop] = useState(0);
+  const [channelExpandNonce, setChannelExpandNonce] = useState(0);
+  // Design: Copilot waits until the trial ends (or the person ends it early).
+  const trialLocked = !!user?.isTrailing;
 
   // Below 760 both side columns leave the chat about 200px — two or three
   // words a line, and a message box the shape of a bookmark. They become
@@ -339,9 +526,17 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
     </button>
   );
 
+  const openChannels = useCallback(() => {
+    if (asDrawer) {
+      setPanel('channels');
+      return;
+    }
+    setChannelExpandNonce((n) => n + 1);
+  }, [asDrawer]);
+
   return (
-    <PropertiesContext.Provider value={{ properties }}>
-      <div ref={rowRef} className="flex flex-1 min-w-0">
+    <PropertiesContext.Provider value={{ properties, openChannels }}>
+      <div ref={rowRef} className="relative flex min-w-0 flex-1">
         {asDrawer && panel && (
           <div
             onClick={() => setPanel(null)}
@@ -356,17 +551,45 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
           top={drawerTop}
           label={t('select_channels', 'Select Channels')}
         >
-          <AgentList onChange={setProperties} />
+          <AgentList
+            onChange={setProperties}
+            expandNonce={channelExpandNonce}
+            showKebab
+          />
         </AgentDrawer>
 
+        {/* Trial lock covers the chat column only — Select Channels stays
+            interactive (design keeps the channel list outside the AI lock). */}
         <div
           className={clsx(
-            'bg-pqInner flex flex-1 flex-col min-w-0',
+            'bg-pqInner relative flex flex-1 flex-col min-w-0',
             // The hairline between the chat and the rail belongs to the
             // desktop layout — in drawer mode the rail is off-canvas.
             !asDrawer && 'border-e border-pqLine'
           )}
         >
+          {trialLocked && (
+            <TrialLockCard
+              variant="overlay"
+              name={t('ai_copilot', 'AI Copilot')}
+              title={t(
+                'ai_copilot_unlocks_after_your_trial',
+                'AI Copilot unlocks after your trial'
+              )}
+              description={t(
+                'ai_lock_sub',
+                'Your channels, calendar and analytics are already live. Copilot is the one thing that waits for your first payment.'
+              )}
+              perks={[
+                t(
+                  'ai_lock_perk_chat',
+                  'Copilot chat that drafts and schedules for you'
+                ),
+                t('ai_lock_perk_images', '300 AI images a month'),
+                t('ai_lock_perk_videos', '30 AI videos a month'),
+              ]}
+            />
+          )}
           {asDrawer && (
             <div className="flex shrink-0 items-center gap-[8px] border-b border-pqLine px-[12px] py-[8px]">
               {toggle('channels', t('select_channels', 'Select Channels'))}
@@ -471,6 +694,18 @@ const Threads: FC = () => {
         </div>
         {!mobile && (
           <button
+            type="button"
+            data-tooltip-id="tooltip"
+            data-tooltip-content={
+              collapsed
+                ? t('pin_chats', 'Pin chats')
+                : t('unpin_chats', 'Unpin chats')
+            }
+            aria-label={
+              collapsed
+                ? t('pin_chats', 'Pin chats')
+                : t('unpin_chats', 'Unpin chats')
+            }
             onClick={() =>
               setCollapseRail(collapsed ? '0' : '1', { days: 365 })
             }
@@ -505,8 +740,13 @@ const Threads: FC = () => {
       </div>
       <Link
         href={`/agents`}
+        {...(collapsed && {
+          'data-tooltip-id': 'tooltip',
+          'data-tooltip-content': t('new_chat', 'New chat'),
+          'aria-label': t('new_chat', 'New chat'),
+        })}
         className={clsx(
-          'flex h-[34px] shrink-0 items-center justify-center gap-[7px] whitespace-nowrap rounded-pqSm bg-pqBrand text-[13px] font-[600] text-pqOnBrand outline-none hover:brightness-105',
+          'flex h-[34px] shrink-0 items-center justify-center gap-[7px] whitespace-nowrap rounded-pqSm bg-pqBrand text-[13px] font-[600] text-pqOnBrand outline-none transition-colors hover:bg-pqBrandHover',
           collapsed ? 'px-0 group-hover/rail:px-[12px]' : 'px-[12px]'
         )}
       >

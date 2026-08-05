@@ -101,9 +101,13 @@ implies behaviour the code doesn't have, **raise it — do not implement it sile
   design's text** (owner decision, 2026-08-05 fidelity pass) as `t()` keys with English fallbacks;
   error/validation strings stay the repo's.
 - **Never make a capability unreachable just because the design doesn't show it — but the rail
-  matches the design's inventory exactly** (owner decision, 2026-08-05). Plugs and Affiliate live
-  as link rows in the Settings sub-nav (`extraMenu` in `top.menu.tsx`); Create Post stays in the
-  header slot.
+  matches the design's inventory exactly** (owner decision, 2026-08-05; Settings nav
+  superseded 2026-08-05 fidelity campaign). Settings sub-nav matches the prototype
+  (Workspace / More / Developers) — no Plugs or Affiliate rows. Plugs capability is
+  Channels → Automations (+ `/plugs` as Auto-Plugs). Affiliate lives in the user menu.
+  Create Post is **not** in the header (design chrome inventory; owner 2026-08-05
+  fidelity) — Blank/AI split lives on the calendar toolbar; calendar cells and
+  Channels → New post also open compose.
 - Keep **i18n** (14 languages) and **RTL** (he, ar) working. The prototype has neither — it is
   hardcoded English, LTR only.
 - Theming is a **`.dark` / `.light` class on `<body>`** (`darkMode: 'class'`), not `data-theme` on

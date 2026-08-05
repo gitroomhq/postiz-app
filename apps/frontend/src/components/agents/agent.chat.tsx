@@ -44,12 +44,30 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+
+type AgentIntegration = Integrations & {
+  refreshNeeded?: boolean;
+  inBetweenSteps?: boolean;
+};
+
+const needsAttention = (
+  integration: Pick<AgentIntegration, 'refreshNeeded' | 'inBetweenSteps'>
+) => !!(integration.refreshNeeded || integration.inBetweenSteps);
+
+const selectableIntegrations = (
+  integrations: AgentIntegration[]
+): AgentIntegration[] => integrations.filter((p) => !needsAttention(p));
 
 export const AgentChat: FC = () => {
   const { backendUrl } = useVariables();
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
   const t = useT();
+  const copilotIntegrations = useMemo(
+    () => selectableIntegrations(properties),
+    [properties]
+  );
 
   return (
     <CopilotKit
@@ -59,7 +77,7 @@ export const AgentChat: FC = () => {
       showDevConsole={false}
       agent="postqueen"
       properties={{
-        integrations: properties,
+        integrations: copilotIntegrations,
       }}
     >
       <Hooks />
@@ -120,7 +138,10 @@ const EmptyState: FC = () => {
   return (
     // z-[2]: the SDK's message scroller carries z-index 1 and would otherwise
     // swallow the suggestion card's clicks.
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[24px] pt-[56px] pb-[30px] text-center">
+    <div
+      data-copilot-empty="1"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
+    >
       <span className="flex h-[54px] w-[54px] items-center justify-center rounded-[16px] bg-pqBrandSoft text-pqFocused">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
           <path
@@ -296,15 +317,37 @@ const NewInput: FC<InputProps> = (props) => {
   const [media, setMedia] = useState([] as { path: string; id: string }[]);
   const [value, setValue] = useState('');
   const { properties } = useContext(PropertiesContext);
+  const copilotIntegrations = useMemo(
+    () => selectableIntegrations(properties),
+    [properties]
+  );
+  const setMediaFromEvent = useCallback(
+    (e: {
+      target: {
+        name: string;
+        value?: { id: string; path: string }[];
+      };
+    }) => setMedia(e.target.value || []),
+    []
+  );
   return (
     <>
       <Input
         {...props}
-        toolbar={
+        attachments={
           <MediaPortal
+            part="thumbs"
             value={value}
             media={media}
-            setMedia={(e) => setMedia(e.target.value)}
+            setMedia={setMediaFromEvent}
+          />
+        }
+        toolbar={
+          <MediaPortal
+            part="toolbar"
+            value={value}
+            media={media}
+            setMedia={setMediaFromEvent}
           />
         }
         onChange={setValue}
@@ -324,10 +367,10 @@ const NewInput: FC<InputProps> = (props) => {
                 : '') +
               `
 ${
-  properties.length
+  copilotIntegrations.length
     ? `[--integrations--]
 Use the following social media platforms: ${JSON.stringify(
-        properties.map((p) => ({
+        copilotIntegrations.map((p) => ({
           id: p.id,
           platform: p.identifier,
           profilePicture: p.picture,
@@ -432,8 +475,19 @@ const OpenModal: FC<{
 }> = ({ args, respond }) => {
   const modals = useModals();
   const { properties } = useContext(PropertiesContext);
+  const usableProperties = useMemo(
+    () => selectableIntegrations(properties),
+    [properties]
+  );
   const startModal = useCallback(async () => {
     for (const integration of args.list) {
+      const channel = usableProperties.find(
+        (p) => p.id === integration.integrationId
+      );
+      // Skip reconnect / in-between channels — same guard as Select Channels.
+      if (!channel) {
+        continue;
+      }
       await new Promise((res) => {
         const group = makeId(10);
         modals.openModal({
@@ -453,9 +507,7 @@ const OpenModal: FC<{
               value={{
                 group,
                 integration: integration.integrationId,
-                integrationPicture:
-                  properties.find((p) => p.id === integration.integrationId)
-                    ?.picture || '',
+                integrationPicture: channel.picture || '',
                 settings: integration.settings || {},
                 posts: integration.posts.map((p) => ({
                   approvedSubmitForOrder: 'NO',
@@ -466,9 +518,7 @@ const OpenModal: FC<{
                   settings: JSON.stringify(integration.settings || {}),
                   group,
                   integrationId: integration.integrationId,
-                  integration: properties.find(
-                    (p) => p.id === integration.integrationId
-                  ),
+                  integration: channel,
                   publishDate: dayjs.utc(integration.date).toISOString(),
                   image: p.attachments.map((a) => ({
                     id: a.id,
@@ -479,10 +529,8 @@ const OpenModal: FC<{
             >
               <AddEditModal
                 date={dayjs.utc(integration.date)}
-                allIntegrations={properties}
-                integrations={properties.filter(
-                  (p) => p.id === integration.integrationId
-                )}
+                allIntegrations={usableProperties}
+                integrations={[channel]}
                 onlyValues={integration.posts.map((p) => ({
                   content: p.content,
                   id: makeId(10),
@@ -502,7 +550,7 @@ const OpenModal: FC<{
     }
 
     respond('User scheduled all the posts');
-  }, [args, respond, properties]);
+  }, [args, respond, usableProperties, modals]);
 
   useEffect(() => {
     startModal();

@@ -5,19 +5,17 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
-import { useRouter } from 'next/navigation';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
-import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
+import { PostQueenLogo, appVersionLabel } from '@gitroom/frontend/components/ui/logo.component';
 import {
   effectiveMonthly,
   LIFETIME_PRICE,
   lifetimeWindow,
   monthsFree,
-  nextLifetimeTier,
   pricing,
   TRIAL_DAYS,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -34,6 +32,8 @@ import useCookie from 'react-use-cookie';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { HelpMenu } from '@gitroom/frontend/components/new-layout/help.menu';
 import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -73,31 +73,103 @@ const TrustCheck = () => (
   </svg>
 );
 
+/** Order summary chrome before Stripe Checkout state is ready. */
+const OrderSummaryFallbackCard: FC<{
+  tier: string;
+  period: string;
+  allowTrial: boolean;
+}> = ({ tier, period, allowTrial }) => {
+  const t = useT();
+  const plan = pricing[tier] || pricing.PRO;
+  const amount =
+    period === 'YEARLY' ? plan.year_price : plan.month_price;
+  const periodWord =
+    period === 'YEARLY'
+      ? t('billing_yearly', 'Yearly').toLowerCase()
+      : t('billing_monthly', 'Monthly').toLowerCase();
+  const unitLabel =
+    period === 'YEARLY'
+      ? `$${amount} / ${t('billing_year', 'year')}`
+      : `$${amount} / ${t('billing_month', 'month')}`;
+
+  return (
+    <div
+      data-order-summary-fallback="1"
+      className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine"
+    >
+      <div className="text-[17px] font-[600] tracking-[-0.015em]">
+        {t('billing_order_summary', 'Order summary')}
+      </div>
+      <div className="flex items-center justify-between gap-[16px]">
+        <span className="text-[15px] text-pqMuted">
+          {capitalize(tier)}, {t('billing_billed', 'billed')} {periodWord}
+        </span>
+        <span className="text-[15px]">{unitLabel}</span>
+      </div>
+      {allowTrial && (
+        <div className="flex items-center justify-between gap-[16px] text-[15px] text-pqOk">
+          <span>
+            {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+              n: TRIAL_DAYS,
+            })}
+          </span>
+          <span className="font-[600]">-${amount}</span>
+        </div>
+      )}
+      {period === 'MONTHLY' && (
+        <button
+          type="button"
+          disabled
+          className="flex h-[44px] items-center gap-[9px] rounded-[12px] bg-pqInner px-[14px] text-start text-pqText shadow-[inset_0_0_0_1px_var(--border)] opacity-70"
+        >
+          <span className="flex-1 text-[14px] font-[600]">
+            {t('billing_have_discount_coupon', 'Have a coupon code?')}
+          </span>
+          <span className="text-[13.5px] font-[600] text-pqBrand">
+            {t('billing_add', 'Add')}
+          </span>
+        </button>
+      )}
+      <div className="h-px bg-pqLine" />
+      <div className="flex items-baseline justify-between gap-[16px]">
+        <span className="text-[16px] font-[600]">
+          {t('billing_due_today', 'Due today')}
+        </span>
+        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+          {allowTrial ? '$0.00' : `$${amount}.00`}
+        </span>
+      </div>
+      <div className="text-[14px] text-pqMuted">
+        {allowTrial
+          ? t(
+              'billing_then_after_trial_short',
+              'Then ${{amount}} {{period}} after the trial',
+              { amount, period: periodWord }
+            )
+          : t(
+              'billing_renews_period',
+              'Renews {{period}} · cancel anytime from settings',
+              { period: periodWord }
+            )}
+      </div>
+    </div>
+  );
+};
+
 /**
- * The founding-member card in the checkout's right column, with the
- * "OR SUBSCRIBE" divider under it — they exist together or not at all.
+ * Founding-member card in the checkout right column + "OR SUBSCRIBE" divider.
  *
- * The countdown is the same clock /billing/lifetime draws: `lifetimeWindow()`
- * from pricing.ts, derived from `User.createdAt` and enforced by the purchase
- * route, so the card cannot advertise an offer the server would refuse. The
- * ticking lives in this component so the once-a-second re-render never touches
- * the Stripe form.
- *
- * Two deliberate deviations from the prototype, both because the repo is
- * authoritative on behaviour:
- * - The prototype makes this card a fourth selectable plan that checks out
- *   through the same pay bar. The repo's lifetime purchase is its own Stripe
- *   session behind /billing/lifetime, so the card navigates there instead of
- *   inventing a second checkout path.
- * - The prototype promises "Everything in Pro" and a "7-day free trial first".
- *   The repo's ladder sells the *next* tier up (FREE buys CREATOR), and the
- *   lifetime session is `mode: 'payment'` — money moves immediately, no trial.
- *   The card names the real tier and the real terms.
+ * Design: selectable in-place (`paywallTier: 'LIFETIME'`). Pay still goes
+ * through `POST /billing/lifetime-checkout` (hosted Stripe), not Embedded —
+ * honest $49 due today, not the prototype's fake $0 lifetime trial.
+ * Marketing + features: Everything in Pro (design), not the code-redemption ladder.
  */
-const LifetimeOfferCard: FC = () => {
+const LifetimeOfferCard: FC<{
+  selected: boolean;
+  onSelect: () => void;
+}> = ({ selected, onSelect }) => {
   const t = useT();
   const user = useUser();
-  const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -112,8 +184,7 @@ const LifetimeOfferCard: FC = () => {
 
   if (!window_.open) return null;
 
-  const target = nextLifetimeTier(user?.tier?.current);
-  const targetPlan = pricing[target];
+  const proPlan = pricing.PRO;
   const total = Math.floor(window_.msLeft / 1000);
   const parts = [
     Math.floor(total / 3600),
@@ -125,15 +196,47 @@ const LifetimeOfferCard: FC = () => {
     <>
       <div
         data-lifetime-card="1"
-        onClick={() => router.push('/billing/lifetime')}
-        className="flex cursor-pointer select-none flex-col gap-[16px] rounded-[22px] bg-pqLtCardOff p-[20px_24px] shadow-pq ring-1 ring-inset ring-pqBorder"
+        data-lifetime-selected={selected ? '1' : '0'}
+        onClick={onSelect}
+        className={clsx(
+          'flex cursor-pointer select-none flex-col gap-[16px] rounded-[22px] p-[20px_24px] shadow-pq',
+          selected
+            ? 'bg-pqLtCardOn ring-[1.5px] ring-inset ring-pqLtAmber'
+            : 'bg-pqLtCardOff ring-1 ring-inset ring-pqBorder'
+        )}
       >
         <div className="flex flex-wrap items-center gap-[11px]">
-          {/* The prototype's radio dot. It never fills here: picking lifetime
-              happens on /billing/lifetime, not in this pay flow. */}
-          <span className="size-[20px] shrink-0 rounded-full ring-[1.5px] ring-inset ring-pqBorder" />
+          <span
+            className={clsx(
+              'grid size-[20px] shrink-0 place-items-center rounded-full',
+              selected
+                ? 'bg-pqLtSolid'
+                : 'ring-[1.5px] ring-inset ring-pqBorder'
+            )}
+          >
+            {selected && (
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                aria-hidden="true"
+                className="text-pqLtSolidFg"
+              >
+                <path
+                  d="m5 12.5 4.5 4.5L19 7.5"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </span>
           <span className="grid h-[21px] place-items-center rounded-full bg-pqLtSolid px-[10px] text-[10px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
-            {t('billing_become_founding_member', 'Become a founding member')}
+            {selected
+              ? t('billing_founding_member', 'Founding member')
+              : t('billing_become_founding_member', 'Become a founding member')}
           </span>
           <span className="flex-1" />
           <span className="flex h-[22px] items-center whitespace-nowrap rounded-full bg-pqLtChipBg px-[10px] text-[11px] font-[700] uppercase tracking-[0.03em] text-pqLtAmber ring-1 ring-inset ring-pqLtOutline">
@@ -147,15 +250,14 @@ const LifetimeOfferCard: FC = () => {
             </div>
             <div className="mt-[5px] text-[13.5px] text-pqLtDim">
               {t(
-                'billing_lifetime_everything_in',
-                'Everything in {{tier}} — yours forever.',
-                { tier: capitalize(target) }
+                'billing_lifetime_everything_in_pro',
+                'Everything in Pro — yours forever.'
               )}
             </div>
           </div>
           <div className="flex items-baseline gap-[7px]">
             <span className="text-[14px] text-pqLtDimmer line-through">
-              ${targetPlan.year_price}
+              ${proPlan.year_price}
               {t('billing_per_year_short', '/yr')}
             </span>
             <span className="font-display text-[38px] font-[700] leading-none tracking-[-0.03em] text-pqLtAmber">
@@ -166,7 +268,7 @@ const LifetimeOfferCard: FC = () => {
             </span>
           </div>
         </div>
-        <BillingFeatures tier={target} tone="lifetime" />
+        <BillingFeatures tier="PRO" tone="lifetime" />
         <div className="flex flex-wrap items-center gap-[12px] border-t border-pqLtLine pt-[15px]">
           {user?.allowTrial ? (
             <>
@@ -222,9 +324,6 @@ const LifetimeOfferCard: FC = () => {
             </span>
           )}
           <span className="flex-1" />
-          {/* The prototype says "7-day free trial first" here. The repo's
-              lifetime session takes the payment immediately, so this line
-              states the real terms instead. */}
           <span className="whitespace-nowrap text-[13px] text-pqLtDim">
             {t('billing_one_payment_no_renewal', 'One payment · no renewal, ever')}
           </span>
@@ -241,25 +340,204 @@ const LifetimeOfferCard: FC = () => {
   );
 };
 
+/** Static Order summary while Lifetime is selected (no Stripe Embedded session). */
+const LifetimeOrderSummary: FC = () => {
+  const t = useT();
+  return (
+    <div
+      data-lifetime-order-summary="1"
+      className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine"
+    >
+      <div className="text-[17px] font-[600] tracking-[-0.015em]">
+        {t('billing_order_summary', 'Order summary')}
+      </div>
+      <div className="flex items-center justify-between gap-[16px]">
+        <span className="text-[15px] text-pqMuted">
+          {t('billing_lifetime_billed_once', 'Lifetime')}
+          {', '}
+          {t('billing_one_time_payment', 'One-time payment').toLowerCase()}
+        </span>
+        <span className="text-[15px]">
+          ${LIFETIME_PRICE} / {t('billing_once', 'once')}
+        </span>
+      </div>
+      <div className="h-px bg-pqLine" />
+      <div className="flex items-baseline justify-between gap-[16px]">
+        <span className="text-[16px] font-[600]">
+          {t('billing_due_today', 'Due today')}
+        </span>
+        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+          ${LIFETIME_PRICE}.00
+        </span>
+      </div>
+      <div className="text-[14px] text-pqMuted">
+        {t(
+          'billing_lifetime_then_line',
+          'One payment of ${{price}} · never charged again',
+          { price: LIFETIME_PRICE }
+        )}
+      </div>
+      <div className="flex items-start gap-[10px] rounded-[13px] bg-pqBrandSoft p-[13px_15px] text-[14px] leading-[1.5]">
+        <svg
+          viewBox="0 0 24 24"
+          width="17"
+          height="17"
+          fill="none"
+          aria-hidden="true"
+          className="mt-[1px] shrink-0 text-pqBrand"
+        >
+          <path
+            d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <path
+            d="m8.5 12.3 2.4 2.4 4.6-5"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span>
+          <strong>
+            {t(
+              'billing_cancel_notice_title',
+              'Cancel anytime from settings without talking to a person.'
+            )}
+          </strong>{' '}
+          <span className="text-pqMuted">
+            {t(
+              'billing_lifetime_no_renewal_note',
+              'Founding member access never renews.'
+            )}
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+};
+
+/** Fixed pay bar for Lifetime — hosted Checkout, not Embedded confirm. */
+const LifetimePayBar: FC = () => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [busy, setBusy] = useState(false);
+
+  const buy = useCallback(async () => {
+    setBusy(true);
+    try {
+      const { url } = await (
+        await fetch('/billing/lifetime-checkout', { method: 'POST' })
+      ).json();
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      toaster.show(t('something_went_wrong', 'Something went wrong'), 'warning');
+    } finally {
+      setBusy(false);
+    }
+  }, [fetch, t, toaster]);
+
+  return (
+    <div
+      data-lifetime-pay-bar="1"
+      className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]"
+    >
+      <div className="min-w-0 flex-1 mobile:hidden" />
+      <div className="shrink-0 text-end mobile:text-center">
+        <div className="text-[15.5px] font-[600]">
+          ${LIFETIME_PRICE} {t('billing_due_today_lower', 'due today')}
+        </div>
+        <div className="mt-[2px] text-[14px] text-pqMuted">
+          {t(
+            'billing_founding_bar_sub',
+            'Founding member · ${{price}} once · never charged again',
+            { price: LIFETIME_PRICE }
+          )}
+        </div>
+      </div>
+      <div className="shrink-0 mobile:w-full">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={buy}
+          className="grid h-[56px] place-items-center rounded-[15px] bg-pqBrand px-[30px] text-[16px] font-[700] text-pqOnBrand shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] transition-all hover:bg-pqBrandHover disabled:opacity-60 mobile:w-full"
+        >
+          {busy
+            ? t('billing_redirecting', 'Redirecting…')
+            : t(
+                'billing_get_lifetime_access',
+                'Get lifetime access — ${{price}} once',
+                { price: LIFETIME_PRICE }
+              )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const CheckoutEmbedNotice: FC<{ message: string }> = ({ message }) => {
+  const t = useT();
+  return (
+    <div className="billing-form flex w-full flex-1 flex-col gap-[22px] rounded-[22px] bg-pqInner p-[34px_32px] shadow-pqE1 ring-1 ring-inset ring-pqLine mobile:p-[24px_20px]">
+      <div className="mb-[2px] flex items-center gap-[16px]">
+        <h2 className="flex-1 font-display text-[21px] font-[600] tracking-[-0.02em]">
+          {t('billing_payment_details', 'Payment details')}
+        </h2>
+      </div>
+      <div className="flex items-start gap-[11px] rounded-[14px] bg-pqAmberSoft p-[13px_16px] text-[14.5px] text-pqText ring-1 ring-inset ring-pqAmberLine">
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          aria-hidden="true"
+          className="mt-[1px] shrink-0 text-pqWarn"
+        >
+          <path
+            d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="flex-1 font-[500] leading-[1.5]">{message}</span>
+      </div>
+    </div>
+  );
+};
+
 export const FirstBillingComponent = () => {
   const { stripeClient, onboardingVideoUrl } = useVariables();
   const user = useUser();
   const dub = useDubClickId();
-  const router = useRouter();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
   // The entry tier. STANDARD is retired and no longer listed, so defaulting to
   // it would open the paywall with nothing selected.
   const [tier, setTier] = useState('CREATOR');
   const [period, setPeriod] = useState('MONTHLY');
+  // Design: Lifetime is a selectable plan mode on this screen, not a redirect.
+  const [checkoutMode, setCheckoutMode] = useState<'subscription' | 'lifetime'>(
+    'subscription'
+  );
   const fetch = useFetch();
   const modals = useModals();
   const t = useT();
+  const { mobile, tablet, desktop } = useViewport();
+  // Stack + H1 scale follow design 760 / 1180, not Tailwind tablet≤1300.
+  const stackCheckout = mobile || tablet;
   const [datafast_visitor_id] = useCookie('datafast_visitor_id', '');
   const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
-    setStripe(loadStripe(stripeClient));
-  }, []);
+    if (stripeClient) {
+      setStripe(loadStripe(stripeClient));
+    }
+  }, [stripeClient]);
 
   // Preselect whatever the visitor picked on the marketing site. UtmSaver
   // stashed it before registration redirected them here; read it after mount so
@@ -283,20 +561,29 @@ export const FirstBillingComponent = () => {
   }, []);
 
   const loadCheckout = useCallback(async () => {
-    return (
-      await fetch('/billing/embedded', {
-        method: 'POST',
-        body: JSON.stringify({
-          billing: tier,
-          period: period,
-          ...(datafast_visitor_id && datafast_session_id
-            ? { datafast_visitor_id, datafast_session_id }
-            : {}),
-          ...(dub ? { dub } : {}),
-        }),
-      })
-    ).json();
-  }, [tier, period]);
+    const res = await fetch('/billing/embedded', {
+      method: 'POST',
+      body: JSON.stringify({
+        billing: tier,
+        period: period,
+        ...(datafast_visitor_id && datafast_session_id
+          ? { datafast_visitor_id, datafast_session_id }
+          : {}),
+        ...(dub ? { dub } : {}),
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    // Surface API failures to SWR's error path so Payment details shows the
+    // CheckoutEmbedNotice instead of a silent empty / stuck loading shell.
+    if (!res.ok) {
+      const message =
+        typeof json?.message === 'string'
+          ? json.message
+          : 'Could not load checkout';
+      throw new Error(message);
+    }
+    return json;
+  }, [tier, period, datafast_visitor_id, datafast_session_id, dub, fetch]);
 
   const showYouTube = () => {
     modals.openModal({
@@ -313,7 +600,7 @@ export const FirstBillingComponent = () => {
     });
   };
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, error: embedFetchError } = useSWR(
     `/billing-${tier}-${period}`,
     loadCheckout,
     {
@@ -346,7 +633,14 @@ export const FirstBillingComponent = () => {
   const JoinOver = () => {
     return (
       <div className="flex flex-col gap-[18px]">
-        <h1 className="font-display text-[54px] font-[800] leading-[1.06] tracking-[-0.035em] tablet:text-[42px] mobile:!text-[34px] whitespace-pre-line text-balance">
+        <h1
+          className={clsx(
+            'font-display font-[800] leading-[1.06] tracking-[-0.035em] whitespace-pre-line text-balance',
+            mobile && 'text-[34px]',
+            tablet && 'text-[42px]',
+            desktop && 'text-[54px]'
+          )}
+        >
           {/* Doc 03 asks for a different headline once somebody has subscribed
               before — its `ended` state, "Pick up where you left off". This
               screen said "Grow your social presence" to everybody, including a
@@ -369,12 +663,13 @@ export const FirstBillingComponent = () => {
               </span>
             </>
           ) : (
+            // Design `pwHeadA` / `pwHeadB`: "Pick up" + brand "where you left
+            // off" — no trailing "with PostQueen" on the lapsed paywall.
             <>
-              {t('billing_pick_up_where', 'Pick up where you')}{' '}
+              {t('billing_pick_up', 'Pick up')}{' '}
               <span className="text-pqBrand">
-                {t('billing_left_off_highlight', 'left off')}
-              </span>{' '}
-              {t('billing_with_postqueen_again', 'with PostQueen')}
+                {t('billing_where_you_left_off', 'where you left off')}
+              </span>
             </>
           )}
         </h1>
@@ -435,30 +730,43 @@ export const FirstBillingComponent = () => {
         )}
 
         {!user?.allowTrial && (
-          <div className="mt-[6px] flex items-center gap-[11px] rounded-[14px] bg-pqAmberSoft p-[13px_16px] text-[14.5px] text-pqText ring-1 ring-inset ring-pqAmberLine">
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              aria-hidden="true"
-              className="shrink-0 text-pqWarn"
-            >
-              <path
-                d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {/* The design writes "Your subscription ended on {date}". No date
-                is written for that: the subscription row is hard-deleted in
-                this state, so nothing on the client knows when — hence the
-                dateless sentence rather than an invented day. */}
-            <span className="flex-1 font-[600]">
-              {t('billing_subscription_ended', 'Your subscription ended.')}
+          <div
+            data-lapsed-banner="1"
+            className="mt-[6px] flex items-start gap-[11px] rounded-[14px] bg-pqAmberSoft p-[14px_16px] text-[14.5px] text-pqText ring-[1.5px] ring-inset ring-pqWarn/35"
+          >
+            <span className="mt-[1px] grid size-[22px] shrink-0 place-items-center rounded-full bg-pqWarn text-white">
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 8v4.5M12 16.2h.01"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                />
+              </svg>
             </span>
+            {/* Design: "Your subscription ended on {date}". The Subscription
+                row is hard-deleted in this state, so no reliable end date is
+                on the client — title stays dateless; body matches design. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+              <span className="font-[700] leading-[1.35]">
+                {t(
+                  'billing_subscription_ended',
+                  'Your subscription ended.'
+                )}
+              </span>
+              <span className="text-[13.5px] font-[500] leading-[1.45] text-pqMuted">
+                {t(
+                  'billing_subscription_ended_body',
+                  'Nothing will go out until you subscribe again.'
+                )}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -475,15 +783,20 @@ export const FirstBillingComponent = () => {
       className="blurMe flex flex-1 flex-col bg-pqBg pb-[132px] mobile:pb-[190px]"
     >
       <div className="sticky top-0 z-40 flex h-[68px] shrink-0 items-center gap-[14px] border-b border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:!px-[16px]">
-        {/* 34px tile + 19px wordmark, the checkout header's own scale. The
-            design also shows a `v3.1.7` chip here; the repo surfaces no real
-            application version, and a made-up one is worse than none. */}
-        <PostQueenLogo
-          wordmark
-          tileClassName="size-[34px]"
-          glyphClassName="size-[19px]"
-          wordClassName="text-[19px]"
-        />
+        {/* 34px tile + 19px wordmark + version chip, the checkout header's own
+            scale. Version reads NEXT_PUBLIC_APP_VERSION — same source as the
+            app rail — not a marketing placeholder. */}
+        <div className="flex min-w-0 items-center gap-[6px]">
+          <PostQueenLogo
+            wordmark
+            tileClassName="size-[34px]"
+            glyphClassName="size-[19px]"
+            wordClassName="text-[19px]"
+          />
+          <span className="shrink-0 text-[12.5px] tabular-nums text-pqSoft">
+            {appVersionLabel}
+          </span>
+        </div>
         {/* The design names the screen in its own header — the only thing
             telling somebody mid-signup where they are. Hidden on phones, where
             the logo already fills the row. */}
@@ -536,7 +849,19 @@ export const FirstBillingComponent = () => {
           )}
         </div>
       </div>
-      <div className="flex flex-1 flex-row items-start gap-[56px] px-[40px] pb-[40px] pt-[56px] tablet:flex-col-reverse tablet:items-stretch tablet:px-[32px] tablet:pt-[40px] mobile:!px-[16px] mobile:!pt-[24px]">
+      <div
+        className={clsx(
+          'flex flex-1 items-start gap-[56px] pb-[40px]',
+          stackCheckout
+            ? 'flex-col-reverse items-stretch'
+            : 'flex-row',
+          mobile
+            ? 'px-[16px] pt-[24px]'
+            : tablet
+            ? 'px-[32px] pt-[40px]'
+            : 'px-[40px] pt-[56px]'
+        )}
+      >
         <div className="flex min-w-0 flex-1 flex-col gap-[40px]">
           <JoinOver />
           {data?.blocked ? (
@@ -546,23 +871,64 @@ export const FirstBillingComponent = () => {
                 'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
               )}
             </div>
-          ) : !isLoading && data && stripe ? (
+          ) : embedFetchError ? (
+            <CheckoutEmbedNotice
+              message={
+                embedFetchError instanceof Error && embedFetchError.message
+                  ? embedFetchError.message
+                  : t(
+                      'billing_checkout_load_failed',
+                      'Could not load checkout. Please refresh the page or try again in a moment.'
+                    )
+              }
+            />
+          ) : isLoading || !stripe ? (
+            <LoadingComponent />
+          ) : data?.client_secret ? (
             <EmbeddedBilling
               stripe={stripe}
               secret={data.client_secret}
               showCoupon={period === 'MONTHLY'}
               autoApplyCoupon={data.auto_apply_coupon}
+              suppressCheckoutChrome={checkoutMode === 'lifetime'}
+              fallbackTier={tier}
+              fallbackPeriod={period}
+              fallbackAllowTrial={!!user?.allowTrial}
             />
           ) : (
-            <LoadingComponent />
+            <CheckoutEmbedNotice
+              message={
+                typeof data?.message === 'string'
+                  ? data.message
+                  : t(
+                      'billing_checkout_unavailable',
+                      'Checkout could not be started. If you already have a subscription, open Billing from settings instead.'
+                    )
+              }
+            />
           )}
           {/* The design keeps the FAQ in the left column, under the payment
               card, on every breakpoint. */}
           <FAQComponent scale="checkout" />
         </div>
-        <div className="flex w-[520px] shrink-0 flex-col gap-[20px] tablet:w-full">
-          <LifetimeOfferCard />
-          <div className="flex flex-col rounded-[22px] bg-pqInner shadow-pqE1 ring-1 ring-inset ring-pqLine">
+        <div
+          className={clsx(
+            'flex shrink-0 flex-col gap-[20px]',
+            stackCheckout ? 'w-full' : 'w-[560px]'
+          )}
+        >
+          {lifetimeOpen && (
+            <LifetimeOfferCard
+              selected={checkoutMode === 'lifetime'}
+              onSelect={() => setCheckoutMode('lifetime')}
+            />
+          )}
+          <div
+            className={clsx(
+              'flex flex-col rounded-[22px] bg-pqInner shadow-pqE1 ring-1 ring-inset ring-pqLine',
+              checkoutMode === 'lifetime' && 'opacity-55'
+            )}
+          >
             <div className="flex flex-col gap-[18px] p-[24px_26px_22px]">
               <div className="flex flex-wrap items-center gap-[14px]">
                 <div className="min-w-[120px] flex-1 font-display text-[19px] font-[600] tracking-[-0.02em]">
@@ -572,22 +938,28 @@ export const FirstBillingComponent = () => {
                   <div
                     className={clsx(
                       'flex h-[32px] cursor-pointer items-center justify-center rounded-full px-[16px] text-[13px] font-[600]',
-                      period === 'MONTHLY'
+                      period === 'MONTHLY' && checkoutMode === 'subscription'
                         ? 'bg-pqInner text-pqText'
                         : 'text-pqMuted'
                     )}
-                    onClick={() => setPeriod('MONTHLY')}
+                    onClick={() => {
+                      setCheckoutMode('subscription');
+                      setPeriod('MONTHLY');
+                    }}
                   >
                     {t('billing_monthly', 'Monthly')}
                   </div>
                   <div
                     className={clsx(
                       'flex h-[32px] cursor-pointer items-center justify-center gap-[8px] rounded-full pe-[10px] ps-[16px] text-[13px] font-[600]',
-                      period === 'YEARLY'
+                      period === 'YEARLY' && checkoutMode === 'subscription'
                         ? 'bg-pqInner text-pqText'
                         : 'text-pqMuted'
                     )}
-                    onClick={() => setPeriod('YEARLY')}
+                    onClick={() => {
+                      setCheckoutMode('subscription');
+                      setPeriod('YEARLY');
+                    }}
                   >
                     <div>{t('billing_yearly', 'Yearly')}</div>
                     {/* Was a hardcoded "20% Off", true of the old prices and an
@@ -604,10 +976,14 @@ export const FirstBillingComponent = () => {
               </div>
               <div className="grid grid-cols-2 gap-[11px]">
                 {price.map(([key, value]) => {
-                  const selected = key === tier;
+                  const selected =
+                    checkoutMode === 'subscription' && key === tier;
                   return (
                     <div
-                      onClick={() => setTier(key)}
+                      onClick={() => {
+                        setCheckoutMode('subscription');
+                        setTier(key);
+                      }}
                       key={key}
                       className={clsx(
                         'relative flex cursor-pointer select-none flex-col gap-[7px] rounded-[14px] p-[14px_16px]',
@@ -686,11 +1062,11 @@ export const FirstBillingComponent = () => {
               {/* The design shows this only under PRO — the plan the lifetime
                   deal replaces — and only while the founding-member window is
                   open. The tier named is the one the ladder actually grants. */}
-              {tier === 'PRO' && lifetimeOpen && (
+              {tier === 'PRO' && lifetimeOpen && checkoutMode === 'subscription' && (
                 <button
                   type="button"
                   data-lifetime-upsell="1"
-                  onClick={() => router.push('/billing/lifetime')}
+                  onClick={() => setCheckoutMode('lifetime')}
                   className="flex w-full items-center gap-[14px] rounded-[14px] p-[13px_16px] text-start ring-1 ring-inset ring-pqLtOutline transition-colors hover:bg-pqLtChipBg"
                 >
                   <span className="min-w-0 flex-1 text-[14.5px] font-[500] text-pqMuted">
@@ -701,7 +1077,7 @@ export const FirstBillingComponent = () => {
                     {t(
                       'billing_once_and_keep_forever',
                       'once and keep {{tier}} forever',
-                      { tier: capitalize(nextLifetimeTier(user?.tier?.current)) }
+                      { tier: 'Pro' }
                     )}
                   </span>
                   <span className="shrink-0 text-[13px] font-[700] text-pqLtAmber">
@@ -759,13 +1135,22 @@ export const FirstBillingComponent = () => {
               <BillingFeatures tier={tier} />
             </div>
           </div>
-          {/* Where the order summary lands. It has to render inside the Stripe
-              CheckoutProvider (it reads checkout state), which lives in the
-              left column's form — so embedded.billing portals it here, the
-              same slot idiom as new-layout/header-slot.tsx. */}
-          <div id="pq-order-summary" className="flex flex-col empty:hidden" />
+          {/* Order summary: Lifetime is local; subscription is portaled from
+              EmbeddedBilling into #pq-order-summary (or fallback while loading). */}
+          {checkoutMode === 'lifetime' ? (
+            <LifetimeOrderSummary />
+          ) : isLoading || !data?.client_secret || embedFetchError || data?.blocked ? (
+            <OrderSummaryFallbackCard
+              tier={tier}
+              period={period}
+              allowTrial={!!user?.allowTrial}
+            />
+          ) : (
+            <div id="pq-order-summary" className="flex flex-col empty:hidden" />
+          )}
         </div>
       </div>
+      {checkoutMode === 'lifetime' && lifetimeOpen && <LifetimePayBar />}
     </div>
   );
 };

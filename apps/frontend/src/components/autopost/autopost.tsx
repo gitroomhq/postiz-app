@@ -4,35 +4,34 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { ModalFormActions } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
 import { FormProvider, useForm } from 'react-hook-form';
 import { array, boolean, object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
 export const Autopost: FC = () => {
   const fetch = useFetch();
   const t = useT();
-  const modal = useModals();
   const toaster = useToaster();
+  const [editing, setEditing] = useState<any | null | undefined>(undefined);
   const list = useCallback(async () => {
     return (await fetch('/autopost')).json();
   }, []);
   const { data, mutate } = useSWR('autopost', list);
+  const closeEditor = useCallback(() => setEditing(undefined), []);
   const addWebhook = useCallback(
-    (data?: any) => () => {
-      modal.openModal({
-        title: data ? t('edit_autopost', 'Edit Autopost') : t('add_autopost_title', 'Add Autopost'),
-        withCloseButton: true,
-        children: <AddOrEditWebhook data={data} reload={mutate} />,
-      });
+    (row?: any) => () => {
+      setEditing(row ?? null);
     },
     []
   );
@@ -68,15 +67,30 @@ export const Autopost: FC = () => {
     },
     [mutate]
   );
+  if (editing !== undefined) {
+    return (
+      <SettingsPaneEditor
+        title={
+          editing
+            ? t('edit_autopost', 'Edit Autopost')
+            : t('add_autopost_title', 'Add Autopost')
+        }
+        onBack={closeEditor}
+      >
+        <AddOrEditWebhook
+          data={editing || undefined}
+          reload={() => {
+            mutate();
+            closeEditor();
+          }}
+          onCancel={closeEditor}
+        />
+      </SettingsPaneEditor>
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">{t('autopost', 'Autopost')}</h3>
-      <div className="mt-[4px] text-pqMuted">
-        {t(
-          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-          'Autopost can automatically posts your RSS new items to social media'
-        )}
-      </div>
       {!!data?.length && (
         <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
           {data?.map((p: any) => (
@@ -225,8 +239,9 @@ const getPostImmediately = (t: (key: string, fallback: string) => string) => [
 export const AddOrEditWebhook: FC<{
   data?: any;
   reload: () => void;
+  onCancel?: () => void;
 }> = (props) => {
-  const { data, reload } = props;
+  const { data, reload, onCancel } = props;
   const fetch = useFetch();
   const t = useT();
   const options = getOptions(t);
@@ -237,7 +252,6 @@ export const AddOrEditWebhook: FC<{
       ? options[1]
       : options[0]
   );
-  const modal = useModals();
   const toast = useToaster();
   const [valid, setValid] = useState(data?.url || '');
   const [lastUrl, setLastUrl] = useState(data?.lastUrl || '');
@@ -313,7 +327,6 @@ export const AddOrEditWebhook: FC<{
           : t('autopost_added_successfully', 'Autopost added successfully'),
         'success'
       );
-      modal.closeAll();
       reload();
     },
     [data, integrations, lastUrl, syncLast]
@@ -345,111 +358,119 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-pqLine pt-0">
-          <div>
-            <Input
-              label="Title"
-              translationKey="label_title"
-              {...form.register('title')}
-            />
-            <Input
-              label="URL"
-              translationKey="label_url"
-              {...form.register('url')}
-            />
-            <Select
-              label="Should we sync the current last post?"
-              translationKey="label_should_sync_last_post"
-              {...form.register('syncLast', {
-                setValueAs: (value) => {
-                  return value === 'true' || value === true;
-                },
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="When should we post it?"
-              translationKey="label_when_post"
-              {...form.register('onSlot', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {postImmediately.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Autogenerate content"
-              translationKey="label_autogenerate_content"
-              {...form.register('generateContent', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            {!generateContent && (
-              <>
-                <div className={`text-[14px] mb-[6px]`}>
-                  {t('post_content', 'Post content')}
-                </div>
+        {/* Match Webhooks in-pane form: no outer pqLine box (that token is a
+            light hairline on dark and read as unintended white rules). */}
+        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
+          <Input
+            label="Title"
+            translationKey="label_title"
+            {...form.register('title')}
+          />
+          <Input
+            label="URL"
+            translationKey="label_url"
+            {...form.register('url')}
+          />
+          <Select
+            label="Should we sync the current last post?"
+            translationKey="label_should_sync_last_post"
+            {...form.register('syncLast', {
+              setValueAs: (value) => {
+                return value === 'true' || value === true;
+              },
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="When should we post it?"
+            translationKey="label_when_post"
+            {...form.register('onSlot', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {postImmediately.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Autogenerate content"
+            translationKey="label_autogenerate_content"
+            {...form.register('generateContent', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          {!generateContent && (
+            <div className="flex flex-col gap-[6px]">
+              <div className="text-[14px] text-pqMuted">
+                {t('post_content', 'Post content')}
+              </div>
+              <div className="overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
                 <CopilotTextarea
                   disableBranding={true}
                   className={clsx(
-                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner bg-pqInner outline-none mb-[16px] border-pqLine border rounded-pqSm'
+                    '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
                   )}
                   value={content}
                   onChange={(e) => {
                     form.setValue('content', e.target.value);
                   }}
-                  placeholder={t('write_your_post_placeholder', 'Write your post...')}
+                  placeholder={t(
+                    'write_your_post_placeholder',
+                    'Write your post...'
+                  )}
                   autosuggestionsConfig={{
                     textareaPurpose: `Assist me in writing social media post`,
                     chatApiConfigs: {},
                   }}
                 />
-              </>
-            )}
-            <Select
-              label="Generate Picture?"
-              translationKey="label_generate_picture"
-              {...form.register('addPicture', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={allIntegrations.value}
-              name="integrations"
-              label="Integrations"
-              translationKey="label_integrations"
-              disableForm={true}
-              onChange={changeIntegration}
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+              </div>
+            </div>
+          )}
+          <Select
+            label="Generate Picture?"
+            translationKey="label_generate_picture"
+            {...form.register('addPicture', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={allIntegrations.value}
+            name="integrations"
+            label="Integrations"
+            translationKey="label_integrations"
+            disableForm={true}
+            onChange={changeIntegration}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
             {allIntegrations.value === 'specific' && dataList && !isLoading && (
               <PickPlatforms
-                integrations={dataList.integrations}
+                integrations={sortIntegrationsByProviderImportance(
+                  dataList.integrations || []
+                )}
                 selectedIntegrations={integrations as any[]}
                 onChange={(e) => form.setValue('integrations', e)}
                 singleSelect={false}
@@ -457,35 +478,35 @@ export const AddOrEditWebhook: FC<{
                 isMain={true}
               />
             )}
-            <div className="flex gap-[10px]">
-              {valid === url && (syncLast || !!lastUrl) && (
-                <Button
-                  type="submit"
-                  className="mt-[24px]"
-                  disabled={
-                    valid !== url ||
-                    !form.formState.isValid ||
-                    (allIntegrations.value === 'specific' &&
-                      !integrations?.length)
-                  }
-                >
-                  {t('save', 'Save')}
-                </Button>
-              )}
+          <ModalFormActions onCancel={() => onCancel?.()}>
+            {valid === url && (syncLast || !!lastUrl) && (
               <Button
-                type="button"
-                className="mt-[24px]"
-                onClick={sendTest}
+                type="submit"
+                className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
                 disabled={
+                  valid !== url ||
                   !form.formState.isValid ||
                   (allIntegrations.value === 'specific' &&
                     !integrations?.length)
                 }
               >
-                {t('send_test', 'Send Test')}
+                {t('save', 'Save')}
               </Button>
-            </div>
-          </div>
+            )}
+            <Button
+              type="button"
+              secondary={true}
+              className="h-[44px] rounded-[8px] px-[18px] text-[14px] font-[600]"
+              onClick={sendTest}
+              disabled={
+                !form.formState.isValid ||
+                (allIntegrations.value === 'specific' &&
+                  !integrations?.length)
+              }
+            >
+              {t('send_test', 'Send Test')}
+            </Button>
+          </ModalFormActions>
         </div>
       </form>
     </FormProvider>

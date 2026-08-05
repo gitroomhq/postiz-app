@@ -20,7 +20,10 @@ export const ModalWrapperComponent: FC<{
           'are_you_sure_you_want_to_close_the_window',
           'Are you sure you want to close the window?'
         ),
-        t('yes_close', 'Yes, close')
+        t('yes_close', 'Yes, close'),
+        undefined,
+        undefined,
+        false
       ))
     ) {
       return;

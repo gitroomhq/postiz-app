@@ -72,6 +72,8 @@
     // the app back so the spotlit target reads as lit, which a light scrim on a
     // light app cannot do.
     --tourScrim: rgba(2, 2, 6, 0.66);
+    // Media lightbox — design `rgba(9,9,11,.86)` (covers rail; not the tour scrim).
+    --mediaScrim: rgba(9, 9, 11, 0.86);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
     --e1: 0 1px 2px rgba(0, 0, 0, 0.35);
     --e2: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
@@ -88,16 +90,28 @@
     // alpha modifier on a var() colour (`bg-pqWarn/15` generates no CSS at
     // all), so they are tokens the way --okSoft already is.
     --okLine: rgba(74, 222, 128, 0.26);
+    // Channels detail Published stat card (chDetailStats) — softer than
+    // --okSoft so the whole card reads green without matching the Connected pill.
+    --okCard: rgba(74, 222, 128, 0.08);
+    --okCardRing: rgba(74, 222, 128, 0.22);
     --warn: #f87171;
     --warnSoft: rgba(248, 113, 113, 0.13);
     --warnLine: rgba(248, 113, 113, 0.28);
+    // Destructive / payment-failed red — the billing payFail strip and its CTA
+    // use #ef4444 in the prototype, not --warn (which is softer in dark).
+    --danger: #ef4444;
+    --dangerSoft: rgba(239, 68, 68, 0.13);
+    --dangerLine: rgba(239, 68, 68, 0.28);
+    --dangerChip: rgba(239, 68, 68, 0.16);
     --unlimA: #a78bfa;
     --unlimB: #fff;
     --avatarBg: #101014;
     --badgeRing: #101014;
     // Lifetime / founding-member surfaces only.
-    --ltCardOn: linear-gradient(120deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.07) 55%, transparent);
-    --ltCardOff: linear-gradient(120deg, rgba(245, 158, 11, 0.11), rgba(245, 158, 11, 0.035) 55%, transparent);
+    // Last stop stays a soft amber wash — fading to bare `transparent` over
+    // black reads as a dark band on the right of the card.
+    --ltCardOn: linear-gradient(120deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.1) 52%, rgba(245, 158, 11, 0.045));
+    --ltCardOff: linear-gradient(120deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05) 52%, rgba(245, 158, 11, 0.025));
     --ltSolid: #f59e0b;
     --ltSolidFg: #1a1205;
     --ltLine2: rgba(245, 158, 11, 0.55);
@@ -137,6 +151,9 @@
     --amber: #fb923c;
     --amberSoft: rgba(251, 146, 60, 0.12);
     --amberLine: rgba(251, 146, 60, 0.28);
+    // Header streak flame — design chromeVals `#f97316` (distinct from --amber).
+    --streak: #f97316;
+    --streakSoft: rgba(249, 115, 22, 0.14);
     // No input in the prototype has a focus state at all. One is needed before
     // Stripe's PaymentElement can be themed to match, and for keyboard use.
     --fieldRing: rgba(167, 139, 250, 0.4);
@@ -188,6 +205,7 @@
     // Lighter than dark's 0.66 — the same opacity over a white app reads as
     // almost opaque and the spotlight stops looking like a spotlight.
     --tourScrim: rgba(2, 2, 6, 0.5);
+    --mediaScrim: rgba(9, 9, 11, 0.86);
     --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 28px -8px rgba(9, 9, 11, 0.16);
     --e1: 0 1px 2px rgba(9, 9, 11, 0.05);
     --e2: 0 4px 12px -2px rgba(9, 9, 11, 0.1);
@@ -201,15 +219,22 @@
     --okSoft: rgba(21, 128, 61, 0.1);
     // As in .dark, on the light theme's darker ok / warn bases.
     --okLine: rgba(21, 128, 61, 0.26);
+    --okCard: rgba(21, 128, 61, 0.08);
+    --okCardRing: rgba(21, 128, 61, 0.22);
     --warn: #dc2626;
     --warnSoft: rgba(220, 38, 38, 0.1);
     --warnLine: rgba(220, 38, 38, 0.28);
+    // Same #ef4444 base as dark — the prototype hardcodes it for payFail.
+    --danger: #ef4444;
+    --dangerSoft: rgba(239, 68, 68, 0.13);
+    --dangerLine: rgba(239, 68, 68, 0.28);
+    --dangerChip: rgba(239, 68, 68, 0.16);
     --unlimA: #6d28d9;
     --unlimB: #a855f7;
     --avatarBg: #eceae6;
     --badgeRing: #f7f5f2;
     --ltCardOn: linear-gradient(120deg, #fdf3e2, #fefaf3 58%, #fffdfa);
-    --ltCardOff: linear-gradient(120deg, #fdf8f0, #fefcf8 55%, transparent);
+    --ltCardOff: linear-gradient(120deg, #fdf8f0, #fefcf8 55%, #fffcf9);
     --ltSolid: #d97706;
     --ltSolidFg: #fffaf2;
     --ltLine2: rgba(217, 119, 6, 0.5);
@@ -244,6 +269,8 @@
     --amber: #b45309;
     --amberSoft: rgba(251, 146, 60, 0.12);
     --amberLine: rgba(251, 146, 60, 0.3);
+    --streak: #f97316;
+    --streakSoft: rgba(249, 115, 22, 0.14);
     --fieldRing: rgba(124, 58, 237, 0.35);
   }
 }

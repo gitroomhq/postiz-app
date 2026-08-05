@@ -4,17 +4,14 @@ import 'reflect-metadata';
 import { FC, useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import dayjs from 'dayjs';
 import { useParams } from 'next/navigation';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
+import dayjs from 'dayjs';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
   const params = useParams<{ platform: string }>();
-
-  const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
-  }, []);
 
   const loadDate = useCallback(async () => {
     if (params.platform === 'all') {
@@ -27,15 +24,7 @@ export const StandaloneModal: FC = () => {
     isLoading,
     data: integrations,
     mutate,
-  } = useSWR('/integrations/list', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
+  } = useIntegrationList();
   const { isLoading: isLoading2, data } = useSWR('/posts/find-slot', loadDate, {
     fallbackData: [],
   });

@@ -11,10 +11,10 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
-import { Button } from '@gitroom/react/form/button';
 import { useHotkeys } from 'react-hotkeys-hook';
 import clsx from 'clsx';
 import { EventEmitter } from 'events';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 interface OpenModalInterface {
   title?: any;
@@ -101,17 +101,26 @@ export const Component: FC<{
   isLast: boolean;
   modal: { id: string } & OpenModalInterface;
 }> = memo(({ isLast, modal, closeModal, zIndex }) => {
+  const t = useT();
   const decision = useDecisionModal();
   const closeModalFunction = useCallback(async () => {
     if (modal.askClose) {
-      const open = await decision.open();
+      const open = await decision.open({
+        description: t(
+          'are_you_sure_you_want_to_close_this_modal_all_data_will_be_lost',
+          'Are you sure you want to close this modal? (all data will be lost)'
+        ),
+        approveLabel: t('yes_close_it', 'Yes, close it!'),
+        cancelLabel: t('no_cancel', 'No, cancel!'),
+        danger: false,
+      });
       if (!open) {
         return;
       }
     }
     modal?.onClose?.();
     closeModal(modal.id);
-  }, [modal.id, closeModal]);
+  }, [modal.id, closeModal, modal.askClose, modal.onClose, decision, t]);
 
   const RenderComponent = useMemo(() => {
     return typeof modal.children === 'function'
@@ -196,14 +205,26 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner shadow-pq mx-auto flex flex-col w-fit rounded-[24px] relative',
-                modal.size ? '' : 'min-w-[600px]',
-                modal.fullScreen && 'h-full'
+                !modal.removeLayout && 'gap-[16px] p-[32px]',
+                // Prototype form card: --inner, r24, p32, gap16,
+                // min-width:min(600px,100%) even when formWidth is 420/460.
+                'relative mx-auto flex w-fit max-w-[min(920px,calc(100vw-48px))] flex-col rounded-[24px] bg-pqInner text-pqText shadow-pq',
+                !modal.fullScreen && 'min-w-[min(600px,100%)] max-h-[86vh]',
+                modal.fullScreen && 'h-full',
+                modal.classNames?.modal
               )}
               {...((!!modal.size || !!modal.height || !!modal.maxSize) && {
                 style: {
-                  ...(modal.size ? { width: modal.size } : {}),
+                  // Width can be narrower on paper (420/460) but min-w above
+                  // keeps desktop cards ≥600 like the prototype.
+                  ...(modal.size
+                    ? {
+                        width:
+                          typeof modal.size === 'number'
+                            ? Math.max(modal.size, 600)
+                            : modal.size,
+                      }
+                    : {}),
                   ...(modal.height ? { height: modal.height } : {}),
                   ...(modal.maxSize ? { maxWidth: modal.maxSize } : {}),
                 },
@@ -211,7 +232,14 @@ export const Component: FC<{
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
-                <div className="font-display text-[24px] font-[600] -tracking-[0.015em] flex-1">
+                <div
+                  className={clsx(
+                    'font-display text-[24px] font-[600] -tracking-[0.015em] flex-1',
+                    (typeof modal.withCloseButton === 'undefined' ||
+                      modal.withCloseButton) &&
+                      'pe-[34px]'
+                  )}
+                >
                   {modal.title}
                 </div>
                 {typeof modal.withCloseButton === 'undefined' ||
@@ -221,6 +249,7 @@ export const Component: FC<{
                       className="absolute end-[20px] top-[20px] grid size-[30px] place-items-center rounded-[9px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText cursor-pointer"
                       type="button"
                       onClick={closeModalFunction}
+                      aria-label="Close"
                     >
                       <svg
                         viewBox="0 0 15 15"
@@ -242,7 +271,7 @@ export const Component: FC<{
               </div>
               <div
                 className={clsx(
-                  'whitespace-pre-line',
+                  'min-h-0 overflow-y-auto whitespace-pre-line',
                   !!modal.height && !!modal.size && 'flex flex-1 flex-col'
                 )}
               >
@@ -265,13 +294,24 @@ export const ModalManagerInner: FC = () => {
   );
 
   useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
     if (modalManager.length > 0) {
-      document.querySelector('body')?.classList.add('overflow-hidden');
-      Array.from(document.querySelectorAll('.blurMe') || []).map((p) =>
-        p.classList.add('blur-xs', 'pointer-events-none')
-      );
+      // Reserve the scrollbar lane so `min(1040px,100%)` Settings cards do not
+      // jump when the bar disappears (prototype keeps the sheet width stable).
+      html.classList.add('pq-modal-open');
+      body?.classList.add('overflow-hidden');
+      // Settings is its own scrim route under `.blurMe` — blurring it under a
+      // nested form washes the sheet; prototype keeps Settings sharp.
+      const settingsOpen = !!document.querySelector('[data-settings-scrim]');
+      if (!settingsOpen) {
+        Array.from(document.querySelectorAll('.blurMe') || []).map((p) =>
+          p.classList.add('blur-xs', 'pointer-events-none')
+        );
+      }
     } else {
-      document.querySelector('body')?.classList.remove('overflow-hidden');
+      html.classList.remove('pq-modal-open');
+      body?.classList.remove('overflow-hidden');
       Array.from(document.querySelectorAll('.blurMe') || []).map((p) =>
         p.classList.remove('blur-xs', 'pointer-events-none')
       );
@@ -284,7 +324,7 @@ export const ModalManagerInner: FC = () => {
 
   return (
     <>
-      <style>{`body, html { overflow: hidden !important; }`}</style>
+      <style>{`html.pq-modal-open { overflow: hidden !important; scrollbar-gutter: stable; } body { overflow: hidden !important; }`}</style>
       {modalManager.map((modal, index) => (
         <Component
           isLast={modalManager.length - 1 === index}
@@ -331,35 +371,86 @@ export const ModalManagerEmitter: FC = () => {
   return null;
 };
 
+/**
+ * Design form footer (`overlayVals` form card): primary (+ optional secondary)
+ * then a fixed-width outline Cancel. Put the primary submit as the first child
+ * with `flex-1` (and h-[42px] rounded-[10px] when matching the prototype).
+ */
+export const ModalFormActions: FC<{
+  onCancel: () => void;
+  cancelLabel?: string;
+  children: ReactNode;
+}> = ({ onCancel, cancelLabel, children }) => {
+  const t = useT();
+  return (
+    <div className="mt-[4px] flex gap-[10px] pt-[4px]">
+      {children}
+      <button
+        type="button"
+        onClick={onCancel}
+        className="h-[44px] w-[120px] shrink-0 rounded-[10px] bg-transparent text-[14px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover"
+      >
+        {cancelLabel ?? t('cancel', 'Cancel')}
+      </button>
+    </div>
+  );
+};
+
+/** Shared field chrome for modal forms (prototype overlayVals inputs). */
+export const modalFieldClass =
+  'h-[44px] w-full rounded-[10px] border-0 bg-pqTableHeader px-[12px] text-[14px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] transition-shadow placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]';
+
+export const modalTextareaClass =
+  'min-h-[110px] w-full resize-y rounded-[10px] border-0 bg-pqTableHeader p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] transition-shadow placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]';
+
+export const modalLabelClass = 'text-[14px] text-pqMuted';
+
 export const DecisionModal: FC<{
   description: string;
   approveLabel: string;
   cancelLabel: string;
   onlyApprove: boolean;
+  danger?: boolean;
   resolution: (value: boolean) => void;
-}> = ({ description, cancelLabel, approveLabel, resolution, onlyApprove }) => {
+}> = ({
+  description,
+  cancelLabel,
+  approveLabel,
+  resolution,
+  onlyApprove,
+  danger,
+}) => {
   const { closeCurrent } = useModals();
   return (
     <div className="flex flex-col">
-      <div className="max-w-[600px]">{description}</div>
-      <div className="flex gap-[12px] mt-[16px]">
-        <Button
+      <div className="max-w-[600px] whitespace-pre-line text-[14px] leading-[1.6] text-pqMuted">
+        {description}
+      </div>
+      <div className="mt-[20px] flex gap-[10px]">
+        <button
+          type="button"
           onClick={() => {
             resolution(true);
             closeCurrent();
           }}
+          className={clsx(
+            'min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 text-[14.5px] font-[600] text-pqOnBrand cursor-pointer transition-[filter] hover:brightness-110',
+            danger ? 'bg-pqDanger' : 'bg-pqBrand'
+          )}
         >
           {approveLabel}
-        </Button>
+        </button>
         {!onlyApprove && (
-          <Button
+          <button
+            type="button"
             onClick={() => {
               resolution(false);
               closeCurrent();
             }}
+            className="min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 bg-pqBtnSimple text-[14.5px] font-[600] text-pqText cursor-pointer transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
           >
             {cancelLabel}
-          </Button>
+          </button>
         )}
       </div>
     </div>
@@ -373,6 +464,7 @@ export const areYouSure = ({
   description = 'Are you sure you want to close this modal?' as any,
   approveLabel = 'Yes',
   cancelLabel = 'No',
+  danger = false,
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -380,6 +472,7 @@ export const areYouSure = ({
       description,
       approveLabel,
       cancelLabel,
+      danger,
       newRes,
     });
   });
@@ -402,6 +495,7 @@ export const useDecisionModal = () => {
       onlyApprove = false,
       approveLabel = 'Yes',
       cancelLabel = 'No',
+      danger = false,
       newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {
@@ -412,6 +506,7 @@ export const useDecisionModal = () => {
           children: (
             <DecisionModal
               onlyApprove={onlyApprove}
+              danger={danger}
               resolution={(value) => (newRes ? newRes(value) : res(value))}
               description={description}
               approveLabel={approveLabel}

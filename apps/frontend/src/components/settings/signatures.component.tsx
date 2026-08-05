@@ -1,11 +1,13 @@
-import React, { FC, useCallback } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { array, boolean, object, string } from 'yup';
+import {
+  ModalFormActions,
+  useModals,
+} from '@gitroom/frontend/components/layout/new-modal';
+import { boolean, object, string } from 'yup';
 import { FormProvider, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
@@ -14,6 +16,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
+
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
 }> = (props) => {
@@ -21,34 +25,48 @@ export const SignaturesComponent: FC<{
   const fetch = useFetch();
   const modal = useModals();
   const toaster = useToaster();
+  const t = useT();
+  // Composer picker still uses a modal; Settings uses the in-pane editor.
+  const usePane = !appendSignature;
+  const [editing, setEditing] = useState<any | null | undefined>(undefined);
   const load = useCallback(async () => {
     return (await fetch('/signatures')).json();
-  }, []);
+  }, [fetch]);
   const { data, mutate } = useSWR('signatures', load);
-  const addSignature = useCallback(
-    (data?: any) => () => {
+  const closeEditor = useCallback(() => setEditing(undefined), []);
+
+  const openEditor = useCallback(
+    (row?: any) => () => {
+      if (usePane) {
+        setEditing(row ?? null);
+        return;
+      }
       modal.openModal({
-        title: data ? 'Edit Signature' : 'Add Signature',
+        title: row ? 'Edit Signature' : 'Add Signature',
         withCloseButton: true,
-        children: <AddOrRemoveSignature data={data} reload={mutate} />,
+        children: (
+          <AddOrRemoveSignature
+            data={row}
+            reload={mutate}
+            onCancel={() => modal.closeCurrent()}
+          />
+        ),
       });
     },
-    [mutate]
+    [usePane, modal, mutate]
   );
 
   const deleteSignature = useCallback(
-    (data: any) => async () => {
+    (row: any) => async () => {
       if (
         await deleteDialog(
           t(
             'are_you_sure_you_want_to_delete',
             `Are you sure you want to delete?`,
-            // Same reason as the list cell below: the confirmation named the
-            // signature with its markup showing.
             {
               name: stripHtmlValidation(
                 'none',
-                data.content,
+                row.content,
                 false,
                 true,
                 false
@@ -59,27 +77,53 @@ export const SignaturesComponent: FC<{
           )
         )
       ) {
-        await fetch(`/signatures/${data.id}`, {
+        await fetch(`/signatures/${row.id}`, {
           method: 'DELETE',
         });
         mutate();
         toaster.show('Signature deleted successfully', 'success');
       }
     },
-    []
+    [fetch, mutate, toaster, t]
   );
 
-  const t = useT();
+  if (usePane && editing !== undefined) {
+    return (
+      <SettingsPaneEditor
+        title={
+          editing
+            ? t('edit_signature', 'Edit Signature')
+            : t('add_signature', 'Add Signature')
+        }
+        onBack={closeEditor}
+      >
+        <AddOrRemoveSignature
+          data={editing || undefined}
+          reload={() => {
+            mutate();
+            closeEditor();
+          }}
+          onCancel={closeEditor}
+        />
+      </SettingsPaneEditor>
+    );
+  }
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">{t('signatures', 'Signatures')}</h3>
-      <div className="mt-[4px] text-pqMuted">
-        {t(
-          'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
-          'You can add signatures to your account to be used in your posts.'
-        )}
-      </div>
+      {!!appendSignature && (
+        <>
+          <h3 className="text-[20px] font-[500]">
+            {t('signatures', 'Signatures')}
+          </h3>
+          <div className="mt-[4px] text-[14px] text-pqMuted">
+            {t(
+              'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
+              'You can add signatures to your account to be used in your posts.'
+            )}
+          </div>
+        </>
+      )}
       {!!data?.length && (
         <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
           {data?.map((p: any) => (
@@ -88,28 +132,16 @@ export const SignaturesComponent: FC<{
               className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
             >
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="truncate text-[13.5px]">
-                  {/* Was `content.slice(0, 15) + '...'` on the raw HTML, so
-                      a signature stored as `<p>— Sent with PostQueen</p>`
-                      listed itself as "<p>— Sent with ..." — a markup tag
-                      shown to the person who wrote the text, and a cut that
-                      could land inside a tag. Same helper the calendar card
-                      uses for the same job, and the ellipsis only appears
-                      when something was actually cut. */}
-                  {(() => {
-                    const plain = stripHtmlValidation(
-                      'none',
-                      p.content,
-                      false,
-                      true,
-                      false
-                    ).trim();
-                    return plain.length > 30
-                      ? plain.slice(0, 30) + '…'
-                      : plain;
-                  })()}
+                <div className="truncate text-[13.5px] text-pqText">
+                  {stripHtmlValidation(
+                    'none',
+                    p.content,
+                    false,
+                    true,
+                    false
+                  ).trim()}
                 </div>
-                <div className="mt-[2px] truncate text-[12px] text-pqMuted">
+                <div className="mt-[2px] text-[12px] text-pqMuted">
                   {t('auto_add', 'Auto add?')}{' '}
                   {p.autoAdd ? t('yes', 'Yes') : t('no', 'No')}
                 </div>
@@ -125,7 +157,7 @@ export const SignaturesComponent: FC<{
               )}
               <button
                 type="button"
-                onClick={addSignature(p)}
+                onClick={openEditor(p)}
                 aria-label={t('edit', 'Edit')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
@@ -167,7 +199,7 @@ export const SignaturesComponent: FC<{
       )}
       <button
         type="button"
-        onClick={addSignature()}
+        onClick={openEditor()}
         className={clsx(
           'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
@@ -196,8 +228,9 @@ const details = object().shape({
 const AddOrRemoveSignature: FC<{
   data?: any;
   reload: () => void;
+  onCancel: () => void;
 }> = (props) => {
-  const { data, reload } = props;
+  const { data, reload, onCancel } = props;
   const toast = useToaster();
   const fetch = useFetch();
   const form = useForm({
@@ -208,8 +241,6 @@ const AddOrRemoveSignature: FC<{
     },
   });
   const text = form.watch('content');
-  const autoAdd = form.watch('autoAdd');
-  const modal = useModals();
   const callBack = useCallback(
     async (values: any) => {
       await fetch(data?.id ? `/signatures/${data.id}` : '/signatures', {
@@ -222,10 +253,9 @@ const AddOrRemoveSignature: FC<{
           : 'Signature added successfully',
         'success'
       );
-      modal.closeCurrent();
       reload();
     },
-    [data, modal]
+    [data, fetch, reload, toast]
   );
 
   const t = useT();
@@ -233,33 +263,12 @@ const AddOrRemoveSignature: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
-          <button
-            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-pqHover cursor-pointer mantine-Modal-close mantine-1dcetaa"
-            type="button"
-            onClick={() => modal.closeCurrent()}
-          >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-
-          <div className="relative bg-pqInner">
+        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
+          <div className="relative overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
             <CopilotTextarea
               disableBranding={true}
               className={clsx(
-                '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner bg-pqInner outline-none'
+                '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
               )}
               value={text}
               onChange={(e) => {
@@ -280,15 +289,18 @@ const AddOrRemoveSignature: FC<{
               setValueAs: (value) => value === 'true',
             })}
           >
-            <option value="false">
-              {t('no', 'No')}
-            </option>
-            <option value="true">
-              {t('yes', 'Yes')}
-            </option>
+            <option value="false">{t('no', 'No')}</option>
+            <option value="true">{t('yes', 'Yes')}</option>
           </Select>
 
-          <Button type="submit">{t('save', 'Save')}</Button>
+          <ModalFormActions onCancel={onCancel}>
+            <Button
+              type="submit"
+              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+            >
+              {t('save', 'Save')}
+            </Button>
+          </ModalFormActions>
         </div>
       </form>
     </FormProvider>

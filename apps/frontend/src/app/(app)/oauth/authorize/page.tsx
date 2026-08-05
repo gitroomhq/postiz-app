@@ -79,7 +79,7 @@ export default function OAuthAuthorizePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-newTextColor relative overflow-hidden">
+      <div className="flex flex-1 items-center justify-center text-pqText relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-pqBrand rounded-full blur-[120px]" />
           <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-pqPink rounded-full blur-[120px]" />
@@ -88,7 +88,7 @@ export default function OAuthAuthorizePage() {
           <div className="flex justify-center mb-[24px]">
             <Logo />
           </div>
-          <div className="text-[16px] text-textItemBlur">
+          <div className="text-[16px] text-pqMuted">
             Please wait...
           </div>
           <div className="mt-[32px] flex justify-center">
@@ -101,7 +101,7 @@ export default function OAuthAuthorizePage() {
 
   if (error) {
     return (
-      <div className="flex flex-1 items-center justify-center text-newTextColor relative overflow-hidden">
+      <div className="flex flex-1 items-center justify-center text-pqText relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-pqBrand rounded-full blur-[120px]" />
           <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-pqPink rounded-full blur-[120px]" />
@@ -110,9 +110,9 @@ export default function OAuthAuthorizePage() {
           <div className="flex justify-center mb-[24px]">
             <Logo />
           </div>
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
+          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-pqWarnSoft flex items-center justify-center">
             <svg
-              className="w-[40px] h-[40px] text-red-500"
+              className="w-[40px] h-[40px] text-pqWarn"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -126,7 +126,7 @@ export default function OAuthAuthorizePage() {
           <div className="text-[28px] font-semibold mb-[12px]">
             Authorization Error
           </div>
-          <div className="text-[16px] text-textItemBlur max-w-[400px]">
+          <div className="text-[16px] text-pqMuted max-w-[400px]">
             {error}
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function OAuthAuthorizePage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center text-newTextColor relative overflow-hidden">
+    <div className="flex flex-1 items-center justify-center text-pqText relative overflow-hidden">
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-pqBrand rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-pqPink rounded-full blur-[120px]" />
@@ -150,7 +150,7 @@ export default function OAuthAuthorizePage() {
           <Logo />
         </div>
 
-        <div className="bg-newBgColorInner rounded-[16px] p-[32px] flex flex-col gap-[24px]">
+        <div className="bg-pqPop rounded-[16px] p-[32px] flex flex-col gap-[24px] shadow-[inset_0_0_0_1px_var(--border)]">
           <div className="flex flex-col items-center gap-[16px]">
             {appInfo.app.picture?.path ? (
               <img
@@ -159,7 +159,7 @@ export default function OAuthAuthorizePage() {
                 className="w-[64px] h-[64px] rounded-full object-cover"
               />
             ) : (
-              <div className="w-[64px] h-[64px] rounded-full bg-newBgLineColor flex items-center justify-center text-[24px] text-textItemBlur">
+              <div className="w-[64px] h-[64px] rounded-full bg-pqLine flex items-center justify-center text-[24px] text-pqMuted">
                 {appInfo.app.name?.[0]?.toUpperCase() || '?'}
               </div>
             )}
@@ -167,14 +167,14 @@ export default function OAuthAuthorizePage() {
               {appInfo.app.name}
             </h2>
             {appInfo.app.description && (
-              <div className="text-textItemBlur text-center text-[14px]">
+              <div className="text-pqMuted text-center text-[14px]">
                 {appInfo.app.description}
               </div>
             )}
           </div>
 
           <div className="border-t border-newBorder pt-[16px]">
-            <div className="text-[14px] text-textItemBlur mb-[12px]">
+            <div className="text-[14px] text-pqMuted mb-[12px]">
               This application is requesting access to your PostQueen account. It
               will be able to:
             </div>

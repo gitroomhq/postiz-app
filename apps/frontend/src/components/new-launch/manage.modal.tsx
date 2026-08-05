@@ -37,19 +37,21 @@ import {
   ChevronDownIcon,
   CloseIcon,
   TrashIcon,
-  DropdownArrowSmallIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
+  const { mobile } = useViewport();
   const ref = useRef(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
+  const [postNowOpen, setPostNowOpen] = useState(false);
   const toaster = useToaster();
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
@@ -157,7 +159,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           'are_you_sure_you_want_to_close_this_modal_all_data_will_be_lost',
           'Are you sure you want to close this modal? (all data will be lost)'
         ),
-        t('yes_close_it', 'Yes, close it!')
+        t('yes_close_it', 'Yes, close it!'),
+        undefined,
+        undefined,
+        false
       )
     ) {
       if (customClose) {
@@ -460,12 +465,25 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className="w-full h-full flex-1 p-[40px] flex relative">
-      <div className="flex flex-1 flex-col rounded-[24px] bg-pqInner shadow-pq">
-        <div className="flex-1 flex">
-          <div className="flex flex-col flex-1 border-e border-newBorder">
-            <div className="flex h-[65px] items-center gap-[12px] rounded-ss-[24px] border-b border-pqLine bg-pqInner px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText">
-              {t('create_post_title', 'Create Post')}
+    <div className="relative flex h-full w-full flex-1 p-[40px] tablet:p-[16px] mobile:p-0">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-[20px] bg-pqInner shadow-pq mobile:rounded-none">
+        <div
+          className={clsx(
+            'flex flex-1',
+            // Design <760: editor + preview stack; preview capped ~340px.
+            mobile ? 'flex-col' : 'flex-row'
+          )}
+        >
+          <div
+            className={clsx(
+              'flex min-h-0 flex-1 flex-col',
+              !mobile && 'border-e border-pqBorder'
+            )}
+          >
+            <div className="flex h-[65px] items-center gap-[12px] rounded-ss-[20px] border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none">
+              {existingData?.integration
+                ? t('edit_post_title', 'Edit Post')
+                : t('create_post_title', 'Create Post')}
               <CreationMethodBadge
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
@@ -477,10 +495,24 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               >
                 <div
                   id="social-content"
-                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
                 >
-                  <div className="flex w-full">
-                    <div className="flex flex-1">
+                  <div className="flex w-full items-start gap-[16px]">
+                    <div className="flex min-w-0 flex-1 flex-col gap-[12px]">
+                      <div className="flex items-center gap-[8px]">
+                        <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
+                          {t('select_channels', 'Select channels')}
+                        </span>
+                        <span className="rounded-full bg-pqInner px-[8px] py-[2px] text-[11px] font-[600] text-pqMuted shadow-[inset_0_0_0_1px_var(--border)]">
+                          {selectedIntegrations.length === 0
+                            ? t('none_yet', 'none yet')
+                            : selectedIntegrations.length === 1
+                            ? t('one_selected', '1 selected')
+                            : t('n_selected', '{{count}} selected', {
+                                count: selectedIntegrations.length,
+                              })}
+                        </span>
+                      </div>
                       <PicksSocialsComponent toolTip={true} />
                     </div>
                     <div>
@@ -515,12 +547,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   current === 'global' && 'hidden'
                 )}
               >
-                <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings">
+                <div className="flex flex-1 flex-col gap-[12px] overflow-hidden rounded-[12px]">
                   <div
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx(
-                      'bg-pqBrand rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
-                      showSettings ? '!rounded-b-none' : ''
+                      'flex h-[44px] cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqTableHeader px-[14px] shadow-[inset_0_0_0_1px_var(--border)]',
+                      showSettings && 'rounded-b-none'
                     )}
                   >
                     <div className="flex-1 text-[14px] font-[600] text-pqText">
@@ -529,7 +561,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <div>
                       <ChevronDownIcon
                         rotated={showSettings}
-                        className="text-pqText"
+                        className="text-pqMuted"
                       />
                     </div>
                   </div>
@@ -539,7 +571,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       'text-[14px] text-textColor font-[500] relative'
                     )}
                   >
-                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-pqInner scrollbar-track-pqColColor">
                       <div
                         id="social-settings"
                         className="flex flex-col gap-[20px] bg-pqBg"
@@ -553,24 +585,41 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
           </div>
-          <div className="w-[580px] flex flex-col">
-            <div className="flex h-[65px] items-center rounded-se-[24px] border-b border-pqLine bg-pqInner px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText">
+          <div
+            className={clsx(
+              'flex flex-col',
+              mobile
+                ? 'w-full max-h-[340px] shrink-0 border-t border-pqBorder'
+                : 'w-[580px]'
+            )}
+          >
+            <div
+              className={clsx(
+                'flex h-[65px] items-center border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none',
+                !mobile && 'rounded-se-[20px]'
+              )}
+            >
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
-              <div className="cursor-pointer">
-                <CloseIcon onClick={askClose} className="text-pqSoft" />
-              </div>
+              <button
+                type="button"
+                onClick={askClose}
+                aria-label={t('close', 'Close')}
+                className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <CloseIcon size={16} />
+              </button>
             </div>
-            <div className="flex-1 relative">
+            <div className="relative min-h-0 flex-1">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
+        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex items-center">
           <div className="flex-1 flex ps-[20px] gap-[8px]">
             {!dummy && (
               <TagsComponent
@@ -606,11 +655,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   selectedIntegrations.length === 0 || loading || locked
                 }
                 onClick={schedule('draft')}
-                className="relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple justify-center items-center flex rounded-[8px] text-[15px] font-[600]"
+                className="relative flex h-[42px] cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple px-[18px] text-[14px] font-[600] disabled:cursor-not-allowed"
               >
                 {loading && (
-                  <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                    <div className="animate-spin h-[20px] w-[20px] border-4 border-textColor border-t-transparent rounded-full" />
+                  <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
+                    <div className="h-[20px] w-[20px] animate-spin rounded-full border-4 border-textColor border-t-transparent" />
                   </div>
                 )}
                 <div className={clsx(loading && 'invisible')}>
@@ -620,7 +669,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {addEditSets && (
               <button
-                className="text-white text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-pqBrand ps-[20px] pe-[16px]"
+                className="btnSub flex h-[42px] min-w-[168px] items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -630,54 +679,76 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="group cursor-pointer relative">
-                <button
-                  disabled={
-                    selectedIntegrations.length === 0 || loading || locked
-                  }
-                  onClick={schedule('schedule')}
-                  className="text-white relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-pqBrand ps-[20px] pe-[16px]"
-                >
-                  {loading && (
-                    <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                      <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
-                    </div>
-                  )}
-                  <div
-                    className={clsx(
-                      'text-[15px] font-[600]',
-                      loading && 'invisible'
-                    )}
-                  >
-                    {selectedIntegrations.length === 0
-                      ? t('check_circles_above', 'Check the circles above')
-                      : dummy
-                      ? t('create_output', 'Create output')
-                      : !existingData?.integration
-                      ? t('add_to_calendar', 'Add to calendar')
-                      : existingData?.posts?.[0]?.state === 'DRAFT'
-                      ? t('schedule', 'Schedule')
-                      : t('update', 'Update')}
-                  </div>
-                  {!dummy && (
-                    <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
-                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-white" />
-                    </div>
-                  )}
-                </button>
-
-                {!dummy && (
+              <div className="relative">
+                <div className="flex">
                   <button
-                    onClick={schedule('now')}
+                    type="button"
                     disabled={
                       selectedIntegrations.length === 0 || loading || locked
                     }
-                    className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
+                    onClick={schedule('schedule')}
+                    className="btnSub relative flex h-[42px] min-w-[168px] items-center justify-center rounded-s-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
                   >
-                    <div className="text-white rounded-[8px] bg-pqPink h-[44px] w-full flex justify-center items-center post-now">
-                      {t('post_now', 'Post Now')}
-                    </div>
+                    {loading && (
+                      <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
+                        <div className="h-[20px] w-[20px] animate-spin rounded-full border-4 border-white border-t-transparent" />
+                      </div>
+                    )}
+                    <span className={clsx(loading && 'invisible')}>
+                      {selectedIntegrations.length === 0
+                        ? t('check_circles_above', 'Check the circles above')
+                        : dummy
+                        ? t('create_output', 'Create output')
+                        : !existingData?.integration
+                        ? t('add_to_calendar', 'Add to calendar')
+                        : existingData?.posts?.[0]?.state === 'DRAFT'
+                        ? t('schedule', 'Schedule')
+                        : t('update', 'Update')}
+                    </span>
                   </button>
+                  {!dummy && (
+                    <button
+                      type="button"
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
+                      onClick={() => setPostNowOpen((v) => !v)}
+                      aria-label={t('more', 'More')}
+                      data-tooltip-id="tooltip"
+                      data-tooltip-content={t('more', 'More')}
+                      className="grid h-[42px] w-[38px] place-items-center rounded-e-[10px] bg-pqBrand text-white shadow-[inset_1px_0_0_rgba(255,255,255,.24)] outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        className="opacity-65"
+                      >
+                        <path
+                          d="m6 9 6 6 6-6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {!dummy && postNowOpen && (
+                  <div className="absolute bottom-[52px] end-0 z-[300] w-[206px] rounded-[8px] border border-pqBorder bg-pqInner p-[12px] shadow-pq">
+                    <button
+                      type="button"
+                      onClick={schedule('now')}
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
+                      className="post-now flex h-[44px] w-full items-center justify-center rounded-[8px] bg-pqPink text-[15px] font-[600] text-white disabled:cursor-not-allowed disabled:opacity-80"
+                    >
+                      {t('post_now', 'Post Now')}
+                    </button>
+                  </div>
                 )}
               </div>
             )}

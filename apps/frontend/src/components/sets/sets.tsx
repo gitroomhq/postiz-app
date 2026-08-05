@@ -1,10 +1,9 @@
 'use client';
 import 'reflect-metadata';
 
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -14,6 +13,8 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useSettingsTabChrome } from '@gitroom/frontend/components/settings/settings-tab-chrome.context';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 
 const SaveSetModal: FC<{
   postData: any;
@@ -59,23 +60,11 @@ const SaveSetModal: FC<{
 
 export const Sets: FC = () => {
   const fetch = useFetch();
-  const user = useUser();
   const modal = useModals();
   const toaster = useToaster();
+  const t = useT();
 
-  const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
-  }, []);
-
-  const { isLoading, data: integrations } = useSWR('/integrations/list', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
+  const { isLoading, data: integrations } = useIntegrationList();
 
   const list = useCallback(async () => {
     return (await fetch('/sets')).json();
@@ -89,6 +78,17 @@ export const Sets: FC = () => {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
   });
+
+  const { setChromePatch } = useSettingsTabChrome();
+
+  useEffect(() => {
+    setChromePatch({
+      title: t('social_sets_count', 'Social Sets ({{count}})', {
+        count: data?.length ?? 0,
+      }),
+    });
+    return () => setChromePatch(null);
+  }, [data?.length, setChromePatch, t]);
 
   const addSet = useCallback(
     (params?: { id?: string; name?: string; content?: string }) => () => {
@@ -163,19 +163,8 @@ export const Sets: FC = () => {
     []
   );
 
-  const t = useT();
-
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">
-        {t('social_sets', 'Social Sets')} ({data?.length || 0})
-      </h3>
-      <div className="mt-[4px] text-pqMuted">
-        {t(
-          'manage_your_content_sets_for_easy_reuse_across_posts',
-          'Manage your content sets for easy reuse across posts.'
-        )}
-      </div>
       {!!data?.length && (
         <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
           <div className="flex items-center bg-pqTableHeader p-[10px_15px] text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
@@ -194,14 +183,14 @@ export const Sets: FC = () => {
                 <button
                   type="button"
                   onClick={addSet(p)}
-                  className="flex h-[30px] items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+                  className="flex h-[30px] items-center rounded-[8px] bg-pqSettings px-[14px] text-[12.5px] font-[600] text-pqText transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
                 >
                   {t('edit', 'Edit')}
                 </button>
                 <button
                   type="button"
                   onClick={deleteSet(p)}
-                  className="flex h-[30px] items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover hover:text-pqWarn"
+                  className="flex h-[30px] items-center rounded-[8px] bg-pqSettings px-[14px] text-[12.5px] font-[600] text-pqText transition-colors hover:text-pqWarn"
                 >
                   {t('delete', 'Delete')}
                 </button>

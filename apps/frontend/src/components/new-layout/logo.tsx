@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import clsx from 'clsx';
 import {
+  appVersionLabel,
   CrownGlyph,
   PostQueenLogo,
 } from '@gitroom/frontend/components/ui/logo.component';
@@ -47,8 +48,13 @@ export const Logo = ({
           <CrownGlyph className="size-[18px] text-white" />
         </span>
         {!collapsed && (
-          <span className="truncate font-display text-[16.5px] font-[700] -tracking-[0.3px] text-pqText">
-            PostQueen
+          <span className="flex min-w-0 items-baseline gap-[6px]">
+            <span className="truncate font-display text-[16.5px] font-[700] -tracking-[0.3px] text-pqText">
+              PostQueen
+            </span>
+            <span className="shrink-0 text-[10.5px] font-[600] tabular-nums text-pqSoft">
+              {appVersionLabel}
+            </span>
           </span>
         )}
       </>

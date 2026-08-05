@@ -83,7 +83,7 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
     return (
       <div
         data-lifetime-window="closed"
-        className="rounded-pqMd border border-pqBorder p-[14px] text-[13px] text-pqMuted"
+        className="rounded-[16px] bg-pqInner p-[16px_18px] text-[13px] text-pqMuted outline outline-1 -outline-offset-1 outline-pqBorder"
       >
         {t(
           'lifetime_window_closed',
@@ -100,24 +100,78 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
     total % 60,
   ].map((n) => String(n).padStart(2, '0'));
 
+  // LOOK: the billing-page lifetime upsell strip (`ltUpsell*` + amber card),
+  // not the old purple brandSoft bar. The 24h clock is the repo's real window
+  // — not the design's seat scarcity chip (intentional skip).
   return (
     <div
       data-lifetime-window="open"
-      className="flex items-center gap-[12px] rounded-pqMd bg-pqBrandSoft p-[14px]"
+      className="flex flex-col gap-[16px] rounded-[18px] bg-pqLtCardOn p-[24px] outline outline-1 -outline-offset-1 outline-pqLtOutline"
     >
-      <span
-        data-lifetime-remaining={total}
-        className="font-display text-[22px] font-[600] tabular-nums text-pqBrand"
-      >
-        {parts.join(':')}
-      </span>
-      <span className="flex-1 text-[13px] leading-[1.45] text-pqText">
-        {t(
-          'lifetime_window_open',
-          'left to claim founding-member pricing. The offer closes 24 hours after you sign up.'
-        )}
-      </span>
-      <BuyLifetime />
+      <div className="flex flex-wrap items-center gap-[18px]">
+        <span className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqLtChipBg text-pqLtAmber">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+            <path d="M3 8.5 7.2 12 12 4.5 16.8 12 21 8.5l-1.7 9.7a1 1 0 0 1-1 .8H5.7a1 1 0 0 1-1-.8L3 8.5Z" />
+          </svg>
+        </span>
+        <div className="min-w-[220px] flex-1">
+          <div className="flex flex-wrap items-center gap-[9px]">
+            <span className="text-[15.5px] font-[600] -tracking-[0.01em] text-pqText">
+              {t('lt_upsell_title', 'Lifetime access & updates')}
+            </span>
+            <span className="grid h-[19px] place-items-center rounded-full bg-pqLtSolid px-[8px] text-[9px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
+              {t('lt_upsell_badge', 'Become a founding member')}
+            </span>
+          </div>
+          <div className="mt-[4px] text-[12.5px] text-pqMuted">
+            {t(
+              'lt_upsell_sub',
+              'Everything in {{tier}} · no renewal, ever · all future updates',
+              { tier: 'PRO' }
+            )}
+          </div>
+        </div>
+        <div className="flex items-baseline gap-[6px]">
+          <span className="text-[13px] text-pqSoft line-through">
+            {t('lt_upsell_compare', '${{price}}/yr', {
+              price: pricing.PRO.year_price,
+            })}
+          </span>
+          <span className="font-display text-[26px] font-[700] leading-none -tracking-[0.02em] text-pqLtAmber">
+            ${LIFETIME_PRICE}
+          </span>
+          <span className="text-[12px] text-pqSoft">{t('lt_once', 'once')}</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-[12px] border-t border-pqLtLine pt-[15px]">
+        <span
+          data-lifetime-remaining={total}
+          className="flex h-[28px] items-center gap-[7px] rounded-[8px] bg-pqLtChipBg pe-[11px] ps-[9px]"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            className="shrink-0 text-pqLtAmber"
+          >
+            <path
+              d="M12 7.5V12l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="font-display text-[13.5px] font-[700] tracking-[0.02em] text-pqLtAmber tabular-nums">
+            {parts.join(':')}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1 text-[13px] text-pqLtDim">
+          {t('lifetime_window_left', 'left at this price')}
+        </span>
+        <BuyLifetime />
+      </div>
     </div>
   );
 };
@@ -161,9 +215,9 @@ const BuyLifetime: FC = () => {
       data-lifetime-buy="1"
       disabled={busy}
       onClick={buy}
-      className="shrink-0 rounded-pqSm bg-pqBrand px-[16px] py-[9px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-60"
+      className="grid h-[38px] shrink-0 place-items-center whitespace-nowrap rounded-[10px] bg-pqLtSolid px-[17px] text-[13px] font-[700] text-pqLtSolidFg transition-all hover:brightness-105 disabled:opacity-60"
     >
-      {t('lifetime_buy', 'Become a founding member — ${{price}}', {
+      {t('lt_upsell_cta_purchase', 'Get lifetime for ${{price}}', {
         price: LIFETIME_PRICE,
       })}
     </button>
@@ -322,7 +376,9 @@ export const FoundingMember: FC<{
  * surface: /billing/lifetime, and the Billing page itself once the account is a
  * founding member.
  */
-export const LifetimePackages: FC = () => {
+export const LifetimePackages: FC<{ showHeading?: boolean }> = ({
+  showHeading = true,
+}) => {
   const t = useT();
   const fetch = useFetch();
   const user = useUser();
@@ -439,9 +495,11 @@ export const LifetimePackages: FC = () => {
   }
   return (
     <div className="flex flex-col gap-[20px]">
-      <h3 className="font-display text-[19px] font-[600] -tracking-[0.015em] text-pqText">
-        {t('lifetime_deal', 'Lifetime deal')}
-      </h3>
+      {showHeading && (
+        <h3 className="font-display text-[19px] font-[600] -tracking-[0.015em] text-pqText">
+          {t('lifetime_deal', 'Lifetime deal')}
+        </h3>
+      )}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-[13px]">
         <div className="flex flex-col gap-[14px] rounded-[14px] bg-pqInner p-[20px] outline outline-1 -outline-offset-1 outline-pqBorder">
           <div className="text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
@@ -507,6 +565,7 @@ export const LifetimePackages: FC = () => {
 };
 
 export const LifetimeDeal = () => {
+  const t = useT();
   const user = useUser();
   const router = useRouter();
   if (!user?.tier) {
@@ -517,7 +576,12 @@ export const LifetimeDeal = () => {
     return null;
   }
   return (
-    <div className="flex flex-col gap-[20px]">
+    <div className="flex flex-col gap-[24px]">
+      <h2 className="font-display text-[26px] font-[600] -tracking-[0.02em] text-pqText">
+        {user?.isLifetime
+          ? t('founding_member', 'Founding member')
+          : t('lifetime_deal', 'Lifetime deal')}
+      </h2>
       {user?.isLifetime ? (
         <FoundingMember
           tier={user?.tier?.current || 'PRO'}
@@ -526,7 +590,7 @@ export const LifetimeDeal = () => {
       ) : (
         <LifetimeCountdown createdAt={user?.createdAt} />
       )}
-      <LifetimePackages />
+      <LifetimePackages showHeading={!!user?.isLifetime} />
     </div>
   );
 };

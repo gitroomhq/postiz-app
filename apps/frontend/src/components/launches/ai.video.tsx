@@ -138,7 +138,7 @@ const AiVideoModal: FC<{
   if (!type) {
     return (
       <div className="flex flex-col gap-[10px]">
-        <div className="text-[14px]">
+        <div className="text-[14px] text-pqMuted">
           {t('choose_a_video_type', 'Choose a video type')}
         </div>
         {list.map((p) => (
@@ -172,6 +172,7 @@ export const AiVideo: FC<{
   const [loading, setLoading] = useState(false);
   const fetch = useFetch();
   const modals = useModals();
+  const toaster = useToaster();
 
   const loadVideoList = useCallback(async () => {
     return (await (await fetch('/media/video-options')).json()).filter(
@@ -188,8 +189,23 @@ export const AiVideo: FC<{
     keepPreviousData: true,
   });
 
+  // Always show when mounted (parent gates on tier.ai). Empty options used to
+  // return null and hide Generate video entirely when no provider keys exist.
+  const hasOptions = !!data?.length;
+  const unavailable = !isLoading && !hasOptions;
+
   const openVideoModal = useCallback(() => {
-    if (loading || !data?.length) {
+    if (loading || isLoading) {
+      return;
+    }
+    if (!hasOptions) {
+      toaster.show(
+        t(
+          'video_providers_are_not_configured',
+          'Video providers are not configured'
+        ),
+        'warning'
+      );
       return;
     }
     modals.openModal({
@@ -203,20 +219,25 @@ export const AiVideo: FC<{
         />
       ),
     });
-  }, [loading, data, onChange]);
-
-  if (isLoading || data?.length === 0) {
-    return null;
-  }
+  }, [loading, isLoading, hasOptions, data, onChange, toaster, t, modals]);
 
   return (
     <div className="relative">
       <div
         onClick={openVideoModal}
+        aria-disabled={unavailable || isLoading || loading}
         className={clsx(
-          'cursor-pointer h-[30px] justify-center items-center flex',
+          'h-[30px] justify-center items-center flex',
+          unavailable || isLoading
+            ? 'cursor-not-allowed opacity-50'
+            : 'cursor-pointer',
           ghost
-            ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqBrandSoft hover:text-pqFocused'
+            ? clsx(
+                'rounded-[8px] px-[10px] text-pqSoft',
+                !unavailable &&
+                  !isLoading &&
+                  'hover:bg-pqBrandSoft hover:text-pqFocused'
+              )
             : 'rounded-[6px] bg-newColColor px-[8px]'
         )}
       >

@@ -98,14 +98,14 @@ export function AuthShell({
       <div className="min-h-[320px] flex flex-col mt-[28px]">
         {step === 'method' ? (
           <>
-            <div className="text-[14px] mb-[12px] text-textItemBlur">
+            <div className="text-[14px] mb-[12px] text-pqMuted">
               {t('continue_with', 'Continue With')}
             </div>
             <Providers extraProviders={extraProviders} />
             <div className="h-[20px] mb-[24px] mt-[24px] relative">
-              <div className="absolute w-full h-[1px] bg-newBorder top-[50%] -translate-y-[50%]" />
+              <div className="absolute w-full h-[1px] bg-pqBorder top-[50%] -translate-y-[50%]" />
               <div className="absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex">
-                <div className="px-[16px] bg-newBgColorInner text-textItemBlur text-[13px]">
+                <div className="px-[16px] bg-pqInner text-pqMuted text-[13px]">
                   {t('or', 'or')}
                 </div>
               </div>
@@ -113,7 +113,7 @@ export function AuthShell({
             <button
               type="button"
               onClick={onContinueEmail}
-              className="h-[52px] rounded-[10px] border border-newBorder hover:bg-boxHover transition-colors flex items-center justify-center gap-[10px] text-[15px] font-[500]"
+              className="h-[52px] rounded-[10px] border border-pqBorder hover:bg-pqHover transition-colors flex items-center justify-center gap-[10px] text-[15px] font-[500]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <rect

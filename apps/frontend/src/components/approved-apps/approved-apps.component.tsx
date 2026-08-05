@@ -59,16 +59,6 @@ export const ApprovedAppsComponent: FC = () => {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">
-        {t('approved_apps', 'Approved Apps')}
-      </h3>
-      <div className="mt-[4px] text-pqMuted">
-        {t(
-          'apps_you_have_authorized',
-          'Applications you have authorized to access your PostQueen account.'
-        )}
-      </div>
-
       <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
         {!apps?.length ? (
           <div className="p-[12px_15px] text-pqMuted">
@@ -108,7 +98,7 @@ export const ApprovedAppsComponent: FC = () => {
               <button
                 type="button"
                 onClick={revokeApp(app)}
-                className="flex h-[30px] shrink-0 items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover hover:text-pqWarn"
+                className="flex h-[30px] shrink-0 items-center rounded-[8px] bg-pqSettings px-[14px] text-[12.5px] font-[600] text-pqText transition-colors hover:text-pqWarn"
               >
                 {t('revoke', 'Revoke')}
               </button>

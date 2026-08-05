@@ -1,6 +1,6 @@
 'use client';
-import { FC, ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { FC, ReactNode, useMemo } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 
@@ -10,9 +10,32 @@ export const MenuItem: FC<{
   path: string;
   collapsed?: boolean;
   onClick?: () => void;
-}> = ({ label, icon, path, collapsed, onClick }) => {
+  /** Product-tour spotlight target (`data-tour`). */
+  tourKey?: string;
+}> = ({ label, icon, path, collapsed, onClick, tourKey }) => {
   const currentPath = usePathname();
-  const isActive = currentPath.indexOf(path) === 0;
+  const searchParams = useSearchParams();
+  // Calendar/Posts share `/launches`; Settings More rows share `/settings?tab=`.
+  // Pathname-only matching lights every More row whenever Settings is open.
+  const isActive = useMemo(() => {
+    const [base, query = ''] = path.split('?');
+    if (!currentPath || currentPath.indexOf(base) !== 0) return false;
+    if (base === '/launches') {
+      const list = searchParams.get('display') === 'list';
+      if (path.includes('display=list')) return list;
+      return !list;
+    }
+    if (base === '/settings') {
+      const pathTab = new URLSearchParams(query).get('tab');
+      if (pathTab) {
+        // More shortcut: only the matching settings tab.
+        return searchParams.get('tab') === pathTab;
+      }
+      // Footer Settings gear: any /settings visit.
+      return true;
+    }
+    return currentPath.indexOf(base) === 0;
+  }, [currentPath, path, searchParams]);
 
   // The rail is a neutral surface now, so states are brand tints rather than
   // tints of white. Hover is an inset ring laid over the row instead of a
@@ -57,6 +80,7 @@ export const MenuItem: FC<{
         onClick={onClick}
         title={label}
         className={className}
+        {...(tourKey ? { 'data-tour': tourKey } : {})}
         {...tip}
       >
         {inner}
@@ -71,6 +95,7 @@ export const MenuItem: FC<{
       title={label}
       {...(path.indexOf('http') === 0 && { target: '_blank' })}
       className={className}
+      {...(tourKey ? { 'data-tour': tourKey } : {})}
       {...tip}
     >
       {inner}

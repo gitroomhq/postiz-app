@@ -1,74 +1,98 @@
 'use client';
 
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { ModalFormActions } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
 import { FormProvider, useForm } from 'react-hook-form';
 import { array, object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
+import { useSettingsTabChrome } from '@gitroom/frontend/components/settings/settings-tab-chrome.context';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 export const Webhooks: FC = () => {
   const fetch = useFetch();
-  const user = useUser();
-  const modal = useModals();
   const toaster = useToaster();
   const t = useT();
+  const user = useUser();
+  const { setChromePatch } = useSettingsTabChrome();
+  const [editing, setEditing] = useState<any | null | undefined>(undefined);
   const list = useCallback(async () => {
     return (await fetch('/webhooks')).json();
   }, []);
   const { data, mutate } = useSWR('webhooks', list);
-  const addWebhook = useCallback(
-    (data?: any) => () => {
-      modal.openModal({
-        title: data ? t('update_webhook', 'Update webhook') : t('add_webhook', 'Add webhook'),
-        withCloseButton: true,
-        children: <AddOrEditWebhook data={data} reload={mutate} />,
-      });
-    },
-    [t]
-  );
+
+  useEffect(() => {
+    const limit = user?.tier?.webhooks;
+    if (!limit) return;
+    setChromePatch({
+      title: t('webhooks_quota_title', 'Webhooks ({{count}}/{{limit}})', {
+        count: data?.length ?? 0,
+        limit,
+      }),
+    });
+    return () => setChromePatch(null);
+  }, [data?.length, setChromePatch, t, user?.tier?.webhooks]);
+
+  const closeEditor = useCallback(() => setEditing(undefined), []);
   const deleteHook = useCallback(
-    (data: any) => async () => {
+    (row: any) => async () => {
       if (
         await deleteDialog(
           t(
             'are_you_sure_you_want_to_delete',
-            `Are you sure you want to delete ${data.name}?`,
-            { name: data.name }
+            `Are you sure you want to delete ${row.name}?`,
+            { name: row.name }
           )
         )
       ) {
-        await fetch(`/webhooks/${data.id}`, {
+        await fetch(`/webhooks/${row.id}`, {
           method: 'DELETE',
         });
         mutate();
-        toaster.show(t('webhook_deleted_successfully', 'Webhook deleted successfully'), 'success');
+        toaster.show(
+          t('webhook_deleted_successfully', 'Webhook deleted successfully'),
+          'success'
+        );
       }
     },
-    []
+    [fetch, mutate, toaster, t]
   );
+
+  if (editing !== undefined) {
+    return (
+      <SettingsPaneEditor
+        title={
+          editing
+            ? t('update_webhook', 'Update webhook')
+            : t('add_webhook', 'Add webhook')
+        }
+        onBack={closeEditor}
+      >
+        <AddOrEditWebhook
+          data={editing || undefined}
+          reload={() => {
+            mutate();
+            closeEditor();
+          }}
+          onCancel={closeEditor}
+        />
+      </SettingsPaneEditor>
+    );
+  }
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">
-        {t('webhooks', 'Webhooks')} ({data?.length || 0}/{user?.tier?.webhooks})
-      </h3>
-      <div className="mt-[4px] text-pqMuted">
-        {t(
-          'webhooks_are_a_way_to_get_notified_when_something_happens_in_postqueen_via_an_http_request',
-          'Webhooks are a way to get notified when something happens in PostQueen via\n        an HTTP request.'
-        )}
-      </div>
       {!!data?.length && (
         <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
           {data?.map((p: any) => (
@@ -98,7 +122,7 @@ export const Webhooks: FC = () => {
               </div>
               <button
                 type="button"
-                onClick={addWebhook(p)}
+                onClick={() => setEditing(p)}
                 aria-label={t('edit', 'Edit')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
@@ -140,7 +164,7 @@ export const Webhooks: FC = () => {
       )}
       <button
         type="button"
-        onClick={addWebhook()}
+        onClick={() => setEditing(null)}
         className={clsx(
           'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
@@ -180,15 +204,15 @@ const getWebhookOptions = (t: (key: string, fallback: string) => string) => [
 export const AddOrEditWebhook: FC<{
   data?: any;
   reload: () => void;
+  onCancel?: () => void;
 }> = (props) => {
-  const { data, reload } = props;
+  const { data, reload, onCancel } = props;
   const fetch = useFetch();
   const t = useT();
   const options = getWebhookOptions(t);
   const [allIntegrations, setAllIntegrations] = useState(
     (data?.integrations?.length || 0) > 0 ? options[1] : options[0]
   );
-  const modal = useModals();
   const toast = useToaster();
   const form = useForm({
     resolver: yupResolver(details),
@@ -241,7 +265,6 @@ export const AddOrEditWebhook: FC<{
           : t('webhook_added_successfully', 'Webhook added successfully'),
         'success'
       );
-      modal.closeAll();
       reload();
     },
     [data, integrations]
@@ -249,42 +272,45 @@ export const AddOrEditWebhook: FC<{
   const sendTest = useCallback(async () => {
     const url = form.getValues('url');
     try {
-      const response = await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([
-          {
-            id: 'cm6tcts4f0005qcwit25cis26',
-            content: 'This is the first post to instagram',
-            publishDate: '2025-02-06T13:09:00.000Z',
-            releaseURL: 'https://facebook.com/release/release',
-            state: 'PUBLISHED',
-            integration: {
-              id: 'cm6s4uyou0001i2r47pxix6z1',
-              name: 'test',
-              providerIdentifier: 'instagram',
-              picture: 'https://example.com/sample-avatar.jpg',
-              type: 'social',
-            },
+      const response = await fetch(
+        `/webhooks/send?url=${encodeURIComponent(url)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          {
-            id: 'cm6tcts4f0005qcwit25cis26',
-            content: 'This is the second post to facebook',
-            publishDate: '2025-02-06T13:09:00.000Z',
-            releaseURL: 'https://facebook.com/release2/release2',
-            state: 'PUBLISHED',
-            integration: {
-              id: 'cm6s4uyou0001i2r47pxix6z1',
-              name: 'test2',
-              providerIdentifier: 'facebook',
-              picture: 'https://example.com/sample-avatar.jpg',
-              type: 'social',
+          body: JSON.stringify([
+            {
+              id: 'cm6tcts4f0005qcwit25cis26',
+              content: 'This is the first post to instagram',
+              publishDate: '2025-02-06T13:09:00.000Z',
+              releaseURL: 'https://facebook.com/release/release',
+              state: 'PUBLISHED',
+              integration: {
+                id: 'cm6s4uyou0001i2r47pxix6z1',
+                name: 'test',
+                providerIdentifier: 'instagram',
+                picture: 'https://example.com/sample-avatar.jpg',
+                type: 'social',
+              },
             },
-          },
-        ]),
-      });
+            {
+              id: 'cm6tcts4f0005qcwit25cis26',
+              content: 'This is the second post to facebook',
+              publishDate: '2025-02-06T13:09:00.000Z',
+              releaseURL: 'https://facebook.com/release2/release2',
+              state: 'PUBLISHED',
+              integration: {
+                id: 'cm6s4uyou0001i2r47pxix6z1',
+                name: 'test2',
+                providerIdentifier: 'facebook',
+                picture: 'https://example.com/sample-avatar.jpg',
+                type: 'social',
+              },
+            },
+          ]),
+        }
+      );
 
       const result = await response.json().catch(() => ({ send: false }));
 
@@ -305,69 +331,67 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
-          <div>
-            <Input
-              label="Name"
-              translationKey="label_name"
-              {...form.register('name')}
+        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
+          <Input
+            label="Name"
+            translationKey="label_name"
+            {...form.register('name')}
+          />
+          <Input
+            label="URL"
+            translationKey="label_url"
+            {...form.register('url')}
+          />
+          <Select
+            value={allIntegrations.value}
+            name="integrations"
+            label="Integrations"
+            translationKey="label_integrations"
+            disableForm={true}
+            onChange={changeIntegration}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          {allIntegrations.value === 'specific' && dataList && !isLoading && (
+            <PickPlatforms
+              integrations={sortIntegrationsByProviderImportance(
+                dataList.integrations || []
+              )}
+              selectedIntegrations={integrations as any[]}
+              onChange={(e) => form.setValue('integrations', e)}
+              singleSelect={false}
+              toolTip={true}
+              isMain={true}
             />
-            <Input
-              label="URL"
-              translationKey="label_url"
-              {...form.register('url')}
-            />
-            <Select
-              value={allIntegrations.value}
-              name="integrations"
-              label="Integrations"
-              translationKey="label_integrations"
-              disableForm={true}
-              onChange={changeIntegration}
+          )}
+          <ModalFormActions onCancel={() => onCancel?.()}>
+            <Button
+              type="submit"
+              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+              disabled={
+                !form.formState.isValid ||
+                (allIntegrations.value === 'specific' && !integrations?.length)
+              }
             >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            {allIntegrations.value === 'specific' && dataList && !isLoading && (
-              <PickPlatforms
-                integrations={dataList.integrations}
-                selectedIntegrations={integrations as any[]}
-                onChange={(e) => form.setValue('integrations', e)}
-                singleSelect={false}
-                toolTip={true}
-                isMain={true}
-              />
-            )}
-            <div className="flex gap-[10px]">
-              <Button
-                type="submit"
-                className="mt-[24px]"
-                disabled={
-                  !form.formState.isValid ||
-                  (allIntegrations.value === 'specific' &&
-                    !integrations?.length)
-                }
-              >
-                {t('save', 'Save')}
-              </Button>
-              <Button
-                type="button"
-                secondary={true}
-                className="mt-[24px]"
-                onClick={sendTest}
-                disabled={
-                  !form.formState.isValid ||
-                  (allIntegrations.value === 'specific' &&
-                    !integrations?.length)
-                }
-              >
-                {t('send_test', 'Send Test')}
-              </Button>
-            </div>
-          </div>
+              {t('save', 'Save')}
+            </Button>
+            <Button
+              type="button"
+              secondary={true}
+              className="h-[44px] rounded-[8px] px-[18px] text-[14px] font-[600]"
+              onClick={sendTest}
+              disabled={
+                !form.formState.isValid ||
+                (allIntegrations.value === 'specific' && !integrations?.length)
+              }
+            >
+              {t('send_test', 'Send Test')}
+            </Button>
+          </ModalFormActions>
         </div>
       </form>
     </FormProvider>

@@ -36,8 +36,13 @@ export const GET = async (
   if (filePath !== base && !filePath.startsWith(base + sep)) {
     return new NextResponse('Not found', { status: 404 });
   }
+  let fileStats;
+  try {
+    fileStats = statSync(filePath);
+  } catch {
+    return new NextResponse('Not found', { status: 404 });
+  }
   const response = createReadStream(filePath);
-  const fileStats = statSync(filePath);
   const contentType = mime.getType(filePath) || 'application/octet-stream';
   const iterator = nodeStreamToIterator(response);
   const webStream = iteratorToStream(iterator);

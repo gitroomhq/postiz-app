@@ -7,6 +7,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 const delayOptions = [
   { value: 1, label: '1m' },
@@ -26,7 +27,11 @@ export const DelayComponent: FC<{
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [customValue, setCustomValue] = useState('');
-  
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(isOpen, 'end', { offsetPx: 10 });
+
   const isCustomDelay = currentDelay > 0 && !delayOptions.some((opt) => opt.value === currentDelay);
 
   useEffect(() => {
@@ -80,6 +85,7 @@ export const DelayComponent: FC<{
   return (
     <div ref={ref} className="relative">
       <div
+        ref={referenceRef}
         onClick={() => setIsOpen(!isOpen)}
         data-tooltip-id="tooltip"
         data-tooltip-content={
@@ -95,7 +101,10 @@ export const DelayComponent: FC<{
         <DelayIcon />
       </div>
       {isOpen && (
-        <div className="z-[300] absolute end-0 top-[100%] w-[200px] bg-newBgColorInner p-[8px] menu-shadow translate-y-[10px] flex flex-col rounded-[8px]">
+        <div
+          ref={floatingRef}
+          className="z-[300] flex w-[200px] flex-col rounded-[8px] bg-newBgColorInner p-[8px] menu-shadow"
+        >
           <div className="grid grid-cols-4 gap-[4px]">
             {delayOptions.map((option) => (
               <div

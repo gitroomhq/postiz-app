@@ -1,12 +1,12 @@
 'use client';
 
 import { FC, ReactNode, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSentryFeedback } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 const HelpIcon: FC<{ d: string }> = ({ d }) => (
   <svg
@@ -39,19 +39,20 @@ const ROW =
  * dialog — and this is also where the browser-extension link moved, since the
  * redesign's header has no icon row left to hold it.
  *
- * Documentation and Keyboard shortcuts have nothing behind them yet. They are
- * rendered at the design's own "locked" opacity and carry no handler, so the
- * menu reads complete without any row pretending to work. Wiring them is
- * follow-up work, not something to fake here.
+ * Documentation opens the public docs site. Keyboard shortcuts have nothing
+ * behind them yet — locked at the design's opacity with no handler.
  */
 export const HelpMenu = () => {
   const t = useT();
-  const router = useRouter();
   const { isChatBase, extensionStoreUrl, billingEnabled } = useVariables();
   const sentry = useSentryFeedback();
   const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLButtonElement,
+    HTMLDivElement
+  >(open, 'end');
 
   useEffect(() => {
     if (!open) return;
@@ -98,6 +99,7 @@ export const HelpMenu = () => {
     <div ref={ref} className="relative shrink-0">
       <button
         type="button"
+        ref={referenceRef}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -129,36 +131,29 @@ export const HelpMenu = () => {
 
       {open && (
         <div
+          ref={floatingRef}
           role="menu"
-          className="absolute end-0 top-[38px] z-[60] w-[246px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
+          className="z-[60] w-[246px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
         >
-          {/* `<Onboarding/>` only mounts on the calendar, so the tour has to be
-              opened there — which is also where its own close handler returns
-              you. */}
+          {/* Design product tour only — old onboarding modal removed. */}
           {live(
-            () => router.push('/launches?onboarding=true'),
+            () => startTour(),
             'M9 11.5l2.5 2.5L17 8.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
             t('setup_tour', 'Setup tour'),
             'tour'
           )}
 
-          {/* The tour itself, replayable at any time — it navigates to the page
-              each step lives on, so it does not matter where it starts from. */}
-          {live(
-            () => startTour(),
-            'M8 5v14l11-7-11-7Z',
-            t('replay_tour', 'Replay tour'),
-            'replay-tour'
-          )}
-
-          {/* No target yet — see the note at the top of this file. */}
-          <div
-            aria-disabled="true"
-            className={clsx(ROW, 'cursor-default text-pqMuted opacity-[0.45]')}
+          <a
+            href="https://docs.postqueen.ai"
+            target="_blank"
+            rel="noreferrer"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className={clsx(ROW, 'text-pqMuted hover:bg-pqHover hover:text-pqText')}
           >
             <HelpIcon d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
             {t('documentation', 'Documentation')}
-          </div>
+          </a>
           <div
             aria-disabled="true"
             className={clsx(ROW, 'cursor-default text-pqMuted opacity-[0.45]')}

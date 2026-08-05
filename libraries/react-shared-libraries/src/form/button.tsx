@@ -62,12 +62,12 @@ export const Button: FC<
   // a legacy palette slot while btnPrimary is the token the rest of the chrome
   // reads. One token means the brand can move in one place.
   const variantClass = {
-    primary: 'bg-btnPrimary text-white hover:opacity-90',
+    primary: 'bg-btnPrimary text-pqOnBrand hover:opacity-90',
     secondary: 'bg-third text-newTextColor hover:bg-boxHover',
     outline:
       'bg-transparent border border-newBorder text-newTextColor hover:bg-boxHover',
     ghost: 'bg-transparent text-newTextColor hover:bg-boxHover',
-    danger: 'bg-pqWarn text-white hover:opacity-90',
+    danger: 'bg-pqDanger text-pqOnBrand hover:opacity-90',
   }[resolved];
   const sizeClass = {
     sm: 'h-[34px] px-[16px] text-[13px]',
@@ -86,7 +86,7 @@ export const Button: FC<
         'rounded-[8px] font-[500] cursor-pointer items-center justify-center flex relative transition-all',
         // Keyboard focus has to be visible; the app's global rule only drops
         // the ring for pointer interaction.
-        'outline-none focus-visible:ring-2 focus-visible:ring-btnPrimary focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+        'outline-none focus-visible:ring-2 focus-visible:ring-btnPrimary focus-visible:ring-offset-2 focus-visible:ring-offset-pqInner',
         props?.className
       )}
     >

@@ -15,15 +15,31 @@ import useCookie from 'react-use-cookie';
 import { Button } from '@gitroom/react/form/button';
 import dayjs from 'dayjs';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { TRIAL_DAYS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { TRIAL_DAYS, pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { capitalize } from 'lodash';
 
 export const EmbeddedBilling: FC<{
   stripe: Promise<Stripe>;
   secret: string;
   showCoupon?: boolean;
   autoApplyCoupon?: string;
-}> = ({ stripe, secret, showCoupon = false, autoApplyCoupon }) => {
+  /** When Lifetime is selected, hide Stripe-driven summary + pay bar. */
+  suppressCheckoutChrome?: boolean;
+  fallbackTier?: string;
+  fallbackPeriod?: string;
+  fallbackAllowTrial?: boolean;
+}> = ({
+  stripe,
+  secret,
+  showCoupon = false,
+  autoApplyCoupon,
+  suppressCheckoutChrome = false,
+  fallbackTier = 'PRO',
+  fallbackPeriod = 'MONTHLY',
+  fallbackAllowTrial = true,
+}) => {
   const [saveSecret, setSaveSecret] = useState(secret);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useCookie('mode', 'light');
@@ -52,9 +68,7 @@ export const EmbeddedBilling: FC<{
     }
   }, [secret, setSaveSecret]);
 
-  if (saveSecret !== secret || loading) {
-    return null;
-  }
+  const swapping = saveSecret !== secret || loading;
 
   return (
     <div className="billing-form flex w-full flex-1 flex-col gap-[22px] rounded-[22px] bg-pqInner p-[34px_32px] shadow-pqE1 ring-1 ring-inset ring-pqLine mobile:p-[24px_20px]">
@@ -101,63 +115,180 @@ export const EmbeddedBilling: FC<{
           </svg>
         </div>
       </div>
-      <CheckoutProvider
-        stripe={stripe}
-        options={{
-          clientSecret: secret,
-          elementsOptions: {
-            // The hex literals in this file are the exception the token rule
-            // allows for, and they are here rather than a token because of
-            // what reads them. Stripe's Elements run in a cross-origin
-            // iframe: its appearance API takes literal colours and cannot
-            // resolve a CSS variable from this document. Each value mirrors a
-            // token from colors.scss and must move with it. The others are
-            // brand marks — the Stripe wordmark and the card-network chips —
-            // which are the one place a fixed colour is the correct one.
-            appearance: {
-              variables: {
-                // --text, per theme.
-                colorText: mode === 'dark' ? '#ededf0' : '#18181b',
-                borderRadius: '8px',
-                // --settings, per theme — the surface the design's checkout
-                // fields sit on, inside the --inner payment card.
-                colorBackground: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
-              },
-              rules: {
-                '.Label': {
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
+      {swapping ? (
+        <div className="flex flex-col gap-[16px] py-[8px]">
+          <div className="flex items-center gap-[12px] text-[15px] text-pqMuted">
+            <div className="size-[18px] shrink-0 animate-spin rounded-full border-2 border-pqLine border-t-pqBrand" />
+            {t(
+              'billing_loading_payment_form',
+              'Loading secure payment form…'
+            )}
+          </div>
+          <div className="flex flex-col gap-[12px]">
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          </div>
+        </div>
+      ) : (
+        <CheckoutProvider
+          stripe={stripe}
+          options={{
+            clientSecret: secret,
+            elementsOptions: {
+              // The hex literals in this file are the exception the token rule
+              // allows for, and they are here rather than a token because of
+              // what reads them. Stripe's Elements run in a cross-origin
+              // iframe: its appearance API takes literal colours and cannot
+              // resolve a CSS variable from this document. Each value mirrors a
+              // token from colors.scss and must move with it. The others are
+              // brand marks — the Stripe wordmark and the card-network chips —
+              // which are the one place a fixed colour is the correct one.
+              appearance: {
+                variables: {
+                  // --text, per theme.
+                  colorText: mode === 'dark' ? '#ededf0' : '#18181b',
+                  borderRadius: '8px',
+                  // --settings, per theme — the surface the design's checkout
+                  // fields sit on, inside the --inner payment card.
+                  colorBackground: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
                 },
-                '.Input': {
-                  height: '44px',
-                  // --settings, as above.
-                  backgroundColor: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
+                rules: {
+                  '.Label': {
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    marginBottom: '8px',
+                  },
+                  '.Input': {
+                    height: '44px',
+                    // --settings, as above.
+                    backgroundColor: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
+                  },
                 },
               },
             },
-          },
-        }}
-      >
-        <FormWrapper
-          showCoupon={showCoupon}
-          autoApplyCoupon={autoApplyCoupon}
-        />
-      </CheckoutProvider>
+          }}
+        >
+          <FormWrapper
+            showCoupon={showCoupon}
+            autoApplyCoupon={autoApplyCoupon}
+            suppressCheckoutChrome={suppressCheckoutChrome}
+            fallbackTier={fallbackTier}
+            fallbackPeriod={fallbackPeriod}
+            fallbackAllowTrial={fallbackAllowTrial}
+          />
+        </CheckoutProvider>
+      )}
     </div>
   );
 };
 
-const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
+const CheckoutSessionStatus: FC = () => {
+  const checkoutState = useCheckout();
+  const t = useT();
+
+  if (checkoutState.type === 'loading') {
+    return (
+      <div className="flex flex-col gap-[16px] py-[8px]">
+        <div className="flex items-center gap-[12px] text-[15px] text-pqMuted">
+          <div className="size-[18px] shrink-0 animate-spin rounded-full border-2 border-pqLine border-t-pqBrand" />
+          {t(
+            'billing_loading_payment_form',
+            'Loading secure payment form…'
+          )}
+        </div>
+        <div className="flex flex-col gap-[12px]">
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutState.type === 'error') {
+    return (
+      <div className="flex items-start gap-[11px] rounded-[14px] bg-pqAmberSoft p-[13px_16px] text-[14.5px] text-pqText ring-1 ring-inset ring-pqAmberLine">
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          aria-hidden="true"
+          className="mt-[1px] shrink-0 text-pqWarn"
+        >
+          <path
+            d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
+          <span className="font-[600]">
+            {t(
+              'billing_payment_form_unavailable',
+              'Payment form could not be loaded'
+            )}
+          </span>
+          <span className="font-[500] leading-[1.5] text-pqMuted">
+            {checkoutState.error.message ||
+              t(
+                'billing_payment_form_error_hint',
+                'Check that Stripe keys match this environment, then pick a plan again or refresh.'
+              )}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const FormWrapper: FC<{
+  showCoupon?: boolean;
+  autoApplyCoupon?: string;
+  suppressCheckoutChrome?: boolean;
+  fallbackTier?: string;
+  fallbackPeriod?: string;
+  fallbackAllowTrial?: boolean;
+}> = ({
   showCoupon = false,
   autoApplyCoupon,
+  suppressCheckoutChrome = false,
+  fallbackTier = 'PRO',
+  fallbackPeriod = 'MONTHLY',
+  fallbackAllowTrial = true,
 }) => {
   const checkoutState = useCheckout();
   const toaster = useToaster();
   const [loading, setLoading] = useState(false);
 
   if (checkoutState.type !== 'success') {
-    return null;
+    return (
+      <>
+        <CheckoutSessionStatus />
+        {!suppressCheckoutChrome && (
+          <OrderSummarySlot>
+            <PriceBreakdownFallback
+              tier={fallbackTier}
+              period={fallbackPeriod}
+              allowTrial={fallbackAllowTrial}
+              showCoupon={showCoupon}
+            />
+          </OrderSummarySlot>
+        )}
+        {!suppressCheckoutChrome && (
+          <SubmitBarFallback
+            tier={fallbackTier}
+            period={fallbackPeriod}
+            allowTrial={fallbackAllowTrial}
+          />
+        )}
+      </>
+    );
   }
 
   const handleSubmit = async (e: any) => {
@@ -181,6 +312,7 @@ const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
         showCoupon={showCoupon}
         autoApplyCoupon={autoApplyCoupon}
         loading={loading}
+        suppressCheckoutChrome={suppressCheckoutChrome}
       />
     </form>
   );
@@ -213,10 +345,15 @@ const StripeInputs: FC<{
   showCoupon: boolean;
   autoApplyCoupon?: string;
   loading: boolean;
-}> = ({ showCoupon, autoApplyCoupon, loading }) => {
+  suppressCheckoutChrome?: boolean;
+}> = ({
+  showCoupon,
+  autoApplyCoupon,
+  loading,
+  suppressCheckoutChrome = false,
+}) => {
   const checkout = useCheckout();
   const t = useT();
-  const [ready, setReady] = useState(false);
   return (
     <>
       {/* The session is created with automatic_tax and
@@ -241,9 +378,8 @@ const StripeInputs: FC<{
             fields: { billingDetails: { address: 'never' } },
             layout: 'tabs',
           }}
-          onReady={() => setReady(true)}
         />
-        {ready && (
+        {!suppressCheckoutChrome && (
           <OrderSummarySlot>
             <PriceBreakdown
               coupon={
@@ -254,7 +390,7 @@ const StripeInputs: FC<{
             />
           </OrderSummarySlot>
         )}
-        {ready && <SubmitBar loading={loading} />}
+        {!suppressCheckoutChrome && <SubmitBar loading={loading} />}
         {checkout.type === 'loading' ? null : (
           <div className="mt-[22px] flex items-center gap-[7px] text-[14px] text-pqMuted">
             <div>
@@ -279,6 +415,120 @@ const StripeInputs: FC<{
         )}
       </div>
     </>
+  );
+};
+
+/**
+ * The order summary card. `coupon` is the coupon block, passed in as a slot so
+ * it sits where the design puts it — between the line items and the total —
+ * while its state stays in CouponInput.
+ */
+const PriceBreakdownFallback: FC<{
+  tier: string;
+  period: string;
+  allowTrial: boolean;
+  showCoupon?: boolean;
+}> = ({ tier, period, allowTrial, showCoupon }) => {
+  const t = useT();
+  const plan = pricing[tier] || pricing.PRO;
+  const amount = period === 'YEARLY' ? plan.year_price : plan.month_price;
+  const periodWord =
+    period === 'YEARLY'
+      ? t('billing_yearly', 'Yearly').toLowerCase()
+      : t('billing_monthly', 'Monthly').toLowerCase();
+
+  return (
+    <div className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine">
+      <div className="text-[17px] font-[600] tracking-[-0.015em]">
+        {t('billing_order_summary', 'Order summary')}
+      </div>
+      <div className="flex items-center justify-between gap-[16px]">
+        <span className="text-[15px] text-pqMuted">
+          {capitalize(tier)}, {t('billing_billed', 'billed')} {periodWord}
+        </span>
+        <span className="text-[15px]">
+          ${amount} /{' '}
+          {period === 'YEARLY'
+            ? t('billing_year', 'year')
+            : t('billing_month', 'month')}
+        </span>
+      </div>
+      {allowTrial && (
+        <div className="flex items-center justify-between gap-[16px] text-[15px] text-pqOk">
+          <span>
+            {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+              n: TRIAL_DAYS,
+            })}
+          </span>
+          <span className="font-[600]">-${amount}</span>
+        </div>
+      )}
+      {showCoupon && (
+        <div className="flex h-[44px] items-center gap-[9px] rounded-[12px] px-[14px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] opacity-70">
+          <span className="flex-1 text-[14px] font-[600]">
+            {t('billing_have_discount_coupon', 'Have a coupon code?')}
+          </span>
+          <span className="text-[13.5px] font-[600] text-pqBrand">
+            {t('billing_add', 'Add')}
+          </span>
+        </div>
+      )}
+      <div className="h-px bg-pqLine" />
+      <div className="flex items-baseline justify-between gap-[16px]">
+        <span className="text-[16px] font-[600]">
+          {t('billing_due_today', 'Due today')}
+        </span>
+        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+          {allowTrial ? '$0.00' : `$${amount}.00`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const SubmitBarFallback: FC<{
+  tier: string;
+  period: string;
+  allowTrial: boolean;
+}> = ({ tier, period, allowTrial }) => {
+  const t = useT();
+  const plan = pricing[tier] || pricing.PRO;
+  const amount = period === 'YEARLY' ? plan.year_price : plan.month_price;
+
+  return (
+    <div className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]">
+      <div className="min-w-0 flex-1 mobile:hidden" />
+      <div className="shrink-0 text-end mobile:text-center">
+        <div className="text-[15.5px] font-[600]">
+          {allowTrial
+            ? t(
+                'billing_trial_bar_loading',
+                'Your {{n}}-day trial is 100% free',
+                { n: TRIAL_DAYS }
+              )
+            : `$${amount} ${t('billing_due_today_lower', 'due today')}`}
+        </div>
+        <div className="mt-[2px] text-[14px] text-pqMuted">
+          {capitalize(tier)} ·{' '}
+          {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+        </div>
+      </div>
+      <div className="shrink-0 mobile:w-full">
+        <Button
+          className="h-[56px] rounded-[15px] px-[30px] text-[16px] font-[700] shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] mobile:w-full"
+          type="button"
+          disabled
+          loading
+        >
+          {allowTrial
+            ? t(
+                'billing_pay_0_start_trial',
+                'Pay $0 Today – Start your free trial!'
+              )
+            : t('billing_pay_now', 'Pay Now')}
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -411,10 +661,21 @@ const PriceBreakdown: FC<{ coupon?: ReactNode }> = ({ coupon }) => {
         <span>
           <strong>
             {t(
-              'billing_cancel_notice',
-              'Cancel anytime from settings without talking to a person and never be charged.'
+              'billing_cancel_notice_title',
+              'Cancel anytime from settings without talking to a person.'
             )}
-          </strong>
+          </strong>{' '}
+          <span className="text-pqMuted">
+            {!!recurring?.trial?.trialEnd
+              ? t(
+                  'billing_cancel_notice_trial',
+                  'Cancel before the trial ends and you are never charged.'
+                )
+              : t(
+                  'billing_cancel_notice_lapsed',
+                  'If you cancel later, your plan runs to the end of the billing period.'
+                )}
+          </span>
         </span>
       </div>
     </div>
@@ -721,30 +982,59 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
 };
 
 const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
-  const checkout = useCheckout();
+  const checkoutState = useCheckout();
   const t = useT();
-  if (checkout.type === 'loading' || checkout.type === 'error') {
+  const user = useUser();
+  if (checkoutState.type === 'loading' || checkoutState.type === 'error') {
     return null;
   }
+
+  const { checkout } = checkoutState;
+  const onTrial = !!checkout.recurring?.trial?.trialEnd;
+  // `allowTrial` false on the FREE paywall means a lapsed subscriber — design
+  // `subEnded` — so the CTA reads "Resubscribe…". First-time purchasers who
+  // are not trial-eligible still get "Pay Now" (`pwSubmitLabel` when !subEnded).
+  const lapsed = !user?.allowTrial;
+  const lineItem = checkout.lineItems?.[0];
+  const planName = lineItem?.name || t('billing_subscription', 'Subscription');
+  const dueToday = checkout.total?.total?.amount || '$0.00';
+  // Stripe amounts arrive as display strings ("$20.00"); bar copy shortens to
+  // "$20" so it matches the design's "Resubscribe to Creator - $20".
+  const dueShort = dueToday.replace(/\.00\b/, '');
+  const interval = checkout.recurring?.interval;
+  const periodLabel =
+    interval === 'year'
+      ? t('billing_a_year', 'a year')
+      : t('billing_a_month', 'a month');
 
   return (
     <div className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]">
       <div className="min-w-0 flex-1 mobile:hidden" />
-      {checkout.checkout.recurring?.trial?.trialEnd ? (
+      {onTrial ? (
         <div className="shrink-0 text-end mobile:text-center">
           <div className="text-[15.5px] font-[600]">
             {t('billing_your_7_day_trial_is', 'Your 7-day trial is')}{' '}
             {t('billing_100_percent_free', '100% free')}{' '}
             {t('billing_ending', 'ending')}{' '}
-            {dayjs(checkout.checkout.recurring?.trial?.trialEnd * 1000).format(
-              'MMMM D, YYYY'
+            {dayjs(checkout.recurring!.trial!.trialEnd! * 1000).format(
+              'D MMM, YYYY'
             )}
           </div>
           <div className="mt-[2px] text-[14px] text-pqMuted">
             {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="shrink-0 text-end mobile:text-center">
+          <div className="text-[15.5px] font-[600]">
+            {dueShort} {t('billing_due_today_lower', 'due today')}
+          </div>
+          <div className="mt-[2px] text-[14px] text-pqMuted">
+            {planName} · {dueShort} {periodLabel} ·{' '}
+            {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+          </div>
+        </div>
+      )}
       <div className="shrink-0 mobile:w-full">
         <Button
           // The glow is the design's exact value — an alpha tint of --brand
@@ -754,10 +1044,16 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
           type="submit"
           loading={loading}
         >
-          {checkout.checkout.recurring?.trial?.trialEnd
+          {onTrial
             ? t(
                 'billing_pay_0_start_trial',
-                'Pay $0 Today - Start your free trial!'
+                'Pay $0 Today – Start your free trial!'
+              )
+            : lapsed
+            ? t(
+                'billing_resubscribe_to_plan',
+                'Resubscribe to {{plan}} – {{price}}',
+                { plan: planName, price: dueShort }
               )
             : t('billing_pay_now', 'Pay Now')}
         </Button>

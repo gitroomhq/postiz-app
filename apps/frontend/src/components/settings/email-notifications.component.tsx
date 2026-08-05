@@ -57,6 +57,7 @@ const EmailNotificationsComponent = () => {
     async (key: keyof EmailNotifications, value: boolean) => {
       // Use ref to get the latest state
       const currentSettings = settingsRef.current;
+      const previous = currentSettings;
       const newData = {
         ...currentSettings,
         [key]: value,
@@ -65,14 +66,24 @@ const EmailNotificationsComponent = () => {
       // Update local state immediately
       setLocalSettings(newData);
 
-      await fetch('/user/email-notifications', {
-        method: 'POST',
-        body: JSON.stringify(newData),
-      });
-
-      toaster.show(t('settings_updated', 'Settings updated'), 'success');
+      try {
+        const response = await fetch('/user/email-notifications', {
+          method: 'POST',
+          body: JSON.stringify(newData),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update email notifications');
+        }
+        toaster.show(t('settings_updated', 'Settings updated'), 'success');
+      } catch {
+        setLocalSettings(previous);
+        toaster.show(
+          t('something_went_wrong', 'Something went wrong'),
+          'warning'
+        );
+      }
     },
-    []
+    [fetch, toaster, t]
   );
 
   const handleSuccessEmailsChange = useCallback(

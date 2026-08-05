@@ -41,6 +41,15 @@ body {
   }
 }
 
+// Header streak popover — design chrome `:115–116` hover show.
+[data-streak] [data-streak-pop] {
+  display: none;
+}
+[data-streak]:hover [data-streak-pop],
+[data-streak]:focus-within [data-streak-pop] {
+  display: flex;
+}
+
 // Calendar cell states. These are hover rules over attributes the cell already
 // sets for its own logic, which is how the design expresses them too — writing
 // them as React state would re-render the whole grid on every pointer move.
@@ -49,6 +58,11 @@ body {
 
   &:hover {
     background-color: var(--hover);
+  }
+
+  // Day timeline slots grow with their cards — do not clip stacked posts.
+  &[data-dayslot='1'] {
+    overflow: visible;
   }
 
   // An empty future cell invites a post: brand tint plus the "+ 14:00" mark.
@@ -66,6 +80,14 @@ body {
     z-index: 7;
   }
 
+  // Owner override (not in design): empty past slots show "Date passed" on
+  // hover. Never on filled cells — the label used to sit at z-6 over cards and
+  // the See all chip. Label is a child so it can be i18n / RTL; CSS only
+  // toggles visibility. `data-filled` mirrors the React gate in CalendarColumn.
+  &[data-past='1']:not([data-filled='1']):hover [data-cell-past-label] {
+    opacity: 0.3;
+  }
+
   &::-webkit-scrollbar {
     width: 4px;
   }
@@ -79,6 +101,31 @@ body {
 [data-cell-add] {
   opacity: 0;
   transition: opacity 0.1s ease;
+}
+
+// Prototype: calendar / list / queue action clusters stay reachable without
+// hover on touch and phone widths.
+[data-ci-actions] {
+  transition: opacity 0.15s ease;
+}
+
+[data-ci]:hover [data-ci-actions] {
+  opacity: 1;
+}
+
+[data-mobile='1'] [data-ci-actions] {
+  opacity: 1 !important;
+}
+
+[data-mobile='1'] [data-ci-actions] button {
+  min-width: 34px !important;
+  min-height: 34px !important;
+}
+
+@media (hover: none) {
+  [data-ci-actions] {
+    opacity: 1 !important;
+  }
 }
 
 // A past hour in the calendar. Diagonal hairlines rather than a flat fill, so
@@ -459,17 +506,8 @@ div div .set-font-family {
   font-weight: 400 !important;
 }
 
-.col-calendar:hover:before {
-  content: 'Date passed';
-  color: var(--color-text);
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  opacity: 30%;
-  font-size: 14px;
-}
+// Legacy class removed with the calendar rewrite; empty past-slot hover lives
+// on `[data-cell][data-past='1']:not([data-filled='1'])` + `[data-cell-past-label]`.
 
 .loading-shimmer {
   position: relative;
@@ -650,7 +688,7 @@ html[dir='rtl'] .lbox {
 
 .ProseMirror .mention {
   font-weight: bold;
-  color: #ae8afc;
+  color: var(--focused);
 }
 
 .ProseMirror ul,
@@ -750,10 +788,10 @@ html[dir='rtl'] .lbox {
   }
 
   .mention {
-    background-color: var(--purple-light);
+    background-color: var(--brandSoft);
     border-radius: 0.4rem;
     box-decoration-break: clone;
-    color: #ae8afc;
+    color: var(--focused);
     &::after {
       content: '\200B';
     }
@@ -844,8 +882,10 @@ html[dir='rtl'] .lbox {
 
   // The composer card is drawn by our Input component (agent.input.tsx);
   // strip the SDK's bordered pill so only the design's frame shows.
+  // Owner inset (2026-08-06): 40px desktop so the 840 card is not edge-flush;
+  // mobile keeps 24 (see [data-mobile] below).
   .copilotKitInputContainer {
-    padding: 0 24px 20px;
+    padding: 0 40px 20px;
     background: transparent;
     border-radius: 0;
   }
@@ -888,12 +928,23 @@ html[dir='rtl'] .lbox {
   .copilotKitInputControlButton:not([disabled]):hover {
     transform: none;
     color: var(--onBrand);
-    filter: brightness(1.1);
+    background: var(--brandHover);
   }
   .copilotKitInputControlButton[disabled] {
     color: var(--onBrand);
     opacity: 0.4;
     cursor: default;
+  }
+}
+
+// Copilot composer / empty hero: keep a tighter 24px inset under 760.
+[data-mobile='1'] .agent {
+  .copilotKitInputContainer {
+    padding: 0 24px 20px;
+  }
+
+  [data-copilot-empty] {
+    padding-inline: 24px;
   }
 }
 
@@ -953,7 +1004,7 @@ html[dir='rtl'] .lbox {
 }
 
 .tiptap p.is-editor-empty:first-child::before {
-  color: #adb5bd;
+  color: var(--soft);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -971,8 +1022,8 @@ html[dir='rtl'] .lbox {
 }
 
 .forceChange .changeColor {
-  background: var(--new-btn-primary) !important;
-  color: #fff !important;
+  background: var(--brand) !important;
+  color: var(--onBrand) !important;
 }
 
 .text-shadow-tags {
@@ -1109,6 +1160,11 @@ html[dir='rtl'] .lbox {
   }
 }
 
+// Tour Connections step — staggered brand glow across connector cards.
+[data-tourconn='1'] [data-conn-card='1'] {
+  animation: pqglow 5.5s ease-in-out infinite;
+}
+
 // The upgrade CTA's three stacked loops: the button's own halo, a blurred bloom
 // behind it, and a sheen crossing it.
 @keyframes pqbtnglow {
@@ -1172,44 +1228,58 @@ html[dir='rtl'] .lbox {
 // Gated on a real pointer. On a touch screen `:hover` sticks after a tap, so
 // the rail would stay open until you touched something else.
 // ---------------------------------------------------------------------------
+// Collapsed resting: labels hidden; pin icon stays visible (no opacity hide —
+// the design never puts data-sb-toggle on the pin row).
 [data-sb][data-hov='1'] [data-sbl='1'],
 [data-sb][data-hov='1'] [data-sbh='1'] {
   display: none;
 }
 
+// Collapsed resting: nav/Connect buttons read as 34px icon squares (Connect =
+// purple square). Pin keeps full-width row so its icon stays easy to hit.
+[data-sb][data-hov='1'] {
+  overflow: visible;
+}
+
+[data-sb][data-hov='1'] a,
+[data-sb][data-hov='1'] button:not([data-sb-pin='1']) {
+  width: 34px;
+  margin-inline: auto;
+  padding-inline: 0;
+  justify-content: center;
+}
+
 @media (hover: hover) and (pointer: fine) {
+  // Widen + shadow only — stacking is owned by DesktopSlot (z-45) so this
+  // panel sits above the page column. Setting z-index only on the nav left
+  // page toolbars free to paint through the expanded rail.
   [data-sb][data-hov='1']:hover {
-    width: 236px;
+    width: 236px !important;
     box-shadow: var(--e3);
-    z-index: 45;
   }
 
   [data-sb][data-hov='1']:hover [data-sbl='1'] {
-    display: block;
+    display: block !important;
   }
 
   // Rows that are flex containers rather than plain text, so `block` would
   // collapse their layout. The design splits them the same way.
   [data-sb][data-hov='1']:hover [data-sbh='1'] {
-    display: flex;
+    display: flex !important;
   }
 
   // The rows centre their icon while collapsed; once the labels are back they
   // have to read as a list again.
   [data-sb][data-hov='1']:hover button,
   [data-sb][data-hov='1']:hover a {
+    width: 100%;
+    margin-inline: 0;
+    padding-inline: 9px;
     justify-content: flex-start;
   }
 
-  // The collapse toggle is chrome, not navigation — it only appears once you
-  // are already pointing at the rail.
-  [data-sb] [data-sb-toggle='1'] {
-    opacity: 0;
-    transition: opacity 0.12s ease;
-  }
-
-  [data-sb]:hover [data-sb-toggle='1'] {
-    opacity: 1;
+  [data-sb][data-hov='1']:hover button[data-sb-pin='1'] {
+    padding-inline: 8px;
   }
 }
 
@@ -1230,4 +1300,20 @@ html[dir='rtl'] .lbox {
   [data-cr][data-crhov='1']:hover [data-crl='1'] {
     display: block !important;
   }
+}
+
+// Chatbase embed defaults to bottom-left and covers the rail footer
+// (Settings / Upgrade). Pin the bubble and window bottom-trailing instead.
+#chatbase-bubble-button,
+#chatbase-bubble-window {
+  inset-inline-start: auto !important;
+  inset-inline-end: 20px !important;
+  left: auto !important;
+  right: 20px !important;
+}
+
+[dir='rtl'] #chatbase-bubble-button,
+[dir='rtl'] #chatbase-bubble-window {
+  left: 20px !important;
+  right: auto !important;
 }

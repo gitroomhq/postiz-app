@@ -14,6 +14,7 @@ import {
 } from '@gitroom/frontend/components/layout/top.menu';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 /** First initial for the avatar fallback, from name or email. */
 function initialOf(user: { name?: string; email?: string } | undefined) {
@@ -42,12 +43,16 @@ export const UserMenu = () => {
   const user = useUser();
   const router = useRouter();
   const fetch = useFetch();
-  const { isGeneral, isSecured } = useVariables();
+  const { isSecured, affiliateUrl, billingEnabled } = useVariables();
   const { mode, setMode } = useThemeMode();
   const { secondMenu } = useMenuItem();
   const filter = useMenuFilter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLButtonElement,
+    HTMLDivElement
+  >(open, 'end');
 
   useEffect(() => {
     if (!open) return;
@@ -91,6 +96,12 @@ export const UserMenu = () => {
   // deliberately hides.
   const billing = secondMenu.find((f) => f.path === '/billing');
   const showBilling = !!billing && filter(billing);
+  // Affiliate left Settings when the sub-nav matched the design; same gates as
+  // before (configured URL, billing on, member+ roles).
+  const showAffiliate =
+    !!affiliateUrl &&
+    !!billingEnabled &&
+    ['ADMIN', 'SUPERADMIN', 'USER'].includes(user?.role!);
 
   const avatar = (size: string, text: string) => (
     <span
@@ -112,6 +123,7 @@ export const UserMenu = () => {
     <div ref={ref} className="relative flex shrink-0 items-center">
       <button
         type="button"
+        ref={referenceRef}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -123,8 +135,9 @@ export const UserMenu = () => {
 
       {open && (
         <div
+          ref={floatingRef}
           role="menu"
-          className="absolute end-0 top-[40px] z-[300] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
+          className="z-[300] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
         >
           <div className="flex items-center gap-[10px] px-[10px] pb-[10px] pt-[8px]">
             {avatar('size-[32px]', 'text-[13px]')}
@@ -179,8 +192,39 @@ export const UserMenu = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              {t('billing', 'Billing')}
+              {user?.isLifetime
+                ? t('lifetime_deal', 'Lifetime deal')
+                : t('billing_and_invoices', 'Billing & invoices')}
             </button>
+          )}
+
+          {showAffiliate && (
+            <a
+              role="menuitem"
+              href={affiliateUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+              className={clsx(ROW, 'text-pqText')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M19 8v6M22 11h-6"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t('affiliate', 'Affiliate')}
+            </a>
           )}
 
           <Divider className="mx-[4px] my-[6px]" />
@@ -250,8 +294,7 @@ export const UserMenu = () => {
                 strokeLinejoin="round"
               />
             </svg>
-            {t('logout_from', 'Logout from')}
-            {isGeneral ? ' PostQueen' : ' PostQueen'}
+            {t('sign_out', 'Sign out')}
           </button>
         </div>
       )}

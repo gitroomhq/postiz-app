@@ -47,18 +47,32 @@ const ShortlinkPreferenceComponent = () => {
 
   const handleChange = useCallback(
     async (newValue: ShortLinkPreference) => {
+      if (newValue === localValue) {
+        return;
+      }
+      const previous = localValue;
       // Update local state immediately
       setLocalValue(newValue);
 
-      await fetch('/settings/shortlink', {
-        method: 'POST',
-        body: JSON.stringify({ shortlink: newValue }),
-      });
-
-      mutate({ shortlink: newValue });
-      toaster.show(t('settings_updated', 'Settings updated'), 'success');
+      try {
+        const response = await fetch('/settings/shortlink', {
+          method: 'POST',
+          body: JSON.stringify({ shortlink: newValue }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update shortlink preference');
+        }
+        mutate({ shortlink: newValue });
+        toaster.show(t('settings_updated', 'Settings updated'), 'success');
+      } catch {
+        setLocalValue(previous);
+        toaster.show(
+          t('something_went_wrong', 'Something went wrong'),
+          'warning'
+        );
+      }
     },
-    [fetch, mutate, toaster, t]
+    [fetch, localValue, mutate, toaster, t]
   );
 
   const options: Array<{ value: ShortLinkPreference; label: string }> = [

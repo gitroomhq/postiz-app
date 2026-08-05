@@ -74,10 +74,10 @@ export const YoutubeContinue = withContinueProvider<
       </div>
       <div className="text-sm font-medium">{item.name}</div>
       {item.username && (
-        <div className="text-xs text-gray-500">{item.username}</div>
+        <div className="text-xs text-pqMuted">{item.username}</div>
       )}
       {item.subscriberCount && (
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-pqSoft">
           {parseInt(item.subscriberCount).toLocaleString()} subscribers
         </div>
       )}

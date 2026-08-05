@@ -97,15 +97,9 @@ export class NotificationsRepository {
       userId
     ))!;
 
-    await this._user.model.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        lastReadNotifications: new Date(),
-      },
-    });
-
+    // Do not advance lastRead here — listing used to mark everything read before
+    // the UI could paint unread styles (and any SWR revalidate/mutate of this
+    // endpoint had the same side effect). Mark via markAllAsRead instead.
     return {
       lastReadNotifications,
       notifications: await this._notifications.model.notifications.findMany({
@@ -117,10 +111,23 @@ export class NotificationsRepository {
           organizationId,
         },
         select: {
+          id: true,
           createdAt: true,
           content: true,
         },
       }),
     };
+  }
+
+  async markAllAsRead(userId: string) {
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        lastReadNotifications: new Date(),
+      },
+    });
+    return { ok: true };
   }
 }

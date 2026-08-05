@@ -57,6 +57,8 @@ export const Rail: FC<RailProps> = ({
   const { mainMenu, moreMenu, secondMenu } = useMenuItem();
   const filter = useMenuFilter();
   const [shut, setShut] = useState<Record<string, boolean>>({});
+  /** Unpin while the pointer is still over the nav — suppress hover-expand until leave. */
+  const [hovSuppressed, setHovSuppressed] = useState(false);
 
   const rc = collapsed && !mobile;
 
@@ -126,12 +128,23 @@ export const Rail: FC<RailProps> = ({
   const settings = secondMenu.find((f) => f.path === '/settings');
   const showSettings = !!settings && filter(settings);
 
-  // Unchanged from the old rail: billing has to be on, and lifetime users have
-  // nothing to upgrade to (`main.billing.component.tsx` redirects them away
-  // from /billing anyway). This row also covers what the separate Billing nav
-  // entry used to reach — its gate is a strict subset of this one.
-  const showUpgrade = billingEnabled && !user?.isLifetime;
+  // Prototype `upgradeLabel` / icon triad: Upgrade (arrow) · Billing & invoices
+  // (card, AGENCY) · Founding member (heart, lifetime / lifetime_trial). Billing
+  // must be on; founding members keep the row — /billing is their lifetime
+  // surface now (the old redirect away is gone).
+  const showUpgrade = !!billingEnabled;
   const onBilling = pathname.indexOf('/billing') === 0;
+  const isFoundingRail = !!user?.isLifetime;
+  const isAgencyRail =
+    !isFoundingRail && user?.tier?.current === 'AGENCY';
+  const upgradeLabel = isFoundingRail
+    ? t('founding_member', 'Founding member')
+    : isAgencyRail
+    ? t('billing_and_invoices', 'Billing & invoices')
+    : t('upgrade', 'Upgrade');
+  const planBadge = isFoundingRail
+    ? t('lifetime_badge', 'Lifetime')
+    : user?.tier?.current || '';
 
   // Tapping a destination should close the drawer, but not tapping the controls
   // that live inside it. The timeout lets the link's own navigation start first.
@@ -166,18 +179,28 @@ export const Rail: FC<RailProps> = ({
       <nav
         ref={navRef}
         onClick={onRailClick}
+        onMouseLeave={() => setHovSuppressed(false)}
         data-sb="1"
-        data-hov={!mobile && rc ? '1' : '0'}
+        data-hov={!mobile && rc && !hovSuppressed ? '1' : '0'}
         aria-label={t('main_navigation', 'Main navigation')}
         {...(mobile && drawerOpen && { role: 'dialog', 'aria-modal': true })}
         className={clsx(
-          'blurMe flex flex-col border-e border-pqRailLine bg-pqRail p-[8px] transition-[width,transform] duration-200 ease-out',
+          // Column fills the slot (inset-y-0) / drawer host; only the middle
+          // menu scrolls. Org / Settings / Upgrade stay pinned via mt-auto.
+          // Do not use h-full here for desktop — percentage height against a
+          // stretch-sized slot has collapsed the scroll region to 0 before.
+          'blurMe flex min-h-0 flex-col border-e border-pqRailLine bg-pqRail p-[8px] transition-[width,transform] duration-200 ease-out',
           mobile
             ? clsx(
-                'pointer-events-auto absolute inset-y-0 start-0 w-[264px] shadow-pqE3',
+                'pointer-events-auto absolute inset-y-0 start-0 h-full w-[264px] shadow-pqE3',
                 !drawerOpen && '-translate-x-[104%] rtl:translate-x-[104%]'
               )
-            : clsx('absolute inset-y-0 start-0', rc ? 'w-[60px]' : 'w-[236px]')
+            : clsx(
+                // Slot owns z-index (see DesktopSlot); keep the nav opaque so
+                // page toolbars cannot show through the hover-expanded panel.
+                'absolute inset-y-0 start-0',
+                rc ? 'w-[60px]' : 'w-[236px]'
+              )
         )}
       >
         {!mobile && (
@@ -185,12 +208,21 @@ export const Rail: FC<RailProps> = ({
             <button
               type="button"
               data-keepdrawer="1"
-              data-sb-toggle="1"
-              onClick={onToggleCollapse}
+              data-sb-pin="1"
+              data-tooltip-id="tooltip"
+              data-tooltip-content={
+                rc
+                  ? t('pin_sidebar', 'Pin sidebar')
+                  : t('unpin_sidebar', 'Unpin sidebar')
+              }
+              onClick={() => {
+                if (!rc) setHovSuppressed(true);
+                onToggleCollapse();
+              }}
               aria-label={
                 rc
-                  ? t('expand_sidebar', 'Expand sidebar')
-                  : t('collapse_sidebar', 'Collapse sidebar')
+                  ? t('pin_sidebar', 'Pin sidebar')
+                  : t('unpin_sidebar', 'Unpin sidebar')
               }
               className={clsx(
                 'flex h-[34px] w-full shrink-0 items-center gap-[11px] rounded-pqSm px-[8px] text-[13.5px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText',
@@ -217,7 +249,9 @@ export const Rail: FC<RailProps> = ({
                 <path d="M9.5 4v16" stroke="currentColor" strokeWidth="1.6" />
               </svg>
               <span data-sbl="1" className="truncate">
-                {t('collapse_sidebar', 'Collapse sidebar')}
+                {rc
+                  ? t('pin_sidebar', 'Pin sidebar')
+                  : t('unpin_sidebar', 'Unpin sidebar')}
               </span>
             </button>
             <div className="mt-[8px] h-[1px] shrink-0 bg-pqRailLine" />
@@ -230,9 +264,11 @@ export const Rail: FC<RailProps> = ({
             route, so there is one Connections and not two. */}
         <Link
           href="/connections"
+          data-sb-connect="1"
+          data-tour="connect-pq"
           title={t('connect_postqueen', 'Connect PostQueen')}
           className={clsx(
-            'mt-[8px] flex h-[38px] shrink-0 items-center gap-[10px] rounded-pqSm bg-pqBrand px-[9px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+            'mt-[12px] flex h-[36px] shrink-0 items-center gap-[10px] rounded-pqSm bg-pqBrand px-[9px] text-[13px] font-[600] text-pqOnBrand shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)] transition-colors hover:bg-pqBrandHover',
             rc ? 'justify-center' : 'justify-start'
           )}
         >
@@ -257,7 +293,10 @@ export const Rail: FC<RailProps> = ({
           </span>
         </Link>
 
-        <div className="mt-[10px] flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto overflow-x-hidden">
+        <div
+          data-sb-scroll="1"
+          className="mt-[10px] flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto overflow-x-hidden overscroll-contain"
+        >
           {groups.map((group) => (
             <div key={group.key} className="flex flex-col gap-[1px]">
               {!!group.label && (
@@ -308,13 +347,19 @@ export const Rail: FC<RailProps> = ({
                     icon={item.icon}
                     collapsed={rc}
                     onClick={item.onClick}
+                    tourKey={
+                      item.path === '/channels' ? 'nav-channels' : undefined
+                    }
                   />
                 ))}
             </div>
           ))}
         </div>
 
-        <div className="mt-[6px] flex shrink-0 flex-col gap-[1px] border-t border-pqLine pt-[6px]">
+        <div
+          data-sb-foot="1"
+          className="mt-auto flex shrink-0 flex-col gap-[1px] border-t border-pqLine pt-[6px]"
+        >
           <OrganizationSelector variant="rail" collapsed={rc} />
           {showSettings && (
             <MenuItem
@@ -327,41 +372,78 @@ export const Rail: FC<RailProps> = ({
           {showUpgrade && (
             <Link
               href="/billing"
-              title={t('upgrade', 'Upgrade')}
+              title={upgradeLabel}
+              data-upgrade="1"
               className={clsx(
                 'flex h-[34px] w-full items-center gap-[10px] rounded-[9px] px-[9px] text-[13px] font-[500] transition-colors',
                 rc ? 'justify-center' : 'justify-start',
-                onBilling
+                isFoundingRail
+                  ? onBilling
+                    ? 'bg-pqLtRowBg text-pqLtAmber'
+                    : 'text-pqLtAmber hover:bg-pqLtRowBg'
+                  : isAgencyRail
+                  ? onBilling
+                    ? 'bg-transparent text-pqFocused'
+                    : 'text-pqMuted hover:bg-pqHover hover:text-pqFocused'
+                  : onBilling
                   ? 'bg-pqUpgradeHover text-pqUpgradeFgHover'
                   : 'text-pqUpgradeFg hover:bg-pqUpgradeHover hover:text-pqUpgradeFgHover'
               )}
             >
-              <svg
-                viewBox="0 0 24 24"
-                width="19"
-                height="19"
-                fill="none"
-                className="shrink-0"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 20V5M5.5 11.5 12 5l6.5 6.5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              {isFoundingRail ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="19"
+                  height="19"
+                  fill="currentColor"
+                  className="shrink-0 text-pqLtAmber"
+                  aria-hidden="true"
+                >
+                  <path d="M12 20.5 4.2 13a4.6 4.6 0 0 1 6.5-6.5l1.3 1.3 1.3-1.3A4.6 4.6 0 1 1 19.8 13L12 20.5Z" />
+                </svg>
+              ) : isAgencyRail ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="19"
+                  height="19"
+                  fill="none"
+                  className="shrink-0"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2.5 9.5h19M4.5 5.5h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="19"
+                  height="19"
+                  fill="none"
+                  className="shrink-0"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 20V5M5.5 11.5 12 5l6.5 6.5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
               <span
                 data-sbh="1"
                 className="flex min-w-0 flex-1 items-center gap-[10px]"
               >
-                <span className="min-w-0 flex-1 truncate">
-                  {t('upgrade', 'Upgrade')}
-                </span>
-                {!!user?.tier?.current && (
+                <span className="min-w-0 flex-1 truncate">{upgradeLabel}</span>
+                {!!planBadge && (
                   <span className="shrink-0 text-[10px] font-[700] tracking-[0.04em] text-pqSoft">
-                    {user.tier.current}
+                    {planBadge}
                   </span>
                 )}
               </span>
@@ -387,10 +469,17 @@ const DesktopSlot: FC<{
   children: ReactNode;
 }> = ({ active, width, children }) => {
   if (!active) return <>{children}</>;
+  // Height: self-stretch against the chrome row (items-stretch). Never h-full —
+  // the slot's only child is absolutely positioned, so percentage height can
+  // resolve to 0 and zero the nav; menus then clip inside overflow-y-auto while
+  // the shrink-0 footer still paints (the empty-middle bug).
+  // Stacking: z-45 on the *slot*, not only the nav. The page column is the next
+  // flex sibling; without a z-index here, later siblings paint over the
+  // hover-expanded rail (Posts "Next 3 days", calendar stickies, etc.).
   return (
     <div
       style={{ width }}
-      className="relative shrink-0 transition-[width] duration-200 ease-out"
+      className="relative z-[45] shrink-0 self-stretch transition-[width] duration-200 ease-out"
     >
       {children}
     </div>

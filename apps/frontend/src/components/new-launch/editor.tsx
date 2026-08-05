@@ -34,6 +34,7 @@ import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
 import Link from '@tiptap/extension-link';
+import NextLink from 'next/link';
 import {
   useEditor,
   EditorContent,
@@ -363,7 +364,7 @@ export const EditorWrapper: FC<{
         'relative flex-col gap-[20px] flex-1',
         (items.length === 1 || !canEdit || !comments) && 'flex',
         ((!canEdit && !isCreateSet) || !comments) &&
-          'bg-newSettings rounded-[12px]'
+          'bg-pqSettings rounded-[12px]'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -373,7 +374,7 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
                 <LockIcon />
               </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+              <div className="w-[54px] h-[54px] rounded-full bg-pqSettings opacity-80" />
             </div>
             <div className="text-[14px] font-[600] text-pqText">
               {t(
@@ -382,7 +383,7 @@ export const EditorWrapper: FC<{
               )}
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-pqPopup opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
       {!canEdit && !isCreateSet && (
@@ -398,7 +399,7 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
                 <LockIcon />
               </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+              <div className="w-[54px] h-[54px] rounded-full bg-pqSettings opacity-80" />
             </div>
             <div className="text-[14px] font-[600] text-pqText">
               {t(
@@ -412,14 +413,14 @@ export const EditorWrapper: FC<{
               </div>
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-pqPopup opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
       {items.map((g, index) => (
         <div
           key={g.id}
           className={clsx(
-            'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
+            'relative flex flex-col gap-[20px] flex-1 bg-pqSettings',
             index === 0 && 'rounded-t-[12px]',
             (index === items.length - 1 || !comments) && 'rounded-b-[12px]',
             !canEdit && !isCreateSet && 'blur-s',
@@ -564,6 +565,23 @@ export const Editor: FC<{
   const toaster = useToaster();
   const editorRef = useRef<undefined | { editor: any }>(undefined);
   const [loading, setLoading] = useState(false);
+  // Design composeVals aiHint — dismiss persists; links reuse /connections (MCP).
+  const [aiHintOff, setAiHintOff] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem('pq-compose-ai-hint-off') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const dismissAiHint = useCallback(() => {
+    setAiHintOff(true);
+    try {
+      window.localStorage.setItem('pq-compose-ai-hint-off', '1');
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const uppy = useUppyUploader({
     onUploadSuccess: (result: any) => {
@@ -713,7 +731,7 @@ export const Editor: FC<{
             >
               {t('drop_files_here_to_upload', 'Drop your files here to upload')}
             </div>
-            <div className="px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]">
+            <div className="px-[10px] pt-[10px] bg-pqInner rounded-t-[6px] relative z-[99]">
               <OnlyEditor
                 value={props.value}
                 editorType={editorType}
@@ -723,7 +741,7 @@ export const Editor: FC<{
               />
             </div>
             <div
-              className="bg-newBgColorInner flex-1"
+              className="bg-pqInner flex-1"
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
@@ -732,7 +750,7 @@ export const Editor: FC<{
               }}
             />
             <div className="w-full pointer-events-none">
-              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
+              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-pqInner uppyChange">
                 <Dashboard
                   height={46}
                   uppy={uppy}
@@ -747,7 +765,7 @@ export const Editor: FC<{
               </div>
             </div>
             <div
-              className="w-full h-[46px] bg-newBgColorInner cursor-text"
+              className="w-full h-[46px] bg-pqInner cursor-text"
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
@@ -755,7 +773,74 @@ export const Editor: FC<{
                 editorRef?.current?.editor?.commands?.focus('end');
               }}
             />
-            <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
+            {/* Raise: design routes Claude/ChatGPT into an aiagents picker; repo
+                WORK is /connections (MCP). Banner is LOOK + deep-link only. */}
+            {!num && !aiHintOff && !valueWithoutHtml.trim() && (
+              <div className="mx-[2px] mb-[4px] mt-[12px] flex items-center gap-[10px] rounded-[12px] bg-[linear-gradient(100deg,color-mix(in_srgb,var(--brand)_16%,transparent),color-mix(in_srgb,var(--focused)_10%,transparent))] p-[12px_13px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand)_24%,transparent)]">
+                <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-[linear-gradient(135deg,var(--focused),var(--brand))] text-pqOnBrand">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 4l1.85 4.65L18.5 10.5l-4.65 1.85L12 17l-1.85-4.65L5.5 10.5l4.65-1.85L12 4Z" />
+                  </svg>
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-[1px]">
+                  <span className="text-[13px] font-[600] text-pqText">
+                    {t('let_ai_write_this_post', 'Let AI write this post')}
+                  </span>
+                  <span className="text-[12px] text-pqMuted">
+                    {t(
+                      'let_ai_write_this_post_sub',
+                      'Use PostQueen from Claude, ChatGPT or your own agent'
+                    )}
+                  </span>
+                </span>
+                <NextLink
+                  href="/connections"
+                  className="flex h-[30px] shrink-0 items-center gap-[6px] rounded-full bg-pqInner ps-[7px] pe-[11px] text-[12px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+                >
+                  <span className="grid h-[19px] w-[19px] place-items-center rounded-[6px] bg-pqSettings text-[9px] font-[700] text-pqText">
+                    C
+                  </span>
+                  {t('claude', 'Claude')}
+                </NextLink>
+                <NextLink
+                  href="/connections"
+                  className="flex h-[30px] shrink-0 items-center gap-[6px] rounded-full bg-pqInner ps-[7px] pe-[11px] text-[12px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+                >
+                  <span className="grid h-[19px] w-[19px] place-items-center rounded-[6px] bg-pqSettings text-[9px] font-[700] text-pqText">
+                    G
+                  </span>
+                  {t('chatgpt', 'ChatGPT')}
+                </NextLink>
+                <button
+                  type="button"
+                  onClick={dismissAiHint}
+                  aria-label={t('hide', 'Hide')}
+                  className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6 6l12 12M18 6 6 18"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <div className="flex bg-pqInner rounded-b-[6px] cursor-default">
               {setImages && (
                 <MultiMediaComponent
                   mediaNotAvailable={num > 0 && comments === 'no-media'}
@@ -810,7 +895,7 @@ export const Editor: FC<{
                       <div
                         data-tooltip-id="tooltip"
                         data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-pqColColor flex justify-center items-center"
                         onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                       >
                         <EmojiIcon />

@@ -28,7 +28,6 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
@@ -169,75 +168,260 @@ export const Features: FC<{
   );
 };
 
-const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
-  const [loading, setLoading] = useState(false);
+type CancelStep = 'confirm' | 'discount' | 'feedback';
+type CancelFlowResult =
+  | { action: 'keep' }
+  | { action: 'applied' }
+  | { action: 'canceled'; feedback: string };
+
+/**
+ * Prototype `billingDlg` cancel chain: confirm → (optional 50% offer) → feedback.
+ * Lifetime trial skips the discount step (owner); design's $24.50 offer is a Raise.
+ */
+const BillingCancelDialog: FC<{
+  showTeamNote: boolean;
+  offerDiscount: boolean;
+  isLifetimeTrial: boolean;
+  onDone: (result: CancelFlowResult) => void;
+}> = ({ showTeamNote, offerDiscount, isLifetimeTrial, onDone }) => {
+  const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
-
-  const apply = useCallback(async () => {
-    setLoading(true);
-    await fetch('/billing/apply-discount', {
-      method: 'POST',
-    });
-
-    resolve(true);
-    toaster.show('50% discount applied successfully');
-  }, []);
-
-  return (
-    <div>
-      <div className="mb-[20px]">
-        Would you accept 50% discount for 3 months instead? 🙏🏻
-      </div>
-      <div className="flex gap-[10px]">
-        <Button loading={loading} onClick={apply}>
-          Apply 50% discount for 3 months
-        </Button>
-        <Button onClick={() => resolve(false)} variant="danger">
-          Cancel my subscription
-        </Button>
-      </div>
-    </div>
-  );
-};
-const Info: FC<{
-  proceed: (feedback: string) => void;
-}> = (props) => {
-  const [feedback, setFeedback] = useState('');
-  const modal = useModals();
   const events = useFireEvents();
-  const cancel = useCallback(() => {
-    props.proceed(feedback);
+  const [step, setStep] = useState<CancelStep>('confirm');
+  const [feedback, setFeedback] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const finishKeep = useCallback(() => onDone({ action: 'keep' }), [onDone]);
+
+  const applyDiscount = useCallback(async () => {
+    setLoading(true);
+    try {
+      await fetch('/billing/apply-discount', { method: 'POST' });
+      toaster.show(
+        t('discount_applied_successfully', '50% discount applied successfully')
+      );
+      onDone({ action: 'applied' });
+    } finally {
+      setLoading(false);
+    }
+  }, [fetch, onDone, t, toaster]);
+
+  const submitCancel = useCallback(() => {
+    if (feedback.length < 20) return;
     events('cancel_subscription');
-    modal.closeAll();
-  }, [modal, feedback]);
+    onDone({ action: 'canceled', feedback });
+  }, [events, feedback, onDone]);
 
-  const t = useT();
+  const title =
+    step === 'confirm'
+      ? isLifetimeTrial
+        ? t('cancel_founding_trial', 'Cancel founding-member trial')
+        : t('cancel_subscription', 'Cancel Subscription')
+      : step === 'discount'
+      ? t('before_you_cancel', 'Before you cancel')
+      : t('we_are_sorry_to_see_you_go', 'We are sorry to see you go :(');
 
-  return (
-    <div className="relative flex gap-[20px] flex-col flex-1">
-      <div>
-        {t(
+  const body =
+    step === 'confirm'
+      ? isLifetimeTrial
+        ? t(
+            'cancel_founding_trial_body',
+            'Cancel your founding-member trial? You will lose lifetime access and go back to the free plan.'
+          )
+        : t(
+            'cancel_subscription_keep_access',
+            'Are you sure you want to cancel your subscription? You keep access until the end of the current period.'
+          )
+      : step === 'discount'
+      ? t(
+          'accept_50_discount_3_months',
+          'Would you accept 50% discount for 3 months instead? 🙏🏻'
+        )
+      : t(
           'would_you_mind_shortly_tell_us_what_we_could_have_done_better',
           'Would you mind shortly tell us what we could have done better?'
+        );
+
+  const iconIsBrand = step === 'discount';
+  const feedbackOk = feedback.length >= 20;
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[480px] flex-col gap-[16px] rounded-[16px] bg-pqPop p-[26px] text-pqText shadow-pqE3"
+      data-pq="billing-cancel-dlg"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-start gap-[12px]">
+        <span
+          className={clsx(
+            'grid size-[38px] shrink-0 place-items-center rounded-[11px]',
+            iconIsBrand
+              ? 'bg-pqBrandSoft text-pqBrand'
+              : 'bg-pqAmberSoft text-pqAmber'
+          )}
+        >
+          {iconIsBrand ? (
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+              <path
+                d="M7 17 17 7M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+              <path
+                d="M12 9v4M12 16.5h.01M10.3 3.9 2.6 17.2A1.9 1.9 0 0 0 4.3 20h15.4a1.9 1.9 0 0 0 1.7-2.8L13.7 3.9a1.9 1.9 0 0 0-3.4 0Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </span>
+        <div className="min-w-0 flex-1 pt-[2px]">
+          <h3 className="font-display text-[18px] font-[600] -tracking-[0.015em] text-pqText">
+            {title}
+          </h3>
+          <div className="mt-[5px] text-[13.5px] leading-[1.6] text-pqMuted">
+            {body}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={finishKeep}
+          aria-label={t('close', 'Close')}
+          className="grid size-[30px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+            <path
+              d="M6 6l12 12M18 6 6 18"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {step === 'confirm' && showTeamNote && (
+        <div className="flex gap-[9px] rounded-[11px] bg-pqAmberSoft px-[14px] py-[12px] outline outline-1 -outline-offset-1 outline-pqAmberLine">
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            className="mt-[1px] shrink-0 text-pqAmber"
+          >
+            <path
+              d="M12 9v4M12 16.5h.01M10.3 3.9 2.6 17.2A1.9 1.9 0 0 0 4.3 20h15.4a1.9 1.9 0 0 0 1.7-2.8L13.7 3.9a1.9 1.9 0 0 0-3.4 0Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="text-[12.5px] leading-[1.55] text-pqText">
+            {t(
+              'team_members_will_be_removed',
+              'Your team members will be removed from your organization.'
+            )}
+          </div>
+        </div>
+      )}
+
+      {step === 'feedback' && (
+        <div className="flex flex-col gap-[7px]">
+          <label className="text-[12px] font-[600] tracking-[0.02em] text-pqMuted">
+            {t('feedback', 'Feedback')}
+          </label>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder={t(
+              'feedback_placeholder_better',
+              'What could we have done better?'
+            )}
+            className="min-h-[96px] w-full resize-y rounded-[11px] border-0 bg-pqBg p-[12px] text-[13.5px] leading-[1.6] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)]"
+          />
+          <div
+            className={clsx(
+              'text-[11.5px]',
+              feedbackOk ? 'text-pqOk' : 'text-pqAmber'
+            )}
+          >
+            {feedbackOk
+              ? t('feedback_thanks', 'Thanks, this helps us improve.')
+              : t(
+                  'please_add_at_least_n_chars',
+                  'Please add at least 20 characters — {{count}}/20',
+                  { count: feedback.length }
+                )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap justify-end gap-[9px]">
+        {step === 'confirm' && (
+          <>
+            <button
+              type="button"
+              onClick={finishKeep}
+              className="h-[42px] rounded-[10px] bg-pqSettings px-[16px] text-[13.5px] font-[600] text-pqText transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
+            >
+              {t('keep_my_plan', 'Keep my plan')}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setStep(offerDiscount ? 'discount' : 'feedback')
+              }
+              className="h-[42px] rounded-[10px] bg-pqDanger px-[18px] text-[13.5px] font-[600] text-white transition-[filter] hover:brightness-110"
+            >
+              {t('yes_cancel', 'Yes, cancel')}
+            </button>
+          </>
         )}
-      </div>
-      <div>
-        <Textarea
-          className="bg-pqInner"
-          label={'Feedback'}
-          name="feedback"
-          disableForm={true}
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-        />
-      </div>
-      <div>
-        <Button disabled={feedback.length < 20} onClick={cancel}>
-          {feedback.length < 20
-            ? t('please_add_at_least', 'Please add at least 20 chars')
-            : t('cancel_subscription', 'Cancel Subscription')}
-        </Button>
+        {step === 'discount' && (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep('feedback')}
+              className="h-[42px] rounded-[10px] bg-pqSettings px-[16px] text-[13.5px] font-[600] text-pqWarn transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
+            >
+              {t('cancel_my_subscription', 'Cancel my subscription')}
+            </button>
+            <Button
+              loading={loading}
+              onClick={applyDiscount}
+              className="h-[42px] rounded-[10px] px-[18px] text-[13.5px] font-[600]"
+            >
+              {t(
+                'apply_50_discount_3_months',
+                'Apply 50% discount for 3 months'
+              )}
+            </Button>
+          </>
+        )}
+        {step === 'feedback' && (
+          <button
+            type="button"
+            disabled={!feedbackOk}
+            onClick={submitCancel}
+            className={clsx(
+              'h-[42px] rounded-[10px] bg-pqDanger px-[18px] text-[13.5px] font-[600] text-white transition-[filter] hover:brightness-110',
+              !feedbackOk && 'opacity-50'
+            )}
+          >
+            {!feedbackOk
+              ? t('please_add_at_least', 'Please add at least 20 chars')
+              : t('cancel_subscription', 'Cancel Subscription')}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -414,71 +598,70 @@ export const MainBillingComponent: FC<{
           );
         }
         if (billing === 'FREE') {
-          if (
-            subscription?.cancelAt ||
-            (await deleteDialog(
-              `Are you sure you want to cancel your subscription?
-              ${messages.join(', ')}`,
-              'Yes, cancel',
-              'Cancel Subscription'
-            ))
-          ) {
-            const checkDiscount = await (
-              await fetch('/billing/check-discount')
-            ).json();
-            if (checkDiscount.offerCoupon) {
-              const info = await new Promise((res) => {
-                modal.openModal({
-                  title: 'Before you cancel',
-                  withCloseButton: true,
-                  classNames: {
-                    modal: 'bg-transparent text-pqText',
-                  },
-                  children: <Accept resolve={res} />,
-                });
-              });
-
-              modal.closeAll();
-
-              if (info) {
-                return;
-              }
-            }
-
-            const info = await new Promise((res) => {
-              modal.openModal({
-                title: t(
-                  'we_are_sorry_to_see_you_go',
-                  'We are sorry to see you go :('
-                ),
-                withCloseButton: true,
-                classNames: {
-                  modal: 'bg-transparent text-pqText',
-                },
-                children: <Info proceed={(e) => res(e)} />,
-              });
-            });
-
-            setLoading(true);
-            const { cancel_at } = await (
-              await fetch('/billing/cancel', {
-                method: 'POST',
-                body: JSON.stringify({
-                  feedback: info,
-                }),
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              })
-            ).json();
-            setSubscription((subs) => ({
-              ...subs!,
-              cancelAt: cancel_at,
-            }));
-            if (cancel_at)
-              toast.show('Subscription set to canceled successfully');
-            setLoading(false);
+          // Already scheduled to cancel — keep the old reactivation path above;
+          // this branch is only for starting a cancel. Skip if already canceling.
+          if (subscription?.cancelAt) {
+            return;
           }
+
+          const isLifetimeTrial = !!user?.isLifetime && !!user?.isTrailing;
+          // Prefetch eligibility so confirm → discount never flashes an empty step.
+          const checkDiscount = isLifetimeTrial
+            ? { offerCoupon: false as const }
+            : await (await fetch('/billing/check-discount')).json();
+          const offerDiscount = !!checkDiscount.offerCoupon && !isLifetimeTrial;
+
+          const result = await new Promise<CancelFlowResult>((res) => {
+            let settled = false;
+            const finish = (r: CancelFlowResult) => {
+              if (settled) return;
+              settled = true;
+              modal.closeAll();
+              res(r);
+            };
+            modal.openModal({
+              title: '',
+              removeLayout: true,
+              askClose: false,
+              onClose: () => finish({ action: 'keep' }),
+              children: (
+                <BillingCancelDialog
+                  showTeamNote={messages.length > 0}
+                  offerDiscount={offerDiscount}
+                  isLifetimeTrial={isLifetimeTrial}
+                  onDone={finish}
+                />
+              ),
+            });
+          });
+
+          if (result.action === 'keep') {
+            return;
+          }
+          if (result.action === 'applied') {
+            await mutate('/user/subscription');
+            return;
+          }
+
+          setLoading(true);
+          const { cancel_at } = await (
+            await fetch('/billing/cancel', {
+              method: 'POST',
+              body: JSON.stringify({
+                feedback: result.feedback,
+              }),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            })
+          ).json();
+          setSubscription((subs) => ({
+            ...subs!,
+            cancelAt: cancel_at,
+          }));
+          if (cancel_at)
+            toast.show('Subscription set to canceled successfully');
+          setLoading(false);
           return;
         }
         if (
@@ -558,7 +741,7 @@ export const MainBillingComponent: FC<{
         }
         setLoading(false);
       },
-    [monthlyOrYearly, subscription, user, utm]
+    [monthlyOrYearly, subscription, user, utm, modal, mutate, fetch, toast, t, dub, track]
   );
   return (
     <div className="flex flex-col gap-[24px]">
@@ -570,7 +753,13 @@ export const MainBillingComponent: FC<{
         </div>
       </div>
 
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+      {finishTrial && (
+        <FinishTrial
+          close={() => setFinishTrial(false)}
+          charged={user?.isLifetime ? LIFETIME_PRICE : trialPrice}
+          period={subscription?.period}
+        />
+      )}
 
       {/* The founding-member upsell, for trial users only — and only while the
           24-hour window the checkout route enforces is still open, so the strip
@@ -579,7 +768,7 @@ export const MainBillingComponent: FC<{
       {!user?.isLifetime && user?.isTrailing && ltWindow.open && (
         <div
           data-lifetime-upsell="1"
-          className="flex flex-wrap items-center gap-[18px] rounded-[16px] bg-gradient-to-r from-pqLtSoft to-transparent p-[16px_18px] outline outline-1 -outline-offset-1 outline-pqLtOutline"
+          className="flex flex-wrap items-center gap-[18px] rounded-[16px] bg-[linear-gradient(110deg,var(--ltSoft),color-mix(in_srgb,var(--ltSoft)_45%,var(--inner))_58%,color-mix(in_srgb,var(--ltSoft)_18%,var(--inner)))] p-[16px_18px] outline outline-1 -outline-offset-1 outline-pqLtOutline"
         >
           <span className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqLtChipBg text-pqLtAmber">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
@@ -632,9 +821,9 @@ export const MainBillingComponent: FC<{
       {!!paymentFailed && !subscription?.cancelAt && (
         <div
           data-payment-failed="1"
-          className="flex flex-wrap items-center gap-[14px] rounded-[16px] bg-gradient-to-r from-pqWarnSoft to-transparent p-[14px_16px] outline outline-1 -outline-offset-1 outline-pqWarnLine"
+          className="flex flex-wrap items-center gap-[14px] rounded-[16px] bg-gradient-to-r from-pqDangerSoft to-transparent p-[14px_16px] outline outline-1 -outline-offset-1 outline-pqDangerLine"
         >
-          <div className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqWarnSoft text-pqWarn">
+          <div className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqDangerChip text-pqDanger">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
               <path
                 d="M2.5 9.5h19M4.5 5.5h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"
@@ -659,7 +848,7 @@ export const MainBillingComponent: FC<{
           <button
             type="button"
             onClick={updatePayment}
-            className="h-[36px] whitespace-nowrap rounded-[10px] bg-pqWarn px-[16px] text-[13px] font-[600] text-white transition-all hover:brightness-105"
+            className="h-[36px] whitespace-nowrap rounded-[10px] bg-pqDanger px-[16px] text-[13px] font-[600] text-pqOnBrand transition-all hover:brightness-[1.08]"
           >
             {t('update_payment_method', 'Update payment method')}
           </button>
@@ -847,9 +1036,10 @@ export const MainBillingComponent: FC<{
               onClick={() => setMonthlyOrYearly('off')}
               className={clsx(
                 'h-[34px] rounded-full px-[18px] text-[13px] font-[600] transition-colors',
+                // Owner override: inactive Monthly/Yearly was too grey in light.
                 monthlyOrYearly === 'off'
                   ? 'bg-pqInner text-pqText shadow-pqE2'
-                  : 'bg-transparent text-pqMuted'
+                  : 'bg-transparent text-pqText'
               )}
             >
               {t('billing_monthly', 'Monthly')}
@@ -861,7 +1051,7 @@ export const MainBillingComponent: FC<{
                 'flex h-[34px] items-center gap-[8px] rounded-full ps-[18px] pe-[12px] text-[13px] font-[600] transition-colors',
                 monthlyOrYearly === 'on'
                   ? 'bg-pqInner text-pqText shadow-pqE2'
-                  : 'bg-transparent text-pqMuted'
+                  : 'bg-transparent text-pqText'
               )}
             >
               {t('billing_yearly', 'Yearly')}
@@ -922,11 +1112,9 @@ export const MainBillingComponent: FC<{
                     <div
                       className={clsx(
                         'text-[14px] font-[600] tracking-[0.02em]',
-                        ltOn
-                          ? 'text-pqLtAmber'
-                          : on
-                          ? 'text-pqText'
-                          : 'text-pqSoft'
+                        // Owner override (light contrast): non-current plan
+                        // titles use --text, not --soft.
+                        ltOn ? 'text-pqLtAmber' : 'text-pqText'
                       )}
                     >
                       {name}

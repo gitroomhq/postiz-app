@@ -40,22 +40,24 @@ export const Textarea: FC<
         props.disabled && 'opacity-50'
       )}
     >
-      <div className={`text-[14px]`}>
-        <TranslatedLabel
-          label={label}
-          translationKey={translationKey}
-          translationParams={translationParams}
-        />
-      </div>
+      {!!label && (
+        <div className="text-[14px] text-pqMuted">
+          <TranslatedLabel
+            label={label}
+            translationKey={translationKey}
+            translationParams={translationParams}
+          />
+        </div>
+      )}
       <textarea
         {...(disableForm ? {} : form.register(props.name))}
         className={clsx(
-          'bg-input min-h-[150px] p-[16px] outline-none border-fifth border rounded-[4px] text-inputText placeholder-inputText',
+          'min-h-[110px] resize-y rounded-[10px] border-0 bg-pqTableHeader p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] transition-shadow placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]',
           className
         )}
         {...rest}
       />
-      <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>
+      <div className="text-[12px] text-red-400">{err || <>&nbsp;</>}</div>
     </div>
   );
 };

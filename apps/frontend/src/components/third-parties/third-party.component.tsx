@@ -1,17 +1,32 @@
 'use client';
 
-import clsx from 'clsx';
-import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ThirdPartyListComponent } from '@gitroom/frontend/components/third-parties/third-party.list.component';
-import React, { FC, useCallback, useState } from 'react';
+import { ApiModal } from '@gitroom/frontend/components/third-parties/third-party.list.component';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import useCookie from 'react-use-cookie';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
 
+type ThirdPartyConnection = {
+  id: string;
+  name: string;
+  identifier: string;
+  title?: string;
+  description?: string;
+};
+
+type ThirdPartyCatalogItem = {
+  identifier: string;
+  title: string;
+  description: string;
+};
+
+/**
+ * Connected-integration overflow menu — DELETE /third-party/:id.
+ * Same pattern the media-library import surface uses for disconnect.
+ */
 export const ThirdPartyMenuComponent: FC<{
   reload: () => void;
   tParty: { id: string };
@@ -48,7 +63,10 @@ export const ThirdPartyMenuComponent: FC<{
   };
 
   return (
-    <div className="cursor-pointer relative select-none" onClick={changeShow}>
+    <div
+      className="relative cursor-pointer select-none"
+      onClick={changeShow}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -65,10 +83,10 @@ export const ThirdPartyMenuComponent: FC<{
       {show && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute top-[100%] start-0 p-[8px] px-[20px] bg-fifth flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
+          className="absolute end-0 top-[100%] z-[100] flex flex-col gap-[16px] rounded-pqSm border border-pqBorder bg-pqPop p-[8px_20px] text-nowrap shadow-[inset_0_0_0_1px_var(--border)]"
         >
           <div
-            className="flex gap-[12px] items-center"
+            className="flex items-center gap-[12px]"
             onClick={deleteChannel(tParty.id)}
           >
             <div className="text-pqWarn">
@@ -80,7 +98,7 @@ export const ThirdPartyMenuComponent: FC<{
                 fill="currentColor"
               >
                 <path
-                  d="M13.5 3H11V2.5C11 2.10218 10.842 1.72064 10.5607 1.43934C10.2794 1.15804 9.89782 1 9.5 1H6.5C6.10218 1 5.72064 1.15804 5.43934 1.43934C5.15804 1.72064 5 2.10218 5 2.5V3H2.5C2.36739 3 2.24021 3.05268 2.14645 3.14645C2.05268 3.24021 2 3.36739 2 3.5C2 3.63261 2.05268 3.75979 2.14645 3.85355C2.24021 3.94732 2.36739 4 2.5 4H3V13C3 13.2652 3.10536 13.5196 3.29289 13.7071C3.48043 13.8946 3.73478 14 4 14H12C12.2652 14 12.5196 13.8946 12.7071 13.7071C12.8946 13.5196 13 13.2652 13 13V4H13.5C13.6326 4 13.7598 3.94732 13.8536 3.85355C13.9473 3.75979 14 3.63261 14 3.5C14 3.36739 13.9473 3.24021 13.8536 3.14645C13.7598 3.05268 13.6326 3 13.5 3ZM6 2.5C6 2.36739 6.05268 2.24021 6.14645 2.14645C6.24021 2.05268 6.36739 2 6.5 2H9.5C9.63261 2 9.75979 2.05268 9.85355 2.14645C9.94732 2.24021 10 2.36739 10 2.5V3H6V2.5ZM12 13H4V4H12V13ZM7 6.5V10.5C7 10.6326 6.94732 10.7598 6.85355 10.8536C6.75979 10.9473 6.63261 11 6.5 11C6.36739 11 6.24021 10.9473 6.14645 10.8536C6.05268 10.7598 6 10.6326 6 10.5V6.5C6 6.36739 6.05268 6.24021 6.14645 6.14645C6.24021 6.05268 6.36739 6 6.5 6C6.63261 6 6.75979 6.05268 6.85355 6.14645C6.94732 6.24021 7 6.36739 7 6.5ZM10 6.5V10.5C10 10.6326 9.94732 10.7598 9.85355 10.8536C9.75979 10.9473 9.63261 11 9.5 11C9.36739 11 9.24021 10.9473 9.14645 10.8536C9.05268 10.7598 9 10.6326 9 10.5V6.5C9 6.36739 9.05268 6.24021 9.14645 6.14645C9.24021 6.05268 9.36739 6 9.5 6C9.63261 6 9.75979 6.05268 9.85355 6.14645C9.94732 6.24021 10 6.36739 10 6.5Z"
+                  d="M13.5 3H11V2.5C11 2.10218 10.842 1.72064 10.5607 1.43934C10.2794 1.15804 9.89782 1 9.5 1H6.5C6.10218 1 5.72064 1.15804 5.43934 1.43934C5.15804 1.72064 5 2.10218 5 2.5V3H2.5C2.36739 3 2.24021 3.05268 2.14645 3.14645C2.05268 3.24021 2 3.36739 2 3.5C2 3.63261 2.05268 3.75979 2.14645 3.85355C2.24021 3.94732 2.36739 4 2.5 4H3V13C3 13.2652 3.10536 13.5196 3.29289 13.7071C3.48043 13.8946 3.73478 14 4 14H12C12.2652 14 12.5196 13.8946 12.7071 13.7071C12.8946 13.5196 13 13.2652 13 13V4H13.5C13.6326 4 13.7598 3.94732 13.85355 3.85355C13.9473 3.75979 14 3.63261 14 3.5C14 3.36739 13.9473 3.24021 13.8536 3.14645C13.7598 3.05268 13.6326 3 13.5 3ZM6 2.5C6 2.36739 6.05268 2.24021 6.14645 2.14645C6.24021 2.05268 6.36739 2 6.5 2H9.5C9.63261 2 9.75979 2.05268 9.85355 2.14645C9.94732 2.24021 10 2.36739 10 2.5V3H6V2.5ZM12 13H4V4H12V13ZM7 6.5V10.5C7 10.6326 6.94732 10.7598 6.85355 10.8536C6.75979 10.9473 6.63261 11 6.5 11C6.36739 11 6.24021 10.9473 6.14645 10.8536C6.05268 10.7598 6 10.6326 6 10.5V6.5C6 6.36739 6.05268 6.24021 6.14645 6.14645C6.24021 6.05268 6.36739 6 6.5 6C6.63261 6 6.75979 6.05268 6.85355 6.14645C6.94732 6.24021 7 6.36739 7 6.5ZM10 6.5V10.5C10 10.6326 9.94732 10.7598 9.85355 10.8536C9.75979 10.9473 9.63261 11 9.5 11C9.36739 11 9.24021 10.9473 9.14645 10.8536C9.05268 10.7598 9 10.6326 9 10.5V6.5C9 6.36739 9.05268 6.24021 9.14645 6.14645C9.24021 6.05268 9.36739 6 9.5 6C9.63261 6 9.75979 6.05268 9.85355 6.14645C9.94732 6.24021 10 6.36739 10 6.5Z"
                   fill="currentColor"
                 />
               </svg>
@@ -95,126 +113,187 @@ export const ThirdPartyMenuComponent: FC<{
   );
 };
 
+/**
+ * Settings → Integrations. One card per catalog provider (`GET /third-party/list`),
+ * matched to connected rows (`GET /third-party`) by identifier.
+ */
 export const ThirdPartyComponent = () => {
-  const t = useT();
   const fetch = useFetch();
+  const t = useT();
+  const toaster = useToaster();
+  const [editing, setEditing] = useState<{
+    title: string;
+    identifier: string;
+  } | null>(null);
 
-  const integrations = useCallback(async () => {
+  const loadConnected = useCallback(async () => {
     return (await fetch('/third-party')).json();
+  }, [fetch]);
+
+  const loadCatalog = useCallback(async () => {
+    return (await fetch('/third-party/list')).json();
+  }, [fetch]);
+
+  const { data: connected, mutate } = useSWR<ThirdPartyConnection[]>(
+    'third-party',
+    loadConnected,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      revalidateOnMount: true,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
+    }
+  );
+
+  const { data: catalog } = useSWR<ThirdPartyCatalogItem[]>(
+    'third-party-list',
+    loadCatalog,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      revalidateOnMount: true,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
+    }
+  );
+
+  const reload = useCallback(() => {
+    void mutate();
+  }, [mutate]);
+
+  const connectedByIdentifier = useMemo(() => {
+    const map = new Map<string, ThirdPartyConnection>();
+    connected?.forEach((row) => map.set(row.identifier, row));
+    return map;
+  }, [connected]);
+
+  const disconnect = useCallback(
+    (id: string) => async () => {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete_integration',
+            'Are you sure you want to delete this integration?'
+          )
+        ))
+      ) {
+        return;
+      }
+
+      const res = await fetch(`/third-party/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        toaster.show(
+          t('integration_deleted_successfully', 'Integration deleted successfully'),
+          'success'
+        );
+        reload();
+      } else {
+        const error = await res.json();
+        console.error('Error deleting integration:', error);
+      }
+    },
+    [fetch, reload, t, toaster]
+  );
+
+  const openEditor = useCallback((provider: ThirdPartyCatalogItem) => {
+    setEditing({ title: provider.title, identifier: provider.identifier });
   }, []);
 
-  const { data, isLoading, mutate } = useSWR('third-party', integrations, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-  });
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  if (editing) {
+    return (
+      <SettingsPaneEditor
+        title={t('top_title_add_api_key_for', 'Add API key for {{name}}', {
+          name: editing.title,
+        })}
+        onBack={() => setEditing(null)}
+      >
+        <ApiModal
+          identifier={editing.identifier}
+          title={editing.title}
+          update={reload}
+          onCancel={() => setEditing(null)}
+        />
+      </SettingsPaneEditor>
+    );
+  }
 
   return (
-    <>
-      <div
-        className={clsx(
-          'bg-pqInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
-        )}
-      >
-        <div className="flex gap-[12px] flex-col">
-          <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
-              {t('integrations')}
-            </h2>
+    <div className="mt-[18px]">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[12px]">
+        {catalog?.map((provider) => {
+          const connection = connectedByIdentifier.get(provider.identifier);
+          const isConnected = !!connection;
+
+          return (
             <div
-              onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+              key={provider.identifier}
+              data-pq="third-party-card"
+              data-connected={isConnected ? '1' : '0'}
+              className="flex min-h-[184px] flex-col gap-[12px] rounded-[16px] bg-pqInner p-[17px] outline outline-1 -outline-offset-1 outline-pqBorder transition-[outline-color] hover:outline-pqBrand"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="7"
-                height="13"
-                viewBox="0 0 7 13"
-                fill="none"
-              >
-                <path
-                  d="M6 11.5L1 6.5L6 1.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
-          <div className="flex flex-col gap-[10px]">
-            <div className="flex-1 flex flex-col gap-[14px]">
-              <div
-                className={clsx(
-                  'gap-[16px] flex flex-col relative justify-center rounded-e-[8px]'
-                )}
-              >
-                {!isLoading && !data?.length ? (
-                  <div>No Integrations Yet</div>
-                ) : (
-                  data?.map((p: any) => (
-                    <div
-                      key={p.id}
-                      className={clsx('flex gap-[8px] items-center group/profile hover:bg-boxHover')}
-                    >
-                      <div className="h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
-                        <SVGLine />
-                      </div>
-                      <div
-                        className={clsx(
-                          'relative rounded-full flex justify-center items-center'
-                        )}
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={p.title}
-                      >
-                        <ImageWithFallback
-                          fallbackSrc={`/icons/third-party/${p.identifier}.png`}
-                          src={`/icons/third-party/${p.identifier}.png`}
-                          className="rounded-full"
-                          alt={p.title}
-                          width={32}
-                          height={32}
-                        />
-                      </div>
-                      <div
-                        // @ts-ignore
-                        role="Handle"
-                        className={clsx(
-                          'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden'
-                        )}
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={p.title}
-                      >
-                        {p.name}
-                      </div>
-                      <ThirdPartyMenuComponent reload={mutate} tParty={p} />
-                    </div>
-                  ))
-                )}
+              <div className="flex items-start gap-[12px]">
+                <div className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[12px] bg-pqSettings">
+                  <img
+                    className="h-[24px] w-[24px]"
+                    src={`/icons/third-party/${provider.identifier}.png`}
+                    alt=""
+                  />
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-[3px] pt-[2px]">
+                  <div className="text-start text-[14.5px] font-[600] tracking-[-0.01em] text-pqText">
+                    {provider.title}
+                  </div>
+                  <div
+                    className={`flex items-center gap-[5px] text-[11.5px] font-[600] ${
+                      isConnected ? 'text-pqOk' : 'text-pqSoft'
+                    }`}
+                  >
+                    {isConnected ? (
+                      <span className="size-[5px] shrink-0 rounded-full bg-pqOk" />
+                    ) : null}
+                    {isConnected
+                      ? t('connected', 'Connected')
+                      : t('not_connected', 'Not connected')}
+                  </div>
+                </div>
+              </div>
+              <div className="line-clamp-2 whitespace-pre-wrap text-start text-[13px] leading-[1.6] text-pqMuted">
+                {provider.description}
+              </div>
+              <div className="mt-auto flex items-center gap-[8px] border-t border-pqLine pt-[13px]">
+                <button
+                  type="button"
+                  onClick={() => openEditor(provider)}
+                  className={
+                    isConnected
+                      ? 'flex h-[31px] items-center rounded-[9px] bg-pqSettings px-[13px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqBrandSoft'
+                      : 'flex h-[31px] items-center rounded-[9px] bg-pqBrand px-[13px] text-[12.5px] font-[600] text-white transition-[filter] hover:bg-pqBrandHover'
+                  }
+                >
+                  {isConnected
+                    ? t('update_key', 'Update key')
+                    : t('add_api_key', 'Add API key')}
+                </button>
+                {isConnected && connection ? (
+                  <button
+                    type="button"
+                    onClick={disconnect(connection.id)}
+                    className="flex h-[31px] items-center rounded-[9px] bg-transparent px-[12px] text-[12.5px] font-[500] text-pqSoft transition-colors hover:text-pqWarn"
+                  >
+                    {t('disconnect', 'Disconnect')}
+                  </button>
+                ) : null}
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
-      <div className="bg-pqInner flex-1 flex-col flex p-[20px] gap-[18px]">
-        <div>
-          <h3 className="text-[20px] font-[500]">
-            {t('integrations', 'Integrations')}
-          </h3>
-          <div className="mt-[4px] text-pqMuted">
-            {t(
-              'extend_postqueen_with_other_tools',
-              'Extend PostQueen with other tools'
-            )}
-          </div>
-        </div>
-        <ThirdPartyListComponent reload={mutate} />
-      </div>
-    </>
+    </div>
   );
 };

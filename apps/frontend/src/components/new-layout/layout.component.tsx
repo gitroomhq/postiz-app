@@ -47,7 +47,15 @@ import {
   ViewportProvider,
 } from '@gitroom/frontend/components/layout/use.viewport';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Tour } from '@gitroom/frontend/components/onboarding/tour';
+import {
+  DevBillingStageProvider,
+  useDevBillingStage,
+} from '@gitroom/frontend/components/billing/dev-billing-stage.provider';
+import { DevBillingStageSwitcher } from '@gitroom/frontend/components/billing/dev-billing-stage.switcher';
+import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { isDevBillingStageEnabled } from '@gitroom/frontend/components/billing/dev-billing-stage';
 
 /** A fixed vertical divider for the header. */
 const HeaderDivider = () => (
@@ -105,6 +113,7 @@ const LayoutSkeleton = () => (
  */
 const AppChrome = ({ children }: { children: ReactNode }) => {
   const t = useT();
+  const user = useUser();
   const { mobile, tablet } = useViewport();
   // Same cookie idiom as the calendar's own collapsible column.
   const [railCookie, setRailCookie] = useCookie('railCollapsed', '0');
@@ -142,6 +151,9 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
   }, [mobile, tablet, collapsed, setRailCookie]);
 
   const closeDrawer = useCallback(() => setDrawer(false), []);
+
+  const showFoundingChip =
+    !mobile && (!!user?.isLifetime || !!user?.isTrailing);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -186,6 +198,25 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
           <Title />
         </div>
 
+        {showFoundingChip && (
+          <span
+            data-hdr-thanks="1"
+            className="me-[2px] inline-flex h-[28px] shrink-0 items-center gap-[7px] whitespace-nowrap rounded-full bg-pqLtChipBg px-[11px] text-[12px] font-[600] text-pqLtAmber shadow-[inset_0_0_0_1px_var(--ltOutline)]"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="currentColor"
+              className="shrink-0"
+              aria-hidden="true"
+            >
+              <path d="M12 20.5 4.2 13a4.6 4.6 0 0 1 6.5-6.5l1.3 1.3 1.3-1.3A4.6 4.6 0 1 1 19.8 13L12 20.5Z" />
+            </svg>
+            {t('founding_member', 'Founding member')}
+          </span>
+        )}
+
         {/* Filled by the page, if it has a primary action. */}
         <HeaderActionSlot />
         <div className="flex items-center gap-[2px] text-pqMuted">
@@ -200,7 +231,10 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
         <UserMenu />
       </header>
 
-      <div ref={rowRef} className="relative flex min-h-0 flex-1">
+      <div
+        ref={rowRef}
+        className="relative flex min-h-0 flex-1 items-stretch"
+      >
         <Rail
           collapsed={collapsed}
           // `react-use-cookie` defaults to a 7-day expiry, so without this the
@@ -214,10 +248,13 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
           onCloseDrawer={closeDrawer}
           hostRef={rowRef}
         />
-        <div className="blurMe flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* z-0 traps page stickies / toolbars in a stacking context below the
+            rail slot (z-45), so collapsed hover-expand covers them instead of
+            letting "Next 3 days" and calendar headers paint through. */}
+        <div className="blurMe relative z-0 flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* The 1px gaps over this background are what draw the hairlines
               between a page's own columns. */}
-          <div className="flex min-h-0 flex-1 gap-[1px] bg-newBgLineColor">
+          <div className="flex min-h-0 flex-1 gap-[1px] bg-pqLine">
             {children}
           </div>
         </div>
@@ -226,33 +263,23 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const LayoutComponent = ({ children }: { children: ReactNode }) => {
-  const fetch = useFetch();
-
+const LayoutBody = ({
+  children,
+  overlay,
+  mutate,
+}: {
+  children: ReactNode;
+  overlay?: ReactNode;
+  mutate: () => void;
+}) => {
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
-
-  // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const load = useCallback(async (path: string) => {
-    return await (await fetch(path)).json();
-  }, []);
-  const { data: user, mutate } = useSWR('/user/self', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-  });
-
-  // While /user/self resolves, show the chrome skeleton instead of a blank
-  // screen (this used to `return null`, flashing empty on every cold load).
-  if (!user) return <LayoutSkeleton />;
+  const { overriddenUser, finishTrialPreviewOpen, closeFinishTrialPreview } =
+    useDevBillingStage();
 
   return (
-    <ContextWrapper user={user}>
-      {/* Outside CopilotKit so the root data-mobile/data-tablet attributes are
-          in place before any surface that reads them mounts. */}
+    <ContextWrapper user={overriddenUser}>
       <ViewportProvider>
         <CopilotKit
           credentials="include"
@@ -275,18 +302,15 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               <NewSubscription />
               <ContinueProvider />
               <div className="flex flex-col min-h-screen w-full text-newTextColor">
-                <div>{user?.admin ? <Impersonate /> : <div />}</div>
-                {/* The paywall replaces the whole shell for a FREE tier — every
-                    route, including the lifetime page. That page is the one
-                    surface a FREE account is *supposed* to reach: the
-                    founding-member offer is aimed at people who have not
-                    subscribed, and it closes 24 hours after they sign up. So it
-                    is let through, and only it. */}
-                {user.tier === 'FREE' &&
+                <div>
+                  {overriddenUser?.admin ? <Impersonate /> : <div />}
+                </div>
+                {isDevBillingStageEnabled() && <DevBillingStageSwitcher />}
+                {overriddenUser.tier === 'FREE' &&
                 isGeneral &&
                 billingEnabled &&
                 !pathname.startsWith('/billing/lifetime') ? (
-                  ['ADMIN', 'SUPERADMIN'].includes(user?.role!) ? (
+                  ['ADMIN', 'SUPERADMIN'].includes(overriddenUser?.role!) ? (
                     <FirstBillingComponent />
                   ) : (
                     <BillingAdminRequiredComponent />
@@ -296,16 +320,50 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <AnnouncementBanner />
                     <Support />
                     <AppChrome>{children}</AppChrome>
-                    {/* Outside AppChrome: the tour spans routes and paints over
-                        the whole app, including the rail. */}
+                    {overlay}
                     <Tour />
                   </>
                 )}
               </div>
+              {finishTrialPreviewOpen && (
+                <FinishTrial close={closeFinishTrialPreview} dryRun />
+              )}
             </CheckPayment>
           </MantineWrapper>
         </CopilotKit>
       </ViewportProvider>
     </ContextWrapper>
+  );
+};
+
+export const LayoutComponent = ({
+  children,
+  overlay,
+}: {
+  children: ReactNode;
+  overlay?: ReactNode;
+}) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return await (await fetch(path)).json();
+  }, []);
+  const { data: user, mutate } = useSWR('/user/self', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
+  });
+
+  // While /user/self resolves, show the chrome skeleton instead of a blank
+  // screen (this used to `return null`, flashing empty on every cold load).
+  if (!user) return <LayoutSkeleton />;
+
+  return (
+    <DevBillingStageProvider baseUser={user}>
+      <LayoutBody overlay={overlay} mutate={mutate}>
+        {children}
+      </LayoutBody>
+    </DevBillingStageProvider>
   );
 };

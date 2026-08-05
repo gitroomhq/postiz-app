@@ -3,35 +3,23 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 export const Null: FC<{
   onSave: (data: any) => Promise<void>;
   existingId: string[];
 }> = () => null;
 export const ContinueProvider: FC = () => {
   const { mutate } = useSWRConfig();
-  const fetch = useFetch();
   const searchParams = useSearchParams();
   const added = searchParams.get('added');
   const continueId = searchParams.get('continue');
   const router = useRouter();
-  const load = useCallback(async (path: string) => {
-    const list = (await (await fetch(path)).json()).integrations;
-    return list;
-  }, []);
-  const { data: integrations } = useSWR('/integrations/list', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
+  const { data: integrations } = useIntegrationList();
   const refreshList = useCallback(() => {
     mutate('/integrations/list');
     const url = new URL(window.location.href);

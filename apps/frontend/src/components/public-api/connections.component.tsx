@@ -1,12 +1,14 @@
 'use client';
 
-import { FC, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import copy from 'copy-to-clipboard';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useTourStepKey } from '@gitroom/frontend/components/onboarding/tour';
+import { ApiKeyCard } from '@gitroom/frontend/components/public-api/api-key-card';
 
 /**
  * Connections — how to drive PostQueen from somewhere else.
@@ -17,7 +19,8 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
  *
  * Every command is built from this install's own backend URL and API key, never
  * from a hardcoded host: a page of instructions that do not work is worse than
- * no page. The key is masked until Reveal is pressed.
+ * no page. Detail view shares the Reveal / Copy / Rotate key card with
+ * Developers.
  *
  * The content here was checked against each product's own documentation, not
  * against the design — the design's command table invents `openclaw mcp add`
@@ -43,6 +46,10 @@ interface Connection {
   kind: Kind;
   short: string;
   intro: string;
+  /** Example @PostQueen prompts in the gradient hero. */
+  prompts?: string[];
+  /** Optional blurb between the hero and the API key card. */
+  info?: string;
   note?: string;
   /** Shown as a badge on the card and at the top of the detail. */
   soon?: boolean;
@@ -64,30 +71,77 @@ const KIND_STYLE: Record<Kind, string> = {
   API: 'bg-pqBtnSimple text-pqSoft',
 };
 
-const CodeBlock: FC<{ code: string; label: string }> = ({ code, label }) => {
+const CodeBlock: FC<{
+  code: string;
+  label: string;
+  rawCode?: string;
+}> = ({ code, label, rawCode }) => {
   const toaster = useToaster();
   const t = useT();
   return (
-    <div className="mt-[8px] flex items-start gap-[8px]">
+    <div className="relative mt-[8px] rounded-pqSm bg-pqBg p-[12px_42px_12px_13px] shadow-[inset_0_0_0_1px_var(--border)]">
       <pre
         data-conn-code="1"
-        className="min-w-0 flex-1 overflow-x-auto whitespace-pre-wrap break-all rounded-pqSm border border-pqBorder bg-pqBg p-[12px] font-mono text-[12.5px] leading-[1.6]"
+        className="m-0 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[12px] leading-[1.65] text-pqText"
       >
         {code}
       </pre>
       <button
         type="button"
+        aria-label={t('copy', 'Copy')}
         onClick={() => {
-          copy(code);
+          copy(rawCode ?? code);
           toaster.show(`${label} copied to clipboard`, 'success');
         }}
-        className="shrink-0 rounded-pqSm bg-pqBtnSimple px-[12px] py-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        className="absolute right-[8px] top-[8px] flex h-[26px] w-[26px] items-center justify-center rounded-[7px] bg-pqSettings text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
       >
-        {t('copy', 'Copy')}
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+          <path
+            d="M9 9V5.5A1.5 1.5 0 0 1 10.5 4h8A1.5 1.5 0 0 1 20 5.5v8a1.5 1.5 0 0 1-1.5 1.5H15M5.5 9h8A1.5 1.5 0 0 1 15 10.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 4 18.5v-8A1.5 1.5 0 0 1 5.5 9Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
     </div>
   );
 };
+
+const PromptHero: FC<{ prompts: string[]; tint: string }> = ({
+  prompts,
+  tint,
+}) => (
+  <div
+    className="flex flex-col items-end gap-[10px] rounded-[18px] p-[24px_20px] shadow-pqE2"
+    style={{
+      backgroundImage: `linear-gradient(135deg, ${tint} 0%, var(--brand) 55%, var(--focused) 100%)`,
+    }}
+  >
+    {prompts.map((prompt) => (
+      <div
+        key={prompt}
+        className="flex max-w-[86%] items-center gap-[11px] rounded-[999px] bg-[rgba(255,255,255,0.82)] px-[15px] py-[11px] shadow-[0_2px_12px_rgba(9,9,11,0.1)]"
+      >
+        <span className="min-w-0 flex-1 text-[13.5px] leading-[1.45] text-[#18181b]">
+          <span className="font-[700]">@PostQueen</span> {prompt}
+        </span>
+        <span className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[999px] bg-white text-[#18181b] shadow-[0_1px_4px_rgba(9,9,11,0.16)]">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none">
+            <path
+              d="M5 12h13m-5-5 5 5-5 5"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </div>
+    ))}
+  </div>
+);
 
 /**
  * The route-level wrapper for /connections. It carries the gate the settings
@@ -121,21 +175,37 @@ export const ConnectionsComponent: FC = () => {
   const t = useT();
   const user = useUser();
   const { backendUrl } = useVariables();
+  const tourKey = useTourStepKey();
+  const tourConn = tourKey === 'connections-page';
   const [picked, setPicked] = useState('');
   const [search, setSearch] = useState('');
-  const [revealed, setRevealed] = useState(false);
+  const [keyRevealed, setKeyRevealed] = useState(false);
 
   const apiKey = (user as any)?.publicApi || '';
   const mcpUrl = `${backendUrl}/mcp`;
   const mcpUrlWithKey = `${backendUrl}/mcp/${apiKey}`;
 
-  /** The real key only once it has been asked for. */
-  const shown = (text: string) =>
-    revealed || !apiKey
-      ? text
-      : text.split(apiKey).join('*'.repeat(Math.min(apiKey.length, 24)));
+  const maskCode = useCallback(
+    (text: string) =>
+      keyRevealed || !apiKey
+        ? text
+        : text.split(apiKey).join('*'.repeat(Math.min(apiKey.length, 24))),
+    [apiKey, keyRevealed]
+  );
 
   const groups = useMemo<Group[]>(() => {
+    const defaultPrompts = [
+      t(
+        'conn_prompt_default_1',
+        'Draft a launch post and schedule it for Tuesday 09:00'
+      ),
+      t('conn_prompt_default_2', 'What is in my queue this week?'),
+      t(
+        'conn_prompt_default_3',
+        'Publish the changelog to X and LinkedIn'
+      ),
+    ];
+
     const skillInstall: Step[] = [
       {
         title: t('conn_step_skill_install', 'Install the PostQueen skill'),
@@ -190,7 +260,18 @@ export const ConnectionsComponent: FC = () => {
               'conn_claude_intro',
               'Add PostQueen as a connector and Claude can read your calendar, draft posts and schedule them without you leaving the chat.'
             ),
-            note: t(
+            prompts: [
+              t(
+                'conn_claude_prompt_1',
+                'Draft a launch thread for v3.2 and schedule it for Tuesday 09:00'
+              ),
+              t('conn_claude_prompt_2', 'What is in my queue this week?'),
+              t(
+                'conn_claude_prompt_3',
+                'Turn this changelog into five posts across X and LinkedIn'
+              ),
+            ],
+            info: t(
               'conn_claude_note',
               'For Claude Code in a terminal, the Agent Skills route below is usually better — it loads context on demand instead of the whole schema up front.'
             ),
@@ -227,7 +308,8 @@ export const ConnectionsComponent: FC = () => {
               'conn_chatgpt_intro',
               'ChatGPT connectors speak MCP, so PostQueen appears as a tool it can call while you talk to it.'
             ),
-            note: t(
+            prompts: defaultPrompts,
+            info: t(
               'conn_chatgpt_note',
               'Custom connectors need a ChatGPT Plus, Pro or Business plan.'
             ),
@@ -264,6 +346,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_gemini_intro',
               'Gemini CLI reads MCP servers from its settings file.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_gemini_step_config', 'Edit your settings file'),
@@ -303,6 +386,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_cc_intro',
               'Claude Code can take PostQueen either as an MCP server or as an Agent Skill. MCP is one command; skills load less context per call.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_cc_step_add', 'Register the server'),
@@ -332,6 +416,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_editors_intro',
               'These all read an MCP config file. Developers → Access generates the exact snippet for each one, including the file it belongs in.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t(
@@ -368,7 +453,18 @@ export const ConnectionsComponent: FC = () => {
               'conn_openclaw_intro',
               "OpenClaw is an open-source agent you run yourself. It reads the Agent Skills package rather than MCP, which means it loads PostQueen's commands on demand instead of carrying a whole tool schema in every prompt — cheaper, and it leaves room for the rest of your context."
             ),
-            note: t(
+            prompts: [
+              t(
+                'conn_openclaw_prompt_1',
+                'Post the blog cover to LinkedIn and X tomorrow at 9am'
+              ),
+              t('conn_openclaw_prompt_2', 'What is in my queue this week?'),
+              t(
+                'conn_openclaw_prompt_3',
+                'Draft a thread from this release note'
+              ),
+            ],
+            info: t(
               'conn_openclaw_note',
               'The same install also powers the chat bridge below: once OpenClaw has this skill, anything that can reach your agent can publish through it. Keep a human in the loop before anything goes out.'
             ),
@@ -412,7 +508,15 @@ export const ConnectionsComponent: FC = () => {
               'conn_hermes_intro',
               "Hermes is Nous Research's open-source agent framework. It picks PostQueen up through the same Agent Skills package the other CLI agents use, so one install covers every agent on the machine."
             ),
-            note: t(
+            prompts: [
+              t(
+                'conn_hermes_prompt_1',
+                'Schedule my latest post to every connected channel for Monday morning'
+              ),
+              t('conn_hermes_prompt_2', 'List my connected channels'),
+              t('conn_hermes_prompt_3', 'Draft a weekly digest for LinkedIn'),
+            ],
+            info: t(
               'conn_hermes_note',
               'Hermes can run tools on a schedule from its own config, which is a neat fit for recurring publishing — a weekly digest, say. Whatever you automate, keep a human in the loop before it publishes.'
             ),
@@ -449,6 +553,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_codex_intro',
               'Codex discovers PostQueen from the skill definition and runs its commands in a sandbox.'
             ),
+            prompts: defaultPrompts,
             steps: [
               ...skillInstall,
               {
@@ -477,7 +582,15 @@ export const ConnectionsComponent: FC = () => {
               'conn_bridge_intro',
               'OpenClaw runs a gateway on your own machine or server that connects chat apps to an AI agent. Give that agent the PostQueen skill and you can schedule a post by sending a message — from WhatsApp, Slack, Discord, Telegram, Signal and around two dozen others.'
             ),
-            note: t(
+            prompts: [
+              t(
+                'conn_bridge_prompt_1',
+                'Write a launch thread for v3.2 and schedule it'
+              ),
+              t('conn_bridge_prompt_2', 'What is going out this week?'),
+              t('conn_bridge_prompt_3', 'Publish the changelog now'),
+            ],
+            info: t(
               'conn_bridge_note',
               'The gateway is yours: it runs on your infrastructure and PostQueen never sees your chat accounts. Keep a human in the loop before anything publishes.'
             ),
@@ -530,7 +643,8 @@ export const ConnectionsComponent: FC = () => {
               'conn_n8n_intro',
               'Use the community node to publish from an n8n flow, and PostQueen webhooks to trigger a flow when a post publishes.'
             ),
-            note: t(
+            prompts: defaultPrompts,
+            info: t(
               'conn_n8n_note',
               'Self-hosted n8n needs the community node installed before the credential appears.'
             ),
@@ -574,6 +688,20 @@ export const ConnectionsComponent: FC = () => {
               'conn_zapier_intro',
               "There is no PostQueen app in Zapier's directory yet. Until there is, Zapier's own generic steps do the job in both directions."
             ),
+            prompts: [
+              t(
+                'conn_zapier_prompt_1',
+                'When a Notion page is published → schedule a post'
+              ),
+              t(
+                'conn_zapier_prompt_2',
+                'When a Shopify product goes live → announce it'
+              ),
+              t(
+                'conn_zapier_prompt_3',
+                'Every Friday → draft next week from a Sheet'
+              ),
+            ],
             steps: [
               {
                 title: t('conn_zapier_step_out', 'PostQueen → Zapier'),
@@ -615,6 +743,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_make_intro',
               "No PostQueen module yet. Make's HTTP and Webhooks modules cover the same ground."
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_make_step_out', 'PostQueen → Make'),
@@ -661,6 +790,14 @@ export const ConnectionsComponent: FC = () => {
               'conn_api_intro',
               'Everything the app does to your account, you can do over HTTP: list channels, schedule and delete posts, upload media, generate video, read analytics.'
             ),
+            prompts: [
+              t(
+                'conn_api_prompt_1',
+                'Create a post from your own dashboard'
+              ),
+              t('conn_api_prompt_2', 'Sync your CMS release notes'),
+              t('conn_api_prompt_3', 'Back up your queue nightly'),
+            ],
             steps: [
               {
                 title: t('conn_api_step_base', 'Base URL'),
@@ -698,6 +835,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_cli_intro',
               'The CLI prints JSON, so anything that can run a shell command can run your publishing.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_cli_step_install', 'Install it'),
@@ -728,6 +866,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_sdk_intro',
               'A thin wrapper over the public API with types for the request and response shapes.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_sdk_step_install', 'Install it'),
@@ -754,6 +893,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_webhooks_intro',
               'PostQueen POSTs the published post as JSON to any URL you register. A webhook can watch every channel or just the ones you pick.'
             ),
+            prompts: defaultPrompts,
             note: t(
               'conn_webhooks_note',
               'Requests are not signed, so treat the URL itself as the secret — give each destination its own, and do not act on a payload you cannot otherwise verify.'
@@ -789,6 +929,7 @@ export const ConnectionsComponent: FC = () => {
               'conn_oauth_intro',
               'If you are building a product rather than automating your own account, register an OAuth app. Your users authorise it and you receive a token that works with the API, MCP and the CLI — no key sharing.'
             ),
+            prompts: defaultPrompts,
             steps: [
               {
                 title: t('conn_oauth_step_create', 'Create the app'),
@@ -814,6 +955,21 @@ export const ConnectionsComponent: FC = () => {
   const all = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const active = all.find((item) => item.id === picked);
 
+  const fallbackPrompts = useMemo(
+    () => [
+      t(
+        'conn_prompt_default_1',
+        'Draft a launch post and schedule it for Tuesday 09:00'
+      ),
+      t('conn_prompt_default_2', 'What is in my queue this week?'),
+      t(
+        'conn_prompt_default_3',
+        'Publish the changelog to X and LinkedIn'
+      ),
+    ],
+    [t]
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return groups;
@@ -828,11 +984,16 @@ export const ConnectionsComponent: FC = () => {
   }, [groups, search]);
 
   if (active) {
+    const prompts = active.prompts ?? fallbackPrompts;
+
     return (
-      <div className="flex flex-col gap-[20px]">
+      <div className="flex flex-col gap-[24px]">
         <button
           type="button"
-          onClick={() => setPicked('')}
+          onClick={() => {
+            setPicked('');
+            setKeyRevealed(false);
+          }}
           className="flex h-[32px] w-fit items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[10px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
         >
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
@@ -847,7 +1008,7 @@ export const ConnectionsComponent: FC = () => {
           {t('conn_all', 'All connections')}
         </button>
 
-        <div className="flex items-center gap-[16px]">
+        <div className="flex flex-wrap items-center gap-[16px]">
           <span
             style={{ backgroundColor: active.tint }}
             className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-pqLg text-[17px] font-[700] text-pqOnBrand shadow-pqE1"
@@ -856,7 +1017,7 @@ export const ConnectionsComponent: FC = () => {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-[8px]">
-              <h2 className="text-[21px] font-[600] -tracking-[0.02em]">
+              <h2 className="text-[23px] font-[600] -tracking-[0.02em]">
                 {active.name}
               </h2>
               {active.soon && (
@@ -865,32 +1026,57 @@ export const ConnectionsComponent: FC = () => {
                 </span>
               )}
             </div>
-            <div className="mt-[2px] text-[13.5px] leading-[1.5] text-pqMuted">
+            <div className="mt-[3px] text-[13.5px] leading-[1.5] text-pqMuted">
               {active.intro}
             </div>
           </div>
         </div>
 
-        <ol className="flex flex-col gap-[16px]">
+        <PromptHero prompts={prompts} tint={active.tint} />
+
+        {!!active.info && (
+          <div className="text-[14px] leading-[1.7] text-pqMuted">
+            {active.info}
+          </div>
+        )}
+
+        <ApiKeyCard
+          showWizard={false}
+          showDocs={false}
+          hint={t(
+            'conn_api_key_hint',
+            'Use this key when the connector asks for credentials — the same key works for every integration here.'
+          )}
+          onRevealChange={setKeyRevealed}
+        />
+
+        <div className="flex flex-col gap-[16px] rounded-[18px] bg-pqInner p-[22px] shadow-[inset_0_0_0_1px_var(--border)]">
+          <div className="text-[15px] font-[600]">
+            {t('conn_how_to_connect', 'How to connect')}
+          </div>
           {active.steps.map((step, index) => (
-            <li key={`${step.title}-${index}`} className="flex gap-[12px]">
-              <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-pqBrandSoft text-[11px] font-[700] text-pqBrand">
+            <div key={`${step.title}-${index}`} className="flex gap-[13px]">
+              <span className="mt-[1px] flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-pqBrandSoft text-[12px] font-[700] text-pqBrand">
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[13.5px] font-[600]">{step.title}</div>
+                <div className="text-[14px] font-[600]">{step.title}</div>
                 {!!step.detail && (
-                  <div className="mt-[2px] text-[12.5px] leading-[1.55] text-pqMuted">
+                  <div className="mt-[2px] text-[13.5px] leading-[1.6] text-pqMuted">
                     {step.detail}
                   </div>
                 )}
                 {!!step.code && (
-                  <CodeBlock code={shown(step.code)} label={active.name} />
+                  <CodeBlock
+                    code={maskCode(step.code)}
+                    rawCode={step.code}
+                    label={active.name}
+                  />
                 )}
               </div>
-            </li>
+            </div>
           ))}
-        </ol>
+        </div>
 
         {!!active.note && (
           <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[12.5px] leading-[1.55] text-pqMuted">
@@ -912,42 +1098,35 @@ export const ConnectionsComponent: FC = () => {
     );
   }
 
+  let connCardI = 0;
+
   return (
-    <div className="flex flex-col gap-[20px]">
+    <div
+      data-tour="connections-page"
+      {...(tourConn ? { 'data-tourconn': '1' } : {})}
+      className="flex flex-col gap-[20px]"
+    >
       <div className="flex flex-wrap items-end justify-between gap-[12px]">
-        <div data-tour="connect-pq">
+        <div>
           <h2 className="text-[27px] font-[600] -tracking-[0.02em]">
             {t('connections', 'Connections')}
           </h2>
           <div className="mt-[2px] text-[14px] text-pqMuted">
             {t(
               'connections_sub',
-              'Work with PostQueen across your favourite tools. Everything here uses the same API key.'
+              'Work with PostQueen across your favorite tools.'
             )}
           </div>
         </div>
-        <div className="flex items-center gap-[8px]">
-          {!!apiKey && (
-            <button
-              type="button"
-              onClick={() => setRevealed((r) => !r)}
-              className="rounded-pqSm bg-pqBtnSimple px-[12px] py-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
-            >
-              {revealed
-                ? t('hide_key', 'Hide key')
-                : t('reveal_key', 'Reveal key')}
-            </button>
-          )}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('conn_search', 'Search connections')}
-            className="h-[38px] w-[220px] rounded-[999px] border-0 bg-pqSettings px-[14px] text-[13.5px] text-pqText outline-none"
-          />
-        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('conn_search', 'Search connections')}
+          className="h-[38px] w-[220px] rounded-[999px] border-0 bg-pqSettings px-[14px] text-[13.5px] text-pqText outline-none"
+        />
       </div>
 
-      <div data-tour="mcp-clients" className="flex flex-col gap-[20px]">
+      <div className="flex flex-col gap-[20px]">
       {filtered.map((group) => (
         <div key={group.id} className="flex flex-col gap-[10px]">
           <div className="flex items-baseline gap-[8px]">
@@ -960,13 +1139,21 @@ export const ConnectionsComponent: FC = () => {
             <span className="h-[1px] flex-1 bg-pqLine" />
           </div>
           <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(330px,1fr))]">
-            {group.items.map((item) => (
+            {group.items.map((item) => {
+              const delay = (connCardI++ % 14) * 0.38;
+              return (
               <button
                 key={item.id}
                 type="button"
                 data-connector={item.id}
+                data-conn-card="1"
                 onClick={() => setPicked(item.id)}
-                className="flex min-h-[76px] items-start gap-[13px] rounded-pqLg bg-pqInner p-[12px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+                style={
+                  tourConn
+                    ? { animationDelay: `${delay}s` }
+                    : undefined
+                }
+                className="flex min-h-[76px] items-start gap-[13px] rounded-pqLg bg-pqInner p-[12px] text-start shadow-[inset_0_0_0_1px_var(--border)] outline outline-1 outline-pqBorder transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]"
               >
                 <span
                   style={{ backgroundColor: item.tint }}
@@ -979,14 +1166,18 @@ export const ConnectionsComponent: FC = () => {
                     <span className="truncate text-[14.5px] font-[600] -tracking-[0.01em]">
                       {item.name}
                     </span>
-                    <span
-                      className={clsx(
-                        'shrink-0 rounded-[5px] px-[6px] py-[1px] text-[9.5px] font-[700] tracking-[0.06em]',
-                        KIND_STYLE[item.kind]
-                      )}
-                    >
-                      {item.soon ? t('conn_soon_short', 'SOON') : item.kind}
-                    </span>
+                    {(item.soon || item.kind !== 'FLOW') && (
+                      <span
+                        className={clsx(
+                          'shrink-0 rounded-[5px] px-[6px] py-[1px] text-[9.5px] font-[700] tracking-[0.06em]',
+                          KIND_STYLE[item.kind]
+                        )}
+                      >
+                        {item.soon
+                          ? t('conn_soon_short', 'SOON')
+                          : item.kind}
+                      </span>
+                    )}
                   </span>
                   <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-pqMuted">
                     {item.short}
@@ -1004,7 +1195,8 @@ export const ConnectionsComponent: FC = () => {
                   </svg>
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

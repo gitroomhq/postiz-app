@@ -52,7 +52,7 @@ export const Input: FC<
   return (
     <div className="flex flex-col gap-[6px]">
       {!!label && (
-        <div className={`text-[14px]`}>
+        <div className="text-[14px] text-pqMuted">
           <TranslatedLabel
             label={label}
             translationKey={translationKey}
@@ -60,29 +60,26 @@ export const Input: FC<
           />
         </div>
       )}
-      {/* newBorder, not newTableBorder: this is a field edge, and the table
-          token sits a shade off every other bordered surface. The focus ring is
-          on the wrapper because the real <input> is transparent and
-          borderless, so focus had nothing to show on. */}
+      {/* Prototype form fields: h44, --tableHeader, inset border, r10. */}
       <div
         className={clsx(
-          'bg-newBgColorInner h-[42px] border-newBorder border rounded-[8px] text-textColor placeholder-textColor flex items-center justify-center transition-colors',
-          'focus-within:border-btnPrimary focus-within:ring-1 focus-within:ring-btnPrimary',
+          'flex h-[44px] items-center justify-center rounded-[10px] bg-pqTableHeader text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow',
+          'focus-within:shadow-[inset_0_0_0_1px_var(--brand)]',
           className
         )}
       >
-        {icon && <div className="ps-[16px]">{icon}</div>}
+        {icon && <div className="ps-[12px]">{icon}</div>}
         <input
           className={clsx(
-            'h-full bg-transparent outline-none flex-1 text-[14px] text-textColor',
-            icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
+            'h-full flex-1 bg-transparent text-[14px] text-pqText outline-none placeholder:text-pqSoft',
+            icon ? 'ps-[8px] pe-[12px]' : 'px-[12px]'
           )}
           {...(disableForm ? {} : form.register(props.name))}
           {...rest}
         />
       </div>
       {!removeError && (
-        <div className="text-red-400 text-[12px]">{err || <>&nbsp;</>}</div>
+        <div className="text-[12px] text-red-400">{err || <>&nbsp;</>}</div>
       )}
     </div>
   );

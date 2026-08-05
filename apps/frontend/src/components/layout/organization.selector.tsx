@@ -13,6 +13,7 @@ import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 interface Organization {
   name: string;
@@ -36,6 +37,10 @@ export const OrganizationSelector: FC<{
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLButtonElement,
+    HTMLDivElement
+  >(open, 'start', { placement: 'top-start', offsetPx: 8 });
   const load = useCallback(async () => {
     return await (await fetch('/user/organizations')).json();
   }, []);
@@ -93,13 +98,10 @@ export const OrganizationSelector: FC<{
       <div ref={ref} className="relative flex items-center" data-keepdrawer="1">
         <button
           type="button"
+          ref={referenceRef}
           onClick={() => setOpen((o) => !o)}
           aria-haspopup="menu"
           aria-expanded={open}
-          {...(collapsed && {
-            'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': current?.name || '',
-          })}
           className={clsx(
             'flex h-[34px] min-w-0 flex-1 items-center gap-[11px] rounded-pqSm px-[8px] text-start transition-colors hover:bg-pqHover',
             collapsed ? 'justify-center' : 'justify-start',
@@ -109,34 +111,37 @@ export const OrganizationSelector: FC<{
           <span className="grid size-[21px] shrink-0 place-items-center rounded-[6px] bg-pqBrand text-[10px] font-[700] text-white">
             {initialOf(current?.name)}
           </span>
-          {!collapsed && (
-            <>
-              <span className="min-w-0 flex-1 truncate text-[13px] font-[500] text-pqMuted">
-                {current?.name}
-              </span>
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                aria-hidden="true"
-                className="shrink-0 text-pqSoft"
-              >
-                <path
-                  d="M8 10l4-4 4 4M8 14l4 4 4-4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </>
-          )}
+          {/* Always in the DOM with data-sbl so collapsed-rail hover can reveal
+              the name the way the design does — do not unmount on collapse. */}
+          <span
+            data-sbl="1"
+            className="min-w-0 flex-1 truncate text-[13px] font-[500] text-pqMuted"
+          >
+            {current?.name}
+          </span>
+          <svg
+            data-sbl="1"
+            viewBox="0 0 24 24"
+            width="13"
+            height="13"
+            fill="none"
+            aria-hidden="true"
+            className="shrink-0 text-pqSoft"
+          >
+            <path
+              d="M8 10l4-4 4 4M8 14l4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
         {open && (
           <div
+            ref={floatingRef}
             role="menu"
-            className="absolute bottom-[42px] start-0 z-[70] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqPop p-[5px] shadow-pq"
+            className="z-[70] w-[248px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqPop p-[5px] shadow-pq"
           >
             <div className="px-[9px] pb-[5px] pt-[7px] text-[10px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
               {t('organizations', 'Organizations')}

@@ -1474,7 +1474,17 @@ export class StripeService {
       );
 
     const currentTier = getCurrentSubscription?.subscriptionTier;
-    const nextPackage = nextLifetimeTier(currentTier);
+    // Founding-member purchase markets "Everything in Pro" — floor the ladder
+    // at PRO so FREE/CREATOR/GROWTH buyers get what the checkout promises.
+    // Code redemption (`lifetimeDeal`) keeps the one-tier ladder unchanged.
+    const ladderTier = nextLifetimeTier(currentTier);
+    const paidOrder = ['CREATOR', 'GROWTH', 'PRO', 'AGENCY'] as const;
+    const ladderIdx = paidOrder.indexOf(
+      ladderTier as (typeof paidOrder)[number]
+    );
+    const proIdx = paidOrder.indexOf('PRO');
+    const nextPackage =
+      ladderIdx >= 0 && ladderIdx < proIdx ? 'PRO' : ladderTier;
     const findPricing = pricing[nextPackage];
 
     await this._subscriptionService.createOrUpdateSubscription(

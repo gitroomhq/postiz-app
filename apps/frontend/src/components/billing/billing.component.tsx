@@ -1,15 +1,18 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import useSWR from 'swr';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { MainBillingComponent } from './main.billing.component';
+import { useDevBillingStageOptional } from '@gitroom/frontend/components/billing/dev-billing-stage.provider';
+
 export const BillingComponent = () => {
   const fetch = useFetch();
   const user = useUser();
+  const devBilling = useDevBillingStageOptional();
   const t = useT();
   // Both endpoints below are ADMIN-gated. The page is directly navigable, so
   // without this a regular member fired two 402s and sat on a spinner.
@@ -21,8 +24,10 @@ export const BillingComponent = () => {
     isOrgAdmin ? '/user/subscription/tiers' : null,
     load
   );
+  const devOverrideActive =
+    !!devBilling?.active && !!devBilling.subscriptionOverride;
   const { isLoading: isLoadingSubscription, data: subscription } = useSWR(
-    isOrgAdmin ? '/user/subscription' : null,
+    isOrgAdmin && !devOverrideActive ? '/user/subscription' : null,
     load
   );
   if (!isOrgAdmin) {
@@ -53,14 +58,19 @@ export const BillingComponent = () => {
       </div>
     );
   }
-  if (isLoadingSubscription || isLoadingTier) {
+  if (!devOverrideActive && (isLoadingSubscription || isLoadingTier)) {
     return <LoadingComponent />;
   }
+
+  const subPayload = devOverrideActive
+    ? devBilling!.subscriptionOverride!
+    : subscription;
+
   return (
     <MainBillingComponent
-      sub={subscription?.subscription}
-      discount={subscription?.discount}
-      paymentFailed={subscription?.paymentFailed}
+      sub={subPayload?.subscription}
+      discount={subPayload?.discount}
+      paymentFailed={subPayload?.paymentFailed}
     />
   );
 };

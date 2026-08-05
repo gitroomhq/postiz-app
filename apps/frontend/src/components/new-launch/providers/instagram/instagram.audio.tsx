@@ -173,7 +173,7 @@ export const InstagramAudioSelector: FC<{
   if (disabled) {
     return (
       <div className="flex flex-col gap-[6px]">
-        <div className="text-[14px]">{label}</div>
+        <div className="text-[14px] text-pqMuted">{label}</div>
         <div>
           <div
             data-tooltip-id="tooltip"
@@ -181,7 +181,7 @@ export const InstagramAudioSelector: FC<{
               'instagram_audio_facebook_login_only',
               'Only available on Instagram with Facebook Login'
             )}
-            className="h-[42px] px-[16px] inline-flex items-center cursor-not-allowed opacity-50 bg-newBgColorInner border-newTableBorder border rounded-[8px] text-[14px]"
+            className="h-[42px] px-[16px] inline-flex items-center cursor-not-allowed opacity-50 bg-pqInner border-pqBorder border rounded-[8px] text-[14px] text-pqText"
           >
             {t('instagram_add_audio', 'Add audio')}
           </div>
@@ -192,9 +192,9 @@ export const InstagramAudioSelector: FC<{
 
   return (
     <div className="flex flex-col gap-[6px]">
-      <div className="text-[14px]">{label}</div>
+      <div className="text-[14px] text-pqMuted">{label}</div>
       {value?.id ? (
-        <div className="flex flex-col gap-[12px] bg-newBgColorInner border-newTableBorder border rounded-[8px] p-[12px]">
+        <div className="flex flex-col gap-[12px] bg-pqInner border-pqBorder border rounded-[8px] p-[12px]">
           <div className="flex items-center gap-[12px]">
             {!!value.image && (
               <img
@@ -203,13 +203,13 @@ export const InstagramAudioSelector: FC<{
               />
             )}
             <div className="flex-1 flex flex-col">
-              <div className="text-[14px]">{value.title}</div>
+              <div className="text-[14px] text-pqText">{value.title}</div>
               {!!value.artist && (
-                <div className="text-[12px] opacity-70">{value.artist}</div>
+                <div className="text-[12px] text-pqSoft">{value.artist}</div>
               )}
             </div>
             <div
-              className="cursor-pointer text-[14px] opacity-70 hover:opacity-100"
+              className="cursor-pointer text-[14px] text-pqSoft hover:text-pqText"
               onClick={removeAudio}
             >
               X
@@ -277,7 +277,7 @@ export const InstagramAudioSelector: FC<{
             </Select>
             <div className="flex-1 h-[42px] bg-newBgColorInner border-newTableBorder border rounded-[8px] flex items-center">
               <input
-                className="h-full w-full bg-transparent outline-none px-[16px] text-[14px] text-textColor placeholder-textColor"
+                className="h-full w-full bg-transparent outline-none px-[16px] text-[14px] text-pqText placeholder:text-pqSoft"
                 placeholder={t(
                   'instagram_search_audio',
                   'Search audio (empty shows trending)'
