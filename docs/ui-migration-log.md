@@ -22,7 +22,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 2 · Shell | done — rail, header, drawer, user menu, org switcher, modal shell, toaster |
 | 3 · Calendar | done — grid, cells, post card, toolbar, month view |
 | 4 · Composer | restyled; **not screenshot-verified** (needs a connected channel) |
-| 5 · Channels + inline connect | Add Channel restyled, photographed and **grouped** (34 tiles, counted). The modal→inline-pane conversion is **declined** — it needs a channels page this repo does not have; see below |
+| 5 · Channels + inline connect | Add Channel restyled, photographed and **grouped** (34 tiles, counted). Modal→inline was declined until `/channels` existed (PR #9); **superseded** — Channels page now hosts the inline Add pane (see fidelity gap pass) |
 | 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
@@ -322,8 +322,9 @@ there; `scripts/migrate-tiers.mjs` exists instead and says so.
 no longer true on a phone, where both are drawers now. It is the agent's own copy and rewriting copy
 during a restyle is the thing this migration has refused to do everywhere else.
 
-**E. The design's modal → inline connect pane is declined, not deferred.** It needs a channels page
-this repo does not have — channels are a column on the calendar. Reasoning in full below.
+**E. The design's modal → inline connect pane** was declined while there was no Channels page.
+**Superseded (2026-08-05):** `/channels` landed in PR #9; the Channels page now opens Add Channel
+inline (same `AddProviderComponent` as the modal). Calendar no longer hosts a channel column.
 
 ### Closed
 
@@ -3619,3 +3620,30 @@ which is translation work rather than a restyle and is left named here instead o
 The review pass also caught and fixed a real regression before it shipped: leaving the list on
 page N made the posts panel fetch N+1 pages after a view switch — `listPage` now resets when the
 display mode changes.
+
+### Gap pass — Channels IA, Create Post split, calendar filter (2026-08-05)
+
+Closed against the prototype after the Channels page existed:
+
+- Calendar is queue + grid only (channel column removed; Add / reconnect live on `/channels`).
+- Header Create Post is the design's Blank post / AI post split (AI gated like Generator).
+- Channels: inline Add pane, All / Connected / Needs attention filters, detail actions (New post
+  opens composer, Reconnect, Publishing options, Time slots), and inline Automations (plugs API).
+- Calendar toolbar: channel multi-select filter (`chanFilter`) applied client-side to grid + panel.
+- List foot uses `showing_x_of_y`.
+- Mobile: posts panel auto-collapses and opens as an overlay drawer so the grid keeps width.
+
+Still intentional / named elsewhere: lifetime scarcity counter, Plugs in Settings `extraMenu`,
+AI Copilot draft-plan / AI-lock, `ended` dated strip, 14-case photo fixture.
+
+**Checks (`scripts/ui-migration-check.sh --update`):** types 0. **routes 29** unchanged.
+**api** moved with the Channels/calendar IA: removed calendar-only
+`/integrations/${id}/group` and the old refresh template; added Channels detail
+`/posts/find-slot/${current.id}`, `/integrations/social/${current.identifier}`,
+and inline plugs `/integrations/${integration.id}/plugs` +
+`/integrations/plugs/${data.id}/activate` (same endpoints `/plugs` already used —
+now also referenced from the Channels page). **i18n** adds design labels
+(`blank_post`, `ai_post`, filter keys, `showing_x_of_y`, reconnect copy, …) and
+drops the word-composed `showing` / `of` list foot. **gates:** `billingEnabled` and
+`tier.ai` rose because Create Post's AI menu shares the Generator gate; calendar
+column lifetime chip removal dropped `user.isLifetime` / `tier.current` by one each.

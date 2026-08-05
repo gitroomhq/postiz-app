@@ -92,6 +92,12 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  // Empty = all channels (design chanFilter). Client-side only — same posts
+  // payload, filtered for the grid and the posts panel.
+  channelFilter: [] as string[],
+  setChannelFilter: (ids: string[]) => {
+    /** empty **/
+  },
 });
 
 export interface Integrations {
@@ -174,6 +180,8 @@ export const CalendarWeekProvider: FC<{
     setListStateRaw(next);
     setListPage(0);
   }, []);
+
+  const [channelFilter, setChannelFilter] = useState<string[]>([]);
 
   // Initialize with current date range based on URL params or defaults
   const initStartDate = searchParams.get('startDate');
@@ -377,9 +385,23 @@ export const CalendarWeekProvider: FC<{
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
   // List view data
-  const listPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
-  const listTotal = listData?.total || 0;
-  const listTotalPages = Math.ceil(listTotal / 100);
+  const rawListPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
+  const matchChannel = useCallback(
+    (post: any) => {
+      if (!channelFilter.length) return true;
+      const id = post?.integration?.id || post?.integrationId;
+      return !!id && channelFilter.includes(id);
+    },
+    [channelFilter]
+  );
+  const listPosts = useMemo(
+    () => rawListPosts.filter(matchChannel),
+    [rawListPosts, matchChannel]
+  );
+  const listTotal = channelFilter.length
+    ? listPosts.length
+    : listData?.total || 0;
+  const listTotalPages = Math.ceil((listData?.total || 0) / 100);
 
   const changeDate = useCallback(
     (id: string, date: dayjs.Dayjs) => {
@@ -413,13 +435,18 @@ export const CalendarWeekProvider: FC<{
   // Determine loading state based on current view
   const loading = filters.display === 'list' ? listIsLoading : calendarIsLoading;
 
+  const calendarPosts = useMemo(() => {
+    const base = calendarIsLoading ? [] : internalData;
+    return base.filter(matchChannel);
+  }, [calendarIsLoading, internalData, matchChannel]);
+
   return (
     <CalendarContext.Provider
       value={{
         trendings,
         reloadCalendarView,
         ...filters,
-        posts: calendarIsLoading ? [] : internalData,
+        posts: calendarPosts,
         loading,
         integrations,
         setFilters: setFiltersWrapper,
@@ -437,6 +464,8 @@ export const CalendarWeekProvider: FC<{
         setListState,
         postsPanelOpen,
         setPostsPanelOpen,
+        channelFilter,
+        setChannelFilter,
       }}
     >
       {children}

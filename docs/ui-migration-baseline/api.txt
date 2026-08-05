@@ -47,8 +47,8 @@
 /customers
 /impersonate-${name}
 /integrations
-/integrations/${id}/group
 /integrations/${integration.id}/customer-name
+/integrations/${integration.id}/plugs
 /integrations/${integration.id}/settings
 /integrations/${plug.providerId}/plugs
 /integrations/${props.integration.id}/nickname
@@ -65,11 +65,12 @@
 /integrations/moltbook/status
 /integrations/plug/list
 /integrations/plugs/${data
+/integrations/plugs/${data.id}/activate
 /integrations/provider/${continueId}/connect
 /integrations/social-connect/${provider}
+/integrations/social/${current.identifier}
 /integrations/social/${identifier}
 /integrations/social/${identifier}${params
-/integrations/social/${integration.identifier}
 /integrations/social/${integrationData.identifier}
 /integrations/telegram/updates
 /media
@@ -95,6 +96,7 @@
 /posts/${postId}/statistics
 /posts/count
 /posts/find-slot
+/posts/find-slot/${current.id}
 /posts/find-slot/${integration.id}
 /posts/generator
 /posts/group/${post.group}

@@ -604,14 +604,10 @@ export const ListView = () => {
   );
   const collapsePosts = useCallback(() => setListPage(0), [setListPage]);
   const hasMore = listPage < listTotalPages - 1;
-  // Word by word from existing keys, the same way the toolbar built
-  // "Page X of Y" before the design moved paging to the foot of the list.
-  const shownLabel = `${t('showing', 'Showing')} ${listPosts.length} ${t(
-    'of',
-    'of'
-  )} ${listTotal} ${
-    listTotal === 1 ? t('post', 'Post') : t('posts', 'Posts')
-  }`;
+  // Single interpolated key so RTL / non-English locales can reorder freely.
+  const shownLabel = t('showing_x_of_y', '{{shown}} of {{total}}')
+    .replace('{{shown}}', String(listPosts.length))
+    .replace('{{total}}', String(listTotal));
 
   if (loading && !listPosts.length) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo, useRef } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
@@ -10,6 +10,7 @@ import {
 } from '@gitroom/frontend/components/launches/calendar.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useTourNeeds } from '@gitroom/frontend/components/onboarding/tour';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 /**
  * The posts panel — the design's permanent column beside the calendar.
@@ -18,9 +19,14 @@ import { useTourNeeds } from '@gitroom/frontend/components/onboarding/tour';
  * `all | scheduled | draft | published` with paging. The three tabs are that
  * filter. The query is disabled while the panel is hidden, so the toggle saves
  * a request rather than just hiding a rendered result.
+ *
+ * On mobile the design treats the queue as a drawer: we collapse by default
+ * when the viewport becomes phone-width, and open as an overlay so the calendar
+ * keeps the full width.
  */
 export const PostsPanel: FC = () => {
   const t = useT();
+  const { mobile } = useViewport();
   const {
     listPosts,
     listState,
@@ -28,6 +34,25 @@ export const PostsPanel: FC = () => {
     postsPanelOpen,
     setPostsPanelOpen,
   } = useCalendar();
+  const autoCollapsed = useRef(false);
+
+  // The tour has a step about this panel. Collapsing it is a preference that
+  // lives in a cookie for a year, and while it was collapsed that step pointed
+  // at nothing. Rendering it open for the length of the step is enough; the
+  // cookie is never written, so the panel goes back to collapsed by itself.
+  const tourNeedsPanel = useTourNeeds('posts-panel');
+
+  useEffect(() => {
+    if (tourNeedsPanel) return;
+    if (mobile && postsPanelOpen && !autoCollapsed.current) {
+      autoCollapsed.current = true;
+      setPostsPanelOpen(false);
+      return;
+    }
+    if (!mobile) {
+      autoCollapsed.current = false;
+    }
+  }, [mobile, postsPanelOpen, setPostsPanelOpen, tourNeedsPanel]);
 
   const tabs = useMemo(
     () =>
@@ -39,13 +64,9 @@ export const PostsPanel: FC = () => {
     [t]
   );
 
-  // The tour has a step about this panel. Collapsing it is a preference that
-  // lives in a cookie for a year, and while it was collapsed that step pointed
-  // at nothing. Rendering it open for the length of the step is enough; the
-  // cookie is never written, so the panel goes back to collapsed by itself.
-  const tourNeedsPanel = useTourNeeds('posts-panel');
+  const showPanel = postsPanelOpen || tourNeedsPanel;
 
-  if (!postsPanelOpen && !tourNeedsPanel) {
+  if (!showPanel) {
     return (
       <div className="flex w-[44px] shrink-0 flex-col items-center bg-pqInner py-[16px]">
         <button
@@ -71,9 +92,23 @@ export const PostsPanel: FC = () => {
   }
 
   return (
+    <>
+      {mobile && (
+        <button
+          type="button"
+          aria-label={t('hide_posts', 'Hide posts')}
+          className="fixed inset-0 z-[54] bg-black/40"
+          onClick={() => setPostsPanelOpen(false)}
+        />
+      )}
     <div
       data-tour="posts-panel"
-      className="flex w-[300px] shrink-0 flex-col overflow-hidden bg-pqInner tablet:w-[248px]"
+      className={clsx(
+        'flex flex-col overflow-hidden bg-pqInner',
+        mobile
+          ? 'fixed inset-y-0 start-0 z-[55] w-[min(330px,86vw)] shadow-menu'
+          : 'w-[300px] shrink-0 tablet:w-[248px]'
+      )}
     >
       <div className="flex shrink-0 flex-col gap-[12px] px-[14px] pb-[12px] pt-[16px]">
         <div className="flex items-center gap-[8px]">
@@ -204,5 +239,6 @@ export const PostsPanel: FC = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };

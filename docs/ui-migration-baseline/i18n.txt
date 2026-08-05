@@ -13,6 +13,7 @@ actions
 activate
 activate_your_account
 activation_email_sent
+active
 add
 add_a_signature
 add_a_social_set
@@ -50,6 +51,7 @@ agent_posting_to
 agent_starting
 ai
 ai_copilot
+ai_post
 all
 all_channels
 all_integrations
@@ -92,6 +94,7 @@ auth_showcase_channels
 auth_showcase_title
 authorized_on
 auto_add
+auto_plug
 auto_post
 automations
 autopost
@@ -177,6 +180,7 @@ billing_with_postqueen_again
 billing_yearly
 billing_your_7_day_trial_is
 billing_your_first
+blank_post
 branded_content_policy
 browser_extension
 by_posting_you_agree_to_tiktoks
@@ -214,6 +218,7 @@ channel_disconnected
 channel_disconnected_click_to_reconnect
 channel_enabled
 channel_id_copied
+channel_lost_connection_banner
 channel_settings
 channels
 chats
@@ -411,6 +416,7 @@ copy_post_id
 copy_secret
 could_not_add_member
 could_not_add_provider
+could_not_connect_platform
 could_not_connect_to_platform
 could_not_use_rss_feed
 create
@@ -420,6 +426,7 @@ create_announcement
 create_new_post
 create_oauth_app
 create_output
+create_post_options
 create_post_title
 credentials
 current_package
@@ -518,6 +525,9 @@ faq_what_are_channels
 faq_what_are_team_members
 farcaster
 fill_in_the_details_for_your_oauth_application
+filter_all
+filter_connected
+filter_needs_attention
 finding_popular_posts_to_match_with
 finding_the_topic
 finding_time_to_post
@@ -739,6 +749,9 @@ move_add_to_group
 move_to_billing
 music_usage_confirmation
 mutual_follow_friends
+n_channels
+n_channels_lost_connection
+n_of_m_selected
 n_publishing_options
 name
 needs_reconnect
@@ -752,6 +765,7 @@ no
 no_approved_apps
 no_cancel
 no_channels
+no_channels_in_filter
 no_charges
 no_content
 no_draft_posts
@@ -772,14 +786,15 @@ no_short_link_results
 no_statistics_available
 no_time_slots
 no_upcoming_posts
+not_set
 nothing_published_yet
 notifications
 oauth_app_note_line1
 oauth_app_note_line2
 oauth_application
-of
 ok
 onboarding
+one_channel_lost_connection
 open_billing_portal
 open_claim_page
 open_connections
@@ -793,6 +808,7 @@ output_format
 paid
 password_reset_link_expired
 paste_debug_json
+paused
 pay_nothing_for_the_first_7_days
 pay_today
 payload_wizard_description
@@ -802,6 +818,7 @@ payment_required
 per_month
 per_year
 personal_voice_i_am_happy_to_announce
+pick_a_platform_to_connect
 picture
 pin_chats
 plan_ai_autocomplete
@@ -873,6 +890,7 @@ publishing_options
 purchase
 reactivate_subscription
 read_the_docs
+reconnect
 reconnect_channel
 redirect_url
 refresh_channel
@@ -909,11 +927,13 @@ save_changes
 schedule
 scheduled
 scheduled_times
+search_channels
 search_media_by_name
 search_settings
 secret_only_shown_on_creation
 select
 select_1
+select_all
 select_channels
 select_customer_label
 select_customer_tooltip
@@ -935,6 +955,7 @@ send_invitation_via_email
 send_password_reset_email
 send_test
 separate_post
+set_plug
 settings
 settings_updated
 setup_tour
@@ -952,7 +973,7 @@ show_less
 show_more
 show_more_posts
 show_posts
-showing
+showing_x_of_y
 sign_in
 sign_in_1
 sign_in_subtitle
@@ -1018,6 +1039,7 @@ three_days
 tiktok_restriction_direct_video
 tiktok_restriction_upload_video
 tiktok_video_features
+time_slots
 time_table_slots
 to_manage_all_your_social_media_channels
 to_your_telegram_group_channel_and_click_here
