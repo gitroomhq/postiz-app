@@ -24,10 +24,55 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 import { useTourDemo } from '@gitroom/frontend/components/onboarding/tour';
+import {
+  isUiDemoEnabled,
+  UI_DEMO_ROWS,
+  UI_DEMO_STORAGE_KEY,
+} from '@gitroom/frontend/components/launches/ui-demo-posts';
 extend(isoWeek);
 extend(weekOfYear);
 
+function localDayKey(publishDate: string | Date) {
+  return dayjs.utc(publishDate).local().format('YYYY-MM-DD');
+}
+
+function postInListRange(
+  publishDate: string | Date,
+  range: ListRangeFilter,
+  weekStart: dayjs.Dayjs
+) {
+  const d = dayjs.utc(publishDate).local().startOf('day');
+  const today = newDayjs().startOf('day');
+  if (range === 'all') return true;
+  if (range.startsWith('day:')) {
+    return d.format('YYYY-MM-DD') === range.slice(4);
+  }
+  if (range === 'today') return d.isSame(today, 'day');
+  if (range === 'week') {
+    return (
+      !d.isBefore(weekStart, 'day') &&
+      !d.isAfter(weekStart.add(6, 'day'), 'day')
+    );
+  }
+  if (range === 'next3') {
+    return (
+      !d.isBefore(today, 'day') && !d.isAfter(today.add(2, 'day'), 'day')
+    );
+  }
+  if (range === 'past') return d.isBefore(today, 'day');
+  return true;
+}
+
 export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
+/** Prototype listRange: presets, or `day:YYYY-MM-DD` from calendar See all. */
+export type ListRangeFilter =
+  | 'all'
+  | 'today'
+  | 'week'
+  | 'next3'
+  | 'past'
+  | `day:${string}`;
+export type ListSortOrder = 'asc' | 'desc';
 
 const LIST_PAGE_SIZE = 100;
 
@@ -92,12 +137,25 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  listRange: 'all' as ListRangeFilter,
+  setListRange: (_range: ListRangeFilter) => {
+    /** empty **/
+  },
+  listSort: 'asc' as ListSortOrder,
+  setListSort: (_sort: ListSortOrder) => {
+    /** empty **/
+  },
+  openPostsForDay: (_date: dayjs.Dayjs) => {
+    /** empty **/
+  },
   // Empty = all channels (design chanFilter). Client-side only — same posts
   // payload, filtered for the grid and the posts panel.
   channelFilter: [] as string[],
   setChannelFilter: (ids: string[]) => {
     /** empty **/
   },
+  /** True when calendar/list are filled with non-persisted UI demo rows. */
+  uiDemoActive: false,
 });
 
 export interface Integrations {
@@ -182,6 +240,20 @@ export const CalendarWeekProvider: FC<{
   }, []);
 
   const [channelFilter, setChannelFilter] = useState<string[]>([]);
+  const initListDay = searchParams.get('listDay');
+  const [listRange, setListRangeRaw] = useState<ListRangeFilter>(
+    initListDay ? (`day:${initListDay}` as ListRangeFilter) : 'all'
+  );
+  // Prototype default for the Posts list is Oldest (asc).
+  const [listSort, setListSortRaw] = useState<ListSortOrder>('asc');
+  const setListRange = useCallback((next: ListRangeFilter) => {
+    setListRangeRaw(next);
+    setListPage(0);
+  }, []);
+  const setListSort = useCallback((next: ListSortOrder) => {
+    setListSortRaw(next);
+    setListPage(0);
+  }, []);
 
   // Initialize with current date range based on URL params or defaults
   const initStartDate = searchParams.get('startDate');
@@ -199,6 +271,17 @@ export const CalendarWeekProvider: FC<{
     customer: initCustomer || null,
     display,
   });
+
+  // Persist uiDemo query into localStorage so a hard refresh keeps the fixture.
+  useEffect(() => {
+    const flag = searchParams.get('uiDemo');
+    if (flag !== '1' && flag !== '0') return;
+    try {
+      localStorage.setItem(UI_DEMO_STORAGE_KEY, flag);
+    } catch {
+      /* private mode */
+    }
+  }, [searchParams]);
 
   const params = useMemo(() => {
     return new URLSearchParams({
@@ -318,6 +401,28 @@ export const CalendarWeekProvider: FC<{
     refreshWhenOffline: false,
   });
 
+  const writeLaunchesUrl = useCallback(
+    (
+      next: {
+        startDate: string;
+        endDate: string;
+        display: string;
+        customer: string | null;
+      },
+      range: ListRangeFilter
+    ) => {
+      const path = [
+        `startDate=${next.startDate}`,
+        `endDate=${next.endDate}`,
+        `display=${next.display}`,
+        next.customer ? `customer=${next.customer}` : '',
+        range.startsWith('day:') ? `listDay=${range.slice(4)}` : '',
+      ].filter((f) => f);
+      window.history.replaceState(null, '', `/launches?${path.join('&')}`);
+    },
+    []
+  );
+
   const setFiltersWrapper = useCallback(
     (newFilters: {
       startDate: string;
@@ -334,58 +439,147 @@ export const CalendarWeekProvider: FC<{
       // view would make the panel fetch the whole stack of pages.
       setListPage(0);
 
-      const path = [
-        `startDate=${newFilters.startDate}`,
-        `endDate=${newFilters.endDate}`,
-        `display=${newFilters.display}`,
-        newFilters.customer ? `customer=${newFilters.customer}` : ``,
-      ].filter((f) => f);
-      window.history.replaceState(null, '', `/launches?${path.join('&')}`);
+      // Leaving Posts clears a day chip; entering list without a day keeps it.
+      if (newFilters.display !== 'list') {
+        setListRangeRaw('all');
+        writeLaunchesUrl(newFilters, 'all');
+      } else {
+        setListRangeRaw((prev) => {
+          writeLaunchesUrl(newFilters, prev);
+          return prev;
+        });
+      }
     },
-    []
+    [setDisplaySaved, writeLaunchesUrl]
   );
+
+  // Rail Link → `/launches?display=list` updates Next searchParams without
+  // remounting this provider; keep filters.display in lockstep.
+  useEffect(() => {
+    const urlDisplay = (searchParams.get('display') ||
+      displaySaved) as typeof filters.display;
+    const urlStart = searchParams.get('startDate');
+    const urlEnd = searchParams.get('endDate');
+    const urlCustomer = searchParams.get('customer');
+    const urlListDay = searchParams.get('listDay');
+
+    setFilters((prev) => {
+      if (
+        prev.display === urlDisplay &&
+        (!urlStart || prev.startDate === urlStart) &&
+        (!urlEnd || prev.endDate === urlEnd) &&
+        (urlCustomer === null
+          ? true
+          : prev.customer === (urlCustomer || null))
+      ) {
+        return prev;
+      }
+      const range =
+        urlStart && urlEnd
+          ? { startDate: urlStart, endDate: urlEnd }
+          : urlDisplay !== prev.display
+          ? getDateRange(urlDisplay)
+          : { startDate: prev.startDate, endDate: prev.endDate };
+      return {
+        startDate: range.startDate,
+        endDate: range.endDate,
+        customer:
+          urlCustomer !== null ? urlCustomer || null : prev.customer,
+        display: urlDisplay,
+      };
+    });
+    if (urlListDay) {
+      setListRangeRaw(`day:${urlListDay}`);
+    } else if (urlDisplay !== 'list') {
+      setListRangeRaw('all');
+    }
+  }, [searchParams, displaySaved]);
 
   const realPosts = useMemo(
     () => calendarData?.posts || [],
     [calendarData?.posts]
   );
+  const rawListPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
 
-  // The product tour's demo calendar. Only ever added on top of an *empty*
-  // week — the moment there is a real post, `revealed` is ignored and the
-  // user's own calendar is what they see. Nothing here is persisted or sent
-  // anywhere; it exists for as long as step one of the tour is on screen.
-  const demo = useTourDemo();
+  // Tour stagger OR design fixture when the account is empty (dev / ?uiDemo=1).
+  const tourDemo = useTourDemo();
+  const uiDemoOn = isUiDemoEnabled(searchParams.get('uiDemo'));
+  // Wait until the active fetch settles so real posts are not replaced by a
+  // flash of fixture rows while SWR is still loading.
+  const fetchSettled =
+    filters.display === 'list' ? !listIsLoading : !calendarIsLoading;
+  const uiDemoActive =
+    uiDemoOn &&
+    fetchSettled &&
+    !realPosts.length &&
+    !rawListPosts.length &&
+    !tourDemo.length;
+
+  const demoWeekStart = useMemo(
+    () => newDayjs(filters.startDate).startOf('isoWeek'),
+    [filters.startDate]
+  );
+
+  const mapUiDemo = useCallback(
+    () =>
+      UI_DEMO_ROWS.map((row, index) => ({
+        id: `pq-ui-demo-${index}`,
+        content: `<p>${row.body}</p>`,
+        publishDate: demoWeekStart
+          .add(row.day, 'day')
+          .hour(row.hour)
+          .minute(0)
+          .second(0)
+          .utc()
+          .format('YYYY-MM-DDTHH:mm:ss'),
+        state: row.state,
+        group: `pq-ui-demo-${index}`,
+        creationMethod: row.method,
+        integration: {
+          id: `pq-ui-demo-integration-${index}`,
+          name: row.channel,
+          picture: null,
+          providerIdentifier: row.provider,
+        },
+        tags: row.tags.map((tag, ti) => ({
+          tag: { id: `pq-ui-demo-tag-${index}-${ti}`, ...tag },
+        })),
+      })),
+    [demoWeekStart]
+  );
+
+  const mapTourDemo = useCallback(
+    () =>
+      tourDemo.map(({ day, hour, provider, title, body }, index) => ({
+        id: `pq-tour-demo-${index}`,
+        content: `<p>${title} — ${body}</p>`,
+        publishDate: demoWeekStart
+          .add(day, 'day')
+          .add(hour, 'hour')
+          .utc()
+          .format('YYYY-MM-DDTHH:mm:ss'),
+        state: 'QUEUE' as const,
+        group: `pq-tour-demo-${index}`,
+        creationMethod: 'WEB' as const,
+        integration: {
+          id: `pq-tour-demo-integration-${index}`,
+          name: title,
+          picture: null,
+          providerIdentifier: provider,
+        },
+        tags: [],
+      })),
+    [tourDemo, demoWeekStart]
+  );
+
   const posts = useMemo(() => {
-    if (!demo.length || realPosts.length) return realPosts;
-    const weekStart = dayjs(filters.startDate).startOf('day');
-    return demo.map(
-      ({ day, hour, provider, title, body }, index) =>
-        ({
-          id: `pq-tour-demo-${index}`,
-          // One paragraph: the card strips tags for its preview, so two would
-          // run the title straight into the body with nothing between them.
-          content: `<p>${title} — ${body}</p>`,
-          publishDate: weekStart
-            .add(day, 'day')
-            .add(hour, 'hour')
-            .utc()
-            .format('YYYY-MM-DDTHH:mm:ss'),
-          state: 'QUEUE',
-          group: `pq-tour-demo-${index}`,
-          integration: {
-            id: `pq-tour-demo-integration-${index}`,
-            name: title,
-            picture: null,
-            providerIdentifier: provider,
-          },
-          tags: [],
-        } as any)
-    );
-  }, [realPosts, demo, filters.startDate]);
+    if (realPosts.length) return realPosts;
+    if (tourDemo.length) return mapTourDemo() as any[];
+    if (uiDemoActive) return mapUiDemo() as any[];
+    return realPosts;
+  }, [realPosts, tourDemo.length, uiDemoActive, mapTourDemo, mapUiDemo]);
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
-  // List view data
-  const rawListPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
   const matchChannel = useCallback(
     (post: any) => {
       if (!channelFilter.length) return true;
@@ -394,14 +588,93 @@ export const CalendarWeekProvider: FC<{
     },
     [channelFilter]
   );
-  const listPosts = useMemo(
-    () => rawListPosts.filter(matchChannel),
-    [rawListPosts, matchChannel]
+
+  const listPosts = useMemo(() => {
+    const weekStart = demoWeekStart;
+    let rows: any[] = rawListPosts.filter(matchChannel);
+    if (!rows.length && !realPosts.length) {
+      if (tourDemo.length) rows = mapTourDemo();
+      else if (uiDemoActive) rows = mapUiDemo();
+    }
+    // Day deep-link: if the list endpoint hasn't returned that day yet, fall
+    // back to calendar rows already on screen (See all from a cell).
+    if (
+      listRange.startsWith('day:') &&
+      !rows.some((p) => postInListRange(p.publishDate, listRange, weekStart))
+    ) {
+      const dayRows = (realPosts.length ? realPosts : posts).filter(
+        (p: { publishDate: string | Date }) =>
+          postInListRange(p.publishDate, listRange, weekStart)
+      );
+      if (dayRows.length) rows = dayRows;
+    }
+    rows = rows.filter((p) =>
+      postInListRange(p.publishDate, listRange, weekStart)
+    );
+    rows = [...rows].sort((a, b) => {
+      const ta = dayjs.utc(a.publishDate).valueOf();
+      const tb = dayjs.utc(b.publishDate).valueOf();
+      return listSort === 'asc' ? ta - tb : tb - ta;
+    });
+    return rows;
+  }, [
+    rawListPosts,
+    matchChannel,
+    realPosts,
+    posts,
+    tourDemo.length,
+    uiDemoActive,
+    mapTourDemo,
+    mapUiDemo,
+    demoWeekStart,
+    listRange,
+    listSort,
+  ]);
+
+  const listTotal =
+    listRange !== 'all' || channelFilter.length || uiDemoActive || tourDemo.length
+      ? listPosts.length
+      : listData?.total || 0;
+  const listTotalPages = Math.ceil(
+    (listRange !== 'all' || channelFilter.length || uiDemoActive || tourDemo.length
+      ? listPosts.length
+      : listData?.total || 0) / LIST_PAGE_SIZE
   );
-  const listTotal = channelFilter.length
-    ? listPosts.length
-    : listData?.total || 0;
-  const listTotalPages = Math.ceil((listData?.total || 0) / 100);
+
+  const openPostsForDay = useCallback(
+    (date: dayjs.Dayjs) => {
+      const day = date.format('YYYY-MM-DD');
+      const range = `day:${day}` as ListRangeFilter;
+      setListRangeRaw(range);
+      setListPage(0);
+      const next = {
+        startDate: day,
+        endDate: day,
+        display: 'list' as const,
+        customer: filters.customer,
+      };
+      setDisplaySaved('list');
+      setFilters(next);
+      writeLaunchesUrl(next, range);
+    },
+    [filters.customer, setDisplaySaved, writeLaunchesUrl]
+  );
+
+  const setListRangeAndUrl = useCallback(
+    (next: ListRangeFilter) => {
+      setListRange(next);
+      writeLaunchesUrl(
+        {
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          display: filters.display,
+          customer: filters.customer,
+        },
+        next
+      );
+    },
+    [setListRange, writeLaunchesUrl, filters]
+  );
 
   const changeDate = useCallback(
     (id: string, date: dayjs.Dayjs) => {
@@ -437,7 +710,11 @@ export const CalendarWeekProvider: FC<{
 
   const calendarPosts = useMemo(() => {
     const base = calendarIsLoading ? [] : internalData;
-    return base.filter(matchChannel);
+    // Belt-and-suspenders with getPosts `state: { not: DRAFT }` — demo /
+    // optimistic / stale SWR must not leave drafts on Day/Week/Month.
+    return base.filter(
+      (p) => p.state !== 'DRAFT' && matchChannel(p)
+    );
   }, [calendarIsLoading, internalData, matchChannel]);
 
   return (
@@ -462,10 +739,16 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        listRange,
+        setListRange: setListRangeAndUrl,
+        listSort,
+        setListSort,
+        openPostsForDay,
         postsPanelOpen,
         setPostsPanelOpen,
         channelFilter,
         setChannelFilter,
+        uiDemoActive,
       }}
     >
       {children}

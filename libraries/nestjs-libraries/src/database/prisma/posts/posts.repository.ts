@@ -168,6 +168,10 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        // Owner: DRAFT lives in Posts panel only — keep publishDate for the
+        // Drafts list (`publishDate >= now`), but never paint drafts on the
+        // Day/Week/Month calendar grid.
+        state: { not: State.DRAFT },
       },
       select: {
         id: true,
@@ -479,6 +483,18 @@ export class PostsRepository {
     return update;
   }
 
+  /** QUEUE → DRAFT for panel unschedule; clears release metadata like schedule path. */
+  async setPostDraft(id: string) {
+    return this._post.model.post.update({
+      where: { id },
+      data: {
+        state: 'DRAFT',
+        releaseId: null,
+        releaseURL: null,
+      },
+    });
+  }
+
   getErrorsByPostIds(postIds: string[]) {
     return this._errors.model.errors.findMany({
       where: {
@@ -492,7 +508,6 @@ export class PostsRepository {
     orgId: string,
     id: string,
     date: string,
-    isDraft: boolean,
     action: 'schedule' | 'update' = 'schedule'
   ) {
     return this._post.model.post.update({
@@ -502,11 +517,11 @@ export class PostsRepository {
       },
       data: {
         publishDate: dayjs(date).toDate(),
-        // schedule: set state to QUEUE (or DRAFT if it was a draft)
+        // schedule: always QUEUE (draft → scheduled when dropped on calendar)
         // update: don't change the state
         ...(action === 'schedule'
           ? {
-              state: isDraft ? 'DRAFT' : 'QUEUE',
+              state: 'QUEUE',
               releaseId: null,
               releaseURL: null,
             }

@@ -30,6 +30,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -285,6 +286,15 @@ export class PostsController {
     @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
     return this._postsService.changeDate(org.id, id, date, action);
+  }
+
+  @Put('/:id/status')
+  changeStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: ChangePostStatusDto
+  ) {
+    return this._postsService.changePostStatus(org.id, id, body.status);
   }
 
   @Post('/separate-posts')
