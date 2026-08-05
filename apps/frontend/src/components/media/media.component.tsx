@@ -774,6 +774,9 @@ export const MultiMediaComponent: FC<{
   description: string;
   mediaNotAvailable?: boolean;
   dummy: boolean;
+  // The agent composer draws the toolbar buttons as ghosts inside its frame;
+  // the post composer keeps its filled pills. Same buttons, same handlers.
+  ghost?: boolean;
   allData: {
     content: string;
     id?: string;
@@ -814,6 +817,7 @@ export const MultiMediaComponent: FC<{
     value,
     allData,
     dummy,
+    ghost,
     toolBar,
     information,
     mediaNotAvailable,
@@ -968,35 +972,71 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        <div
+          className={clsx(
+            'flex gap-[8px] w-full b1',
+            ghost
+              ? 'flex-wrap items-center'
+              : 'px-[12px] border-t border-newColColor text-textColor'
+          )}
+        >
           {!mediaNotAvailable && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div
+              className={clsx(
+                'flex b2 items-center gap-[4px]',
+                !ghost && 'py-[10px]'
+              )}
+            >
               <div
                 // The media picker opens from here and nowhere else, so the
                 // screenshot tool needs a handle on it. The icons inside it had
                 // never been seen for exactly this reason.
                 data-pq="insert-media"
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className={clsx(
+                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  ghost
+                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                )}
               >
                 <div className="flex gap-[8px] items-center">
                   <div>
                     <InsertMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] maxMedia:hidden block">
+                  <div
+                    className={clsx(
+                      'font-[600]',
+                      ghost
+                        ? 'text-[12px] whitespace-nowrap'
+                        : 'text-[10px] maxMedia:hidden block'
+                    )}
+                  >
                     {t('insert_media', 'Insert Media')}
                   </div>
                 </div>
               </div>
               <div
                 onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className={clsx(
+                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  ghost
+                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                )}
               >
                 <div className="flex gap-[5px] items-center">
                   <div>
                     <DesignMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
+                  <div
+                    className={clsx(
+                      'font-[600]',
+                      ghost
+                        ? 'text-[12px] whitespace-nowrap'
+                        : 'text-[10px] iconBreak:hidden block'
+                    )}
+                  >
                     {t('design_media', 'Design Media')}
                   </div>
                 </div>
@@ -1006,8 +1046,8 @@ export const MultiMediaComponent: FC<{
 
               {!!user?.tier?.ai && (
                 <>
-                  <AiImage value={text} onChange={changeMedia} />
-                  <AiVideo value={text} onChange={changeMedia} />
+                  <AiImage ghost={ghost} value={text} onChange={changeMedia} />
+                  <AiVideo ghost={ghost} value={text} onChange={changeMedia} />
                 </>
               )}
             </div>

@@ -14,7 +14,7 @@ import clsx from 'clsx';
 import useCookie from 'react-use-cookie';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -43,23 +43,23 @@ export const MediaPortal: FC<{
   }) => void;
 }> = ({ media, setMedia, value }) => {
   const waitForClass = useWaitForClass('copilotKitMessages');
-  const t = useT();
   if (!waitForClass) return null;
+  // Rendered inside the composer frame (agent.input.tsx), where the design
+  // draws the media buttons as ghosts rather than the post composer's pills.
   return (
-    <div className="pl-[14px] pr-[24px] whitespace-nowrap editor rm-bg">
-      <MultiMediaComponent
-        allData={[{ content: value }]}
-        text={value}
-        label={t('attachments', 'Attachments')}
-        description=""
-        value={media}
-        dummy={false}
-        name="image"
-        onChange={setMedia}
-        onOpen={() => {}}
-        onClose={() => {}}
-      />
-    </div>
+    <MultiMediaComponent
+      ghost={true}
+      allData={[{ content: value }]}
+      text={value}
+      label=""
+      description=""
+      value={media}
+      dummy={false}
+      name="image"
+      onChange={setMedia}
+      onOpen={() => {}}
+      onClose={() => {}}
+    />
   );
 };
 
@@ -81,7 +81,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   // only for the desktop collapse toggle.
   const channelsCollapsed = !mobile && collapseMenu === '1';
 
-  const { data } = useSWR('integrations', load, {
+  const { data, mutate } = useSWR('integrations', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -90,6 +90,9 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
     refreshWhenOffline: false,
     fallbackData: [],
   });
+
+  // The same add-channel dialog every other surface opens — not a copy.
+  const addProvider = useAddProvider(() => mutate());
 
   const setIntegration = useCallback(
     (integration: Integration) => () => {
@@ -117,7 +120,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
       data-cr="1"
       data-crhov={!mobile && channelsCollapsed ? '1' : '0'}
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
+        'trz bg-pqInner flex flex-col transition-all relative',
         mobile
           ? 'w-full'
           : channelsCollapsed
@@ -125,14 +128,19 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
           : 'w-[260px]'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="flex items-center">
-          <h2
+      <div className="absolute top-0 start-0 flex h-full w-full flex-col">
+        <div className="flex shrink-0 items-center gap-[8px] border-b border-pqLine p-[16px_14px_12px]">
+          <div
             data-crl="1"
-            className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]"
+            className="flex min-w-0 flex-1 items-baseline gap-[7px] group-[.sidebar]:hidden"
           >
-            {t('select_channels', 'Select Channels')}
-          </h2>
+            <span className="whitespace-nowrap text-[12px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
+              {t('select_channels', 'Select Channels')}
+            </span>
+            <span className="text-[11px] font-[600] text-pqSoft opacity-75">
+              {sortedIntegrations.length}
+            </span>
+          </div>
           {/* The collapse toggle only means anything on desktop — in the mobile
               drawer there is no narrow state to collapse to. */}
           <div
@@ -140,81 +148,133 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
               setCollapseMenu(collapseMenu === '1' ? '0' : '1', { days: 365 })
             }
             className={clsx(
-              '-mt-3 group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none',
+              'flex h-[26px] w-[26px] shrink-0 cursor-pointer select-none items-center justify-center rounded-[7px] text-pqSoft hover:bg-pqHover hover:text-pqText group-[.sidebar]:mx-auto group-[.sidebar]:rotate-180',
               mobile && 'hidden'
             )}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="7"
-              height="13"
-              viewBox="0 0 7 13"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
               <path
-                d="M6 11.5L1 6.5L6 1.5"
+                d="M14 8l-4 4 4 4"
                 stroke="currentColor"
-                strokeWidth="1.5"
+                strokeWidth="1.9"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+              />
+              <path
+                d="M19 4.5v15"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
               />
             </svg>
           </div>
         </div>
-        <div className={clsx('flex flex-col gap-[15px]')}>
-          {sortedIntegrations.map((integration, index) => (
-            <div
-              onClick={setIntegration(integration)}
-              key={integration.id}
-              className={clsx(
-                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px] hover:opacity-100 cursor-pointer',
-                !selected.some((p) => p.id === integration.id) && 'opacity-20'
-              )}
+        <div className="shrink-0 p-[12px_12px_10px]">
+          <button
+            data-pq="agent-add-channel"
+            onClick={addProvider}
+            className="flex h-[36px] w-full items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText hover:brightness-110"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              className="shrink-0"
             >
+              <path
+                d="M12 5.5v13M5.5 12h13"
+                stroke="currentColor"
+                strokeWidth="2.1"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span
+              data-crl="1"
+              className="whitespace-nowrap group-[.sidebar]:hidden"
+            >
+              {t('add_channel', 'Add Channel')}
+            </span>
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col gap-[2px] overflow-y-auto overflow-x-hidden p-[0_8px_12px] scrollbar nBorder scrollbar-track-pqInner">
+          {sortedIntegrations.map((integration) => {
+            const isSelected = selected.some((p) => p.id === integration.id);
+            return (
               <div
+                onClick={setIntegration(integration)}
+                key={integration.id}
                 className={clsx(
-                  'relative rounded-full flex justify-center items-center gap-[6px]',
-                  integration.disabled && 'opacity-50'
+                  'relative flex cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] transition-[background-color,opacity] hover:opacity-100 hover:shadow-[inset_0_0_0_999px_var(--brandFaint)] group-[.sidebar]:justify-center',
+                  isSelected ? 'bg-pqBrandSoft' : 'opacity-60'
                 )}
               >
-                {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                {isSelected && (
+                  <span className="absolute -start-[8px] bottom-[8px] top-[8px] w-[3px] rounded-e-[4px] bg-pqBrand" />
+                )}
+                <div
+                  className={clsx(
+                    'relative h-[32px] w-[32px] shrink-0',
+                    integration.disabled && 'opacity-50'
+                  )}
+                >
+                  {isSelected && (
+                    <span className="absolute -start-[4px] -top-[4px] z-[2] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-pqBrand text-pqOnBrand">
+                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none">
+                        <path
+                          d="M5 12.5l4.5 4.5L19 7.5"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                  <ImageWithFallback
+                    fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+                    src={integration.picture}
+                    className="rounded-[9px]"
+                    alt={integration.identifier}
+                    width={32}
+                    height={32}
+                  />
+                  <SafeImage
+                    src={`/icons/platforms/${integration.identifier}.png`}
+                    className="absolute -bottom-[4px] -end-[5px] z-10 rounded-full shadow-[0_0_0_1.5px_var(--inner)]"
+                    alt={integration.identifier}
+                    width={17}
+                    height={17}
+                  />
+                  {(integration.inBetweenSteps ||
+                    integration.refreshNeeded) && (
+                    <span className="absolute -start-[4px] -top-[4px] z-[3] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqWarn text-[10px] text-pqOnBrand">
                       !
-                    </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
-                  </div>
-                )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
-                  <SVGLine />
+                    </span>
+                  )}
                 </div>
-                <ImageWithFallback
-                  fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-                  src={integration.picture}
-                  className="rounded-[8px]"
-                  alt={integration.identifier}
-                  width={36}
-                  height={36}
-                />
-                <SafeImage
-                  src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-                  alt={integration.identifier}
-                  width={18.41}
-                  height={18.41}
-                />
+                <div
+                  data-crl="1"
+                  className={clsx(
+                    'min-w-0 flex-1 leading-[1.3] group-[.sidebar]:hidden',
+                    integration.disabled && 'opacity-50'
+                  )}
+                >
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px]">
+                    {integration.name}
+                  </div>
+                  <div
+                    className={clsx(
+                      'overflow-hidden text-ellipsis whitespace-nowrap text-[12px]',
+                      integration.refreshNeeded ? 'text-pqWarn' : 'text-pqMuted'
+                    )}
+                  >
+                    {integration.identifier}
+                  </div>
+                </div>
               </div>
-              <div
-                data-crl="1"
-                className={clsx(
-                  'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden',
-                  integration.disabled && 'opacity-50'
-                )}
-              >
-                {integration.name}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -299,7 +359,14 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
           <AgentList onChange={setProperties} />
         </AgentDrawer>
 
-        <div className="bg-newBgColorInner flex flex-1 flex-col min-w-0">
+        <div
+          className={clsx(
+            'bg-pqInner flex flex-1 flex-col min-w-0',
+            // The hairline between the chat and the rail belongs to the
+            // desktop layout — in drawer mode the rail is off-canvas.
+            !asDrawer && 'border-e border-pqLine'
+          )}
+        >
           {asDrawer && (
             <div className="flex shrink-0 items-center gap-[8px] border-b border-pqLine px-[12px] py-[8px]">
               {toggle('channels', t('select_channels', 'Select Channels'))}
@@ -372,59 +439,113 @@ const Threads: FC = () => {
 
   const { data } = useSWR('threads', threads);
   const { mobile } = useViewport();
+  const [collapseRail, setCollapseRail] = useCookie('agentRailCollapse', '0');
+  // The pin toggle only means anything on desktop — in the mobile drawer
+  // (see `Agent`) the rail fills the drawer and has no narrow state.
+  const collapsed = !mobile && collapseRail === '1';
 
   return (
     // Below 760 this lives in a drawer (see `Agent`) and fills it. Two fixed
-    // 260px columns beside the chat left it nothing at phone widths — the page
+    // side columns beside the chat left it nothing at phone widths — the page
     // rendered with no usable conversation area at all, and did so before the
     // migration too.
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex shrink-0 flex-col gap-[15px] transition-all relative',
-        mobile ? 'w-full' : 'w-[260px]'
+        'trz bg-pqInner relative flex shrink-0 flex-col gap-[9px] overflow-y-auto p-[16px_12px] transition-[width]',
+        mobile
+          ? 'w-full'
+          : clsx(
+              'group/rail border-s border-pqLine',
+              collapsed ? 'w-[56px] hover:w-[232px]' : 'w-[232px]'
+            )
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px]">
-          <Link
-            href={`/agents`}
-            className="text-white whitespace-nowrap flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
+      <div className="flex shrink-0 items-center gap-[6px] p-[0_2px_2px]">
+        <div
+          className={clsx(
+            'min-w-0 flex-1 text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqSoft',
+            collapsed && 'hidden group-hover/rail:block'
+          )}
+        >
+          {t('chats', 'Chats')}
+        </div>
+        {!mobile && (
+          <button
+            onClick={() =>
+              setCollapseRail(collapsed ? '0' : '1', { days: 365 })
+            }
+            className={clsx(
+              'h-[26px] shrink-0 items-center gap-[6px] whitespace-nowrap rounded-[7px] px-[8px] text-[11.5px] font-[600] text-pqSoft hover:bg-pqHover hover:text-pqText',
+              collapsed ? 'hidden group-hover/rail:flex' : 'flex'
+            )}
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="21"
-              height="20"
-              viewBox="0 0 21 20"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
               fill="none"
-              className="min-w-[21px] min-h-[20px]"
+              className="shrink-0"
             >
-              <path
-                d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="16"
+                rx="2.2"
+                stroke="currentColor"
+                strokeWidth="1.6"
               />
+              <path d="M14.5 4v16" stroke="currentColor" strokeWidth="1.6" />
             </svg>
-            <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
-              {t('start_a_new_chat', 'Start a new chat')}
-            </div>
+            {collapsed
+              ? t('pin_chats', 'Pin chats')
+              : t('unpin_chats', 'Unpin chats')}
+          </button>
+        )}
+      </div>
+      <Link
+        href={`/agents`}
+        className={clsx(
+          'flex h-[34px] shrink-0 items-center justify-center gap-[7px] whitespace-nowrap rounded-pqSm bg-pqBrand text-[13px] font-[600] text-pqOnBrand outline-none hover:brightness-105',
+          collapsed ? 'px-0 group-hover/rail:px-[12px]' : 'px-[12px]'
+        )}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          fill="none"
+          className="shrink-0"
+        >
+          <path
+            d="M12 5.5v13M5.5 12h13"
+            stroke="currentColor"
+            strokeWidth="2.1"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className={clsx(collapsed && 'hidden group-hover/rail:inline')}>
+          {t('new_chat', 'New chat')}
+        </span>
+      </Link>
+      <div
+        className={clsx(
+          'flex flex-col gap-[1px]',
+          collapsed && 'hidden group-hover/rail:flex'
+        )}
+      >
+        {data?.threads?.map((p: any) => (
+          <Link
+            className={clsx(
+              'overflow-hidden text-ellipsis whitespace-nowrap rounded-pqSm p-[7px_9px] text-[12.5px] hover:bg-pqHover hover:text-pqText',
+              p.id === id ? 'bg-pqNavOn text-pqText' : 'text-pqMuted'
+            )}
+            href={`/agents/${p.id}`}
+            key={p.id}
+          >
+            {p.title}
           </Link>
-        </div>
-        <div className="flex flex-col gap-[1px]">
-          {data?.threads?.map((p: any) => (
-            <Link
-              className={clsx(
-                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer',
-                p.id === id && 'bg-newBgColor'
-              )}
-              href={`/agents/${p.id}`}
-              key={p.id}
-            >
-              {p.title}
-            </Link>
-          ))}
-        </div>
+        ))}
       </div>
     </div>
   );

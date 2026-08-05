@@ -411,46 +411,6 @@ body *:focus-visible {
 .mantine-Paper-root {
   outline: none !important;
 }
-//
-//:root {
-//  --copilot-kit-primary-color: #612ad5 !important;
-//  --copilot-kit-background-color: #0b0f1c !important;
-//  --copilot-kit-separator-color: #1f2941 !important;
-//  --copilot-kit-contrast-color: #ffffff !important;
-//  --copilot-kit-secondary-contrast-color: #ffffff !important;
-//  --copilot-kit-secondary-color: #000 !important;
-//  --copilot-kit-response-button-background-color: #000 !important;
-//  --copilot-kit-response-button-color: #fff !important;
-//}
-
-//.copilotKitWindow {
-//  @apply bg-customColor3 #{!important};
-//}
-
-//.copilotKitButtonIconOpen svg {
-//  display: none !important;
-//}
-//
-//.copilotKitButtonIconOpen:after {
-//  @apply text-textColor;
-//  content: '';
-//  display: block;
-//  position: relative;
-//  z-index: 1;
-//  object-fit: contain;
-//  background: url('/magic.svg') no-repeat center center / contain;
-//  width: 30px;
-//  height: 30px;
-//}
-//
-//.copilotKitPopup {
-//  right: -2rem !important;
-//  bottom: 2rem !important;
-//}
-//
-//.copilotKitWindow {
-//  /*right: -5rem !important;*/
-//}
 
 .trz {
   transform: translateZ(0);
@@ -806,33 +766,135 @@ html[dir='rtl'] .lbox {
   filter: blur(5px);
 }
 
+// AI Copilot (/agents). CopilotKit is an SDK: everything its
+// --copilot-kit-* variables can reach is themed where the chat mounts
+// (agent.chat.tsx); what they cannot reach — bubble geometry, the message
+// column, the composer frame — is restyled here, scoped to the page.
 .agent {
+  // The SDK ships its own system font stack; the design types the chat in the
+  // app's fonts.
+  .copilotKitChat {
+    font-family: inherit;
+  }
+
+  // Message column: an 840px centred column, 24px padding, 16px rhythm.
+  .copilotKitMessagesContainer {
+    width: 100%;
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .copilotKitMessage {
+    margin-bottom: 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+
+  // User bubble: brand fill, tucked corner on the sending side. Logical
+  // radii and margins so the bubble mirrors correctly in RTL.
+  .copilotKitMessage.copilotKitUserMessage {
+    max-width: 78%;
+    margin-left: 0;
+    margin-inline-start: auto;
+    padding: 10px 13px;
+    border-start-start-radius: 14px;
+    border-start-end-radius: 14px;
+    border-end-end-radius: 5px;
+    border-end-start-radius: 14px;
+  }
+
+  // Assistant: no bubble at all — bare text beside the PQ tile.
+  .copilotKitMessage.copilotKitAssistantMessage {
+    max-width: 100%;
+    padding: 10px 0;
+    padding-inline-start: 2px;
+    border-radius: 0;
+    color: var(--text);
+  }
+
+  // Regenerate / copy / thumbs stay, restyled as quiet ghosts.
+  .copilotKitMessage.copilotKitAssistantMessage .copilotKitMessageControls {
+    left: auto;
+    inset-inline-start: 0;
+    gap: 2px;
+  }
+  .copilotKitMessageControlButton {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    color: var(--soft);
+  }
+  .copilotKitMessageControlButton:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+
+  .copilotKitMessage img {
+    width: 200px;
+  }
+  .copilotKitMessage a {
+    color: var(--focused);
+  }
+  .copilotKitMessage.copilotKitUserMessage a {
+    color: var(--onBrand);
+    text-decoration: underline;
+  }
+
+  // The composer card is drawn by our Input component (agent.input.tsx);
+  // strip the SDK's bordered pill so only the design's frame shows.
   .copilotKitInputContainer {
-    padding: 0 24px !important;
+    padding: 0 24px 20px;
+    background: transparent;
+    border-radius: 0;
   }
-
   .copilotKitInput {
-    width: 100% !important;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 11px 12px 9px;
+    border: 0;
+    border-radius: var(--r-lg);
+    background: var(--pop);
+    box-shadow: inset 0 0 0 1px var(--border), var(--e1);
   }
-}
-.rm-bg .b2 {
-  padding-top: 0 !important;
-}
-.rm-bg .b1 {
-  background: transparent !important;
-  gap: 0 !important;
-  // The media toolbar row carries a full-width border-t; inside the agent
-  // chat (which has no composer frame) it reads as a stray line above the
-  // Insert/Design/AI-Image buttons, so drop it here only.
-  border-top: none !important;
-}
+  .copilotKitInput textarea {
+    width: 100%;
+    min-height: 52px;
+    padding: 2px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .copilotKitInput textarea::placeholder {
+    color: var(--soft);
+  }
 
-.copilotKitMessage img {
-  width: 200px;
-}
-
-.copilotKitMessage a {
-  color: var(--new-btn-text) !important;
+  // Send: 32px brand square, white glyph. The SDK flips `disabled` while the
+  // input is empty — that state carries the design's .4 opacity.
+  .copilotKitInputControlButton,
+  .copilotKitInputControlButton:not([disabled]) {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--brand);
+    color: var(--onBrand);
+  }
+  .copilotKitInputControlButton:not([disabled]):hover {
+    transform: none;
+    color: var(--onBrand);
+    filter: brightness(1.1);
+  }
+  .copilotKitInputControlButton[disabled] {
+    color: var(--onBrand);
+    opacity: 0.4;
+    cursor: default;
+  }
 }
 
 @keyframes marquee-up {
