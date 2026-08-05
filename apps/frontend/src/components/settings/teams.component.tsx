@@ -3,10 +3,10 @@
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import React, { useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { ModalFormActions } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { Select } from '@gitroom/react/form/select';
@@ -18,6 +18,9 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
+import { useRouter } from 'next/navigation';
+import { leaveSettingsFor } from '@gitroom/frontend/components/layout/leave-settings';
 
 const roles = [
   {
@@ -29,10 +32,13 @@ const roles = [
     value: 'ADMIN',
   },
 ];
-export const AddMember = () => {
-  const modals = useModals();
+export const AddMember: FC<{
+  onCancel: () => void;
+  onDone: () => void;
+}> = ({ onCancel, onDone }) => {
   const fetch = useFetch();
   const toast = useToaster();
+  const t = useT();
   const resolver = useMemo(() => {
     return classValidatorResolver(AddTeamMemberDto);
   }, []);
@@ -58,23 +64,21 @@ export const AddMember = () => {
         })
       ).json();
       if (values.sendEmail) {
-        modals.closeAll();
         toast.show(t('invitation_link_sent', 'Invitation link sent'));
+        onDone();
         return;
       }
       copy(url);
-      modals.closeAll();
       toast.show(t('link_copied_to_clipboard', 'Link copied to clipboard'));
+      onDone();
     },
-    []
+    [fetch, toast, t, onDone]
   );
-
-  const t = useT();
 
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
+        <div className="relative flex flex-1 flex-col gap-[10px] pt-0">
           {sendEmail && (
             <Input
               label="Email"
@@ -98,45 +102,59 @@ export const AddMember = () => {
               {t('send_invitation_via_email', 'Send invitation via email?')}
             </div>
           </div>
-          <Button type="submit" className="mt-[18px]">
-            {sendEmail ? t('send_invitation_link', 'Send Invitation Link') : t('copy_link', 'Copy Link')}
-          </Button>
+          <ModalFormActions onCancel={onCancel}>
+            <Button
+              type="submit"
+              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+            >
+              {sendEmail
+                ? t('send_invitation_link', 'Send Invitation Link')
+                : t('copy_link', 'Copy Link')}
+            </Button>
+          </ModalFormActions>
         </div>
       </form>
     </FormProvider>
   );
 };
-export const TeamsComponent = () => {
+type TeamRow = {
+  id: string;
+  role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+  user: {
+    email: string;
+    id: string;
+  };
+};
+
+type TeamLoadResult =
+  | { kind: 'ok'; users: TeamRow[] }
+  | { kind: 'upgrade' };
+
+export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
   const fetch = useFetch();
   const user = useUser();
-  const modals = useModals();
   const t = useT();
+  const [inviting, setInviting] = useState(false);
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
     (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
       role === 'USER' ? 0 : role === 'ADMIN' ? 1 : 2,
     []
   );
-  const loadTeam = useCallback(async () => {
-    return (await (await fetch('/settings/team')).json()).users as Array<{
-      id: string;
-      role: 'SUPERADMIN' | 'ADMIN' | 'USER';
-      user: {
-        email: string;
-        id: string;
-      };
-    }>;
-  }, []);
-  const addMember = useCallback(() => {
-    modals.openModal({
-      classNames: {
-        modal: 'bg-transparent text-textColor',
-      },
-      title: t('top_title_add_member', 'Add Member'),
-      withCloseButton: true,
-      children: <AddMember />,
-    });
-  }, [t]);
+  const loadTeam = useCallback(async (): Promise<TeamLoadResult> => {
+    const res = await fetch('/settings/team');
+    // Backend is source of truth. Frontend tier (incl. DEV billing override)
+    // can claim team_members while GET still 402s — show inline lock, never
+    // leave an empty list after a silent/global payment dialog.
+    if (res.status === 402) {
+      return { kind: 'upgrade' };
+    }
+    if (!res.ok) {
+      return { kind: 'ok', users: [] };
+    }
+    const body = await res.json();
+    return { kind: 'ok', users: (body.users || []) as TeamRow[] };
+  }, [fetch]);
   const { data, mutate } = useSWR('/api/teams', loadTeam, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -151,7 +169,10 @@ export const TeamsComponent = () => {
       async () => {
         if (
           !(await deleteDialog(
-            t('are_you_sure_remove_team_member', 'Are you sure you want to remove this team member?')
+            t(
+              'are_you_sure_remove_team_member',
+              'Are you sure you want to remove this team member?'
+            )
           ))
         ) {
           return;
@@ -161,75 +182,159 @@ export const TeamsComponent = () => {
         });
         await mutate();
       },
-    [t]
+    [t, fetch, mutate]
   );
 
+  if (data?.kind === 'upgrade') {
+    return <TeamsUpgradeLock onClose={onClose} />;
+  }
+
+  if (inviting) {
+    return (
+      <SettingsPaneEditor
+        title={t('top_title_add_member', 'Add Member')}
+        onBack={() => setInviting(false)}
+      >
+        <AddMember
+          onCancel={() => setInviting(false)}
+          onDone={() => {
+            mutate();
+            setInviting(false);
+          }}
+        />
+      </SettingsPaneEditor>
+    );
+  }
+
+  const rows = data?.kind === 'ok' ? data.users : [];
+
   return (
-    <div className="flex flex-col">
-      <h3 className="text-[20px] font-[500]">{t('team_members', 'Team Members')}</h3>
-      <div className="text-pqMuted mt-[4px]">
+    <div className="mt-[18px] flex flex-col gap-[10px]">
+      <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        {rows.map((p) => (
+          <div
+            key={p.user.id}
+            className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
+          >
+            <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pqBrand text-[12px] font-[700] text-white">
+              {capitalize(p.user.email.split('@')[0]).split('.')[0].slice(0, 1)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13.5px] font-[600]">
+                {capitalize(p.user.email.split('@')[0]).split('.')[0]}
+              </div>
+              <div className="mt-[1px] truncate text-[12px] text-pqMuted">
+                {p.user.email}
+              </div>
+            </div>
+            <div className="grid h-[21px] shrink-0 place-items-center rounded-[999px] bg-pqSettings px-[9px] text-[11px] font-[600] text-pqMuted">
+              {p.role === 'USER'
+                ? t('user', 'User')
+                : p.role === 'ADMIN'
+                ? t('admin', 'Admin')
+                : t('super_admin', 'Super Admin')}
+            </div>
+            <button
+              type="button"
+              onClick={remove(p)}
+              aria-label={t('remove', 'Remove')}
+              className={clsx(
+                'grid h-[28px] w-[28px] place-items-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn',
+                +myLevel > +getLevel(p.role) ? '' : 'invisible'
+              )}
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                <path
+                  d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setInviting(true)}
+        className="flex h-[34px] items-center gap-[7px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white hover:bg-pqBrandHover"
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+          <path
+            d="M12 5.5v13M5.5 12h13"
+            stroke="currentColor"
+            strokeWidth="2.1"
+            strokeLinecap="round"
+          />
+        </svg>
+        {t('invite_member', 'Invite member')}
+      </button>
+    </div>
+  );
+};
+
+/**
+ * Plan lacks `team_members` — show an inline upgrade pane instead of mounting
+ * TeamsComponent (which would GET /settings/team and trip the global 402 Payment
+ * Required dialog). Org admins still reach this via Settings nav.
+ *
+ * Visual: same lock-card language as TrialLockCard / analytics empty states
+ * (brand-soft icon tile, inset card, centered copy). Design prototype hides
+ * the Teams tab when gated — no locked empty state there; this is the repo
+ * owner path (keep tab discoverable). CTA matches design rail `upgradeCta`
+ * ("Upgrade plan"); team seats unlock at Growth, so do not say "Upgrade to Pro".
+ *
+ * Settings is an intercepting `@modal/(.)settings` overlay — a bare Link to
+ * `/billing` leaves the scrim; `back()`+`push()` races and often only closes.
+ * Use `leaveSettingsFor` (hard assign while scrim is open).
+ */
+export const TeamsUpgradeLock: FC<{ onClose?: () => void }> = () => {
+  const t = useT();
+  const router = useRouter();
+  const goBilling = useCallback(() => {
+    leaveSettingsFor('/billing', router);
+  }, [router]);
+
+  return (
+    <div
+      data-teams-upgrade-lock="1"
+      className="mt-[18px] flex w-full flex-col items-center justify-center rounded-pqMd bg-pqPop px-[24px] py-[44px] text-center shadow-[inset_0_0_0_1px_var(--border)]"
+    >
+      <span className="grid size-[52px] place-items-center rounded-[16px] bg-pqBrandSoft text-pqBrand">
+        <svg
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M7 10V7.5a5 5 0 0 1 10 0V10M6 10h12a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 18 20H6a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 6 10Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <div className="mt-[16px] font-display text-[18px] font-[600] tracking-[-0.01em] text-pqText">
+        {t('unlock_team_members', 'Unlock team members')}
+      </div>
+      <div className="mt-[8px] max-w-[420px] text-[13.5px] leading-[1.6] text-pqMuted text-pretty">
         {t(
-          'invite_your_assistant_or_team_member_to_manage_your_account',
-          'Invite your assistant or team member to manage your account'
+          'subscription_does_not_include_team_members',
+          'Your subscription does not include team members. Please upgrade your subscription to invite your team.'
         )}
       </div>
-      <div className="mt-[18px] flex flex-col gap-[10px]">
-        <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] overflow-hidden">
-          {(data || []).map((p) => (
-            <div
-              key={p.user.id}
-              className="flex items-center gap-[11px] p-[13px_15px] border-b border-pqLine last:border-b-0"
-            >
-              <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-pqBrand text-[12px] font-[700] text-white">
-                {capitalize(p.user.email.split('@')[0]).split('.')[0].slice(0, 1)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[13.5px] font-[600] truncate">
-                  {capitalize(p.user.email.split('@')[0]).split('.')[0]}
-                </div>
-                <div className="text-[12px] text-pqMuted truncate">
-                  {p.user.email}
-                </div>
-              </div>
-              <div className="flex h-[21px] items-center rounded-[999px] bg-pqSettings px-[9px] text-[11px] font-[600] text-pqMuted">
-                {p.role === 'USER'
-                  ? t('user', 'User')
-                  : p.role === 'ADMIN'
-                  ? t('admin', 'Admin')
-                  : t('super_admin', 'Super Admin')}
-              </div>
-              <button
-                type="button"
-                onClick={remove(p)}
-                className={clsx(
-                  'flex h-[28px] w-[28px] items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn',
-                  +myLevel > +getLevel(p.role) ? '' : 'invisible'
-                )}
-              >
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
-                  <path
-                    d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={addMember}
-          className="flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white hover:bg-pqBrandHover"
-        >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
-            <path d="M12 5.5v13M5.5 12h13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          {t('invite_member', 'Invite member')}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={goBilling}
+        className="mt-[20px] flex h-[40px] items-center justify-center rounded-pqSm bg-pqBrand px-[20px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+      >
+        {t('upgrade_plan', 'Upgrade plan')}
+      </button>
     </div>
   );
 };

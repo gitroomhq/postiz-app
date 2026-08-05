@@ -17,13 +17,12 @@ import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
-import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
+import { TeamsComponent, TeamsUpgradeLock } from '@gitroom/frontend/components/settings/teams.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
-import { PlanInvoicesComponent } from '@gitroom/frontend/components/settings/plan.invoices.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
@@ -32,18 +31,20 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
-import {
-  useMenuFilter,
-  useMenuItem,
-} from '@gitroom/frontend/components/layout/top.menu';
 import { useRouter } from 'next/navigation';
+import { leaveSettingsFor } from '@gitroom/frontend/components/layout/leave-settings';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
+import {
+  SettingsTabChromeProvider,
+  useSettingsTabChrome,
+} from '@gitroom/frontend/components/settings/settings-tab-chrome.context';
 
 /**
  * The design's settings sub-nav draws a 16px stroked glyph on every row
- * (`SETTINGS_ICONS`, prototype). Path data is lifted verbatim; Plugs and
- * Affiliate reuse the glyphs their rail rows carried.
+ * (`SETTINGS_ICONS`, prototype). Path data is lifted verbatim. Plugs /
+ * Affiliate glyphs stay for any residual deep-link callers but are not
+ * drawn in the Settings nav (inventory matches the prototype).
  */
 const SETTINGS_NAV_ICONS: Record<string, string[]> = {
   global_settings: [
@@ -90,7 +91,7 @@ const SettingsNavIcon: FC<{ icon: string }> = ({ icon }) => (
     width="16"
     height="16"
     fill="none"
-    className="block shrink-0"
+    className="block shrink-0 opacity-[0.85]"
     aria-hidden="true"
   >
     {(SETTINGS_NAV_ICONS[icon] || SETTINGS_NAV_ICONS.global_settings).map(
@@ -107,13 +108,38 @@ const SettingsNavIcon: FC<{ icon: string }> = ({ icon }) => (
     )}
   </svg>
 );
+
+const SettingsTabPane: FC<{
+  tabHeader: { title: string; desc?: string };
+  children: React.ReactNode;
+}> = ({ tabHeader, children }) => {
+  const { inEditor, chromePatch } = useSettingsTabChrome();
+  return (
+    <div className="flex w-full max-w-[920px] flex-col">
+      {!inEditor && (
+        <>
+          <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
+            {chromePatch?.title ?? tabHeader.title}
+          </h3>
+          {!!(chromePatch?.desc ?? tabHeader.desc) && (
+            <div className="mt-[4px] text-[14px] text-pqMuted">
+              {chromePatch?.desc ?? tabHeader.desc}
+            </div>
+          )}
+        </>
+      )}
+      {children}
+    </div>
+  );
+};
+
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
   /** Route context passes a router-back closure; the FREE-tier modal keeps
    *  the modal system's own close. */
   onClose?: () => void;
 }> = (props) => {
-  const { isGeneral, billingEnabled } = useVariables();
+  const { isGeneral } = useVariables();
   const { getRef, onClose } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -132,10 +158,6 @@ export const SettingsPopup: FC<{
   }, []);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-  // Plugs and Affiliate left the rail when it took the design's inventory;
-  // their rows live here now, filtered by the same gates they always had.
-  const { extraMenu } = useMenuItem();
-  const menuFilter = useMenuFilter();
   const { mobile } = useViewport();
   const [query, setQuery] = useState('');
   const loadProfile = useCallback(async () => {
@@ -170,7 +192,6 @@ export const SettingsPopup: FC<{
   const settingsTabs = [
     'global_settings',
     'language',
-    'plan_invoices',
     'teams',
     'webhooks',
     'autopost',
@@ -186,12 +207,15 @@ export const SettingsPopup: FC<{
       ? requestedTab
       : 'global_settings'
   );
-  // Connections grew into its own page, where the design keeps it. The old
-  // deep link keeps working.
+  // Connections / billing are their own pages. Settings is `@modal/(.)settings`
+  // — leave via hard assign so the scrim clears and the destination loads.
   const redirectRouter = useRouter();
   useEffect(() => {
     if (requestedTab === 'connections') {
-      redirectRouter.replace('/connections');
+      leaveSettingsFor('/connections', redirectRouter);
+    }
+    if (requestedTab === 'plan_invoices' || requestedTab === 'billing') {
+      leaveSettingsFor('/billing', redirectRouter);
     }
   }, [requestedTab, redirectRouter]);
 
@@ -202,9 +226,9 @@ export const SettingsPopup: FC<{
   const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
   // `group` only sorts the sub-nav into sections; which tabs exist, what they
   // are called and what they open are all unchanged.
-  // The design's three groups, in the design's order — Workspace / More /
-  // Developers — with the repo-only rows (Plan & invoices, Plugs, Affiliate)
-  // slotted at the end of their group. Every gate is unchanged.
+  // Design settings nav: Workspace / More / Developers only. Billing lives on
+  // /billing and in the user menu — not here. Plugs → Channels Automations;
+  // Affiliate → user menu.
   const list = useMemo(() => {
     const arr: {
       tab: string;
@@ -229,23 +253,15 @@ export const SettingsPopup: FC<{
       group: workspace,
       icon: 'language',
     });
-    if (user?.tier?.team_members && isGeneral && isOrgAdmin) {
+    // Teams stays discoverable for org admins even when the plan lacks
+    // `team_members` — content then shows TeamsUpgradeLock (no /settings/team
+    // fetch → no global Payment Required popup). USER role still hidden.
+    if (isGeneral && isOrgAdmin) {
       arr.push({
         tab: 'teams',
         label: t('teams', 'Teams'),
         group: workspace,
         icon: 'teams',
-      });
-    }
-    // The design names this tab and it did not exist here. Same gate as the
-    // Billing screen — only an org admin can see what the org is paying — and
-    // only where billing is switched on at all.
-    if (isGeneral && billingEnabled && isOrgAdmin) {
-      arr.push({
-        tab: 'plan_invoices',
-        label: t('plan_invoices', 'Plan & invoices'),
-        group: workspace,
-        icon: 'plan_invoices',
       });
     }
     if (user?.tier.current !== 'FREE') {
@@ -264,7 +280,10 @@ export const SettingsPopup: FC<{
         icon: 'signatures',
       });
     }
-    if (user?.tier?.autoPost) {
+    // Auto Post stays in More for every paid tier (rail deep-link + Settings).
+    // Was hidden via `tier.autoPost` (false on CREATOR) — owner wants the row
+    // visible like Sets/Signatures; API create uses existing WEBHOOKS policy.
+    if (user?.tier.current !== 'FREE') {
       arr.push({
         tab: 'autopost',
         label: t('auto_post', 'Auto Post'),
@@ -286,15 +305,6 @@ export const SettingsPopup: FC<{
       group: more,
       icon: 'integrations',
     });
-    for (const item of extraMenu.filter(menuFilter)) {
-      arr.push({
-        tab: item.path,
-        label: item.name,
-        group: more,
-        href: item.path,
-        icon: item.path === '/plugs' ? 'plugs' : 'affiliate',
-      });
-    }
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
       arr.push({
         tab: 'api',
@@ -311,7 +321,7 @@ export const SettingsPopup: FC<{
     });
 
     return arr;
-  }, [user, isGeneral, showLogout, isOrgAdmin, t, extraMenu, menuFilter]);
+  }, [user, isGeneral, showLogout, isOrgAdmin, t]);
 
   /** The same items, in the same order, bucketed by their group label. */
   const groupedList = useMemo(() => {
@@ -341,33 +351,101 @@ export const SettingsPopup: FC<{
     loadProfile();
   }, []);
 
+  // Prototype settingsVals TAB titles/descriptions — one shared block in the
+  // content column (h3 20/500 + muted 14 mt4). Per-tab bodies own only content.
+  const tabHeader = useMemo(() => {
+    const headers: Record<string, { title: string; desc?: string }> = {
+      global_settings: {
+        title: t('global_settings', 'Global Settings'),
+      },
+      language: {
+        title: t('language', 'Language'),
+        desc: t(
+          'language_settings_description',
+          'Pick the language for the interface, emails and AI prompts.'
+        ),
+      },
+      teams: {
+        title: t('team_members', 'Team Members'),
+        desc: t(
+          'invite_your_assistant_or_team_member_to_manage_your_account',
+          'Invite your assistant or team member to manage your account'
+        ),
+      },
+      webhooks: {
+        title: t('webhooks', 'Webhooks'),
+        desc: t(
+          'webhooks_are_a_way_to_get_notified_when_something_happens_in_postqueen_via_an_http_request',
+          'Webhooks are a way to get notified when something happens in PostQueen via an HTTP request.'
+        ),
+      },
+      autopost: {
+        title: t('autopost', 'Autopost'),
+        desc: t(
+          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
+          'Autopost can automatically posts your RSS new items to social media'
+        ),
+      },
+      sets: {
+        title: t('social_sets', 'Social Sets'),
+        desc: t(
+          'manage_your_content_sets_for_easy_reuse_across_posts',
+          'Manage your content sets for easy reuse across posts.'
+        ),
+      },
+      signatures: {
+        title: t('signatures', 'Signatures'),
+        desc: t(
+          'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
+          'You can add signatures to your account to be used in your posts.'
+        ),
+      },
+      api: {
+        title: t('developers', 'Developers'),
+        desc: t(
+          'developers_description',
+          'Use the public API to schedule posts from your own systems.'
+        ),
+      },
+      approved_apps: {
+        title: t('approved_apps', 'Approved Apps'),
+        desc: t(
+          'apps_you_have_authorized',
+          'Applications you have authorized to access your PostQueen account.'
+        ),
+      },
+      integrations: {
+        title: t('integrations', 'Integrations'),
+        desc: t(
+          'extend_postqueen_with_other_tools',
+          'Extend PostQueen with other tools'
+        ),
+      },
+    };
+    return headers[tab] || headers.global_settings;
+  }, [tab, t]);
+
+  // Nav row hover matches the prototype's purple inset wash (also on the
+  // selected row). Kept as a shared class so Link and button stay identical.
+  const navItemBase =
+    'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
+
+  // Prototype: width/height min(1040×680, 100%) of the scrim — fixed for every
+  // tab. Content scrolls inside; the card never shrinks to the active section.
   return (
     <div
+      data-settings-card="1"
+      onClick={(e) => e.stopPropagation()}
       className={clsx(
-        'relative flex overflow-hidden bg-pqPop shadow-[var(--e3),inset_0_0_0_1px_var(--border)] animate-pqPop',
+        'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),inset_0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >
-      <button
-        type="button"
-        onClick={onClose || close}
-        aria-label={t('close', 'Close')}
-        className="absolute end-[16px] top-[14px] z-[2] flex h-[30px] w-[30px] items-center justify-center rounded-[8px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
-      >
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
-          <path
-            d="M6 6l12 12M18 6 6 18"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
       <div
         className={clsx(
-          'flex flex-col bg-pqBg',
+          'flex min-h-0 flex-col bg-pqBg',
           mobile
             ? 'max-h-[132px] w-full shrink-0 border-b border-pqLine'
             : 'w-[236px] shrink-0 border-e border-pqLine'
@@ -384,7 +462,7 @@ export const SettingsPopup: FC<{
               className="pointer-events-none absolute start-[10px] top-[10px] text-pqSoft"
             >
               <path
-                d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20.5 20.5 16 16"
+                d="M17 17l4 4M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
                 stroke="currentColor"
                 strokeWidth="1.8"
                 strokeLinecap="round"
@@ -398,7 +476,7 @@ export const SettingsPopup: FC<{
             />
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-[16px] overflow-y-auto p-[0_8px_14px]">
+        <nav className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-y-auto p-[0_8px_14px]">
           {visibleGroups.map(({ group, items }) => (
             <div key={group} className="flex flex-col gap-[1px]">
               <div className="px-[9px] pb-[5px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
@@ -409,7 +487,7 @@ export const SettingsPopup: FC<{
                   <Link
                     key={tabKey}
                     href={href}
-                    className="flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+                    className={clsx(navItemBase, 'text-pqMuted')}
                   >
                     <SettingsNavIcon icon={icon} />
                     <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -421,10 +499,10 @@ export const SettingsPopup: FC<{
                     onClick={() => setTab(tabKey)}
                     aria-current={tabKey === tab ? 'page' : undefined}
                     className={clsx(
-                      'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-colors',
+                      navItemBase,
                       tabKey === tab
-                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused hover:bg-[rgba(124,58,237,.2)]'
-                        : 'text-pqMuted hover:bg-pqHover hover:text-pqText'
+                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                        : 'text-pqMuted'
                     )}
                   >
                     <SettingsNavIcon icon={icon} />
@@ -436,89 +514,100 @@ export const SettingsPopup: FC<{
           ))}
         </nav>
       </div>
-      <div className="flex flex-1 flex-col overflow-y-auto bg-pqInner p-[26px_28px_34px]">
-        <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(submit)}>
-            {!!getRef && (
-              <button type="submit" className="hidden" ref={getRef}></button>
-            )}
-            <div className="relative flex w-full max-w-[920px] flex-col gap-[24px]">
-              {tab === 'global_settings' && (
-                <div>
-                  <GlobalSettings />
-                </div>
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <button
+          type="button"
+          onClick={onClose || close}
+          aria-label={t('close', 'Close')}
+          className="absolute end-[16px] top-[14px] z-[4] grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6 6 18"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px]">
+          <SettingsTabChromeProvider key={tab}>
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(submit)}>
+              {!!getRef && (
+                <button type="submit" className="hidden" ref={getRef}></button>
               )}
-              {tab === 'language' && (
-                <div>
-                  <ChangeLanguageComponent />
-                </div>
-              )}
-              {tab === 'teams' &&
-                !!user?.tier?.team_members &&
-                isGeneral &&
-                isOrgAdmin && (
+              <SettingsTabPane tabHeader={tabHeader}>
+                {tab === 'global_settings' && (
                   <div>
-                    <TeamsComponent />
+                    <GlobalSettings />
+                  </div>
+                )}
+                {tab === 'language' && (
+                  <div>
+                    <ChangeLanguageComponent hideHeader />
+                  </div>
+                )}
+                {tab === 'teams' && isGeneral && isOrgAdmin && (
+                  <div>
+                    {user?.tier?.team_members ? (
+                      <TeamsComponent onClose={onClose} />
+                    ) : (
+                      <TeamsUpgradeLock onClose={onClose} />
+                    )}
                   </div>
                 )}
 
-              {tab === 'webhooks' && !!user?.tier?.webhooks && (
-                <div>
-                  <Webhooks />
-                </div>
-              )}
-
-              {tab === 'autopost' && !!user?.tier?.autoPost && (
-                <div>
-                  <Autopost />
-                </div>
-              )}
-
-              {tab === 'sets' && user?.tier.current !== 'FREE' && (
-                <div>
-                  <Sets />
-                </div>
-              )}
-
-              {tab === 'signatures' && user?.tier.current !== 'FREE' && (
-                <div>
-                  <SignaturesComponent />
-                </div>
-              )}
-
-              {tab === 'api' &&
-                !!user?.tier?.public_api &&
-                isGeneral &&
-                showLogout &&
-                isOrgAdmin && (
+                {tab === 'webhooks' && !!user?.tier?.webhooks && (
                   <div>
-                    <PublicComponent />
+                    <Webhooks />
                   </div>
                 )}
 
-              {tab === 'plan_invoices' &&
-                isGeneral &&
-                billingEnabled &&
-                isOrgAdmin && (
+                {tab === 'autopost' && user?.tier.current !== 'FREE' && (
                   <div>
-                    <PlanInvoicesComponent />
+                    <Autopost />
                   </div>
                 )}
 
-              {tab === 'approved_apps' && (
-                <div>
-                  <ApprovedAppsComponent />
-                </div>
-              )}
+                {tab === 'sets' && user?.tier.current !== 'FREE' && (
+                  <div>
+                    <Sets />
+                  </div>
+                )}
 
-              {tab === 'integrations' && (
-                <div>
-                  <ThirdPartyComponent />
-                </div>
-              )}
-            </div>
-          </form>
-        </FormProvider>
+                {tab === 'signatures' && user?.tier.current !== 'FREE' && (
+                  <div>
+                    <SignaturesComponent />
+                  </div>
+                )}
+
+                {tab === 'api' &&
+                  !!user?.tier?.public_api &&
+                  isGeneral &&
+                  showLogout &&
+                  isOrgAdmin && (
+                    <div>
+                      <PublicComponent onClose={onClose} />
+                    </div>
+                  )}
+
+                {tab === 'approved_apps' && (
+                  <div>
+                    <ApprovedAppsComponent />
+                  </div>
+                )}
+
+                {tab === 'integrations' && (
+                  <div>
+                    <ThirdPartyComponent />
+                  </div>
+                )}
+              </SettingsTabPane>
+            </form>
+          </FormProvider>
+          </SettingsTabChromeProvider>
+        </div>
       </div>
     </div>
   );
@@ -539,33 +628,23 @@ export const SettingsPage = () => {
     }
   }, [router]);
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0">
+    <div
+      data-settings-scrim="1"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-pqPopup p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0"
+      onClick={back}
+    >
       <SettingsPopup onClose={back} />
     </div>
   );
 };
+/**
+ * Legacy gear control. One open path only: navigate to `/settings` (scrim modal).
+ * The FREE-tier nested `openModal` path is gone — it stacked a second modal on
+ * the route and did not match the design.
+ */
 export const SettingsComponent = () => {
-  const settings = useModals();
-  const user = useUser();
-  const openModal = useCallback(() => {
-    if (user?.tier.current !== 'FREE') {
-      return;
-    }
-    settings.openModal({
-      children: (
-        <div className="flex h-[min(680px,90vh)] flex-1 items-center justify-center">
-          <SettingsPopup />
-        </div>
-      ),
-      classNames: {
-        modal: 'bg-transparent',
-      },
-      withCloseButton: false,
-      size: '100%',
-    });
-  }, [user]);
   return (
-    <Link href="/settings" onClick={openModal}>
+    <Link href="/settings">
       <svg
         width="40"
         height="40"

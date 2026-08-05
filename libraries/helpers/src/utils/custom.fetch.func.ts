@@ -80,8 +80,14 @@ export const customFetch = (
       return fetchRequest;
     }
 
-    // @ts-ignore
-    return new Promise((res) => {}) as Response;
+    // afterRequest returned false (e.g. user dismissed the 402/406 dialog).
+    // Returning an unresolved Promise left every `await fetch(…)` hung forever
+    // — Invite by link stayed on "Loading…" with no URL. Hand back a synthetic
+    // error body so callers can clear loading and show a real failure state.
+    return new Response(JSON.stringify({ err: true, cancelled: true }), {
+      status: 499,
+      headers: { 'Content-Type': 'application/json' },
+    });
   };
 };
 
