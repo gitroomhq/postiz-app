@@ -98,7 +98,7 @@ interface StepMeta {
    * there is no preference to restore afterwards and no way to leave it
    * changed — the prototype's `panelCollapsed: false`, without the side effect.
    */
-  needs?: 'posts-panel';
+  needs?: 'posts-panel' | 'channel-add';
 }
 
 interface Step extends StepMeta {
@@ -106,14 +106,19 @@ interface Step extends StepMeta {
   text: string;
 }
 
-/** Metadata only. `useSteps()` adds the copy. */
+/** Metadata only. `useSteps()` adds the copy. Matches prototype tourSteps(). */
 const STEPS: StepMeta[] = [
-  { key: 'cal-grid', path: '/launches' },
+  // Design keeps the Posts queue open while the calendar fills.
+  { key: 'cal-grid', path: '/launches', needs: 'posts-panel' },
   { key: 'posts-panel', path: '/launches', needs: 'posts-panel' },
+  // Spotlight is the rail Connect button (still visible on /connections).
   { key: 'connect-pq', path: '/connections' },
-  { key: 'mcp-clients', path: '/connections', dim: true },
-  { key: 'channels-column', path: '/launches' },
-  { key: 'channel-connect', path: '/channels' },
+  { key: 'connections-page', path: '/connections', dim: true },
+  // Spotlight is the rail Channels row; open Add Channel so the right pane
+  // matches what the step describes (owner: not calendar behind the tip).
+  { key: 'nav-channels', path: '/channels', needs: 'channel-add' },
+  // End on open Add Channel / platform grid (design chAdd:'connect').
+  { key: 'platform-grid', path: '/channels', needs: 'channel-add' },
 ];
 
 /**
@@ -125,12 +130,15 @@ const STEPS: StepMeta[] = [
 export const useTourNeeds = (need: NonNullable<StepMeta['needs']>) =>
   useTourStore((state) => state.running && STEPS[state.step]?.needs === need);
 
+/** Current tour step key while running; null otherwise. */
+export const useTourStepKey = () =>
+  useTourStore((state) =>
+    state.running ? STEPS[state.step]?.key ?? null : null
+  );
+
 const useSteps = (): Step[] => {
   const t = useT();
   return useMemo(() => {
-    // Order is the design's: the two Connections steps come before the channel
-    // ones, and the tour ends on the connect dialog — where the person is meant
-    // to do something — rather than on a list of MCP clients to read.
     const copy: Record<string, { title: string; text: string }> = {
       'cal-grid': {
         title: t('tour_calendar_title', 'One calendar for every account'),
@@ -153,21 +161,21 @@ const useSteps = (): Step[] => {
           'Claude, ChatGPT, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
         ),
       },
-      'mcp-clients': {
+      'connections-page': {
         title: t('tour_clients_title', 'Works with the tools you already use'),
         text: t(
           'tour_clients_text',
           'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'
         ),
       },
-      'channels-column': {
+      'nav-channels': {
         title: t('tour_channels_title', 'Your accounts live here'),
         text: t(
           'tour_channels_text',
           'Connect them once and set the hours each one publishes.'
         ),
       },
-      'channel-connect': {
+      'platform-grid': {
         title: t('tour_add_channel_title', 'Post everywhere at once'),
         text: t(
           'tour_add_channel_text',
@@ -213,40 +221,40 @@ export interface TourDemoPost {
 }
 
 /**
- * The demo posts that are currently on screen, already translated. Empty
- * whenever the tour is not on its first step, which is what switches the whole
- * thing off.
+ * Demo posts while the tour runs on an empty account. Stagger on the calendar
+ * step; once past it (or on posts-panel), show the full set so the queue fills
+ * like the design (`full = tourKey !== 'cal-grid'`).
  */
 export const useTourDemo = (): TourDemoPost[] => {
   const t = useT();
   const { running, step } = useTourStore(
     useShallow((state) => ({ running: state.running, step: state.step }))
   );
-  const onCalendarStep = running && step === 0;
+  const showDemo = running;
+  const stagger = running && step === 0;
   const [revealed, setRevealed] = useState(0);
   const [dropped, setDropped] = useState(false);
 
-  // The ninth post is the one the step is really about: it lands late, sits for
-  // a beat and then moves to a different hour, which is the whole "drag to
-  // reschedule" claim shown rather than written. It is a re-render into another
-  // cell, not a drag — react-dnd is never involved, so nothing here can leave
-  // the real drag layer in a half-finished state.
   useEffect(() => {
-    if (!onCalendarStep || revealed < DEMO_ROWS.length) {
-      setDropped(false);
+    if (!stagger || revealed < DEMO_ROWS.length) {
+      if (!stagger) setDropped(false);
       return;
     }
     const id = window.setTimeout(() => setDropped(true), DEMO_DROP_MS);
     return () => window.clearTimeout(id);
-  }, [onCalendarStep, revealed]);
+  }, [stagger, revealed]);
 
   useEffect(() => {
-    if (!onCalendarStep) {
+    if (!showDemo) {
       setRevealed(0);
+      setDropped(false);
       return;
     }
-    // Everything at once for anyone who asked for less motion; the point is a
-    // full calendar, the staggering is decoration.
+    // Past calendar step: full queue immediately (posts-panel and later).
+    if (!stagger) {
+      setRevealed(DEMO_ROWS.length);
+      return;
+    }
     if (
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -254,6 +262,7 @@ export const useTourDemo = (): TourDemoPost[] => {
       setRevealed(DEMO_ROWS.length);
       return;
     }
+    setRevealed(0);
     const id = window.setInterval(() => {
       setRevealed((n) => {
         if (n >= DEMO_ROWS.length) {
@@ -264,13 +273,10 @@ export const useTourDemo = (): TourDemoPost[] => {
       });
     }, DEMO_REVEAL_MS);
     return () => window.clearInterval(id);
-  }, [onCalendarStep]);
+  }, [showDemo, stagger]);
 
-  // The demo sits at 07:00-09:00 and the grid opens at midnight, so without
-  // this the posts appear below the fold and the step describes an empty
-  // calendar. The design scrolls the same rows into view.
   useEffect(() => {
-    if (!onCalendarStep) return;
+    if (!stagger) return;
     let tries = 0;
     const settle = () => {
       const grid = document.querySelector('[data-tour="cal-grid"]');
@@ -283,10 +289,10 @@ export const useTourDemo = (): TourDemoPost[] => {
       if (tries++ < 40) requestAnimationFrame(settle);
     };
     settle();
-  }, [onCalendarStep]);
+  }, [stagger]);
 
   return useMemo(() => {
-    if (!onCalendarStep) return [];
+    if (!showDemo) return [];
     const copy: Record<string, string> = {
       tour_demo_1_title: t('tour_demo_1_title', 'Launch teaser'),
       tour_demo_1_body: t(
@@ -340,9 +346,6 @@ export const useTourDemo = (): TourDemoPost[] => {
     );
     if (revealed >= DEMO_ROWS.length) {
       shown.push({
-        // Friday, late morning. The design puts this at 09:00, which here sits
-        // directly under the tour card — the one post the step is really about
-        // would be the one you cannot see.
         day: 4,
         hour: dropped ? 10 : 11,
         provider: 'x',
@@ -354,7 +357,7 @@ export const useTourDemo = (): TourDemoPost[] => {
       });
     }
     return shown;
-  }, [onCalendarStep, revealed, dropped, t]);
+  }, [showDemo, revealed, dropped, t]);
 };
 
 interface Rect {
@@ -383,6 +386,11 @@ const place = (r: Rect, huge: boolean, key: string) => {
       // off-centre so it covers a corner rather than the hours it describes.
       l = r.l + r.w * 0.54;
       t = r.t + r.h * 0.3 - CARD_H / 2;
+    } else if (key === 'platform-grid') {
+      // Add Channel grid is tall — park the card near the top of the pane so
+      // we never scroll the page to the bottom to "center" the whole grid.
+      l = r.l + Math.min(48, r.w * 0.08);
+      t = r.t + 28;
     } else if (r.l + r.w + MARGIN + CARD_W <= vw - MARGIN) {
       l = r.l + r.w + MARGIN;
       t = r.t;
@@ -438,20 +446,31 @@ export const Tour: FC = () => {
   const current = running ? steps[Math.min(step, steps.length - 1)] : null;
   const last = step >= steps.length - 1;
 
-  const finish = useCallback(() => {
-    markSeen();
-    stop();
-    setRect(null);
-  }, [stop]);
+  const finish = useCallback(
+    (opts?: { leaveOnAddChannel?: boolean }) => {
+      markSeen();
+      // Design Finish leaves Add Channel open; Skip just dismisses.
+      if (opts?.leaveOnAddChannel) {
+        router.push('/channels?add=1');
+      }
+      stop();
+      setRect(null);
+    },
+    [router, stop]
+  );
 
-  // `?tour=true`, the same shape as the existing `?onboarding=true`. Support
-  // can link someone straight into it. The ref keeps a finished tour from
-  // restarting itself while the query is still on the URL.
+  // First-run and Help both land here. `?onboarding=` is kept as an alias so
+  // auth redirects and OAuth return URLs keep working after the old modal died.
   const { start } = useTourStore(
     useShallow((state) => ({ start: state.start }))
   );
   useEffect(() => {
-    if (!query.get('tour') || urlStarted.current) return;
+    if (
+      (!query.get('tour') && !query.get('onboarding')) ||
+      urlStarted.current
+    ) {
+      return;
+    }
     urlStarted.current = true;
     start();
   }, [query, start]);
@@ -502,12 +521,24 @@ export const Tour: FC = () => {
       }
       // Scroll on the first sighting, not in a separate effect: right after a
       // navigation the element does not exist yet, and a one-shot effect that
-      // fires then never scrolls at all. 'center', not 'nearest' — a tall
-      // target left at the bottom of the fold leaves the card nowhere to
-      // stand except on top of the thing it is describing.
+      // fires then never scrolls at all.
+      //
+      // `block: 'center'` on a tall Add Channel grid scrolls the page to the
+      // bottom so the grid's midpoint is in view — owner: keep the finish card
+      // up top. Use 'start' for that step; 'center' for compact targets.
       if (scrolled.current !== current.key) {
         scrolled.current = current.key;
-        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        if (current.key === 'platform-grid') {
+          const pane =
+            (el.closest('[data-tour="channels-page"]') as HTMLElement | null) ||
+            (el.closest('.overflow-auto') as HTMLElement | null);
+          if (pane && typeof pane.scrollTop === 'number') {
+            pane.scrollTop = 0;
+          }
+          el.scrollIntoView({ block: 'start', inline: 'nearest' });
+        } else {
+          el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
       }
       const b = el.getBoundingClientRect();
       if (!b.width || !b.height) return;
@@ -557,6 +588,8 @@ export const Tour: FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [running, finish]);
 
+  // Scrim click = skip (not Finish → Add Channel).
+
   useEffect(() => {
     if (!running) {
       (restoreFocus.current as HTMLElement | null)?.focus?.();
@@ -586,7 +619,13 @@ export const Tour: FC = () => {
   const covers =
     !!rect &&
     (rect.w * rect.h) / (window.innerWidth * window.innerHeight) > 0.82;
-  const huge = !!rect && (offscreen || covers || !!current.dim);
+  // platform-grid is intentionally large; treating it as `huge` centers the
+  // card on the whole pane and (with scrollIntoView center) dumps the page
+  // to the bottom. Keep the dedicated top placement instead.
+  const huge =
+    !!rect &&
+    current.key !== 'platform-grid' &&
+    (offscreen || covers || !!current.dim);
   const spot = !!rect && !huge;
   const pos = rect ? place(rect, huge, current.key) : null;
 
@@ -602,7 +641,10 @@ export const Tour: FC = () => {
           CSS animation beats an inline style, so the two cannot share the
           property — the scrim silently loses. */}
       {!spot && (
-        <div className="absolute inset-0 bg-pqTourScrim" onClick={finish} />
+        <div
+          className="absolute inset-0 bg-pqTourScrim"
+          onClick={() => finish()}
+        />
       )}
 
       {spot &&
@@ -637,7 +679,7 @@ export const Tour: FC = () => {
             key={i}
             className="absolute bg-pqTourScrim"
             style={style}
-            onClick={finish}
+            onClick={() => finish()}
           />
         ))}
 
@@ -723,7 +765,7 @@ export const Tour: FC = () => {
           <button
             type="button"
             data-tour-action="skip"
-            onClick={finish}
+            onClick={() => finish()}
             className="rounded-pqSm px-[10px] py-[6px] text-[13px] text-pqMuted hover:text-pqText"
           >
             {t('skip', 'Skip')}
@@ -731,7 +773,9 @@ export const Tour: FC = () => {
           <button
             type="button"
             data-tour-action="next"
-            onClick={() => (last ? finish() : next())}
+            onClick={() =>
+              last ? finish({ leaveOnAddChannel: true }) : next()
+            }
             className="rounded-pqSm bg-pqBrand px-[14px] py-[6px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover"
           >
             {last ? t('finish', 'Finish') : t('next', 'Next')}

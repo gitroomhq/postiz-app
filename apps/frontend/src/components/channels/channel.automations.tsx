@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -57,11 +58,10 @@ const ChannelPlugRow: FC<{
 
   const openEdit = useCallback(() => {
     modals.openModal({
-      withCloseButton: false,
+      withCloseButton: true,
       onClose() {
         mutate();
       },
-      size: '500px',
       title: `${t('auto_plug', 'Auto Plug')}: ${plug.title}`,
       children: (
         <PlugPop
@@ -73,10 +73,12 @@ const ChannelPlugRow: FC<{
     });
   }, [data, identifier, modals, mutate, name, plug, providerId, t]);
 
+  const isOn = !!data && activated;
+
   return (
     <div className="flex flex-col gap-[9px] border-b border-pqLine px-[15px] py-[14px] last:border-b-0">
       <div className="flex items-center gap-[11px]">
-        <span className="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-pqBrandSoft text-pqFocused">
+        <span className="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-pqSettings text-pqMuted">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
             <path
               d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"
@@ -93,18 +95,10 @@ const ChannelPlugRow: FC<{
         <span
           className={clsx(
             'grid h-[20px] shrink-0 place-items-center rounded-full px-[8px] text-[11px] font-[600]',
-            data
-              ? activated
-                ? 'bg-pqOkSoft text-pqOk'
-                : 'bg-pqSettings text-pqMuted'
-              : 'bg-pqSettings text-pqSoft'
+            isOn ? 'bg-pqOkSoft text-pqOk' : 'bg-pqSettings text-pqMuted'
           )}
         >
-          {data
-            ? activated
-              ? t('active', 'Active')
-              : t('paused', 'Paused')
-            : t('not_set', 'Not set')}
+          {isOn ? t('active', 'Active') : t('off', 'Off')}
         </span>
         {!!data && (
           <div onClick={(e) => e.stopPropagation()}>
@@ -129,7 +123,9 @@ const ChannelPlugRow: FC<{
             : 'bg-pqBrand text-pqOnBrand'
         )}
       >
-        {data ? t('edit', 'Edit') : t('set_plug', 'Set Plug')}
+        {data
+          ? t('edit', 'Edit')
+          : t('set_up_plug', 'Set up plug')}
       </button>
     </div>
   );
@@ -177,8 +173,16 @@ export const ChannelAutomations: FC<{ integration: any }> = ({
 
   return (
     <div data-channel-automations="1" className="flex flex-col gap-[8px]">
-      <div className="px-[2px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
-        {t('automations', 'Automations')}
+      <div className="flex items-center justify-between gap-[8px] px-[2px]">
+        <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
+          {t('automations', 'Automations')}
+        </div>
+        <Link
+          href="/plugs"
+          className="text-[11.5px] font-[500] text-pqSoft hover:text-pqFocused hover:underline"
+        >
+          {t('open_auto_plugs', 'Open Auto-Plugs')}
+        </Link>
       </div>
       <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
         <PlugsContext.Provider value={ctx}>

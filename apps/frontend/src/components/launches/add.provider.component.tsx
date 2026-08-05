@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -24,7 +24,7 @@ import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-card';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
@@ -130,7 +130,7 @@ export const UrlModal: FC<{
     gotoUrl(data.url);
   }, []);
   return (
-    <div className="rounded-[4px] border border-pqLine bg-sixth px-[16px] pb-[16px] relative">
+    <div className="rounded-[4px] border border-pqLine bg-pqTableHeader px-[16px] pb-[16px] relative">
       <TopTitle title={`Instance URL`} />
       <button
         onClick={() => modals.closeCurrent()}
@@ -397,6 +397,182 @@ const ChromeExtensionWarning: FC<{
  * login password, Bluesky not supporting 2FA — used to be discovered *after*
  * a failed round trip through someone else's login screen.
  */
+const CONNECT_MODE_ICONS = {
+  self: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
+  invite:
+    'M10.2 13.8a4.2 4.2 0 0 0 6.3.45l2.4-2.4a4.2 4.2 0 0 0-5.95-5.95l-1.4 1.4M13.8 10.2a4.2 4.2 0 0 0-6.3-.45l-2.4 2.4a4.2 4.2 0 0 0 5.95 5.95l1.4-1.4',
+} as const;
+
+/** Invite-by-link step — design shows URL + Copy link, not Continue/OAuth. */
+const InviteLinkStep: FC<{
+  item: { identifier: string; name: string };
+  hint?: string;
+  onBack: () => void;
+  onboarding?: boolean;
+}> = ({ item, hint, onBack, onboarding }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const identifier = item.identifier;
+    (async () => {
+      setLoading(true);
+      setFailed(false);
+      setUrl('');
+      try {
+        // Same endpoint as connect-myself invite copy path in getSocialLink.
+        const res = await fetch(
+          `/integrations/social/${identifier}${
+            onboarding ? '?onboarding=true' : ''
+          }`
+        );
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || body?.err || !body?.url) {
+          setFailed(true);
+          setUrl('');
+          // 402/406 already showed a global dialog; avoid a second toast there.
+          if (res.status !== 402 && res.status !== 406 && res.status !== 499) {
+            toaster.show(
+              t(
+                'could_not_connect_to_platform',
+                'Could not connect to the platform'
+              ),
+              'warning'
+            );
+          }
+          return;
+        }
+        setUrl(body.url);
+      } catch {
+        if (!cancelled) {
+          setFailed(true);
+          setUrl('');
+          toaster.show(
+            t(
+              'could_not_connect_to_platform',
+              'Could not connect to the platform'
+            ),
+            'warning'
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally omit toaster/t — remounting the fetch on every t identity
+    // change left Loading stuck when a dialog cancelled the previous request.
+  }, [fetch, item.identifier, onboarding, retryKey]);
+
+  const copyLink = useCallback(() => {
+    if (!url) return;
+    copy(url);
+    toaster.show(
+      t(
+        'invite_link_copied_to_clipboard',
+        'Invite link copied to clipboard, link will be available for 1 hour'
+      ),
+      'success'
+    );
+  }, [url, toaster, t]);
+
+  return (
+    <div
+      data-provider-step={item.identifier}
+      data-provider-invite="1"
+      data-view="connect-step"
+      className="flex w-full max-w-[460px] flex-col gap-[18px] self-start"
+    >
+      <div className="flex flex-col items-start gap-[14px]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex h-[32px] w-fit items-center gap-[6px] rounded-[9px] bg-pqSettings pe-[12px] ps-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t('all_platforms', 'All platforms')}
+        </button>
+        <div className="flex items-center gap-[11px]">
+          <img
+            src={`/icons/platforms/${item.identifier}.png`}
+            alt=""
+            className="h-[32px] w-[32px] shrink-0 rounded-full"
+          />
+          <span className="text-[16px] font-[600] -tracking-[0.01em]">
+            {capitalize(item.name)}
+          </span>
+        </div>
+      </div>
+
+      {!!hint && (
+        <span className="text-[13px] leading-[1.55] text-pqMuted">{hint}</span>
+      )}
+
+      <div className="flex flex-col gap-[14px] rounded-[12px] bg-pqInner p-[18px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <span className="text-[14px] leading-[1.6] text-pqMuted">
+          {t(
+            'send_this_invite_link',
+            'Send this link to whoever owns the account. They connect it themselves and it lands in your workspace — the link works for one hour.'
+          )}
+        </span>
+        <div className="flex h-[42px] items-center gap-[10px] rounded-[10px] bg-pqBg pe-[6px] ps-[14px] shadow-[inset_0_0_0_1px_var(--border)]">
+          <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-pqMuted">
+            {loading
+              ? t('loading', 'Loading…')
+              : url ||
+                t('invite_link_unavailable', 'Link unavailable')}
+          </span>
+          {failed && !loading ? (
+            <button
+              type="button"
+              onClick={() => setRetryKey((n) => n + 1)}
+              className="h-[32px] shrink-0 rounded-[8px] bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+            >
+              {t('retry', 'Retry')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-provider-copy-invite="1"
+              onClick={copyLink}
+              disabled={!url || loading}
+              className="h-[32px] shrink-0 rounded-[8px] bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-50"
+            >
+              {t('copy_link', 'Copy link')}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-[10px]">
+          <button
+            type="button"
+            onClick={onBack}
+            className="h-[38px] rounded-[10px] bg-pqBtnSimple px-[18px] text-[13.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+          >
+            {t('back', 'Back')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProviderSetupStep: FC<{
   item: {
     identifier: string;
@@ -405,25 +581,41 @@ const ProviderSetupStep: FC<{
     isWeb3: boolean;
     isChromeExtension?: boolean;
     trialLocked?: boolean;
+    toolTip?: string;
     customFields?: Array<{ key: string; label: string }>;
   };
   guide: ProviderGuide;
   locked: boolean;
+  inviteMode: boolean;
+  onboarding?: boolean;
   onBack: () => void;
   onConnect: () => void;
-}> = ({ item, guide, locked, onBack, onConnect }) => {
+}> = ({ item, guide, locked, inviteMode, onboarding, onBack, onConnect }) => {
   const t = useT();
   const needsFields = !!item.customFields?.length;
+  const inviteHint = item.toolTip || guide.requirement || guide.summary;
+
+  if (inviteMode && !locked) {
+    return (
+      <InviteLinkStep
+        item={item}
+        hint={inviteHint}
+        onBack={onBack}
+        onboarding={onboarding}
+      />
+    );
+  }
 
   return (
     <div
       data-provider-step={item.identifier}
-      className="flex w-full flex-col gap-[18px]"
+      data-view="connect-step"
+      className="flex w-full max-w-[460px] flex-col gap-[18px] self-start"
     >
       <button
         type="button"
         onClick={onBack}
-        className="flex h-[32px] w-fit items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[10px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        className="flex h-[32px] w-fit items-center gap-[6px] rounded-[9px] bg-pqSettings pe-[12px] ps-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
           <path
@@ -434,7 +626,7 @@ const ProviderSetupStep: FC<{
             strokeLinejoin="round"
           />
         </svg>
-        {t('all_channels', 'All channels')}
+        {t('all_platforms', 'All platforms')}
       </button>
 
       <div className="flex items-center gap-[14px]">
@@ -540,75 +732,38 @@ const ProviderSetupStep: FC<{
 
 /**
  * What a trialing organization sees instead of a Connect button.
- *
- * The design also carries a dated line — "X unlocks on 7 Aug 2026 when your
- * trial ends". There is no trial end date in this schema: `Organization` has
- * `isTrailing` and `allowTrial`, both booleans, and nothing else. So the copy
- * here says the same thing without naming a day it cannot know.
- *
- * The button is not a new flow. It opens `FinishTrial`, which has always posted
- * to `/billing/finish-trial`; ending the trial is what actually unlocks this.
+ * Shared TrialLockCard LOOK; FinishTrial opens from the primary CTA.
+ * No fake trial-end date — schema only has isTrailing / allowTrial.
  */
 const TrialLock: FC<{ name: string }> = ({ name }) => {
   const t = useT();
-  const [finishTrial, setFinishTrial] = useState(false);
-
-  const perks = [
-    t('x_lock_perk_publish', 'Publish and thread straight to {{name}}', {
-      name,
-    }),
-    t('x_lock_perk_plugs', 'Auto-plugs and reply automations'),
-    t('x_lock_perk_analytics', 'Analytics — impressions, engagement, follows'),
-  ];
-
   return (
-    <div
-      data-provider-locked="1"
-      className="flex flex-col gap-[14px] rounded-pqMd border border-pqBorder p-[18px]"
-    >
-      <div className="flex flex-col gap-[8px]">
-        {perks.map((perk) => (
-          <div key={perk} className="flex items-start gap-[9px] text-[13px]">
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              className="mt-[2px] shrink-0 text-pqOk"
-            >
-              <path
-                d="m5 12.5 4.5 4.5L19 7.5"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="leading-[1.5]">{perk}</span>
-          </div>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        data-provider-unlock="1"
-        onClick={() => setFinishTrial(true)}
-        className="h-[40px] w-fit rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
-      >
-        {t('end_trial_to_unlock', 'End free trial to unlock {{name}}', {
-          name,
-        })}
-      </button>
-
-      <div className="text-[12.5px] leading-[1.5] text-pqMuted">
-        {t(
-          'or_wait_until_trial_ends',
-          'Or wait — {{name}} unlocks by itself when your free trial ends.',
+    <div data-provider-locked="1">
+      <TrialLockCard
+        variant="inline"
+        name={name}
+        title={t(
+          'provider_unlocks_after_your_trial',
+          '{{name}} unlocks after your trial',
           { name }
         )}
-      </div>
-
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+        description={t(
+          'you_will_be_logged_in_into_your_current_account_if_you_would_like_a_different_account_change_it_first_on_x',
+          'You will be logged in into your current account, if you would like a different account, change it first on {{name}}',
+          { name }
+        )}
+        perks={[
+          t('x_lock_perk_publish', 'Publish and thread straight to {{name}}', {
+            name,
+          }),
+          t('x_lock_perk_plugs', 'Auto-plugs and reply automations'),
+          t(
+            'x_lock_perk_analytics',
+            '{{name}} analytics — impressions, engagement, follows',
+            { name }
+          ),
+        ]}
+      />
     </div>
   );
 };
@@ -643,8 +798,11 @@ export const AddProviderComponent: FC<{
   update?: () => void;
   onboarding?: boolean;
   isMobile?: boolean;
+  onInviteModeChange?: (invite: boolean) => void;
+  /** Fires when a provider connect/continue step opens or closes (scroll reset). */
+  onStepChange?: (open: boolean) => void;
 }> = (props) => {
-  const { update, social, article, onboarding, isMobile } = props;
+  const { update, social, article, onboarding, isMobile, onStepChange } = props;
   // Which provider's setup step is open. The grid used to connect on click,
   // which meant a precondition you did not know about — an Instagram account
   // that is not a Business account, an X session on the wrong login — only
@@ -654,6 +812,11 @@ export const AddProviderComponent: FC<{
   // channels column has a button for each, but the design lets you switch
   // without closing — picking the wrong one used to mean reopening the dialog.
   const [inviteMode, setInviteMode] = useState(!!props.invite);
+
+  useEffect(() => {
+    onStepChange?.(!!step);
+  }, [step, onStepChange]);
+
   const { guides, fallback } = useProviderGuides();
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
@@ -699,7 +862,7 @@ export const AddProviderComponent: FC<{
             children: (
               <div
                 {...(isMobile
-                  ? { className: 'h-full bg-newBgColor p-[20px]' }
+                  ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
                 <Web3Providers
@@ -901,7 +1064,7 @@ export const AddProviderComponent: FC<{
             children: (
               <div
                 {...(isMobile
-                  ? { className: 'h-full bg-newBgColor p-[20px]' }
+                  ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
                 <CustomVariables
@@ -969,6 +1132,8 @@ export const AddProviderComponent: FC<{
         item={step}
         guide={guide}
         locked={!!step.trialLocked && !!user?.isTrailing}
+        inviteMode={inviteMode}
+        onboarding={onboarding}
         onBack={() => setStep(null)}
         onConnect={getSocialLink(
           inviteMode,
@@ -985,23 +1150,44 @@ export const AddProviderComponent: FC<{
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
       {!onboarding && (
-        <div className="flex w-fit items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
-          {[
-            [false, t('connect_myself', 'Connect myself')] as const,
-            [true, t('invite_by_link', 'Invite by link')] as const,
-          ].map(([mode, label]) => (
+        <div className="flex w-fit items-center gap-[3px] self-start rounded-[11px] bg-pqSettings p-[3px]">
+          {(
+            [
+              [false, t('connect_myself', 'Connect myself'), CONNECT_MODE_ICONS.self],
+              [true, t('invite_by_link', 'Invite by link'), CONNECT_MODE_ICONS.invite],
+            ] as const
+          ).map(([mode, label, icon]) => (
             <button
               key={label}
               type="button"
               data-connect-mode={mode ? 'invite' : 'self'}
-              onClick={() => setInviteMode(mode)}
+              onClick={() => {
+                setInviteMode(mode);
+                props.onInviteModeChange?.(mode);
+              }}
               className={clsx(
-                'h-[30px] rounded-[6px] px-[14px] text-[12.5px] transition-colors',
+                'flex h-[32px] items-center gap-[7px] rounded-[9px] px-[14px] text-[12.5px] font-[600] transition-colors',
                 inviteMode === mode
-                  ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
-                  : 'font-[500] text-pqSoft hover:text-pqText'
+                  ? 'bg-pqInner text-pqText shadow-pqE1'
+                  : 'bg-transparent text-pqMuted hover:text-pqText'
               )}
             >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                className="shrink-0"
+                aria-hidden="true"
+              >
+                <path
+                  d={icon}
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               {label}
             </button>
           ))}
@@ -1019,8 +1205,8 @@ export const AddProviderComponent: FC<{
               className={clsx(
                 isMobile && 'gap-[20px] flex flex-col',
                 !isMobile &&
-                  'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
-                isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
+                  'grid gap-[12px] justify-items-center justify-center',
+                isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-4'
               )}
             >
               {group.items.map((item) => (
@@ -1043,8 +1229,8 @@ export const AddProviderComponent: FC<{
                   className={clsx(
                     isMobile
                       ? 'flex-row h-[72px] p-[16px]'
-                      : 'flex-col p-[10px] h-[100px] justify-center',
-                    'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
+                      : 'h-[104px] flex-col justify-center px-[10px] py-[12px]',
+                    'relative flex w-full cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqInner text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                   )}
                 >
                   <div className="relative">
