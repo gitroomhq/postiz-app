@@ -96,10 +96,14 @@ implies behaviour the code doesn't have, **raise it — do not implement it sile
   the corrections table is in `docs/ui-migration-log.md`. Read the method, not the doc.
 - All colour comes from the token layer in `apps/frontend/src/app/colors.scss`. No hex literals in
   components. Missing value → add a token.
-- Do not rewrite copy, handlers, API calls or provider settings while restyling. Those were verified
-  against source; "cleaning them up" is a regression.
-- **Never delete a capability just because the design doesn't show it.** The design's rail has no
-  Plugs, no Affiliate and no Create-Post button; all three exist here and stay.
+- Do not rewrite handlers, API calls or provider settings while restyling. Those were verified
+  against source; "cleaning them up" is a regression. **Copy: visible labels and headings take the
+  design's text** (owner decision, 2026-08-05 fidelity pass) as `t()` keys with English fallbacks;
+  error/validation strings stay the repo's.
+- **Never make a capability unreachable just because the design doesn't show it — but the rail
+  matches the design's inventory exactly** (owner decision, 2026-08-05). Plugs and Affiliate live
+  as link rows in the Settings sub-nav (`extraMenu` in `top.menu.tsx`); Create Post stays in the
+  header slot.
 - Keep **i18n** (14 languages) and **RTL** (he, ar) working. The prototype has neither — it is
   hardcoded English, LTR only.
 - Theming is a **`.dark` / `.light` class on `<body>`** (`darkMode: 'class'`), not `data-theme` on

@@ -30,7 +30,9 @@ fi
 
 mkdir -p "$OUT"
 
-# Screens that render for an ordinary signed-in account.
+# Screens that render for an ordinary signed-in account. /third-party stays
+# even though it redirects to Settings now — the warning line is the proof the
+# redirect still works.
 SCREENS=(
   launches
   analytics
@@ -38,6 +40,7 @@ SCREENS=(
   plugs
   third-party
   settings
+  connections
   agents
   channels
   billing

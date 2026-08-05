@@ -73,93 +73,131 @@ export const PostsPanel: FC = () => {
   return (
     <div
       data-tour="posts-panel"
-      className="flex w-[320px] shrink-0 flex-col gap-[12px] overflow-hidden bg-pqInner p-[16px]"
+      className="flex w-[300px] shrink-0 flex-col overflow-hidden bg-pqInner tablet:w-[248px]"
     >
-      <div className="flex items-center gap-[8px]">
-        <h2 className="flex-1 text-[19px] font-[500]">{t('posts', 'Posts')}</h2>
-        <button
-          type="button"
-          data-posts-toggle="1"
-          onClick={() => setPostsPanelOpen(false)}
-          className="flex h-[28px] items-center gap-[5px] rounded-pqSm px-[8px] text-[12px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
-            <path
-              d="m14 7-5 5 5 5"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {t('hide_posts', 'Hide posts')}
-        </button>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-[2px] rounded-pqSm bg-pqSettings p-[3px]">
-        {tabs.map(([value, label]) => (
+      <div className="flex shrink-0 flex-col gap-[12px] px-[14px] pb-[12px] pt-[16px]">
+        <div className="flex items-center gap-[8px]">
+          <h2 className="flex-1 font-display text-[15px] font-[600]">
+            {t('posts', 'Posts')}
+          </h2>
           <button
-            key={value}
             type="button"
-            data-posts-tab={value}
-            onClick={() => setListState(value)}
-            className={clsx(
-              'h-[28px] flex-1 rounded-[6px] text-[12.5px] transition-colors',
-              listState === value
-                ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
-                : 'font-[500] text-pqSoft hover:text-pqText'
-            )}
+            data-posts-toggle="1"
+            onClick={() => setPostsPanelOpen(false)}
+            className="flex h-[28px] items-center gap-[6px] rounded-pqSm border border-pqBorder px-[10px] text-[12.5px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
           >
-            {label}
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              className="rtl:rotate-180"
+            >
+              <path
+                d="M14 8l-4 4 4 4"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M4.5 4v16" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+            {t('hide_posts', 'Hide posts')}
           </button>
-        ))}
+        </div>
+
+        <div className="flex shrink-0 gap-[2px] rounded-pqSm bg-pqSettings p-[2px]">
+          {tabs.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              data-posts-tab={value}
+              onClick={() => setListState(value)}
+              className={clsx(
+                'h-[28px] min-w-0 flex-1 truncate rounded-[6px] px-[4px] text-[12px] transition-colors',
+                listState === value
+                  ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
+                  : 'font-[500] text-pqSoft hover:text-pqText'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
+      <div className="flex min-h-0 flex-1 flex-col gap-[6px] overflow-y-auto px-[12px] pb-[14px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
         {!listPosts.length && (
-          <div className="rounded-pqSm border border-pqBorder p-[16px] text-center text-[12.5px] text-pqMuted">
-            {t('no_posts_here', 'Nothing here yet.')}
+          <div className="flex flex-1 flex-col items-center justify-center gap-[10px] px-[16px] py-[32px] text-center">
+            <span className="grid size-[40px] place-items-center rounded-pqMd bg-pqSettings text-pqSoft">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                <path
+                  d="M9 6.5h11M9 12h11M9 17.5h7M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <div className="text-[13.5px] text-pqMuted">
+              {listState === 'draft'
+                ? t('no_drafts_yet', 'No drafts yet')
+                : listState === 'published'
+                ? t('nothing_published_yet', 'Nothing published yet')
+                : t('no_posts_yet', 'No posts yet')}
+            </div>
           </div>
         )}
         {listPosts.map((post: any) => (
           <div
             key={post.id}
             data-posts-item={post.id}
-            className="flex flex-col gap-[8px] rounded-pqMd bg-pqBg p-[12px]"
+            className="rounded-pqMd border border-pqBorder bg-pqBg p-[10px]"
           >
-            <div className="flex items-center gap-[8px]">
-              <span className="relative shrink-0">
+            <div className="mb-[7px] flex items-center gap-[7px]">
+              <span className="relative size-[24px] shrink-0">
                 <ImageWithFallback
                   fallbackSrc={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
                   src={post.integration?.picture || '/no-picture.jpg'}
                   alt=""
                   width={24}
                   height={24}
-                  className="rounded-full"
+                  className="rounded-[7px]"
                 />
-                <img
-                  src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-                  alt=""
-                  className="absolute -bottom-[2px] -end-[2px] h-[12px] w-[12px] rounded-full border border-pqBg"
-                />
+                <span className="absolute -bottom-[2px] -end-[3px] grid size-[14px] place-items-center rounded-full bg-pqBadgeRing">
+                  <img
+                    src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+                    alt=""
+                    className="size-[10px] rounded-full"
+                  />
+                </span>
               </span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-pqMuted">
+              <span className="min-w-0 flex-1 truncate text-[11.5px] text-pqMuted">
                 {dayjs.utc(post.publishDate).local().format('ddd · HH:mm')}
               </span>
               <span
                 className={clsx(
-                  'shrink-0 text-[11.5px] font-[500]',
-                  post.state === 'PUBLISHED' ? 'text-pqOk' : 'text-pqFocused'
+                  'flex shrink-0 items-center gap-[5px] text-[11px] font-[500]',
+                  post.state === 'PUBLISHED'
+                    ? 'text-pqOk'
+                    : post.state === 'DRAFT'
+                    ? 'text-pqSoft'
+                    : 'text-pqFocused'
                 )}
               >
+                <span
+                  className="size-[5px] rounded-full bg-current"
+                  aria-hidden="true"
+                />
                 {post.state === 'PUBLISHED'
-                  ? t('posted', 'Posted')
+                  ? t('published', 'Published')
                   : post.state === 'DRAFT'
-                  ? t('drafts', 'Drafts')
+                  ? t('draft', 'Draft')
                   : t('scheduled', 'Scheduled')}
               </span>
             </div>
-            <div className="line-clamp-3 text-[13px] leading-[1.45]">
+            <div className="line-clamp-2 text-[13px] leading-[1.5] text-pqText">
               {(post.content || '').replace(/<[^>]*>/g, ' ').trim()}
             </div>
           </div>

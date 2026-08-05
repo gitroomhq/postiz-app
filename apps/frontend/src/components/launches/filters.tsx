@@ -274,18 +274,6 @@ export const Filters = () => {
     { value: 'published', label: t('published', 'Published') },
   ];
 
-  const previousPage = useCallback(() => {
-    if (calendar.listPage > 0) {
-      calendar.setListPage(calendar.listPage - 1);
-    }
-  }, [calendar]);
-
-  const nextPage = useCallback(() => {
-    if (calendar.listPage < calendar.listTotalPages - 1) {
-      calendar.setListPage(calendar.listPage + 1);
-    }
-  }, [calendar]);
-
   // The design draws all three of this toolbar's switches the same way: a
   // `--settings` trough with a raised `--inner` pill on the chosen option.
   const segment = 'flex gap-[2px] rounded-pqSm bg-pqSettings p-[2px]';
@@ -364,63 +352,8 @@ export const Filters = () => {
       )}
       {isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
-            <div
-              onClick={previousPage}
-              className={clsx(
-                'flex h-full items-center justify-center px-[10px] text-pqMuted transition-colors rtl:rotate-180',
-                calendar.listPage > 0
-                  ? 'cursor-pointer hover:bg-pqHover hover:text-pqText'
-                  : 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M6.5 11L1.5 6L6.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="flex h-full min-w-[190px] items-center justify-center text-center">
-              <div className="px-[9px] text-[13px] font-[500]">
-                {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
-              </div>
-            </div>
-            <div
-              onClick={nextPage}
-              className={clsx(
-                'flex h-full items-center justify-center px-[10px] text-pqMuted transition-colors rtl:rotate-180',
-                calendar.listPage < calendar.listTotalPages - 1
-                  ? 'cursor-pointer hover:bg-pqHover hover:text-pqText'
-                  : 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M1.5 11L6.5 6L1.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
+          {/* No pager here any more: the design pages the list from its own
+              foot — "Show more" under the last row — not from the toolbar. */}
           <div className={segment}>
             {listStateOptions.map((option) => (
               <div

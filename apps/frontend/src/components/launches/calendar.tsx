@@ -558,7 +558,15 @@ export const MonthView = () => {
 export const ListView = () => {
   const t = useT();
   const user = useUser();
-  const { integrations, loading, listPosts, listState } = useCalendar();
+  const {
+    loading,
+    listPosts,
+    listState,
+    listPage,
+    listTotal,
+    listTotalPages,
+    setListPage,
+  } = useCalendar();
   const emptyMessage =
     listState === 'scheduled'
       ? t('no_upcoming_posts', 'No upcoming posts scheduled')
@@ -590,7 +598,22 @@ export const ListView = () => {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [listPosts]);
 
-  if (loading) {
+  const showMore = useCallback(
+    () => setListPage(listPage + 1),
+    [listPage, setListPage]
+  );
+  const collapsePosts = useCallback(() => setListPage(0), [setListPage]);
+  const hasMore = listPage < listTotalPages - 1;
+  // Word by word from existing keys, the same way the toolbar built
+  // "Page X of Y" before the design moved paging to the foot of the list.
+  const shownLabel = `${t('showing', 'Showing')} ${listPosts.length} ${t(
+    'of',
+    'of'
+  )} ${listTotal} ${
+    listTotal === 1 ? t('post', 'Post') : t('posts', 'Posts')
+  }`;
+
+  if (loading && !listPosts.length) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center">
         <div className="text-textColor">{t('loading', 'Loading...')}</div>
@@ -600,46 +623,115 @@ export const ListView = () => {
 
   if (listPosts.length === 0) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="text-textColor text-[16px]">{emptyMessage}</div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-[10px] py-[80px] text-center">
+        <span className="grid size-[44px] place-items-center rounded-[13px] bg-pqSettings text-pqSoft">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none">
+            <path
+              d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19V6a1.5 1.5 0 0 1 1.5-1.5Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+            />
+            <path
+              d="M6.5 9h11M6.5 12.5h11M6.5 16h7"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+        <div className="text-[14.5px] font-[600] text-pqText">
+          {emptyMessage}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-[10px] flex-1 relative">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {groupedPosts.map(([dateKey, datePosts]) => (
-          <Fragment key={dateKey}>
-            <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
-              {newDayjs(dateKey).format(
-                isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY'
+    <div className="relative flex flex-1 flex-col">
+      <div className="absolute inset-0 overflow-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
+        <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
+          {groupedPosts.map(([dateKey, datePosts]) => (
+            <Fragment key={dateKey}>
+              <div className="flex items-center gap-[10px] px-[2px] pb-[9px] pt-[18px]">
+                <span className="shrink-0 text-[11.5px] font-[600] uppercase tracking-[0.05em] text-pqSoft">
+                  {newDayjs(dateKey).format(
+                    isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY'
+                  )}
+                </span>
+                <span className="h-[1px] flex-1 bg-pqLine" aria-hidden="true" />
+                <span className="shrink-0 text-[11.5px] text-pqSoft">
+                  {datePosts.length}{' '}
+                  {datePosts.length === 1 ? t('post', 'Post') : t('posts', 'Posts')}
+                </span>
+              </div>
+              <div className="flex flex-col gap-[6px]">
+                {datePosts.map((post) => (
+                  <ListItem
+                    key={post.id}
+                    post={post}
+                    statistics={openStatistics(post.id)}
+                    missingRelease={openMissingRelease(post.id)}
+                    editPost={editPost(post, false)}
+                    duplicatePost={editPost(post, true)}
+                    copyDebugJson={
+                      user?.isSuperAdmin ? copyDebugJson(post) : undefined
+                    }
+                    deletePost={deletePost(post)}
+                  />
+                ))}
+              </div>
+            </Fragment>
+          ))}
+          {hasMore ? (
+            <div className="flex flex-col items-center gap-[8px] pb-[8px] pt-[22px]">
+              <button
+                type="button"
+                onClick={showMore}
+                className="flex h-[36px] items-center gap-[8px] rounded-pqSm bg-pqInner px-[18px] text-[13px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+              >
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                  <path
+                    d="m6 9 6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {t('show_more_posts', 'Show more')}
+              </button>
+              <span className="text-[12px] text-pqSoft">{shownLabel}</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-[10px] pb-[8px] pt-[22px]">
+              <span className="text-[12px] text-pqSoft">{shownLabel}</span>
+              {listPage > 0 && (
+                <button
+                  type="button"
+                  onClick={collapsePosts}
+                  className="flex h-[30px] items-center gap-[7px] rounded-pqSm px-[13px] text-[12.5px] font-[500] text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    className="rotate-180"
+                  >
+                    <path
+                      d="m6 9 6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {t('collapse', 'Collapse')}
+                </button>
               )}
             </div>
-            <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
-              {datePosts.map((post) => (
-                <CalendarItem
-                  key={post.id}
-                  display="day"
-                  isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
-                  state={post.state}
-                  statistics={openStatistics(post.id)}
-                  missingRelease={openMissingRelease(post.id)}
-                  editPost={editPost(post, false)}
-                  duplicatePost={editPost(post, true)}
-                  copyDebugJson={
-                    user?.isSuperAdmin ? copyDebugJson(post) : undefined
-                  }
-                  post={post}
-                  integrations={integrations}
-                  deletePost={deletePost(post)}
-                  showTime={true}
-                />
-              ))}
-            </div>
-          </Fragment>
-        ))}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1255,6 +1347,213 @@ const CalendarItem: FC<{
         data-ci-actions="1"
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-[3px] end-[3px] z-[5] flex gap-[1px] rounded-[6px] bg-pqSettings p-[2px] opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+      >
+        {copyDebugJson && (
+          <button
+            type="button"
+            className={actionButton}
+            onClick={copyDebugJson}
+          >
+            <CopyDebug />
+          </button>
+        )}
+        <button type="button" className={actionButton} onClick={duplicatePost}>
+          <Duplicate />
+        </button>
+        <button type="button" className={actionButton} onClick={preview}>
+          <Preview />
+        </button>
+        {(post.integration.providerIdentifier === 'x' && disableXAnalytics) ||
+        !post.releaseId ? (
+          <></>
+        ) : post.releaseId === 'missing' && missingRelease ? (
+          <button
+            type="button"
+            className={actionButton}
+            onClick={missingRelease}
+          >
+            <Statistics />
+          </button>
+        ) : post.releaseId !== 'missing' ? (
+          <button type="button" className={actionButton} onClick={statistics}>
+            <Statistics />
+          </button>
+        ) : (
+          <></>
+        )}
+        <button
+          type="button"
+          className={clsx(actionButton, 'hover:text-pqWarn')}
+          onClick={deletePost}
+        >
+          <DeletePost />
+        </button>
+      </div>
+    </div>
+  );
+});
+/**
+ * The list view's row — the design gives the Posts page a wider card than the
+ * calendar cell: channel name, time and a status pill share the top line, the
+ * tag chips get a row of their own, and the same floating action cluster the
+ * calendar card uses appears on hover.
+ */
+const ListItem: FC<{
+  editPost: () => void;
+  duplicatePost: () => void;
+  copyDebugJson?: () => void;
+  deletePost: () => void;
+  statistics: () => void;
+  missingRelease?: () => void;
+  post: Post & {
+    integration: Integration;
+    tags: {
+      tag: Tags;
+    }[];
+  };
+}> = memo((props) => {
+  const t = useT();
+  const {
+    editPost,
+    duplicatePost,
+    copyDebugJson,
+    deletePost,
+    statistics,
+    missingRelease,
+    post,
+  } = props;
+  const { disableXAnalytics } = useVariables();
+  const user = useUser();
+  const state = post.state;
+  const showCreationMethodBadge =
+    user?.impersonate &&
+    post.creationMethod &&
+    post.creationMethod !== 'UNKNOWN';
+  const preview = useCallback(() => {
+    window.open(`/p/` + post.id + '?share=true', '_blank');
+  }, [post]);
+  // Status, not tag: the list row shows its tags as chips below the content,
+  // so the stripe is free to say published / draft / scheduled.
+  const accent =
+    state === 'PUBLISHED'
+      ? 'var(--ok)'
+      : state === 'DRAFT'
+      ? 'var(--soft)'
+      : state === 'ERROR'
+      ? 'var(--warn)'
+      : 'var(--brand)';
+  const actionButton =
+    'grid size-[26px] place-items-center rounded-[6px] text-pqMuted transition-colors hover:bg-pqSettings hover:text-pqText';
+  return (
+    <div
+      onClick={editPost}
+      className="group relative flex w-full min-w-0 cursor-pointer overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]"
+    >
+      <span
+        className="w-[3px] shrink-0"
+        style={{
+          background: accent,
+          backgroundImage:
+            state === 'DRAFT'
+              ? 'repeating-linear-gradient(180deg, var(--soft) 0 3px, transparent 3px 6px)'
+              : undefined,
+        }}
+        aria-hidden="true"
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-[9px] pb-[11px] pe-[13px] ps-[14px] pt-[12px]">
+        <div className="flex min-w-0 items-center gap-[9px]">
+          <span className="relative size-[26px] shrink-0">
+            <img
+              className="size-[26px] rounded-[8px] object-cover"
+              src={post.integration.picture! || '/no-picture.jpg'}
+              alt=""
+            />
+            <span className="absolute -bottom-[4px] -end-[4px] grid size-[15px] place-items-center rounded-full bg-pqBadgeRing">
+              <img
+                className="size-[11px] rounded-full"
+                src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+                alt=""
+              />
+            </span>
+          </span>
+          <span className="min-w-0 truncate text-[13px] font-[600] text-pqText">
+            {post.integration.name}
+          </span>
+          <span className="shrink-0 text-[12.5px] font-[600] text-pqSoft">
+            {dayjs
+              .utc(post.publishDate)
+              .local()
+              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+          </span>
+          <span className="min-w-0 flex-1" />
+          {state === 'ERROR' && (
+            <span
+              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+              data-tooltip-id="tooltip"
+              data-tooltip-content={
+                post.error || 'An error occurred while publishing this post'
+              }
+            >
+              !
+            </span>
+          )}
+          {showCreationMethodBadge && (
+            <CreationMethodBadge
+              creationMethod={post.creationMethod}
+              size="sm"
+            />
+          )}
+          <span
+            className={clsx(
+              'flex h-[20px] shrink-0 items-center gap-[5px] rounded-full pe-[8px] ps-[7px] text-[11px] font-[600]',
+              state === 'PUBLISHED'
+                ? 'bg-pqOkSoft text-pqOk'
+                : state === 'DRAFT'
+                ? 'bg-pqSettings text-pqSoft'
+                : state === 'ERROR'
+                ? 'bg-pqWarnSoft text-pqWarn'
+                : 'bg-pqBrandSoft text-pqBrand'
+            )}
+          >
+            <span
+              className="size-[5px] rounded-full bg-current"
+              aria-hidden="true"
+            />
+            {state === 'PUBLISHED'
+              ? t('published', 'Published')
+              : state === 'DRAFT'
+              ? t('draft', 'Draft')
+              : state === 'ERROR'
+              ? t('error', 'Error')
+              : t('scheduled', 'Scheduled')}
+          </span>
+        </div>
+        <div className="line-clamp-2 break-words text-start text-[13.5px] leading-[1.5] text-pqText">
+          {stripHtmlValidation('none', post.content, false, true, false) ||
+            t('no_content', 'no content')}
+        </div>
+        {!!post.tags?.length && (
+          <div className="flex flex-wrap items-center gap-[5px]">
+            {post.tags.map(({ tag }) => (
+              <span
+                key={tag.id || tag.name}
+                className="flex h-[20px] items-center gap-[5px] rounded-[6px] bg-pqSettings pe-[8px] ps-[6px] text-[11px] font-[600] text-pqMuted"
+              >
+                <span
+                  className="size-[6px] rounded-[2px]"
+                  style={{ background: tag.color }}
+                  aria-hidden="true"
+                />
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div
+        data-ci-actions="1"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-[9px] end-[9px] z-[5] flex gap-[1px] rounded-[8px] bg-pqInner p-[2px] opacity-0 shadow-[var(--e2),inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
         {copyDebugJson && (
           <button

@@ -78,6 +78,7 @@ export const CalendarContext = createContext({
   >,
   listPage: 0,
   listTotalPages: 0,
+  listTotal: 0,
   postsPanelOpen: true,
   setPostsPanelOpen: (open: boolean) => {
     /** empty **/
@@ -221,10 +222,30 @@ export const CalendarWeekProvider: FC<{
     }).toString();
   }, [listPage, filters.customer, listState]);
 
+  // Reads every page up to the current one, not just the newest: the design's
+  // list grows downward under a "Show more" button, so the pages already on
+  // screen have to stay. Fetching the whole stack under one key also means an
+  // edit or delete revalidates everything shown instead of leaving a stale
+  // copy of an earlier page behind.
   const loadListData = useCallback(async () => {
-    const response = await fetch(`/posts/list?${listParams}`);
-    return expandPostsList(await response.json());
-  }, [listParams]);
+    const pages = await Promise.all(
+      Array.from({ length: listPage + 1 }, async (_, page) => {
+        const pageParams = new URLSearchParams({
+          page: page.toString(),
+          limit: '100',
+          customer: filters?.customer?.toString() || '',
+          state: listState,
+        }).toString();
+        const response = await fetch(`/posts/list?${pageParams}`);
+        return expandPostsList(await response.json());
+      })
+    );
+    return {
+      ...pages[pages.length - 1],
+      posts: pages.flatMap((page: any) => page?.posts || []),
+      total: pages[0]?.total || 0,
+    };
+  }, [listPage, filters.customer, listState]);
 
   // SWR for calendar view
   const {
@@ -257,6 +278,9 @@ export const CalendarWeekProvider: FC<{
       refreshWhenOffline: false,
       refreshWhenHidden: false,
       revalidateOnFocus: false,
+      // "Show more" and the panel tabs change the key; without this the rows
+      // already read blink out for a spinner. The design appends beneath them.
+      keepPreviousData: true,
     }
   );
 
@@ -406,6 +430,7 @@ export const CalendarWeekProvider: FC<{
         listPosts,
         listPage,
         listTotalPages,
+        listTotal,
         setListPage,
         listState,
         setListState,

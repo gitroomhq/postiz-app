@@ -3582,3 +3582,31 @@ recorded above) · **i18n 1137**, adds being the design's billing/agent copy and
 retired greeting, "Features"-era labels and never-interpolating variants. One interpolation bug
 was caught by the screenshot: the months-free pill rendered a literal `{{n}}` because two call
 sites disagreed on the parameter name.
+
+### Posts is the design's list — done
+
+The design has no separate Posts screen: `page:'posts'` renders the calendar's list view beside
+the posts panel, and ours now draws it the design's way — day-grouped rows under date headers
+with per-day counts, the segmented state filter, brand accent bars, status pills, and a
+"Showing N of M" line over the design's Load-more button in place of the old pager. The list
+now *accumulates*: pages already read stay on screen under one SWR key with `keepPreviousData`,
+because the design's list grows downward instead of swapping pages — same endpoint, same
+call surface (`api` unchanged at 149). The panel takes its 300px/248px widths and the 15px
+display heading from the prototype. i18n: the pager's `page` label retires; the empty states
+split per tab (`no_posts_yet` / `no_drafts_yet` / `nothing_published_yet`), plus `show_more_posts`,
+`showing`, `collapse`.
+
+### The sweep, both themes, and RTL — done
+
+Thirteen screens plus the new `/connections` (added to `ui-sweep.sh`), three widths, both themes:
+**zero horizontal overflow anywhere**, and the only warnings are the two honest redirects —
+`/third-party → /settings` (ours, by design) and `/agents → /agents/new` (the app's own).
+`/billing` no longer redirects the lifetime account, which is the deliberate change above doing
+its job. The light theme was read, not assumed: the billing grid, the lifetime card and the
+settings modal all resolve correctly through the token layer. Hebrew mirrors cleanly — the
+settings card flips, the close button crosses to the start edge, and untranslated new keys fall
+back to English until the catalogues catch up.
+
+Root `CLAUDE.md`'s two non-negotiables now say what the owner decided during this pass: the rail
+matches the design's inventory exactly (capabilities stay *reachable*, not necessarily *drawn*),
+and visible labels take the design's text as translation keys.
