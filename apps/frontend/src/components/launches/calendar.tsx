@@ -10,7 +10,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  CalendarContext,
   Integrations,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
@@ -41,8 +40,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, random, sortBy } from 'lodash';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import { random } from 'lodash';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { useInterval } from '@mantine/hooks';
@@ -58,6 +56,7 @@ import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
+import { isClientDemoPost } from '@gitroom/frontend/components/launches/ui-demo-posts';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -93,8 +92,26 @@ export const hours = Array.from(
   (_, i) => i
 );
 
+/**
+ * Demo / tour seed posts look real but have no API backing. Match media's
+ * read-only toast so actions don't silently no-op and look broken.
+ */
+export const useDemoPostAction = () => {
+  const t = useT();
+  const toaster = useToaster();
+  const message = t(
+    'ui_demo_post_readonly',
+    'Sample posts are for layout only. Create a real post to edit, duplicate, preview, or delete.'
+  );
+  const explain = useCallback(() => {
+    toaster.show(message, 'warning');
+  }, [toaster, message]);
+  return { explain, demoTooltip: message };
+};
+
 // Shared hook for post actions (edit, delete, statistics)
-const usePostActions = (onMutate?: () => void) => {
+/** Shared by calendar cells, list rows, and the Posts queue panel. */
+export const usePostActions = (onMutate?: () => void) => {
   const t = useT();
   const fetch = useFetch();
   const modal = useModals();
@@ -257,98 +274,12 @@ const usePostActions = (onMutate?: () => void) => {
   };
 };
 
-export const DayView = () => {
-  const calendar = useCalendar();
-  const { integrations, posts, startDate } = calendar;
-
-  // Set dayjs locale based on current language
-  const currentLanguage = i18next.resolvedLanguage || 'en';
-  dayjs.locale(currentLanguage);
-
-  const currentDay = dayjs.utc(startDate);
-
-  const options = useMemo(() => {
-    const createdPosts = posts.map((post) => ({
-      integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post?.integration?.picture || '',
-      identifier: post?.integration?.providerIdentifier || '',
-      id: post?.integration?.id || '',
-      name: post?.integration?.name || '',
-      time: dayjs
-        .utc(post.publishDate)
-        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
-    }));
-    return sortBy(
-      Object.values(
-        groupBy(
-          [
-            ...createdPosts,
-            ...integrations.flatMap((p) =>
-              p.time.flatMap((t) => ({
-                integration: p,
-                identifier: p?.identifier,
-                name: p?.name,
-                id: p?.id,
-                image: p?.picture,
-                time: t?.time,
-              }))
-            ),
-          ],
-          (p: any) => p.time
-        )
-      ),
-      (p) => p[0].time
-    );
-  }, [integrations, posts]);
-
-  return (
-    <div className="flex flex-col gap-[10px] flex-1 relative">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {options.map((option) => (
-          <Fragment key={option[0].time}>
-            <div className="text-center text-[14px] min-h-[21px]">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
-            </div>
-            <div
-              key={option[0].time}
-              className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
-            >
-              <CalendarContext.Provider
-                value={{
-                  ...calendar,
-                  integrations: option.flatMap((p) => p.integration),
-                }}
-              >
-                <CalendarColumn
-                  getDate={currentDay
-                    .startOf('day')
-                    .add(option[0].time, 'minute')
-                    .local()}
-                />
-              </CalendarContext.Provider>
-            </div>
-          </Fragment>
-        ))}
-      </div>
-    </div>
-  );
-};
 /**
- * Opens the week grid at 07:00 instead of midnight.
+ * Opens week/day grids at 07:00 instead of midnight.
  *
- * The prototype does the same (`scrollTop = 7 * 78`), and for a plain reason:
- * a calendar that opens on the small hours shows an empty night and makes
- * everybody scroll before they can see their own day. This account's posting
- * times are 05:00, 09:40 and 14:40 — none of them visible at the top.
- *
- * Computed from the container rather than a hardcoded row height, so it stays
- * right if the row height changes: the grid is 24 hours tall, so seven
- * twenty-fourths of it is 07:00.
+ * The prototype does the same for the week scroller (`scrollTop = 7 * 78`).
+ * A calendar that opens on the small hours shows an empty night first.
+ * Computed from the container: 24 equal hour rows → seven twenty-fourths = 07:00.
  */
 const openAtMorning = (el: HTMLDivElement | null) => {
   if (!el || el.dataset.scrolled === '1') return;
@@ -358,8 +289,6 @@ const openAtMorning = (el: HTMLDivElement | null) => {
     el.dataset.scrolled = '1';
     return true;
   };
-  // The rows are not laid out on the first ref callback, so try until they are
-  // rather than guessing at a delay.
   if (!apply()) {
     let tries = 0;
     const tick = () => {
@@ -370,8 +299,37 @@ const openAtMorning = (el: HTMLDivElement | null) => {
   }
 };
 
+export const DayView = () => {
+  const { startDate } = useCalendar();
+  const currentDay = newDayjs(startDate).startOf('day');
+
+  // Owner: Day matches Posts list LOOK (860 column, list cards, hour headers) —
+  // not the prototype left timeline / compact day chips.
+  return (
+    <div className="relative flex flex-1 flex-col text-pqText">
+      <div className="relative flex-1">
+        <div
+          data-tour="cal-day"
+          ref={openAtMorning}
+          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+        >
+          <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
+            {hours.map((hour) => (
+              <DayHourSection
+                key={hour}
+                hour={hour}
+                day={currentDay}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const WeekView = () => {
-  const { startDate, endDate } = useCalendar();
+  const { startDate, endDate, openPostsForDay } = useCalendar();
   const t = useT();
 
   // Use dayjs to get localized day names
@@ -415,10 +373,16 @@ export const WeekView = () => {
             const today = day.day === newDayjs().format('L');
             const past = day.date.endOf('day').isBefore(newDayjs());
             return (
-              <div
+              <button
+                type="button"
                 key={day.name}
+                onClick={() => openPostsForDay(day.date.startOf('day'))}
+                title={t('see_all_posts_on', 'See all posts on {{day}}').replace(
+                  '{{day}}',
+                  day.date.format('dddd')
+                )}
                 className={clsx(
-                  'sticky top-0 z-[13] flex h-[54px] min-w-0 flex-col items-center justify-center gap-[2px] overflow-hidden border-b border-pqBorder px-[6px]',
+                  'sticky top-0 z-[13] flex h-[54px] min-w-0 flex-col items-center justify-center gap-[2px] overflow-hidden border-b border-pqBorder px-[6px] transition-colors hover:bg-pqHover',
                   today ? 'bg-pqBrandFaint' : 'bg-pqInner'
                 )}
               >
@@ -446,7 +410,7 @@ export const WeekView = () => {
                   className={clsx(
                     'flex h-[27px] min-w-[27px] items-center justify-center rounded-full px-[7px] text-[15px] font-[600]',
                     today
-                      ? 'bg-pqBrand text-white shadow-pqToday'
+                      ? 'bg-pqBrand text-pqOnBrand shadow-pqToday'
                       : past
                       ? 'text-pqSoft'
                       : 'text-pqText'
@@ -454,7 +418,7 @@ export const WeekView = () => {
                 >
                   {day.date.date()}
                 </div>
-              </div>
+              </button>
             );
           })}
           {hours.map((hour) => (
@@ -482,7 +446,6 @@ export const WeekView = () => {
 };
 export const MonthView = () => {
   const { startDate } = useCalendar();
-  const t = useT();
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -538,7 +501,7 @@ export const MonthView = () => {
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="sticky top-0 z-[20] flex h-[54px] min-w-0 items-center justify-center overflow-hidden border-b border-pqBorder bg-pqInner px-[6px] text-[12.5px] font-[600] tracking-[0.01em] text-pqMuted"
+              className="sticky top-0 z-[20] flex h-[54px] min-w-0 items-center justify-center overflow-hidden border-b border-s border-pqBorder bg-pqInner px-[6px] text-[12.5px] font-[600] tracking-[0.01em] text-pqMuted"
             >
               <span className="truncate">{day}</span>
             </div>
@@ -548,6 +511,7 @@ export const MonthView = () => {
               key={index}
               getDate={newDayjs(date.day).endOf('day')}
               randomHour={true}
+              outOfMonth={date.label !== 'current-month'}
             />
           ))}
         </div>
@@ -752,10 +716,12 @@ export const Calendar = () => {
 export const CalendarColumn: FC<{
   getDate: dayjs.Dayjs;
   randomHour?: boolean;
+  /** Month grid: days outside the focused month (prototype soft numColor). */
+  outOfMonth?: boolean;
 }> = memo((props) => {
   const t = useT();
 
-  const { getDate, randomHour } = props;
+  const { getDate, randomHour, outOfMonth } = props;
   const [num, setNum] = useState(0);
   const user = useUser();
   const {
@@ -767,9 +733,11 @@ export const CalendarColumn: FC<{
     sets,
     signature,
     loading,
+    openPostsForDay,
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
+  const toaster = useToaster();
 
   // Use shared post actions hook
   const {
@@ -782,30 +750,38 @@ export const CalendarColumn: FC<{
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
+      // Day and week both bucket by hour — day used to match exact minute so it
+      // could sit on autopost publish times; the design day grid is hourly.
       const check =
-        display === 'day'
-          ? pList.format('YYYY-MM-DD HH:mm') ===
-            getDate.format('YYYY-MM-DD HH:mm')
-          : display === 'week'
+        display === 'day' || display === 'week'
           ? pList.isSameOrAfter(getDate.startOf('hour')) &&
             pList.isBefore(getDate.endOf('hour'))
           : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
       return check;
     });
   }, [posts, display, getDate]);
-  const [showAll, setShowAll] = useState(false);
   const showAllFunc = useCallback(() => {
-    setShowAll(true);
-  }, []);
-  const showLessFunc = useCallback(() => {
-    setShowAll(false);
-  }, []);
+    // Design: overflow opens the Posts list for that day — not in-cell expand.
+    openPostsForDay(getDate.startOf('day'));
+  }, [openPostsForDay, getDate]);
+  // Prototype week: >2 groups → show 1 card + See all N. Month: up to 3 + +N more.
+  // Painting three full cards in a 108px week cell was clipping content and actions.
   const list = useMemo(() => {
-    if (showAll) {
-      return postList;
+    if (display === 'week' && postList.length > 2) {
+      return postList.slice(0, 1);
     }
-    return postList.slice(0, 3);
-  }, [postList, showAll]);
+    if (display === 'month') {
+      return postList.slice(0, 3);
+    }
+    return postList;
+  }, [postList, display]);
+  const showOverflowChip =
+    display === 'week'
+      ? postList.length > 2
+      : display === 'month'
+      ? postList.length > 3
+      : false;
+  const cellClampTwo = display === 'week' && postList.length === 2;
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
@@ -912,6 +888,15 @@ export const CalendarColumn: FC<{
           }),
         });
         if (status !== 500) {
+          if (action === 'schedule') {
+            toaster.show(
+              t('scheduled_for_when', 'Scheduled for {when}').replace(
+                '{when}',
+                getDate.format('ddd · HH:mm')
+              ),
+              'success'
+            );
+          }
           if (item.interval || action === 'schedule') {
             reloadCalendarView();
             return;
@@ -931,7 +916,7 @@ export const CalendarColumn: FC<{
           : !!monitor.canDrop() && !monitor.isOver(),
       }),
     }),
-    [posts]
+    [posts, changeDate, fetch, getDate, modal, reloadCalendarView, t, toaster]
   );
 
   const addModal = useCallback(async () => {
@@ -1010,43 +995,87 @@ export const CalendarColumn: FC<{
 
   const addProvider = useAddProvider();
   const isToday = getDate.isSame(newDayjs(), 'day');
+  const isDay = display === 'day';
+  const emptySlotLabel = isBeforeNow
+    ? t('date_passed', 'Date passed')
+    : t('add_a_post_at', 'Add a post at {{time}}').replace(
+        '{{time}}',
+        convertTimeFormatBasedOnLocality(getDate.hour())
+      );
+
   return (
-    // The cell is the grid item now — the hairlines between cells are its own
-    // bottom and start borders, which is how the design draws the grid and
-    // what the 1px-gap trick elsewhere in the app cannot do inside a scroller.
+    // Week/month: cell draws its own hairlines. Day: the parent row owns the
+    // top/gutter hairlines (`dayRows` template) — no extra borders here, or they
+    // read as the white lines on the old autopost bands.
     <div
       ref={drop as any}
       data-cell="1"
+      data-dayslot={isDay ? '1' : undefined}
       data-filled={postList.length ? '1' : '0'}
       data-past={isBeforeNow ? '1' : '0'}
-      data-stack={postList.length > 1 ? '1' : '0'}
+      // Week never stacks: overflow is See all, not hover-scroll (prototype stackAttr:0).
+      // Day grows with its posts (prototype min-height 64, no max).
+      data-stack={
+        display !== 'week' && display !== 'day' && postList.length > 1
+          ? '1'
+          : '0'
+      }
       className={clsx(
-        'relative flex min-w-0 flex-col gap-[3px] border-b border-s border-pqLine p-[3px]',
-        display === 'month'
-          ? 'min-h-[126px]'
-          : display === 'day'
-          ? 'min-h-[108px]'
-          : 'min-h-[108px] max-h-[108px]',
-        isToday && !isBeforeNow && 'bg-pqBrandFaint',
-        isBeforeNow ? 'pq-hatch cursor-not-allowed' : 'cursor-pointer',
+        'relative flex min-w-0 flex-col',
+        isDay
+          ? 'min-h-[64px] gap-[6px] px-[4px] py-[8px] ps-[12px]'
+          : 'gap-[3px] border-b border-s border-pqLine p-[3px]',
+        !isDay && display === 'month' && 'min-h-[126px]',
+        !isDay && display === 'week' && 'min-h-[108px] max-h-[108px]',
+        !isDay && isToday && !isBeforeNow && 'bg-pqBrandFaint',
+        outOfMonth && 'bg-pqTableHeader',
+        isBeforeNow
+          ? clsx(!isDay && 'pq-hatch', 'cursor-not-allowed')
+          : 'cursor-pointer',
         canDrop && 'shadow-[inset_0_0_0_2px_var(--brand)]',
         isTarget && 'shadow-[inset_0_0_0_1px_var(--dropHint)]',
         loading && 'animate-pulse'
       )}
+      onClick={
+        isDay && !isBeforeNow
+          ? integrations.length
+            ? addModal
+            : addProvider
+          : undefined
+      }
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div className="flex items-center gap-[5px] px-[2px] pb-[1px] pt-[3px]">
+          <span
+            className={clsx(
+              'grid h-[22px] min-w-[22px] place-items-center rounded-full px-[6px] text-[12.5px] font-[600]',
+              isToday && !isBeforeNow
+                ? 'bg-pqBrand text-white'
+                : outOfMonth
+                ? 'text-pqSoft'
+                : 'text-pqText'
+            )}
+          >
+            {getDate.date()}
+          </span>
+          {postList.length > 3 && (
+            <span className="ms-auto text-[10.5px] font-[700] text-pqSoft">
+              {postList.length}
+            </span>
+          )}
+        </div>
       )}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className={clsx(
-            'flex w-full flex-col gap-[3px] text-[12px]',
+            'flex w-full flex-col text-[12px]',
+            isDay ? 'gap-[6px]' : 'gap-[3px]',
             isBeforeNow ? 'flex-1' : 'cursor-pointer'
           )}
         >
           {loading && (
             <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
-              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+              <div className="h-full w-full rounded-[10px] bg-pqSettings" />
             </div>
           )}
           {list.map((post) => (
@@ -1066,28 +1095,68 @@ export const CalendarColumn: FC<{
               post={post}
               integrations={integrations}
               deletePost={deletePost(post)}
+              lineClamp={cellClampTwo ? 1 : 2}
             />
           ))}
-          {!showAll && postList.length > 3 && (
+          {showOverflowChip && (
             <button
               type="button"
-              className="relative z-[4] flex h-[19px] w-full shrink-0 items-center justify-center gap-[3px] whitespace-nowrap rounded-[5px] bg-pqBrandSoft px-[5px] text-[10.5px] font-[700] text-pqFocused transition-[filter] hover:brightness-110"
-              onClick={showAllFunc}
+              className="relative z-[4] flex h-[19px] w-full shrink-0 cursor-pointer items-center justify-center gap-[3px] whitespace-nowrap rounded-[5px] bg-pqBrandSoft px-[5px] text-[10.5px] font-[700] text-pqFocused transition-colors hover:bg-pqBrandFaint"
+              onClick={(e) => {
+                e.stopPropagation();
+                showAllFunc();
+              }}
             >
-              {t('show_more', '+ Show more')} ({postList.length - 3})
-            </button>
-          )}
-          {showAll && postList.length > 3 && (
-            <button
-              type="button"
-              className="relative z-[4] flex h-[19px] w-full shrink-0 items-center justify-center gap-[3px] whitespace-nowrap rounded-[5px] bg-pqBrandSoft px-[5px] text-[10.5px] font-[700] text-pqFocused transition-[filter] hover:brightness-110"
-              onClick={showLessFunc}
-            >
-              {t('show_less', '- Show less')}
+              {display === 'month'
+                ? t('n_more', '+{{count}} more').replace(
+                    '{{count}}',
+                    String(postList.length - 3)
+                  )
+                : t('see_all_n_posts', 'See all {{count}} posts').replace(
+                    '{{count}}',
+                    String(postList.length)
+                  )}
             </button>
           )}
         </div>
-        {!isBeforeNow && (
+        {/* Empty past slots only — never paint "Date passed" across cards / See all. */}
+        {!isDay && isBeforeNow && postList.length === 0 && (
+          <div
+            data-cell-past-label="1"
+            className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center text-[14px] text-pqText opacity-0 transition-opacity"
+          >
+            {t('date_passed', 'Date passed')}
+          </div>
+        )}
+        {/* Day empty slots: always-visible chip (prototype emptyLabel), not the
+            week/month hover "+" and not the old greyscale channel icon row. */}
+        {isDay && postList.length === 0 && (
+          <div
+            className={clsx(
+              'mt-auto flex h-[34px] max-w-[230px] items-center gap-[7px] rounded-[8px] px-[11px] text-[12px] text-pqSoft shadow-[inset_0_0_0_1px_var(--border)]',
+              !isBeforeNow && 'pointer-events-none'
+            )}
+          >
+            {!isBeforeNow && (
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 5.5v13M5.5 12h13"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+            {emptySlotLabel}
+          </div>
+        )}
+        {!isDay && !isBeforeNow && (
           <div
             className="pb-[2.5px] px-[5px] flex-1 flex"
             onClick={integrations.length ? addModal : addProvider}
@@ -1102,77 +1171,32 @@ export const CalendarColumn: FC<{
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
-              {display !== 'day' && (
-                // Shown by the `[data-cell]:hover [data-cell-add]` rule in
-                // global.scss rather than by React, so moving the pointer
-                // across the grid does not re-render it.
-                <div
-                  data-cell-add="1"
-                  className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px]"
+              {/* Shown by the `[data-cell]:hover [data-cell-add]` rule in
+                  global.scss rather than by React, so moving the pointer
+                  across the grid does not re-render it. */}
+              <div
+                data-cell-add="1"
+                className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px]"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="26"
+                  height="26"
+                  fill="none"
+                  className="text-pqBrand"
+                  aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="26"
-                    height="26"
-                    fill="none"
-                    className="text-pqBrand"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M12 5v14M5 12h14"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="text-[11.5px] font-[600] -tracking-[0.01em] text-pqFocused">
-                    {convertTimeFormatBasedOnLocality(getDate.hour())}
-                  </span>
-                </div>
-              )}
-              {display === 'day' && (
-                <div
-                  className={`w-full h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
-                >
-                  {integrations.map((selectedIntegrations) => (
-                    <div
-                      className="relative"
-                      key={selectedIntegrations.identifier}
-                    >
-                      <div
-                        className={clsx(
-                          'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
-                        )}
-                      >
-                        <SafeImage
-                          src={
-                            selectedIntegrations.picture || '/no-picture.jpg'
-                          }
-                          className="rounded-[8px]"
-                          alt={selectedIntegrations.identifier}
-                          width={32}
-                          height={32}
-                        />
-                        {selectedIntegrations.identifier === 'youtube' ? (
-                          <img
-                            src="/icons/platforms/youtube.svg"
-                            className="absolute z-10 -bottom-[5px] -end-[5px]"
-                            width={20}
-                          />
-                        ) : (
-                          <SafeImage
-                            src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
-                            className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
-                            alt={selectedIntegrations.identifier}
-                            width={20}
-                            height={20}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                  <path
+                    d="M12 5v14M5 12h14"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="text-[11.5px] font-[600] -tracking-[0.01em] text-pqFocused">
+                  {convertTimeFormatBasedOnLocality(getDate.hour())}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -1193,6 +1217,8 @@ const CalendarItem: FC<{
   state: State;
   display: 'day' | 'week' | 'month';
   showTime?: boolean;
+  /** Week with two cards uses 1-line clamp so both fit the 108px cell. */
+  lineClamp?: 1 | 2;
   post: Post & {
     integration: Integration;
     tags: {
@@ -1203,27 +1229,55 @@ const CalendarItem: FC<{
   const t = useT();
   const {
     editPost,
-    statistics,
     duplicatePost,
     copyDebugJson,
     post,
     date,
     isBeforeNow,
     state,
-    display,
     deletePost,
-    showTime,
-    missingRelease,
+    lineClamp = 2,
   } = props;
-  const { disableXAnalytics } = useVariables();
   const user = useUser();
+  const demo = isClientDemoPost(post.id);
+  const { explain: explainDemo, demoTooltip } = useDemoPostAction();
   const showCreationMethodBadge =
     user?.impersonate &&
     post.creationMethod &&
     post.creationMethod !== 'UNKNOWN';
   const preview = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
     window.open(`/p/` + post.id + '?share=true', '_blank');
-  }, [post]);
+  }, [post, demo, explainDemo]);
+  const onEdit = useCallback(
+    (e?: React.MouseEvent) => {
+      // Day slots put compose on the cell; card click must not bubble into it.
+      e?.stopPropagation();
+      if (demo) {
+        explainDemo();
+        return;
+      }
+      editPost();
+    },
+    [demo, editPost, explainDemo]
+  );
+  const onDuplicate = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
+    duplicatePost();
+  }, [demo, duplicatePost, explainDemo]);
+  const onDelete = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
+    deletePost();
+  }, [demo, deletePost, explainDemo]);
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -1231,7 +1285,9 @@ const CalendarItem: FC<{
         id: post.id,
         interval: !!post.intervalInDays,
         date,
+        state: post.state,
       },
+      canDrag: !demo,
       collect: (monitor) => ({
         // 40%, not invisible: the design keeps the card faintly in place so you
         // can still see where it came from. (Doc 02 says "fully transparent" —
@@ -1239,7 +1295,7 @@ const CalendarItem: FC<{
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    []
+    [demo, post.id, post.intervalInDays, post.state, date]
   );
   // The accent stripe carries the tag colour when the post has one, which is
   // where the tag used to be visible before the actions moved off the top bar.
@@ -1250,14 +1306,181 @@ const CalendarItem: FC<{
     : 'var(--brand)';
   const tagNames = post.tags.map((p) => p.tag.name).join(', ');
   const actionButton =
-    'grid h-[18px] w-[20px] place-items-center rounded-[4px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText';
+    'grid h-[18px] w-[20px] place-items-center rounded-[4px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText disabled:opacity-40';
+  const contentPreview =
+    stripHtmlValidation('none', post.content, false, true, false) ||
+    t('no_content', 'no content');
+  const timeLabel = dayjs
+    .utc(post.publishDate)
+    .local()
+    .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm');
+
+  // Month view: compact 24px chips (prototype data-mpost), not full week cards.
+  if (props.display === 'month') {
+    return (
+      <div
+        // @ts-ignore
+        ref={dragRef}
+        data-ci="1"
+        data-mpost="1"
+        onClick={onEdit}
+        className={clsx(
+          'relative z-[2] flex h-[24px] w-full min-w-0 shrink-0 cursor-pointer items-center gap-[5px] overflow-hidden rounded-[6px] bg-pqPop pe-[6px] ps-[4px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
+          state === 'ERROR' && 'ring-1 ring-pqDanger',
+          isBeforeNow && 'opacity-70 grayscale'
+        )}
+        style={{ opacity }}
+      >
+        <span
+          className="h-[14px] w-[3px] shrink-0 rounded-[2px]"
+          style={{ background: accent }}
+          aria-hidden="true"
+        />
+        <span className="relative size-[13px] shrink-0">
+          <img
+            className="size-[13px] rounded-full object-cover"
+            src={post.integration.picture! || '/no-picture.jpg'}
+            alt=""
+          />
+        </span>
+        <span className="shrink-0 text-[10px] font-[700] text-pqMuted">
+          {timeLabel}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[10.5px] text-pqText">
+          {contentPreview}
+        </span>
+      </div>
+    );
+  }
+
+  // Day view: list-adjacent card (prototype showDay) — content first, channel
+  // row under, max 560px, actions top-end. Wider than week cells.
+  if (props.display === 'day') {
+    const dayAccent =
+      state === 'PUBLISHED'
+        ? 'var(--ok)'
+        : state === 'DRAFT'
+        ? 'var(--soft)'
+        : state === 'ERROR'
+        ? 'var(--warn)'
+        : 'var(--brand)';
+    const dayAction =
+      'grid h-[22px] w-[24px] place-items-center rounded-[5px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText disabled:opacity-40';
+    return (
+      <div
+        // @ts-ignore
+        ref={dragRef}
+        data-ci="1"
+        onClick={onEdit}
+        className={clsx(
+          'group relative z-[2] flex w-full max-w-[560px] min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[9px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border),var(--e1)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
+          state === 'ERROR' && 'ring-2 ring-pqDanger',
+          isBeforeNow && 'grayscale'
+        )}
+        style={{ opacity }}
+      >
+        <span
+          className="w-[3px] shrink-0"
+          style={{
+            background: dayAccent,
+            backgroundImage:
+              state === 'DRAFT'
+                ? 'repeating-linear-gradient(180deg, var(--soft) 0 3px, transparent 3px 6px)'
+                : undefined,
+          }}
+          aria-hidden="true"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-[6px] p-[9px_11px]">
+          <div className="break-words text-[13px] leading-[1.45] text-pqText">
+            {contentPreview}
+          </div>
+          <div className="flex items-center gap-[7px]">
+            <span className="relative size-[16px] shrink-0">
+              <img
+                className="size-[16px] rounded-full object-cover"
+                src={post.integration.picture! || '/no-picture.jpg'}
+                alt=""
+              />
+              <img
+                className="absolute -bottom-[1px] -end-[1px] size-[9px] rounded-full ring-1 ring-pqBadgeRing"
+                src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+                alt=""
+              />
+            </span>
+            <span className="min-w-0 truncate text-[11.5px] text-pqSoft">
+              {post.integration.name}
+            </span>
+            <span className="min-w-0 flex-1" />
+            {state === 'DRAFT' && (
+              <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-[0.04em] text-pqSoft">
+                {t('draft', 'Draft')}
+              </span>
+            )}
+            {state === 'PUBLISHED' && (
+              <span className="size-[5px] shrink-0 rounded-full bg-pqOk" />
+            )}
+            {state === 'ERROR' && (
+              <span
+                className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
+                data-tooltip-id="tooltip"
+                data-tooltip-content={
+                  post.error || 'An error occurred while publishing this post'
+                }
+              >
+                !
+              </span>
+            )}
+            <span className="shrink-0 text-[11.5px] font-[600] text-pqMuted">
+              {timeLabel}
+            </span>
+          </div>
+        </div>
+        <div
+          data-ci-actions="1"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute end-[7px] top-[7px] z-[5] flex gap-[1px] rounded-[7px] bg-pqSettings p-[2px] opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+        >
+          {copyDebugJson && !demo && (
+            <button
+              type="button"
+              className={dayAction}
+              onClick={copyDebugJson}
+            >
+              <CopyDebug />
+            </button>
+          )}
+          {state !== 'PUBLISHED' && (
+            <button type="button" className={dayAction} onClick={onEdit}>
+              <EditPost tooltip={demo ? demoTooltip : undefined} />
+            </button>
+          )}
+          <button type="button" className={dayAction} onClick={onDuplicate}>
+            <Duplicate tooltip={demo ? demoTooltip : undefined} />
+          </button>
+          <button type="button" className={dayAction} onClick={preview}>
+            <Preview tooltip={demo ? demoTooltip : undefined} />
+          </button>
+          <button
+            type="button"
+            className={clsx(dayAction, 'hover:text-pqWarn')}
+            onClick={onDelete}
+          >
+            <DeletePost tooltip={demo ? demoTooltip : undefined} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       // @ts-ignore
       ref={dragRef}
-      onClick={editPost}
+      data-ci="1"
+      onClick={onEdit}
       className={clsx(
-        'group relative flex w-full min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[7px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:z-[3] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
+        // z-[2]: stay above empty-slot past label / hatch stacking if both ever coexist.
+        'group relative z-[2] flex w-full min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[7px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:z-[3] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
         state === 'ERROR' && 'ring-2 ring-red-500',
         isBeforeNow && 'grayscale'
       )}
@@ -1300,10 +1523,7 @@ const CalendarItem: FC<{
                 the stored UTC string as local, so the card printed the UTC hour
                 while sitting in the local one — a post scheduled for 07:00 read
                 "04:00" to anyone three hours off UTC. */}
-            {dayjs
-              .utc(post.publishDate)
-              .local()
-              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+            {timeLabel}
           </span>
           {!!tagNames && (
             <span className="grid h-[14px] shrink-0 place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
@@ -1313,7 +1533,7 @@ const CalendarItem: FC<{
           <span className="min-w-0 flex-1" />
           {state === 'ERROR' && (
             <span
-              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
               data-tooltip-id="tooltip"
               data-tooltip-content={
                 post.error || 'An error occurred while publishing this post'
@@ -1331,20 +1551,23 @@ const CalendarItem: FC<{
             </span>
           )}
         </div>
-        <div className="line-clamp-2 break-words text-start text-[11px] leading-[1.3] text-pqText">
-          {stripHtmlValidation('none', post.content, false, true, false) ||
-            t('no_content', 'no content')}
+        <div
+          className={clsx(
+            'break-words text-start text-[11px] leading-[1.3] text-pqText',
+            lineClamp === 1 ? 'line-clamp-1' : 'line-clamp-2'
+          )}
+        >
+          {contentPreview}
         </div>
       </div>
-      {/* The actions used to be a coloured bar across the top of every card.
-          The design floats them instead, so the card's own content is what you
-          read and the controls appear over it on hover. */}
+      {/* Prototype: Open / Duplicate / Preview / Delete — no Statistics on
+          calendar cells. Controls appear over the card on hover. */}
       <div
         data-ci-actions="1"
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-[3px] end-[3px] z-[5] flex gap-[1px] rounded-[6px] bg-pqSettings p-[2px] opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
-        {copyDebugJson && (
+        {copyDebugJson && !demo && (
           <button
             type="button"
             className={actionButton}
@@ -1353,36 +1576,23 @@ const CalendarItem: FC<{
             <CopyDebug />
           </button>
         )}
-        <button type="button" className={actionButton} onClick={duplicatePost}>
-          <Duplicate />
+        {state !== 'PUBLISHED' && (
+          <button type="button" className={actionButton} onClick={onEdit}>
+            <EditPost tooltip={demo ? demoTooltip : undefined} />
+          </button>
+        )}
+        <button type="button" className={actionButton} onClick={onDuplicate}>
+          <Duplicate tooltip={demo ? demoTooltip : undefined} />
         </button>
         <button type="button" className={actionButton} onClick={preview}>
-          <Preview />
+          <Preview tooltip={demo ? demoTooltip : undefined} />
         </button>
-        {(post.integration.providerIdentifier === 'x' && disableXAnalytics) ||
-        !post.releaseId ? (
-          <></>
-        ) : post.releaseId === 'missing' && missingRelease ? (
-          <button
-            type="button"
-            className={actionButton}
-            onClick={missingRelease}
-          >
-            <Statistics />
-          </button>
-        ) : post.releaseId !== 'missing' ? (
-          <button type="button" className={actionButton} onClick={statistics}>
-            <Statistics />
-          </button>
-        ) : (
-          <></>
-        )}
         <button
           type="button"
           className={clsx(actionButton, 'hover:text-pqWarn')}
-          onClick={deletePost}
+          onClick={onDelete}
         >
-          <DeletePost />
+          <DeletePost tooltip={demo ? demoTooltip : undefined} />
         </button>
       </div>
     </div>
@@ -1419,15 +1629,40 @@ const ListItem: FC<{
     post,
   } = props;
   const { disableXAnalytics } = useVariables();
-  const user = useUser();
   const state = post.state;
+  const demo = isClientDemoPost(post.id);
+  const { explain: explainDemo, demoTooltip } = useDemoPostAction();
+  // Design list cards always show the soft method pill (WEB/API/CLI/MCP).
   const showCreationMethodBadge =
-    user?.impersonate &&
-    post.creationMethod &&
-    post.creationMethod !== 'UNKNOWN';
+    !!post.creationMethod && post.creationMethod !== 'UNKNOWN';
   const preview = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
     window.open(`/p/` + post.id + '?share=true', '_blank');
-  }, [post]);
+  }, [post, demo, explainDemo]);
+  const onEdit = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
+    editPost();
+  }, [demo, editPost, explainDemo]);
+  const onDuplicate = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
+    duplicatePost();
+  }, [demo, duplicatePost, explainDemo]);
+  const onDelete = useCallback(() => {
+    if (demo) {
+      explainDemo();
+      return;
+    }
+    deletePost();
+  }, [demo, deletePost, explainDemo]);
   // Status, not tag: the list row shows its tags as chips below the content,
   // so the stripe is free to say published / draft / scheduled.
   const accent =
@@ -1439,10 +1674,11 @@ const ListItem: FC<{
       ? 'var(--warn)'
       : 'var(--brand)';
   const actionButton =
-    'grid size-[26px] place-items-center rounded-[6px] text-pqMuted transition-colors hover:bg-pqSettings hover:text-pqText';
+    'grid size-[26px] place-items-center rounded-[6px] text-pqMuted transition-colors hover:bg-pqSettings hover:text-pqText disabled:opacity-40';
   return (
     <div
-      onClick={editPost}
+      data-ci="1"
+      onClick={onEdit}
       className="group relative flex w-full min-w-0 cursor-pointer overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]"
     >
       <span
@@ -1484,7 +1720,7 @@ const ListItem: FC<{
           <span className="min-w-0 flex-1" />
           {state === 'ERROR' && (
             <span
-              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
               data-tooltip-id="tooltip"
               data-tooltip-content={
                 post.error || 'An error occurred while publishing this post'
@@ -1494,10 +1730,9 @@ const ListItem: FC<{
             </span>
           )}
           {showCreationMethodBadge && (
-            <CreationMethodBadge
-              creationMethod={post.creationMethod}
-              size="sm"
-            />
+            <span className="flex h-[17px] shrink-0 items-center rounded-[5px] bg-pqSettings px-[6px] text-[9px] font-[700] uppercase tracking-[0.04em] text-pqSoft">
+              {post.creationMethod}
+            </span>
           )}
           <span
             className={clsx(
@@ -1551,7 +1786,7 @@ const ListItem: FC<{
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-[9px] end-[9px] z-[5] flex gap-[1px] rounded-[8px] bg-pqInner p-[2px] opacity-0 shadow-[var(--e2),inset_0_0_0_1px_var(--border)] transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
-        {copyDebugJson && (
+        {copyDebugJson && !demo && (
           <button
             type="button"
             className={actionButton}
@@ -1560,41 +1795,424 @@ const ListItem: FC<{
             <CopyDebug />
           </button>
         )}
-        <button type="button" className={actionButton} onClick={duplicatePost}>
-          <Duplicate />
+        {state !== 'PUBLISHED' && (
+          <button type="button" className={actionButton} onClick={onEdit}>
+            <EditPost tooltip={demo ? demoTooltip : undefined} />
+          </button>
+        )}
+        <button type="button" className={actionButton} onClick={onDuplicate}>
+          <Duplicate tooltip={demo ? demoTooltip : undefined} />
         </button>
         <button type="button" className={actionButton} onClick={preview}>
-          <Preview />
+          <Preview tooltip={demo ? demoTooltip : undefined} />
         </button>
-        {(post.integration.providerIdentifier === 'x' && disableXAnalytics) ||
-        !post.releaseId ? (
-          <></>
-        ) : post.releaseId === 'missing' && missingRelease ? (
-          <button
-            type="button"
-            className={actionButton}
-            onClick={missingRelease}
-          >
-            <Statistics />
-          </button>
-        ) : post.releaseId !== 'missing' ? (
-          <button type="button" className={actionButton} onClick={statistics}>
-            <Statistics />
-          </button>
-        ) : (
-          <></>
-        )}
+        {!demo &&
+          !(
+            (post.integration.providerIdentifier === 'x' &&
+              disableXAnalytics) ||
+            !post.releaseId
+          ) &&
+          (post.releaseId === 'missing' && missingRelease ? (
+            <button
+              type="button"
+              className={actionButton}
+              onClick={missingRelease}
+            >
+              <Statistics />
+            </button>
+          ) : post.releaseId !== 'missing' ? (
+            <button type="button" className={actionButton} onClick={statistics}>
+              <Statistics />
+            </button>
+          ) : null)}
         <button
           type="button"
           className={clsx(actionButton, 'hover:text-pqWarn')}
-          onClick={deletePost}
+          onClick={onDelete}
         >
-          <DeletePost />
+          <DeletePost tooltip={demo ? demoTooltip : undefined} />
         </button>
       </div>
     </div>
   );
 });
+
+/**
+ * One hour in Day's Posts-like list: date-header style time row, ListItem cards,
+ * full-width Add row when empty. Drop → PUT /posts/:id/date; click Add → compose
+ * (same WORK as the old day CalendarColumn slot).
+ */
+const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
+  ({ hour, day }) => {
+    const t = useT();
+    const user = useUser();
+    const getDate = useMemo(
+      () => day.hour(hour).startOf('hour'),
+      [day, hour]
+    );
+    const {
+      integrations,
+      posts,
+      changeDate,
+      reloadCalendarView,
+      sets,
+      signature,
+      loading,
+    } = useCalendar();
+    const modal = useModals();
+    const fetch = useFetch();
+    const toaster = useToaster();
+    const {
+      editPost,
+      deletePost,
+      copyDebugJson,
+      openStatistics,
+      openMissingRelease,
+    } = usePostActions();
+    const addProvider = useAddProvider();
+
+    const postList = useMemo(() => {
+      return posts.filter((post) => {
+        const pList = dayjs.utc(post.publishDate).local();
+        return (
+          pList.isSameOrAfter(getDate.startOf('hour')) &&
+          pList.isBefore(getDate.endOf('hour'))
+        );
+      });
+    }, [posts, getDate]);
+
+    const isBeforeNow = useMemo(() => {
+      return getDate
+        .startOf('hour')
+        .isBefore(newDayjs().startOf('hour').utc());
+    }, [getDate]);
+
+    const [{ canDrop, isTarget }, drop] = useDrop(
+      () => ({
+        accept: 'post',
+        drop: async (item: any) => {
+          if (isBeforeNow) return;
+
+          const post = posts.find((p) => p.id === item.id);
+          let action: 'schedule' | 'update' = 'schedule';
+
+          if (
+            post &&
+            (post.state === 'PUBLISHED' ||
+              (post.state === 'QUEUE' &&
+                dayjs().isAfter(dayjs.utc(post.publishDate))))
+          ) {
+            const whatToDo = await new Promise<
+              'schedule' | 'update' | 'cancel'
+            >((resolve) => {
+              modal.openModal({
+                title: t('what_do_you_want_to_do', 'What do you want to do?'),
+                children: (
+                  <div className="flex flex-col">
+                    <div className="text-[20px] mb-[20px]">
+                      {t(
+                        'post_already_published_drag',
+                        'This post was already published, what do you want to do?'
+                      )}
+                    </div>
+                    <div className="flex w-full gap-[10px]">
+                      <div className="flex-1 flex">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          onClick={() => {
+                            modal.closeAll();
+                            resolve('update');
+                          }}
+                        >
+                          {t(
+                            'just_update_post_details',
+                            'Just update the post details'
+                          )}
+                        </Button>
+                      </div>
+                      <div className="flex-1 flex">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          onClick={() => {
+                            modal.closeAll();
+                            resolve('schedule');
+                          }}
+                        >
+                          {t('reschedule_post', 'Reschedule the post')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ),
+                onClose: () => resolve('cancel'),
+              });
+            });
+
+            if (whatToDo === 'cancel') {
+              return;
+            }
+            action = whatToDo;
+          }
+
+          if (!item.interval) {
+            changeDate(item.id, getDate);
+          }
+          const { status } = await fetch(`/posts/${item.id}/date`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+              action,
+            }),
+          });
+          if (status !== 500) {
+            if (action === 'schedule') {
+              toaster.show(
+                t('scheduled_for_when', 'Scheduled for {when}').replace(
+                  '{when}',
+                  getDate.format('ddd · HH:mm')
+                ),
+                'success'
+              );
+            }
+            if (item.interval || action === 'schedule') {
+              reloadCalendarView();
+            }
+          }
+        },
+        collect: (monitor) => ({
+          canDrop: isBeforeNow
+            ? false
+            : !!monitor.canDrop() && !!monitor.isOver(),
+          isTarget: isBeforeNow
+            ? false
+            : !!monitor.canDrop() && !monitor.isOver(),
+        }),
+      }),
+      [posts, changeDate, fetch, getDate, modal, reloadCalendarView, t, toaster, isBeforeNow]
+    );
+
+    const addModal = useCallback(async () => {
+      if (isBeforeNow) return;
+      const set: any = !sets.length
+        ? undefined
+        : await new Promise((resolve) => {
+            modal.openModal({
+              title: t('select_set', 'Select a Set'),
+              closeOnClickOutside: true,
+              askClose: false,
+              closeOnEscape: true,
+              withCloseButton: true,
+              onClose: () => resolve('exit'),
+              children: (
+                <SetSelectionModal
+                  sets={sets}
+                  onSelect={(selectedSet) => {
+                    resolve(selectedSet);
+                    modal.closeAll();
+                  }}
+                  onContinueWithoutSet={() => {
+                    resolve(undefined);
+                    modal.closeAll();
+                  }}
+                />
+              ),
+            });
+          });
+
+      if (set === 'exit') return;
+
+      modal.openModal({
+        id: 'add-edit-modal',
+        closeOnClickOutside: false,
+        removeLayout: true,
+        closeOnEscape: false,
+        withCloseButton: false,
+        askClose: true,
+        fullScreen: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
+        },
+        children: (
+          <AddEditModal
+            allIntegrations={integrations.map((p) => ({
+              ...p,
+            }))}
+            integrations={integrations.slice(0).map((p) => ({
+              ...p,
+            }))}
+            mutate={reloadCalendarView}
+            {...(signature?.id && !set
+              ? {
+                  onlyValues: [
+                    {
+                      content: '\n' + signature.content,
+                    },
+                  ],
+                }
+              : {})}
+            date={
+              getDate.format('YYYY-MM-DDTHH:mm:ss') ===
+              newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+                ? newDayjs().add(10, 'minute')
+                : getDate
+            }
+            {...(set?.content ? { set: JSON.parse(set.content) } : {})}
+            reopenModal={() => ({})}
+          />
+        ),
+        size: '80%',
+      });
+    }, [
+      isBeforeNow,
+      sets,
+      modal,
+      t,
+      integrations,
+      reloadCalendarView,
+      signature,
+      getDate,
+    ]);
+
+    const onAdd = useCallback(() => {
+      if (isBeforeNow) return;
+      if (integrations.length) {
+        void addModal();
+      } else {
+        addProvider();
+      }
+    }, [isBeforeNow, integrations.length, addModal, addProvider]);
+
+    const emptyLabel = isBeforeNow
+      ? t('date_passed', 'Date passed')
+      : t('add_a_post_at', 'Add a post at {{time}}').replace(
+          '{{time}}',
+          convertTimeFormatBasedOnLocality(hour)
+        );
+
+    return (
+      <div
+        ref={drop as any}
+        data-dayslot="1"
+        data-filled={postList.length ? '1' : '0'}
+        data-past={isBeforeNow ? '1' : '0'}
+        className={clsx(
+          'min-w-0',
+          canDrop && 'rounded-pqMd shadow-[inset_0_0_0_2px_var(--brand)]',
+          isTarget && 'rounded-pqMd shadow-[inset_0_0_0_1px_var(--dropHint)]',
+          loading && 'animate-pulse'
+        )}
+      >
+        <div className="flex items-center gap-[10px] px-[2px] pb-[9px] pt-[18px]">
+          <span
+            dir="ltr"
+            className="shrink-0 text-[11.5px] font-[600] uppercase tracking-[0.05em] text-pqSoft"
+          >
+            {convertTimeFormatBasedOnLocality(hour)}
+          </span>
+          <span className="h-[1px] flex-1 bg-pqLine" aria-hidden="true" />
+          {postList.length > 0 && (
+            <span className="shrink-0 text-[11.5px] text-pqSoft">
+              {postList.length}{' '}
+              {postList.length === 1
+                ? t('post', 'Post')
+                : t('posts', 'Posts')}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col gap-[6px]">
+          {postList.map((post) => (
+            <DayDraggableListItem
+              key={post.id}
+              post={post}
+              statistics={openStatistics(post.id)}
+              missingRelease={openMissingRelease(post.id)}
+              editPost={editPost(post, false)}
+              duplicatePost={editPost(post, true)}
+              copyDebugJson={
+                user?.isSuperAdmin ? copyDebugJson(post) : undefined
+              }
+              deletePost={deletePost(post)}
+            />
+          ))}
+          {postList.length === 0 && (
+            <button
+              type="button"
+              disabled={isBeforeNow}
+              onClick={onAdd}
+              className={clsx(
+                'flex h-[44px] w-full items-center gap-[8px] rounded-pqMd px-[14px] text-start text-[13px] font-[500] shadow-[inset_0_0_0_1px_var(--border)] transition-colors',
+                isBeforeNow
+                  ? 'cursor-not-allowed text-pqSoft'
+                  : 'cursor-pointer text-pqMuted hover:bg-pqHover hover:text-pqText hover:shadow-[inset_0_0_0_1px_var(--brand)]'
+              )}
+            >
+              {!isBeforeNow && (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  aria-hidden="true"
+                  className="shrink-0 text-pqSoft"
+                >
+                  <path
+                    d="M12 5.5v13M5.5 12h13"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+              {emptyLabel}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
+/** ListItem + drag source so Day hour drops still receive posts. */
+const DayDraggableListItem: FC<{
+  editPost: () => void;
+  duplicatePost: () => void;
+  copyDebugJson?: () => void;
+  deletePost: () => void;
+  statistics: () => void;
+  missingRelease?: () => void;
+  post: Post & {
+    integration: Integration;
+    tags: {
+      tag: Tags;
+    }[];
+  };
+}> = memo((props) => {
+  const { post, ...rest } = props;
+  const demo = isClientDemoPost(post.id);
+  const [{ opacity }, dragRef] = useDrag(
+    () => ({
+      type: 'post',
+      item: {
+        id: post.id,
+        interval: !!post.intervalInDays,
+        state: post.state,
+      },
+      canDrag: !demo,
+      collect: (monitor) => ({
+        opacity: monitor.isDragging() ? 0.4 : 1,
+      }),
+    }),
+    [demo, post.id, post.intervalInDays, post.state]
+  );
+  return (
+    <div ref={dragRef as any} style={{ opacity }} className="min-w-0">
+      <ListItem post={post} {...rest} />
+    </div>
+  );
+});
+
 const DebugJsonModal: FC<{ post: any }> = ({ post }) => {
   const t = useT();
   const fetch = useFetch();
@@ -1663,7 +2281,30 @@ const CopyDebug = () => {
     </svg>
   );
 };
-const Duplicate = () => {
+type ActionIconProps = { tooltip?: string };
+
+export const EditPost = ({ tooltip }: ActionIconProps = {}) => {
+  const t = useT();
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+      fill="none"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={tooltip ?? t('edit_post', 'Edit')}
+    >
+      <path
+        d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+export const Duplicate = ({ tooltip }: ActionIconProps = {}) => {
   const t = useT();
   return (
     <svg
@@ -1673,7 +2314,7 @@ const Duplicate = () => {
       viewBox="0 0 32 32"
       fill="none"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('duplicate_post', 'Duplicate Post')}
+      data-tooltip-content={tooltip ?? t('duplicate_post', 'Duplicate Post')}
     >
       <path
         d="M27 5H9C8.46957 5 7.96086 5.21071 7.58579 5.58579C7.21071 5.96086 7 6.46957 7 7V9H5C4.46957 9 3.96086 9.21071 3.58579 9.58579C3.21071 9.96086 3 10.4696 3 11V25C3 25.5304 3.21071 26.0391 3.58579 26.4142C3.96086 26.7893 4.46957 27 5 27H23C23.5304 27 24.0391 26.7893 24.4142 26.4142C24.7893 26.0391 25 25.5304 25 25V23H27C27.5304 23 28.0391 22.7893 28.4142 22.4142C28.7893 22.0391 29 21.5304 29 21V7C29 6.46957 28.7893 5.96086 28.4142 5.58579C28.0391 5.21071 27.5304 5 27 5ZM23 11V13H5V11H23ZM23 25H5V15H23V25ZM27 21H25V11C25 10.4696 24.7893 9.96086 24.4142 9.58579C24.0391 9.21071 23.5304 9 23 9H9V7H27V21Z"
@@ -1682,7 +2323,7 @@ const Duplicate = () => {
     </svg>
   );
 };
-const Preview = () => {
+const Preview = ({ tooltip }: ActionIconProps = {}) => {
   const t = useT();
   return (
     <svg
@@ -1692,7 +2333,7 @@ const Preview = () => {
       viewBox="0 0 32 32"
       fill="none"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('preview_post', 'Preview Post')}
+      data-tooltip-content={tooltip ?? t('preview_post', 'Preview Post')}
     >
       <path
         d="M30.9137 15.595C30.87 15.4963 29.8112 13.1475 27.4575 10.7937C24.3212 7.6575 20.36 6 16 6C11.64 6 7.67874 7.6575 4.54249 10.7937C2.18874 13.1475 1.12499 15.5 1.08624 15.595C1.02938 15.7229 1 15.8613 1 16.0012C1 16.1412 1.02938 16.2796 1.08624 16.4075C1.12999 16.5062 2.18874 18.8538 4.54249 21.2075C7.67874 24.3425 11.64 26 16 26C20.36 26 24.3212 24.3425 27.4575 21.2075C29.8112 18.8538 30.87 16.5062 30.9137 16.4075C30.9706 16.2796 31 16.1412 31 16.0012C31 15.8613 30.9706 15.7229 30.9137 15.595ZM16 24C12.1525 24 8.79124 22.6012 6.00874 19.8438C4.86704 18.7084 3.89572 17.4137 3.12499 16C3.89551 14.5862 4.86686 13.2915 6.00874 12.1562C8.79124 9.39875 12.1525 8 16 8C19.8475 8 23.2087 9.39875 25.9912 12.1562C27.1352 13.2912 28.1086 14.5859 28.8812 16C27.98 17.6825 24.0537 24 16 24ZM16 10C14.8133 10 13.6533 10.3519 12.6666 11.0112C11.6799 11.6705 10.9108 12.6075 10.4567 13.7039C10.0026 14.8003 9.88377 16.0067 10.1153 17.1705C10.3468 18.3344 10.9182 19.4035 11.7573 20.2426C12.5965 21.0818 13.6656 21.6532 14.8294 21.8847C15.9933 22.1162 17.1997 21.9974 18.2961 21.5433C19.3924 21.0892 20.3295 20.3201 20.9888 19.3334C21.6481 18.3467 22 17.1867 22 16C21.9983 14.4092 21.3657 12.884 20.2408 11.7592C19.1159 10.6343 17.5908 10.0017 16 10ZM16 20C15.2089 20 14.4355 19.7654 13.7777 19.3259C13.1199 18.8864 12.6072 18.2616 12.3045 17.5307C12.0017 16.7998 11.9225 15.9956 12.0768 15.2196C12.2312 14.4437 12.6122 13.731 13.1716 13.1716C13.731 12.6122 14.4437 12.2312 15.2196 12.0769C15.9956 11.9225 16.7998 12.0017 17.5307 12.3045C18.2616 12.6072 18.8863 13.1199 19.3259 13.7777C19.7654 14.4355 20 15.2089 20 16C20 17.0609 19.5786 18.0783 18.8284 18.8284C18.0783 19.5786 17.0609 20 16 20Z"
@@ -1721,7 +2362,7 @@ export const Statistics = () => {
   );
 };
 
-export const DeletePost = () => {
+export const DeletePost = ({ tooltip }: ActionIconProps = {}) => {
   const t = useT();
   return (
     <svg
@@ -1731,7 +2372,7 @@ export const DeletePost = () => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('delete_post', 'Delete Post')}
+      data-tooltip-content={tooltip ?? t('delete_post', 'Delete Post')}
     >
       <path
         d="M15 10V18H9V10H15ZM14 4H9.9L8.9 5H6V7H18V5H15L14 4ZM17 8H7V18C7 19.1 7.9 20 9 20H15C16.1 20 17 19.1 17 18V8Z"
@@ -1749,32 +2390,31 @@ export const SetSelectionModal: FC<{
   const t = useT();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-lg font-medium">
-        {t('choose_set_or_continue', 'Choose a set or continue without one')}
-      </div>
-
-      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+    <div className="flex flex-col gap-[14px]">
+      <div className="flex max-h-[240px] flex-col gap-[6px] overflow-y-auto">
         {sets.map((set) => (
-          <div
+          <button
             key={set.id}
+            type="button"
             onClick={() => onSelect(set)}
-            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:transition-colors"
+            className="w-full rounded-pqMd bg-pqPop px-[15px] py-[13px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]"
           >
-            <div className="font-medium">{set.name}</div>
+            <div className="text-[13.5px] font-[600] text-pqText">{set.name}</div>
             {set.description && (
-              <div className="text-sm text-gray-400 mt-1">
+              <div className="mt-[3px] text-[12.5px] text-pqMuted">
                 {set.description}
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
 
-      <div className="flex gap-2 pt-2 border-t border-tableBorder">
+      <div className="flex justify-center border-t border-pqLine pt-[12px]">
         <button
+          type="button"
+          data-pq="continue-without-set"
           onClick={onContinueWithoutSet}
-          className="flex-1 px-4 py-2 text-textColor rounded-lg hover:transition-colors"
+          className="flex h-[36px] items-center justify-center rounded-pqSm px-[16px] text-[13px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
         >
           {t('continue_without_set', 'Continue without set')}
         </button>

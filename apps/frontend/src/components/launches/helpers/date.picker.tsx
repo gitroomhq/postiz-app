@@ -48,7 +48,7 @@ export const DatePicker: FC<{
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="animate-fadeIn absolute bottom-[100%] mb-[16px] start-[50%] -translate-x-[50%] bg-sixth border border-tableBorder text-textColor rounded-[16px] z-[300] p-[16px] flex flex-col"
+          className="animate-fadeIn absolute bottom-[100%] mb-[16px] start-[50%] -translate-x-[50%] bg-pqPop border border-pqBorder text-pqText rounded-[16px] z-[300] p-[16px] flex flex-col shadow-pqE2"
         >
           <Calendar
             onChange={changeDate('date')}
@@ -61,23 +61,23 @@ export const DatePicker: FC<{
                 return '!text-gray';
               }
               if (modifiers.selected) {
-                return '!text-white !bg-seventh !outline-none';
+                return '!text-pqOnBrand !bg-pqBrand !outline-none';
               }
-              return '!text-textColor';
+              return '!text-pqText';
             }}
             classNames={{
-              day: 'hover:bg-seventh',
-              calendarHeaderControl: 'text-textColor hover:bg-third',
-              calendarHeaderLevel: 'text-textColor hover:bg-third', // cell: 'child:!text-textColor'
+              day: 'hover:bg-pqHover',
+              calendarHeaderControl: 'text-pqText hover:bg-pqHover',
+              calendarHeaderLevel: 'text-pqText hover:bg-pqHover',
             }}
           />
           <TimeInput
             onChange={changeDate('time')}
             label="Pick time"
             classNames={{
-              label: 'text-textColor py-[12px]',
+              label: 'text-pqMuted py-[12px]',
               input:
-                'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
+                'bg-pqTableHeader h-[40px] border-0 text-pqText rounded-[10px] outline-none shadow-[inset_0_0_0_1px_var(--border)]',
             }}
             defaultValue={date.toDate()}
           />

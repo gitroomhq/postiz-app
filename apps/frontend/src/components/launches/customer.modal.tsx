@@ -55,7 +55,12 @@ export const CustomerModal: FC<{
           value={customer}
           onChange={setCustomer}
           classNames={{
-            label: 'text-white',
+            label: 'text-[14px] text-pqMuted mb-[6px]',
+            input:
+              'h-[44px] rounded-[10px] border-0 bg-pqTableHeader px-[12px] text-[14px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]',
+            dropdown:
+              'bg-pqPop border border-pqBorder rounded-[10px] shadow-pqE2 overflow-hidden',
+            item: 'text-[14px] text-pqText hover:bg-pqHover data-[hovered]:bg-pqHover',
           }}
           label={t('select_customer_label', 'Select Customer')}
           placeholder={t('start_typing', 'Start typing...')}

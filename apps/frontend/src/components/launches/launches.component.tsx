@@ -3,9 +3,21 @@
 import { PostsPanel } from '@gitroom/frontend/components/launches/posts.panel';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
-import { orderBy } from 'lodash';
-import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import {
+  CalendarWeekProvider,
+  useCalendar,
+} from '@gitroom/frontend/components/launches/calendar.context';
+
+/** Prototype hides the queue on the Posts (list) page. */
+const PostsPanelWhenCalendar = () => {
+  const { display } = useCalendar();
+  if (display === 'list') return null;
+  return <PostsPanel />;
+};
 import { Filters } from '@gitroom/frontend/components/launches/filters';
+import { NewPost } from '@gitroom/frontend/components/launches/new.post';
+import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
@@ -19,11 +31,8 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
-import { NewPost } from '@gitroom/frontend/components/launches/new.post';
-import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
-import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 
 export const SVGLine = () => {
   return (
@@ -258,7 +267,7 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[12px] items-center bg-pqInner hover:bg-pqHover group/profile transition-all rounded-e-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -280,10 +289,10 @@ export const MenuComponent: FC<
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="absolute start-[5px] top-[5px] z-[200] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqWarn text-[10px] font-[700] text-pqOnBrand">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
+            <div className="absolute start-0 top-0 z-[199] h-[46px] w-[39px] rounded-full bg-pqBrand/60" />
           </div>
         )}
         <ImageWithFallback
@@ -355,11 +364,7 @@ export const LaunchesComponent = () => {
   const { isLoading, data: integrations } = useIntegrationList();
 
   const sortedIntegrations = useMemo(() => {
-    return orderBy(
-      integrations,
-      ['type', 'disabled', 'identifier'],
-      ['desc', 'asc', 'asc']
-    );
+    return sortIntegrationsByProviderImportance(integrations || []);
   }, [integrations]);
 
   useEffect(() => {
@@ -392,7 +397,7 @@ export const LaunchesComponent = () => {
   }, []);
   if (isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-pqInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -401,19 +406,15 @@ export const LaunchesComponent = () => {
   // @ts-ignore
   return (
     <DNDProvider>
-      <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
-        {/* The page's primary action belongs in the chrome's header, but the
-            button reads useCalendar() — so it is mounted here, inside the
-            provider, and only its output is portalled up. */}
-        <HeaderAction>
-          {sortedIntegrations?.length > 0 && <NewPost />}
-        </HeaderAction>
-        {/* Design calendar is queue + grid only. Channel management (Add,
-            reconnect, time slots) lives on /channels. Create Post / AI post
-            are in the header. OAuth ?added= handlers stay in this component. */}
-        <PostsPanel />
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        {sortedIntegrations.length > 0 && (
+          <HeaderAction>
+            <NewPost />
+          </HeaderAction>
+        )}
+        {/* Design: queue panel beside calendar only. Posts (list) is full-bleed. */}
+        <PostsPanelWhenCalendar />
+        <div className="bg-pqInner flex-1 flex-col flex p-[20px] gap-[12px]">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />

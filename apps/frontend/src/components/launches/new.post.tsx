@@ -16,10 +16,13 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { GeneratorPopup } from '@gitroom/frontend/components/launches/generator/generator';
 import clsx from 'clsx';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 /**
- * Header Create Post — design's split control: primary opens a blank compose,
- * the chevron opens Blank post / AI post (AI gated the same way as Generator).
+ * Create Post split control (Blank / AI). Portalled into the header via
+ * `HeaderAction` from `launches.component.tsx` (owner: header placement).
+ * Primary opens a blank compose; the chevron opens Blank / AI post (AI gated
+ * the same way as Generator).
  */
 export const NewPost = () => {
   const fetch = useFetch();
@@ -32,6 +35,10 @@ export const NewPost = () => {
   const all = useCalendar();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(menuOpen, 'end');
 
   const createAPost = useCallback(async () => {
     setMenuOpen(false);
@@ -111,11 +118,13 @@ export const NewPost = () => {
     }
     modal.openModal({
       title: t('generate_posts', 'Generate Posts'),
-      withCloseButton: false,
+      withCloseButton: true,
+      // Opaque --inner card (modal shell). Never bg-transparent — that let the
+      // calendar list bleed through. Width matches prototype generator card.
       classNames: {
-        modal: 'bg-transparent text-textColor',
+        modal: 'text-pqText',
       },
-      size: 'xl',
+      size: 640,
       children: (
         <CalendarWeekProvider {...all}>
           <GeneratorPopup />
@@ -128,7 +137,10 @@ export const NewPost = () => {
 
   return (
     <div className="relative shrink-0" ref={menuRef}>
-      <div className="flex h-[36px] overflow-hidden rounded-[8px] bg-btnPrimary text-[14px] font-[500] text-white">
+      <div
+        ref={referenceRef}
+        className="flex h-[36px] overflow-hidden rounded-[8px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand"
+      >
         <button
           type="button"
           data-pq="create-post"
@@ -161,7 +173,7 @@ export const NewPost = () => {
           aria-label={t('create_post_options', 'Create post options')}
           onClick={() => setMenuOpen((open) => !open)}
           className={clsx(
-            'flex h-full w-[32px] items-center justify-center border-s border-white/20 outline-none transition-opacity hover:opacity-90',
+            'flex h-full w-[32px] items-center justify-center border-s border-pqOnBrand/20 outline-none transition-opacity hover:opacity-90',
             menuOpen && 'bg-black/10'
           )}
         >
@@ -184,8 +196,9 @@ export const NewPost = () => {
       </div>
       {menuOpen && (
         <div
+          ref={floatingRef}
           data-pq="create-post-dropdown"
-          className="absolute end-0 top-[calc(100%+6px)] z-[80] min-w-[188px] overflow-hidden rounded-pqMd border border-pqBorder bg-pqPop py-[4px] shadow-menu"
+          className="z-[80] min-w-[188px] overflow-hidden rounded-pqMd border border-pqBorder bg-pqPop py-[4px] shadow-menu"
         >
           <button
             type="button"

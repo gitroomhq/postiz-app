@@ -8,6 +8,7 @@ import {
 } from '@gitroom/frontend/components/launches/calendar.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 /**
  * Design chromeVals chanFilter — multi-select channels for the calendar grid
@@ -19,6 +20,11 @@ export const ChannelFilter: FC = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useClickOutside(() => setOpen(false));
+  // Trailing-edge toolbar control — prefer end alignment, flip/shift if needed.
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLButtonElement,
+    HTMLDivElement
+  >(open, 'end');
 
   const active = channelFilter.length > 0;
 
@@ -69,6 +75,7 @@ export const ChannelFilter: FC = () => {
     <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
+        ref={referenceRef}
         data-pq="channel-filter"
         onClick={() => setOpen((v) => !v)}
         className={clsx(
@@ -126,8 +133,9 @@ export const ChannelFilter: FC = () => {
       </button>
       {open && (
         <div
+          ref={floatingRef}
           data-pq="channel-filter-menu"
-          className="absolute start-0 top-[38px] z-[45] flex w-[290px] flex-col overflow-hidden rounded-pqMd border border-pqBorder bg-pqInner shadow-menu"
+          className="z-[45] flex w-[290px] flex-col overflow-hidden rounded-pqMd border border-pqBorder bg-pqInner shadow-menu"
         >
           <div className="border-b border-pqLine p-[10px] pb-[8px]">
             <input
@@ -177,7 +185,7 @@ export const ChannelFilter: FC = () => {
                     className={clsx(
                       'grid size-[16px] shrink-0 place-items-center rounded-[4px] border-[1.5px]',
                       on
-                        ? 'border-pqBrand bg-pqBrand text-white'
+                        ? 'border-pqBrand bg-pqBrand text-pqOnBrand'
                         : 'border-pqBorder bg-transparent'
                     )}
                   >

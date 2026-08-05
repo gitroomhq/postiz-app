@@ -152,29 +152,29 @@ export const StatisticsModal: FC<{
               {t('short_links_statistics', 'Short Links Statistics')}
             </h3>
             {statisticsData?.clicks?.length === 0 ? (
-              <div className="text-gray-400">
+              <div className="text-pqSoft">
                 {t('no_short_link_results', 'No short link results')}
               </div>
             ) : (
               <div className="grid grid-cols-3">
-                <div className="bg-forth p-[4px] rounded-tl-lg">
+                <div className="bg-pqBrand p-[4px] rounded-tl-lg text-pqOnBrand">
                   {t('short_link', 'Short Link')}
                 </div>
-                <div className="bg-forth p-[4px]">
+                <div className="bg-pqBrand p-[4px] text-pqOnBrand">
                   {t('original_link', 'Original Link')}
                 </div>
-                <div className="bg-forth p-[4px] rounded-tr-lg">
+                <div className="bg-pqBrand p-[4px] rounded-tr-lg text-pqOnBrand">
                   {t('clicks', 'Clicks')}
                 </div>
                 {statisticsData?.clicks?.map((p: any) => (
                   <Fragment key={p.short}>
-                    <div className="p-[4px] py-[10px] bg-customColor6">
+                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
                       {p.short}
                     </div>
-                    <div className="p-[4px] py-[10px] bg-customColor6">
+                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
                       {p.original}
                     </div>
-                    <div className="p-[4px] py-[10px] bg-customColor6">
+                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
                       {p.clicks}
                     </div>
                   </Fragment>
@@ -186,7 +186,7 @@ export const StatisticsModal: FC<{
           {/* No analytics available message */}
           {(!analyticsData || !Array.isArray(analyticsData) || analyticsData.length === 0) &&
             (!statisticsData?.clicks || statisticsData.clicks.length === 0) && (
-              <div className="text-center text-gray-400 py-[20px]">
+              <div className="text-center text-pqSoft py-[20px]">
                 {t('no_statistics_available', 'No statistics available for this post')}
               </div>
             )}

@@ -264,7 +264,9 @@ const FirstStep: FC = (props) => {
                   </option>
                 </Select>
                 <Select
-                  label={t('output_format', 'Output format')}
+                  // Prototype template also labels this "Output format" (bug);
+                  // field is genTone / form `tone` — use Tone.
+                  label={t('tone', 'Tone')}
                   {...form.register('tone')}
                 >
                   <option value="personal">
@@ -307,14 +309,8 @@ const FirstStep: FC = (props) => {
   );
 };
 export const GeneratorPopup = () => {
-  const t = useT();
-
-  const modals = useModals();
-  const closeAll = useCallback(() => {
-    modals.closeAll();
-  }, []);
   return (
-    <div className="w-full flex flex-col rounded-[4px] relative">
+    <div className="relative flex w-full flex-col bg-pqInner">
       <FirstStep />
     </div>
   );
@@ -340,18 +336,18 @@ export const GeneratorComponent = () => {
     }
     modal.openModal({
       title: t('generate_posts', 'Generate Posts'),
-      withCloseButton: false,
+      withCloseButton: true,
       classNames: {
-        modal: 'bg-transparent text-textColor',
+        modal: 'text-pqText',
       },
-      size: 'xl',
+      size: 640,
       children: (
         <CalendarWeekProvider {...all}>
           <GeneratorPopup />
         </CalendarWeekProvider>
       ),
     });
-  }, [user, all]);
+  }, [user, all, modal, router, t]);
   return (
     <div
       className="h-[44px] w-[44px] group-[.sidebar]:w-full bg-ai justify-center items-center flex rounded-[8px] cursor-pointer"

@@ -3,12 +3,14 @@
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useCallback } from 'react';
 import useSWR from 'swr';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 
 export const useIntegrationList = () => {
   const fetch = useFetch();
 
-  const load = useCallback(async (path: string) => {
-    return (await (await fetch(path)).json()).integrations;
+  const load = useCallback(async (path: string): Promise<any[]> => {
+    const integrations = (await (await fetch(path)).json()).integrations;
+    return sortIntegrationsByProviderImportance(integrations || []);
   }, []);
 
   return useSWR('/integrations/list', load, {

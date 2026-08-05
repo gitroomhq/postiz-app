@@ -178,18 +178,18 @@ export const InformationComponent: FC<{
       {isValid ? <Valid /> : <Invalid />}
 
       {!isGlobal && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-pqOnBrand')}>
           {totalChars}/{totalAllowedChars}
         </div>
       )}
       {isGlobal && globalDisplayLimit !== null && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-pqOnBrand')}>
           {totalChars}/{globalDisplayLimit}
         </div>
       )}
       {((isGlobal && selectedIntegrations.length) || !isValid) && (
         <svg
-          className={clsx('group-hover:rotate-180', !isValid && 'text-white')}
+          className={clsx('group-hover:rotate-180', !isValid && 'text-pqOnBrand')}
           xmlns="http://www.w3.org/2000/svg"
           width="16"
           height="16"

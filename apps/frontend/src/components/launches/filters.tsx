@@ -1,14 +1,19 @@
 'use client';
 
-import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  useCalendar,
+  ListRangeFilter,
+} from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { ChannelFilter } from '@gitroom/frontend/components/launches/channel.filter';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -259,21 +264,45 @@ export const Filters = () => {
   );
 
   const isListView = calendar.display === 'list';
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const rangeRef = useRef<HTMLDivElement>(null);
+  const { referenceRef: rangeTriggerRef, floatingRef: rangeMenuRef } =
+    useAnchoredPopover<HTMLButtonElement, HTMLDivElement>(rangeOpen, 'start');
 
-  const setListStateFilter = useCallback(
-    (next: ListStateFilter) => () => {
-      if (calendar.listState === next) return;
-      calendar.setListState(next);
-    },
-    [calendar]
-  );
+  useEffect(() => {
+    if (!rangeOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rangeRef.current?.contains(e.target as Node)) setRangeOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [rangeOpen]);
 
-  const listStateOptions: { value: ListStateFilter; label: string }[] = [
-    { value: 'all', label: t('all', 'All') },
-    { value: 'scheduled', label: t('scheduled', 'Scheduled') },
-    { value: 'draft', label: t('draft', 'Draft') },
-    { value: 'published', label: t('published', 'Published') },
-  ];
+  const listRangeOptions = useMemo(() => {
+    const opts: { value: ListRangeFilter; label: string }[] = [
+      { value: 'all', label: t('all_dates', 'All dates') },
+      { value: 'today', label: t('today', 'Today') },
+      { value: 'week', label: t('this_week', 'This week') },
+      { value: 'next3', label: t('next_3_days', 'Next 3 days') },
+      { value: 'past', label: t('past_only', 'Past only') },
+    ];
+    if (calendar.listRange.startsWith('day:')) {
+      const d = newDayjs(calendar.listRange.slice(4));
+      opts.unshift({
+        value: calendar.listRange,
+        label: d.format(isUSCitizen() ? 'dddd, MMMM D' : 'dddd, D MMMM'),
+      });
+    }
+    return opts;
+  }, [calendar.listRange, t]);
+
+  const listRangeLabel =
+    listRangeOptions.find((o) => o.value === calendar.listRange)?.label ||
+    t('all_dates', 'All dates');
+
+  const toggleListSort = useCallback(() => {
+    calendar.setListSort(calendar.listSort === 'asc' ? 'desc' : 'asc');
+  }, [calendar]);
 
   // The design draws all three of this toolbar's switches the same way: a
   // `--settings` trough with a raised `--inner` pill on the chosen option.
@@ -353,23 +382,103 @@ export const Filters = () => {
       )}
       {isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          {/* No pager here any more: the design pages the list from its own
-              foot — "Show more" under the last row — not from the toolbar. */}
-          <div className={segment}>
-            {listStateOptions.map((option) => (
-              <div
-                key={option.value}
-                onClick={setListStateFilter(option.value)}
+          {/* Prototype list toolbar: date-range chip + Newest/Oldest — not the
+              status segment (status lives on the queue panel, hidden on Posts). */}
+          <div className="relative" ref={rangeRef}>
+            <button
+              type="button"
+              ref={rangeTriggerRef}
+              onClick={() => setRangeOpen((o) => !o)}
+              className={clsx(
+                'flex h-[32px] items-center gap-[7px] rounded-pqSm pe-[11px] ps-[10px] text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover',
+                rangeOpen ? 'bg-pqHover' : 'bg-transparent'
+              )}
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                <path
+                  d="M7 3.5v3M17 3.5v3M4.5 9h15M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
+              {listRangeLabel}
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
                 className={clsx(
-                  segmentItem,
-                  'min-w-[80px]',
-                  calendar.listState === option.value ? segmentOn : segmentOff
+                  'shrink-0 text-pqSoft transition-transform',
+                  rangeOpen && 'rotate-180'
                 )}
+                aria-hidden="true"
               >
-                {option.label}
+                <path
+                  d="m6 9 6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {rangeOpen && (
+              <div
+                ref={rangeMenuRef}
+                className="z-[20] w-[210px] rounded-pqMd bg-pqPop p-[5px] shadow-[var(--e3),inset_0_0_0_1px_var(--border)]"
+              >
+                {listRangeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      calendar.setListRange(opt.value);
+                      setRangeOpen(false);
+                    }}
+                    className={clsx(
+                      'flex h-[32px] w-full items-center rounded-pqSm px-[10px] text-start text-[13px] transition-colors',
+                      calendar.listRange === opt.value
+                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                        : 'font-[500] text-pqMuted hover:bg-pqHover hover:text-pqText'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
+          <button
+            type="button"
+            onClick={toggleListSort}
+            title={
+              calendar.listSort === 'desc'
+                ? t('sorted_newest_first', 'Sorted newest first')
+                : t('sorted_oldest_first', 'Sorted oldest first')
+            }
+            className="flex h-[32px] shrink-0 items-center gap-[6px] rounded-pqSm pe-[11px] ps-[9px] text-[12.5px] font-[500] text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              className={clsx(calendar.listSort === 'desc' && 'scale-y-[-1]')}
+              aria-hidden="true"
+            >
+              <path
+                d="M7 4.5v15M7 19.5l-3-3M7 19.5l3-3M13 6.5h7M13 11.5h5M13 16.5h3"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {calendar.listSort === 'desc'
+              ? t('newest', 'Newest')
+              : t('oldest', 'Oldest')}
+          </button>
           <div className="flex-1" />
         </div>
       )}
