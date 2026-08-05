@@ -273,6 +273,23 @@ export class LinkedinPageProvider
     return super.post(id, accessToken, postDetails, integration, 'company');
   }
 
+  // checkPostStatus / finalizePost are inherited as-is: the company context
+  // travels inside pendingData (postType), set here once.
+  override async postPending(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return super.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'company'
+    );
+  }
+
   override async comment(
     id: string,
     postId: string,

@@ -16,7 +16,7 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { createReadStream, statSync } from 'fs';
+import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -683,31 +683,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  // Resolves the total byte size of the media without loading it into memory:
-  // a HEAD request for remote URLs, statSync for local files.
-  private async tiktokMediaSize(path: string): Promise<number> {
-    if (path.indexOf('http') === 0) {
-      // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request
-      const head = await fetch(path, {
-        method: 'HEAD',
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      const length = head.headers.get('content-length');
-      if (!length) {
-        throw new BadBody(
-          'tiktok-error-upload',
-          '{}',
-          Buffer.from('{}'),
-          'Could not determine the video size for TikTok upload'
-        );
-      }
-      return Number(length);
-    }
-
-    return statSync(path).size;
-  }
-
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
@@ -833,7 +808,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     // loaded into memory.
     const videoSize = isPhoto
       ? undefined
-      : await this.tiktokMediaSize(videoPath);
+      : await this.mediaSize(videoPath, 'tiktok-error-upload');
 
     const {
       data: { publish_id, upload_url },
