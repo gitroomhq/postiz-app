@@ -3610,3 +3610,12 @@ back to English until the catalogues catch up.
 Root `CLAUDE.md`'s two non-negotiables now say what the owner decided during this pass: the rail
 matches the design's inventory exactly (capabilities stay *reachable*, not necessarily *drawn*),
 and visible labels take the design's text as translation keys.
+
+One honest gap in the list step, recorded after its review agent reported in: the "Showing X of
+Y posts" line is composed word-by-word from existing keys, the same way the pager line it
+replaced was. That reads correctly in English and will misorder in some of the fourteen
+locales; the right fix is a single interpolated key (`showing_x_of_y`, '{{shown}} of {{total}}'),
+which is translation work rather than a restyle and is left named here instead of half-done.
+The review pass also caught and fixed a real regression before it shipped: leaving the list on
+page N made the posts panel fetch N+1 pages after a view switch — `listPage` now resets when the
+display mode changes.
