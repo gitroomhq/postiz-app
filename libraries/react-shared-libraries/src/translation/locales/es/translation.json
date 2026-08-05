@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Sí, cancelar cupón",
   "cancel_coupon_title": "¿Cancelar cupón?",
   "cancel_coupon_failed": "No se pudo cancelar el cupón",
-  "cancel_coupon_success": "Cupón cancelado"
+  "cancel_coupon_success": "Cupón cancelado",
+  "recurrence_projection": "Recurrencia: una ocurrencia futura de esta publicación recurrente"
 }

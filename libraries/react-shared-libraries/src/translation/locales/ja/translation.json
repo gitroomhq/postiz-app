@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "はい、クーポンをキャンセルします",
   "cancel_coupon_title": "クーポンをキャンセルしますか？",
   "cancel_coupon_failed": "クーポンをキャンセルできませんでした",
-  "cancel_coupon_success": "クーポンがキャンセルされました"
+  "cancel_coupon_success": "クーポンがキャンセルされました",
+  "recurrence_projection": "繰り返し: この定期的な投稿の今後の発生"
 }

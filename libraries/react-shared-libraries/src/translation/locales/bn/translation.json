@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "হ্যাঁ, কুপন বাতিল করুন",
   "cancel_coupon_title": "কুপন বাতিল করবেন?",
   "cancel_coupon_failed": "কুপন বাতিল করা যায়নি",
-  "cancel_coupon_success": "কুপন বাতিল হয়েছে"
+  "cancel_coupon_success": "কুপন বাতিল হয়েছে",
+  "recurrence_projection": "পুনরাবৃত্তি: এই পুনরাবৃত্ত পোস্টের একটি ভবিষ্যৎ ঘটনা"
 }

@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "是的，取消优惠券",
   "cancel_coupon_title": "取消优惠券？",
   "cancel_coupon_failed": "无法取消该优惠券",
-  "cancel_coupon_success": "优惠券已取消"
+  "cancel_coupon_success": "优惠券已取消",
+  "recurrence_projection": "重复：该周期性帖子的未来一次发布"
 }
