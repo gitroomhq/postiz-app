@@ -31,6 +31,18 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL');
     this.checkIsValidUrl('BACKEND_INTERNAL_URL');
     this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.');
+    this.checkStorage();
+  }
+
+  checkStorage() {
+    const provider = this.get('STORAGE_PROVIDER');
+
+    if (provider === 's3') {
+      this.checkNonEmpty('S3_ENDPOINT', 'S3-compatible endpoint URL.');
+      this.checkNonEmpty('S3_ACCESS_KEY', 'S3 access key.');
+      this.checkNonEmpty('S3_SECRET_KEY', 'S3 secret key.');
+      this.checkNonEmpty('S3_BUCKET', 'S3 bucket name.');
+    }
   }
 
   checkNonEmpty(key: string, description?: string): boolean {
