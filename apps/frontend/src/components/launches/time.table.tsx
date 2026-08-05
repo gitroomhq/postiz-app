@@ -15,6 +15,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import clsx from 'clsx';
 import {
@@ -48,24 +49,16 @@ export const TimeTable: FC<{
   const [minute, setMinute] = useState(0);
   const fetch = useFetch();
   const modal = useModals();
+  const toast = useToaster();
   usePreventWindowUnload(true);
 
-  const askClose = useCallback(async () => {
-    if (
-      !(await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_close_the_window',
-          'Are you sure you want to close the window?'
-        ),
-        t('yes_close', 'Yes, close')
-      ))
-    ) {
-      return;
-    }
+  // Scheduled Times is low-stakes — Escape/X discard unsaved slot edits by
+  // unmounting (state lives only in this component). Keep confirm on Create Post.
+  const closeWithoutConfirm = useCallback(() => {
     modal.closeAll();
-  }, []);
+  }, [modal]);
 
-  useKeypress('Escape', askClose);
+  useKeypress('Escape', closeWithoutConfirm);
 
   const removeSlot = useCallback(
     (index: number) => async () => {
@@ -124,15 +117,16 @@ export const TimeTable: FC<{
       }),
     });
     mutate();
+    toast.show(t('settings_updated', 'Settings updated'), 'success');
     modal.closeAll();
   }, [currentTimes]);
 
   return (
     <div className="relative w-full max-w-[400px] mx-auto">
       {/* Add Time Slot Section */}
-      <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
+      <div className="bg-pqInner rounded-[12px] p-[20px] border border-newTableBorder">
         <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
-          <DelayIcon size={18} className="text-[#612BD3]" />
+          <DelayIcon size={18} className="text-pqBrand" />
           {t('add_time_slot', 'Add Time Slot')}
         </div>
 
@@ -172,7 +166,7 @@ export const TimeTable: FC<{
           <button
             type="button"
             onClick={addHour}
-            className="h-[42px] px-[16px] bg-[#612BD3] hover:bg-[#7640e0] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
+            className="h-[42px] px-[16px] bg-pqBrand hover:bg-[#7640e0] transition-colors rounded-[8px] flex items-center gap-[6px] text-white text-[14px] font-medium"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}
@@ -198,12 +192,12 @@ export const TimeTable: FC<{
                 className={clsx(
                   'group flex items-center justify-between',
                   'h-[48px] px-[16px] rounded-[8px]',
-                  'bg-newBgColorInner border border-newTableBorder',
-                  'hover:border-[#612BD3]/40 transition-colors'
+                  'bg-pqInner border border-newTableBorder',
+                  'hover:border-[color-mix(in_srgb,var(--brand)_40%,transparent)] transition-colors'
                 )}
               >
                 <div className="flex items-center gap-[12px]">
-                  <div className="w-[8px] h-[8px] rounded-full bg-[#612BD3]" />
+                  <div className="w-[8px] h-[8px] rounded-full bg-pqBrand" />
                   <span className="text-[15px] font-medium tabular-nums">
                     {timeSlot.formatted}
                   </span>

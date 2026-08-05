@@ -139,11 +139,27 @@ If the tools return errors, you would need to rerun it with the right parameters
 
         const integrations = {} as Record<string, Integration>;
         for (const platform of inputData.socialPost) {
-          integrations[platform.integrationId] =
-            await this._integrationService.getIntegrationById(
-              organizationId,
-              platform.integrationId
-            );
+          const integration = await this._integrationService.getIntegrationById(
+            organizationId,
+            platform.integrationId
+          );
+          integrations[platform.integrationId] = integration;
+
+          if (!integration) {
+            return {
+              errors: 'Integration not found',
+            };
+          }
+
+          if (
+            integration.disabled ||
+            integration.refreshNeeded ||
+            integration.inBetweenSteps
+          ) {
+            return {
+              errors: `${integration.name}: This channel needs to be reconnected before you can schedule posts. Please reconnect it from Channels.`,
+            };
+          }
 
           // Same server-side validation as the dashboard / public API
           // (settings DTO + media checkValidity + empty / too-long content).

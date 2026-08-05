@@ -16,6 +16,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
   identifier = 'hashnode';
+  category = 'publishing' as const;
   name = 'Hashnode';
   isBetweenSteps = false;
   scopes = [] as string[];

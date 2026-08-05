@@ -67,7 +67,7 @@ export const MediumTags: FC<{
   }, [suggestions, tagValue]);
   return (
     <div className="medium-tags">
-      <div className={`text-[14px] mb-[6px]`}>{label}</div>
+      <div className="mb-[6px] text-[14px] text-pqMuted">{label}</div>
       <ReactTags
         placeholderText={t('add_a_tag', 'Add a tag')}
         suggestions={suggestionsArray}

@@ -69,9 +69,10 @@ function LayoutContextInner(params: { children: ReactNode }) {
         }
       }
       if (response?.headers?.get('onboarding')) {
+        // Design tour is the only first-run (old modal removed).
         window.location.href = isGeneral
-          ? '/launches?onboarding=true'
-          : '/analytics?onboarding=true';
+          ? '/launches?tour=true'
+          : '/analytics?tour=true';
         return true;
       }
 
@@ -104,6 +105,15 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 402) {
+        // Settings → Teams owns its upgrade UI (TeamsUpgradeLock). A GET
+        // /settings/team 402 must not open the global Payment Required dialog —
+        // that was the bug when the plan lacks team_members (or when a DEV
+        // billing-stage override claims a richer tier than the real sub).
+        const method = (options?.method || 'GET').toUpperCase();
+        const path = typeof url === 'string' ? url.split('?')[0] : '';
+        if (method === 'GET' && path === '/settings/team') {
+          return true;
+        }
         // Read from a clone: returning `true` below hands the original response
         // back to the caller, which reads the body again.
         const { message } = await response.clone().json();

@@ -1,17 +1,29 @@
 'use client';
 
-import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import { PostsPanel } from '@gitroom/frontend/components/launches/posts.panel';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
-import { capitalize, groupBy, orderBy } from 'lodash';
-import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import {
+  CalendarWeekProvider,
+  useCalendar,
+} from '@gitroom/frontend/components/launches/calendar.context';
+
+/** Prototype hides the queue on the Posts (list) page. */
+const PostsPanelWhenCalendar = () => {
+  const { display } = useCalendar();
+  if (display === 'list') return null;
+  return <PostsPanel />;
+};
 import { Filters } from '@gitroom/frontend/components/launches/filters';
+import { NewPost } from '@gitroom/frontend/components/launches/new.post';
+import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -19,14 +31,8 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
-import { GeneratorComponent } from './generator/generator';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { NewPost } from '@gitroom/frontend/components/launches/new.post';
-import { HeaderAction } from '@gitroom/frontend/components/new-layout/header-slot';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
-import useCookie from 'react-use-cookie';
-import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 
 export const SVGLine = () => {
   return (
@@ -261,7 +267,7 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[12px] items-center bg-pqInner hover:bg-pqHover group/profile transition-all rounded-e-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -283,10 +289,10 @@ export const MenuComponent: FC<
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="absolute start-[5px] top-[5px] z-[200] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqWarn text-[10px] font-[700] text-pqOnBrand">
               !
             </div>
-            <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
+            <div className="absolute start-0 top-0 z-[199] h-[46px] w-[39px] rounded-full bg-pqBrand/60" />
           </div>
         )}
         <ImageWithFallback
@@ -351,124 +357,16 @@ export const MenuComponent: FC<
   );
 };
 export const LaunchesComponent = () => {
-  const fetch = useFetch();
-  const user = useUser();
-  const { billingEnabled } = useVariables();
-  const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
   const fireEvents = useFireEvents();
   const t = useT();
-  const [reload, setReload] = useState(false);
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
-  const [mode] = useCookie('mode', 'light');
-  const { isLoading, data: integrations, mutate } = useIntegrationList();
+  const { isLoading, data: integrations } = useIntegrationList();
 
-  const totalNonDisabledChannels = useMemo(() => {
-    return (
-      integrations?.filter((integration: any) => !integration.disabled)
-        ?.length || 0
-    );
-  }, [integrations]);
-  const changeItemGroup = useCallback(
-    async (id: string, group: string) => {
-      mutate(
-        integrations.map((integration: any) => {
-          if (integration.id === id) {
-            return {
-              ...integration,
-              customer: {
-                id: group,
-              },
-            };
-          }
-          return integration;
-        }),
-        false
-      );
-      await fetch(`/integrations/${id}/group`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          group,
-        }),
-      });
-      mutate();
-    },
-    [integrations]
-  );
   const sortedIntegrations = useMemo(() => {
-    return orderBy(
-      integrations,
-      ['type', 'disabled', 'identifier'],
-      ['desc', 'asc', 'asc']
-    );
+    return sortIntegrationsByProviderImportance(integrations || []);
   }, [integrations]);
-  const menuIntegrations = useMemo(() => {
-    return orderBy(
-      Object.values(
-        groupBy(sortedIntegrations, (o) => o?.customer?.id || '')
-      ).map((p) => ({
-        name: (p[0].customer?.name || '') as string,
-        id: (p[0].customer?.id || '') as string,
-        isEmpty: p.length === 0,
-        values: orderBy(
-          p,
-          ['type', 'disabled', 'identifier'],
-          ['desc', 'asc', 'asc']
-        ),
-      })),
-      ['isEmpty', 'name'],
-      ['desc', 'asc']
-    );
-  }, [sortedIntegrations]);
-  const update = useCallback(async (shouldReload: boolean) => {
-    if (shouldReload) {
-      setReload(true);
-    }
-    await mutate();
-    if (shouldReload) {
-      setReload(false);
-    }
-  }, []);
-  const continueIntegration = useCallback(
-    (integration: any) => async () => {
-      router.push(
-        `/launches?added=${integration.identifier}&continue=${integration.id}`
-      );
-    },
-    []
-  );
-  const refreshChannel = useCallback(
-    (
-        integration: Integration & {
-          identifier: string;
-        }
-      ) =>
-      async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-            {
-              method: 'GET',
-            }
-          )
-        ).json();
 
-        // The endpoint answers { err: true } with no url when generateAuthUrl
-        // throws — bad or missing provider credentials, or the provider being
-        // unreachable. Navigating anyway sent the user to /undefined.
-        if (!url) {
-          toast.show(
-            'Could not connect to the platform, please try again later',
-            'warning'
-          );
-          return;
-        }
-
-        window.location.href = url;
-      },
-    []
-  );
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -497,9 +395,9 @@ export const LaunchesComponent = () => {
       window.close();
     }
   }, []);
-  if (isLoading || reload) {
+  if (isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
+      <div className="bg-pqInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
       </div>
     );
@@ -508,110 +406,15 @@ export const LaunchesComponent = () => {
   // @ts-ignore
   return (
     <DNDProvider>
-      <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
-        {/* The page's primary action belongs in the chrome's header, but the
-            button reads useCalendar() — so it is mounted here, inside the
-            provider, and only its output is portalled up. */}
-        <HeaderAction>
-          {sortedIntegrations?.length > 0 && <NewPost />}
-        </HeaderAction>
-        <div
-          className={clsx(
-            'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
-          )}
-        >
-          <div
-            className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
-            )}
-          >
-            <div className="flex items-center">
-              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
-                {t('channels')}
-              </h2>
-              <div
-                onClick={() =>
-                  setCollapseMenu(collapseMenu === '1' ? '0' : '1')
-                }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="7"
-                  height="13"
-                  viewBox="0 0 7 13"
-                  fill="none"
-                >
-                  <path
-                    d="M6 11.5L1 6.5L6 1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
-              <AddProviderButton update={() => update(true)} />
-              {/* Create Post used to sit here; it is in the header now. */}
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col empty:hidden">
-                {sortedIntegrations?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
-              </div>
-            </div>
-            <div className="gap-[32px] flex flex-col select-none flex-1">
-              {sortedIntegrations.length === 0 && collapseMenu === '0' && (
-                <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
-                    <img
-                      src={
-                        mode === 'dark'
-                          ? '/no-channels.svg'
-                          : '/no-channels-colors.svg'
-                      }
-                      alt="No channels"
-                      className="mx-auto min-w-[100%]"
-                    />
-                    <div className="font-[600] text-[20px]">
-                      {t('no_channels', 'No channels yet')}
-                    </div>
-                    <div className="text-[14px]">
-                      {t('connect_your_accounts')}
-                    </div>
-                  </div>
-                </div>
-              )}
-              {menuIntegrations.map((menu) => (
-                <MenuGroupComponent
-                  collapsed={collapseMenu === '1'}
-                  changeItemGroup={changeItemGroup}
-                  key={menu.name}
-                  group={menu}
-                  mutate={mutate}
-                  continueIntegration={continueIntegration}
-                  update={update}
-                  refreshChannel={refreshChannel}
-                  totalNonDisabledChannels={totalNonDisabledChannels}
-                />
-              ))}
-            </div>
-            <div className="mt-[5px] text-center flex flex-col">
-              {billingEnabled && user?.isLifetime && (
-                <div>{capitalize(user?.tier?.current || '')} tier</div>
-              )}
-              <div>
-                {process.env.NEXT_PUBLIC_VERSION
-                  ? process.env.NEXT_PUBLIC_VERSION
-                  : ''}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        {sortedIntegrations.length > 0 && (
+          <HeaderAction>
+            <NewPost />
+          </HeaderAction>
+        )}
+        {/* Design: queue panel beside calendar only. Posts (list) is full-bleed. */}
+        <PostsPanelWhenCalendar />
+        <div className="bg-pqInner flex-1 flex-col flex p-[20px] gap-[12px]">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />

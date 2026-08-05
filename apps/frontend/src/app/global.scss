@@ -23,14 +23,121 @@ body {
   background-image: linear-gradient(145deg, #6d28d9, #7c3aed 45%, #e0189e);
 }
 
-// The left rail. Only the brand purples, brand-500 down to brand-700, spread
-// across the full height of the column: the point is depth, not a change of
-// colour. .crown-gradient's pop-600 belongs on a 40px logo tile, where it is a
-// highlight; down a rail the length of the window it becomes a pink half.
-// Brand values, so the rail is the same in light and dark and only the
-// surfaces around it change.
-.brand-rail {
-  background-image: linear-gradient(180deg, #7c3aed, #6d28d9 50%, #5b21b6);
+// The redesign's responsive shell keys off the attributes `use.viewport.tsx`
+// stamps on <html>, not off media queries — most of what changes between the
+// three sizes is structural and lives in the components. What is left here is
+// the handful of purely cosmetic hides, which is also how the prototype does
+// it. The Tailwind `mobile:` / `tablet:` screens are a separate, older system
+// at different widths; both are in use and neither replaces the other.
+[data-mobile='1'] {
+  // Icon-and-number only: at phone widths the header has no room for the words
+  // next to them.
+  [data-hdr-label] {
+    display: none !important;
+  }
+
+  [data-streak] {
+    display: none !important;
+  }
+}
+
+// Header streak popover — design chrome `:115–116` hover show.
+[data-streak] [data-streak-pop] {
+  display: none;
+}
+[data-streak]:hover [data-streak-pop],
+[data-streak]:focus-within [data-streak-pop] {
+  display: flex;
+}
+
+// Calendar cell states. These are hover rules over attributes the cell already
+// sets for its own logic, which is how the design expresses them too — writing
+// them as React state would re-render the whole grid on every pointer move.
+[data-cell] {
+  overflow: hidden;
+
+  &:hover {
+    background-color: var(--hover);
+  }
+
+  // Day timeline slots grow with their cards — do not clip stacked posts.
+  &[data-dayslot='1'] {
+    overflow: visible;
+  }
+
+  // An empty future cell invites a post: brand tint plus the "+ 14:00" mark.
+  &:not([data-filled='1']):not([data-past='1']):hover {
+    background-color: var(--brandFaint);
+
+    [data-cell-add] {
+      opacity: 1;
+    }
+  }
+
+  // A full cell grows a scrollbar under the pointer rather than clipping.
+  &[data-stack='1']:hover {
+    overflow-y: auto;
+    z-index: 7;
+  }
+
+  // Owner override (not in design): empty past slots show "Date passed" on
+  // hover. Never on filled cells — the label used to sit at z-6 over cards and
+  // the See all chip. Label is a child so it can be i18n / RTL; CSS only
+  // toggles visibility. `data-filled` mirrors the React gate in CalendarColumn.
+  &[data-past='1']:not([data-filled='1']):hover [data-cell-past-label] {
+    opacity: 0.3;
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+}
+
+[data-cell-add] {
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+// Prototype: calendar / list / queue action clusters stay reachable without
+// hover on touch and phone widths.
+[data-ci-actions] {
+  transition: opacity 0.15s ease;
+}
+
+[data-ci]:hover [data-ci-actions] {
+  opacity: 1;
+}
+
+[data-mobile='1'] [data-ci-actions] {
+  opacity: 1 !important;
+}
+
+[data-mobile='1'] [data-ci-actions] button {
+  min-width: 34px !important;
+  min-height: 34px !important;
+}
+
+@media (hover: none) {
+  [data-ci-actions] {
+    opacity: 1 !important;
+  }
+}
+
+// A past hour in the calendar. Diagonal hairlines rather than a flat fill, so
+// the cell still reads as part of the grid while saying it is closed. Lives
+// here because a repeating-gradient is unreadable as a Tailwind arbitrary
+// value and it is used in three views.
+.pq-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--hatch) 0 1px,
+    transparent 1px 9px
+  );
 }
 
 // Only suppress the outline for pointer interaction; keyboard focus must stay
@@ -38,6 +145,16 @@ body {
 // removed every focus ring in the app and made it unusable without a mouse.
 body *:focus:not(:focus-visible) {
   outline: none !important;
+}
+
+// The keyboard focus ring, in the app's own palette. `--ring` was added with
+// the token layer for exactly this and nothing had used it, so every focus ring
+// was still Chrome's default blue — legible, but a colour that appears nowhere
+// else in the product. Tabbing through the rail was the giveaway.
+body *:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: inherit;
 }
 
 .box {
@@ -341,46 +458,6 @@ body *:focus:not(:focus-visible) {
 .mantine-Paper-root {
   outline: none !important;
 }
-//
-//:root {
-//  --copilot-kit-primary-color: #612ad5 !important;
-//  --copilot-kit-background-color: #0b0f1c !important;
-//  --copilot-kit-separator-color: #1f2941 !important;
-//  --copilot-kit-contrast-color: #ffffff !important;
-//  --copilot-kit-secondary-contrast-color: #ffffff !important;
-//  --copilot-kit-secondary-color: #000 !important;
-//  --copilot-kit-response-button-background-color: #000 !important;
-//  --copilot-kit-response-button-color: #fff !important;
-//}
-
-//.copilotKitWindow {
-//  @apply bg-customColor3 #{!important};
-//}
-
-//.copilotKitButtonIconOpen svg {
-//  display: none !important;
-//}
-//
-//.copilotKitButtonIconOpen:after {
-//  @apply text-textColor;
-//  content: '';
-//  display: block;
-//  position: relative;
-//  z-index: 1;
-//  object-fit: contain;
-//  background: url('/magic.svg') no-repeat center center / contain;
-//  width: 30px;
-//  height: 30px;
-//}
-//
-//.copilotKitPopup {
-//  right: -2rem !important;
-//  bottom: 2rem !important;
-//}
-//
-//.copilotKitWindow {
-//  /*right: -5rem !important;*/
-//}
 
 .trz {
   transform: translateZ(0);
@@ -429,17 +506,8 @@ div div .set-font-family {
   font-weight: 400 !important;
 }
 
-.col-calendar:hover:before {
-  content: 'Date passed';
-  color: var(--color-text);
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  opacity: 30%;
-  font-size: 14px;
-}
+// Legacy class removed with the calendar rewrite; empty past-slot hover lives
+// on `[data-cell][data-past='1']:not([data-filled='1'])` + `[data-cell-past-label]`.
 
 .loading-shimmer {
   position: relative;
@@ -552,9 +620,14 @@ html[dir='rtl'] .lbox {
   direction: ltr !important;
 }
 
-html[dir='rtl'] [dir='ltr'] {
-  direction: rtl !important;
-}
+// Removed: `html[dir='rtl'] [dir='ltr'] { direction: rtl !important }`.
+//
+// It forced *every* element that asks to be left-to-right back to right-to-left,
+// which is the exact opposite of what `dir="ltr"` is for — isolating content
+// that is not prose: dates, clock times, URLs, code, phone numbers. With it in
+// place a Hebrew week of 03/08–09/08 rendered as "09/08/2026 - 09/08/2026"
+// reversed, reading as the wrong week, and no amount of markup could fix it.
+// Nothing in the app sets `dir="ltr"` for the old rule to protect.
 //
 .uppy-Dashboard-AddFiles {
   display: none !important;
@@ -615,7 +688,7 @@ html[dir='rtl'] [dir='ltr'] {
 
 .ProseMirror .mention {
   font-weight: bold;
-  color: #ae8afc;
+  color: var(--focused);
 }
 
 .ProseMirror ul,
@@ -715,10 +788,10 @@ html[dir='rtl'] [dir='ltr'] {
   }
 
   .mention {
-    background-color: var(--purple-light);
+    background-color: var(--brandSoft);
     border-radius: 0.4rem;
     box-decoration-break: clone;
-    color: #ae8afc;
+    color: var(--focused);
     &::after {
       content: '\200B';
     }
@@ -731,33 +804,148 @@ html[dir='rtl'] [dir='ltr'] {
   filter: blur(5px);
 }
 
+// AI Copilot (/agents). CopilotKit is an SDK: everything its
+// --copilot-kit-* variables can reach is themed where the chat mounts
+// (agent.chat.tsx); what they cannot reach — bubble geometry, the message
+// column, the composer frame — is restyled here, scoped to the page.
 .agent {
+  // The SDK ships its own system font stack; the design types the chat in the
+  // app's fonts.
+  .copilotKitChat {
+    font-family: inherit;
+  }
+
+  // Message column: an 840px centred column, 24px padding, 16px rhythm.
+  .copilotKitMessagesContainer {
+    width: 100%;
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .copilotKitMessage {
+    margin-bottom: 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+
+  // User bubble: brand fill, tucked corner on the sending side. Logical
+  // radii and margins so the bubble mirrors correctly in RTL.
+  .copilotKitMessage.copilotKitUserMessage {
+    max-width: 78%;
+    margin-left: 0;
+    margin-inline-start: auto;
+    padding: 10px 13px;
+    border-start-start-radius: 14px;
+    border-start-end-radius: 14px;
+    border-end-end-radius: 5px;
+    border-end-start-radius: 14px;
+  }
+
+  // Assistant: no bubble at all — bare text beside the PQ tile.
+  .copilotKitMessage.copilotKitAssistantMessage {
+    max-width: 100%;
+    padding: 10px 0;
+    padding-inline-start: 2px;
+    border-radius: 0;
+    color: var(--text);
+  }
+
+  // Regenerate / copy / thumbs stay, restyled as quiet ghosts.
+  .copilotKitMessage.copilotKitAssistantMessage .copilotKitMessageControls {
+    left: auto;
+    inset-inline-start: 0;
+    gap: 2px;
+  }
+  .copilotKitMessageControlButton {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    color: var(--soft);
+  }
+  .copilotKitMessageControlButton:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+
+  .copilotKitMessage img {
+    width: 200px;
+  }
+  .copilotKitMessage a {
+    color: var(--focused);
+  }
+  .copilotKitMessage.copilotKitUserMessage a {
+    color: var(--onBrand);
+    text-decoration: underline;
+  }
+
+  // The composer card is drawn by our Input component (agent.input.tsx);
+  // strip the SDK's bordered pill so only the design's frame shows.
+  // Owner inset (2026-08-06): 40px desktop so the 840 card is not edge-flush;
+  // mobile keeps 24 (see [data-mobile] below).
   .copilotKitInputContainer {
-    padding: 0 24px !important;
+    padding: 0 40px 20px;
+    background: transparent;
+    border-radius: 0;
   }
-
   .copilotKitInput {
-    width: 100% !important;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 11px 12px 9px;
+    border: 0;
+    border-radius: var(--r-lg);
+    background: var(--pop);
+    box-shadow: inset 0 0 0 1px var(--border), var(--e1);
+  }
+  .copilotKitInput textarea {
+    width: 100%;
+    min-height: 52px;
+    padding: 2px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .copilotKitInput textarea::placeholder {
+    color: var(--soft);
+  }
+
+  // Send: 32px brand square, white glyph. The SDK flips `disabled` while the
+  // input is empty — that state carries the design's .4 opacity.
+  .copilotKitInputControlButton,
+  .copilotKitInputControlButton:not([disabled]) {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--brand);
+    color: var(--onBrand);
+  }
+  .copilotKitInputControlButton:not([disabled]):hover {
+    transform: none;
+    color: var(--onBrand);
+    background: var(--brandHover);
+  }
+  .copilotKitInputControlButton[disabled] {
+    color: var(--onBrand);
+    opacity: 0.4;
+    cursor: default;
   }
 }
-.rm-bg .b2 {
-  padding-top: 0 !important;
-}
-.rm-bg .b1 {
-  background: transparent !important;
-  gap: 0 !important;
-  // The media toolbar row carries a full-width border-t; inside the agent
-  // chat (which has no composer frame) it reads as a stray line above the
-  // Insert/Design/AI-Image buttons, so drop it here only.
-  border-top: none !important;
-}
 
-.copilotKitMessage img {
-  width: 200px;
-}
+// Copilot composer / empty hero: keep a tighter 24px inset under 760.
+[data-mobile='1'] .agent {
+  .copilotKitInputContainer {
+    padding: 0 24px 20px;
+  }
 
-.copilotKitMessage a {
-  color: var(--new-btn-text) !important;
+  [data-copilot-empty] {
+    padding-inline: 24px;
+  }
 }
 
 @keyframes marquee-up {
@@ -816,7 +1004,7 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .tiptap p.is-editor-empty:first-child::before {
-  color: #adb5bd;
+  color: var(--soft);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -834,11 +1022,298 @@ html[dir='rtl'] [dir='ltr'] {
 }
 
 .forceChange .changeColor {
-  background: var(--new-btn-primary) !important;
-  color: #fff !important;
+  background: var(--brand) !important;
+  color: var(--onBrand) !important;
 }
 
 .text-shadow-tags {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
+}
+
+// ---------------------------------------------------------------------------
+// Redesign motion
+//
+// From design/handoff/tokens.css. Nothing uses these yet — they land with the
+// token layer so each later step only has to reference them.
+//
+// The looping ones (pqbtnglow, pqbtnbloom, pqbtnsheen, pqunlim, pqtick, pqring)
+// run forever by design. They are gated below: an indefinite animation is the
+// kind that triggers motion sickness, and the handoff asks for the gate but the
+// prototype never implemented it.
+// ---------------------------------------------------------------------------
+
+// Loaders.
+@keyframes pqspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Popover entry: 150ms, opacity plus a 4px rise.
+@keyframes pqpop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Toast entry. Paired with the -50% X translate the toast already carries, so
+// the keyframe has to restate it or the toast jumps left as it animates.
+@keyframes pqfadeDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+// Card entry for the tour's calendar demo.
+@keyframes pqin {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// Tooltip fade.
+@keyframes pqtip {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// The "Unlimited channels" line on a plan card.
+@keyframes pqunlim {
+  0%,
+  100% {
+    color: var(--unlimA);
+    text-shadow: none;
+  }
+  50% {
+    color: var(--unlimB);
+    text-shadow: 0 0 12px rgba(167, 139, 250, 0.65);
+  }
+}
+
+// Tour target ring.
+@keyframes pqtick {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.22),
+      0 0 12px rgba(124, 58, 237, 0.5);
+  }
+}
+
+// The tour's spotlight. The 9999px spread is what dims the rest of the screen,
+// so this ring is both the highlight and the scrim.
+@keyframes pqring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 9999px rgba(2, 2, 6, 0.72), 0 0 0 2px var(--brand),
+      0 0 24px -6px rgba(124, 58, 237, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(2, 2, 6, 0.72), 0 0 0 3px var(--brand),
+      0 0 48px -4px rgba(124, 58, 237, 1);
+  }
+}
+
+// Attention pulse on a connection card.
+//
+// tokens.css declares pqglow twice — an early text-shadow version and this
+// outline one. In CSS the later wins, so this is the one that actually ran in
+// the prototype; the text-shadow version is dead and is not ported.
+@keyframes pqglow {
+  0%,
+  100% {
+    outline-color: var(--border);
+    box-shadow: none;
+    transform: none;
+  }
+  8% {
+    outline-color: rgba(124, 58, 237, 0.95);
+    box-shadow: 0 0 30px -6px rgba(124, 58, 237, 0.85);
+    transform: translateY(-2px);
+  }
+  20% {
+    outline-color: var(--border);
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+// Tour Connections step — staggered brand glow across connector cards.
+[data-tourconn='1'] [data-conn-card='1'] {
+  animation: pqglow 5.5s ease-in-out infinite;
+}
+
+// The upgrade CTA's three stacked loops: the button's own halo, a blurred bloom
+// behind it, and a sheen crossing it.
+@keyframes pqbtnglow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4),
+      0 10px 30px -8px rgba(124, 58, 237, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(124, 58, 237, 0),
+      0 14px 44px -6px rgba(124, 58, 237, 0.85);
+  }
+}
+
+@keyframes pqbtnbloom {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pqbtnsheen {
+  0% {
+    transform: translateX(-130%);
+  }
+  55%,
+  100% {
+    transform: translateX(230%);
+  }
+}
+
+// Every element carrying one of the indefinite loops above must also carry
+// `pq-loop`, which is the hook that turns them off for readers who ask for less
+// motion. Matching on the animation name is not possible in CSS, and matching
+// on inline `style` would only work for elements styled inline — so this is a
+// convention the components have to keep, not something the stylesheet can
+// enforce on its own.
+//
+// The one-shot entrances (pqpop, pqfadeDown, pqin, pqtip) are deliberately not
+// covered: removing them makes surfaces appear with no transition at all, which
+// reads as a glitch rather than as calm.
+@media (prefers-reduced-motion: reduce) {
+  .pq-loop {
+    animation: none !important;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The collapsed rail expands on hover
+//
+// Ported from the design, which does this in CSS rather than in state — so it
+// costs no re-render and cannot get out of step with React. `data-hov` is only
+// "1" when the rail is collapsed on desktop; expanded, there is nothing to
+// reveal, and on mobile the rail is a drawer.
+//
+// Gated on a real pointer. On a touch screen `:hover` sticks after a tap, so
+// the rail would stay open until you touched something else.
+// ---------------------------------------------------------------------------
+// Collapsed resting: labels hidden; pin icon stays visible (no opacity hide —
+// the design never puts data-sb-toggle on the pin row).
+[data-sb][data-hov='1'] [data-sbl='1'],
+[data-sb][data-hov='1'] [data-sbh='1'] {
+  display: none;
+}
+
+// Collapsed resting: nav/Connect buttons read as 34px icon squares (Connect =
+// purple square). Pin keeps full-width row so its icon stays easy to hit.
+[data-sb][data-hov='1'] {
+  overflow: visible;
+}
+
+[data-sb][data-hov='1'] a,
+[data-sb][data-hov='1'] button:not([data-sb-pin='1']) {
+  width: 34px;
+  margin-inline: auto;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  // Widen + shadow only — stacking is owned by DesktopSlot (z-45) so this
+  // panel sits above the page column. Setting z-index only on the nav left
+  // page toolbars free to paint through the expanded rail.
+  [data-sb][data-hov='1']:hover {
+    width: 236px !important;
+    box-shadow: var(--e3);
+  }
+
+  [data-sb][data-hov='1']:hover [data-sbl='1'] {
+    display: block !important;
+  }
+
+  // Rows that are flex containers rather than plain text, so `block` would
+  // collapse their layout. The design splits them the same way.
+  [data-sb][data-hov='1']:hover [data-sbh='1'] {
+    display: flex !important;
+  }
+
+  // The rows centre their icon while collapsed; once the labels are back they
+  // have to read as a list again.
+  [data-sb][data-hov='1']:hover button,
+  [data-sb][data-hov='1']:hover a {
+    width: 100%;
+    margin-inline: 0;
+    padding-inline: 9px;
+    justify-content: flex-start;
+  }
+
+  [data-sb][data-hov='1']:hover button[data-sb-pin='1'] {
+    padding-inline: 8px;
+  }
+}
+
+// The agent page's channel column does the same, at its own widths. Unlike the
+// rail it grows *in* the flow rather than floating — which is what the design
+// does here too (it sets `flex` as well as `width`), because the chat beside it
+// reflows happily and a floating panel would cover the message you are reading.
+//
+// `!important` because the labels are hidden by a Tailwind `group-[.sidebar]`
+// rule; this has to outrank it rather than replace it, so the resting state
+// stays exactly as it was.
+@media (hover: hover) and (pointer: fine) {
+  [data-cr][data-crhov='1']:hover {
+    width: 260px;
+    flex: 0 0 260px;
+  }
+
+  [data-cr][data-crhov='1']:hover [data-crl='1'] {
+    display: block !important;
+  }
+}
+
+// Chatbase embed defaults to bottom-left and covers the rail footer
+// (Settings / Upgrade). Pin the bubble and window bottom-trailing instead.
+#chatbase-bubble-button,
+#chatbase-bubble-window {
+  inset-inline-start: auto !important;
+  inset-inline-end: 20px !important;
+  left: auto !important;
+  right: 20px !important;
+}
+
+[dir='rtl'] #chatbase-bubble-button,
+[dir='rtl'] #chatbase-bubble-window {
+  left: 20px !important;
+  right: auto !important;
 }

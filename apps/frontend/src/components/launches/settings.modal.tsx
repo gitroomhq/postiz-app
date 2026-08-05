@@ -15,8 +15,8 @@ export const Element: FC<{
   const [value, setValue] = useState(setting.value);
   return (
     <div className="flex flex-col gap-[10px]">
-      <div>{setting.title}</div>
-      <div className="text-[14px]">{setting.description}</div>
+      <div className="text-pqText">{setting.title}</div>
+      <div className="text-[14px] text-pqMuted">{setting.description}</div>
       <Slider
         value={value === true ? 'on' : 'off'}
         onChange={() => {

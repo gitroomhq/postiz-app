@@ -15,6 +15,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+import { GetPostsCountDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.count.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -29,6 +30,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -136,6 +138,14 @@ export class PostsController {
     @Query() query: GetPostsListDto
   ) {
     return this._postsService.getPostsList(org.id, query);
+  }
+
+  @Get('/count')
+  async countPosts(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetPostsCountDto
+  ) {
+    return this._postsService.countPostsByState(org.id, query.integration);
   }
 
   @Get('/old')
@@ -276,6 +286,15 @@ export class PostsController {
     @Body('action') action: 'schedule' | 'update' = 'schedule'
   ) {
     return this._postsService.changeDate(org.id, id, date, action);
+  }
+
+  @Put('/:id/status')
+  changeStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: ChangePostStatusDto
+  ) {
+    return this._postsService.changePostStatus(org.id, id, body.status);
   }
 
   @Post('/separate-posts')

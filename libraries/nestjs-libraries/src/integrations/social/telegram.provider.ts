@@ -21,6 +21,7 @@ const mediaStorage = process.env.STORAGE_PROVIDER || 'local';
 export class TelegramProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Telegram has moderate bot API limits
   identifier = 'telegram';
+  category = 'chat' as const;
   name = 'Telegram';
   isBetweenSteps = false;
   isWeb3 = true;

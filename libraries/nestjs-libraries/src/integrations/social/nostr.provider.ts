@@ -29,6 +29,7 @@ const pool = new SimplePool();
 export class NostrProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5;
   identifier = 'nostr';
+  category = 'social' as const;
   name = 'Nostr';
   isBetweenSteps = false;
   scopes = [] as string[];

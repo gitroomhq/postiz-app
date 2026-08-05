@@ -1,11 +1,11 @@
 import { FC, useCallback, useMemo, useState } from 'react';
-import { Integration } from '@prisma/client';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import clsx from 'clsx';
 
 interface AnalyticsDataItem {
   label: string;
@@ -24,28 +24,26 @@ const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
   const displayValue = Math.abs(value).toFixed(1);
 
   return (
-    <div
-      className={`flex items-center gap-[4px] text-[13px] font-medium ${
-        isPositive ? 'text-[#32d583]' : 'text-[#f97066]'
-      }`}
+    <span
+      className={clsx(
+        'flex h-[23px] shrink-0 items-center gap-[4px] rounded-full pe-[9px] ps-[7px] text-[12.5px] font-[600]',
+        isPositive ? 'bg-pqOkSoft text-pqOk' : 'bg-pqWarnSoft text-pqWarn'
+      )}
     >
       <svg
-        width="12"
-        height="12"
+        width="10"
+        height="10"
         viewBox="0 0 12 12"
         fill="none"
         className={isPositive ? '' : 'rotate-180'}
       >
-        <path
-          d="M6 2.5L10 7.5H2L6 2.5Z"
-          fill="currentColor"
-        />
+        <path d="M6 2.5L10 7.5H2L6 2.5Z" fill="currentColor" />
       </svg>
       <span>
         {displayValue}
         {average ? 'pp' : '%'}
       </span>
-    </div>
+    </span>
   );
 };
 
@@ -54,70 +52,47 @@ const AnalyticsCard: FC<{
   total: string | number;
   index: number;
 }> = ({ item, total, index }) => {
-  const colorVariants = ['purple', 'green', 'blue'] as const;
+  const colorVariants = ['purple', 'green', 'amber'] as const;
   const color = colorVariants[index % colorVariants.length];
-
   const hasDataPoints = item.data.length >= 1;
 
   return (
-    <div className="group relative">
-      <div
-        className={`
-          flex flex-col h-full
-          bg-newTableHeader
-          border border-newTableBorder
-          rounded-[12px]
-          overflow-hidden
-          transition-all duration-200
-          hover:border-[#612bd3]/50
-        `}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
-          <div className="flex items-center gap-[10px]">
-            <div
-              className={`
-                w-[8px] h-[8px] rounded-full
-                ${color === 'purple' ? 'bg-[#612bd3]' : ''}
-                ${color === 'green' ? 'bg-[#32d583]' : ''}
-                ${color === 'blue' ? 'bg-[#1d9bf0]' : ''}
-              `}
-            />
-            <span className="text-[15px] font-medium text-newTableText">
-              {item.label}
-            </span>
-          </div>
-          {item.percentageChange !== undefined && (
-            <TrendIndicator value={item.percentageChange} average={item.average} />
-          )}
-        </div>
-
-        {/* Content */}
-        {hasDataPoints ? (
-          <>
-            {/* Chart */}
-            <div className="flex-1 px-[12px] py-[8px]">
-              <div className="h-[120px] relative">
-                <ChartSocial data={item.data} color={color} key={`chart-${index}`} />
-              </div>
-            </div>
-
-            {/* Value */}
-            <div className="px-[16px] pb-[14px]">
-              <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
-                {total}
-              </div>
-            </div>
-          </>
-        ) : (
-          /* Single value display */
-          <div className="flex-1 flex flex-col items-center justify-center py-[32px] px-[16px]">
-            <div className="text-[48px] leading-[56px] font-semibold tracking-tight">
+    <div className="flex flex-col overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]">
+      <div className="flex items-center gap-[9px] px-[17px] pt-[15px]">
+        <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+          {item.label}
+        </span>
+        {item.percentageChange !== undefined && (
+          <TrendIndicator
+            value={item.percentageChange}
+            average={item.average}
+          />
+        )}
+      </div>
+      {hasDataPoints ? (
+        <>
+          <div className="px-[17px] pt-[10px]">
+            <div className="text-[28px] font-[600] leading-[1.1] tracking-tight text-pqText">
               {total}
             </div>
           </div>
-        )}
-      </div>
+          <div className="px-[12px] pb-[12px] pt-[8px]">
+            <div className="relative h-[100px]">
+              <ChartSocial
+                data={item.data}
+                color={color === 'amber' ? 'blue' : color}
+                key={`chart-${index}`}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center px-[16px] py-[32px]">
+          <div className="text-[36px] font-[600] leading-[1.1] tracking-tight">
+            {total}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -126,8 +101,8 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const t = useT();
 
   return (
-    <div className="col-span-full flex flex-col items-center justify-center py-[48px] px-[24px] bg-newTableHeader border border-newTableBorder rounded-[12px]">
-      <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[#612bd3]/10 flex items-center justify-center">
+    <div className="col-span-full flex flex-col items-center justify-center rounded-pqMd bg-pqPop px-[24px] py-[48px] shadow-[inset_0_0_0_1px_var(--border)]">
+      <div className="mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-full bg-pqBrandSoft">
         <svg
           width="24"
           height="24"
@@ -135,41 +110,37 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-[#612bd3]"
+          className="text-pqBrand"
         >
           <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           <path d="M12 8v4l2 2" />
         </svg>
       </div>
-      <p className="text-[15px] text-newTableText text-center mb-[12px]">
+      <p className="mb-[12px] text-center text-[15px] text-pqText">
         {t(
           'this_channel_needs_to_be_refreshed',
           'This channel needs to be refreshed to display analytics'
         )}
       </p>
       <button
+        type="button"
         onClick={onRefresh}
-        className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-white bg-[#612bd3] hover:bg-[#5023b8] rounded-[8px] transition-colors"
+        className="inline-flex items-center gap-[6px] rounded-[8px] bg-pqBrand px-[16px] py-[8px] text-[14px] font-medium text-pqOnBrand transition-colors hover:bg-pqBrandHover"
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M23 4v6h-6M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-        </svg>
         {t('refresh_channel', 'Refresh Channel')}
       </button>
     </div>
   );
 };
 
+type AnalyticsIntegration = {
+  id: string;
+  identifier: string;
+  internalId?: string;
+};
+
 export const RenderAnalytics: FC<{
-  integration: Integration;
+  integration: AnalyticsIntegration;
   date: number;
 }> = (props) => {
   const { integration, date } = props;
@@ -198,44 +169,36 @@ export const RenderAnalytics: FC<{
   const toast = useToaster();
 
   const refreshChannel = useCallback(
-    (
-        integrationData: Integration & {
-          identifier: string;
-        }
-      ) =>
-      async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
-            {
-              method: 'GET',
-            }
-          )
-        ).json();
+    (integrationData: AnalyticsIntegration) => async () => {
+      const { url } = await (
+        await fetch(
+          `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
+          {
+            method: 'GET',
+          }
+        )
+      ).json();
 
-        // The endpoint answers { err: true } with no url when generateAuthUrl
-        // throws — bad or missing provider credentials, or the provider being
-        // unreachable. Navigating anyway sent the user to /undefined.
-        if (!url) {
-          toast.show(
-            'Could not connect to the platform, please try again later',
-            'warning'
-          );
-          return;
-        }
+      if (!url) {
+        toast.show(
+          'Could not connect to the platform, please try again later',
+          'warning'
+        );
+        return;
+      }
 
-        window.location.href = url;
-      },
-    []
+      window.location.href = url;
+    },
+    [fetch, toast]
   );
-
-  const t = useT();
 
   const totals = useMemo(() => {
     return data?.map((p: AnalyticsDataItem) => {
       const value =
-        (p?.data.reduce((acc: number, curr: { total: number }) => acc + curr.total, 0) || 0) /
-        (p.average ? p.data.length : 1);
+        (p?.data.reduce(
+          (acc: number, curr: { total: number }) => acc + Number(curr.total),
+          0
+        ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
       }
@@ -252,9 +215,9 @@ export const RenderAnalytics: FC<{
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+    <div className="grid grid-cols-1 gap-[13px] sm:grid-cols-2 lg:grid-cols-3">
       {data?.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration as any)} />
+        <EmptyState onRefresh={refreshChannel(integration)} />
       )}
       {data?.map((item: AnalyticsDataItem, index: number) => (
         <AnalyticsCard

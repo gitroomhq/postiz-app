@@ -607,13 +607,21 @@ export const DeleteCircleIcon: FC<IconProps> = ({
     height={size}
     viewBox="0 0 18 18"
     fill="none"
-    className={className}
+    // The mark takes its colour from the token layer instead of a hex. The
+    // design's palette has no separate danger token — `--warn` is #f87171 there
+    // and carries this role — and ours resolves it per theme (#f87171 dark,
+    // #dc2626 light), which the fixed red never did.
+    className={clsx('text-pqWarn', className)}
     {...props}
   >
+    {/* Left white on purpose: this disc is a backing plate, not a fill. The
+        icon lives on the corner of a photograph and the mark has to stay
+        legible against whatever is under it. On the light page background it
+        simply blends, and the mark still reads. */}
     <ellipse cx="9.96484" cy="9.10742" rx="6" ry="5.5" fill="white" />
     <path
       d="M9 1.5C4.8675 1.5 1.5 4.8675 1.5 9C1.5 13.1325 4.8675 16.5 9 16.5C13.1325 16.5 16.5 13.1325 16.5 9C16.5 4.8675 13.1325 1.5 9 1.5ZM11.52 10.725C11.7375 10.9425 11.7375 11.3025 11.52 11.52C11.4075 11.6325 11.265 11.685 11.1225 11.685C10.98 11.685 10.8375 11.6325 10.725 11.52L9 9.795L7.275 11.52C7.1625 11.6325 7.02 11.685 6.8775 11.685C6.735 11.685 6.5925 11.6325 6.48 11.52C6.2625 11.3025 6.2625 10.9425 6.48 10.725L8.205 9L6.48 7.275C6.2625 7.0575 6.2625 6.6975 6.48 6.48C6.6975 6.2625 7.0575 6.2625 7.275 6.48L9 8.205L10.725 6.48C10.9425 6.2625 11.3025 6.2625 11.52 6.48C11.7375 6.6975 11.7375 7.0575 11.52 7.275L9.795 9L11.52 10.725Z"
-      fill="#FF3535"
+      fill="currentColor"
     />
   </svg>
 );
@@ -630,12 +638,12 @@ export const CloseCircleIcon: FC<IconProps> = ({
     height={size}
     viewBox="0 0 15 15"
     fill="none"
-    className={className}
+    className={clsx('text-pqWarn', className)}
     {...props}
   >
     <path
       d="M7.5 0C3.3675 0 0 3.3675 0 7.5C0 11.6325 3.3675 15 7.5 15C11.6325 15 15 11.6325 15 7.5C15 3.3675 11.6325 0 7.5 0ZM10.02 9.225C10.2375 9.4425 10.2375 9.8025 10.02 10.02C9.9075 10.1325 9.765 10.185 9.6225 10.185C9.48 10.185 9.3375 10.1325 9.225 10.02L7.5 8.295L5.775 10.02C5.6625 10.1325 5.52 10.185 5.3775 10.185C5.235 10.185 5.0925 10.1325 4.98 10.02C4.7625 9.8025 4.7625 9.4425 4.98 9.225L6.705 7.5L4.98 5.775C4.7625 5.5575 4.7625 5.1975 4.98 4.98C5.1975 4.7625 5.5575 4.7625 5.775 4.98L7.5 6.705L9.225 4.98C9.4425 4.7625 9.8025 4.7625 10.02 4.98C10.2375 5.1975 10.2375 5.5575 10.02 5.775L8.295 7.5L10.02 9.225Z"
-      fill="#FF3535"
+      fill="currentColor"
     />
   </svg>
 );

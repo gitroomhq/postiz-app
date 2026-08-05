@@ -13,6 +13,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Discord has generous rate limits for webhook posting
   identifier = 'discord';
+  category = 'chat' as const;
   name = 'Discord';
   isBetweenSteps = false;
   editor = 'markdown' as const;

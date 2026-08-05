@@ -25,10 +25,7 @@ const useFaqList = () => {
         ]
       : []),
     {
-      title: t(
-        'faq_can_i_trust_postqueen_gitroom',
-        'Can I trust PostQueen?'
-      ),
+      title: t('faq_can_i_trust_postqueen_gitroom', 'Can I trust PostQueen?'),
       description:
         t(
           'faq_postqueen_gitroom_is_proudly_open_source',
@@ -59,83 +56,85 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
 export const FAQSection: FC<{
   title: string;
   description: string;
+  /** The checkout draws the same FAQ one size up (prototype :3667-3682). */
+  scale?: 'billing' | 'checkout';
 }> = (props) => {
-  const { title, description } = props;
+  const { title, description, scale = 'billing' } = props;
+  const checkout = scale === 'checkout';
   const [show, setShow] = useState(false);
   const changeShow = useCallback(() => {
     setShow(!show);
   }, [show]);
   return (
     <div
-      className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
+      className={clsx(
+        'cursor-pointer bg-pqInner outline outline-1 -outline-offset-1 transition-[outline-color] duration-[140ms] hover:outline-pqBrand',
+        checkout ? 'rounded-[18px] p-[24px_26px]' : 'rounded-[14px] p-[19px_22px]',
+        show ? 'outline-pqBrand' : 'outline-pqBorder'
+      )}
       onClick={changeShow}
     >
-      <div className={`text-[20px] cursor-pointer flex justify-center`}>
-        <div className="flex-1">{title}</div>
-        <div className="flex items-center justify-center w-[32px]">
-          {!show ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <path
-                d="M18 12.75H6C5.59 12.75 5.25 12.41 5.25 12C5.25 11.59 5.59 11.25 6 11.25H18C18.41 11.25 18.75 11.59 18.75 12C18.75 12.41 18.41 12.75 18 12.75Z"
-                fill="white"
-              />
-              <path
-                d="M12 18.75C11.59 18.75 11.25 18.41 11.25 18V6C11.25 5.59 11.59 5.25 12 5.25C12.41 5.25 12.75 5.59 12.75 6V18C12.75 18.41 12.41 18.75 12 18.75Z"
-                fill="white"
-              />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-            >
-              <path
-                d="M24 17H8C7.45333 17 7 16.5467 7 16C7 15.4533 7.45333 15 8 15H24C24.5467 15 25 15.4533 25 16C25 16.5467 24.5467 17 24 17Z"
-                fill="#ECECEC"
-              />
-            </svg>
+      <div className="flex items-center gap-[12px]">
+        <div
+          className={clsx(
+            'min-w-0 flex-1 font-[600] -tracking-[0.01em] text-pqText',
+            checkout ? 'text-[18px]' : 'text-[15.5px]'
           )}
+        >
+          {title}
+        </div>
+        <div
+          className={clsx(
+            'grid shrink-0 place-items-center rounded-[8px] transition-transform',
+            checkout ? 'size-[28px] duration-[250ms]' : 'size-[26px] duration-[180ms]',
+            show
+              ? 'rotate-180 bg-pqBrandSoft text-pqBrand'
+              : 'bg-pqSettings text-pqSoft'
+          )}
+        >
+          <svg viewBox="0 0 24 24" width={checkout ? 17 : 15} height={checkout ? 17 : 15} fill="none">
+            <path
+              d="m6 9 6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
       </div>
-      <div
-        className={clsx(
-          'transition-all duration-500 overflow-hidden',
-          !show ? 'max-h-[0]' : 'max-h-[500px]'
-        )}
-      >
+      {show && (
         <div
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={`mt-[16px] w-full text-wrap font-[400] text-[16px] text-customColor17 select-text max-w-[450px]`}
+          className={clsx(
+            'text-pqMuted select-text',
+            checkout
+              ? 'mt-[12px] max-w-[66ch] text-[16px] leading-[1.6]'
+              : 'mt-[11px] pe-[38px] text-[14px] leading-[1.7]'
+          )}
           dangerouslySetInnerHTML={{
             __html: description,
           }}
         />
-      </div>
+      )}
     </div>
   );
 };
-export const FAQComponent: FC = () => {
+export const FAQComponent: FC<{
+  scale?: 'billing' | 'checkout';
+}> = ({ scale = 'billing' }) => {
   const t = useT();
   const list = useFaqList();
   return (
-    <div>
-      {/*<h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">*/}
-      {/*  {t('frequently_asked_questions', 'Frequently Asked Questions')}*/}
-      {/*</h3>*/}
-      <div className="gap-[24px] flex-col flex select-none  mt-[48px] mb-[40px] tablet:mt-[80px]">
+    <div className="mt-[8px] flex flex-col gap-[20px]">
+      <h3 className="font-display text-[22px] font-[600] -tracking-[0.018em] text-pqText">
+        {t('frequently_asked_questions', 'Frequently asked questions')}
+      </h3>
+      <div className="flex select-none flex-col gap-[9px]">
         {list.map((item, index) => (
-          <FAQSection key={index} {...item} />
+          <FAQSection key={index} scale={scale} {...item} />
         ))}
       </div>
     </div>

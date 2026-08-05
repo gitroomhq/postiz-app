@@ -211,6 +211,14 @@ export class IntegrationsController {
     const integrationProvider =
       this._integrationManager.getSocialIntegration(integration);
 
+    // Before the OAuth URL is even issued, so a locked provider says why here
+    // rather than sending someone to a consent screen that leads nowhere.
+    this._integrationService.assertConnectAllowed(
+      integrationProvider,
+      org,
+      refresh
+    );
+
     if (integrationProvider.externalUrl && !externalUrl) {
       throw new Error('Missing external url');
     }

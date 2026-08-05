@@ -1,10 +1,11 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import { Role, ShortLinkPreference } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 @Injectable()
 export class OrganizationRepository {
@@ -13,6 +14,20 @@ export class OrganizationRepository {
     private _userOrg: PrismaRepository<'userOrganization'>,
     private _user: PrismaRepository<'user'>
   ) {}
+
+  /**
+   * Clears the trial flag without going through Stripe.
+   *
+   * For an organization Stripe has no trialing subscription for — a founding
+   * member, whose entitlement is a local row — this is the only thing that can
+   * end the trial. Nothing else writes the flag on this path.
+   */
+  endTrial(id: string) {
+    return this._organization.model.organization.update({
+      where: { id },
+      data: { isTrailing: false },
+    });
+  }
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
     return this._organization.model.organization.create({
@@ -27,7 +42,10 @@ export class OrganizationRepository {
         subscription: {
           create: {
             totalChannels: 1000000,
-            subscriptionTier: 'ULTIMATE',
+            // The only place a tier is *written* on org creation. AGENCY, not
+            // the retired ULTIMATE — both are 100 channels, so nothing about
+            // this organisation changes except the name of its plan.
+            subscriptionTier: 'AGENCY',
             isLifetime: true,
             period: 'YEARLY',
           },
@@ -174,6 +192,16 @@ export class OrganizationRepository {
           },
         },
       },
+      // `auth.middleware.ts:92` falls back to `organization[0]` when the request
+      // carries no `showorg`, and without an order Postgres is free to return
+      // these in any order it likes. With one organization that never showed;
+      // the moment a second one existed here, a signed-in account resolved to
+      // the *new, empty* workspace on its own and every screen turned into the
+      // checkout paywall. Oldest first makes the default the one the account
+      // started with, which is what the fallback was always assumed to mean.
+      orderBy: {
+        createdAt: 'asc',
+      },
       include: {
         users: {
           where: {
@@ -238,10 +266,21 @@ export class OrganizationRepository {
         },
       });
 
+    // This used to name STANDARD outright. STANDARD is retired, so after the
+    // rename a CREATOR organisation — the entry plan that replaced it — walked
+    // straight through a gate meant to stop exactly that, and could invite team
+    // members it does not pay for.
+    //
+    // The tier it should block is whichever one is not sold with team members,
+    // so it reads that from `pricing` instead of naming a plan. An org with no
+    // subscription row at all is left alone, which is what naming STANDARD did
+    // and is the only reason FREE is not caught here.
+    const subscribedTier =
+      checkForSubscription?.subscription?.subscriptionTier;
     if (
       isBillingEnabled() &&
-      checkForSubscription?.subscription?.subscriptionTier ===
-        SubscriptionTier.STANDARD
+      subscribedTier &&
+      !pricing[subscribedTier]?.team_members
     ) {
       return false;
     }

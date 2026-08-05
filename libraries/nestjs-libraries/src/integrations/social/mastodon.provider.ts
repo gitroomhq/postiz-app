@@ -14,6 +14,7 @@ import { number, string } from 'yup';
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
   identifier = 'mastodon';
+  category = 'social' as const;
   name = 'Mastodon';
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];

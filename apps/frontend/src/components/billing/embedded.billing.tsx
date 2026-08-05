@@ -2,7 +2,8 @@
 
 import { Stripe } from '@stripe/stripe-js';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, ReactNode, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   PaymentElement,
   BillingAddressElement,
@@ -14,17 +15,35 @@ import useCookie from 'react-use-cookie';
 import { Button } from '@gitroom/react/form/button';
 import dayjs from 'dayjs';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { TRIAL_DAYS, pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { capitalize } from 'lodash';
 
 export const EmbeddedBilling: FC<{
   stripe: Promise<Stripe>;
   secret: string;
   showCoupon?: boolean;
   autoApplyCoupon?: string;
-}> = ({ stripe, secret, showCoupon = false, autoApplyCoupon }) => {
+  /** When Lifetime is selected, hide Stripe-driven summary + pay bar. */
+  suppressCheckoutChrome?: boolean;
+  fallbackTier?: string;
+  fallbackPeriod?: string;
+  fallbackAllowTrial?: boolean;
+}> = ({
+  stripe,
+  secret,
+  showCoupon = false,
+  autoApplyCoupon,
+  suppressCheckoutChrome = false,
+  fallbackTier = 'PRO',
+  fallbackPeriod = 'MONTHLY',
+  fallbackAllowTrial = true,
+}) => {
   const [saveSecret, setSaveSecret] = useState(secret);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useCookie('mode', 'light');
+  const t = useT();
 
   useEffect(() => {
     modeEmitter.on('mode', (value) => {
@@ -49,57 +68,227 @@ export const EmbeddedBilling: FC<{
     }
   }, [secret, setSaveSecret]);
 
-  if (saveSecret !== secret || loading) {
-    return null;
-  }
+  const swapping = saveSecret !== secret || loading;
 
   return (
-    <div className="flex flex-col w-full pt-[48px] billing-form flex-1 tablet:pt-0">
-      <CheckoutProvider
-        stripe={stripe}
-        options={{
-          clientSecret: secret,
-          elementsOptions: {
-            appearance: {
-              variables: {
-                colorText: mode === 'dark' ? '#ffffff' : '#0e0e0e',
-                borderRadius: '8px',
-                colorBackground: mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
-              },
-              rules: {
-                '.Label': {
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
+    <div className="billing-form flex w-full flex-1 flex-col gap-[22px] rounded-[22px] bg-pqInner p-[34px_32px] shadow-pqE1 ring-1 ring-inset ring-pqLine mobile:p-[24px_20px]">
+      <div className="mb-[2px] flex items-center gap-[16px]">
+        <h2 className="flex-1 font-display text-[21px] font-[600] tracking-[-0.02em]">
+          {t('billing_payment_details', 'Payment details')}
+        </h2>
+        {/* Card-brand chips, lifted from the prototype. Their fills are the
+            card networks' own marks — like the Stripe wordmark below, brand
+            colours are the one place a fixed colour is the correct one. */}
+        <div className="flex items-center gap-[6px]">
+          <svg width="32" height="21" viewBox="0 0 30 20" aria-label="Mastercard">
+            <rect width="30" height="20" rx="4" fill="#fff" stroke="var(--line)" />
+            <circle cx="12" cy="10" r="6" fill="#EB001B" />
+            <circle cx="18" cy="10" r="6" fill="#F79E1B" fillOpacity=".9" />
+          </svg>
+          <svg width="32" height="21" viewBox="0 0 30 20" aria-label="Visa">
+            <rect width="30" height="20" rx="4" fill="#fff" stroke="var(--line)" />
+            <text
+              x="15"
+              y="14"
+              textAnchor="middle"
+              fontFamily="Plus Jakarta Sans, sans-serif"
+              fontSize="9"
+              fontWeight="800"
+              fill="#1434CB"
+            >
+              VISA
+            </text>
+          </svg>
+          <svg width="32" height="21" viewBox="0 0 30 20" aria-label="American Express">
+            <rect width="30" height="20" rx="4" fill="#fff" stroke="var(--line)" />
+            <text
+              x="15"
+              y="14"
+              textAnchor="middle"
+              fontFamily="Plus Jakarta Sans, sans-serif"
+              fontSize="7"
+              fontWeight="800"
+              fill="#016FD0"
+            >
+              AMEX
+            </text>
+          </svg>
+        </div>
+      </div>
+      {swapping ? (
+        <div className="flex flex-col gap-[16px] py-[8px]">
+          <div className="flex items-center gap-[12px] text-[15px] text-pqMuted">
+            <div className="size-[18px] shrink-0 animate-spin rounded-full border-2 border-pqLine border-t-pqBrand" />
+            {t(
+              'billing_loading_payment_form',
+              'Loading secure payment form…'
+            )}
+          </div>
+          <div className="flex flex-col gap-[12px]">
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+            <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          </div>
+        </div>
+      ) : (
+        <CheckoutProvider
+          stripe={stripe}
+          options={{
+            clientSecret: secret,
+            elementsOptions: {
+              // The hex literals in this file are the exception the token rule
+              // allows for, and they are here rather than a token because of
+              // what reads them. Stripe's Elements run in a cross-origin
+              // iframe: its appearance API takes literal colours and cannot
+              // resolve a CSS variable from this document. Each value mirrors a
+              // token from colors.scss and must move with it. The others are
+              // brand marks — the Stripe wordmark and the card-network chips —
+              // which are the one place a fixed colour is the correct one.
+              appearance: {
+                variables: {
+                  // --text, per theme.
+                  colorText: mode === 'dark' ? '#ededf0' : '#18181b',
+                  borderRadius: '8px',
+                  // --settings, per theme — the surface the design's checkout
+                  // fields sit on, inside the --inner payment card.
+                  colorBackground: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
                 },
-                '.Input': {
-                  height: '44px',
-                  backgroundColor: mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
+                rules: {
+                  '.Label': {
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    marginBottom: '8px',
+                  },
+                  '.Input': {
+                    height: '44px',
+                    // --settings, as above.
+                    backgroundColor: mode === 'dark' ? '#1f1f24' : '#e9e9ef',
+                  },
                 },
               },
             },
-          },
-        }}
-      >
-        <FormWrapper
-          showCoupon={showCoupon}
-          autoApplyCoupon={autoApplyCoupon}
-        />
-      </CheckoutProvider>
+          }}
+        >
+          <FormWrapper
+            showCoupon={showCoupon}
+            autoApplyCoupon={autoApplyCoupon}
+            suppressCheckoutChrome={suppressCheckoutChrome}
+            fallbackTier={fallbackTier}
+            fallbackPeriod={fallbackPeriod}
+            fallbackAllowTrial={fallbackAllowTrial}
+          />
+        </CheckoutProvider>
+      )}
     </div>
   );
 };
 
-const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
+const CheckoutSessionStatus: FC = () => {
+  const checkoutState = useCheckout();
+  const t = useT();
+
+  if (checkoutState.type === 'loading') {
+    return (
+      <div className="flex flex-col gap-[16px] py-[8px]">
+        <div className="flex items-center gap-[12px] text-[15px] text-pqMuted">
+          <div className="size-[18px] shrink-0 animate-spin rounded-full border-2 border-pqLine border-t-pqBrand" />
+          {t(
+            'billing_loading_payment_form',
+            'Loading secure payment form…'
+          )}
+        </div>
+        <div className="flex flex-col gap-[12px]">
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+          <div className="h-[44px] animate-pulse rounded-[11px] bg-pqSettings" />
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutState.type === 'error') {
+    return (
+      <div className="flex items-start gap-[11px] rounded-[14px] bg-pqAmberSoft p-[13px_16px] text-[14.5px] text-pqText ring-1 ring-inset ring-pqAmberLine">
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          aria-hidden="true"
+          className="mt-[1px] shrink-0 text-pqWarn"
+        >
+          <path
+            d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
+          <span className="font-[600]">
+            {t(
+              'billing_payment_form_unavailable',
+              'Payment form could not be loaded'
+            )}
+          </span>
+          <span className="font-[500] leading-[1.5] text-pqMuted">
+            {checkoutState.error.message ||
+              t(
+                'billing_payment_form_error_hint',
+                'Check that Stripe keys match this environment, then pick a plan again or refresh.'
+              )}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const FormWrapper: FC<{
+  showCoupon?: boolean;
+  autoApplyCoupon?: string;
+  suppressCheckoutChrome?: boolean;
+  fallbackTier?: string;
+  fallbackPeriod?: string;
+  fallbackAllowTrial?: boolean;
+}> = ({
   showCoupon = false,
   autoApplyCoupon,
+  suppressCheckoutChrome = false,
+  fallbackTier = 'PRO',
+  fallbackPeriod = 'MONTHLY',
+  fallbackAllowTrial = true,
 }) => {
   const checkoutState = useCheckout();
   const toaster = useToaster();
   const [loading, setLoading] = useState(false);
 
   if (checkoutState.type !== 'success') {
-    return null;
+    return (
+      <>
+        <CheckoutSessionStatus />
+        {!suppressCheckoutChrome && (
+          <OrderSummarySlot>
+            <PriceBreakdownFallback
+              tier={fallbackTier}
+              period={fallbackPeriod}
+              allowTrial={fallbackAllowTrial}
+              showCoupon={showCoupon}
+            />
+          </OrderSummarySlot>
+        )}
+        {!suppressCheckoutChrome && (
+          <SubmitBarFallback
+            tier={fallbackTier}
+            period={fallbackPeriod}
+            allowTrial={fallbackAllowTrial}
+          />
+        )}
+      </>
+    );
   }
 
   const handleSubmit = async (e: any) => {
@@ -123,19 +312,48 @@ const FormWrapper: FC<{ showCoupon?: boolean; autoApplyCoupon?: string }> = ({
         showCoupon={showCoupon}
         autoApplyCoupon={autoApplyCoupon}
         loading={loading}
+        suppressCheckoutChrome={suppressCheckoutChrome}
       />
     </form>
   );
+};
+
+/**
+ * Moves the order summary into the right column's `#pq-order-summary` div.
+ *
+ * The summary reads checkout state, so it has to render inside the
+ * CheckoutProvider — which lives in the left column's payment form. The design
+ * draws it in the right column, under the plan card. Same resolution as
+ * new-layout/header-slot.tsx: the right column renders an empty container and
+ * this portals into it, so the component keeps its provider and only its
+ * output moves.
+ */
+const OrderSummarySlot: FC<{ children: ReactNode }> = ({ children }) => {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+
+  // The slot belongs to a sibling subtree, so it only exists after the first
+  // paint. State (not a ref) so finding it re-renders and the portal opens.
+  useEffect(() => {
+    setSlot(document.getElementById('pq-order-summary'));
+  }, []);
+
+  if (!slot) return null;
+  return createPortal(children, slot);
 };
 
 const StripeInputs: FC<{
   showCoupon: boolean;
   autoApplyCoupon?: string;
   loading: boolean;
-}> = ({ showCoupon, autoApplyCoupon, loading }) => {
+  suppressCheckoutChrome?: boolean;
+}> = ({
+  showCoupon,
+  autoApplyCoupon,
+  loading,
+  suppressCheckoutChrome = false,
+}) => {
   const checkout = useCheckout();
   const t = useT();
-  const [ready, setReady] = useState(false);
   return (
     <>
       {/* The session is created with automatic_tax and
@@ -143,15 +361,15 @@ const StripeInputs: FC<{
           collected here — Stripe Tax has no other way to learn the customer's
           location in the embedded flow. */}
       <div>
-        <h4 className="mb-[32px] text-[24px] font-[700]">
+        <h4 className="mb-[16px] text-[16px] font-[600]">
           {checkout.type === 'loading'
             ? ''
             : t('billing_billing_address', 'Billing Address')}
         </h4>
         <BillingAddressElement />
       </div>
-      <div>
-        <h4 className="mb-[32px] text-[24px] font-[700]">
+      <div className="mt-[22px]">
+        <h4 className="mb-[16px] text-[16px] font-[600]">
           {checkout.type === 'loading' ? '' : t('billing_payment', 'Payment')}
         </h4>
         <PaymentElement
@@ -160,20 +378,26 @@ const StripeInputs: FC<{
             fields: { billingDetails: { address: 'never' } },
             layout: 'tabs',
           }}
-          onReady={() => setReady(true)}
         />
-        {ready && <PriceBreakdown />}
-        {showCoupon && ready && (
-          <CouponInput autoApplyCoupon={autoApplyCoupon} />
+        {!suppressCheckoutChrome && (
+          <OrderSummarySlot>
+            <PriceBreakdown
+              coupon={
+                showCoupon ? (
+                  <CouponInput autoApplyCoupon={autoApplyCoupon} />
+                ) : null
+              }
+            />
+          </OrderSummarySlot>
         )}
-        {ready && <SubmitBar loading={loading} />}
+        {!suppressCheckoutChrome && <SubmitBar loading={loading} />}
         {checkout.type === 'loading' ? null : (
-          <div className="mt-[24px] text-[16px] font-[600] flex gap-[4px] items-center">
+          <div className="mt-[22px] flex items-center gap-[7px] text-[14px] text-pqMuted">
             <div>
               {t('billing_powered_by_stripe', 'Secure payments processed by')}
             </div>
             <svg
-              className="mt-[4px]"
+              className="mt-[2px]"
               xmlns="http://www.w3.org/2000/svg"
               width="47"
               height="20"
@@ -194,7 +418,126 @@ const StripeInputs: FC<{
   );
 };
 
-const PriceBreakdown: FC = () => {
+/**
+ * The order summary card. `coupon` is the coupon block, passed in as a slot so
+ * it sits where the design puts it — between the line items and the total —
+ * while its state stays in CouponInput.
+ */
+const PriceBreakdownFallback: FC<{
+  tier: string;
+  period: string;
+  allowTrial: boolean;
+  showCoupon?: boolean;
+}> = ({ tier, period, allowTrial, showCoupon }) => {
+  const t = useT();
+  const plan = pricing[tier] || pricing.PRO;
+  const amount = period === 'YEARLY' ? plan.year_price : plan.month_price;
+  const periodWord =
+    period === 'YEARLY'
+      ? t('billing_yearly', 'Yearly').toLowerCase()
+      : t('billing_monthly', 'Monthly').toLowerCase();
+
+  return (
+    <div className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine">
+      <div className="text-[17px] font-[600] tracking-[-0.015em]">
+        {t('billing_order_summary', 'Order summary')}
+      </div>
+      <div className="flex items-center justify-between gap-[16px]">
+        <span className="text-[15px] text-pqMuted">
+          {capitalize(tier)}, {t('billing_billed', 'billed')} {periodWord}
+        </span>
+        <span className="text-[15px]">
+          ${amount} /{' '}
+          {period === 'YEARLY'
+            ? t('billing_year', 'year')
+            : t('billing_month', 'month')}
+        </span>
+      </div>
+      {allowTrial && (
+        <div className="flex items-center justify-between gap-[16px] text-[15px] text-pqOk">
+          <span>
+            {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+              n: TRIAL_DAYS,
+            })}
+          </span>
+          <span className="font-[600]">-${amount}</span>
+        </div>
+      )}
+      {showCoupon && (
+        <div className="flex h-[44px] items-center gap-[9px] rounded-[12px] px-[14px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] opacity-70">
+          <span className="flex-1 text-[14px] font-[600]">
+            {t('billing_have_discount_coupon', 'Have a coupon code?')}
+          </span>
+          <span className="text-[13.5px] font-[600] text-pqBrand">
+            {t('billing_add', 'Add')}
+          </span>
+        </div>
+      )}
+      <div className="h-px bg-pqLine" />
+      <div className="flex items-baseline justify-between gap-[16px]">
+        <span className="text-[16px] font-[600]">
+          {t('billing_due_today', 'Due today')}
+        </span>
+        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+          {allowTrial ? '$0.00' : `$${amount}.00`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const SubmitBarFallback: FC<{
+  tier: string;
+  period: string;
+  allowTrial: boolean;
+}> = ({ tier, period, allowTrial }) => {
+  const t = useT();
+  const plan = pricing[tier] || pricing.PRO;
+  const amount = period === 'YEARLY' ? plan.year_price : plan.month_price;
+
+  return (
+    <div className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]">
+      <div className="min-w-0 flex-1 mobile:hidden" />
+      <div className="shrink-0 text-end mobile:text-center">
+        <div className="text-[15.5px] font-[600]">
+          {allowTrial
+            ? t(
+                'billing_trial_bar_loading',
+                'Your {{n}}-day trial is 100% free',
+                { n: TRIAL_DAYS }
+              )
+            : `$${amount} ${t('billing_due_today_lower', 'due today')}`}
+        </div>
+        <div className="mt-[2px] text-[14px] text-pqMuted">
+          {capitalize(tier)} ·{' '}
+          {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+        </div>
+      </div>
+      <div className="shrink-0 mobile:w-full">
+        <Button
+          className="h-[56px] rounded-[15px] px-[30px] text-[16px] font-[700] shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] mobile:w-full"
+          type="button"
+          disabled
+          loading
+        >
+          {allowTrial
+            ? t(
+                'billing_pay_0_start_trial',
+                'Pay $0 Today – Start your free trial!'
+              )
+            : t('billing_pay_now', 'Pay Now')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * The order summary card. `coupon` is the coupon block, passed in as a slot so
+ * it sits where the design puts it — between the line items and the total —
+ * while its state stays in CouponInput.
+ */
+const PriceBreakdown: FC<{ coupon?: ReactNode }> = ({ coupon }) => {
   const checkoutState = useCheckout();
   const t = useT();
 
@@ -223,85 +566,117 @@ const PriceBreakdown: FC = () => {
       : t('billing_yearly', 'Yearly');
 
   return (
-    <div className="mt-[40px]">
-      <h4 className="mb-[16px] text-[24px] font-[700]">
-        {t('billing_order_summary', 'Order Summary')}
-      </h4>
-      <div className="rounded-[12px] border border-newColColor p-[20px] flex flex-col gap-[12px]">
-        {/* Plan */}
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="font-[600] text-textColor">{planName}</span>
-            <span className="text-[13px] text-textColor/60">
-              {billingInterval}
-            </span>
-          </div>
-          <span className="font-[500] text-textColor">{unitAmount}</span>
-        </div>
+    <div className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine">
+      <div className="text-[17px] font-[600] tracking-[-0.015em]">
+        {t('billing_order_summary', 'Order summary')}
+      </div>
 
-        {/* Discount */}
-        {discountDisplay && (
-          <div className="flex justify-between items-center font-[600]">
-            <div className="flex items-center gap-[6px]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                <line x1="7" y1="7" x2="7.01" y2="7" />
-              </svg>
-              <span className="font-[500]">
-                {discountDisplay.displayName || discountDisplay.promotionCode}
-                {discountDisplay.percentOff &&
-                  ` (${discountDisplay.percentOff}% off)`}
-              </span>
-            </div>
-            <span className="font-[500]">
-              {discountDisplay.amount !== '$0.00'
-                ? `-${discountDisplay.amount}`
-                : t('billing_applied', 'Applied')}
-            </span>
-          </div>
-        )}
+      {/* Plan */}
+      <div className="flex items-center justify-between gap-[16px]">
+        <span className="text-[15px] text-pqMuted">
+          {planName} · {billingInterval}
+        </span>
+        <span className="text-[15px]">{unitAmount}</span>
+      </div>
 
-        {/* Divider */}
-        <div className="border-t border-newColColor my-[4px]" />
-
-        {/* Due today */}
-        <div className="flex justify-between items-center">
-          <span className="font-[600] text-textColor">
-            {t('billing_due_today', 'Due today')}
+      {/* Discount */}
+      {discountDisplay && (
+        <div className="flex items-center justify-between gap-[16px] text-[15px]">
+          <span className="text-pqMuted">
+            {discountDisplay.displayName || discountDisplay.promotionCode}
+            {discountDisplay.percentOff &&
+              ` (${discountDisplay.percentOff}% off)`}
           </span>
-          <span className="font-[700] text-[18px] text-textColor">
-            {dueToday}
+          <span className="font-[600] text-pqOk">
+            {discountDisplay.amount !== '$0.00'
+              ? `-${discountDisplay.amount}`
+              : t('billing_applied', 'Applied')}
           </span>
         </div>
+      )}
 
-        {/* Next billing info */}
-        {nextBillingTotal && nextBillingDate && (
-          <div className="flex justify-between items-center text-[13px] text-textColor/60">
-            <span>
-              {t('billing_then', 'Then')} {nextBillingTotal}{' '}
-              {t('billing_on', 'on')} {nextBillingDate}
-            </span>
-          </div>
-        )}
+      {/* Trial credit. The design shows the trial as its own line — "7-day
+          free trial  -$49" — rather than only as a zero at the bottom. Two
+          numbers that explain each other read as an invoice; one number that
+          contradicts the price above it reads as a mistake. */}
+      {!!recurring?.trial?.trialEnd && (
+        <div
+          data-trial-credit="1"
+          className="flex items-center justify-between gap-[16px] text-[15px] text-pqOk"
+        >
+          <span>
+            {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+              n: TRIAL_DAYS,
+            })}
+          </span>
+          <span className="font-[600]">-{unitAmount}</span>
+        </div>
+      )}
 
-        <div className="text-[12px]">
+      {coupon}
+
+      {/* Divider */}
+      <div className="h-px bg-pqLine" />
+
+      {/* Due today */}
+      <div className="flex items-baseline justify-between gap-[16px]">
+        <span className="text-[16px] font-[600]">
+          {t('billing_due_today', 'Due today')}
+        </span>
+        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+          {dueToday}
+        </span>
+      </div>
+
+      {/* Next billing info */}
+      {nextBillingTotal && nextBillingDate && (
+        <div className="text-[14px] text-pqMuted">
+          {t('billing_then', 'Then')} {nextBillingTotal}{' '}
+          {t('billing_on', 'on')} {nextBillingDate}
+        </div>
+      )}
+
+      <div className="flex items-start gap-[10px] rounded-[13px] bg-pqBrandSoft p-[13px_15px] text-[14px] leading-[1.5]">
+        <svg
+          viewBox="0 0 24 24"
+          width="17"
+          height="17"
+          fill="none"
+          aria-hidden="true"
+          className="mt-[1px] shrink-0 text-pqBrand"
+        >
+          <path
+            d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <path
+            d="m8.5 12.3 2.4 2.4 4.6-5"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span>
           <strong>
             {t(
-              'billing_cancel_notice',
-              'Cancel anytime from settings without talking to a person and never be charged.'
+              'billing_cancel_notice_title',
+              'Cancel anytime from settings without talking to a person.'
             )}
-          </strong>
-        </div>
+          </strong>{' '}
+          <span className="text-pqMuted">
+            {!!recurring?.trial?.trialEnd
+              ? t(
+                  'billing_cancel_notice_trial',
+                  'Cancel before the trial ends and you are never charged.'
+                )
+              : t(
+                  'billing_cancel_notice_lapsed',
+                  'If you cancel later, your plan runs to the end of the billing period.'
+                )}
+          </span>
+        </span>
       </div>
     </div>
   );
@@ -379,41 +754,41 @@ const AppliedCouponDisplay: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#AA0FA4]/30 bg-[#AA0FA4]/10">
-        <div className="flex-1">
-          <div className="flex items-center gap-[8px] flex-wrap">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#FC69FF"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <span className="font-[600] text-[#FC69FF]">{appliedCode}</span>
-            <span className="text-[14px] text-textColor/70">
-              {t('billing_discount_applied', 'applied')}
-              {discountDisplay && ` (${discountDisplay})`}
-            </span>
-          </div>
-        </div>
+      <div className="flex h-[46px] items-center gap-[10px] rounded-[13px] bg-pqOkSoft px-[14px]">
+        <svg
+          viewBox="0 0 24 24"
+          width="17"
+          height="17"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 text-pqOk"
+        >
+          <path
+            d="m5 12.5 4.5 4.5L19 7.5"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="min-w-0 flex-1 truncate text-[14.5px] font-[600]">
+          {appliedCode}{' '}
+          <span className="font-[400] text-pqMuted">
+            {t('billing_discount_applied', 'applied')}
+            {discountDisplay && ` (${discountDisplay})`}
+          </span>
+        </span>
         <button
           type="button"
           onClick={onRemove}
           disabled={isApplying}
-          className="text-[14px] text-textColor/50 hover:text-textColor font-[500] disabled:opacity-50"
+          className="shrink-0 text-[13.5px] font-[600] text-pqMuted transition-colors hover:text-pqText disabled:opacity-50"
         >
           {t('billing_remove', 'Remove')}
         </button>
       </div>
       {expirationDate && (
-        <p className="text-[13px] text-textColor/50 flex items-center gap-[6px]">
+        <p className="flex items-center gap-[6px] text-[13px] text-pqMuted">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -511,51 +886,54 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
   // Show applied coupon (either manually applied or pre-applied from backend)
   if (effectiveAppliedCode) {
     return (
-      <div className="mt-[40px]">
-        <AppliedCouponDisplay
-          appliedCode={effectiveAppliedCode}
-          checkout={checkout}
-          isApplying={isApplying}
-          onRemove={handleRemoveCoupon}
-        />
-      </div>
+      <AppliedCouponDisplay
+        appliedCode={effectiveAppliedCode}
+        checkout={checkout}
+        isApplying={isApplying}
+        onRemove={handleRemoveCoupon}
+      />
     );
   }
 
-  // Show "Have a promo code?" link
+  // Show "Have a coupon code?" row
   if (!showInput) {
     return (
-      <div className="mt-[40px]">
-        <button
-          type="button"
-          onClick={() => setShowInput(true)}
-          className="text-[16px] text-textColor/60 hover:text-textColor font-[500] flex items-center gap-[8px] transition-colors"
+      <button
+        type="button"
+        onClick={() => setShowInput(true)}
+        className="flex h-[44px] w-full items-center gap-[9px] rounded-[12px] bg-pqSettings px-[14px] text-start transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 text-pqBrand"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
+          <path
+            d="M7 17 17 7M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="1.7"
             strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-          </svg>
-          {t('billing_have_discount_coupon', 'Have a discount coupon?')}
-        </button>
-      </div>
+          />
+        </svg>
+        <span className="flex-1 text-[14px] font-[600]">
+          {t('billing_have_discount_coupon', 'Have a coupon code?')}
+        </span>
+        <span className="text-[13.5px] font-[600] text-pqBrand">
+          {t('billing_add', 'Add')}
+        </span>
+      </button>
     );
   }
 
   // Show input field
   return (
-    <div className="mt-[40px]">
-      <div className="flex items-center gap-[12px] mb-[12px]">
-        <h4 className="text-[18px] font-[600] text-textColor">
-          {t('billing_discount_coupon', 'Discount Coupon')}
+    <div className="flex flex-col gap-[10px] rounded-[13px] border border-dashed border-pqBrand p-[14px]">
+      <div className="flex items-center gap-[10px]">
+        <h4 className="flex-1 text-[14.5px] font-[600]">
+          {t('billing_discount_coupon', 'Coupon code')}
         </h4>
         <button
           type="button"
@@ -563,12 +941,12 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
             setShowInput(false);
             setCouponCode('');
           }}
-          className="text-[14px] text-textColor/50 hover:text-textColor transition-colors"
+          className="text-[13.5px] font-[600] text-pqMuted transition-colors hover:text-pqText"
         >
           {t('billing_cancel', 'Cancel')}
         </button>
       </div>
-      <div className="flex gap-[12px]">
+      <div className="flex items-center gap-[9px]">
         <input
           type="text"
           value={couponCode}
@@ -576,7 +954,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
           placeholder={t('billing_enter_coupon_code', 'Enter coupon code')}
           disabled={isApplying}
           autoFocus
-          className="flex-1 h-[44px] px-[16px] rounded-[8px] border border-newColColor bg-newBgColor text-textColor placeholder:text-textColor/50 focus:outline-none focus:border-boxFocused disabled:opacity-50"
+          className="h-[44px] min-w-0 flex-1 rounded-[11px] bg-pqSettings px-[14px] text-[14.5px] text-pqText ring-1 ring-inset ring-pqLine placeholder:text-pqSoft focus:outline-none focus:ring-pqBrand disabled:opacity-50"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -592,7 +970,7 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
           type="button"
           onClick={() => handleApplyCoupon()}
           disabled={isApplying || !couponCode.trim()}
-          className="h-[44px] px-[24px] rounded-[8px] bg-boxFocused text-textItemFocused font-[600] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="h-[44px] shrink-0 rounded-[11px] bg-pqBrand px-[20px] text-[14.5px] font-[600] text-pqOnBrand transition-all hover:bg-pqBrandHover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isApplying
             ? t('billing_applying', 'Applying...')
@@ -604,51 +982,81 @@ export const CouponInput: FC<{ autoApplyCoupon?: string }> = ({
 };
 
 const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
-  const checkout = useCheckout();
+  const checkoutState = useCheckout();
   const t = useT();
-  if (checkout.type === 'loading' || checkout.type === 'error') {
+  const user = useUser();
+  if (checkoutState.type === 'loading' || checkoutState.type === 'error') {
     return null;
   }
 
+  const { checkout } = checkoutState;
+  const onTrial = !!checkout.recurring?.trial?.trialEnd;
+  // `allowTrial` false on the FREE paywall means a lapsed subscriber — design
+  // `subEnded` — so the CTA reads "Resubscribe…". First-time purchasers who
+  // are not trial-eligible still get "Pay Now" (`pwSubmitLabel` when !subEnded).
+  const lapsed = !user?.allowTrial;
+  const lineItem = checkout.lineItems?.[0];
+  const planName = lineItem?.name || t('billing_subscription', 'Subscription');
+  const dueToday = checkout.total?.total?.amount || '$0.00';
+  // Stripe amounts arrive as display strings ("$20.00"); bar copy shortens to
+  // "$20" so it matches the design's "Resubscribe to Creator - $20".
+  const dueShort = dueToday.replace(/\.00\b/, '');
+  const interval = checkout.recurring?.interval;
+  const periodLabel =
+    interval === 'year'
+      ? t('billing_a_year', 'a year')
+      : t('billing_a_month', 'a month');
+
   return (
-    <div className="animate-fadeIn h-[92px] mobile:h-auto fixed bottom-0 w-full px-[12px] pb-[12px] left-0 bg-newBgColor z-[100]">
-      <div className="w-full h-full border-t border-newColColor bg-newBgColorInner px-[80px] tablet:px-[33px] mobile:!px-[16px] flex mobile:flex-col gap-[32px] mobile:gap-[16px] justify-end items-center font-[400] text-[14px] text-[#A3A3A3] mobile:py-[16px]">
-        {checkout.checkout.recurring?.trial?.trialEnd ? (
-          <div>
+    <div className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]">
+      <div className="min-w-0 flex-1 mobile:hidden" />
+      {onTrial ? (
+        <div className="shrink-0 text-end mobile:text-center">
+          <div className="text-[15.5px] font-[600]">
             {t('billing_your_7_day_trial_is', 'Your 7-day trial is')}{' '}
-            <span className="text-textColor font-[600]">
-              {t('billing_100_percent_free', '100% free')}
-            </span>{' '}
+            {t('billing_100_percent_free', '100% free')}{' '}
             {t('billing_ending', 'ending')}{' '}
-            <br className="hidden mobile:block" />
-            <span className="text-textColor font-[600]">
-              {dayjs(
-                checkout.checkout.recurring?.trial?.trialEnd * 1000
-              ).format('MMMM D, YYYY')}{' '}
-              —{' '}
-            </span>
-            <span className="text-textColor font-[600]">
-              {t(
-                'billing_cancel_anytime_short',
-                'Cancel anytime from settings'
-              )}
-            </span>
+            {dayjs(checkout.recurring!.trial!.trialEnd! * 1000).format(
+              'D MMM, YYYY'
+            )}
           </div>
-        ) : null}
-        <div>
-          <Button
-            className="h-[42px] rounded-[10px] mobile:w-full"
-            type="submit"
-            loading={loading}
-          >
-            {checkout.checkout.recurring?.trial?.trialEnd
-              ? t(
-                  'billing_pay_0_start_trial',
-                  'Pay $0 Today - Start your free trial!'
-                )
-              : t('billing_pay_now', 'Pay Now')}
-          </Button>
+          <div className="mt-[2px] text-[14px] text-pqMuted">
+            {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+          </div>
         </div>
+      ) : (
+        <div className="shrink-0 text-end mobile:text-center">
+          <div className="text-[15.5px] font-[600]">
+            {dueShort} {t('billing_due_today_lower', 'due today')}
+          </div>
+          <div className="mt-[2px] text-[14px] text-pqMuted">
+            {planName} · {dueShort} {periodLabel} ·{' '}
+            {t('billing_cancel_anytime_short', 'Cancel anytime from settings')}
+          </div>
+        </div>
+      )}
+      <div className="shrink-0 mobile:w-full">
+        <Button
+          // The glow is the design's exact value — an alpha tint of --brand
+          // (#7c3aed at .95), written literally because box-shadow cannot
+          // alpha-modulate a var() colour.
+          className="h-[56px] rounded-[15px] px-[30px] text-[16px] font-[700] shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] mobile:w-full"
+          type="submit"
+          loading={loading}
+        >
+          {onTrial
+            ? t(
+                'billing_pay_0_start_trial',
+                'Pay $0 Today – Start your free trial!'
+              )
+            : lapsed
+            ? t(
+                'billing_resubscribe_to_plan',
+                'Resubscribe to {{plan}} – {{price}}',
+                { plan: planName, price: dueShort }
+              )
+            : t('billing_pay_now', 'Pay Now')}
+        </Button>
       </div>
     </div>
   );

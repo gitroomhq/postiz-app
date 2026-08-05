@@ -132,7 +132,7 @@ export const FacebookPreview: FC<{
         </div>
         <div className="flex flex-col leading-[18px]">
           <div className="text-[14px] font-[500]">{integration?.name}</div>
-          <div className="text-[12px] font-[400] text-[#A3A3A3] flex gap-[4px] items-center">
+          <div className="text-[12px] font-[400] text-pqSoft flex gap-[4px] items-center">
             <span>30m •</span>
             <span>
               <svg

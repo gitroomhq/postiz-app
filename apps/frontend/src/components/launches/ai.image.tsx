@@ -78,7 +78,7 @@ ${style}
   return (
     <div className="flex flex-col gap-[16px]">
       <div className="flex flex-col gap-[6px]">
-        <div className="text-[14px]">{t('prompt', 'Prompt')}</div>
+        <div className="text-[14px] text-pqMuted">{t('prompt', 'Prompt')}</div>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -86,11 +86,11 @@ ${style}
             'describe_the_image_you_want_to_generate',
             'Describe the image you want to generate'
           )}
-          className="bg-input min-h-[150px] p-[16px] outline-none border-fifth border rounded-[4px] text-inputText placeholder-inputText"
+          className="min-h-[150px] rounded-[10px] border-0 bg-pqTableHeader p-[16px] text-[14px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]"
         />
       </div>
       <div className="flex flex-col gap-[6px]">
-        <div className="text-[14px]">{t('style', 'Style')}</div>
+        <div className="text-[14px] text-pqMuted">{t('style', 'Style')}</div>
         <div className="flex flex-wrap gap-[8px]">
           {list.map((p) => (
             <div
@@ -99,8 +99,8 @@ ${style}
               className={clsx(
                 'cursor-pointer rounded-[4px] px-[10px] h-[30px] flex items-center text-[12px] border',
                 style === p
-                  ? 'bg-[#612BD3] border-[#612BD3] text-white'
-                  : 'bg-newColColor border-newBgLineColor'
+                  ? 'bg-pqBrand border-pqBrand text-pqOnBrand'
+                  : 'bg-pqSettings border-pqBorder text-pqText'
               )}
             >
               {p}
@@ -119,10 +119,13 @@ ${style}
 
 export const AiImage: FC<{
   value: string;
+  // Ghost look for the agent composer's frame; the post composer keeps the
+  // filled pill. Same modal, same gate.
+  ghost?: boolean;
   onChange: (params: { id: string; path: string }) => void;
 }> = (props) => {
   const t = useT();
-  const { onChange } = props;
+  const { onChange, ghost } = props;
   const [loading, setLoading] = useState(false);
   const modals = useModals();
 
@@ -147,7 +150,10 @@ export const AiImage: FC<{
       <div
         onClick={openImageModal}
         className={clsx(
-          'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]'
+          'cursor-pointer h-[30px] justify-center items-center flex',
+          ghost
+            ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqBrandSoft hover:text-pqFocused'
+            : 'rounded-[6px] bg-newColColor px-[8px]'
         )}
       >
         {loading && (
@@ -185,8 +191,17 @@ export const AiImage: FC<{
               </defs>
             </svg>
           </div>
-          <div className="text-[10px] font-[600] iconBreak:hidden block">
-            {t('ai', 'AI')} Image
+          <div
+            className={clsx(
+              'font-[600]',
+              ghost
+                ? 'text-[12px] whitespace-nowrap'
+                : 'text-[10px] iconBreak:hidden block'
+            )}
+          >
+            {ghost
+              ? t('generate_image', 'Generate image')
+              : `${t('ai', 'AI')} Image`}
           </div>
         </div>
       </div>

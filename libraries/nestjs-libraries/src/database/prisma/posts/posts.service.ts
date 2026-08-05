@@ -339,6 +339,10 @@ export class PostsService {
     });
   }
 
+  countPostsByState(orgId: string, integrationId: string) {
+    return this._postRepository.countPostsByState(orgId, integrationId);
+  }
+
   async getPostsList(orgId: string, query: GetPostsListDto) {
     return minifyPostsList(
       await this._postRepository.getPostsList(orgId, query)
@@ -993,8 +997,24 @@ export class PostsService {
       throw new BadRequestException('Post not found');
     }
 
+    if (getPostById.state === 'PUBLISHED' || getPostById.state === 'ERROR') {
+      throw new BadRequestException(
+        'Cannot change status of a published or errored post'
+      );
+    }
+
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
-    await this._postRepository.changeState(id, state);
+
+    // Idempotent: already a draft — skip Temporal churn.
+    if (status === 'draft' && getPostById.state === 'DRAFT') {
+      return { id, state };
+    }
+
+    if (status === 'draft') {
+      await this._postRepository.setPostDraft(id);
+    } else {
+      await this._postRepository.changeState(id, state);
+    }
 
     try {
       await this.startWorkflow(
@@ -1022,7 +1042,6 @@ export class PostsService {
       orgId,
       id,
       date,
-      getPostById.state === 'DRAFT',
       action
     );
 

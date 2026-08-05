@@ -103,7 +103,10 @@ export class UsersController {
       tier:
         // @ts-ignore
         organization?.subscription?.subscriptionTier ||
-        (!isBillingEnabled() ? 'ULTIMATE' : 'FREE'),
+        // Same fallback as `organization.service.ts`: no billing means every
+        // feature, and AGENCY is the top tier still on sale. ULTIMATE is
+        // retired and would name the user a plan that cannot be bought.
+        (!isBillingEnabled() ? 'AGENCY' : 'FREE'),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
@@ -249,7 +252,19 @@ export class UsersController {
         organization.id
       );
 
-    return subscription ? { subscription } : { subscription: undefined };
+    if (!subscription) {
+      return { subscription: undefined };
+    }
+
+    // Both facts live in Stripe and nowhere local, so without them the Billing
+    // screen cannot tell that 50% off was accepted, or that the last renewal
+    // was refused.
+    const [discount, paymentFailed] = await Promise.all([
+      this._stripeService.getActiveDiscount(organization.paymentId),
+      this._stripeService.hasFailedPayment(organization.paymentId),
+    ]);
+
+    return { subscription, discount, paymentFailed };
   }
 
   @Get('/subscription/tiers')

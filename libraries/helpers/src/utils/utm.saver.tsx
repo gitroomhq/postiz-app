@@ -6,9 +6,20 @@ import { useLocalStorage } from '@mantine/hooks';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useTrack } from '@gitroom/react/helpers/use.track';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
-/** Plans the marketing site is allowed to preselect through ?plan=. */
-const SELECTABLE_PLANS = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
+/**
+ * Plans the marketing site is allowed to preselect through `?plan=`.
+ *
+ * Derived from `pricing` rather than written out, because the hardcoded list
+ * silently stopped matching when the tiers were renamed — `?plan=creator`
+ * landed on a visitor who had picked a plan and was dropped without a trace.
+ * Retired tiers are excluded: they are not for sale, so a link offering one
+ * should not work.
+ */
+const SELECTABLE_PLANS = Object.keys(pricing).filter(
+  (plan) => plan !== 'FREE' && !pricing[plan].retired
+);
 const SELECTABLE_PERIODS = ['MONTHLY', 'YEARLY'];
 
 const UtmSaver: FC = () => {

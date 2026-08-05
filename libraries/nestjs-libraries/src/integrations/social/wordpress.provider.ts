@@ -21,6 +21,7 @@ export class WordpressProvider
   implements SocialProvider
 {
   identifier = 'wordpress';
+  category = 'publishing' as const;
   name = 'WordPress';
   isBetweenSteps = false;
   editor = 'html' as const;

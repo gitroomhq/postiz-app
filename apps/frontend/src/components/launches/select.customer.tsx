@@ -1,7 +1,7 @@
 'use client';
 
 import { uniqBy } from 'lodash';
-import React, { FC, useCallback, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
@@ -10,6 +10,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { UserIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 export const SelectCustomer: FC<{
   onChange: (value: string) => void;
@@ -25,24 +26,20 @@ export const SelectCustomer: FC<{
   const toaster = useToaster();
   const t = useT();
   const [customer, setCustomer] = useState(currentCustomer || '');
-  const [pos, setPos] = useState<any>({});
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(() => {
     if (open) {
       setOpen(false);
     }
   });
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(open, 'start');
 
   const openClose = useCallback(() => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-
-    const { x, y, width, height } = ref.current?.getBoundingClientRect();
-    setPos({ top: y + height, left: x });
-    setOpen(true);
-  }, [open]);
+    setOpen((prev) => !prev);
+  }, []);
 
   const totalCustomers = useMemo(() => {
     return uniqBy(integrations, (i) => i?.customer?.id).length;
@@ -52,14 +49,15 @@ export const SelectCustomer: FC<{
   }
 
   return (
-    <div className="relative select-none z-[500]" ref={ref}>
+    <div className="relative z-[500] select-none" ref={ref}>
       <div
+        ref={referenceRef}
         data-tooltip-id="tooltip"
         data-tooltip-content={t('select_customer_tooltip', 'Select Customer')}
         onClick={openClose}
         className={clsx(
-          'relative z-[20] cursor-pointer h-[42px] rounded-[8px] pl-[16px] pr-[12px] gap-[8px] border flex items-center',
-          open ? 'border-[#612BD3]' : 'border-newColColor'
+          'relative z-[20] flex h-[42px] cursor-pointer items-center gap-[8px] rounded-[8px] border pl-[16px] pr-[12px]',
+          open ? 'border-pqBrand' : 'border-newColColor'
         )}
       >
         <div>
@@ -71,10 +69,10 @@ export const SelectCustomer: FC<{
       </div>
       {open && (
         <div
-          style={pos}
-          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px]"
+          ref={floatingRef}
+          className="flex min-w-[250px] flex-col bg-pqInner pt-[12px] menu-shadow"
         >
-          <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
+          <div className="mb-[5px] px-[12px] text-[14px] font-[600]">
             {t('customers', 'Customers')}
           </div>
           {uniqBy(integrations, (u) => u?.customer?.name)
@@ -89,10 +87,10 @@ export const SelectCustomer: FC<{
                   setCustomer(p.customer?.id);
                   onChange(p.customer?.id);
                   setOpen(false);
-                  setCurrent('global')
+                  setCurrent('global');
                 }}
                 key={p.customer?.id}
-                className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+                className="flex h-[32px] items-center p-[12px] text-[14px] font-[500] hover:bg-pqBg"
               >
                 {p.customer?.name}
               </div>

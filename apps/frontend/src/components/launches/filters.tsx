@@ -1,13 +1,19 @@
 'use client';
 
-import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  useCalendar,
+  ListRangeFilter,
+} from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { ChannelFilter } from '@gitroom/frontend/components/launches/channel.filter';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -258,42 +264,64 @@ export const Filters = () => {
   );
 
   const isListView = calendar.display === 'list';
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const rangeRef = useRef<HTMLDivElement>(null);
+  const { referenceRef: rangeTriggerRef, floatingRef: rangeMenuRef } =
+    useAnchoredPopover<HTMLButtonElement, HTMLDivElement>(rangeOpen, 'start');
 
-  const setListStateFilter = useCallback(
-    (next: ListStateFilter) => () => {
-      if (calendar.listState === next) return;
-      calendar.setListState(next);
-    },
-    [calendar]
-  );
+  useEffect(() => {
+    if (!rangeOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rangeRef.current?.contains(e.target as Node)) setRangeOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [rangeOpen]);
 
-  const listStateOptions: { value: ListStateFilter; label: string }[] = [
-    { value: 'all', label: t('all', 'All') },
-    { value: 'scheduled', label: t('scheduled', 'Scheduled') },
-    { value: 'draft', label: t('draft', 'Draft') },
-    { value: 'published', label: t('published', 'Published') },
-  ];
-
-  const previousPage = useCallback(() => {
-    if (calendar.listPage > 0) {
-      calendar.setListPage(calendar.listPage - 1);
+  const listRangeOptions = useMemo(() => {
+    const opts: { value: ListRangeFilter; label: string }[] = [
+      { value: 'all', label: t('all_dates', 'All dates') },
+      { value: 'today', label: t('today', 'Today') },
+      { value: 'week', label: t('this_week', 'This week') },
+      { value: 'next3', label: t('next_3_days', 'Next 3 days') },
+      { value: 'past', label: t('past_only', 'Past only') },
+    ];
+    if (calendar.listRange.startsWith('day:')) {
+      const d = newDayjs(calendar.listRange.slice(4));
+      opts.unshift({
+        value: calendar.listRange,
+        label: d.format(isUSCitizen() ? 'dddd, MMMM D' : 'dddd, D MMMM'),
+      });
     }
+    return opts;
+  }, [calendar.listRange, t]);
+
+  const listRangeLabel =
+    listRangeOptions.find((o) => o.value === calendar.listRange)?.label ||
+    t('all_dates', 'All dates');
+
+  const toggleListSort = useCallback(() => {
+    calendar.setListSort(calendar.listSort === 'asc' ? 'desc' : 'asc');
   }, [calendar]);
 
-  const nextPage = useCallback(() => {
-    if (calendar.listPage < calendar.listTotalPages - 1) {
-      calendar.setListPage(calendar.listPage + 1);
-    }
-  }, [calendar]);
-
+  // The design draws all three of this toolbar's switches the same way: a
+  // `--settings` trough with a raised `--inner` pill on the chosen option.
+  const segment = 'flex gap-[2px] rounded-pqSm bg-pqSettings p-[2px]';
+  const segmentItem =
+    'flex h-[28px] cursor-pointer items-center justify-center rounded-[6px] px-[10px] text-center text-[12.5px] transition-colors';
+  const segmentOn = 'bg-pqInner font-[600] text-pqText shadow-pqE1';
+  const segmentOff = 'font-[500] text-pqSoft hover:text-pqText';
   return (
-    <div className="text-textColor flex flex-col md:flex-row gap-[8px] items-center select-none">
+    <div
+      data-tour="cal-views"
+      className="flex select-none flex-col items-center gap-[8px] text-pqText md:flex-row"
+    >
       {!isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
+          <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
             <div
               onClick={previous}
-              className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -311,14 +339,17 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
+            <div className="flex h-full min-w-[190px] items-center justify-center text-center">
+              {/* A date range is a left-to-right token: in RTL, bidi otherwise
+                  flips "03/08 - 09/08" into "09/08 - 03/08" and the week reads
+                  backwards. */}
+              <div dir="ltr" className="px-[9px] text-[13px] font-[500]">
                 {getDisplayText()}
               </div>
             </div>
             <div
               onClick={next}
-              className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
+              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -338,10 +369,10 @@ export const Filters = () => {
             </div>
           </div>
           <div className="flex-1 text-[14px] font-[500]">
-            <div className="text-center flex h-[42px]">
+            <div className="flex h-[34px] text-center">
               <div
                 onClick={setToday}
-                className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
+                className="flex h-[34px] cursor-pointer items-center justify-center rounded-pqSm bg-pqInner px-[14px] text-[13px] font-[500] shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 {t('today', 'Today')}
               </div>
@@ -351,78 +382,103 @@ export const Filters = () => {
       )}
       {isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden">
-            <div
-              onClick={previousPage}
+          {/* Prototype list toolbar: date-range chip + Newest/Oldest — not the
+              status segment (status lives on the queue panel, hidden on Posts). */}
+          <div className="relative" ref={rangeRef}>
+            <button
+              type="button"
+              ref={rangeTriggerRef}
+              onClick={() => setRangeOpen((o) => !o)}
               className={clsx(
-                'text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center',
-                calendar.listPage > 0
-                  ? 'cursor-pointer hover:text-textItemFocused hover:bg-boxFocused'
-                  : 'opacity-50 cursor-not-allowed'
+                'flex h-[32px] items-center gap-[7px] rounded-pqSm pe-[11px] ps-[10px] text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover',
+                rangeOpen ? 'bg-pqHover' : 'bg-transparent'
               )}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
                 <path
-                  d="M6.5 11L1.5 6L6.5 1"
+                  d="M7 3.5v3M17 3.5v3M4.5 9h15M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="1.7"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
               </svg>
-            </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
-                {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
-              </div>
-            </div>
-            <div
-              onClick={nextPage}
-              className={clsx(
-                'text-textColor rtl:rotate-180 px-[9px] bg-newBgColorInner h-full flex items-center justify-center',
-                calendar.listPage < calendar.listTotalPages - 1
-                  ? 'cursor-pointer hover:text-textItemFocused hover:bg-boxFocused'
-                  : 'opacity-50 cursor-not-allowed'
-              )}
-            >
+              {listRangeLabel}
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
                 fill="none"
-              >
-                <path
-                  d="M1.5 11L6.5 6L1.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
-          <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
-            {listStateOptions.map((option) => (
-              <div
-                key={option.value}
-                onClick={setListStateFilter(option.value)}
                 className={clsx(
-                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-[6px]',
-                  calendar.listState === option.value &&
-                    'text-textItemFocused bg-boxFocused'
+                  'shrink-0 text-pqSoft transition-transform',
+                  rangeOpen && 'rotate-180'
                 )}
+                aria-hidden="true"
               >
-                {option.label}
+                <path
+                  d="m6 9 6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {rangeOpen && (
+              <div
+                ref={rangeMenuRef}
+                className="z-[20] w-[210px] rounded-pqMd bg-pqPop p-[5px] shadow-[var(--e3),inset_0_0_0_1px_var(--border)]"
+              >
+                {listRangeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      calendar.setListRange(opt.value);
+                      setRangeOpen(false);
+                    }}
+                    className={clsx(
+                      'flex h-[32px] w-full items-center rounded-pqSm px-[10px] text-start text-[13px] transition-colors',
+                      calendar.listRange === opt.value
+                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                        : 'font-[500] text-pqMuted hover:bg-pqHover hover:text-pqText'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
+          <button
+            type="button"
+            onClick={toggleListSort}
+            title={
+              calendar.listSort === 'desc'
+                ? t('sorted_newest_first', 'Sorted newest first')
+                : t('sorted_oldest_first', 'Sorted oldest first')
+            }
+            className="flex h-[32px] shrink-0 items-center gap-[6px] rounded-pqSm pe-[11px] ps-[9px] text-[12.5px] font-[500] text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              className={clsx(calendar.listSort === 'desc' && 'scale-y-[-1]')}
+              aria-hidden="true"
+            >
+              <path
+                d="M7 4.5v15M7 19.5l-3-3M7 19.5l3-3M13 6.5h7M13 11.5h5M13 16.5h3"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {calendar.listSort === 'desc'
+              ? t('newest', 'Newest')
+              : t('oldest', 'Oldest')}
+          </button>
           <div className="flex-1" />
         </div>
       )}
@@ -431,12 +487,14 @@ export const Filters = () => {
         onChange={(customer: string) => setCustomer(customer)}
         integrations={calendar.integrations}
       />
+      <ChannelFilter />
       {!isListView && (
-        <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+        <div className={segment}>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'day' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'day' ? segmentOn : segmentOff
             )}
             onClick={setDay}
           >
@@ -444,8 +502,9 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'week' ? segmentOn : segmentOff
             )}
             onClick={setWeek}
           >
@@ -453,8 +512,9 @@ export const Filters = () => {
           </div>
           <div
             className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-[6px]',
-              calendar.display === 'month' && 'text-textItemFocused bg-boxFocused'
+              segmentItem,
+              'w-[60px]',
+              calendar.display === 'month' ? segmentOn : segmentOff
             )}
             onClick={setMonth}
           >
@@ -462,12 +522,13 @@ export const Filters = () => {
           </div>
         </div>
       )}
-      <div className="flex flex-row p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+      <div className={segment}>
         <div
           onClick={setCalendarView}
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer flex justify-center items-center w-[34px] text-center rounded-[6px]',
-            !isListView && 'text-textItemFocused bg-boxFocused'
+            segmentItem,
+            'w-[30px] px-0',
+            !isListView ? segmentOn : segmentOff
           )}
         >
           {/*calendar*/}
@@ -490,8 +551,9 @@ export const Filters = () => {
         <div
           onClick={setList}
           className={clsx(
-            'pt-[6px] pb-[5px] flex justify-center items-center cursor-pointer w-[34px] text-center rounded-[6px]',
-            isListView && 'text-textItemFocused bg-boxFocused'
+            segmentItem,
+            'w-[30px] px-0',
+            isListView ? segmentOn : segmentOff
           )}
         >
           {/*list*/}

@@ -85,10 +85,16 @@ export class IntegrationManager {
           name: p.name,
           identifier: p.identifier,
           toolTip: p.toolTip,
+          category: p.category,
           editor: p.editor,
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,
+          // The grid needs this to draw the lock. It is only ever *whether* the
+          // provider is held back during a trial — whether this organization is
+          // trialing comes from the user, so the flag is the same for everyone
+          // and this list stays cacheable.
+          trialLocked: !!p.trialLocked,
           ...(p.extensionCookies
             ? { extensionCookies: p.extensionCookies }
             : {}),

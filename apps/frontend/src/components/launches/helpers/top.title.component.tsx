@@ -31,7 +31,7 @@ export const TopTitle: FC<{
   return (
     <div
       className={clsx(
-        'border-b flex items-center border-newBgLineColor -mx-[24px]',
+        'border-b flex items-center border-pqLine -mx-[24px]',
         props.extraClass ? props.extraClass : 'h-[57px]'
       )}
     >
@@ -45,9 +45,9 @@ export const TopTitle: FC<{
         {shouldExpend !== undefined && (
           <div className="cursor-pointer">
             {!shouldExpend ? (
-              <ExpandIcon onClick={expend} className="text-white" />
+              <ExpandIcon onClick={expend} className="text-pqText" />
             ) : (
-              <CollapseIcon onClick={collapse} className="text-white" />
+              <CollapseIcon onClick={collapse} className="text-pqText" />
             )}
           </div>
         )}

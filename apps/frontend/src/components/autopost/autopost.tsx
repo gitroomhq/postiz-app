@@ -1,38 +1,37 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { ModalFormActions } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
 import { FormProvider, useForm } from 'react-hook-form';
 import { array, boolean, object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
+import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
 export const Autopost: FC = () => {
   const fetch = useFetch();
   const t = useT();
-  const modal = useModals();
   const toaster = useToaster();
+  const [editing, setEditing] = useState<any | null | undefined>(undefined);
   const list = useCallback(async () => {
     return (await fetch('/autopost')).json();
   }, []);
   const { data, mutate } = useSWR('autopost', list);
+  const closeEditor = useCallback(() => setEditing(undefined), []);
   const addWebhook = useCallback(
-    (data?: any) => () => {
-      modal.openModal({
-        title: data ? t('edit_autopost', 'Edit Autopost') : t('add_autopost_title', 'Add Autopost'),
-        withCloseButton: true,
-        children: <AddOrEditWebhook data={data} reload={mutate} />,
-      });
+    (row?: any) => () => {
+      setEditing(row ?? null);
     },
     []
   );
@@ -68,63 +67,127 @@ export const Autopost: FC = () => {
     },
     [mutate]
   );
+  if (editing !== undefined) {
+    return (
+      <SettingsPaneEditor
+        title={
+          editing
+            ? t('edit_autopost', 'Edit Autopost')
+            : t('add_autopost_title', 'Add Autopost')
+        }
+        onBack={closeEditor}
+      >
+        <AddOrEditWebhook
+          data={editing || undefined}
+          reload={() => {
+            mutate();
+            closeEditor();
+          }}
+          onCancel={closeEditor}
+        />
+      </SettingsPaneEditor>
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
-      <div className="text-customColor18 mt-[4px]">
-        {t(
-          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-          'Autopost can automatically posts your RSS new items to social media'
-        )}
-      </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('title', 'Title')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              <div>{t('active', 'Active')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Slider
-                      value={p.active ? 'on' : 'off'}
-                      onChange={changeActive(p)}
-                      fill={true}
-                    />
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
+      {!!data?.length && (
+        <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+          {data?.map((p: any) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
             >
-              {t('add_an_autopost', 'Add an autopost')}
-            </Button>
-          </div>
+              <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-pqSettings text-pqMuted">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 19.5h.01M5 12a7.5 7.5 0 0 1 7.5 7.5M5 5a14.5 14.5 0 0 1 14.5 14.5" />
+                </svg>
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="truncate text-[13.5px] font-[600]">
+                  {p.title}
+                </div>
+                <div className="mt-[2px] truncate font-mono text-[11.5px] text-pqSoft">
+                  {p.url}
+                </div>
+              </div>
+              <Slider
+                value={p.active ? 'on' : 'off'}
+                onChange={changeActive(p)}
+                fill={true}
+              />
+              <button
+                type="button"
+                onClick={addWebhook(p)}
+                aria-label={t('edit', 'Edit')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={deleteHook(p)}
+                aria-label={t('delete', 'Delete')}
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={addWebhook()}
+        className={clsx(
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
+        )}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
+        {t('add_an_autopost', 'Add an autopost')}
+      </button>
     </div>
   );
 };
@@ -176,8 +239,9 @@ const getPostImmediately = (t: (key: string, fallback: string) => string) => [
 export const AddOrEditWebhook: FC<{
   data?: any;
   reload: () => void;
+  onCancel?: () => void;
 }> = (props) => {
-  const { data, reload } = props;
+  const { data, reload, onCancel } = props;
   const fetch = useFetch();
   const t = useT();
   const options = getOptions(t);
@@ -188,7 +252,6 @@ export const AddOrEditWebhook: FC<{
       ? options[1]
       : options[0]
   );
-  const modal = useModals();
   const toast = useToaster();
   const [valid, setValid] = useState(data?.url || '');
   const [lastUrl, setLastUrl] = useState(data?.lastUrl || '');
@@ -264,7 +327,6 @@ export const AddOrEditWebhook: FC<{
           : t('autopost_added_successfully', 'Autopost added successfully'),
         'success'
       );
-      modal.closeAll();
       reload();
     },
     [data, integrations, lastUrl, syncLast]
@@ -296,111 +358,119 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 pt-0">
-          <div>
-            <Input
-              label="Title"
-              translationKey="label_title"
-              {...form.register('title')}
-            />
-            <Input
-              label="URL"
-              translationKey="label_url"
-              {...form.register('url')}
-            />
-            <Select
-              label="Should we sync the current last post?"
-              translationKey="label_should_sync_last_post"
-              {...form.register('syncLast', {
-                setValueAs: (value) => {
-                  return value === 'true' || value === true;
-                },
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="When should we post it?"
-              translationKey="label_when_post"
-              {...form.register('onSlot', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {postImmediately.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Autogenerate content"
-              translationKey="label_autogenerate_content"
-              {...form.register('generateContent', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            {!generateContent && (
-              <>
-                <div className={`text-[14px] mb-[6px]`}>
-                  {t('post_content', 'Post content')}
-                </div>
+        {/* Match Webhooks in-pane form: no outer pqLine box (that token is a
+            light hairline on dark and read as unintended white rules). */}
+        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
+          <Input
+            label="Title"
+            translationKey="label_title"
+            {...form.register('title')}
+          />
+          <Input
+            label="URL"
+            translationKey="label_url"
+            {...form.register('url')}
+          />
+          <Select
+            label="Should we sync the current last post?"
+            translationKey="label_should_sync_last_post"
+            {...form.register('syncLast', {
+              setValueAs: (value) => {
+                return value === 'true' || value === true;
+              },
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="When should we post it?"
+            translationKey="label_when_post"
+            {...form.register('onSlot', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {postImmediately.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Autogenerate content"
+            translationKey="label_autogenerate_content"
+            {...form.register('generateContent', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          {!generateContent && (
+            <div className="flex flex-col gap-[6px]">
+              <div className="text-[14px] text-pqMuted">
+                {t('post_content', 'Post content')}
+              </div>
+              <div className="overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
                 <CopilotTextarea
                   disableBranding={true}
                   className={clsx(
-                    '!min-h-40 !max-h-80 p-2 overflow-x-hidden scrollbar scrollbar-thumb-[#612AD5] bg-customColor2 outline-none mb-[16px] border-fifth border rounded-[4px]'
+                    '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
                   )}
                   value={content}
                   onChange={(e) => {
                     form.setValue('content', e.target.value);
                   }}
-                  placeholder={t('write_your_post_placeholder', 'Write your post...')}
+                  placeholder={t(
+                    'write_your_post_placeholder',
+                    'Write your post...'
+                  )}
                   autosuggestionsConfig={{
                     textareaPurpose: `Assist me in writing social media post`,
                     chatApiConfigs: {},
                   }}
                 />
-              </>
-            )}
-            <Select
-              label="Generate Picture?"
-              translationKey="label_generate_picture"
-              {...form.register('addPicture', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={allIntegrations.value}
-              name="integrations"
-              label="Integrations"
-              translationKey="label_integrations"
-              disableForm={true}
-              onChange={changeIntegration}
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+              </div>
+            </div>
+          )}
+          <Select
+            label="Generate Picture?"
+            translationKey="label_generate_picture"
+            {...form.register('addPicture', {
+              setValueAs: (value) => value === 'true' || value === true,
+            })}
+          >
+            {optionsChoose.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={allIntegrations.value}
+            name="integrations"
+            label="Integrations"
+            translationKey="label_integrations"
+            disableForm={true}
+            onChange={changeIntegration}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
             {allIntegrations.value === 'specific' && dataList && !isLoading && (
               <PickPlatforms
-                integrations={dataList.integrations}
+                integrations={sortIntegrationsByProviderImportance(
+                  dataList.integrations || []
+                )}
                 selectedIntegrations={integrations as any[]}
                 onChange={(e) => form.setValue('integrations', e)}
                 singleSelect={false}
@@ -408,35 +478,35 @@ export const AddOrEditWebhook: FC<{
                 isMain={true}
               />
             )}
-            <div className="flex gap-[10px]">
-              {valid === url && (syncLast || !!lastUrl) && (
-                <Button
-                  type="submit"
-                  className="mt-[24px]"
-                  disabled={
-                    valid !== url ||
-                    !form.formState.isValid ||
-                    (allIntegrations.value === 'specific' &&
-                      !integrations?.length)
-                  }
-                >
-                  {t('save', 'Save')}
-                </Button>
-              )}
+          <ModalFormActions onCancel={() => onCancel?.()}>
+            {valid === url && (syncLast || !!lastUrl) && (
               <Button
-                type="button"
-                className="mt-[24px]"
-                onClick={sendTest}
+                type="submit"
+                className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
                 disabled={
+                  valid !== url ||
                   !form.formState.isValid ||
                   (allIntegrations.value === 'specific' &&
                     !integrations?.length)
                 }
               >
-                {t('send_test', 'Send Test')}
+                {t('save', 'Save')}
               </Button>
-            </div>
-          </div>
+            )}
+            <Button
+              type="button"
+              secondary={true}
+              className="h-[44px] rounded-[8px] px-[18px] text-[14px] font-[600]"
+              onClick={sendTest}
+              disabled={
+                !form.formState.isValid ||
+                (allIntegrations.value === 'specific' &&
+                  !integrations?.length)
+              }
+            >
+              {t('send_test', 'Send Test')}
+            </Button>
+          </ModalFormActions>
         </div>
       </form>
     </FormProvider>

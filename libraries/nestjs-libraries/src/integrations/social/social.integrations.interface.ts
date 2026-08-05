@@ -166,6 +166,34 @@ export interface SocialProvider
   >;
   name: string;
   toolTip?: string;
+  /**
+   * Which group this provider sits in on the Add Channel grid.
+   *
+   * It lives on the provider rather than in a list on the frontend on purpose:
+   * a map maintained elsewhere is one someone forgets to update when they add a
+   * provider, and the provider then vanishes from the only screen that can
+   * connect it. Unset is fine — anything without a category falls into the
+   * default group, so forgetting costs a placement, never a channel.
+   */
+  category?:
+    | 'social'
+    | 'chat'
+    | 'video'
+    | 'business'
+    | 'publishing';
+  /**
+   * Whether connecting this provider is held back until the trial ends.
+   *
+   * It sits on the provider for the same reason `category` does: the check that
+   * uses it is generic, and a list of locked identifiers kept somewhere else is
+   * a list that goes stale. A provider that says nothing is not locked.
+   *
+   * Only ever applied when billing is on and the organization is actually
+   * trialing, and only to *new* connections — an already connected channel
+   * keeps working, because silencing a channel someone is publishing through is
+   * a worse outcome than letting one trial account keep it.
+   */
+  trialLocked?: boolean;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];

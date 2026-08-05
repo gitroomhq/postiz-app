@@ -168,6 +168,10 @@ export class PostsRepository {
         },
         deletedAt: null,
         parentPostId: null,
+        // Owner: DRAFT lives in Posts panel only — keep publishDate for the
+        // Drafts list (`publishDate >= now`), but never paint drafts on the
+        // Day/Week/Month calendar grid.
+        state: { not: State.DRAFT },
       },
       select: {
         id: true,
@@ -219,6 +223,32 @@ export class PostsRepository {
 
       return [...all, ...addMorePosts];
     }, [] as any[]);
+  }
+
+  /**
+   * How many posts a single channel has in each state. One grouped query rather
+   * than three counts, and scoped to the org so a channel id from elsewhere
+   * cannot be used to read another organisation's numbers.
+   */
+  async countPostsByState(orgId: string, integrationId: string) {
+    const rows = await this._post.model.post.groupBy({
+      by: ['state'],
+      where: {
+        organizationId: orgId,
+        integrationId,
+        deletedAt: null,
+      },
+      _count: { _all: true },
+    });
+
+    const of = (state: State) =>
+      rows.find((row) => row.state === state)?._count._all || 0;
+
+    return {
+      scheduled: of(State.QUEUE),
+      draft: of(State.DRAFT),
+      published: of(State.PUBLISHED),
+    };
   }
 
   async getPostsList(orgId: string, query: GetPostsListDto) {
@@ -453,6 +483,18 @@ export class PostsRepository {
     return update;
   }
 
+  /** QUEUE → DRAFT for panel unschedule; clears release metadata like schedule path. */
+  async setPostDraft(id: string) {
+    return this._post.model.post.update({
+      where: { id },
+      data: {
+        state: 'DRAFT',
+        releaseId: null,
+        releaseURL: null,
+      },
+    });
+  }
+
   getErrorsByPostIds(postIds: string[]) {
     return this._errors.model.errors.findMany({
       where: {
@@ -466,7 +508,6 @@ export class PostsRepository {
     orgId: string,
     id: string,
     date: string,
-    isDraft: boolean,
     action: 'schedule' | 'update' = 'schedule'
   ) {
     return this._post.model.post.update({
@@ -476,11 +517,11 @@ export class PostsRepository {
       },
       data: {
         publishDate: dayjs(date).toDate(),
-        // schedule: set state to QUEUE (or DRAFT if it was a draft)
+        // schedule: always QUEUE (draft → scheduled when dropped on calendar)
         // update: don't change the state
         ...(action === 'schedule'
           ? {
-              state: isDraft ? 'DRAFT' : 'QUEUE',
+              state: 'QUEUE',
               releaseId: null,
               releaseURL: null,
             }

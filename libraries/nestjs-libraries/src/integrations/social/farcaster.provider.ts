@@ -28,6 +28,7 @@ export class FarcasterProvider
   implements SocialProvider
 {
   identifier = 'wrapcast';
+  category = 'social' as const;
   name = 'Farcaster';
   isBetweenSteps = false;
   isWeb3 = true;

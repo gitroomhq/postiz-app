@@ -38,6 +38,10 @@ export class NotificationService {
     );
   }
 
+  markAllAsRead(userId: string) {
+    return this._notificationRepository.markAllAsRead(userId);
+  }
+
   async inAppNotification(
     orgId: string,
     subject: string,

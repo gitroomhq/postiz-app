@@ -1,8 +1,22 @@
 // @ts-check
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { withSentryConfig } from '@sentry/nextjs';
+
+const rootPkg = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '../../package.json'),
+    'utf8'
+  )
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION:
+      process.env.NEXT_PUBLIC_APP_VERSION || rootPkg.version,
+  },
   experimental: {
     proxyTimeout: 90_000,
   },

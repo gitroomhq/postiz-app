@@ -1,9 +1,12 @@
-import { Body, Controller, Get, HttpException, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Req } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { lifetimeWindow } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { LifetimeDto } from '@gitroom/nestjs-libraries/dtos/billing/lifetime.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
@@ -23,7 +26,8 @@ export class BillingController {
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
     private _notificationService: NotificationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _organizationService: OrganizationService
   ) {}
 
   private async assertNoOtherSubscribedAccount(user: User) {
@@ -60,8 +64,23 @@ export class BillingController {
 
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
+    // Two ways a trial ends, and the caller polls `is-trial-finished` until the
+    // organization's flag clears either way.
+    //
+    // When Stripe has a trialing subscription, ending it there is enough: the
+    // webhook clears the flag. When it has none — a founding member, whose
+    // entitlement is a local row and never a Stripe subscription — no webhook
+    // is ever coming, so the flag is cleared here. Without this the caller
+    // polled forever and the "End free trial" dialog never closed.
+    //
+    // The error is still swallowed, as before, so a Stripe outage cannot leave
+    // somebody stuck in a dialog. But `ended: false` is not an error, and only
+    // that specific answer clears the flag locally.
     try {
-      await this._stripeService.finishTrial(org.paymentId);
+      const { ended } = await this._stripeService.finishTrial(org.paymentId);
+      if (!ended) {
+        await this._organizationService.endTrial(org.id);
+      }
     } catch (err) {}
     return {
       finish: true,
@@ -239,6 +258,46 @@ export class BillingController {
     }
 
     return refund;
+  }
+
+  @Post('/lifetime-checkout')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async lifetimeCheckout(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    // Same window as redemption, same 410. The button is hidden once the offer
+    // closes, but a hidden button is a UI decision and this is the rule.
+    if (!lifetimeWindow(user.createdAt).open) {
+      throw new HttpException(
+        { success: false, message: 'The founding-member offer has closed.' },
+        HttpStatus.GONE
+      );
+    }
+
+    return this._stripeService.createLifetimeCheckout(org);
+  }
+
+  @Post('/lifetime')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async lifetime(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: LifetimeDto
+  ) {
+    // The founding-member offer closes 24 hours after registration, and the
+    // screen draws a countdown to that moment. A countdown the server does not
+    // enforce is decoration — the same lesson as the trial lock: the rule lives
+    // where the money moves, or it is not a rule. Both sides read
+    // `lifetimeWindow()` so they cannot drift.
+    if (!lifetimeWindow(user.createdAt).open) {
+      throw new HttpException(
+        { success: false, message: 'The founding-member offer has closed.' },
+        HttpStatus.GONE
+      );
+    }
+
+    return this._stripeService.lifetimeDeal(org.id, body.code);
   }
 
   @Post('/add-subscription')

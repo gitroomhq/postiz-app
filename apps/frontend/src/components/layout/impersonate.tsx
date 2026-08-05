@@ -682,12 +682,12 @@ const SwitchUser = () => {
             className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
             onClick={() => setName('')}
           />
-          <div className="absolute top-[100%] start-0 w-full bg-sixth border border-customColor6 text-textColor z-[999]">
+          <div className="absolute top-[100%] start-0 w-full bg-sixth border border-pqLine text-textColor z-[999]">
             {mapData.map((item: any) => (
               <div
                 onClick={pick(item)}
                 key={item.id}
-                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                className="p-[10px] border-b border-pqLine hover:bg-tableBorder cursor-pointer"
               >
                 {t('user_1', 'user:')}
                 {item.id.split('-').at(-1)} -{' '}
@@ -814,12 +814,12 @@ export const Impersonate = () => {
                 className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
+              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-pqLine text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
                     onClick={setUser(user.id)}
                     key={user.id}
-                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                    className="p-[10px] border-b border-pqLine hover:bg-tableBorder cursor-pointer"
                   >
                     {t('user_1', 'user:')}
                     {user.id.split('-').at(-1)} - {user.name} - {user.email}

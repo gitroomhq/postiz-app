@@ -1,41 +1,88 @@
 'use client';
-import { FC, ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { FC, ReactNode, useMemo } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 
-export const MenuItem: FC<{ label: string; icon: ReactNode; path: string; onClick?: () => void }> = ({
-  label,
-  icon,
-  path,
-  onClick,
-}) => {
+export const MenuItem: FC<{
+  label: string;
+  icon: ReactNode;
+  path: string;
+  collapsed?: boolean;
+  onClick?: () => void;
+  /** Product-tour spotlight target (`data-tour`). */
+  tourKey?: string;
+}> = ({ label, icon, path, collapsed, onClick, tourKey }) => {
   const currentPath = usePathname();
-  const isActive = currentPath.indexOf(path) === 0;
+  const searchParams = useSearchParams();
+  // Calendar/Posts share `/launches`; Settings More rows share `/settings?tab=`.
+  // Pathname-only matching lights every More row whenever Settings is open.
+  const isActive = useMemo(() => {
+    const [base, query = ''] = path.split('?');
+    if (!currentPath || currentPath.indexOf(base) !== 0) return false;
+    if (base === '/launches') {
+      const list = searchParams.get('display') === 'list';
+      if (path.includes('display=list')) return list;
+      return !list;
+    }
+    if (base === '/settings') {
+      const pathTab = new URLSearchParams(query).get('tab');
+      if (pathTab) {
+        // More shortcut: only the matching settings tab.
+        return searchParams.get('tab') === pathTab;
+      }
+      // Footer Settings gear: any /settings visit.
+      return true;
+    }
+    return currentPath.indexOf(base) === 0;
+  }, [currentPath, path, searchParams]);
 
-  // The rail is branded, so these are tints of white rather than theme tokens:
-  // one gradient under them in both light and dark means one set of states.
+  // The rail is a neutral surface now, so states are brand tints rather than
+  // tints of white. Hover is an inset ring laid over the row instead of a
+  // background, and it is only applied when the row is not the current page —
+  // otherwise you cannot tell which one you are on.
   const className = clsx(
-    'group w-full minCustom:h-[54px] custom:h-[44px] py-[8px] px-[6px] minCustom:gap-[4px] custom:gap-[2px] flex flex-col font-[600] items-center justify-center rounded-[12px] transition-colors',
-    // Hover on an inactive item is a lighter hint, not the full active pill —
-    // otherwise you can't tell which page you're actually on.
+    'group flex h-[34px] w-full items-center gap-[11px] rounded-pqSm px-[8px] text-start text-[13.5px] transition-colors',
+    collapsed ? 'justify-center' : 'justify-start',
     isActive
-      ? 'text-white bg-white/20'
-      : 'text-white/80 hover:text-white hover:bg-white/10'
+      ? 'bg-pqNavActive font-[600] text-pqText'
+      : 'font-[500] text-pqMuted hover:text-pqText hover:shadow-[inset_0_0_0_999px_var(--navRowHover)]'
   );
 
   const inner = (
     <>
-      <div className="custom:scale-90 transition-transform">{icon}</div>
-      <div className="custom:text-[9px] minCustom:text-[10px] leading-[1.1] text-center">
+      <span
+        className={clsx(
+          'shrink-0 transition-opacity',
+          isActive ? 'opacity-100' : 'opacity-[0.65]'
+        )}
+      >
+        {icon}
+      </span>
+      {/* Always in the DOM, hidden by CSS when the rail is collapsed. The
+          collapsed rail expands on hover (see `[data-sb]` in global.scss) and a
+          label React has not rendered cannot appear on hover. */}
+      <span data-sbl="1" className="min-w-0 flex-1 truncate">
         {label}
-      </div>
+      </span>
     </>
   );
 
+  // No tooltip in the collapsed rail: hovering it widens the rail and shows the
+  // real label, so a tooltip would put the same word on screen twice. `title`
+  // still carries the name for anything that cannot hover.
+  const tip = {};
+
   if (onClick) {
     return (
-      <button onClick={onClick} title={label} className={className}>
+      <button
+        type="button"
+        onClick={onClick}
+        title={label}
+        className={className}
+        {...(tourKey ? { 'data-tour': tourKey } : {})}
+        {...tip}
+      >
         {inner}
       </button>
     );
@@ -46,8 +93,10 @@ export const MenuItem: FC<{ label: string; icon: ReactNode; path: string; onClic
       prefetch={true}
       href={path}
       title={label}
-      {...path.indexOf('http') === 0 && { target: '_blank' }}
+      {...(path.indexOf('http') === 0 && { target: '_blank' })}
       className={className}
+      {...(tourKey ? { 'data-tour': tourKey } : {})}
+      {...tip}
     >
       {inner}
     </Link>

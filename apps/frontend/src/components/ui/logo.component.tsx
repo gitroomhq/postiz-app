@@ -1,5 +1,12 @@
 import clsx from 'clsx';
 
+/** major.minor from NEXT_PUBLIC_APP_VERSION (falls back to package 3.0.2 → v3.0). */
+export const appVersionLabel = (() => {
+  const raw = process.env.NEXT_PUBLIC_APP_VERSION || '3.0.2';
+  const [major, minor] = raw.split('.');
+  return `v${major}.${minor ?? '0'}`;
+})();
+
 /**
  * Crown mark. Identical geometry to the landing site's CrownGlyph
  * (postqueen.ai/src/components/doodles.tsx) so both properties draw the same

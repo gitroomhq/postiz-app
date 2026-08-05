@@ -102,7 +102,10 @@ export class MediaController {
         org.id,
         uploadedFile.originalname,
         uploadedFile.path,
-        originalName
+        originalName,
+        // The size the uploader already knows. Nothing wrote it before, so
+        // every Media row read as "size unknown".
+        file?.size
       );
     } finally {
       await discardTempFile(file);
@@ -166,7 +169,8 @@ export class MediaController {
         org.id,
         getFile.originalname,
         getFile.path,
-        originalName
+        originalName,
+        file?.size
       );
     } finally {
       await discardTempFile(file);

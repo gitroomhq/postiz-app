@@ -1,174 +1,45 @@
 'use client';
 
 import React, {
-  ChangeEvent,
-  ClipboardEvent,
   FC,
-  Fragment,
   useCallback,
   useEffect,
-  useMemo,
-  useRef,
   useState,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
-import useSWR from 'swr';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { Media } from '@prisma/client';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import EventEmitter from 'events';
-import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
-import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
-import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
-import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
 import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { ThirdPartyMediaLibrary } from '@gitroom/frontend/components/third-parties/third-party.media-library';
-import { Dashboard } from '@uppy/react';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  DeleteCircleIcon,
   CloseCircleIcon,
   DragHandleIcon,
   MediaSettingsIcon,
   InsertMediaIcon,
   DesignMediaIcon,
   VerticalDividerIcon,
-  NoMediaIcon,
 } from '@gitroom/frontend/components/ui/icons';
-import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
-import { useShallow } from 'zustand/react/shallow';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import { useDebounce } from 'use-debounce';
+
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
 const showModalEmitter = new EventEmitter();
-export const Pagination: FC<{
-  current: number;
-  totalPages: number;
-  setPage: (num: number) => void;
-}> = (props) => {
-  const t = useT();
 
-  const { current, totalPages, setPage } = props;
+export { Pagination } from '@gitroom/frontend/components/media/media.pagination';
+import { MediaBox } from '@gitroom/frontend/components/media/media.box';
+export { MediaBox };
 
-  const paginationItems = useMemo(() => {
-    // Convert to 1-based for algorithm (current is 0-based)
-    const c = current + 1;
-    const m = totalPages;
-
-    // If total pages <= 10, show all pages
-    if (m <= 10) {
-      return Array.from({ length: m }, (_, i) => i + 1);
-    }
-
-    const delta = 3;
-    const left = c - delta;
-    const right = c + delta + 1;
-    const range: number[] = [];
-    const rangeWithDots: (number | '...')[] = [];
-    let l: number | undefined;
-
-    // Build the range of pages to show
-    for (let i = 1; i <= m; i++) {
-      if (i === 1 || i === m || (i >= left && i < right)) {
-        range.push(i);
-      }
-    }
-
-    // Add dots where there are gaps
-    for (const i of range) {
-      if (l !== undefined) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1);
-        } else if (i - l !== 1) {
-          rangeWithDots.push('...');
-        }
-      }
-      rangeWithDots.push(i);
-      l = i;
-    }
-
-    // Limit to maximum 10 items by trimming pages near edges if needed
-    while (rangeWithDots.length > 10) {
-      const currentIndex = rangeWithDots.findIndex((item) => item === c);
-      if (currentIndex !== -1 && currentIndex > rangeWithDots.length / 2) {
-        // Current is in second half, remove one item from start side
-        rangeWithDots.splice(2, 1);
-      } else {
-        // Current is in first half, remove one item from end side
-        rangeWithDots.splice(-3, 1);
-      }
-    }
-
-    return rangeWithDots;
-  }, [current, totalPages]);
-
-  return (
-    <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
-      <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
-        <div
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
-          aria-label="Go to previous page"
-          onClick={() => setPage(current - 1)}
-        >
-          <ChevronLeftIcon className="lucide lucide-chevron-left h-4 w-4" />
-          <span>{t('previous', 'Previous')}</span>
-        </div>
-      </li>
-      {paginationItems.map((item, index) => (
-        <li key={index}>
-          {item === '...' ? (
-            <span className="inline-flex items-center justify-center h-10 w-10 text-textColor select-none">
-              ...
-            </span>
-          ) : (
-            <div
-              aria-current="page"
-              onClick={() => setPage(item - 1)}
-              className={clsx(
-                'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-white border-newBorder',
-                current === item - 1
-                  ? 'bg-forth !text-white'
-                  : 'text-textColor hover:text-white'
-              )}
-            >
-              {item}
-            </div>
-          )}
-        </li>
-      ))}
-      <li
-        className={clsx(
-          current + 1 === totalPages && 'opacity-20 pointer-events-none'
-        )}
-      >
-        <a
-          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
-          aria-label="Go to next page"
-          onClick={() => setPage(current + 1)}
-        >
-          <span>{t('next', 'Next')}</span>
-          <ChevronRightIcon className="lucide lucide-chevron-right h-4 w-4" />
-        </a>
-      </li>
-    </ul>
-  );
-};
 export const ShowMediaBoxModal: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [callBack, setCallBack] =
@@ -198,440 +69,18 @@ export const showMediaBox = (
 ) => {
   showModalEmitter.emit('show-modal', callback);
 };
-const CHUNK_SIZE = 1024 * 1024;
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
-export const MediaBox: FC<{
-  setMedia: (params: { id: string; path: string }[]) => void;
-  standalone?: boolean;
-  type?: 'image' | 'video';
-  closeModal: () => void;
-}> = ({ type, standalone, setMedia }) => {
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch] = useDebounce(search, 300);
-  const fetch = useFetch();
-  const modals = useModals();
-  const toaster = useToaster();
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedSearch]);
-  const loadMedia = useCallback(async () => {
-    const params = new URLSearchParams({ page: String(page + 1) });
-    if (debouncedSearch.trim()) {
-      params.set('search', debouncedSearch.trim());
-    }
-    return (await fetch(`/media?${params.toString()}`)).json();
-  }, [page, debouncedSearch]);
-  const { data, mutate, isLoading } = useSWR(
-    `get-media-${page}-${debouncedSearch}`,
-    loadMedia
-  );
-  const [selected, setSelected] = useState([]);
-  const t = useT();
-  const uploaderRef = useRef<any>(null);
-  const mediaDirectory = useMediaDirectory();
-  const [loading, setLoading] = useState(false);
 
-  const uppy = useUppyUploader({
-    allowedFileTypes:
-      type == 'image'
-        ? 'image/*'
-        : type == 'video'
-        ? 'video/mp4'
-        : 'image/*,video/mp4',
-    onUploadSuccess: async (arr) => {
-      await mutate();
-      if (standalone) {
-        return;
-      }
-      setSelected((prevSelected) => {
-        return [...prevSelected, ...arr];
-      });
-    },
-    onStart: () => setLoading(true),
-    onEnd: () => setLoading(false),
-  });
-
-  const addRemoveSelected = useCallback(
-    (media: any) => () => {
-      if (standalone) {
-        return;
-      }
-      const exists = selected.find((p: any) => p.id === media.id);
-      if (exists) {
-        setSelected(selected.filter((f: any) => f.id !== media.id));
-        return;
-      }
-      setSelected([...selected, media]);
-    },
-    [selected]
-  );
-
-  const addMedia = useCallback(async () => {
-    if (standalone) {
-      return;
-    }
-    // @ts-ignore
-    setMedia(selected);
-    modals.closeCurrent();
-  }, [selected]);
-
-  const addToUpload = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
-      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-
-      if (totalSize > MAX_UPLOAD_SIZE) {
-        toaster.show(
-          t(
-            'upload_size_limit_exceeded',
-            'Upload size limit exceeded. Maximum 1 GB per upload session.'
-          ),
-          'warning'
-        );
-        return;
-      }
-
-      setLoading(true);
-
-      // @ts-ignore
-      uppy.addFiles(files);
-    },
-    [toaster, t]
-  );
-
-  const dragAndDrop = useCallback(
-    async (event: ClipboardEvent<HTMLDivElement> | File[]) => {
-      // @ts-ignore
-      const clipboardItems = event.map((p) => ({
-        kind: 'file',
-        getAsFile: () => p,
-      }));
-      if (!clipboardItems) {
-        return;
-      }
-
-      const files: File[] = [];
-      // @ts-ignore
-      for (const item of clipboardItems) {
-        if (item.kind === 'file') {
-          const file = item.getAsFile();
-          if (file) {
-            files.push(file);
-          }
-        }
-      }
-
-      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-
-      if (totalSize > MAX_UPLOAD_SIZE) {
-        toaster.show(
-          t(
-            'upload_size_limit_exceeded',
-            'Upload size limit exceeded. Maximum 1 GB per upload session.'
-          ),
-          'warning'
-        );
-        return;
-      }
-
-      setLoading(true);
-
-      for (const file of files) {
-        uppy.addFile(file);
-      }
-    },
-    [toaster, t]
-  );
-
-  const maximize = useCallback(
-    (media: Media) => async (e: any) => {
-      e.stopPropagation();
-      modals.openModal({
-        title: '',
-        top: 10,
-        children: (
-          <div className="w-full h-full p-[50px]">
-            {hasExtension(media.path, 'mp4') ? (
-              <VideoFrame
-                autoplay={true}
-                url={mediaDirectory.set(media.path)}
-              />
-            ) : (
-              <img
-                width="100%"
-                height="100%"
-                className="w-full h-full max-h-[100%] max-w-[100%] object-cover"
-                src={mediaDirectory.set(media.path)}
-                alt="media"
-              />
-            )}
-          </div>
-        ),
-      });
-    },
-    []
-  );
-
-  const deleteImage = useCallback(
-    (media: Media) => async (e: any) => {
-      e.stopPropagation();
-      if (
-        !(await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete_the_image',
-            'Are you sure you want to delete the image?'
-          )
-        ))
-      ) {
-        return;
-      }
-      await fetch(`/media/${media.id}`, {
-        method: 'DELETE',
-      });
-      mutate();
-    },
-    [mutate]
-  );
-
-  const btn = useMemo(() => {
-    return (
-      <button
-        disabled={loading}
-        onClick={() => uploaderRef?.current?.click()}
-        className="relative cursor-pointer bg-btnSimple changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-[8px]"
-      >
-        {loading ? (
-          <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-            <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
-          </div>
-        ) : (
-          <PlusIcon size={14} />
-        )}
-        <div className={loading ? 'invisible' : undefined}>{t('upload', 'Upload')}</div>
-      </button>
-    );
-  }, [t, loading]);
-
-  return (
-    <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
-      <div className="flex flex-col flex-1">
-        <div
-          className={clsx(
-            'flex items-center gap-[12px]',
-            !isLoading &&
-              !data?.results?.length &&
-              !debouncedSearch &&
-              'hidden'
-          )}
-        >
-          <div className="flex-1">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('search_media_by_name', 'Search by file name')}
-              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
-            />
-          </div>
-          <input
-            type="file"
-            ref={uploaderRef}
-            onChange={addToUpload}
-            className="hidden"
-            multiple={true}
-          />
-          <div className="flex gap-[8px]">
-            {btn}
-            <ThirdPartyMediaLibrary onImported={() => mutate()} />
-          </div>
-        </div>
-        <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
-          <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
-            <Dashboard
-              height={46}
-              uppy={uppy}
-              id={`uploader`}
-              showProgressDetails={true}
-              hideUploadButton={true}
-              hideRetryButton={true}
-              hidePauseResumeButton={true}
-              hideCancelButton={true}
-              hideProgressAfterFinish={true}
-            />
-          </div>
-          <div className="w-full h-[46px] uppyChange" />
-        </div>
-        <div
-          className={clsx(
-            'flex-1 relative',
-            !isLoading &&
-              !data?.results?.length &&
-              'bg-newTextColor/[0.02] rounded-[12px]'
-          )}
-        >
-          <div
-            className={clsx(
-              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
-              !isLoading &&
-                !data?.results?.length &&
-                'flex justify-center items-center gap-[20px] flex-col'
-            )}
-          >
-            {!isLoading && !data?.results?.length && (
-              <>
-                <NoMediaIcon />
-                <div className="text-[20px] font-[600]">
-                  {debouncedSearch
-                    ? t(
-                        'no_media_match_search',
-                        'No media matches your search'
-                      )
-                    : t(
-                        'you_dont_have_any_media_yet',
-                        "You don't have any media yet"
-                      )}
-                </div>
-                <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
-                  {t(
-                    'select_or_upload_pictures_max_1gb',
-                    'Select or upload pictures (maximum 1 GB per upload).'
-                  )}{' '}
-                  {'\n'}
-                  {t(
-                    'you_can_drag_drop_pictures',
-                    'You can also drag & drop pictures.'
-                  )}
-                </div>
-                <div className="forceChange flex gap-[8px]">
-                  {btn}
-                  <ThirdPartyMediaLibrary onImported={() => mutate()} />
-                </div>
-              </>
-            )}
-            {isLoading && (
-              <>
-                {[...new Array(16)].map((_, i) => (
-                  <div
-                    className={clsx(
-                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max aspect-square'
-                    )}
-                    key={i}
-                  >
-                    <div className="w-full h-full bg-newSep rounded-[6px] animate-pulse" />
-                  </div>
-                ))}
-              </>
-            )}
-            {data?.results
-              ?.filter((f: any) => {
-                if (type === 'video') {
-                  return hasExtension(f.path, 'mp4');
-                } else if (type === 'image') {
-                  return !hasExtension(f.path, 'mp4');
-                }
-                return true;
-              })
-              .map((media: any) => (
-                <div
-                  className={clsx(
-                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
-                    !standalone && 'cursor-pointer'
-                  )}
-                  key={media.id}
-                >
-                  <div
-                    className={clsx(
-                      'w-full h-full rounded-[6px] border-[4px] relative',
-                      !!selected.find((p) => p.id === media.id)
-                        ? 'border-[#612BD3]'
-                        : 'border-transparent'
-                    )}
-                    onClick={addRemoveSelected(media)}
-                  >
-                    {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
-                        {selected.findIndex((z: any) => z.id === media.id) + 1}
-                      </div>
-                    ) : (
-                      <DeleteCircleIcon
-                        className="cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]"
-                        onClick={deleteImage(media)}
-                      />
-                    )}
-                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
-                    <div className="w-full h-full rounded-[6px] overflow-hidden relative">
-                      <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
-                        <div
-                          onClick={maximize(media)}
-                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
-                        >
-                          <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                              fill="#F1F5F9"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      {hasExtension(media.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media.path)} />
-                      ) : (
-                        <img
-                          width="100%"
-                          height="100%"
-                          className="w-full h-full object-cover"
-                          src={mediaDirectory.set(media.path)}
-                          alt="media"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-        {(data?.pages || 0) > 1 && (
-          <Pagination
-            current={page}
-            totalPages={data?.pages}
-            setPage={setPage}
-          />
-        )}
-        {!standalone && (
-          <div className="flex justify-end mt-[32px] gap-[8px]">
-            <button
-              onClick={() => modals.closeCurrent()}
-              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
-            >
-              {t('cancel', 'Cancel')}
-            </button>
-            {!isLoading && !!data?.results?.length && (
-              <button
-                onClick={standalone ? () => {} : addMedia}
-                disabled={selected.length === 0}
-                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px]"
-              >
-                {t('add_selected_media', 'Add selected media')}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </DropFiles>
-  );
-};
 export const MultiMediaComponent: FC<{
   label: string;
   description: string;
   mediaNotAvailable?: boolean;
   dummy: boolean;
+  // The agent composer draws the toolbar buttons as ghosts inside its frame;
+  // the post composer keeps its filled pills. Same buttons, same handlers.
+  ghost?: boolean;
+  // Agent splits thumbs (above the textarea) from the toolbar (inside controls).
+  // Post composer leaves this unset and renders both together.
+  ghostPart?: 'thumbs' | 'toolbar' | 'all';
   allData: {
     content: string;
     id?: string;
@@ -672,10 +121,14 @@ export const MultiMediaComponent: FC<{
     value,
     allData,
     dummy,
+    ghost,
+    ghostPart = 'all',
     toolBar,
     information,
     mediaNotAvailable,
   } = props;
+  const showThumbs = !ghost || ghostPart === 'all' || ghostPart === 'thumbs';
+  const showToolbar = !ghost || ghostPart === 'all' || ghostPart === 'toolbar';
   const user = useUser();
   const modals = useModals();
   const t = useT();
@@ -752,102 +205,192 @@ export const MultiMediaComponent: FC<{
     }
   }, [changeMedia, t]);
 
+  if (ghost && ghostPart === 'thumbs' && !currentMedia?.length) {
+    return null;
+  }
+
   return (
     <>
-      <div className="b1 flex flex-col gap-[8px] rounded-bl-[8px] select-none w-full">
-        <div className="flex gap-[10px] px-[12px]">
-          {!!currentMedia && (
-            <ReactSortable
-              list={currentMedia}
-              setList={(value) =>
-                onChange({ target: { name: 'upload', value } })
-              }
-              className="flex gap-[10px] sortable-container"
-              animation={200}
-              swap={true}
-              handle=".dragging"
-            >
-              {currentMedia.map((media, index) => (
-                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
-                    <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
+      <div
+        className={clsx(
+          'b1 flex select-none w-full',
+          ghost && ghostPart === 'thumbs'
+            ? 'flex-wrap'
+            : 'flex-col gap-[8px] rounded-bl-[8px]'
+        )}
+      >
+        {showThumbs && (
+          <div
+            className={clsx(
+              'flex',
+              ghost
+                ? 'flex-wrap gap-[7px] pb-[3px]'
+                : 'gap-[10px] px-[12px]'
+            )}
+          >
+            {!!currentMedia && (
+              <ReactSortable
+                list={currentMedia}
+                setList={(next) =>
+                  onChange({ target: { name: 'upload', value: next } })
+                }
+                className={clsx(
+                  'sortable-container flex',
+                  ghost ? 'flex-wrap gap-[7px]' : 'gap-[10px]'
+                )}
+                animation={200}
+                swap={true}
+                handle=".dragging"
+              >
+                {currentMedia.map((media, index) => (
+                  <div
+                    key={media.id}
+                    className={clsx(
+                      'relative flex cursor-pointer transition-all',
+                      ghost
+                        ? 'h-[58px] w-[58px] rounded-[9px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)]'
+                        : 'h-[40px] w-[40px] rounded-[5px] border-2 border-tableBorder'
+                    )}
+                  >
+                    {!ghost && (
+                      <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
+                    )}
 
-                    <div className="w-full h-full relative group">
-                      <div
-                        onClick={async () => {
-                          modals.openModal({
-                            title: t('media_settings', 'Media Settings'),
-                            children: (close) => (
-                              <MediaComponentInner
-                                media={media as any}
-                                onClose={close}
-                                onSelect={(value: any) => {
-                                  onChange({
-                                    target: {
-                                      name: 'upload',
-                                      value: currentMedia.map((p) => {
-                                        if (p.id === media.id) {
-                                          return {
-                                            ...p,
-                                            ...value,
-                                          };
-                                        }
-                                        return p;
-                                      }),
-                                    },
-                                  });
-                                }}
-                              />
-                            ),
-                          });
-                        }}
-                        className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
-                      >
-                        <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
-                      </div>
+                    <div className="w-full h-full relative group overflow-hidden rounded-[inherit]">
+                      {!ghost && (
+                        <div
+                          onClick={async () => {
+                            modals.openModal({
+                              title: t('change_alt_text', 'Change alt text'),
+                              children: (close) => (
+                                <MediaComponentInner
+                                  media={media as any}
+                                  onClose={close}
+                                  onSelect={(next: any) => {
+                                    onChange({
+                                      target: {
+                                        name: 'upload',
+                                        value: currentMedia.map((p) => {
+                                          if (p.id === media.id) {
+                                            return {
+                                              ...p,
+                                              ...next,
+                                            };
+                                          }
+                                          return p;
+                                        }),
+                                      },
+                                    });
+                                  }}
+                                />
+                              ),
+                            });
+                          }}
+                          className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
+                        >
+                          <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
+                        </div>
+                      )}
                       {hasExtension(media?.path, 'mp4') ? (
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img
-                          className="w-full h-full object-cover rounded-[4px]"
+                          className={clsx(
+                            'w-full h-full object-cover',
+                            ghost ? 'rounded-[9px]' : 'rounded-[4px]'
+                          )}
                           src={mediaDirectory.set(media?.path)}
                         />
                       )}
                     </div>
 
-                    <CloseCircleIcon
-                      onClick={clearMedia(index)}
-                      className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
-                    />
+                    {ghost ? (
+                      <button
+                        type="button"
+                        onClick={clearMedia(index)}
+                        aria-label="Remove"
+                        className="absolute -end-[5px] -top-[5px] z-[20] grid h-[17px] w-[17px] place-items-center rounded-full bg-pqWarn text-[10px] font-[700] leading-none text-pqOnBrand"
+                      >
+                        ×
+                      </button>
+                    ) : (
+                      <CloseCircleIcon
+                        onClick={clearMedia(index)}
+                        className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
+                      />
+                    )}
                   </div>
-              ))}
-            </ReactSortable>
+                ))}
+              </ReactSortable>
+            )}
+          </div>
+        )}
+        {showToolbar && (
+        <div
+          className={clsx(
+            'flex gap-[8px] w-full b1',
+            ghost
+              ? 'flex-wrap items-center'
+              : 'px-[12px] border-t border-newColColor text-textColor'
           )}
-        </div>
-        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        >
           {!mediaNotAvailable && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div
+              className={clsx(
+                'flex b2 items-center gap-[4px]',
+                !ghost && 'py-[10px]'
+              )}
+            >
               <div
+                // The media picker opens from here and nowhere else, so the
+                // screenshot tool needs a handle on it. The icons inside it had
+                // never been seen for exactly this reason.
+                data-pq="insert-media"
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className={clsx(
+                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  ghost
+                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                )}
               >
                 <div className="flex gap-[8px] items-center">
                   <div>
                     <InsertMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] maxMedia:hidden block">
-                    {t('insert_media', 'Insert Media')}
+                  <div
+                    className={clsx(
+                      'font-[600]',
+                      ghost
+                        ? 'text-[12px] whitespace-nowrap'
+                        : 'text-[10px] maxMedia:hidden block'
+                    )}
+                  >
+                    {t('insert_media', 'Insert media')}
                   </div>
                 </div>
               </div>
               <div
                 onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className={clsx(
+                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  ghost
+                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                )}
               >
                 <div className="flex gap-[5px] items-center">
                   <div>
                     <DesignMediaIcon />
                   </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
+                  <div
+                    className={clsx(
+                      'font-[600]',
+                      ghost
+                        ? 'text-[12px] whitespace-nowrap'
+                        : 'text-[10px] iconBreak:hidden block'
+                    )}
+                  >
                     {t('design_media', 'Design Media')}
                   </div>
                 </div>
@@ -857,8 +400,8 @@ export const MultiMediaComponent: FC<{
 
               {!!user?.tier?.ai && (
                 <>
-                  <AiImage value={text} onChange={changeMedia} />
-                  <AiVideo value={text} onChange={changeMedia} />
+                  <AiImage ghost={ghost} value={text} onChange={changeMedia} />
+                  <AiVideo ghost={ghost} value={text} onChange={changeMedia} />
                 </>
               )}
             </div>
@@ -879,8 +422,9 @@ export const MultiMediaComponent: FC<{
             </div>
           )}
         </div>
+        )}
       </div>
-      <div className="text-[12px] text-red-400">{error}</div>
+      {showToolbar && <div className="text-[12px] text-red-400">{error}</div>}
     </>
   );
 };
@@ -972,8 +516,8 @@ export const MediaComponent: FC<{
   }, [value]);
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="text-[14px]">{label}</div>
-      <div className="text-[12px]">{description}</div>
+      <div className="text-[14px] text-pqMuted">{label}</div>
+      <div className="text-[12px] text-pqSoft">{description}</div>
       {!!currentMedia && (
         <div className="my-[20px] cursor-pointer w-[200px] h-[200px] border-2 border-tableBorder">
           <img

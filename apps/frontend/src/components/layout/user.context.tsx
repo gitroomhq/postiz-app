@@ -3,6 +3,7 @@
 import { createContext, FC, ReactNode, useContext } from 'react';
 import { User } from '@prisma/client';
 import {
+  AnyTier,
   pricing,
   PricingInnerInterface,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -24,7 +25,7 @@ export const UserContext = createContext<
 export const ContextWrapper: FC<{
   user: User & {
     orgId: string;
-    tier: 'FREE' | 'STANDARD' | 'PRO' | 'ULTIMATE' | 'TEAM';
+    tier: AnyTier;
     role: 'USER' | 'ADMIN' | 'SUPERADMIN';
     publicApi: string;
     totalChannels: number;

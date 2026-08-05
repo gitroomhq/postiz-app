@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -16,9 +16,15 @@ import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import {
+  ProviderGuide,
+  useProviderGuides,
+} from '@gitroom/frontend/components/launches/provider.guides';
 import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-card';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
@@ -46,6 +52,9 @@ export const AddProviderButton: FC<{
   return (
     <div className="flex group-[.sidebar]:block gap-[8px]">
       <button
+        // A stable hook for the screenshot tool: this dialog cannot be reached
+        // by URL, and the migration has to be able to photograph it.
+        data-pq="add-channel"
         className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-btnText bg-btnSimple h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[8px] gap-[8px]"
         onClick={add}
       >
@@ -121,7 +130,7 @@ export const UrlModal: FC<{
     gotoUrl(data.url);
   }, []);
   return (
-    <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
+    <div className="rounded-[4px] border border-pqLine bg-pqTableHeader px-[16px] pb-[16px] relative">
       <TopTitle title={`Instance URL`} />
       <button
         onClick={() => modals.closeCurrent()}
@@ -350,8 +359,8 @@ const ChromeExtensionWarning: FC<{
           We will store your cookies securely to facilitate the connection.
         </li>
         <li>
-          PostQueen does not take responsibility for any issues arising or account
-          termination due to the use of this method.
+          PostQueen does not take responsibility for any issues arising or
+          account termination due to the use of this method.
         </li>
       </ul>
       <div className="flex gap-[10px] mt-[8px]">
@@ -380,14 +389,395 @@ const ChromeExtensionWarning: FC<{
   );
 };
 
+/**
+ * The screen between picking a provider and actually connecting it.
+ *
+ * It exists for one reason: every precondition here — Instagram needing a
+ * Business account, WordPress needing an application password rather than a
+ * login password, Bluesky not supporting 2FA — used to be discovered *after*
+ * a failed round trip through someone else's login screen.
+ */
+const CONNECT_MODE_ICONS = {
+  self: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
+  invite:
+    'M10.2 13.8a4.2 4.2 0 0 0 6.3.45l2.4-2.4a4.2 4.2 0 0 0-5.95-5.95l-1.4 1.4M13.8 10.2a4.2 4.2 0 0 0-6.3-.45l-2.4 2.4a4.2 4.2 0 0 0 5.95 5.95l1.4-1.4',
+} as const;
+
+/** Invite-by-link step — design shows URL + Copy link, not Continue/OAuth. */
+const InviteLinkStep: FC<{
+  item: { identifier: string; name: string };
+  hint?: string;
+  onBack: () => void;
+  onboarding?: boolean;
+}> = ({ item, hint, onBack, onboarding }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const identifier = item.identifier;
+    (async () => {
+      setLoading(true);
+      setFailed(false);
+      setUrl('');
+      try {
+        // Same endpoint as connect-myself invite copy path in getSocialLink.
+        const res = await fetch(
+          `/integrations/social/${identifier}${
+            onboarding ? '?onboarding=true' : ''
+          }`
+        );
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || body?.err || !body?.url) {
+          setFailed(true);
+          setUrl('');
+          // 402/406 already showed a global dialog; avoid a second toast there.
+          if (res.status !== 402 && res.status !== 406 && res.status !== 499) {
+            toaster.show(
+              t(
+                'could_not_connect_to_platform',
+                'Could not connect to the platform'
+              ),
+              'warning'
+            );
+          }
+          return;
+        }
+        setUrl(body.url);
+      } catch {
+        if (!cancelled) {
+          setFailed(true);
+          setUrl('');
+          toaster.show(
+            t(
+              'could_not_connect_to_platform',
+              'Could not connect to the platform'
+            ),
+            'warning'
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally omit toaster/t — remounting the fetch on every t identity
+    // change left Loading stuck when a dialog cancelled the previous request.
+  }, [fetch, item.identifier, onboarding, retryKey]);
+
+  const copyLink = useCallback(() => {
+    if (!url) return;
+    copy(url);
+    toaster.show(
+      t(
+        'invite_link_copied_to_clipboard',
+        'Invite link copied to clipboard, link will be available for 1 hour'
+      ),
+      'success'
+    );
+  }, [url, toaster, t]);
+
+  return (
+    <div
+      data-provider-step={item.identifier}
+      data-provider-invite="1"
+      data-view="connect-step"
+      className="flex w-full max-w-[460px] flex-col gap-[18px] self-start"
+    >
+      <div className="flex flex-col items-start gap-[14px]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex h-[32px] w-fit items-center gap-[6px] rounded-[9px] bg-pqSettings pe-[12px] ps-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t('all_platforms', 'All platforms')}
+        </button>
+        <div className="flex items-center gap-[11px]">
+          <img
+            src={`/icons/platforms/${item.identifier}.png`}
+            alt=""
+            className="h-[32px] w-[32px] shrink-0 rounded-full"
+          />
+          <span className="text-[16px] font-[600] -tracking-[0.01em]">
+            {capitalize(item.name)}
+          </span>
+        </div>
+      </div>
+
+      {!!hint && (
+        <span className="text-[13px] leading-[1.55] text-pqMuted">{hint}</span>
+      )}
+
+      <div className="flex flex-col gap-[14px] rounded-[12px] bg-pqInner p-[18px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <span className="text-[14px] leading-[1.6] text-pqMuted">
+          {t(
+            'send_this_invite_link',
+            'Send this link to whoever owns the account. They connect it themselves and it lands in your workspace — the link works for one hour.'
+          )}
+        </span>
+        <div className="flex h-[42px] items-center gap-[10px] rounded-[10px] bg-pqBg pe-[6px] ps-[14px] shadow-[inset_0_0_0_1px_var(--border)]">
+          <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-pqMuted">
+            {loading
+              ? t('loading', 'Loading…')
+              : url ||
+                t('invite_link_unavailable', 'Link unavailable')}
+          </span>
+          {failed && !loading ? (
+            <button
+              type="button"
+              onClick={() => setRetryKey((n) => n + 1)}
+              className="h-[32px] shrink-0 rounded-[8px] bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+            >
+              {t('retry', 'Retry')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-provider-copy-invite="1"
+              onClick={copyLink}
+              disabled={!url || loading}
+              className="h-[32px] shrink-0 rounded-[8px] bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-50"
+            >
+              {t('copy_link', 'Copy link')}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-[10px]">
+          <button
+            type="button"
+            onClick={onBack}
+            className="h-[38px] rounded-[10px] bg-pqBtnSimple px-[18px] text-[13.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+          >
+            {t('back', 'Back')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProviderSetupStep: FC<{
+  item: {
+    identifier: string;
+    name: string;
+    isExternal: boolean;
+    isWeb3: boolean;
+    isChromeExtension?: boolean;
+    trialLocked?: boolean;
+    toolTip?: string;
+    customFields?: Array<{ key: string; label: string }>;
+  };
+  guide: ProviderGuide;
+  locked: boolean;
+  inviteMode: boolean;
+  onboarding?: boolean;
+  onBack: () => void;
+  onConnect: () => void;
+}> = ({ item, guide, locked, inviteMode, onboarding, onBack, onConnect }) => {
+  const t = useT();
+  const needsFields = !!item.customFields?.length;
+  const inviteHint = item.toolTip || guide.requirement || guide.summary;
+
+  if (inviteMode && !locked) {
+    return (
+      <InviteLinkStep
+        item={item}
+        hint={inviteHint}
+        onBack={onBack}
+        onboarding={onboarding}
+      />
+    );
+  }
+
+  return (
+    <div
+      data-provider-step={item.identifier}
+      data-view="connect-step"
+      className="flex w-full max-w-[460px] flex-col gap-[18px] self-start"
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex h-[32px] w-fit items-center gap-[6px] rounded-[9px] bg-pqSettings pe-[12px] ps-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {t('all_platforms', 'All platforms')}
+      </button>
+
+      <div className="flex items-center gap-[14px]">
+        <img
+          src={`/icons/platforms/${item.identifier}.png`}
+          alt=""
+          className="h-[44px] w-[44px] rounded-full"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="text-[19px] font-[600] -tracking-[0.01em]">
+            {capitalize(item.name)}
+          </div>
+          <div className="mt-[2px] text-[13px] leading-[1.5] text-pqMuted">
+            {guide.summary}
+          </div>
+        </div>
+      </div>
+
+      {!!guide.requirement && (
+        <div
+          data-provider-requirement="1"
+          className="flex gap-[10px] rounded-pqSm bg-pqAmberSoft p-[12px] text-[12.5px] leading-[1.55] text-pqText"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            aria-hidden="true"
+            className="mt-[1px] shrink-0 text-pqAmber"
+          >
+            <path
+              d="M12 8v5m0 3.5h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>{guide.requirement}</span>
+        </div>
+      )}
+
+      {!!guide.steps?.length && (
+        <ol className="flex flex-col gap-[10px]">
+          {guide.steps.map((line, index) => (
+            <li key={line} className="flex gap-[10px]">
+              <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-pqBrandSoft text-[10.5px] font-[700] text-pqBrand">
+                {index + 1}
+              </span>
+              <span className="text-[12.5px] leading-[1.55] text-pqMuted">
+                {line}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {!!guide.fields && (
+        <div className="flex flex-col gap-[6px]">
+          {(item.customFields || []).map((field) =>
+            guide.fields?.[field.key] ? (
+              <div key={field.key} className="text-[12.5px] text-pqMuted">
+                <span className="font-[600] text-pqText">{field.label}</span>
+                {' — '}
+                {guide.fields[field.key]}
+              </div>
+            ) : null
+          )}
+        </div>
+      )}
+
+      {!!guide.link && (
+        <a
+          href={guide.link.href}
+          target="_blank"
+          rel="noreferrer"
+          className="w-fit text-[12.5px] font-[600] text-pqBrand hover:underline"
+        >
+          {guide.link.label} →
+        </a>
+      )}
+
+      {locked ? (
+        <TrialLock name={capitalize(item.name)} />
+      ) : (
+        <button
+          type="button"
+          data-provider-connect="1"
+          onClick={onConnect}
+          className="h-[40px] w-fit rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+        >
+          {needsFields
+            ? t('enter_details', 'Enter details')
+            : t('continue_to', 'Continue to {{name}}', {
+                name: capitalize(item.name),
+              })}
+        </button>
+      )}
+    </div>
+  );
+};
+
+/**
+ * What a trialing organization sees instead of a Connect button.
+ * Shared TrialLockCard LOOK; FinishTrial opens from the primary CTA.
+ * No fake trial-end date — schema only has isTrailing / allowTrial.
+ */
+const TrialLock: FC<{ name: string }> = ({ name }) => {
+  const t = useT();
+  return (
+    <div data-provider-locked="1">
+      <TrialLockCard
+        variant="inline"
+        name={name}
+        title={t(
+          'provider_unlocks_after_your_trial',
+          '{{name}} unlocks after your trial',
+          { name }
+        )}
+        description={t(
+          'you_will_be_logged_in_into_your_current_account_if_you_would_like_a_different_account_change_it_first_on_x',
+          'You will be logged in into your current account, if you would like a different account, change it first on {{name}}',
+          { name }
+        )}
+        perks={[
+          t('x_lock_perk_publish', 'Publish and thread straight to {{name}}', {
+            name,
+          }),
+          t('x_lock_perk_plugs', 'Auto-plugs and reply automations'),
+          t(
+            'x_lock_perk_analytics',
+            '{{name}} analytics — impressions, engagement, follows',
+            { name }
+          ),
+        ]}
+      />
+    </div>
+  );
+};
+
 export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
     name: string;
     toolTip?: string;
+    category?: string;
     isExternal: boolean;
     isWeb3: boolean;
     isChromeExtension?: boolean;
+    trialLocked?: boolean;
     extensionCookies?: Array<{
       name: string;
       domain: string;
@@ -408,8 +798,26 @@ export const AddProviderComponent: FC<{
   update?: () => void;
   onboarding?: boolean;
   isMobile?: boolean;
+  onInviteModeChange?: (invite: boolean) => void;
+  /** Fires when a provider connect/continue step opens or closes (scroll reset). */
+  onStepChange?: (open: boolean) => void;
 }> = (props) => {
-  const { update, social, article, onboarding, isMobile } = props;
+  const { update, social, article, onboarding, isMobile, onStepChange } = props;
+  // Which provider's setup step is open. The grid used to connect on click,
+  // which meant a precondition you did not know about — an Instagram account
+  // that is not a Business account, an X session on the wrong login — only
+  // surfaced after a round trip through somebody else's OAuth screen.
+  const [step, setStep] = useState<(typeof social)[number] | null>(null);
+  // Which of the two ways in is active. It arrives as a prop because the
+  // channels column has a button for each, but the design lets you switch
+  // without closing — picking the wrong one used to mean reopening the dialog.
+  const [inviteMode, setInviteMode] = useState(!!props.invite);
+
+  useEffect(() => {
+    onStepChange?.(!!step);
+  }, [step, onStepChange]);
+
+  const { guides, fallback } = useProviderGuides();
   const { isGeneral, extensionId } = useVariables();
   const toaster = useToaster();
   const router = useRouter();
@@ -453,7 +861,9 @@ export const AddProviderComponent: FC<{
             },
             children: (
               <div
-                {...(isMobile ? { className: 'h-full bg-newBgColor p-[20px]' } : {})}
+                {...(isMobile
+                  ? { className: 'h-full bg-pqBg p-[20px]' }
+                  : {})}
               >
                 <Web3Providers
                   onComplete={(code, newState) => {
@@ -653,7 +1063,9 @@ export const AddProviderComponent: FC<{
             },
             children: (
               <div
-                {...(isMobile ? { className: 'h-full bg-newBgColor p-[20px]' } : {})}
+                {...(isMobile
+                  ? { className: 'h-full bg-pqBg p-[20px]' }
+                  : {})}
               >
                 <CustomVariables
                   identifier={identifier}
@@ -672,95 +1084,215 @@ export const AddProviderComponent: FC<{
   );
 
   const t = useT();
+  // Whether *this* organization is trialing. The provider only says whether it
+  // is lockable at all; the two together decide the tile.
+  const user = useUser();
+
+  // The design sorts this grid into five groups. The category comes from the
+  // provider itself (`social.integrations.interface.ts`), not from a list kept
+  // here — so a provider added without one lands in "Other" rather than
+  // disappearing from the only screen that can connect it.
+  const groups = useMemo(() => {
+    const visible = social.filter((item) =>
+      !inviteMode
+        ? true
+        : !item.isExternal &&
+          !item.isWeb3 &&
+          !item.isChromeExtension &&
+          !item.customFields
+    );
+    const order: Array<[string, string]> = [
+      ['social', t('category_social', 'Social')],
+      ['chat', t('category_chat', 'Chat & communities')],
+      ['video', t('category_video', 'Video & streaming')],
+      ['business', t('category_business', 'Business & portfolio')],
+      ['publishing', t('category_publishing', 'Blogs & newsletters')],
+    ];
+    const known = new Set(order.map(([key]) => key));
+    return [
+      ...order.map(([key, label]) => ({
+        key,
+        label,
+        items: visible.filter((item) => item.category === key),
+      })),
+      {
+        key: 'other',
+        label: t('category_other', 'Other'),
+        items: visible.filter(
+          (item) => !item.category || !known.has(item.category)
+        ),
+      },
+    ].filter((group) => group.items.length);
+  }, [social, inviteMode, t]);
+
+  if (step) {
+    const guide = guides[step.identifier] || fallback(capitalize(step.name));
+    return (
+      <ProviderSetupStep
+        item={step}
+        guide={guide}
+        locked={!!step.trialLocked && !!user?.isTrailing}
+        inviteMode={inviteMode}
+        onboarding={onboarding}
+        onBack={() => setStep(null)}
+        onConnect={getSocialLink(
+          inviteMode,
+          step.identifier,
+          step.isExternal,
+          step.isWeb3,
+          step.isChromeExtension,
+          step.customFields
+        )}
+      />
+    );
+  }
 
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
-      <div className="flex flex-col">
-        <div
-          className={clsx(
-            isMobile && 'gap-[20px] flex flex-col',
-            !isMobile &&
-              'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
-            isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
-          )}
-        >
-          {social
-            .filter((item) => {
-              if (!props.invite) {
-                return true;
-              }
-
-              return (
-                !item.isExternal &&
-                !item.isWeb3 &&
-                !item.isChromeExtension &&
-                !item.customFields
-              );
-            })
-            .map((item) => (
-              <div
-                key={item.identifier}
-                onClick={getSocialLink(
-                  props.invite,
-                  item.identifier,
-                  item.isExternal,
-                  item.isWeb3,
-                  item.isChromeExtension,
-                  item.customFields
-                )}
-                {...(!!item.toolTip
-                  ? {
-                      'data-tooltip-id': 'tooltip',
-                      'data-tooltip-content': item.toolTip,
-                    }
-                  : {})}
-                className={clsx(
-                  isMobile
-                    ? 'flex-row h-[72px] p-[16px]'
-                    : 'flex-col p-[10px] h-[100px] justify-center',
-                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
-                )}
+    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative">
+      {!onboarding && (
+        <div className="flex w-fit items-center gap-[3px] self-start rounded-[11px] bg-pqSettings p-[3px]">
+          {(
+            [
+              [false, t('connect_myself', 'Connect myself'), CONNECT_MODE_ICONS.self],
+              [true, t('invite_by_link', 'Invite by link'), CONNECT_MODE_ICONS.invite],
+            ] as const
+          ).map(([mode, label, icon]) => (
+            <button
+              key={label}
+              type="button"
+              data-connect-mode={mode ? 'invite' : 'self'}
+              onClick={() => {
+                setInviteMode(mode);
+                props.onInviteModeChange?.(mode);
+              }}
+              className={clsx(
+                'flex h-[32px] items-center gap-[7px] rounded-[9px] px-[14px] text-[12.5px] font-[600] transition-colors',
+                inviteMode === mode
+                  ? 'bg-pqInner text-pqText shadow-pqE1'
+                  : 'bg-transparent text-pqMuted hover:text-pqText'
+              )}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                className="shrink-0"
+                aria-hidden="true"
               >
-                <div>
-                  {item.identifier === 'youtube' ? (
-                    <img src={`/icons/platforms/youtube.svg`} />
-                  ) : (
-                    <img
-                      className={clsx(
-                        'w-[32px] h-[32px]',
-                        item.identifier !== 'google_my_business' &&
-                          'rounded-full'
-                      )}
-                      src={`/icons/platforms/${item.identifier}.png`}
-                    />
-                  )}
-                </div>
+                <path
+                  d={icon}
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-col">
+        {groups.map((group) => (
+          <div key={group.key} className="flex flex-col">
+            {!onboarding && groups.length > 1 && (
+              <div className="mb-[10px] mt-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqSoft first:mt-0">
+                {group.label}
+              </div>
+            )}
+            <div
+              className={clsx(
+                isMobile && 'gap-[20px] flex flex-col',
+                !isMobile &&
+                  'grid gap-[12px] justify-items-center justify-center',
+                isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-4'
+              )}
+            >
+              {group.items.map((item) => (
                 <div
+                  key={item.identifier}
+                  data-provider={item.identifier}
+                  // Still clickable when locked: the step behind it is where the
+                  // reason lives. A tile that does nothing when pressed teaches
+                  // nobody why.
+                  {...(item.trialLocked && user?.isTrailing
+                    ? { 'data-provider-trial-locked': '1' }
+                    : {})}
+                  onClick={() => setStep(item)}
+                  {...(!!item.toolTip
+                    ? {
+                        'data-tooltip-id': 'tooltip',
+                        'data-tooltip-content': item.toolTip,
+                      }
+                    : {})}
                   className={clsx(
-                    isMobile ? '' : 'whitespace-pre-wrap',
-                    'text-center'
+                    isMobile
+                      ? 'flex-row h-[72px] p-[16px]'
+                      : 'h-[104px] flex-col justify-center px-[10px] py-[12px]',
+                    'relative flex w-full cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqInner text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                   )}
                 >
-                  {item.name}
-                  {!!item.toolTip && !isMobile && (
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 26 26"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="absolute top-[10px] end-[10px]"
-                    >
-                      <path
-                        d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
-                        fill="currentColor"
+                  <div className="relative">
+                    {item.trialLocked && user?.isTrailing && (
+                      <span className="absolute -end-[3px] -top-[3px] z-[2] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-pqInner text-pqMuted">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="10"
+                          height="10"
+                          fill="none"
+                        >
+                          <path
+                            d="M7 10V8a5 5 0 0 1 10 0v2M5 10h14v10H5z"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    )}
+                    {item.identifier === 'youtube' ? (
+                      <img src={`/icons/platforms/youtube.svg`} />
+                    ) : (
+                      <img
+                        className={clsx(
+                          'w-[32px] h-[32px]',
+                          item.identifier !== 'google_my_business' &&
+                            'rounded-full'
+                        )}
+                        src={`/icons/platforms/${item.identifier}.png`}
                       />
-                    </svg>
-                  )}
+                    )}
+                  </div>
+                  <div
+                    className={clsx(
+                      isMobile ? '' : 'whitespace-pre-wrap',
+                      'text-center'
+                    )}
+                  >
+                    {item.name}
+                    {!!item.toolTip && !isMobile && (
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 26 26"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="absolute top-[10px] end-[10px]"
+                      >
+                        <path
+                          d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-        </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

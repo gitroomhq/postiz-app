@@ -2,8 +2,12 @@ import { LayoutComponent } from '@gitroom/frontend/components/new-layout/layout.
 
 export default async function Layout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
-  return <LayoutComponent>{children}</LayoutComponent>;
+  return (
+    <LayoutComponent overlay={modal}>{children}</LayoutComponent>
+  );
 }

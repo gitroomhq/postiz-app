@@ -2,11 +2,17 @@
 
 import { EventEmitter } from 'events';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import {
+  ModalFormActions,
+  modalLabelClass,
+  modalTextareaClass,
+} from '@gitroom/frontend/components/layout/new-modal';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Button } from '@gitroom/react/form/button';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -254,7 +260,7 @@ export const CreateThumbnail: FC<{
             <button
               onClick={captureFrame}
               disabled={isCapturing}
-              className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-pqSm bg-pqBrand px-[24px] py-[8px] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
             </button>
@@ -309,6 +315,7 @@ export const MediaComponentInner: FC<{
     | undefined;
 }> = (props) => {
   const { onClose, onSelect, media } = props;
+  const t = useT();
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   const newFetch = useFetch();
   const [newThumbnail, setNewThumbnail] = useState<string | null>(null);
@@ -363,17 +370,26 @@ export const MediaComponentInner: FC<{
   }, [altText, newThumbnail, thumbnail, thumbnailTimestamp]);
 
   return (
-    <div className="mt-[10px] flex flex-col gap-[20px]">
-      <div className="flex flex-col space-y-2">
-        <label className="text-sm text-textColor font-medium">
-          Alt Text (for accessibility)
+    <div className="mt-[4px] flex flex-col gap-[16px]">
+      <p className="text-[13.5px] leading-[1.55] text-pqMuted">
+        {t(
+          'alt_text_subtitle',
+          'Describe the image for screen readers and platforms that support alt text.'
+        )}
+      </p>
+      <div className="flex flex-col gap-[8px]">
+        <label className={modalLabelClass}>
+          {t('alt_text', 'Alt text')}
         </label>
-        <input
-          type="text"
+        <textarea
           value={altText}
           onChange={(e) => setAltText(e.target.value)}
-          placeholder="Describe the image/video content..."
-          className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
+          placeholder={t(
+            'alt_text_placeholder',
+            'A product shot of the v3.2 dashboard'
+          )}
+          className={modalTextareaClass}
+          rows={4}
         />
       </div>
       {hasExtension(media?.path, 'mp4') && (
@@ -401,7 +417,7 @@ export const MediaComponentInner: FC<{
                   <button
                     disabled={loading}
                     onClick={() => setIsEditingThumbnail(true)}
-                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
+                    className="flex-1 rounded-pqSm border border-pqBorder bg-pqSettings px-[24px] py-[8px] text-pqText transition-colors hover:bg-pqHover"
                   >
                     {media.thumbnail || newThumbnail
                       ? 'Edit Thumbnail'
@@ -414,7 +430,7 @@ export const MediaComponentInner: FC<{
                         setNewThumbnail(null);
                         setThumbnail(null);
                       }}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700"
+                      className="flex-1 rounded-pqSm border border-pqDangerLine bg-pqDangerSoft px-[24px] py-[8px] text-pqDanger transition-colors hover:bg-pqDangerChip"
                     >
                       Clear Thumbnail
                     </button>
@@ -427,7 +443,7 @@ export const MediaComponentInner: FC<{
                 <div className="flex justify-start">
                   <button
                     onClick={() => setIsEditingThumbnail(false)}
-                    className="text-textColor hover:text-white transition-colors flex items-center space-x-2"
+                    className="text-textColor hover:text-pqText transition-colors flex items-center space-x-2"
                   >
                     <svg
                       width="16"
@@ -473,21 +489,15 @@ export const MediaComponentInner: FC<{
       )}
 
       {!isEditingThumbnail && (
-        <div className="flex space-x-2 !mt-[20px]">
-          <button
+        <ModalFormActions onCancel={onClose}>
+          <Button
             disabled={loading}
-            onClick={onClose}
-            className="flex-1 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
-          >
-            Cancel
-          </button>
-          <button
             onClick={save}
-            className="flex-1 bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+            className="h-[44px] flex-1 rounded-[10px]"
           >
-            Save Changes
-          </button>
-        </div>
+            {t('save', 'Save')}
+          </Button>
+        </ModalFormActions>
       )}
     </div>
   );

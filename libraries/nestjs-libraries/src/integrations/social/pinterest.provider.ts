@@ -28,6 +28,7 @@ export class PinterestProvider
   implements SocialProvider
 {
   identifier = 'pinterest';
+  category = 'business' as const;
   name = 'Pinterest';
   isBetweenSteps = false;
   scopes = [

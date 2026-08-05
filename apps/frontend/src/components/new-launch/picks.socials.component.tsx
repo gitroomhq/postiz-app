@@ -57,24 +57,24 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'relative flex cursor-pointer items-center justify-center rounded-full border-[2px] bg-pqSettings filter transition-all duration-500',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
                         ? 'grayscale border-transparent'
-                        : 'border-btnPrimary'
+                        : 'border-pqBrand'
                     )}
                   >
                     <ImageWithFallback
                       fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
                       className={clsx(
-                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
+                        'min-h-[42px] min-w-[42px] rounded-full border-[1.5px] transition-all',
                         selectedIntegrations.findIndex(
                           (p) => p.integration.id === integration.id
                         ) === -1
                           ? 'border-transparent'
-                          : 'border-newBgColor'
+                          : 'border-pqInner'
                       )}
                       alt={integration.identifier}
                       width={42}

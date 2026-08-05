@@ -908,10 +908,26 @@ enum State {
 }
 
 enum SubscriptionTier {
+  // Retired for new signups. These are permanent — not "until someone gets
+  // round to it".
+  //
+  // Postgres adds enum values safely but cannot drop one without recreating the
+  // type, and the deploy path is `prisma db push --accept-data-loss`
+  // (package.json), which would take `Subscription.subscriptionTier` with it.
+  // Nothing in `migrations/` ever runs, so there is no safe route to removing
+  // them and none is planned.
+  //
+  // Keeping them costs nothing: `retired: true` in pricing.ts is what stops
+  // them being sold, and `pnpm run command migrate:tiers` moves live rows onto
+  // the current names whenever the owner chooses to run it.
   STANDARD
-  PRO
   TEAM
   ULTIMATE
+  // Current.
+  CREATOR
+  GROWTH
+  PRO
+  AGENCY
 }
 
 enum Period {

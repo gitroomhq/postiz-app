@@ -27,6 +27,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 )
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
+  category = 'social' as const;
   name = 'LinkedIn';
   oneTimeToken = true;
 

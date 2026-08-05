@@ -22,7 +22,7 @@ export default async function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="bg-newBgColorInner text-newTextColor flex min-h-screen w-full">
+    <div className="bg-pqInner text-pqText flex min-h-screen w-full">
       <ReturnUrlComponent />
       <div className="flex flex-1 flex-col px-[24px] py-[28px] sm:px-[40px] lg:w-[46%] lg:max-w-[640px] lg:flex-none">
         <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">

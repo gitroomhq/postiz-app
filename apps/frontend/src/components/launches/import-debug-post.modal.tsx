@@ -128,7 +128,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
   return (
     <div className="flex flex-col gap-[16px] min-w-[500px]">
       <textarea
-        className="w-full h-[200px] p-[12px] rounded-[8px] bg-input border border-tableBorder text-textColor font-mono text-[13px] resize-y"
+        className="w-full h-[200px] p-[12px] rounded-[10px] bg-pqTableHeader border-0 text-pqText font-mono text-[13px] resize-y shadow-[inset_0_0_0_1px_var(--border)] outline-none focus:shadow-[inset_0_0_0_1px_var(--brand)]"
         placeholder={t(
           'paste_debug_json',
           'Paste the debug JSON copied from a failed post...'

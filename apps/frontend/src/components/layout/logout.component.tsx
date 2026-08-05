@@ -6,7 +6,15 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
+export const LogoutComponent: FC<{
+  isIcon?: boolean;
+  /**
+   * What the confirmation asks. The checkout passes its own, because leaving
+   * that screen loses the plan the person had picked and the design says so
+   * out loud; everywhere else the generic question is right.
+   */
+  confirmMessage?: string;
+}> = ({ isIcon, confirmMessage }) => {
   const fetch = useFetch();
   const { isGeneral, isSecured } = useVariables();
   const t = useT();
@@ -14,10 +22,11 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
   const logout = useCallback(async () => {
     if (
       await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_logout',
-          'Are you sure you want to logout?'
-        ),
+        confirmMessage ||
+          t(
+            'are_you_sure_you_want_to_logout',
+            'Are you sure you want to logout?'
+          ),
         t('yes_logout', 'Yes logout')
       )
     ) {

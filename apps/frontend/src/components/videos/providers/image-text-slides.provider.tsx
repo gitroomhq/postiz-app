@@ -101,7 +101,7 @@ const VoiceSelector: FC = () => {
   if (isLoading || !data?.voices?.length) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="text-sm text-gray-500">Loading voices...</div>
+        <div className="text-sm text-pqSoft">Loading voices...</div>
       </div>
     );
   }

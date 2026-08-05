@@ -7,6 +7,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 const delayOptions = [
   { value: 1, label: '1m' },
@@ -26,7 +27,11 @@ export const DelayComponent: FC<{
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [customValue, setCustomValue] = useState('');
-  
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(isOpen, 'end', { offsetPx: 10 });
+
   const isCustomDelay = currentDelay > 0 && !delayOptions.some((opt) => opt.value === currentDelay);
 
   useEffect(() => {
@@ -80,6 +85,7 @@ export const DelayComponent: FC<{
   return (
     <div ref={ref} className="relative">
       <div
+        ref={referenceRef}
         onClick={() => setIsOpen(!isOpen)}
         data-tooltip-id="tooltip"
         data-tooltip-content={
@@ -89,13 +95,16 @@ export const DelayComponent: FC<{
         }
         className={clsx(
           'cursor-pointer flex items-center gap-[4px]',
-          currentDelay > 0 && 'bg-[#D82D7E] text-white rounded-full'
+          currentDelay > 0 && 'bg-pqPink text-white rounded-full'
         )}
       >
         <DelayIcon />
       </div>
       {isOpen && (
-        <div className="z-[300] absolute end-0 top-[100%] w-[200px] bg-newBgColorInner p-[8px] menu-shadow translate-y-[10px] flex flex-col rounded-[8px]">
+        <div
+          ref={floatingRef}
+          className="z-[300] flex w-[200px] flex-col rounded-[8px] bg-newBgColorInner p-[8px] menu-shadow"
+        >
           <div className="grid grid-cols-4 gap-[4px]">
             {delayOptions.map((option) => (
               <div
@@ -103,7 +112,7 @@ export const DelayComponent: FC<{
                 key={option.value}
                 className={clsx(
                   'h-[32px] flex items-center justify-center rounded-[4px] cursor-pointer hover:bg-newBgColor text-[13px]',
-                  currentDelay === option.value && 'bg-[#612BD3] text-white hover:bg-[#612BD3]'
+                  currentDelay === option.value && 'bg-pqBrand text-white hover:bg-pqBrand'
                 )}
               >
                 {option.label}
@@ -120,8 +129,8 @@ export const DelayComponent: FC<{
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Custom min"
                 className={clsx(
-                  'flex-1 w-full h-[32px] px-[8px] rounded-[4px] bg-newBgColor border text-[13px] outline-none focus:border-[#612BD3]',
-                  isCustomDelay ? 'border-[#612BD3]' : 'border-newTextColor/10'
+                  'flex-1 w-full h-[32px] px-[8px] rounded-[4px] bg-newBgColor border text-[13px] outline-none focus:border-pqBrand',
+                  isCustomDelay ? 'border-pqBrand' : 'border-newTextColor/10'
                 )}
               />
               <button
@@ -133,7 +142,7 @@ export const DelayComponent: FC<{
                     setCustomValue('');
                   }
                 }}
-                className="h-[32px] px-[10px] rounded-[4px] bg-[#612BD3] text-white text-[12px] font-[600] hover:bg-[#612BD3]/80"
+                className="h-[32px] px-[10px] rounded-[4px] bg-pqBrand text-white text-[12px] font-[600] hover:bg-pqBrandHover"
               >
                 Set
               </button>

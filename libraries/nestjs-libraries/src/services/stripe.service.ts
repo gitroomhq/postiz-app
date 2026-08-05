@@ -6,8 +6,16 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { groupBy } from 'lodash';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import {
+  LIFETIME_PRICE,
+  nextLifetimeTier,
+  PaidTier,
+  pricing,
+  trialWindow,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
@@ -28,7 +36,10 @@ export class StripeService {
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    // For `paymentFailed` — a failed renewal has to reach the customer, and
+    // this is the same service the cancellation email already goes through.
+    private _notificationService: NotificationService
   ) {}
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
@@ -110,7 +121,10 @@ export class StripeService {
       billing,
       period,
     } = event.data.object.metadata as {
-      billing: 'STANDARD' | 'PRO';
+      // Stripe hands this back as whatever was written when the subscription
+      // was created, so it has to name every tier that can be sold, not the
+      // two that could when this was written.
+      billing: PaidTier;
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };
@@ -125,7 +139,14 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status !== 'active',
+      // This argument is the organization's trial flag, and it used to read
+      // `status !== 'active'` — which is true of `past_due`, `unpaid`,
+      // `incomplete` and `paused` as well as `trialing`. A test clock caught it:
+      // advancing to a renewal the card refused left the subscription
+      // `past_due`, and the customer was written back into a **trial they were
+      // not on** — re-locking X and putting the trial banner in front of
+      // somebody who had been paying for a month. Only one status is a trial.
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -134,13 +155,17 @@ export class StripeService {
       event.data.object.cancel_at
     );
   }
+
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
     const {
       uniqueId,
       billing,
       period,
     } = event.data.object.metadata as {
-      billing: 'STANDARD' | 'PRO';
+      // Stripe hands this back as whatever was written when the subscription
+      // was created, so it has to name every tier that can be sold, not the
+      // two that could when this was written.
+      billing: PaidTier;
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };
@@ -151,7 +176,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
-      event.data.object.status !== 'active',
+      event.data.object.status === 'trialing',
       uniqueId,
       event.data.object.customer as string,
       pricing[billing].channel!,
@@ -221,22 +246,44 @@ export class StripeService {
   }
 
   async getPackages() {
+    // A self-hosted install has no key, so line 19 hands Stripe the string
+    // 'sk_nothing' and this call comes back 401. That 401 is not harmless: the
+    // frontend treats any 401 as an expired session, clears the auth cookie and
+    // sends the browser to the login page — so opening /billing on an install
+    // with billing switched off *signs the user out*. Billing is hidden from
+    // the navigation there, but the route is still reachable by URL.
+    //
+    // There are no packages to list when nobody can buy one, so say that
+    // instead of asking Stripe.
+    if (!isBillingEnabled()) {
+      return {};
+    }
+
     const products = await stripe.prices.list({
       active: true,
       expand: ['data.tiers', 'data.product'],
-      lookup_keys: [
-        'standard_monthly',
-        'standard_yearly',
-        'pro_monthly',
-        'pro_yearly',
-      ],
+      // Built from the tiers actually on sale rather than a hardcoded list.
+      // It asked for `standard_monthly` and `standard_yearly` until now —
+      // STANDARD was retired by the rename, so two of the four keys named a
+      // plan nobody can buy, and nothing noticed because this endpoint returns
+      // whatever it finds.
+      lookup_keys: Object.entries(pricing)
+        .filter(([name, plan]) => name !== 'FREE' && !plan.retired)
+        .flatMap(([name]) => [
+          `${name.toLowerCase()}_monthly`,
+          `${name.toLowerCase()}_yearly`,
+        ]),
     });
 
     const productsList = groupBy(
       products.data.map((p) => ({
         name: (p.product as Stripe.Product)?.name,
         recurring: p?.recurring?.interval!,
-        price: p?.tiers?.[0]?.unit_amount! / 100,
+        // Tiered prices keep the amount on the first tier; a flat price keeps
+        // it on the price itself. This read only handled the first, so an
+        // ordinary flat price came back with no amount at all — which is what
+        // the whole packages list did until the fixtures exposed it.
+        price: (p?.tiers?.[0]?.unit_amount ?? p?.unit_amount ?? 0) / 100,
       })),
       'recurring'
     );
@@ -300,8 +347,6 @@ export class StripeService {
         },
       }));
 
-    const proration_date = Math.floor(Date.now() / 1000);
-
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -317,6 +362,13 @@ export class StripeService {
         subscription: currentUserSubscription?.data?.[0]?.id,
         subscription_details: {
           proration_behavior: 'create_prorations',
+          // `proration_date` used to be passed here as well. Stripe rejects the
+          // pair — "You cannot specify `proration_date` when
+          // `billing_cycle_anchor=now`" — so **every** call threw, the catch
+          // below swallowed it, and the plan cards told everyone that every
+          // upgrade cost "(Pay Today $0)". Anchoring to now already means the
+          // proration is calculated at this moment; the date was redundant as
+          // well as fatal.
           billing_cycle_anchor: 'now',
           items: [
             {
@@ -325,7 +377,6 @@ export class StripeService {
               quantity: 1,
             },
           ],
-          proration_date: proration_date,
         },
       });
 
@@ -333,6 +384,8 @@ export class StripeService {
         price: price?.amount_remaining ? price?.amount_remaining / 100 : 0,
       };
     } catch (err) {
+      // Kept, so a Stripe outage cannot take the Billing screen down with it —
+      // but it is no longer hiding a permanent failure.
       return { price: 0 };
     }
   }
@@ -609,16 +662,96 @@ export class StripeService {
     return { url };
   }
 
+  /**
+   * Ends a Stripe trial early, and says whether there was one.
+   *
+   * It used to index `list[0].id` unconditionally, which throws when the
+   * customer has no trialing subscription — and a founding member has none at
+   * all, because a lifetime entitlement is a local row rather than a Stripe
+   * subscription. The controller swallowed the throw and reported success, so
+   * the caller polled `is-trial-finished` forever against a flag nothing had
+   * cleared. The spinner never stopped.
+   *
+   * `ended: false` is not a failure. It means Stripe had nothing to end, which
+   * the caller needs in order to finish the job locally. An actual error still
+   * throws, because "the API call failed" and "there was no trial" must not
+   * look the same to whoever decides to clear somebody's trial flag.
+   */
   async finishTrial(paymentId: string) {
+    if (!paymentId) {
+      return { ended: false };
+    }
+
     const list = (
       await stripe.subscriptions.list({
         customer: paymentId,
       })
     ).data.filter((f) => f.status === 'trialing');
 
-    return stripe.subscriptions.update(list[0].id, {
+    if (!list.length) {
+      return { ended: false };
+    }
+
+    await stripe.subscriptions.update(list[0].id, {
       trial_end: 'now',
     });
+
+    return { ended: true };
+  }
+
+  /**
+   * The discount currently running on a subscription, if any.
+   *
+   * `applyDiscount` puts the retention coupon on the Stripe subscription and
+   * nothing read it back, so somebody who accepted 50% off saw a toast and then
+   * a Billing screen that looked exactly as it had a moment earlier. Doc 03
+   * calls for "a visible active-discount state on Billing"; this is what the
+   * banner is drawn from.
+   *
+   * Returns null rather than throwing when billing is off or the customer has
+   * no subscription — the Billing screen must render either way.
+   */
+  async getActiveDiscount(customer?: string | null) {
+    if (!isBillingEnabled() || !customer) {
+      return null;
+    }
+
+    try {
+      const subscription = (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'all',
+          expand: ['data.discounts'],
+        })
+      ).data.find((f) => f.status === 'active' || f.status === 'trialing');
+
+      const discount = subscription?.discounts?.[0];
+      if (!discount || typeof discount === 'string') {
+        return null;
+      }
+
+      // The coupon hangs off `source` in this API version, and expansion only
+      // reaches one level in — so it arrives as an id about as often as an
+      // object, and both have to be handled.
+      const source = discount.source?.coupon;
+      const coupon =
+        typeof source === 'string' ? await stripe.coupons.retrieve(source) : source;
+
+      const percentOff = coupon?.percent_off ?? null;
+      if (!percentOff) {
+        return null;
+      }
+
+      return {
+        percentOff,
+        // Stripe reports the end of a repeating coupon as a timestamp; a
+        // `forever` one has none, and the banner says so by leaving it out.
+        endsAt: discount.end ? new Date(discount.end * 1000).toISOString() : null,
+        months: coupon?.duration_in_months ?? null,
+      };
+    } catch (err) {
+      return null;
+    }
   }
 
   async checkDiscount(customer: string) {
@@ -943,6 +1076,61 @@ export class StripeService {
     return { ok: true };
   }
 
+  /**
+   * A renewal Stripe could not charge.
+   *
+   * Nothing handled this before, so the customer's first sign that anything was
+   * wrong was the app dropping to the paywall weeks later, when Stripe gave up
+   * retrying and cancelled the subscription. Now they are told, and the Billing
+   * screen has something to draw (`hasFailedPayment` below).
+   *
+   * Deliberately does not touch the subscription: Stripe retries a failed
+   * invoice on its own schedule and most of them succeed on the second attempt.
+   * Cancelling here would take the plan away from somebody whose bank simply
+   * asked for a confirmation.
+   */
+  async paymentFailed(event: Stripe.InvoicePaymentFailedEvent) {
+    const customer = event.data.object.customer as string;
+    if (!customer) {
+      return { ok: true };
+    }
+
+    const org = await this._organizationService.getOrgByCustomerId(customer);
+    if (!org) {
+      return { ok: true };
+    }
+
+    await this._notificationService.inAppNotification(
+      org.id,
+      'Payment failed',
+      "We could not charge your card for PostQueen. Update your payment method from Billing and we'll try again — nothing is cancelled yet.",
+      true
+    );
+
+    return { ok: true };
+  }
+
+  /**
+   * Whether the most recent invoice on this customer failed to be paid.
+   *
+   * Read from Stripe rather than stored, for the same reason the active
+   * discount is: the fact lives there, and a copy here is a copy that goes
+   * stale the moment Stripe's own retry succeeds.
+   */
+  async hasFailedPayment(customer?: string | null) {
+    if (!isBillingEnabled() || !customer) {
+      return false;
+    }
+
+    try {
+      const invoices = await stripe.invoices.list({ customer, limit: 1 });
+      const latest = invoices.data[0];
+      return latest?.status === 'open' && (latest?.attempt_count ?? 0) > 0;
+    } catch (err) {
+      return false;
+    }
+  }
+
   async getCharges(organizationId: string) {
     const org = await this._organizationService.getOrgById(organizationId);
     if (!org?.paymentId) {
@@ -1189,6 +1377,133 @@ export class StripeService {
     };
   }
 
+  /**
+   * A one-off checkout session for the founding-member offer.
+   *
+   * `mode: 'payment'`, not `'subscription'` — there is nothing to renew, which
+   * is the whole product. Two consequences follow and both are load-bearing:
+   *
+   * - The metadata goes on the **session**, not on `subscription_data`, because
+   *   there is no subscription to hang it from. `stripe.controller.ts` reads
+   *   `data.object.metadata.service` to decide whether an event is ours and
+   *   drops anything else, so without the tag this app would discard its own
+   *   webhook.
+   * - It emits `checkout.session.completed` rather than any of the
+   *   `customer.subscription.*` events. That branch exists already; it was
+   *   written before this method so a half-finished state could never take
+   *   money with nothing to answer it.
+   *
+   * `price_data` rather than a stored price: the amount lives in `pricing.ts`
+   * next to everything else about what a plan costs, and a Stripe price object
+   * created by hand is one more place for the number to drift.
+   */
+  async createLifetimeCheckout(organization: Organization) {
+    const customer = await this.createOrGetCustomer(organization);
+
+    const { url } = await stripe.checkout.sessions.create({
+      customer,
+      mode: 'payment',
+      cancel_url: process.env['FRONTEND_URL'] + '/billing/lifetime?cancel=true',
+      success_url:
+        process.env['FRONTEND_URL'] + '/billing/lifetime?purchased=true',
+      automatic_tax: { enabled: true },
+      customer_update: { address: 'auto' },
+      billing_address_collection: 'required',
+      metadata: {
+        service: SUBSCRIPTION_SERVICE_TAG,
+        organizationId: organization.id,
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'usd',
+            unit_amount: LIFETIME_PRICE * 100,
+            product_data: {
+              name: 'PostQueen — founding member',
+              description:
+                'One payment. Your plan stays unlocked with nothing to renew.',
+            },
+          },
+        },
+      ],
+    });
+
+    return { url };
+  }
+
+  /**
+   * Grants a lifetime entitlement that was paid for rather than redeemed.
+   *
+   * Deliberately the *same* effect as `lifetimeDeal` — same ladder, same
+   * `createOrUpdateSubscription` call — so there is one way to become a
+   * founding member and not two that can drift apart.
+   *
+   * `paymentRef` stands in for the redemption code. The repository derives
+   * `isLifetime` from that argument being present, and using the Stripe session
+   * id means the row records which payment granted it. A generated placeholder
+   * would set the flag just as well and tell nobody anything.
+   *
+   * Idempotent by the same route redemption is: a session id already stored as
+   * a used code is a webhook Stripe delivered twice, and it grants nothing the
+   * second time.
+   */
+  /**
+   * Whether this organization's free trial is still running.
+   *
+   * Both lifetime grants below used to hardcode `false` here, which ended the
+   * trial the instant somebody bought the founding-member deal. The owner's
+   * rule is the opposite: buying it leaves the trial running, and the person
+   * becomes a founding member when it expires — or sooner, from the "End free
+   * trial" button that the X panel and the Billing screen both offer.
+   */
+  private async stillTrialing(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    return !!org?.isTrailing && trialWindow(org.createdAt).open;
+  }
+
+  async grantLifetimeFromPayment(organizationId: string, paymentRef: string) {
+    const existing = await this._subscriptionService.getCode(paymentRef);
+    if (existing) {
+      return { success: true, duplicate: true };
+    }
+
+    const getCurrentSubscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+
+    const currentTier = getCurrentSubscription?.subscriptionTier;
+    // Founding-member purchase markets "Everything in Pro" — floor the ladder
+    // at PRO so FREE/CREATOR/GROWTH buyers get what the checkout promises.
+    // Code redemption (`lifetimeDeal`) keeps the one-tier ladder unchanged.
+    const ladderTier = nextLifetimeTier(currentTier);
+    const paidOrder = ['CREATOR', 'GROWTH', 'PRO', 'AGENCY'] as const;
+    const ladderIdx = paidOrder.indexOf(
+      ladderTier as (typeof paidOrder)[number]
+    );
+    const proIdx = paidOrder.indexOf('PRO');
+    const nextPackage =
+      ladderIdx >= 0 && ladderIdx < proIdx ? 'PRO' : ladderTier;
+    const findPricing = pricing[nextPackage];
+
+    await this._subscriptionService.createOrUpdateSubscription(
+      await this.stillTrialing(organizationId),
+      makeId(10),
+      organizationId,
+      currentTier && nextPackage === currentTier
+        ? getCurrentSubscription!.totalChannels + 5
+        : findPricing.channel!,
+      nextPackage,
+      'MONTHLY',
+      null,
+      paymentRef,
+      organizationId
+    );
+
+    return { success: true, tier: nextPackage };
+  }
+
   async lifetimeDeal(organizationId: string, code: string) {
     const getCurrentSubscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(
@@ -1207,15 +1522,20 @@ export class StripeService {
         };
       }
 
-      const nextPackage = !getCurrentSubscription ? 'STANDARD' : 'PRO';
+      const currentTier = getCurrentSubscription?.subscriptionTier;
+      const nextPackage = nextLifetimeTier(currentTier);
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
-        false,
+        // Same rule as the paid grant above: redeeming a code does not cut a
+        // running trial short.
+        await this.stillTrialing(organizationId),
         makeId(10),
         organizationId,
-        getCurrentSubscription?.subscriptionTier === 'PRO'
-          ? getCurrentSubscription.totalChannels + 5
+        // At the top of the ladder a further code can no longer raise the tier,
+        // so it buys channels instead — what PRO did before the rename.
+        currentTier && nextPackage === currentTier
+          ? getCurrentSubscription!.totalChannels + 5
           : findPricing.channel!,
         nextPackage,
         'MONTHLY',

@@ -10,6 +10,7 @@ import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useTour } from '@gitroom/frontend/components/onboarding/tour';
 
 interface OnboardingModalProps {
   onClose: () => void;
@@ -18,6 +19,7 @@ interface OnboardingModalProps {
 export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const modals = useModals();
+  const { start: startTour } = useTour();
   const t = useT();
 
   return (
@@ -98,7 +100,15 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
               />
             )}
             {step === 2 && (
-              <OnboardingStep2 onBack={() => setStep(1)} onFinish={onClose} />
+              <OnboardingStep2
+                onBack={() => setStep(1)}
+                // Get Started closes setup and rolls straight into the tour —
+                // the close button and Esc do not, they just leave.
+                onFinish={() => {
+                  onClose();
+                  startTour();
+                }}
+              />
             )}
           </div>
         </div>
@@ -149,7 +159,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
         <div className="text-[24px] font-semibold">
           {t('connect_your_channels', 'Connect Your Channels')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[14px] text-pqMuted">
           {t(
             'connect_social_media_to_start',
             'Connect your social media accounts to start scheduling posts'
@@ -251,7 +261,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
         <div className="text-[24px] font-semibold">
           {t('watch_tutorial_title', 'Learn How to Use PostQueen')}
         </div>
-        <div className="text-[14px] text-customColor18">
+        <div className="text-[14px] text-pqMuted">
           {t(
             'watch_tutorial_description',
             'Watch this short video to learn how to get the most out of PostQueen'

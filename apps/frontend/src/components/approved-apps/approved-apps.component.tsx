@@ -1,9 +1,8 @@
 'use client';
 
-import { FC, Fragment, useCallback } from 'react';
+import { FC, useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { Button } from '@gitroom/react/form/button';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -59,64 +58,52 @@ export const ApprovedAppsComponent: FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-[20px]">
-      <div className="flex flex-col">
-        <h3 className="text-[20px]">
-          {t('approved_apps', 'Approved Apps')}
-        </h3>
-        <div className="text-customColor18 mt-[4px]">
-          {t(
-            'apps_you_have_authorized',
-            'Applications you have authorized to access your PostQueen account.'
-          )}
-        </div>
-      </div>
-
-      <div className="bg-sixth border-fifth border rounded-[4px] p-[24px]">
+    <div className="flex flex-col">
+      <div className="mt-[18px] overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
         {!apps?.length ? (
-          <div className="text-customColor18">
+          <div className="p-[12px_15px] text-pqMuted">
             {t('no_approved_apps', 'No approved apps yet.')}
           </div>
         ) : (
-          <div className="flex flex-col gap-[16px]">
-            {apps.map((app: any) => (
-              <div
-                key={app.id}
-                className="flex items-center justify-between p-[12px] border border-fifth rounded-[4px]"
-              >
-                <div className="flex items-center gap-[12px]">
-                  {app.oauthApp?.picture?.path ? (
-                    <img
-                      src={app.oauthApp.picture.path}
-                      alt={app.oauthApp.name}
-                      className="w-[40px] h-[40px] rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
-                      {app.oauthApp?.name?.[0]?.toUpperCase() || '?'}
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-[14px] font-bold">
-                      {app.oauthApp?.name}
-                    </div>
-                    {app.oauthApp?.description && (
-                      <div className="text-customColor18 text-[12px]">
-                        {app.oauthApp.description}
-                      </div>
-                    )}
-                    <div className="text-customColor18 text-[12px]">
-                      {t('authorized_on', 'Authorized on')}{' '}
-                      {new Date(app.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
+          apps.map((app: any) => (
+            <div
+              key={app.id}
+              className="flex items-center gap-[12px] border-b border-pqLine p-[12px_15px] last:border-b-0"
+            >
+              {app.oauthApp?.picture?.path ? (
+                <img
+                  src={app.oauthApp.picture.path}
+                  alt={app.oauthApp.name}
+                  className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-full bg-pqSettings text-[15px] font-[600] text-pqMuted">
+                  {app.oauthApp?.name?.[0]?.toUpperCase() || '?'}
                 </div>
-                <Button onClick={revokeApp(app)}>
-                  {t('revoke', 'Revoke')}
-                </Button>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-[700]">
+                  {app.oauthApp?.name}
+                </div>
+                {app.oauthApp?.description && (
+                  <div className="text-[12px] text-pqMuted">
+                    {app.oauthApp.description}
+                  </div>
+                )}
+                <div className="text-[12px] text-pqMuted">
+                  {t('authorized_on', 'Authorized on')}{' '}
+                  {new Date(app.createdAt).toLocaleDateString()}
+                </div>
               </div>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={revokeApp(app)}
+                className="flex h-[30px] shrink-0 items-center rounded-[8px] bg-pqSettings px-[14px] text-[12.5px] font-[600] text-pqText transition-colors hover:text-pqWarn"
+              >
+                {t('revoke', 'Revoke')}
+              </button>
+            </div>
+          ))
         )}
       </div>
     </div>

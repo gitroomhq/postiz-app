@@ -251,6 +251,44 @@ export class IntegrationService {
     }
   }
 
+  /**
+   * Providers a trialing organization cannot connect yet.
+   *
+   * Reads `trialLocked` off the provider rather than testing an identifier, so
+   * a second provider joining the rule is one field on that provider and no
+   * change here — the same reason `category` lives there.
+   *
+   * Three ways out, all deliberate: billing off means self-hosted, where every
+   * gate is open; an organization that is not trialing was never locked; and a
+   * refresh is an *existing* channel reconnecting, which must keep working —
+   * cutting off a channel someone already publishes through would punish the
+   * wrong person.
+   *
+   * 406 is the status the rest of the app already uses for "this is blocked
+   * *because* you are on trial" — `media.service.ts:99` throws it for
+   * trial-locked video. The frontend has a handler for exactly that code
+   * (`layout.context.tsx:91`): it opens a dialog offering to finish the trial
+   * and charge now, which is the way out this lock is supposed to point at.
+   * Thrown as a plain Error it became a 500 and the message never arrived.
+   */
+  assertConnectAllowed(
+    provider: { trialLocked?: boolean; name: string },
+    org: { isTrailing?: boolean },
+    refresh?: string
+  ) {
+    if (!isBillingEnabled() || !provider.trialLocked) {
+      return;
+    }
+    if (!org?.isTrailing || refresh) {
+      return;
+    }
+
+    throw new HttpException(
+      `${provider.name} unlocks when your free trial ends. End the trial to connect it now.`,
+      406
+    );
+  }
+
   async disableChannel(org: string, id: string) {
     return this._integrationRepository.disableChannel(org, id);
   }
