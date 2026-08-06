@@ -13,8 +13,15 @@ import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
-import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
+import dynamic from "next/dynamic"
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
+const WalletProvider = dynamic(
+  () => import ("@gitroom/frontend/components/auth/providers/wallet.provider"),
+  {
+    ssr: false,
+  }
+)
 type Inputs = {
   email: string;
   password: string;
