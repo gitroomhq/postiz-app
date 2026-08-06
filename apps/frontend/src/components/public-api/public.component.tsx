@@ -723,7 +723,7 @@ export const PublicComponent = () => {
     revalidateOnReconnect: false,
   });
   const currentOrg = useMemo(() => {
-    return organizations?.find((org: any) => org.id === user?.orgId);
+    return organizations?.find((org: any) => org?.id === user?.orgId);
   }, [organizations, user?.orgId]);
 
   return (

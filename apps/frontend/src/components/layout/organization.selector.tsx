@@ -64,7 +64,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 />
               </svg>
               {!!current?.name && (
-                <div className="max-w-[240px] truncate">{current.name}</div>
+                <div className="max-w-[240px] truncate">{current?.name}</div>
               )}
             </div>
           )}
@@ -82,18 +82,18 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                   users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
                 }) => (
                   <div
-                    key={org.id}
+                    key={org?.id}
                     onClick={changeOrg(org)}
                     className="whitespace-nowrap truncate"
                   >
-                    {org.name}
-                    {!!org.users?.[0]?.role && (
+                    {org?.name}
+                    {!!org?.users?.[0]?.role && (
                       <span className="text-customColor18">
                         {' '}
                         (
-                        {org.users[0].role === 'SUPERADMIN'
+                        {org?.users?.[0]?.role === 'SUPERADMIN'
                           ? 'Super-Admin'
-                          : org.users[0].role === 'ADMIN'
+                          : org?.users?.[0]?.role === 'ADMIN'
                           ? 'Admin'
                           : 'User'}
                         )

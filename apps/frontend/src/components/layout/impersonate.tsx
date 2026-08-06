@@ -885,24 +885,24 @@ const SwitchUser = () => {
     // one row per user-organization: dedupe by user id, drop the impersonated user
     const seen = new Set<string>();
     return (data || [])
-      .filter((curr: any) => curr.user.id !== currentUser?.id)
+      .filter((curr: any) => curr?.user?.id !== currentUser?.id)
       .filter((curr: any) => {
-        if (seen.has(curr.user.id)) {
+        if (seen.has(curr?.user?.id)) {
           return false;
         }
-        seen.add(curr.user.id);
+        seen.add(curr?.user?.id);
         return true;
       })
       .map((curr: any) => ({
-        id: curr.user.id,
-        name: curr.user.name,
-        email: curr.user.email,
+        id: curr?.user?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
         orgs: (data || [])
-          .filter((org: any) => org.user.id === curr.user.id)
+          .filter((org: any) => org?.user?.id === curr?.user?.id)
           .map(
             (org: any) =>
-              `${org.organization?.name} (${org.role} / ${
-                org.organization?.subscription?.subscriptionTier || 'FREE'
+              `${org?.organization?.name} (${org?.role} / ${
+                org?.organization?.subscription?.subscriptionTier || 'FREE'
               })`
           )
           .join(', '),
@@ -993,14 +993,14 @@ const SwitchUser = () => {
             {mapData.map((item: any) => (
               <div
                 onClick={pick(item)}
-                key={item.id}
+                key={item?.id}
                 className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
               >
                 {t('user_1', 'user:')}
-                {item.id.split('-').at(-1)} -{' '}
-                {item.name ? `${item.name} - ` : ''}
-                {item.email}
-                {item.orgs ? ` - ${item.orgs}` : ''}
+                {item?.id?.split('-')?.at(-1)} -{' '}
+                {item?.name ? `${item?.name} - ` : ''}
+                {item?.email}
+                {item?.orgs ? ` - ${item?.orgs}` : ''}
               </div>
             ))}
           </div>
@@ -1061,12 +1061,12 @@ export const Impersonate = () => {
   const mapData = useMemo(() => {
     return data?.map(
       (curr: any) => ({
-        id: curr.id,
-        name: curr.user.name,
-        email: curr.user.email,
-        orgName: curr.organization?.name,
-        role: curr.role,
-        tier: curr.organization?.subscription?.subscriptionTier || 'FREE',
+        id: curr?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
+        orgName: curr?.organization?.name,
+        role: curr?.role,
+        tier: curr?.organization?.subscription?.subscriptionTier || 'FREE',
       }),
       []
     );
@@ -1128,13 +1128,13 @@ export const Impersonate = () => {
               <div className="absolute top-[100%] w-max min-w-full max-w-[90vw] start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
-                    onClick={setUser(user.id)}
-                    key={user.id}
+                    onClick={setUser(user?.id)}
+                    key={user?.id}
                     className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
                   >
                     {t('user_1', 'user:')}
-                    {user.id.split('-').at(-1)} - {user.name} - {user.email} -{' '}
-                    {user.orgName} ({user.role} / {user.tier})
+                    {user?.id?.split('-')?.at(-1)} - {user?.name} - {user?.email}{' '}
+                    - {user?.orgName} ({user?.role} / {user?.tier})
                   </div>
                 ))}
               </div>
