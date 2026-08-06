@@ -121,6 +121,10 @@ export const startMcp = async (app: INestApplication) => {
     // otherwise a GET opens an SSE stream that never emits and never closes,
     // leaving clients (e.g. ChatGPT) waiting forever.
     if (req.method === 'GET' || req.method === 'DELETE') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.setHeader('Access-Control-Expose-Headers', '*');
       res.setHeader('Allow', 'POST, OPTIONS');
       res.sendStatus(405);
       return;
