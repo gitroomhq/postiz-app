@@ -23,6 +23,8 @@ export interface StatsResponse {
   errors: { total: number; perSocial: PerSocial[] };
   posts: { total: number; perSocial: PerSocial[] };
   connected: { total: number; perSocial: PerSocial[] };
+  publishingAccounts: { total: number; perSocial: PerSocial[] };
+  scheduledAccounts: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -113,6 +115,73 @@ export class AdminStatsRepository {
     };
   }
 
+  // Distinct organizations with at least one top-level post in the range,
+  // per provider and overall: "publishing" = already PUBLISHED, "scheduled" =
+  // QUEUE or PUBLISHED (a published post was scheduled for that day too).
+  // The totals are distinct across all providers combined, not a summation.
+  private async accountStats(params: StatsParams) {
+    const whereBase: Prisma.PostWhereInput = {
+      parentPostId: null,
+      deletedAt: null,
+      publishDate: { gte: params.from, lte: params.to },
+    };
+
+    const [publishedGroups, scheduledGroups] = await Promise.all([
+      this._post.model.post.groupBy({
+        by: ['organizationId', 'integrationId'],
+        where: { ...whereBase, state: 'PUBLISHED' },
+      }),
+      this._post.model.post.groupBy({
+        by: ['organizationId', 'integrationId'],
+        where: { ...whereBase, state: { in: ['QUEUE', 'PUBLISHED'] } },
+      }),
+    ]);
+
+    const integrationIds = [
+      ...new Set(
+        [...publishedGroups, ...scheduledGroups].map((g) => g.integrationId)
+      ),
+    ];
+    const integrations = integrationIds.length
+      ? await this._integration.model.integration.findMany({
+          where: { id: { in: integrationIds } },
+          select: { id: true, providerIdentifier: true },
+        })
+      : [];
+    const providerById = new Map(
+      integrations.map((i) => [i.id, i.providerIdentifier])
+    );
+
+    const distinctOrgs = (
+      groups: { organizationId: string; integrationId: string }[]
+    ) => {
+      const allOrgs = new Set<string>();
+      const orgsByProvider = new Map<string, Set<string>>();
+      for (const g of groups) {
+        const provider = providerById.get(g.integrationId) || 'unknown';
+        if (!orgsByProvider.has(provider)) {
+          orgsByProvider.set(provider, new Set());
+        }
+        orgsByProvider.get(provider)!.add(g.organizationId);
+        allOrgs.add(g.organizationId);
+      }
+      return {
+        total: allOrgs.size,
+        perSocial: sortDesc(
+          [...orgsByProvider.entries()].map(([provider, orgs]) => ({
+            provider,
+            count: orgs.size,
+          }))
+        ),
+      };
+    };
+
+    return {
+      publishingAccounts: distinctOrgs(publishedGroups),
+      scheduledAccounts: distinctOrgs(scheduledGroups),
+    };
+  }
+
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
       deletedAt: null,
@@ -140,9 +209,10 @@ export class AdminStatsRepository {
   }
 
   async getStats(params: StatsParams): Promise<StatsResponse> {
-    const [errors, posts, connected] = await Promise.all([
+    const [errors, posts, accounts, connected] = await Promise.all([
       this.errorStats(params),
       this.postStats(params),
+      this.accountStats(params),
       this.connectedStats(params),
     ]);
 
@@ -152,6 +222,8 @@ export class AdminStatsRepository {
       errors,
       posts,
       connected,
+      publishingAccounts: accounts.publishingAccounts,
+      scheduledAccounts: accounts.scheduledAccounts,
     };
   }
 }
