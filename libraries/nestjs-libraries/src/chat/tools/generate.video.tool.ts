@@ -55,26 +55,35 @@ export class GenerateVideoTool implements AgentToolInterface {
         ),
       }),
       outputSchema: z.object({
-        url: z.string(),
+        url: z.string().optional(),
+        error: z.string().optional(),
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
-        const value = await this._mediaService.generateVideo(org, {
-          type: inputData.identifier,
-          output: inputData.output,
-          customParams: inputData.customParams.reduce(
-            (all: Record<string, any>, current: { key: string; value: any }) => ({
-              ...all,
-              [current.key]: current.value,
-            }),
-            {} as Record<string, any>
-          ),
-        });
+        try {
+          const value = await this._mediaService.generateVideo(org, {
+            type: inputData.identifier,
+            output: inputData.output,
+            customParams: inputData.customParams.reduce(
+              (all: Record<string, any>, current: { key: string; value: any }) => ({
+                ...all,
+                [current.key]: current.value,
+              }),
+              {} as Record<string, any>
+            ),
+          });
 
-        return {
-          url: value.path,
-        };
+          return {
+            url: value.path,
+          };
+        } catch (err) {
+          return {
+            error: `Video generation failed: ${
+              err instanceof Error ? err.message : String(err)
+            }. The user's video credit was not used.`,
+          };
+        }
       },
     });
   }

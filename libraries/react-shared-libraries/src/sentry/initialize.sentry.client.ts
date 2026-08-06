@@ -1,6 +1,25 @@
 import * as Sentry from '@sentry/nextjs';
 import { initializeSentryBasic } from '@gitroom/react/sentry/initialize.sentry.next.basic';
 
+export const setSentryUser = (
+  user?: { id: string; email?: string; orgId: string } | null
+) => {
+  try {
+    if (user?.id) {
+      Sentry.setUser({
+        id: user.id,
+        ...(user.email ? { email: user.email } : {}),
+      });
+      Sentry.setTag('organization.id', user.orgId);
+    } else {
+      Sentry.setUser(null);
+      Sentry.setTag('organization.id', undefined);
+    }
+  } catch (err) {
+    /* never let telemetry break the app */
+  }
+};
+
 export const initializeSentryClient = (environment: string, dsn: string) =>
   initializeSentryBasic(environment, dsn, {
     integrations: [

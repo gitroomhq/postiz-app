@@ -730,5 +730,12 @@
   "yes_cancel_coupon": "Evet, kuponu iptal et",
   "cancel_coupon_title": "Kupon İptal Edilsin mi?",
   "cancel_coupon_failed": "Kupon iptal edilemedi",
-  "cancel_coupon_success": "Kupon iptal edildi"
+  "cancel_coupon_success": "Kupon iptal edildi",
+  "what_do_you_want_to_do": "Ne yapmak istiyorsunuz?",
+  "just_update_post_details": "Sadece gönderi detaylarını güncelle",
+  "reschedule_post": "Gönderiyi yeniden zamanla",
+  "republish_the_post": "Gönderiyi tekrar yayımla",
+  "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
+  "republish_at": "tarihinde/saatinde",
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
 }
