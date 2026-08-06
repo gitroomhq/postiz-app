@@ -81,6 +81,10 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
+  updatePostKeepRelease(id: string, postId: string, releaseURL: string) {
+    return this._postRepository.updatePostKeepRelease(id, postId, releaseURL);
+  }
+
   async getMissingContent(
     orgId: string,
     postId: string,
@@ -726,7 +730,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV106', {
+        ?.workflow.start('postWorkflowV107', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -749,6 +753,148 @@ export class PostsService {
           ]),
         });
     } catch (err) {}
+  }
+
+  // Recycles fire only on the post's own schedule: the first future
+  // publishDate + k*intervalInDays anniversary.
+  private nextRecycleTime(post: { publishDate: Date; intervalInDays: number }) {
+    let next = dayjs.utc(post.publishDate);
+    while (!next.isAfter(dayjs.utc())) {
+      next = next.add(post.intervalInDays, 'day');
+    }
+    return next.toISOString();
+  }
+
+  // Start a postWorkflowV107 scheduled recycle for an already published
+  // recurring post (sleeps until recycleAt, republishes, keeps releaseURL).
+  private async startRecycleWorkflow(
+    taskQueue: string,
+    postId: string,
+    orgId: string,
+    recycleAt: string
+  ) {
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        ?.workflow.start('postWorkflowV107', {
+          workflowId: `post_${postId}_recycle`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'USE_EXISTING',
+          args: [
+            {
+              taskQueue,
+              postId,
+              organizationId: orgId,
+              recycleAt,
+            },
+          ],
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: postIdSearchParam,
+              value: postId,
+            },
+            {
+              key: organizationId,
+              value: orgId,
+            },
+          ]),
+        });
+    } catch (err) {}
+  }
+
+  // Returns false when a running workflow may have survived - the caller must
+  // not arm a replacement then, or the post would have two concurrent chains.
+  private async terminatePostWorkflows(postId: string) {
+    try {
+      const workflows = this._temporalService.client
+        .getRawClient()
+        ?.workflow.list({
+          query: `postId="${postId}" AND ExecutionStatus="Running"`,
+        });
+
+      for await (const executionInfo of workflows) {
+        try {
+          const workflow = await this._temporalService.client.getWorkflowHandle(
+            executionInfo.workflowId
+          );
+          if (
+            workflow &&
+            (await workflow.describe()).status.name !== 'TERMINATED'
+          ) {
+            await workflow.terminate();
+          }
+        } catch (err) {
+          return false;
+        }
+      }
+    } catch (err) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private async hasRunningPostWorkflow(postId: string) {
+    try {
+      const workflows = this._temporalService.client
+        .getRawClient()
+        ?.workflow.list({
+          query: `postId="${postId}" AND ExecutionStatus="Running"`,
+        });
+
+      for await (const _ of workflows) {
+        return true;
+      }
+    } catch (err) {}
+    return false;
+  }
+
+  // Saving a PUBLISHED recurring post must never requeue it (that would
+  // republish immediately): reconcile the armed recycle workflow instead.
+  private async reconcileRecycleWorkflow(
+    taskQueue: string,
+    orgId: string,
+    before: { publishDate: Date; intervalInDays: number | null },
+    after: { id: string; publishDate: Date; intervalInDays: number | null }
+  ) {
+    const removed = !after.intervalInDays;
+    const scheduleChanged =
+      dayjs.utc(before.publishDate).toISOString() !==
+        dayjs.utc(after.publishDate).toISOString() ||
+      before.intervalInDays !== after.intervalInDays;
+
+    if (removed) {
+      // the armed sleeper never re-reads the row, clearing the interval alone
+      // does not stop it
+      await this.terminatePostWorkflows(after.id);
+      return;
+    }
+
+    if (scheduleChanged) {
+      // if termination failed, keep the old chain instead of arming a second
+      // one: v1.0.7 sleepers re-read the row at wake, and a later save
+      // self-heals onto the new schedule
+      if (!(await this.terminatePostWorkflows(after.id))) {
+        return;
+      }
+      await this.startRecycleWorkflow(
+        taskQueue,
+        after.id,
+        orgId,
+        this.nextRecycleTime(after as { publishDate: Date; intervalInDays: number })
+      );
+      return;
+    }
+
+    // schedule untouched: leave the armed recycle alone, self-heal if it's gone
+    if (!(await this.hasRunningPostWorkflow(after.id))) {
+      await this.startRecycleWorkflow(
+        taskQueue,
+        after.id,
+        orgId,
+        this.nextRecycleTime(after as { publishDate: Date; intervalInDays: number })
+      );
+    }
   }
 
   /**
@@ -900,8 +1046,19 @@ export class PostsService {
         content: removeLinks ? stripLinks(updateContent[i]) : updateContent[i],
       }));
 
+      // a save touching a PUBLISHED recurring post updates content/settings
+      // without requeueing it - reconcile the recycle workflow instead. The
+      // explicit republish opt-in keeps the normal requeue-and-publish path.
+      const existingPost = post.value?.[0]?.id
+        ? await this._postRepository.getPostById(post.value[0].id, orgId)
+        : null;
+      const publishedRecurring =
+        existingPost?.state === 'PUBLISHED' &&
+        !!existingPost.intervalInDays &&
+        !body.republish;
+
       const { posts } = await this._postRepository.createOrUpdatePost(
-        body.type,
+        publishedRecurring ? 'update' : body.type,
         orgId,
         body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
         post,
@@ -914,7 +1071,14 @@ export class PostsService {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
+      if (publishedRecurring) {
+        await this.reconcileRecycleWorkflow(
+          post.settings.__type.split('-')[0].toLowerCase(),
+          orgId,
+          existingPost,
+          posts[0]
+        );
+      } else if (body.type !== 'update') {
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
@@ -970,9 +1134,36 @@ export class PostsService {
     orgId: string,
     id: string,
     date: string,
-    action: 'schedule' | 'update' = 'schedule'
+    action: 'schedule' | 'update' = 'schedule',
+    republish = false
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
+
+    // a PUBLISHED recurring post is never requeued by a date change: move the
+    // date only and re-arm the recycle workflow on the new schedule. The
+    // explicit republish opt-in keeps the normal requeue-and-publish path.
+    if (
+      getPostById.state === 'PUBLISHED' &&
+      getPostById.intervalInDays &&
+      !republish
+    ) {
+      const newDate = await this._postRepository.changeDate(
+        orgId,
+        id,
+        date,
+        false,
+        'update'
+      );
+
+      await this.reconcileRecycleWorkflow(
+        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
+        orgId,
+        getPostById,
+        newDate
+      );
+
+      return newDate;
+    }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
     // update: Just change the date without changing the status
