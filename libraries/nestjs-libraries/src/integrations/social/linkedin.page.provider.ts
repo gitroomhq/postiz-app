@@ -254,7 +254,9 @@ export class LinkedinPageProvider
     ).json();
 
     return {
-      id: id,
+      // namespaced placeholder so the in-between row never collides with the
+      // personal LinkedIn channel row (same org + same member sub)
+      id: `${this.identifier}_${id}`,
       accessToken,
       refreshToken,
       expiresIn,
