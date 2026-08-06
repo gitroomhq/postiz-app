@@ -45,7 +45,7 @@ export class LoadToolsService {
     return new Agent({
       id: 'postiz',
       name: 'postiz',
-      description: 'Agent that helps manage and schedule social media posts for users',
+      description: 'Agent that helps schedule and list social media posts for users',
       instructions: ({ requestContext }) => {
         const ui: string = requestContext.get('ui' as never);
         return `
