@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -8,13 +9,15 @@ import {
 import dayjs from 'dayjs';
 import {
   BadBody,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { createReadStream, statSync } from 'fs';
+import { createReadStream } from 'fs';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -412,15 +415,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private async uploadedVideoSuccess(
-    id: string,
-    publishId: string,
-    accessToken: string
-  ): Promise<{ url: string; id: string }> {
-    // eslint-disable-next-line no-constant-condition
-    for (const i of Array(27).keys()) {
-      // ~9 minutes at 20s interval
-      const post = await (
+  // Single status check for a publish_id, no loops and no timers: `post` returns
+  // a `pending` PostResponse right after the upload, and the post workflow polls
+  // this method with durable timers, so a stuck/retried check can never re-run
+  // the publish and duplicate the post.
+  override async checkPostStatus(
+    accessToken: string,
+    pendingData: { publishId: string },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    let post: any;
+    try {
+      post = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -430,7 +436,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              publish_id: publishId,
+              publish_id: pendingData.publishId,
             }),
           },
           '',
@@ -438,47 +444,52 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           true
         )
       ).json();
-
-      const { status, publicaly_available_post_id } = post.data;
-
-      if (status === 'SEND_TO_USER_INBOX') {
-        return {
-          url: 'https://www.tiktok.com/messages?lang=en',
-          id: 'missing',
-        };
+    } catch (err) {
+      if (err instanceof RefreshToken) {
+        throw err;
       }
 
-      if (status === 'PUBLISH_COMPLETE') {
-        return {
-          url: !publicaly_available_post_id
-            ? `https://www.tiktok.com/@${id}`
-            : `https://www.tiktok.com/@${id}/video/` +
-              publicaly_available_post_id,
-          id: !publicaly_available_post_id
-            ? publishId
-            : publicaly_available_post_id?.[0],
-        };
-      }
-
-      if (status === 'FAILED') {
-        const handleError = this.handleErrors(JSON.stringify(post));
-        throw new BadBody(
-          'titok-error-upload',
-          JSON.stringify(post),
-          Buffer.from(JSON.stringify(post)),
-          handleError?.value || ''
-        );
-      }
-
-      await timer(20000);
+      // Transient API error while checking the status: the post may already
+      // be live, so keep polling instead of failing it - if the API stays
+      // broken the caller exhausts its checks and warns the user properly.
+      return { status: 'pending', pendingData };
     }
 
-    throw new BadBody(
-      'titok-error-upload',
-      JSON.stringify({}),
-      Buffer.from(JSON.stringify({})),
-      'TikTok refused to publish your post'
-    );
+    const { status, publicaly_available_post_id } = post?.data || {};
+
+    if (status === 'SEND_TO_USER_INBOX') {
+      return {
+        status: 'completed',
+        releaseURL: 'https://www.tiktok.com/messages?lang=en',
+        postId: 'missing',
+      };
+    }
+
+    if (status === 'PUBLISH_COMPLETE') {
+      // an empty array is truthy, so index it once and branch on the value
+      const publicPostId = publicaly_available_post_id?.[0];
+
+      return {
+        status: 'completed',
+        releaseURL: !publicPostId
+          ? `https://www.tiktok.com/@${integration.profile}`
+          : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
+        // TikTok returns the id as a number, releaseId in the db is a string
+        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+      };
+    }
+
+    if (status === 'FAILED') {
+      const handleError = this.handleErrors(JSON.stringify(post));
+      throw new BadBody(
+        'titok-error-upload',
+        JSON.stringify(post),
+        Buffer.from(JSON.stringify(post)),
+        handleError?.value || ''
+      );
+    }
+
+    return { status: 'pending', pendingData };
   }
 
   // UPLOAD does not publish - it only drops the media into the user's TikTok
@@ -672,26 +683,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  // Resolves the total byte size of the media without loading it into memory:
-  // a HEAD request for remote URLs, statSync for local files.
-  private async tiktokMediaSize(path: string): Promise<number> {
-    if (path.indexOf('http') === 0) {
-      const head = await fetch(path, { method: 'HEAD' });
-      const length = head.headers.get('content-length');
-      if (!length) {
-        throw new BadBody(
-          'tiktok-error-upload',
-          '{}',
-          Buffer.from('{}'),
-          'Could not determine the video size for TikTok upload'
-        );
-      }
-      return Number(length);
-    }
-
-    return statSync(path).size;
-  }
-
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
@@ -699,7 +690,20 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (path.indexOf('http') === 0) {
       const response = await fetch(path, {
         headers: { Range: `bytes=${start}-${end}` },
-      });
+        dispatcher: getSsrfSafeDispatcher(),
+      } as any);
+
+      // A store that ignores Range (200 with the full file) or answers with an
+      // error page would corrupt the upload at this offset.
+      if (response.status !== 206) {
+        throw new BadBody(
+          'tiktok-error-upload',
+          '{}',
+          '{}',
+          'The media storage did not return the requested byte range, please try again'
+        );
+      }
+
       return response.body;
     }
 
@@ -789,7 +793,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async post(
+  async postPending(
     id: string,
     accessToken: string,
     postDetails: PostDetails<TikTokDto>[],
@@ -804,7 +808,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     // loaded into memory.
     const videoSize = isPhoto
       ? undefined
-      : await this.tiktokMediaSize(videoPath);
+      : await this.mediaSize(videoPath, 'tiktok-error-upload');
 
     const {
       data: { publish_id, upload_url },
@@ -830,28 +834,94 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     // Videos: stream the bytes to the upload_url returned by the init call.
     if (!isPhoto && upload_url && videoSize) {
-      await this.uploadTikTokVideoBytes(
-        upload_url,
-        videoPath,
-        videoSize,
-        'video/mp4'
-      );
+      try {
+        await this.uploadTikTokVideoBytes(
+          upload_url,
+          videoPath,
+          videoSize,
+          'video/mp4'
+        );
+      } catch (err) {
+        // An explicit rejection from TikTok: the post won't publish, fail it
+        if (err instanceof BadBody) {
+          throw err;
+        }
+
+        // A network error here is ambiguous - TikTok may have received all
+        // the bytes and still publish. Return pending and let checkPostStatus
+        // deliver TikTok's own verdict instead of letting the caller retry
+        // the publish.
+      }
     }
 
-    const { url, id: videoId } = await this.uploadedVideoSuccess(
-      integration.profile!,
-      publish_id,
-      accessToken
-    );
-
+    // The publish is now irreversible on TikTok's side: return `pending` so the
+    // workflow polls checkPostStatus instead of blocking (and possibly timing
+    // out and re-posting) inside this activity.
     return [
       {
         id: firstPost.id,
-        releaseURL: url,
-        postId: String(videoId),
-        status: 'success',
+        releaseURL: '',
+        postId: '',
+        status: 'pending',
+        pendingData: { publishId: publish_id },
       },
     ];
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that still
+  // run (scheduled posts sleep inside them until publish time) and don't know
+  // how to resolve a `pending` response - they keep polling inside the
+  // activity exactly like before.
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<TikTokDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [response] = await this.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration
+    );
+
+    const started = Date.now();
+
+    for (const _ of Array(27).keys()) {
+      // ~9 minutes at 20s interval
+      const check = await this.checkPostStatus(
+        accessToken,
+        response.pendingData,
+        integration
+      );
+
+      if (check.status === 'completed') {
+        return [
+          {
+            id: response.id,
+            releaseURL: check.releaseURL,
+            postId: String(check.postId),
+            status: 'success',
+          },
+        ];
+      }
+
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here (non-retryable) is safe, timing the activity
+      // out is not - a retried activity would publish the post again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        break;
+      }
+
+      await timer(20000);
+    }
+
+    throw new BadBody(
+      'titok-error-upload',
+      JSON.stringify({}),
+      Buffer.from(JSON.stringify({})),
+      'TikTok refused to publish your post'
+    );
   }
 
   async analytics(

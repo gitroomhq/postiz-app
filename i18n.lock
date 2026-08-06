@@ -508,6 +508,9 @@ checksums:
     label_who_can_reply_to_this_post: 4d8913296a1fc3f197cb0aead34af73d
     delete_integration: ccc879ccfcf7f85bcfe09f2bc3fa0dd3
     start_writing_your_post: 471efc4f2a7e2cf02a065a2de34e7213
+    billing_other_account_subscribed: 6c12b4a726d55ee88b0594bd22ec556c
+    already_subscribed: 3694e02bcb0a41286ea6b79615e6cdbf
+    ok: e2d6579a83aba07c4180c21c5fe9893d
     billing_join_over: 6e1c237241ba00ddbb07fd603344c5c3
     billing_entrepreneurs_count: 1e90206cb8ea01d0a1084d3af1a4cbed
     billing_who_use: 63bdc59ef443e193eca87889e83ea07a
@@ -654,6 +657,7 @@ checksums:
     please_fix_your_settings: 41c970bc73bb775e8b1882dfdbaad569
     shortlink_urls_question: 5308003901830e666ff9915b4855a9c9
     yes_shortlink_it: b784b6f9ce6d5eec451de7f3c7f1e01d
+    no_original_urls: 06cf15a6bf380da85f537f425dd6d236
     added_successfully: 5a1557f26138d3f80b6449d4570d47a9
     updated_successfully: fb4e4de59015fd30331e0f56c63918c5
     create_post_title: 06549e1cb8bbba2645f5ded68259684d
@@ -699,3 +703,42 @@ checksums:
     back: f541015a827e37cb3b1234e56bc2aa3c
     get_started: 1d5f030c4ec9c869e647ae060518b948
     kick_select_channel: 13fa95c439addeb6674e571e37c96b79
+    annual: 5d4f1c56f4e9e579ec9967ca68cc64ac
+    apply: 0f03e8e3752eb120bf8ea0b8f8f5d244
+    none: d163ad01ba50118a86047c8b73fbe922
+    no_go_back: f8e980b79b6f711240f4b5e6fcc1f6f3
+    apply_coupon: 9a016a02f2d4aca87f05adc4bc6847ab
+    apply_coupon_subtitle: 05875bab8b513599f15e0cce2c6f0a7b
+    apply_coupon_plan: 34b5f2fb456c10457b3b9bb2cc4e65b5
+    apply_coupon_period: e11ea2f87aed7b3546ecda10d5c44ead
+    apply_coupon_lifetime: 7497bc91074527a9581e72d25ec23f65
+    apply_coupon_applied: ccf9b4f0de47262b510a487084164de0
+    apply_coupon_off: 5506213b43515ef4bbae281d8bd77952
+    apply_coupon_months_total: 4a3cfe6c04a7c1dbb30e0fe2de3fe9fc
+    apply_coupon_months_left: e5b3cd8bd2dd414cdcfc4841f1852319
+    apply_coupon_forever: cab9ed28c6d3735b71c1593e3ec6f5c6
+    apply_coupon_once: 8850cb73dd454e158ec690be76248da0
+    apply_coupon_next_payment: ececc8280a8afceadaae55356fa502a0
+    apply_coupon_type: 05c7b6c0563f7d7652eec29b9e6aa8f8
+    apply_coupon_percentage: a3f8383e2d3a91e6c2eb6527c32224c0
+    apply_coupon_fixed_amount: cbdeaf8ae4ab1c9b14c8cfc50e972ca6
+    apply_coupon_value: 34b0eaa85808b15cbc4be94c64d0146b
+    apply_coupon_months: ea9b90197973d3827ad0803c24ff1704
+    apply_coupon_not_supported: 82a66cd587e53dc94f64a96924e439c4
+    apply_coupon_invalid_percentage: 30cb7721e6a0aa2d9c9d7f7e248b4d33
+    apply_coupon_invalid_amount: ca798a609518dc3b595e8b1d5ba17735
+    apply_coupon_invalid_months: 2588a8e621326f62ad74e2326c230571
+    apply_coupon_failed: ad086216c34702e4d44c86512e2952a2
+    apply_coupon_success: 8ac77166d813092acc04a8bd99f5e6f6
+    cancel_coupon_confirm: 42ec505aeed81903e444cf3c14cec222
+    yes_cancel_coupon: d5cbc873759d9040edceeb4643925a98
+    cancel_coupon_title: 6a02a23e494728ddb694f591be65900d
+    cancel_coupon_failed: 7bbb5c2646ba919b7df0879225eba918
+    cancel_coupon_success: ded654a3b6c5fdfe7bdd23e9b5ad711c
+    what_do_you_want_to_do: c2c352197ed13cee73ed85f9706b35de
+    just_update_post_details: fb0d9cba2fe76d06571fc30dc8db0f13
+    reschedule_post: 103d1943e23d4f71b22439a3b03885dd
+    republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
+    post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
+    republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d

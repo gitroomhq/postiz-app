@@ -118,11 +118,13 @@ export class OrganizationRepository {
                 {
                   name: {
                     contains: name,
+                    mode: 'insensitive',
                   },
                 },
                 {
                   email: {
                     contains: name,
+                    mode: 'insensitive',
                   },
                 },
                 {
@@ -199,6 +201,14 @@ export class OrganizationRepository {
     return this._organization.model.organization.findUnique({
       where: {
         id,
+      },
+    });
+  }
+
+  getUsersByEmail(email: string) {
+    return this._user.model.user.findMany({
+      where: {
+        email,
       },
     });
   }
