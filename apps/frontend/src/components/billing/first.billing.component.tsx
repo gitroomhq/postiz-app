@@ -28,6 +28,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import useCookie from 'react-use-cookie';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
+import { InvoicesComponent } from '@gitroom/frontend/components/layout/invoices.component';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -183,6 +184,7 @@ export const FirstBillingComponent = () => {
         <div className="flex items-center">
           <div className="flex gap-[20px] text-textItemBlur">
             <OrganizationSelector />
+            <InvoicesComponent />
             <div className="hover:text-newTextColor">
               <ModeComponent />
             </div>

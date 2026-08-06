@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "네, 쿠폰을 취소합니다.",
   "cancel_coupon_title": "쿠폰을 취소하시겠습니까?",
   "cancel_coupon_failed": "쿠폰을 취소할 수 없습니다.",
-  "cancel_coupon_success": "쿠폰이 취소되었습니다."
+  "cancel_coupon_success": "쿠폰이 취소되었습니다.",
+  "invoices": "송장"
 }

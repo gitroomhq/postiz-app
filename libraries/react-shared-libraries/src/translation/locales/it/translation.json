@@ -730,5 +730,6 @@
   "yes_cancel_coupon": "Sì, annulla il coupon",
   "cancel_coupon_title": "Annulla coupon?",
   "cancel_coupon_failed": "Impossibile annullare il coupon",
-  "cancel_coupon_success": "Coupon annullato"
+  "cancel_coupon_success": "Coupon annullato",
+  "invoices": "Fatture"
 }
