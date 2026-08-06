@@ -116,6 +116,16 @@ export const startMcp = async (app: INestApplication) => {
       return;
     }
 
+    // The serverless transport has no notification stream and no sessions, so
+    // per the MCP Streamable HTTP spec answer GET (and DELETE) with 405 -
+    // otherwise a GET opens an SSE stream that never emits and never closes,
+    // leaving clients (e.g. ChatGPT) waiting forever.
+    if (req.method === 'GET' || req.method === 'DELETE') {
+      res.setHeader('Allow', 'POST, OPTIONS');
+      res.sendStatus(405);
+      return;
+    }
+
     const url = new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL);
 
     const result = await oauthMiddleware(req, res, url);
@@ -161,6 +171,12 @@ export const startMcp = async (app: INestApplication) => {
       return;
     }
 
+    if (req.method === 'GET' || req.method === 'DELETE') {
+      res.setHeader('Allow', 'POST, OPTIONS');
+      res.sendStatus(405);
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
       res.status(401).send('Missing Authorization header');
@@ -202,6 +218,12 @@ export const startMcp = async (app: INestApplication) => {
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
+      return;
+    }
+
+    if (req.method === 'GET' || req.method === 'DELETE') {
+      res.setHeader('Allow', 'POST, OPTIONS');
+      res.sendStatus(405);
       return;
     }
 
