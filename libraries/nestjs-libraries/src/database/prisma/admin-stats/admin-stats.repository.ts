@@ -25,6 +25,8 @@ export interface StatsResponse {
   connected: { total: number; perSocial: PerSocial[] };
   publishingAccounts: { total: number; perSocial: PerSocial[] };
   scheduledAccounts: { total: number; perSocial: PerSocial[] };
+  publishingChannels: { total: number; perSocial: PerSocial[] };
+  scheduledChannels: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -176,9 +178,37 @@ export class AdminStatsRepository {
       };
     };
 
+    // Same idea per channel: distinct integrations regardless of which
+    // organization owns them (a user with two TikTok channels counts twice).
+    const distinctChannels = (
+      groups: { organizationId: string; integrationId: string }[]
+    ) => {
+      const allChannels = new Set<string>();
+      const channelsByProvider = new Map<string, Set<string>>();
+      for (const g of groups) {
+        const provider = providerById.get(g.integrationId) || 'unknown';
+        if (!channelsByProvider.has(provider)) {
+          channelsByProvider.set(provider, new Set());
+        }
+        channelsByProvider.get(provider)!.add(g.integrationId);
+        allChannels.add(g.integrationId);
+      }
+      return {
+        total: allChannels.size,
+        perSocial: sortDesc(
+          [...channelsByProvider.entries()].map(([provider, channels]) => ({
+            provider,
+            count: channels.size,
+          }))
+        ),
+      };
+    };
+
     return {
       publishingAccounts: distinctOrgs(publishedGroups),
       scheduledAccounts: distinctOrgs(scheduledGroups),
+      publishingChannels: distinctChannels(publishedGroups),
+      scheduledChannels: distinctChannels(scheduledGroups),
     };
   }
 
@@ -224,6 +254,8 @@ export class AdminStatsRepository {
       connected,
       publishingAccounts: accounts.publishingAccounts,
       scheduledAccounts: accounts.scheduledAccounts,
+      publishingChannels: accounts.publishingChannels,
+      scheduledChannels: accounts.scheduledChannels,
     };
   }
 }
