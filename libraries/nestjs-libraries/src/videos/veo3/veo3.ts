@@ -48,6 +48,7 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
           Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
         },
         method: 'POST',
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           prompt: customParams.prompt,
           imageUrls: customParams?.images?.map((p) => p.path) || [],
@@ -58,12 +59,18 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
     ).json();
 
     if (value.code !== 200 && value.code !== 201) {
-      throw new Error(`Failed to generate video`);
+      throw new Error(value?.msg || `Failed to generate video`);
     }
 
     const taskId = value.data.taskId;
-    let videoUrl = [];
-    while (videoUrl.length === 0) {
+    console.log('veo3 taskId', taskId);
+    let attempts = 0;
+    const maxAttempts = 180; // ~30 minutes at 10s interval
+    while (true) {
+      if (attempts++ >= maxAttempts) {
+        throw new Error('Video generation timed out');
+      }
+
       console.log('waiting for video to be ready');
       const data = await (
         await fetch(
@@ -73,18 +80,34 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
             },
+            signal: AbortSignal.timeout(30000),
           }
         )
       ).json();
 
-      if (data.code !== 200 && data.code !== 400) {
-        throw new Error(`Failed to get video info`);
+      if (data.code !== 200) {
+        throw new Error(data?.msg || `Failed to get video info`);
       }
 
-      videoUrl = data?.data?.response?.resultUrls || [];
+      // successFlag: 0 = generating, 1 = success, anything else = failed
+      const successFlag = data?.data?.successFlag;
+      if (successFlag !== 0 && successFlag !== 1) {
+        throw new Error(
+          data?.data?.errorMessage ||
+            `Video generation failed (status ${successFlag})`
+        );
+      }
+
+      const videoUrl = data?.data?.response?.resultUrls || [];
+      if (videoUrl.length > 0) {
+        return videoUrl[0];
+      }
+
+      if (successFlag === 1) {
+        throw new Error('Video generation succeeded but no video URL returned');
+      }
+
       await timer(10000);
     }
-
-    return videoUrl[0];
   }
 }

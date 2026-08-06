@@ -60,8 +60,15 @@ export const Modal: FC<{
 
       if (image.status == 200 || image.status == 201) {
         onChange(await image.json());
+      } else {
+        toaster.show('Video generation failed', 'warning');
       }
-    } catch (e) {}
+    } catch (e) {
+      toaster.show(
+        'Video generation failed or timed out — if it completes, it will appear in your media library',
+        'warning'
+      );
+    }
 
     setLocked(false);
     setLoading(false);
