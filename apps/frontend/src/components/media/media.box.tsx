@@ -1051,154 +1051,157 @@ export const MediaBox: FC<{
 
       {uppyBar}
 
-      {/* Filters tight above gallery — owner */}
+      {/* Filters tight above gallery — owner.
+          Scroll only the grid (~2 rows + type/size captions). Pagination
+          stays outside so page controls stay visible without scrolling. */}
       <div className="flex flex-col gap-[8px]">
         <div className="flex shrink-0 flex-wrap items-center gap-[10px]">
           {filterTabs}
         </div>
 
-        {/* ~2 thumb rows (+ meta) so page controls sit under the grid without
-            scrolling the sheet. Extra rows scroll inside this viewport. */}
         <div className="relative max-h-[min(280px,32vh)] overflow-y-auto p-[3px] pe-[4px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
-        {isLoading && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-[14px] gap-y-[18px]">
-            {[...new Array(12)].map((_, i) => (
-              <div key={i} className="flex flex-col gap-[8px]">
-                <div className="aspect-[4/3] animate-pulse rounded-[10px] bg-pqSettings" />
-                <div className="flex justify-between gap-[8px]">
-                  <div className="h-[11px] w-[28%] animate-pulse rounded bg-pqSettings" />
-                  <div className="h-[11px] w-[34%] animate-pulse rounded bg-pqSettings" />
+          {isLoading && (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-[14px] gap-y-[18px]">
+              {[...new Array(12)].map((_, i) => (
+                <div key={i} className="flex flex-col gap-[8px]">
+                  <div className="aspect-[4/3] animate-pulse rounded-[10px] bg-pqSettings" />
+                  <div className="flex justify-between gap-[8px]">
+                    <div className="h-[11px] w-[28%] animate-pulse rounded bg-pqSettings" />
+                    <div className="h-[11px] w-[34%] animate-pulse rounded bg-pqSettings" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {!isLoading && visibleMedia.length === 0 && (
-          <div className="flex flex-col items-center gap-[12px] py-[32px] text-center">
-            <div className="text-[15px] font-[600] text-pqText">
-              {t('nothing_here_yet', 'Nothing here yet')}
+              ))}
             </div>
-            <button
-              type="button"
-              onClick={() => uploaderRef.current?.click()}
-              className="h-[34px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand"
-            >
-              {t('upload_media', 'Upload media')}
-            </button>
-          </div>
-        )}
-        <div
-          className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] items-start gap-x-[14px] gap-y-[18px]"
-          data-pq="media-library-grid"
-        >
-          {visibleMedia.map((media) => {
-            const alreadyOnPost = attachedIds.has(media.id);
-            const selectionOrder = selected.findIndex((z) => z.id === media.id);
-            const isPicked = selectionOrder >= 0;
-            const marked = isPicked || alreadyOnPost;
-            const menuOpenForItem = menuMedia?.id === media.id;
-            return (
-              <div
-                key={media.id}
-                onClick={addRemoveSelected(media)}
-                className="group flex cursor-pointer flex-col gap-[8px]"
+          )}
+          {!isLoading && visibleMedia.length === 0 && (
+            <div className="flex flex-col items-center gap-[12px] py-[32px] text-center">
+              <div className="text-[15px] font-[600] text-pqText">
+                {t('nothing_here_yet', 'Nothing here yet')}
+              </div>
+              <button
+                type="button"
+                onClick={() => uploaderRef.current?.click()}
+                className="h-[34px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand"
               >
+                {t('upload_media', 'Upload media')}
+              </button>
+            </div>
+          )}
+          <div
+            className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] items-start gap-x-[14px] gap-y-[18px]"
+            data-pq="media-library-grid"
+          >
+            {visibleMedia.map((media) => {
+              const alreadyOnPost = attachedIds.has(media.id);
+              const selectionOrder = selected.findIndex(
+                (z) => z.id === media.id
+              );
+              const isPicked = selectionOrder >= 0;
+              const marked = isPicked || alreadyOnPost;
+              const menuOpenForItem = menuMedia?.id === media.id;
+              return (
                 <div
-                  className={clsx(
-                    // Selection chrome: 2px brand border flush on the thumb
-                    // edge — no ring-offset halo/gap between image and ring.
-                    'relative grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
-                    marked
-                      ? 'border-pqBrand'
-                      : 'border-pqBorder group-hover:border-pqBrand'
-                  )}
+                  key={media.id}
+                  onClick={addRemoveSelected(media)}
+                  className="group flex cursor-pointer flex-col gap-[8px]"
                 >
-                  <MediaThumb media={media} />
-                  {isVideoMedia(media) && !marked && (
-                    <span className="absolute bottom-[7px] end-[7px] flex h-[19px] items-center gap-[4px] rounded-[5px] bg-black/72 px-[6px] text-[10px] font-[600] tabular-nums text-white">
-                      {media.duration || t('video', 'Video')}
-                    </span>
-                  )}
-                  {marked && (
+                  <div
+                    className={clsx(
+                      // Selection chrome: 2px brand border flush on the thumb
+                      // edge — no ring-offset halo/gap between image and ring.
+                      'relative grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
+                      marked
+                        ? 'border-pqBrand'
+                        : 'border-pqBorder group-hover:border-pqBrand'
+                    )}
+                  >
+                    <MediaThumb media={media} />
+                    {isVideoMedia(media) && !marked && (
+                      <span className="absolute bottom-[7px] end-[7px] flex h-[19px] items-center gap-[4px] rounded-[5px] bg-black/72 px-[6px] text-[10px] font-[600] tabular-nums text-white">
+                        {media.duration || t('video', 'Video')}
+                      </span>
+                    )}
+                    {marked && (
+                      <div
+                        // Top-start order chip — clears the top-end ⋯ menu and
+                        // the border-2 selection outline. Bare digit (no
+                        // parentheses); already-attached stays a small check.
+                        className={clsx(
+                          'absolute top-[8px] start-[8px] z-[101] grid h-[22px] min-w-[22px] place-items-center rounded-[7px] bg-pqInner px-[6px] text-[11px] font-[700] leading-none tabular-nums text-pqBrand shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)]',
+                          alreadyOnPost && !isPicked && 'text-pqMuted'
+                        )}
+                        title={
+                          alreadyOnPost && !isPicked
+                            ? t(
+                                'media_already_on_post',
+                                'This media is already on the post.'
+                              )
+                            : undefined
+                        }
+                      >
+                        {alreadyOnPost && !isPicked ? (
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="12"
+                            height="12"
+                            fill="none"
+                            aria-hidden
+                          >
+                            <path
+                              d="M5.5 12.5 10 17l8.5-9"
+                              stroke="currentColor"
+                              strokeWidth="2.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : (
+                          <span aria-hidden>{selectionOrder + 1}</span>
+                        )}
+                      </div>
+                    )}
                     <div
-                      // Top-start order chip — clears the top-end ⋯ menu and
-                      // the border-2 selection outline. Bare digit (no
-                      // parentheses); already-attached stays a small check.
                       className={clsx(
-                        'absolute top-[8px] start-[8px] z-[101] grid h-[22px] min-w-[22px] place-items-center rounded-[7px] bg-pqInner px-[6px] text-[11px] font-[700] leading-none tabular-nums text-pqBrand shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)]',
-                        alreadyOnPost && !isPicked && 'text-pqMuted'
+                        'absolute top-[6px] end-[6px] z-[100] transition-opacity',
+                        menuOpenForItem
+                          ? 'opacity-100'
+                          : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
                       )}
-                      title={
-                        alreadyOnPost && !isPicked
-                          ? t(
-                              'media_already_on_post',
-                              'This media is already on the post.'
-                            )
-                          : undefined
-                      }
                     >
-                      {alreadyOnPost && !isPicked ? (
+                      <button
+                        type="button"
+                        onClick={openMenu(media)}
+                        title={t('more', 'More')}
+                        className="grid h-[28px] w-[28px] place-items-center rounded-[8px] bg-pqPop text-pqMuted shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)] hover:text-pqText"
+                      >
                         <svg
                           viewBox="0 0 24 24"
-                          width="12"
-                          height="12"
+                          width="16"
+                          height="16"
                           fill="none"
-                          aria-hidden
                         >
                           <path
-                            d="M5.5 12.5 10 17l8.5-9"
+                            d="M12 6.5h.01M12 12h.01M12 17.5h.01"
                             stroke="currentColor"
                             strokeWidth="2.4"
                             strokeLinecap="round"
-                            strokeLinejoin="round"
                           />
                         </svg>
-                      ) : (
-                        <span aria-hidden>{selectionOrder + 1}</span>
-                      )}
+                      </button>
                     </div>
-                  )}
-                  <div
-                    className={clsx(
-                      'absolute top-[6px] end-[6px] z-[100] transition-opacity',
-                      menuOpenForItem
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={openMenu(media)}
-                      title={t('more', 'More')}
-                      className="grid h-[28px] w-[28px] place-items-center rounded-[8px] bg-pqPop text-pqMuted shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)] hover:text-pqText"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="none"
-                      >
-                        <path
-                          d="M12 6.5h.01M12 12h.01M12 17.5h.01"
-                          stroke="currentColor"
-                          strokeWidth="2.4"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-[8px] px-[2px] text-[11px] leading-[1.35] tabular-nums text-pqMuted">
+                    <span className="min-w-0 truncate uppercase">
+                      {mediaFormatLabel(media)}
+                    </span>
+                    <span className="shrink-0">{mediaSizeLabel(media)}</span>
                   </div>
                 </div>
-                <div className="flex items-baseline justify-between gap-[8px] px-[2px] text-[11px] leading-[1.35] tabular-nums text-pqMuted">
-                  <span className="min-w-0 truncate uppercase">
-                    {mediaFormatLabel(media)}
-                  </span>
-                  <span className="shrink-0">{mediaSizeLabel(media)}</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-        </div>
+
         {(data?.pages || 0) > 1 && !useDemo && (
           <div className="shrink-0 pt-[4px]">
             <Pagination
