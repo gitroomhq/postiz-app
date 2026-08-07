@@ -12,6 +12,7 @@ import { MediumTags } from '@gitroom/frontend/components/new-launch/providers/me
 import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { Select } from '@gitroom/react/form/select';
 import { YoutubePreview } from '@gitroom/frontend/components/new-launch/providers/youtube/youtube.preview';
+import { InfoTooltip } from '@gitroom/frontend/components/ui/info.tooltip';
 const type = [
   {
     label: 'Public',
@@ -72,7 +73,12 @@ const YoutubeSettings: FC = () => {
           type="image"
           width={1280}
           height={720}
-          label="Thumbnail"
+          label={
+            <span className="flex items-center gap-[6px]">
+              Thumbnail
+              <InfoTooltip content="YouTube — not Postiz — decides if a video is a Short (vertical, up to 3 min). For Shorts, YouTube often ignores custom thumbnails and uses a video frame instead, without reporting an error — so a thumbnail here is best-effort. Custom thumbnails also need a verified channel and a JPEG or PNG under 2MB." />
+            </span>
+          }
           description="Thumbnail picture (optional)"
           {...register('thumbnail')}
         />

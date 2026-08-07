@@ -885,7 +885,7 @@ export const MultiMediaComponent: FC<{
   );
 };
 export const MediaComponent: FC<{
-  label: string;
+  label: React.ReactNode;
   description: string;
   value?: {
     path: string;
