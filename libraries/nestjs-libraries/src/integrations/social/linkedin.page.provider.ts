@@ -150,8 +150,10 @@ export class LinkedinPageProvider
     ).json();
 
     return (elements || [])
-      .filter((e: any) =>
-        ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'].includes(e.role)
+      .filter(
+        (e: any) =>
+          e['organizationalTarget~'] &&
+          ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'].includes(e.role)
       )
       .map((e: any) => ({
         id: e.organizationalTarget.split(':').pop(),
