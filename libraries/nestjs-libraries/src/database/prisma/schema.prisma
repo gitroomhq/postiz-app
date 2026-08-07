@@ -409,6 +409,7 @@ model Post {
   submittedForOrderId        String?
   submittedForOrganizationId String?
   approvedSubmitForOrder     APPROVED_SUBMIT_FOR_ORDER @default(NO)
+  creationMethod             CreationMethod            @default(UNKNOWN)
   lastMessageId              String?
   intervalInDays             Int?
   error                      String?
@@ -436,6 +437,7 @@ model Post {
   @@index([submittedForOrderId])
   @@index([intervalInDays])
   @@index([approvedSubmitForOrder])
+  @@index([creationMethod])
   @@index([lastMessageId])
   @@index([createdAt])
   @@index([updatedAt])
@@ -936,6 +938,15 @@ enum APPROVED_SUBMIT_FOR_ORDER {
   NO
   WAITING_CONFIRMATION
   YES
+}
+
+enum CreationMethod {
+  UNKNOWN
+  WEB
+  MCP
+  API
+  AUTOPOST
+  CLI
 }
 
 enum ShortLinkPreference {

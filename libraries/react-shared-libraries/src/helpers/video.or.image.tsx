@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { clsx } from 'clsx';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 export const VideoOrImage: FC<{
   src: string;
   autoplay: boolean;
@@ -8,7 +9,7 @@ export const VideoOrImage: FC<{
   videoClassName?: string;
 }> = (props) => {
   const { src, autoplay, isContain, imageClassName, videoClassName } = props;
-  if (src?.indexOf('mp4') > -1) {
+  if (hasExtension(src, 'mp4')) {
     return (
       <video
         src={src}

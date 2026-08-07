@@ -3,8 +3,10 @@ import dayjs, { ConfigType } from 'dayjs';
 import { FC, useEffect } from 'react';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(timezone);
 dayjs.extend(utc);
+dayjs.extend(relativeTime);
 
 const { utc: originalUtc } = dayjs;
 

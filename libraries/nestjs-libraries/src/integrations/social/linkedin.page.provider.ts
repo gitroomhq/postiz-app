@@ -273,6 +273,23 @@ export class LinkedinPageProvider
     return super.post(id, accessToken, postDetails, integration, 'company');
   }
 
+  // checkPostStatus / finalizePost are inherited as-is: the company context
+  // travels inside pendingData (postType), set here once.
+  override async postPending(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return super.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'company'
+    );
+  }
+
   override async comment(
     id: string,
     postId: string,
@@ -433,7 +450,7 @@ export class LinkedinPageProvider
 
     const { elements: shareElements }: { elements: PostShareStatElement[] } =
       await (
-        await this.fetch(shareStatsUrl, {
+        await fetch(shareStatsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',
@@ -449,7 +466,7 @@ export class LinkedinPageProvider
         postId
       )}`;
       socialActions = await (
-        await this.fetch(socialActionsUrl, {
+        await fetch(socialActionsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',

@@ -23,6 +23,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -233,8 +234,8 @@ export class NoAuthIntegrationsController {
               Buffer.from(body.code, 'base64').toString()
             )
           : integrationProvider.isChromeExtension
-          ? AuthService.signJWT(
-              JSON.parse(Buffer.from(body.code, 'base64').toString())
+          ? AuthService.fixedEncryption(
+              Buffer.from(body.code, 'base64').toString()
             )
           : undefined
       );
@@ -277,6 +278,8 @@ export class NoAuthIntegrationsController {
               apiKey: org.apiKey,
             }),
           }),
+          // @ts-ignore — undici option, not in lib.dom fetch types
+          dispatcher: getSsrfSafeDispatcher(),
         });
       } catch (err) {}
 
@@ -297,8 +300,18 @@ export class NoAuthIntegrationsController {
         })
       : undefined;
 
+    // Never leak stored credentials (signed/encrypted secrets) back to the
+    // caller. These columns hold the integration access token, refresh token
+    // and encrypted custom instance details and must stay server-side.
+    const {
+      token: _token,
+      refreshToken: _refreshToken,
+      customInstanceDetails: _customInstanceDetails,
+      ...safeIntegration
+    } = createUpdate as any;
+
     return {
-      ...createUpdate,
+      ...safeIntegration,
       onboarding: onboarding === 'true',
       pages,
       ...(returnURL ? { returnURL } : {}),

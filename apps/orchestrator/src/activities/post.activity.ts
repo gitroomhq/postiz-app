@@ -17,12 +17,40 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+
+// Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
+function slimPost(post: any) {
+  if (!post) return post;
+  const {
+    error,
+    childrenPost,
+    tags,
+    description,
+    title,
+    submittedForOrderId,
+    submittedForOrganizationId,
+    submittedForOrder,
+    submittedForOrganization,
+    lastMessageId,
+    parentPostId,
+    approvedSubmitForOrder,
+    deletedAt,
+    createdAt,
+    updatedAt,
+    payoutProblems,
+    comments,
+    errors,
+    ...rest
+  } = post;
+  return rest;
+}
 
 @Injectable()
 @Activity()
@@ -49,7 +77,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV102', {
+        .workflow.signalWithStart('postWorkflowV106', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -80,13 +108,33 @@ export class PostActivity {
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {
-    return this._postService.updatePost(id, postId, releaseURL);
+    await this._postService.updatePost(id, postId, releaseURL);
+  }
+
+  @ActivityMethod()
+  async getPost(orgId: string, postId: string) {
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(
+        orgId
+      );
+      if (!subscription) {
+        return false;
+      }
+    }
+    const post = await this._postService.getPostById(postId, orgId);
+    if (post.deletedAt) {
+      return false;
+    }
+
+    return post;
   }
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
     if (process.env.STRIPE_SECRET_KEY) {
-      const subscription = await this._subscriptionService.getSubscription(orgId);
+      const subscription = await this._subscriptionService.getSubscription(
+        orgId
+      );
       if (!subscription) {
         return [];
       }
@@ -101,7 +149,7 @@ export class PostActivity {
       return [];
     }
 
-    return getPosts;
+    return getPosts.map(slimPost);
   }
 
   @ActivityMethod()
@@ -159,6 +207,33 @@ export class PostActivity {
 
   @ActivityMethod()
   async postSocial(integration: Integration, posts: Post[]) {
+    return this.postSocialInternal(integration, posts, false);
+  }
+
+  // Used by postWorkflowV106 and up: providers that implement `postPending`
+  // return a `pending` response the workflow resolves via checkPostStatus /
+  // finalizePost. Older workflow versions keep calling `postSocial` and get
+  // the old blocking behavior.
+  @ActivityMethod()
+  async postSocialPending(integration: Integration, posts: Post[]) {
+    return this.postSocialInternal(integration, posts, true);
+  }
+
+  private async postSocialInternal(
+    integration: Integration,
+    posts: Post[],
+    allowPending: boolean
+  ) {
+    if (process.env.STRIPE_SECRET_KEY) {
+      const subscription = await this._subscriptionService.getSubscription(
+        integration.organizationId
+      );
+
+      if (!subscription) {
+        throw new Error('No active subscription found for this organization.');
+      }
+    }
+
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -168,47 +243,89 @@ export class PostActivity {
       posts
     );
 
-    const postNow = await getIntegration.post(
-      integration.internalId,
-      integration.token,
-      await Promise.all(
-        (newPosts || []).map(async (p) => ({
-          id: p.id,
-          message: stripHtmlValidation(
-            getIntegration.editor,
-            p.content,
-            true,
-            false,
-            !/<\/?[a-z][\s\S]*>/i.test(p.content),
-            getIntegration.mentionFormat
-          ),
-          settings: JSON.parse(p.settings || '{}'),
-          media: await this._postService.updateMedia(
-            p.id,
-            JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
-          ),
-        }))
-      ),
-      integration
+    const mappedPosts = await Promise.all(
+      (newPosts || []).map(async (p) => ({
+        id: p.id,
+        message: stripHtmlValidation(
+          getIntegration.editor,
+          p.content,
+          true,
+          false,
+          !/<\/?[a-z][\s\S]*>/i.test(p.content),
+          getIntegration.mentionFormat
+        ),
+        settings: JSON.parse(p.settings || '{}'),
+        media: await this._postService.updateMedia(
+          p.id,
+          JSON.parse(p.image || '[]'),
+          getIntegration?.convertToJPEG || false
+        ),
+      }))
     );
 
-    await this._temporalService.client
-      .getRawClient()
-      .workflow.start('streakWorkflow', {
-        args: [{ organizationId: integration.organizationId }],
-        workflowId: `streak_${integration.organizationId}`,
-        taskQueue: 'main',
-        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
-        typedSearchAttributes: new TypedSearchAttributes([
-          {
-            key: organizationId,
-            value: integration.organizationId,
-          },
-        ]),
-      });
+    const postNow =
+      allowPending && getIntegration.postPending
+        ? await getIntegration.postPending(
+            integration.internalId,
+            integration.token,
+            mappedPosts,
+            integration
+          )
+        : await getIntegration.post(
+            integration.internalId,
+            integration.token,
+            mappedPosts,
+            integration
+          );
+
+    // The post is already published at this point: the streak is best-effort,
+    // failing the activity here would retry it and publish again.
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.start('streakWorkflow', {
+          args: [{ organizationId: integration.organizationId }],
+          workflowId: `streak_${integration.organizationId}`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: organizationId,
+              value: integration.organizationId,
+            },
+          ]),
+        });
+    } catch (err) {
+      /**empty**/
+    }
 
     return postNow;
+  }
+
+  @ActivityMethod()
+  async checkPostStatus(integration: Integration, pendingData: any) {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    return getIntegration.checkPostStatus(
+      integration.token,
+      pendingData,
+      integration
+    );
+  }
+
+  @ActivityMethod()
+  async finalizePost(integration: Integration, pendingData: any) {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    return getIntegration.finalizePost(
+      integration.token,
+      pendingData,
+      integration
+    );
   }
 
   @ActivityMethod()
@@ -220,7 +337,7 @@ export class PostActivity {
     digest = false,
     type: NotificationType = 'success'
   ) {
-    return this._notificationService.inAppNotification(
+    await this._notificationService.inAppNotification(
       orgId,
       subject,
       message,
@@ -241,7 +358,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async changeState(id: string, state: State, err?: any, body?: any) {
-    return this._postService.changeState(id, state, err, body);
+    await this._postService.changeState(id, state, err, body);
   }
 
   @ActivityMethod()
@@ -256,31 +373,46 @@ export class PostActivity {
 
   @ActivityMethod()
   async sendWebhooks(postId: string, orgId: string, integrationId: string) {
-    const webhooks = (await this._webhookService.getWebhooks(orgId)).filter(
-      (f) => {
-        return (
-          f.integrations.length === 0 ||
-          f.integrations.some((i) => i.integration.id === integrationId)
-        );
-      }
-    );
-
-    const post = await this._postService.getPostByForWebhookId(postId);
-    return Promise.all(
-      webhooks.map(async (webhook) => {
-        try {
-          await fetch(webhook.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(post),
-          });
-        } catch (e) {
-          /**empty**/
+    // Webhooks are best-effort and run after the post already published, so a
+    // failure here must not fail the workflow.
+    try {
+      const webhooks = (await this._webhookService.getWebhooks(orgId)).filter(
+        (f) => {
+          return (
+            f.integrations.length === 0 ||
+            f.integrations.some((i) => i.integration.id === integrationId)
+          );
         }
-      })
-    );
+      );
+
+      if (webhooks.length === 0) {
+        return;
+      }
+
+      const post = await this._postService.getPostByForWebhookId(postId);
+      await Promise.all(
+        webhooks.map(async (webhook) => {
+          try {
+            // webhook.url is validated at save time, but DNS can change
+            // between then and now - pin resolution like every other
+            // user-influenced outbound request.
+            await fetch(webhook.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(post),
+              // @ts-ignore — undici option, not in lib.dom fetch types
+              dispatcher: getSsrfSafeDispatcher(),
+            });
+          } catch (e) {
+            /**empty**/
+          }
+        })
+      );
+    } catch (err) {
+      /**empty**/
+    }
   }
   @ActivityMethod()
   async processPlug(data: {
@@ -303,7 +435,7 @@ export class PostActivity {
     delay: number;
     information: any;
   }) {
-    return this._integrationService.processInternalPlug(data);
+    await this._integrationService.processInternalPlug(data);
   }
 
   @ActivityMethod()
@@ -357,10 +489,7 @@ export class PostActivity {
 
       return refresh;
     } catch (err) {
-      await this._refreshIntegrationService.setBetweenSteps(
-        integration,
-        cause
-      );
+      await this._refreshIntegrationService.setBetweenSteps(integration, cause);
       return false;
     }
   }
