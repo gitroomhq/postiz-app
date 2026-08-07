@@ -1,5 +1,6 @@
 import { TweetV2, TwitterApi } from 'twitter-api-v2';
 import { createHmac, randomBytes } from 'crypto';
+import { parseFragment } from 'parse5';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -42,8 +43,14 @@ type XPendingData = {
     community?: string;
     made_with_ai?: boolean;
     paid_partnership?: boolean;
+    post_type?: 'post' | 'article';
+    article_title?: string;
+    article_status?: 'draft' | 'published';
   };
   mediaIds: string[];
+  // Article cover selected in the settings, uploaded separately from the post
+  // media (which is embedded in the article body).
+  coverMediaId?: string;
   // Media still transcoding on X's side, waiting for STATUS = succeeded.
   processingIds: string[];
   // Arm -> confirm -> publish handshake (same as the Facebook story flow):
@@ -55,7 +62,7 @@ type XPendingData = {
 };
 
 @Rules(
-  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments ${
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article ${
     process.env.STRIP_LINKS_FROM_X_POSTS
       ? 'do not add links, they will be stripped from the post'
       : ''
@@ -76,16 +83,61 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   toolTip =
     'You will be logged in into your current account, if you would like a different account, change it first on X';
 
-  editor = 'normal' as const;
+  // The provider receives the rich HTML so articles keep their formatting;
+  // regular tweets are stripped to plain text inside the provider.
+  editor = 'html' as const;
   dto = XDto;
 
-  maxLength(additionalSettings?: any) {
+  maxLength(additionalSettings?: any, settings?: any) {
+    // Articles are long-form content, the tweet character limit doesn't apply.
+    if (settings?.post_type === 'article') {
+      return 100000;
+    }
+
     // Accepts either the parsed additionalSettings array (from validation) or a
     // plain boolean (legacy callers). "Verified" => premium => higher limit.
     const isTwitterPremium = Array.isArray(additionalSettings)
       ? !!additionalSettings.find((p: any) => p?.title === 'Verified')?.value
       : !!additionalSettings;
     return isTwitterPremium ? 4000 : 280;
+  }
+
+  // With `editor = 'html'` the activity hands the provider HTML (needed for
+  // articles); everything that becomes a tweet has to be flattened back to the
+  // plain text X expects - same output the old 'normal' editor produced.
+  private toTweetText(message: string) {
+    return stripHtmlValidation(
+      'normal',
+      message,
+      true,
+      false,
+      !/<\/?[a-z][\s\S]*>/i.test(message)
+    );
+  }
+
+  override async checkValidity(
+    [firstPost, ...comments]: Array<{ path: string }[]>,
+    settings: any
+  ): Promise<string | true> {
+    if (settings?.post_type !== 'article') {
+      return true;
+    }
+
+    if (
+      [...(firstPost || []), ...comments.flat()].some((m) =>
+        hasExtension(m.path, 'mp4')
+      )
+    ) {
+      return 'X articles only support images';
+    }
+
+    // Replies can only be attached to the seed post a published article
+    // creates - a draft has no post to reply to.
+    if (settings?.article_status !== 'published' && comments.length) {
+      return 'A draft article cannot have thread replies, remove them or publish the article';
+    }
+
+    return true;
   }
 
   override handleErrors(body: string):
@@ -590,7 +642,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   private async uploadMediaEntries(
     client: TwitterApi,
-    postDetails: PostDetails<any>[]
+    postDetails: PostDetails<any>[],
+    asArticleImage = false
   ) {
     // Media is uploaded sequentially on purpose: uploading everything with
     // Promise.all holds every file in memory at the same time.
@@ -605,20 +658,37 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                   this.uploadVideoInChunks(client, m.path)
                 )
               : {
+                  // Articles reject GIF media, so the tweet pipeline (which
+                  // converts every image to GIF) can't be reused for them -
+                  // article images are uploaded as JPEG with the tweet_image
+                  // category the article references them by.
                   mediaId: await this.uploadWithRateLimitRetry(async () =>
-                    client.v2.uploadMedia(
-                      await sharp(await readOrFetch(m.path), {
-                        animated: lookup(m.path) === 'image/gif',
-                      })
-                        .resize({
-                          width: 1000,
-                        })
-                        .gif()
-                        .toBuffer(),
-                      {
-                        media_type: (lookup(m.path) || '') as any,
-                      }
-                    )
+                    asArticleImage
+                      ? client.v2.uploadMedia(
+                          await sharp(await readOrFetch(m.path))
+                            .resize({
+                              width: 1000,
+                            })
+                            .jpeg()
+                            .toBuffer(),
+                          {
+                            media_type: 'image/jpeg' as any,
+                            media_category: 'tweet_image' as any,
+                          }
+                        )
+                      : client.v2.uploadMedia(
+                          await sharp(await readOrFetch(m.path), {
+                            animated: lookup(m.path) === 'image/gif',
+                          })
+                            .resize({
+                              width: 1000,
+                            })
+                            .gif()
+                            .toBuffer(),
+                          {
+                            media_type: (lookup(m.path) || '') as any,
+                          }
+                        )
                   ),
                   processing: false,
                 },
@@ -674,18 +744,40 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         | 'verified';
       made_with_ai?: boolean;
       paid_partnership?: boolean;
+      post_type?: 'post' | 'article';
+      article_title?: string;
+      article_status?: 'draft' | 'published';
+      article_cover?: { id: string; path: string };
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
     const client = await this.getClient(accessToken);
     const [firstPost] = postDetails;
+    const isArticle = firstPost?.settings?.post_type === 'article';
 
     // Upload the media now; the transcoding wait moves to checkPostStatus and
     // the tweet itself is only created by finalizePost, so nothing here is
     // irreversible - a failure leaves only orphaned media.
-    const { media, processingIds } = await this.uploadMediaEntries(client, [
-      firstPost,
-    ]);
+    const { media, processingIds } = await this.uploadMediaEntries(
+      client,
+      [firstPost],
+      isArticle
+    );
+
+    // The article cover is picked in the settings, separate from the post
+    // media (which is embedded in the article body).
+    const coverPath = isArticle
+      ? firstPost?.settings?.article_cover?.path
+      : undefined;
+    const coverMediaId = coverPath
+      ? (
+          await this.uploadMediaEntries(
+            client,
+            [{ id: 'article-cover', media: [{ path: coverPath }] } as any],
+            true
+          )
+        ).media['article-cover']?.[0]
+      : undefined;
 
     return [
       {
@@ -694,14 +786,22 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         postId: '',
         status: 'pending',
         pendingData: {
-          message: firstPost.message,
+          // Articles keep the HTML (converted to Draft.js in finalizePost),
+          // tweets are flattened to plain text.
+          message: isArticle
+            ? firstPost.message
+            : this.toTweetText(firstPost.message),
           settings: {
             who_can_reply_post: firstPost?.settings?.who_can_reply_post,
             community: firstPost?.settings?.community,
             made_with_ai: firstPost?.settings?.made_with_ai,
             paid_partnership: firstPost?.settings?.paid_partnership,
+            post_type: firstPost?.settings?.post_type,
+            article_title: firstPost?.settings?.article_title,
+            article_status: firstPost?.settings?.article_status,
           },
           mediaIds: (media[firstPost.id] || []).filter((f) => f),
+          ...(coverMediaId ? { coverMediaId } : {}),
           processingIds,
         } as XPendingData,
       },
@@ -801,6 +901,259 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // Converts the editor HTML (already sanitized by stripHtmlValidation's
+  // 'html' mode - only p, h1-h3, ul, li, strong, u and a survive) into the
+  // content_state the X Articles API expects, embedding the post media as
+  // atomic image blocks at the end (the cover travels separately).
+  // X's schema is a snake_case Draft.js dialect with additionalProperties
+  // disallowed: blocks only accept key/text/type/data/entity_ranges/
+  // inline_style_ranges (no depth).
+  private articleContentState(html: string, embeddedMediaIds: string[]) {
+    const blocks: any[] = [];
+    const entities: any[] = [];
+
+    const walkInline = (
+      node: any,
+      ctx: { text: string; styles: any[]; entityRanges: any[] }
+    ) => {
+      for (const child of node.childNodes || []) {
+        if (child.nodeName === '#text') {
+          ctx.text += child.value || '';
+          continue;
+        }
+
+        const offset = ctx.text.length;
+        walkInline(child, ctx);
+        const length = ctx.text.length - offset;
+        if (!length) {
+          continue;
+        }
+
+        if (child.nodeName === 'strong') {
+          ctx.styles.push({ offset, length, style: 'bold' });
+        }
+
+        if (child.nodeName === 'a') {
+          const url = (child.attrs || []).find(
+            (a: any) => a.name === 'href'
+          )?.value;
+          if (url) {
+            const key = entities.length;
+            entities.push({
+              key: String(key),
+              value: {
+                type: 'link',
+                mutability: 'mutable',
+                data: { url },
+              },
+            });
+            ctx.entityRanges.push({ offset, length, key });
+          }
+        }
+      }
+    };
+
+    const makeBlock = (
+      text: string,
+      type: string,
+      styles: any[] = [],
+      entityRanges: any[] = []
+    ) => ({
+      key: `b${blocks.length}`,
+      text,
+      type,
+      ...(styles.length ? { inline_style_ranges: styles } : {}),
+      ...(entityRanges.length ? { entity_ranges: entityRanges } : {}),
+    });
+
+    const pushBlock = (node: any, type: string) => {
+      const ctx = { text: '', styles: [] as any[], entityRanges: [] as any[] };
+      walkInline(node, ctx);
+      if (!ctx.text.trim()) {
+        return;
+      }
+      blocks.push(makeBlock(ctx.text, type, ctx.styles, ctx.entityRanges));
+    };
+
+    const fragment = parseFragment(html) as any;
+    for (const node of fragment.childNodes || []) {
+      switch (node.nodeName) {
+        case 'h1':
+          pushBlock(node, 'header-one');
+          break;
+        case 'h2':
+          pushBlock(node, 'header-two');
+          break;
+        case 'h3':
+          pushBlock(node, 'header-three');
+          break;
+        case 'ul':
+        case 'ol':
+          for (const li of (node.childNodes || []).filter(
+            (n: any) => n.nodeName === 'li'
+          )) {
+            pushBlock(
+              li,
+              node.nodeName === 'ol'
+                ? 'ordered-list-item'
+                : 'unordered-list-item'
+            );
+          }
+          break;
+        case '#text':
+          if ((node.value || '').trim()) {
+            blocks.push(makeBlock(node.value, 'unstyled'));
+          }
+          break;
+        default:
+          pushBlock(node, 'unstyled');
+          break;
+      }
+    }
+
+    // The API requires at least one block.
+    if (!blocks.length) {
+      blocks.push(makeBlock(stripHtmlValidation('none', html), 'unstyled'));
+    }
+
+    for (const mediaId of embeddedMediaIds) {
+      const key = entities.length;
+      entities.push({
+        key: String(key),
+        value: {
+          type: 'image',
+          mutability: 'immutable',
+          data: {
+            media_items: [
+              // Must match the category the media was uploaded with -
+              // lowercase, like the upload endpoint (the uppercase
+              // TWEET_IMAGE in the docs example is wrong).
+              { media_category: 'tweet_image', media_id: mediaId },
+            ],
+          },
+        },
+      });
+      blocks.push(
+        makeBlock(' ', 'atomic', [], [{ offset: 0, length: 1, key }])
+      );
+    }
+
+    return { blocks, entities };
+  }
+
+  private async finalizeArticle(
+    accessToken: string,
+    pendingData: XPendingData,
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const settings = pendingData.settings || {};
+    const coverMediaId = pendingData.coverMediaId;
+    // All the post media is embedded in the article body; the cover comes
+    // from its own settings field.
+    const embeddedMediaIds = (pendingData.mediaIds || []).filter((f) => f);
+
+    const draftUrl = 'https://api.x.com/2/articles/draft';
+    const draftResponse = await this.fetch(draftUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          draftUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: settings.article_title,
+        content_state: this.articleContentState(
+          pendingData.message,
+          embeddedMediaIds
+        ),
+        ...(coverMediaId
+          ? {
+              cover_media: {
+                // Lowercase, matching the category the upload stored.
+                media_category: 'tweet_image',
+                media_id: coverMediaId,
+              },
+            }
+          : {}),
+      }),
+    });
+    const draftJson = (await draftResponse.json()) as {
+      data?: { id: string };
+      errors?: any[];
+    };
+
+    // The articles endpoints can return 2xx with an errors array (e.g. a
+    // rejected cover) - don't swallow it.
+    if (draftJson?.errors?.length) {
+      console.log(
+        'X article draft returned errors:',
+        JSON.stringify(draftJson.errors)
+      );
+    }
+
+    if (!draftJson?.data?.id) {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(draftJson),
+        Buffer.from('{}'),
+        'X could not create the article draft'
+      );
+    }
+
+    if (settings.article_status !== 'published') {
+      return {
+        status: 'completed',
+        postId: draftJson.data.id,
+        releaseURL: `https://x.com/i/articles`,
+      };
+    }
+
+    const publishUrl = `https://api.x.com/2/articles/${draftJson.data.id}/publish`;
+    const publishResponse = await this.fetch(publishUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: this.signOAuth1(
+          'POST',
+          publishUrl,
+          accessTokenSplit,
+          accessSecretSplit
+        ),
+        'Content-Type': 'application/json',
+      },
+    });
+    const publishJson = (await publishResponse.json()) as {
+      data?: { post_id: string };
+      errors?: any[];
+    };
+
+    if (publishJson?.errors?.length) {
+      console.log(
+        'X article publish returned errors:',
+        JSON.stringify(publishJson.errors)
+      );
+    }
+
+    if (!publishJson?.data?.post_id) {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(publishJson),
+        Buffer.from('{}'),
+        'X created the article draft but could not publish it, check your drafts on X'
+      );
+    }
+
+    return {
+      status: 'completed',
+      postId: publishJson.data.post_id,
+      releaseURL: `https://twitter.com/${integration.profile}/status/${publishJson.data.post_id}`,
+    };
+  }
+
   override async finalizePost(
     accessToken: string,
     pendingData: XPendingData,
@@ -808,12 +1161,18 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PendingCheckResponse> {
     // Create with an arm -> confirm -> publish handshake: the create only runs
     // after checkPostStatus witnessed the intent, so a run that dies
-    // mid-create is detectable and the tweet is never published twice.
+    // mid-create is detectable and the tweet is never published twice. The
+    // same protection covers articles - creating a draft isn't idempotent
+    // either.
     if (!pendingData.attempting || !pendingData.confirmed) {
       return {
         status: 'pending',
         pendingData: { ...pendingData, attempting: true, confirmed: false },
       };
+    }
+
+    if (pendingData.settings?.post_type === 'article') {
+      return this.finalizeArticle(accessToken, pendingData, integration);
     }
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
@@ -970,11 +1329,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const replyToId = lastCommentId || postId;
 
+    // Comments are always tweets - flatten the editor HTML to plain text.
+    const commentText = this.toTweetText(commentPost.message);
+
     const tweetUrl = 'https://api.x.com/2/tweets';
     const tweetBody = {
-      text: this.stripLinks()
-        ? removeLinks(commentPost.message)
-        : commentPost.message,
+      text: this.stripLinks() ? removeLinks(commentText) : commentText,
       ...(media_ids.length ? { media: { media_ids } } : {}),
       reply: { in_reply_to_tweet_id: replyToId },
       made_with_ai: this.assetBoolean(commentPost?.settings?.made_with_ai),
