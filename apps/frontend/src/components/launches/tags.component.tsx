@@ -17,6 +17,7 @@ import {
   DropdownArrowIcon,
   PlusIcon,
   CheckmarkIcon,
+  PencilIcon,
 } from '@gitroom/frontend/components/ui/icons';
 
 export const TagsComponent: FC<{
@@ -105,54 +106,103 @@ export const TagsComponentInner: FC<{
     }
   }, []);
 
+  const editTag = useCallback(
+    async (tag: any, e: React.MouseEvent) => {
+      setAllowClose(false);
+      e.stopPropagation();
+      try {
+        const val: string | undefined = await new Promise((resolve) => {
+          modals.openModal({
+            title: t('edit_tag', 'Edit Tag'),
+            onClose: () => resolve(undefined),
+            children: (close) => (
+              <ShowModal
+                tag={tag.name}
+                color={tag.color}
+                id={tag.id}
+                close={close}
+                resolve={resolve}
+              />
+            ),
+          });
+        });
+
+        const newValues = await mutate();
+
+        if (val) {
+          const updated = newValues.tags.find((p: any) => p.id === tag.id);
+          if (updated && tagValue.find((a) => a.id === tag.id)) {
+            const modify = tagValue.map((a) =>
+              a.id === tag.id ? updated : a
+            );
+            setTagValue(modify);
+            onChange({
+              target: {
+                value: modify.map((p: any) => ({
+                  label: p.name,
+                  value: p.name,
+                })),
+                name,
+              },
+            });
+          }
+        }
+      } finally {
+        setTimeout(() => {
+          setAllowClose(true);
+        }, 500);
+      }
+    },
+    [tagValue, name, onChange, mutate, modals, t]
+  );
+
   const deleteTag = useCallback(
     async (tag: any, e: React.MouseEvent) => {
       setAllowClose(false);
       e.stopPropagation();
-      const confirmed: boolean = await new Promise((resolve) => {
-        modals.openModal({
-          title: t('delete_tag', 'Delete Tag'),
-          children: (close) => (
-            <ConfirmDeleteModal
-              tagName={tag.name}
-              close={close}
-              resolve={resolve}
-            />
-          ),
+      try {
+        const confirmed: boolean = await new Promise((resolve) => {
+          modals.openModal({
+            title: t('delete_tag', 'Delete Tag'),
+            children: (close) => (
+              <ConfirmDeleteModal
+                tagName={tag.name}
+                close={close}
+                resolve={resolve}
+              />
+            ),
+          });
         });
-      });
 
-      if (!confirmed) {
+        if (!confirmed) {
+          return;
+        }
+
+        await fetch(`/posts/tags/${tag.id}`, {
+          method: 'DELETE',
+        });
+
+        // Remove the tag from current selection if it was selected
+        const modify = tagValue.filter((a) => a.id !== tag.id);
+        if (modify.length !== tagValue.length) {
+          setTagValue(modify);
+          onChange({
+            target: {
+              value: modify.map((p: any) => ({
+                label: p.name,
+                value: p.name,
+              })),
+              name,
+            },
+          });
+        }
+
+        await mutate();
+      } finally {
         setTimeout(() => {
           setAllowClose(true);
         }, 500);
-        return;
       }
-
-      await fetch(`/posts/tags/${tag.id}`, {
-        method: 'DELETE',
-      });
-
-      // Remove the tag from current selection if it was selected
-      const modify = tagValue.filter((a) => a.id !== tag.id);
-      if (modify.length !== tagValue.length) {
-        setTagValue(modify);
-        onChange({
-          target: {
-            value: modify.map((p: any) => ({
-              label: p.name,
-              value: p.name,
-            })),
-            name,
-          },
-        });
-      }
-
-      await mutate();
-
-      setTimeout(() => {
-        setAllowClose(true);
-      }, 500);
     },
     [tagValue, name, onChange, mutate, fetch, modals, t]
   );
@@ -231,10 +281,16 @@ export const TagsComponentInner: FC<{
                   {p.name}
                 </span>
               </div>
+              <div
+                onClick={(e) => editTag(p, e)}
+                className="ms-auto me-[12px] transition-opacity cursor-pointer opacity-60 hover:opacity-100"
+              >
+                <PencilIcon size={12} />
+              </div>
               {!tagValue.find((a) => a.id === p.id) && (
                 <div
                   onClick={(e) => deleteTag(p, e)}
-                  className="ms-auto transition-opacity cursor-pointer text-red-500 text-[14px] font-[600]"
+                  className="transition-opacity cursor-pointer text-red-500 text-[14px] font-[600]"
                 >
                   ×
                 </div>
