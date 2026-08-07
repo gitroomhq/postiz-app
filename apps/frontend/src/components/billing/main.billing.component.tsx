@@ -551,12 +551,14 @@ export const MainBillingComponent: FC<{
       </div>
       {!!subscription?.id && (
         <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>
-            {t(
-              'update_payment_method_invoices_history',
-              'Update Payment Method / Invoices History'
-            )}
-          </Button>
+          {!!(user as any)?.hasStripeCustomer && (
+            <Button onClick={updatePayment}>
+              {t(
+                'update_payment_method_invoices_history',
+                'Update Payment Method / Invoices History'
+              )}
+            </Button>
+          )}
           {isGeneral && !subscription?.cancelAt && (
             <Button
               className="bg-red-500"
