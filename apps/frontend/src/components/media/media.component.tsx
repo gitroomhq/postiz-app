@@ -532,8 +532,8 @@ export const MediaBox: FC<{
                 } else if (type === 'image') {
                   return !hasExtension(f.path, 'mp4');
                 } else if (type === 'image-static') {
-                  return (
-                    !hasExtension(f.path, 'mp4') && !hasExtension(f.path, 'gif')
+                  return ['jpg', 'jpeg', 'png'].some((ext) =>
+                    hasExtension(f.path, ext)
                   );
                 }
                 return true;
