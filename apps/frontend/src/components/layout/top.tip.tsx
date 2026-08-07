@@ -2,5 +2,5 @@
 
 import { Tooltip } from 'react-tooltip';
 export const ToolTip = () => {
-  return <Tooltip className="z-[200]" id="tooltip" />;
+  return <Tooltip className="z-[200] whitespace-pre-line" id="tooltip" />;
 };

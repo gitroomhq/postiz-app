@@ -229,6 +229,7 @@
     "we_couldn_t_find_any_business_connected_to_the_selected_pages": "არჩეულ გვერდებს მიერთებული ბიზნესი ვერ ვიპოვეთ.",
     "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "გირჩევთ დააკავშიროთ ყველა გვერდი და ყველა ბიზნესი.",
     "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "დახურეთ ეს ფანჯარა, წაშალეთ ინტეგრაცია და თავიდან დაამატეთ არხი.",
+    "back_to_postiz": "Postiz-ზე დაბრუნება",
     "select_instagram_account": "აირჩიეთ Instagram ანგარიში:",
     "select_page": "გვერდის არჩევა:",
     "generate_image_with_ai": "სურათის გენერირება AI-ით",
