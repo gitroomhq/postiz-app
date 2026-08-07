@@ -33,7 +33,7 @@ services:
     container_name: postiz-pg-admin
     restart: always
     ports:
-      - 8081:80
+      - 8082:80
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -132,7 +132,7 @@ services:
     networks:
       - temporal-network
     ports:
-      - "8080:8080"
+      - "8083:8080"
 
 volumes:
   redisinsight:
