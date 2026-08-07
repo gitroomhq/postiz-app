@@ -5,6 +5,7 @@ import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
+import { Metadata } from 'next';
 import { ReactNode } from 'react';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
@@ -16,7 +17,15 @@ import {
   THEME_COOKIE,
 } from '@gitroom/frontend/components/layout/theme';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import { isAiEnabled } from '@gitroom/helpers/utils/ai.enabled';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'PostQueen',
+    template: '%s · PostQueen',
+  },
+};
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const mode = resolveTheme((await cookies()).get(THEME_COOKIE)?.value);
@@ -39,6 +48,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={isBillingEnabled()}
+          aiEnabled={isAiEnabled()}
           passwordlessLogin={process.env.PASSWORDLESS_LOGIN === 'true'}
           turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
           frontEndUrl={process.env.FRONTEND_URL!}

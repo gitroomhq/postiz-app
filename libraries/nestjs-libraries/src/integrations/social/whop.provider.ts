@@ -17,6 +17,7 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
   identifier = 'whop';
   category = 'chat' as const;
   name = 'Whop';
+  isNew = true;
   isBetweenSteps = false;
   scopes = ['openid', 'profile', 'email', 'forum:post:create', 'forum:read', 'company:basic:read'];
   refreshCron = false;

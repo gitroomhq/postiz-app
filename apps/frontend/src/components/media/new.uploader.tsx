@@ -60,7 +60,8 @@ export function useUppyUploader(props: {
     const uppy2 = new Uppy({
       autoProceed: true,
       restrictions: {
-        // maxNumberOfFiles: 5,
+        // No hard file-count cap here — platforms enforce their own limits
+        // via provider checkValidity. Soft helper copy lives on the picker.
         // allowedFileTypes: allowedFileTypes.split(','),
         maxFileSize: 1000000000, // Default 1GB, but we'll override with custom validation
       },
@@ -203,7 +204,6 @@ export function useUppyUploader(props: {
       props.onStart();
     });
     uppy2.on('complete', async (result) => {
-      console.log(result);
       for (const file of [...result.successful]) {
         uppy2.removeFile(file.id);
       }

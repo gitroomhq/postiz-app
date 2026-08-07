@@ -21,6 +21,7 @@ import {
 } from '@copilotkit/react-ui/dist/components/chat/props';
 import Link from 'next/link';
 import { Input } from '@gitroom/frontend/components/agents/agent.input';
+import AutoResizingTextarea from '@gitroom/frontend/components/agents/agent.textarea';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
   CopilotKit,
@@ -45,6 +46,8 @@ import { ExistingDataContextProvider } from '@gitroom/frontend/components/launch
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 
 type AgentIntegration = Integrations & {
   refreshNeeded?: boolean;
@@ -56,11 +59,14 @@ const needsAttention = (
 ) => !!(integration.refreshNeeded || integration.inBetweenSteps);
 
 const selectableIntegrations = (
-  integrations: AgentIntegration[]
-): AgentIntegration[] => integrations.filter((p) => !needsAttention(p));
+  integrations: AgentIntegration[] | null | undefined
+): AgentIntegration[] =>
+  Array.isArray(integrations)
+    ? integrations.filter((p) => !needsAttention(p))
+    : [];
 
 export const AgentChat: FC = () => {
-  const { backendUrl } = useVariables();
+  const { backendUrl, aiEnabled } = useVariables();
   const params = useParams<{ id: string }>();
   const { properties } = useContext(PropertiesContext);
   const t = useT();
@@ -68,6 +74,13 @@ export const AgentChat: FC = () => {
     () => selectableIntegrations(properties),
     [properties]
   );
+
+  // Without an OpenAI key, do not mount CopilotKit — that remounts against a
+  // 503 `/copilot/agent` and brings back the Next CombinedError overlay. Show
+  // the same empty chrome as a static shell instead of a blocking takeover.
+  if (!aiEnabled) {
+    return <UnconfiguredAgentShell />;
+  }
 
   return (
     <CopilotKit
@@ -121,27 +134,14 @@ export const AgentChat: FC = () => {
 };
 
 /**
- * The design's empty-thread hero, rendered instead of the old five-paragraph
- * `labels.initial` greeting (owner-approved copy change). CopilotKit would
- * render `initial` as a message, so the label is gone and this overlays the
- * top of the (empty) message column until the first message lands.
+ * Presentational empty-thread hero (title / sub / MCP card). Safe outside
+ * CopilotKit — no message-context hooks — so the unconfigured shell can reuse
+ * the same LOOK as a live empty thread.
  */
-const EmptyState: FC = () => {
-  const { messages } = useCopilotMessagesContext();
-  const params = useParams<{ id: string }>();
+const EmptyStateHero: FC = () => {
   const t = useT();
-  // Existing threads start with an empty context while their messages load —
-  // without the id gate the hero flashes over every old conversation.
-  if (messages.length || params.id !== 'new') {
-    return null;
-  }
   return (
-    // z-[2]: the SDK's message scroller carries z-index 1 and would otherwise
-    // swallow the suggestion card's clicks.
-    <div
-      data-copilot-empty="1"
-      className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
-    >
+    <>
       <span className="flex h-[54px] w-[54px] items-center justify-center rounded-[16px] bg-pqBrandSoft text-pqFocused">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
           <path
@@ -166,7 +166,7 @@ const EmptyState: FC = () => {
       </div>
       <Link
         href="/connections"
-        className="pointer-events-auto flex items-center gap-[10px] rounded-[14px] bg-pqPop p-[12px_16px] text-start shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqBrandSoft hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+        className="pointer-events-auto flex w-full max-w-[560px] items-center gap-[12px] rounded-[14px] bg-pqPop p-[14px_18px] text-start shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqBrandSoft hover:shadow-[inset_0_0_0_1px_var(--brand)]"
       >
         <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-pqBrandSoft text-pqFocused">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
@@ -179,14 +179,14 @@ const EmptyState: FC = () => {
             />
           </svg>
         </span>
-        <span className="flex flex-col gap-[2px]">
+        <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
           <span className="text-[13px] font-[600] text-pqText">
             {t('agent_mcp_card_title', 'Prefer your own AI tool?')}
           </span>
-          <span className="text-[12px] text-pqMuted">
+          <span className="text-[12px] leading-[1.45] text-pqMuted">
             {t(
               'agent_mcp_card_sub',
-              'Drive PostQueen from Claude, ChatGPT, Cursor or n8n over MCP.'
+              'Drive PostQueen from Claude, ChatGPT or Cursor over MCP — or automate with n8n.'
             )}
           </span>
         </span>
@@ -206,6 +206,250 @@ const EmptyState: FC = () => {
           />
         </svg>
       </Link>
+    </>
+  );
+};
+
+/**
+ * The design's empty-thread hero, rendered instead of the old five-paragraph
+ * `labels.initial` greeting (owner-approved copy change). CopilotKit would
+ * render `initial` as a message, so the label is gone and this overlays the
+ * top of the (empty) message column until the first message lands.
+ */
+const EmptyState: FC = () => {
+  const { messages } = useCopilotMessagesContext();
+  const params = useParams<{ id: string }>();
+  // Existing threads start with an empty context while their messages load —
+  // without the id gate the hero flashes over every old conversation.
+  if (messages.length || params.id !== 'new') {
+    return null;
+  }
+  return (
+    // z-[2]: the SDK's message scroller carries z-index 1 and would otherwise
+    // swallow the suggestion card's clicks.
+    <div
+      data-copilot-empty="1"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
+    >
+      <EmptyStateHero />
+    </div>
+  );
+};
+
+/**
+ * Agents chat column when AI is off: same LOOK as a live thread (hero +
+ * working composer + user bubbles) without mounting CopilotKit. Typing and
+ * send append to a local list only — no `/copilot/agent` call, no assistant
+ * reply, no CombinedError overlay.
+ */
+const UnconfiguredAgentShell: FC = () => {
+  const t = useT();
+  const { properties, openChannels } = useContext(PropertiesContext);
+  const [messages, setMessages] = useState<{ id: string; content: string }[]>(
+    []
+  );
+  const [text, setText] = useState('');
+  const [media, setMedia] = useState<{ path: string; id: string }[]>([]);
+  const [isComposing, setIsComposing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const canSend = text.trim().length > 0 || media.length > 0;
+
+  const setMediaFromEvent = useCallback(
+    (e: {
+      target: {
+        name: string;
+        value?: { id: string; path: string }[];
+      };
+    }) => setMedia(e.target.value || []),
+    []
+  );
+
+  const send = useCallback(() => {
+    const content =
+      text.trim() +
+      (media.length > 0
+        ? '\n[--Media--]' +
+          media
+            .map((m) =>
+              hasExtension(m.path, 'mp4')
+                ? `Video: ${m.path}`
+                : `Image: ${m.path}`
+            )
+            .join('\n') +
+          '\n[--Media--]'
+        : '');
+    if (!content.trim()) {
+      return;
+    }
+    setMessages((prev) => [...prev, { id: makeId(10), content }]);
+    setText('');
+    setMedia([]);
+    textareaRef.current?.focus();
+  }, [text, media]);
+
+  useEffect(() => {
+    if (!messages.length) {
+      return;
+    }
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [messages]);
+
+  const handleComposerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('button')) return;
+    if (target.tagName === 'TEXTAREA') return;
+    textareaRef.current?.focus();
+  };
+
+  return (
+    <div className="trz agent bg-pqInner flex flex-col transition-all flex-1 relative min-w-0">
+      <div className="absolute inset-0 flex flex-col">
+        <div ref={listRef} className="relative min-h-0 flex-1 overflow-y-auto">
+          {!messages.length ? (
+            <div
+              data-copilot-empty="1"
+              className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
+            >
+              <EmptyStateHero />
+            </div>
+          ) : (
+            <div className="copilotKitMessagesContainer flex flex-col">
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className="copilotKitMessage copilotKitUserMessage whitespace-pre-wrap"
+                >
+                  {m.content}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="copilotKitInputContainer">
+          <div className="mx-auto flex w-full max-w-[840px] flex-col gap-[8px]">
+            <div className="flex flex-wrap items-center gap-[6px] p-[0_2px_2px]">
+              {properties.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={openChannels}
+                  className="flex h-[26px] items-center gap-[6px] rounded-full bg-pqSettings px-[9px] text-[11.5px] font-[600] text-pqSoft shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqHover hover:text-pqText"
+                >
+                  <span>
+                    {t('no_channels_selected', 'No channels selected')}
+                  </span>
+                  <span className="text-pqMuted" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>{t('select_channels', 'Select channels')}</span>
+                </button>
+              ) : (
+                <>
+                  <span className="text-[11.5px] text-pqSoft">
+                    {t('agent_posting_to', 'Posting to')}
+                  </span>
+                  {properties.map((p: AgentIntegration) => (
+                    <span
+                      key={p.id}
+                      className="flex h-[26px] items-center gap-[6px] rounded-full bg-pqSettings ps-[4px] pe-[9px] text-[11.5px] font-[600] text-pqText"
+                    >
+                      <span className="relative h-[18px] w-[18px] shrink-0">
+                        <ImageWithFallback
+                          fallbackSrc={`/icons/platforms/${p.identifier}.png`}
+                          src={p.picture}
+                          className="rounded-[5px]"
+                          alt={p.identifier}
+                          width={18}
+                          height={18}
+                        />
+                        <span className="absolute -bottom-[4px] -end-[4px] flex h-[15px] w-[15px] items-center justify-center rounded-full bg-pqBadgeRing">
+                          <SafeImage
+                            src={`/icons/platforms/${p.identifier}.png`}
+                            className="rounded-full"
+                            alt={p.identifier}
+                            width={11}
+                            height={11}
+                          />
+                        </span>
+                      </span>
+                      {p.name}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+            <div
+              className="copilotKitInput flex cursor-text flex-col gap-[7px]"
+              onClick={handleComposerClick}
+            >
+              <MediaPortal
+                part="thumbs"
+                value={text}
+                media={media}
+                setMedia={setMediaFromEvent}
+              />
+              <AutoResizingTextarea
+                ref={textareaRef}
+                placeholder={t(
+                  'agent_placeholder',
+                  'Ask Copilot to draft, schedule or generate…'
+                )}
+                autoFocus={false}
+                maxRows={6}
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !isComposing
+                  ) {
+                    event.preventDefault();
+                    if (canSend) {
+                      send();
+                    }
+                  }
+                }}
+              />
+              <div className="copilotKitInputControls flex items-end gap-[4px] pb-[2px]">
+                <div className="min-w-0 flex-1">
+                  <MediaPortal
+                    part="toolbar"
+                    value={text}
+                    media={media}
+                    setMedia={setMediaFromEvent}
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={!canSend}
+                  onClick={send}
+                  data-test-id="copilot-chat-ready"
+                  data-pq-agent-send="1"
+                  className="copilotKitInputControlButton shrink-0"
+                  aria-label={t('send_message', 'Send message')}
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                    <path
+                      d="M12 19V5M6 11l6-6 6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

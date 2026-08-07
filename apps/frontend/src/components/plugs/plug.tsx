@@ -27,6 +27,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Slider } from '@gitroom/react/form/slider';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -40,30 +41,48 @@ export const TextArea: FC<{
   const form = useFormContext();
   const { onChange, onBlur, ...all } = form.register(props.name);
   const value = form.watch(props.name);
+  const { aiEnabled } = useVariables();
+  const fieldClass = clsx(
+    '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-hidden placeholder:text-pqSoft w-full resize-none border-0'
+  );
   return (
     <>
       <textarea className="hidden" {...all}></textarea>
       <div className="overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
-        <CopilotTextarea
-          disableBranding={true}
-          placeholder={props.placeHolder}
-          value={value}
-          className={clsx(
-            '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-hidden placeholder:text-pqSoft'
-          )}
-          onChange={(e) => {
-            onChange({
-              target: {
-                name: props.name,
-                value: e.target.value,
-              },
-            });
-          }}
-          autosuggestionsConfig={{
-            textareaPurpose: `Assist me in writing social media posts.`,
-            chatApiConfigs: {},
-          }}
-        />
+        {aiEnabled ? (
+          <CopilotTextarea
+            disableBranding={true}
+            placeholder={props.placeHolder}
+            value={value}
+            className={fieldClass}
+            onChange={(e) => {
+              onChange({
+                target: {
+                  name: props.name,
+                  value: e.target.value,
+                },
+              });
+            }}
+            autosuggestionsConfig={{
+              textareaPurpose: `Assist me in writing social media posts.`,
+              chatApiConfigs: {},
+            }}
+          />
+        ) : (
+          <textarea
+            placeholder={props.placeHolder}
+            value={value}
+            className={fieldClass}
+            onChange={(e) => {
+              onChange({
+                target: {
+                  name: props.name,
+                  value: e.target.value,
+                },
+              });
+            }}
+          />
+        )}
       </div>
       <div className="text-[12px] text-pqWarn">
         {form?.formState?.errors?.[props.name]?.message as string}
@@ -158,7 +177,7 @@ export const PlugPop: FC<{
           <ModalFormActions onCancel={() => closeAll()}>
             <Button
               type="submit"
-              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+              className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
             >
               {t('activate', 'Activate')}
             </Button>

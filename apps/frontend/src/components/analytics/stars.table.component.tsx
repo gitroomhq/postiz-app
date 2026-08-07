@@ -18,6 +18,7 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 export const UpDown: FC<{
   name: string;
@@ -92,6 +93,7 @@ export const StarsTableComponent = () => {
   const fetch = useFetch();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { datePattern } = useDateFormat();
   const page = +(searchParams.get('page') || 1);
   const key = searchParams.get('key');
   const state = searchParams.get('state');
@@ -232,7 +234,7 @@ export const StarsTableComponent = () => {
                 <tr key={p.date}>
                   <td>{p.login}</td>
                   <td>
-                    <UtcToLocalDateRender date={p.date} format="DD/MM/YYYY" />
+                    <UtcToLocalDateRender date={p.date} format={datePattern()} />
                   </td>
                   <td>{p.totalStars}</td>
                   <td>{p.totalForks}</td>

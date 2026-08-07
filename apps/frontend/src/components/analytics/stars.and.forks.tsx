@@ -6,9 +6,11 @@ import { Chart } from '@gitroom/frontend/components/analytics/chart';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
   const { list } = props;
   const t = useT();
+  const { shortDatePattern, timePattern } = useDateFormat();
   return (
     <>
       {list.map((item) => (
@@ -162,7 +164,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   date={
                     p === 0 ? props.trending.last : props.trending.predictions
                   }
-                  format="DD MMM YYYY"
+                  format={shortDatePattern()}
                 />
               </div>
               <div>
@@ -178,7 +180,7 @@ export const StarsAndForks: FC<StarsAndForksInterface> = (props) => {
                   date={
                     p === 0 ? props.trending.last : props.trending.predictions
                   }
-                  format="HH:mm"
+                  format={timePattern()}
                 />
               </div>
             </div>

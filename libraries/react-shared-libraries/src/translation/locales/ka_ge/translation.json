@@ -425,7 +425,7 @@
   "label_when_post": "როდის დავპოსტოთ?",
   "label_autogenerate_content": "კონტენტის ავტომატური გენერირება",
   "label_generate_picture": "სურათის გენერირება?",
-  "label_company": "კომპანია",
+  "label_organization": "ორგანიზაცია",
   "label_tag_color": "ტეგის ფერი",
   "label_select_board": "ბორდის არჩევა",
   "label_select_organization": "ორგანიზაციის არჩევა",
@@ -502,5 +502,7 @@
   "label_who_can_reply_to_this_post": "ვის შეუძლია პასუხის გაცემა ამ პოსტზე?",
   "delete_integration": "ინტეგრაციის წაშლა",
   "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის",
-  "faq_can_i_trust_postqueen_gitroom": "Შემიძლია ვენდო PostQueen-ს?"
+  "faq_can_i_trust_postqueen_gitroom": "Შემიძლია ვენდო PostQueen-ს?",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

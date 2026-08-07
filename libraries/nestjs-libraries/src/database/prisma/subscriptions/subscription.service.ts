@@ -33,7 +33,27 @@ export class SubscriptionService {
     return this._subscriptionRepository.getCode(code);
   }
 
+  getCodesByOrgId(orgId: string) {
+    return this._subscriptionRepository.getCodesByOrgId(orgId);
+  }
+
+  createUsedCode(orgId: string, code: string) {
+    return this._subscriptionRepository.createUsedCode(orgId, code);
+  }
+
   async deleteSubscription(customerId: string) {
+    // A founding-member row is a local entitlement, not a mirror of a Stripe
+    // subscription. Cancelling (or exhausting) a leftover Stripe sub must not
+    // wipe lifetime — that used to happen after a mid-trial convert, because
+    // `customer.subscription.deleted` always hard-deleted the org's row.
+    const current =
+      await this._subscriptionRepository.getSubscriptionByCustomerId(
+        customerId
+      );
+    if (current?.isLifetime) {
+      return false;
+    }
+
     await this.modifySubscription(
       customerId,
       pricing.FREE.channel || 0,
@@ -41,6 +61,18 @@ export class SubscriptionService {
     );
     return this._subscriptionRepository.deleteSubscriptionByCustomerId(
       customerId
+    );
+  }
+
+  /** Immediate revoke of a local subscription row (founding-member trial cancel). */
+  async revokeLocalSubscription(organizationId: string) {
+    await this.modifySubscriptionByOrg(
+      organizationId,
+      pricing.FREE.channel || 0,
+      'FREE'
+    );
+    return this._subscriptionRepository.deleteSubscriptionByOrganizationId(
+      organizationId
     );
   }
 

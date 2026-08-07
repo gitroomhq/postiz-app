@@ -581,6 +581,7 @@ const ProviderSetupStep: FC<{
     isWeb3: boolean;
     isChromeExtension?: boolean;
     trialLocked?: boolean;
+    isNew?: boolean;
     toolTip?: string;
     customFields?: Array<{ key: string; label: string }>;
   };
@@ -645,7 +646,9 @@ const ProviderSetupStep: FC<{
         </div>
       </div>
 
-      {!!guide.requirement && (
+      {/* Amber tip is for a live connect. While trial-locked the channel is not
+          open yet — the tip would only clutter the lock card. */}
+      {!!guide.requirement && !locked && (
         <div
           data-provider-requirement="1"
           className="flex gap-[10px] rounded-pqSm bg-pqAmberSoft p-[12px] text-[12.5px] leading-[1.55] text-pqText"
@@ -733,7 +736,7 @@ const ProviderSetupStep: FC<{
 /**
  * What a trialing organization sees instead of a Connect button.
  * Shared TrialLockCard LOOK; FinishTrial opens from the primary CTA.
- * No fake trial-end date — schema only has isTrailing / allowTrial.
+ * Foot date comes from trialWindow(user.createdAt) inside TrialLockCard.
  */
 const TrialLock: FC<{ name: string }> = ({ name }) => {
   const t = useT();
@@ -748,8 +751,8 @@ const TrialLock: FC<{ name: string }> = ({ name }) => {
           { name }
         )}
         description={t(
-          'you_will_be_logged_in_into_your_current_account_if_you_would_like_a_different_account_change_it_first_on_x',
-          'You will be logged in into your current account, if you would like a different account, change it first on {{name}}',
+          'x_lock_sub',
+          '{{name}} charges us per post through their API, so this one channel waits for your first payment. Every other channel is already publishing.',
           { name }
         )}
         perks={[
@@ -778,6 +781,7 @@ export const AddProviderComponent: FC<{
     isWeb3: boolean;
     isChromeExtension?: boolean;
     trialLocked?: boolean;
+    isNew?: boolean;
     extensionCookies?: Array<{
       name: string;
       domain: string;
@@ -1131,7 +1135,10 @@ export const AddProviderComponent: FC<{
       <ProviderSetupStep
         item={step}
         guide={guide}
-        locked={!!step.trialLocked && !!user?.isTrailing}
+        locked={
+          !!step.trialLocked &&
+          (!!user?.isTrailing || !!user?.lifetimePaymentPending)
+        }
         inviteMode={inviteMode}
         onboarding={onboarding}
         onBack={() => setStep(null)}
@@ -1193,12 +1200,18 @@ export const AddProviderComponent: FC<{
           ))}
         </div>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-[24px]">
         {groups.map((group) => (
-          <div key={group.key} className="flex flex-col">
+          <div key={group.key} className="flex flex-col gap-[10px]">
             {!onboarding && groups.length > 1 && (
-              <div className="mb-[10px] mt-[6px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqSoft first:mt-0">
-                {group.label}
+              <div className="flex items-center gap-[10px]">
+                <span className="shrink-0 whitespace-nowrap text-[11px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+                  {group.label}
+                </span>
+                <span
+                  className="h-[1px] flex-1 bg-pqLine"
+                  aria-hidden="true"
+                />
               </div>
             )}
             <div
@@ -1216,7 +1229,8 @@ export const AddProviderComponent: FC<{
                   // Still clickable when locked: the step behind it is where the
                   // reason lives. A tile that does nothing when pressed teaches
                   // nobody why.
-                  {...(item.trialLocked && user?.isTrailing
+                  {...(item.trialLocked &&
+                  (user?.isTrailing || user?.lifetimePaymentPending)
                     ? { 'data-provider-trial-locked': '1' }
                     : {})}
                   onClick={() => setStep(item)}
@@ -1233,25 +1247,14 @@ export const AddProviderComponent: FC<{
                     'relative flex w-full cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqInner text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                   )}
                 >
+                  {!!item.isNew && (
+                    <span className="absolute start-0 top-0 z-[1] rounded-ss-[12px] rounded-ee-[10px] bg-pqBrand px-[10px] pb-[6px] pt-[5px] text-[9px] font-[700] leading-none tracking-[0.08em] text-pqOnBrand">
+                      {t('new', 'NEW')}
+                    </span>
+                  )}
                   <div className="relative">
-                    {item.trialLocked && user?.isTrailing && (
-                      <span className="absolute -end-[3px] -top-[3px] z-[2] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-pqInner text-pqMuted">
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="10"
-                          height="10"
-                          fill="none"
-                        >
-                          <path
-                            d="M7 10V8a5 5 0 0 1 10 0v2M5 10h14v10H5z"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                    )}
+                    {/* No lock badge on the tile — owner: only show the lock
+                        when the user opens the connect step (TrialLock below). */}
                     {item.identifier === 'youtube' ? (
                       <img src={`/icons/platforms/youtube.svg`} />
                     ) : (

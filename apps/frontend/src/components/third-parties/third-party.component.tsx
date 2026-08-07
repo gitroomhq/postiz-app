@@ -211,6 +211,11 @@ export const ThirdPartyComponent = () => {
         title={t('top_title_add_api_key_for', 'Add API key for {{name}}', {
           name: editing.title,
         })}
+        description={t(
+          'add_api_key_description',
+          'Connect {{name}} so you can use it from Media and the composer.',
+          { name: editing.title }
+        )}
         onBack={() => setEditing(null)}
       >
         <ApiModal

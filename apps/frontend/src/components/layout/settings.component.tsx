@@ -3,26 +3,21 @@
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, {
   FC,
-  Ref,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
-import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { TeamsComponent, TeamsUpgradeLock } from '@gitroom/frontend/components/settings/teams.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
+import {
+  PublicApiKeysSection,
+  PublicAppsSection,
+} from '@gitroom/frontend/components/public-api/public.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
@@ -30,9 +25,15 @@ import { SignaturesComponent } from '@gitroom/frontend/components/settings/signa
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
+import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
+import { UserAccountComponent } from '@gitroom/frontend/components/settings/user.account.component';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 import { useRouter } from 'next/navigation';
-import { leaveSettingsFor } from '@gitroom/frontend/components/layout/leave-settings';
+import {
+  leaveSettingsFor,
+  RouteOverlayScrim,
+  type RouteOverlayMode,
+} from '@gitroom/frontend/components/layout/leave-settings';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
 import {
@@ -74,7 +75,13 @@ const SETTINGS_NAV_ICONS: Record<string, string[]> = {
   signatures: [
     'M4 17.5c3.5 0 4-11 7-11s2.4 8 4.8 8c1.6 0 2.6-1.1 4.2-1.4M4 21h16',
   ],
-  api: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
+  // Lucide-style key for API Keys; code glyph for Developers (OAuth apps).
+  api: [
+    'M7.5 21a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z',
+    'm21 2-9.6 9.6',
+    'm15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4',
+  ],
+  developers: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
   approved_apps: [
     'M9 12.5l2.5 2.5 5-5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
   ],
@@ -82,6 +89,17 @@ const SETTINGS_NAV_ICONS: Record<string, string[]> = {
   affiliate: [
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
     'M19 8v6M22 11h-6',
+  ],
+  connect: [
+    'M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1.2 1.2M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1.2-1.2',
+  ],
+  // Bell for Notifications (under Workspace). Account glyph kept for
+  // residual `?tab=account` deep links — row is hidden from the nav.
+  notifications: [
+    'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0',
+  ],
+  account: [
+    'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   ],
 };
 
@@ -134,58 +152,21 @@ const SettingsTabPane: FC<{
 };
 
 export const SettingsPopup: FC<{
-  getRef?: Ref<any>;
   /** Route context passes a router-back closure; the FREE-tier modal keeps
    *  the modal system's own close. */
   onClose?: () => void;
 }> = (props) => {
   const { isGeneral } = useVariables();
-  const { getRef, onClose } = props;
-  const fetch = useFetch();
-  const toast = useToaster();
-  const swr = useSWRConfig();
+  const { onClose } = props;
   const user = useUser();
-  const resolver = useMemo(() => {
-    return classValidatorResolver(UserDetailDto);
-  }, []);
-  const form = useForm({
-    resolver,
-  });
-  const picture = form.watch('picture');
   const modal = useModals();
   const close = useCallback(() => {
     return modal.closeAll();
-  }, []);
+  }, [modal]);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
   const { mobile } = useViewport();
   const [query, setQuery] = useState('');
-  const loadProfile = useCallback(async () => {
-    const personal = await (await fetch('/user/personal')).json();
-    form.setValue('fullname', personal.name || '');
-    form.setValue('bio', personal.bio || '');
-    form.setValue('picture', personal.picture);
-  }, []);
-  const openMedia = useCallback(() => {
-    showMediaBox((values) => {
-      form.setValue('picture', values);
-    });
-  }, []);
-  const remove = useCallback(() => {
-    form.setValue('picture', null);
-  }, []);
-
-  const submit = useCallback(async (val: any) => {
-    await fetch('/user/personal', {
-      method: 'POST',
-      body: JSON.stringify(val),
-    });
-    if (getRef) {
-      return;
-    }
-    toast.show(t('profile_updated', 'Profile updated'));
-    close();
-  }, []);
 
   // Tabs can be deep-linked, e.g. /settings?tab=api (Connect) or ?tab=teams
   // (Invite). Fall back to Global Settings for an unknown/absent param.
@@ -193,11 +174,14 @@ export const SettingsPopup: FC<{
     'global_settings',
     'language',
     'teams',
+    'notifications',
+    'account',
     'webhooks',
     'autopost',
     'sets',
     'signatures',
     'api',
+    'developers',
     'approved_apps',
     'integrations',
   ];
@@ -213,11 +197,28 @@ export const SettingsPopup: FC<{
   useEffect(() => {
     if (requestedTab === 'connections') {
       leaveSettingsFor('/connections', redirectRouter);
+      return;
     }
     if (requestedTab === 'plan_invoices' || requestedTab === 'billing') {
       leaveSettingsFor('/billing', redirectRouter);
+      return;
+    }
+    if (requestedTab && settingsTabs.includes(requestedTab)) {
+      setTab(requestedTab);
     }
   }, [requestedTab, redirectRouter]);
+
+  const selectTab = useCallback(
+    (tabKey: string) => {
+      setTab(tabKey);
+      const params = new URLSearchParams(url.toString());
+      params.set('tab', tabKey);
+      redirectRouter.replace(`/settings?${params.toString()}`, {
+        scroll: false,
+      });
+    },
+    [url, redirectRouter]
+  );
 
   const t = useT();
   // Teams and Developers call ADMIN-gated endpoints as soon as they mount.
@@ -226,9 +227,10 @@ export const SettingsPopup: FC<{
   const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
   // `group` only sorts the sub-nav into sections; which tabs exist, what they
   // are called and what they open are all unchanged.
-  // Design settings nav: Workspace / More / Developers only. Billing lives on
-  // /billing and in the user menu — not here. Plugs → Channels Automations;
-  // Affiliate → user menu.
+  // Nav: Workspace / More / Connect. Billing lives on /billing and in the
+  // user menu — not here. Plugs → Channels Automations; Affiliate → user
+  // menu. Account + "Your user" section hidden for now (owner 2026-08-06);
+  // Notifications sits under Workspace. `?tab=account` still opens the pane.
   const list = useMemo(() => {
     const arr: {
       tab: string;
@@ -239,7 +241,9 @@ export const SettingsPopup: FC<{
     }[] = [];
     const workspace = t('workspace', 'Workspace');
     const more = t('more', 'More');
-    const developers = t('developers', 'Developers');
+    // Owner: section Account (API Keys / Developers / Approved Apps). Connect
+    // PostQueen lives on /connections via the rail — not duplicated here.
+    const account = t('account', 'Account');
 
     arr.push({
       tab: 'global_settings',
@@ -247,15 +251,9 @@ export const SettingsPopup: FC<{
       group: workspace,
       icon: 'global_settings',
     });
-    arr.push({
-      tab: 'language',
-      label: t('language', 'Language'),
-      group: workspace,
-      icon: 'language',
-    });
-    // Teams stays discoverable for org admins even when the plan lacks
-    // `team_members` — content then shows TeamsUpgradeLock (no /settings/team
-    // fetch → no global Payment Required popup). USER role still hidden.
+    // Teams 2nd under Workspace (after Global Settings). Discoverable for org
+    // admins even without `team_members` — content shows TeamsUpgradeLock (no
+    // /settings/team fetch → no global Payment Required popup). USER role hidden.
     if (isGeneral && isOrgAdmin) {
       arr.push({
         tab: 'teams',
@@ -264,6 +262,18 @@ export const SettingsPopup: FC<{
         icon: 'teams',
       });
     }
+    arr.push({
+      tab: 'language',
+      label: t('language', 'Language'),
+      group: workspace,
+      icon: 'language',
+    });
+    arr.push({
+      tab: 'notifications',
+      label: t('notifications', 'Notifications'),
+      group: workspace,
+      icon: 'notifications',
+    });
     if (user?.tier.current !== 'FREE') {
       arr.push({
         tab: 'sets',
@@ -308,15 +318,21 @@ export const SettingsPopup: FC<{
     if (user?.tier?.public_api && isGeneral && showLogout && isOrgAdmin) {
       arr.push({
         tab: 'api',
-        label: t('developers', 'Developers'),
-        group: developers,
+        label: t('api_keys', 'API Keys'),
+        group: account,
         icon: 'api',
+      });
+      arr.push({
+        tab: 'developers',
+        label: t('developers', 'Developers'),
+        group: account,
+        icon: 'developers',
       });
     }
     arr.push({
       tab: 'approved_apps',
       label: t('approved_apps', 'Approved Apps'),
-      group: developers,
+      group: account,
       icon: 'approved_apps',
     });
 
@@ -347,10 +363,6 @@ export const SettingsPopup: FC<{
       .filter((g) => g.items.length);
   }, [groupedList, query]);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
   // Prototype settingsVals TAB titles/descriptions — one shared block in the
   // content column (h3 20/500 + muted 14 mt4). Per-tab bodies own only content.
   const tabHeader = useMemo(() => {
@@ -370,6 +382,20 @@ export const SettingsPopup: FC<{
         desc: t(
           'invite_your_assistant_or_team_member_to_manage_your_account',
           'Invite your assistant or team member to manage your account'
+        ),
+      },
+      notifications: {
+        title: t('notifications', 'Notifications'),
+        desc: t(
+          'notifications_settings_description',
+          'Choose which email updates you receive about your posts and streak.'
+        ),
+      },
+      account: {
+        title: t('account', 'Account'),
+        desc: t(
+          'account_settings_description',
+          'Personal preferences for your user — separate from workspace settings.'
         ),
       },
       webhooks: {
@@ -401,10 +427,17 @@ export const SettingsPopup: FC<{
         ),
       },
       api: {
+        title: t('api_keys', 'API Keys'),
+        desc: t(
+          'api_keys_description',
+          'Reveal or rotate your personal API key for authenticating with the public API.'
+        ),
+      },
+      developers: {
         title: t('developers', 'Developers'),
         desc: t(
-          'developers_description',
-          'Use the public API to schedule posts from your own systems.'
+          'developers_oauth_description',
+          'Build OAuth apps so other products can post on behalf of your users. After authorization you get a pos_ token that works like an API key.'
         ),
       },
       approved_apps: {
@@ -437,7 +470,7 @@ export const SettingsPopup: FC<{
       data-settings-card="1"
       onClick={(e) => e.stopPropagation()}
       className={clsx(
-        'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),inset_0_0_0_1px_var(--border)] animate-pqPop',
+        'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
@@ -445,7 +478,9 @@ export const SettingsPopup: FC<{
     >
       <div
         className={clsx(
-          'flex min-h-0 flex-col bg-pqBg',
+          // Settings surface (--settings), not page --bg: otherwise the nav
+          // column disappears into the scrim on the left edge.
+          'flex min-h-0 flex-col bg-pqSettings',
           mobile
             ? 'max-h-[132px] w-full shrink-0 border-b border-pqLine'
             : 'w-[236px] shrink-0 border-e border-pqLine'
@@ -487,16 +522,39 @@ export const SettingsPopup: FC<{
                   <Link
                     key={tabKey}
                     href={href}
+                    onClick={(e) => {
+                      // Soft-leave Settings overlay → destination (see leaveSettingsFor).
+                      if (href.startsWith('/')) {
+                        e.preventDefault();
+                        leaveSettingsFor(href, redirectRouter);
+                      }
+                    }}
                     className={clsx(navItemBase, 'text-pqMuted')}
                   >
                     <SettingsNavIcon icon={icon} />
                     <span className="min-w-0 flex-1 truncate">{label}</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      aria-hidden="true"
+                      className="ms-auto shrink-0 opacity-[0.55]"
+                    >
+                      <path
+                        d="M14 5h5v5M19 5l-9 9M10 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </Link>
                 ) : (
                   <button
                     key={tabKey}
                     type="button"
-                    onClick={() => setTab(tabKey)}
+                    onClick={() => selectTab(tabKey)}
                     aria-current={tabKey === tab ? 'page' : undefined}
                     className={clsx(
                       navItemBase,
@@ -532,80 +590,95 @@ export const SettingsPopup: FC<{
         </button>
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px]">
           <SettingsTabChromeProvider key={tab}>
-          <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(submit)}>
-              {!!getRef && (
-                <button type="submit" className="hidden" ref={getRef}></button>
+            <SettingsTabPane tabHeader={tabHeader}>
+              {tab === 'global_settings' && (
+                <div>
+                  <GlobalSettings />
+                </div>
               )}
-              <SettingsTabPane tabHeader={tabHeader}>
-                {tab === 'global_settings' && (
-                  <div>
-                    <GlobalSettings />
-                  </div>
-                )}
-                {tab === 'language' && (
-                  <div>
-                    <ChangeLanguageComponent hideHeader />
-                  </div>
-                )}
-                {tab === 'teams' && isGeneral && isOrgAdmin && (
-                  <div>
-                    {user?.tier?.team_members ? (
-                      <TeamsComponent onClose={onClose} />
-                    ) : (
-                      <TeamsUpgradeLock onClose={onClose} />
-                    )}
-                  </div>
-                )}
-
-                {tab === 'webhooks' && !!user?.tier?.webhooks && (
-                  <div>
-                    <Webhooks />
-                  </div>
-                )}
-
-                {tab === 'autopost' && user?.tier.current !== 'FREE' && (
-                  <div>
-                    <Autopost />
-                  </div>
-                )}
-
-                {tab === 'sets' && user?.tier.current !== 'FREE' && (
-                  <div>
-                    <Sets />
-                  </div>
-                )}
-
-                {tab === 'signatures' && user?.tier.current !== 'FREE' && (
-                  <div>
-                    <SignaturesComponent />
-                  </div>
-                )}
-
-                {tab === 'api' &&
-                  !!user?.tier?.public_api &&
-                  isGeneral &&
-                  showLogout &&
-                  isOrgAdmin && (
-                    <div>
-                      <PublicComponent onClose={onClose} />
-                    </div>
+              {tab === 'language' && (
+                <div>
+                  <ChangeLanguageComponent hideHeader />
+                </div>
+              )}
+              {tab === 'teams' && isGeneral && isOrgAdmin && (
+                <div>
+                  {user?.tier?.team_members ? (
+                    <TeamsComponent onClose={onClose} />
+                  ) : (
+                    <TeamsUpgradeLock onClose={onClose} />
                   )}
+                </div>
+              )}
 
-                {tab === 'approved_apps' && (
+              {tab === 'notifications' && (
+                <div>
+                  <EmailNotificationsComponent />
+                </div>
+              )}
+
+              {tab === 'account' && (
+                <div>
+                  <UserAccountComponent />
+                </div>
+              )}
+
+              {tab === 'webhooks' && !!user?.tier?.webhooks && (
+                <div>
+                  <Webhooks />
+                </div>
+              )}
+
+              {tab === 'autopost' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <Autopost />
+                </div>
+              )}
+
+              {tab === 'sets' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <Sets />
+                </div>
+              )}
+
+              {tab === 'signatures' && user?.tier.current !== 'FREE' && (
+                <div>
+                  <SignaturesComponent />
+                </div>
+              )}
+
+              {tab === 'api' &&
+                !!user?.tier?.public_api &&
+                isGeneral &&
+                showLogout &&
+                isOrgAdmin && (
                   <div>
-                    <ApprovedAppsComponent />
+                    <PublicApiKeysSection />
                   </div>
                 )}
 
-                {tab === 'integrations' && (
+              {tab === 'developers' &&
+                !!user?.tier?.public_api &&
+                isGeneral &&
+                showLogout &&
+                isOrgAdmin && (
                   <div>
-                    <ThirdPartyComponent />
+                    <PublicAppsSection />
                   </div>
                 )}
-              </SettingsTabPane>
-            </form>
-          </FormProvider>
+
+              {tab === 'approved_apps' && (
+                <div>
+                  <ApprovedAppsComponent />
+                </div>
+              )}
+
+              {tab === 'integrations' && (
+                <div>
+                  <ThirdPartyComponent />
+                </div>
+              )}
+            </SettingsTabPane>
           </SettingsTabChromeProvider>
         </div>
       </div>
@@ -617,8 +690,16 @@ export const SettingsPopup: FC<{
  * The /settings route renders the design's settings modal: the card floats on
  * a scrim over the app chrome. Closing walks back to wherever the person came
  * from, or to the calendar when the URL was opened directly.
+ *
+ * `mode=intercept` — soft-open via `@modal/(.)settings` (prior page under scrim).
+ * `mode=page` — hard `/settings` URL; scrim still portals to body so the header
+ * is covered (not crushed inside `.blurMe`).
  */
-export const SettingsPage = () => {
+export const SettingsPage = ({
+  mode = 'page',
+}: {
+  mode?: RouteOverlayMode;
+}) => {
   const router = useRouter();
   const back = useCallback(() => {
     if (window.history.length > 1) {
@@ -627,14 +708,17 @@ export const SettingsPage = () => {
       router.push('/launches');
     }
   }, [router]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') back();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [back]);
   return (
-    <div
-      data-settings-scrim="1"
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-pqPopup p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0"
-      onClick={back}
-    >
+    <RouteOverlayScrim mode={mode} kind="settings" onClose={back}>
       <SettingsPopup onClose={back} />
-    </div>
+    </RouteOverlayScrim>
   );
 };
 /**

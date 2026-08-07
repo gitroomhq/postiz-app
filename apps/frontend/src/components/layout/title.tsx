@@ -1,8 +1,8 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { useMenuItem } from '@gitroom/frontend/components/layout/top.menu';
+import { useChromeLocation } from '@gitroom/frontend/components/layout/use-chrome-location';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 // Routes with no menu entry (/admin/*, /err) that still deserve a heading
@@ -17,8 +17,11 @@ const FALLBACK_TITLES: Record<string, string> = {
 };
 
 export const Title = () => {
-  const path = usePathname();
-  const searchParams = useSearchParams();
+  // Soft Settings/Connections overlays change the URL but keep the previous
+  // page mounted — chrome must follow that background page, not the overlay.
+  // Hard `/settings` / `/connections` blanks the h1 (scrim covers the header;
+  // a second "Settings" label under the sheet felt dual).
+  const { pathname: path, searchParams, isHardOverlay } = useChromeLocation();
   const t = useT();
   const { all: menuItems } = useMenuItem();
   const isPostsList =
@@ -61,6 +64,7 @@ export const Title = () => {
   };
 
   const currentTitle = useMemo(() => {
+    if (isHardOverlay) return '';
     if (isPostsList) return t('posts', 'Posts');
     // More-menu items deep-link to `/settings?tab=…` and share the `/settings`
     // prefix — the chrome h1 is always Settings; tab titles live in the sheet.
@@ -90,9 +94,10 @@ export const Title = () => {
       (key) => path.indexOf(key) > -1
     );
     return fallbackKey ? FALLBACK_TITLES[fallbackKey] : '';
-  }, [path, menuItems, isPostsList, t]);
+  }, [path, menuItems, isPostsList, isHardOverlay, t]);
 
   const subtitle = useMemo(() => {
+    if (isHardOverlay) return '';
     if (isPostsList) {
       return t(
         'subtitle_posts',
@@ -101,7 +106,7 @@ export const Title = () => {
     }
     const key = Object.keys(SUBTITLES).find((k) => path.indexOf(k) === 0);
     return key ? SUBTITLES[key] : '';
-  }, [path, t, isPostsList]);
+  }, [path, t, isPostsList, isHardOverlay]);
 
   return (
     <>

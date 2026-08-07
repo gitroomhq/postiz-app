@@ -7,6 +7,41 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+
+const PickPlatformCopilotBindings: FC<{
+  isMain: boolean;
+  integrations: Integrations[];
+  handler: (args: { integrationsId: string[] }) => Promise<void>;
+  deps: unknown[];
+}> = ({ isMain, integrations, handler, deps }) => {
+  useCopilotReadable({
+    description: isMain
+      ? 'All available platforms channels'
+      : 'Possible platforms channels to edit',
+    value: JSON.stringify(integrations),
+  });
+  useCopilotAction(
+    {
+      name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
+      description: isMain
+        ? `Add or remove channels to schedule your post to, pass all the ids as array`
+        : 'Set selected integrations',
+      parameters: [
+        {
+          name: 'integrationsId',
+          type: 'string[]',
+          description: 'List of integrations id to set as selected',
+          required: true,
+        },
+      ],
+      handler,
+    },
+    deps
+  );
+  return null;
+};
+
 export const PickPlatforms: FC<{
   integrations: Integrations[];
   selectedIntegrations: Integrations[];
@@ -141,44 +176,10 @@ export const PickPlatforms: FC<{
     const newIntegrations = [...notToRemove, ...toAdd]
       .map((id) => integrations.find((p) => p.id === id)!)
       .filter((p) => p);
-    setSelectedAccounts(newIntegrations, () => {
-      console.log('changed');
-    });
-    onChange(newIntegrations, () => {
-      console.log('changed');
-    });
+    setSelectedAccounts(newIntegrations, () => {});
+    onChange(newIntegrations, () => {});
   };
-  useCopilotReadable({
-    description: isMain
-      ? 'All available platforms channels'
-      : 'Possible platforms channels to edit',
-    value: JSON.stringify(integrations),
-  });
-  useCopilotAction(
-    {
-      name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
-      description: isMain
-        ? `Add or remove channels to schedule your post to, pass all the ids as array`
-        : 'Set selected integrations',
-      parameters: [
-        {
-          name: 'integrationsId',
-          type: 'string[]',
-          description: 'List of integrations id to set as selected',
-          required: true,
-        },
-      ],
-      handler,
-    },
-    [
-      addPlatform,
-      selectedAccounts,
-      integrations,
-      onChange,
-      props.singleSelect,
-      setSelectedAccounts,
-    ]
-  );
+  const { aiEnabled } = useVariables();
   if (hide) {
     return null;
   }
@@ -186,6 +187,21 @@ export const PickPlatforms: FC<{
     <div
       className={clsx('flex select-none', props.singleSelect && 'gap-[10px]')}
     >
+      {aiEnabled && (
+        <PickPlatformCopilotBindings
+          isMain={isMain}
+          integrations={integrations}
+          handler={handler}
+          deps={[
+            addPlatform,
+            selectedAccounts,
+            integrations,
+            onChange,
+            props.singleSelect,
+            setSelectedAccounts,
+          ]}
+        />
+      )}
       {props.singleSelect && isLeft && (
         <div className="flex items-center">
           {isLeft && (

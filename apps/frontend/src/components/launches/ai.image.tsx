@@ -76,9 +76,19 @@ ${style}
   }, [prompt, style, onChange]);
 
   return (
-    <div className="flex flex-col gap-[16px]">
-      <div className="flex flex-col gap-[6px]">
-        <div className="text-[14px] text-pqMuted">{t('prompt', 'Prompt')}</div>
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex flex-col gap-[8px]">
+        <div>
+          <div className="text-[12.5px] font-[600] text-pqSoft">
+            {t('prompt', 'Prompt')}
+          </div>
+          <div className="mt-[2px] text-[12px] leading-[1.45] text-pqMuted">
+            {t(
+              'ai_image_prompt_help',
+              'What should appear in the image?'
+            )}
+          </div>
+        </div>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -86,33 +96,38 @@ ${style}
             'describe_the_image_you_want_to_generate',
             'Describe the image you want to generate'
           )}
-          className="min-h-[150px] rounded-[10px] border-0 bg-pqTableHeader p-[16px] text-[14px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]"
+          className="min-h-[140px] rounded-[12px] border-0 bg-pqTableHeader p-[14px_16px] text-[14px] leading-[1.55] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)]"
         />
       </div>
-      <div className="flex flex-col gap-[6px]">
-        <div className="text-[14px] text-pqMuted">{t('style', 'Style')}</div>
+      <div className="flex flex-col gap-[8px]">
+        <div className="text-[12.5px] font-[600] text-pqSoft">
+          {t('style', 'Style')}
+        </div>
         <div className="flex flex-wrap gap-[8px]">
           {list.map((p) => (
-            <div
+            <button
+              type="button"
               key={p}
               onClick={() => setStyle(p)}
               className={clsx(
-                'cursor-pointer rounded-[4px] px-[10px] h-[30px] flex items-center text-[12px] border',
+                'flex h-[32px] cursor-pointer items-center rounded-pqSm px-[12px] text-[12px] font-[600] transition-colors',
                 style === p
-                  ? 'bg-pqBrand border-pqBrand text-pqOnBrand'
-                  : 'bg-pqSettings border-pqBorder text-pqText'
+                  ? 'bg-pqBrand text-pqOnBrand'
+                  : 'bg-pqSettings text-pqText shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqHover'
               )}
             >
               {p}
-            </div>
+            </button>
           ))}
         </div>
       </div>
-      <div className="flex">
-        <Button type="button" onClick={generate} className="flex-1">
-          {t('generate', 'Generate')}
-        </Button>
-      </div>
+      <Button
+        type="button"
+        onClick={generate}
+        className="h-[44px] w-full text-[14.5px] font-[700]"
+      >
+        {t('generate', 'Generate')}
+      </Button>
     </div>
   );
 };
@@ -150,10 +165,10 @@ export const AiImage: FC<{
       <div
         onClick={openImageModal}
         className={clsx(
-          'cursor-pointer h-[30px] justify-center items-center flex',
+          'inline-flex h-[36px] cursor-pointer items-center justify-center',
           ghost
             ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqBrandSoft hover:text-pqFocused'
-            : 'rounded-[6px] bg-newColColor px-[8px]'
+            : 'rounded-[8px] bg-pqBtnSimple px-[12px] text-pqText transition-colors hover:bg-pqHover'
         )}
       >
         {loading && (
@@ -196,7 +211,7 @@ export const AiImage: FC<{
               'font-[600]',
               ghost
                 ? 'text-[12px] whitespace-nowrap'
-                : 'text-[10px] iconBreak:hidden block'
+                : 'text-[12px] iconBreak:hidden block'
             )}
           >
             {ghost

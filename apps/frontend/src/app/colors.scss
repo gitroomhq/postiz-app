@@ -108,10 +108,10 @@
     --avatarBg: #101014;
     --badgeRing: #101014;
     // Lifetime / founding-member surfaces only.
-    // Last stop stays a soft amber wash — fading to bare `transparent` over
-    // black reads as a dark band on the right of the card.
-    --ltCardOn: linear-gradient(120deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.1) 52%, rgba(245, 158, 11, 0.045));
-    --ltCardOff: linear-gradient(120deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05) 52%, rgba(245, 158, 11, 0.025));
+    // Solid washes — diagonal fades over black read as a dark band on the right
+    // (owner 2026-08-06: kill the “lifetime = dark mood” gradient).
+    --ltCardOn: rgba(245, 158, 11, 0.14);
+    --ltCardOff: rgba(245, 158, 11, 0.08);
     --ltSolid: #f59e0b;
     --ltSolidFg: #1a1205;
     --ltLine2: rgba(245, 158, 11, 0.55);
@@ -123,8 +123,7 @@
     --ltText: rgba(255, 244, 228, 0.92);
     --ltLine: rgba(245, 158, 11, 0.18);
     --ltChipBg: rgba(245, 158, 11, 0.14);
-    // The lifetime upsell strip's gradient start, and the outline drawn around
-    // lifetime gradient surfaces (the upsell strip, the founding-member hero).
+    // The outline drawn around lifetime surfaces (upsell strip, founding hero).
     --ltSoft: rgba(245, 158, 11, 0.15);
     --ltOutline: rgba(245, 158, 11, 0.34);
     --ltTick: rgba(245, 158, 11, 0.85);
@@ -233,8 +232,8 @@
     --unlimB: #a855f7;
     --avatarBg: #eceae6;
     --badgeRing: #f7f5f2;
-    --ltCardOn: linear-gradient(120deg, #fdf3e2, #fefaf3 58%, #fffdfa);
-    --ltCardOff: linear-gradient(120deg, #fdf8f0, #fefcf8 55%, #fffcf9);
+    --ltCardOn: #fdf6ea;
+    --ltCardOff: #faf6f0;
     --ltSolid: #d97706;
     --ltSolidFg: #fffaf2;
     --ltLine2: rgba(217, 119, 6, 0.5);

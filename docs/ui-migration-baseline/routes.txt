@@ -1,4 +1,5 @@
 /(app)/(preview)/p/[id]/page.tsx
+/(app)/(site)/@modal/(.)connections/page.tsx
 /(app)/(site)/@modal/(.)settings/page.tsx
 /(app)/(site)/admin/errors/page.tsx
 /(app)/(site)/admin/stats/page.tsx

@@ -48,6 +48,29 @@ export const ChatbaseComponentLoad: FC = () => {
   return <ChatBaseCode token={data} />;
 };
 
+/**
+ * Chatbase's dashboard "Align: Left" keeps rewriting `left` on the bubble.
+ * CSS alone loses that fight; pin bottom-trailing with !important so the rail
+ * footer (Settings / Upgrade) stays visible.
+ */
+const pinChatbaseTrailing = (el: HTMLElement) => {
+  const rtl = document.documentElement.getAttribute('dir') === 'rtl';
+  const wantLeft = rtl ? '20px' : 'auto';
+  const wantRight = rtl ? 'auto' : '20px';
+  if (el.style.getPropertyValue('left') === wantLeft &&
+      el.style.getPropertyValue('right') === wantRight) {
+    return;
+  }
+  el.style.setProperty('left', wantLeft, 'important');
+  el.style.setProperty('right', wantRight, 'important');
+  el.style.setProperty('inset-inline-start', 'auto', 'important');
+  el.style.setProperty('inset-inline-end', '20px', 'important');
+};
+
+const CHATBASE_PIN_STYLE_ID = 'pq-chatbase-pin-trailing';
+const CHATBASE_PIN_SELECTOR =
+  '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"]';
+
 const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
   const { chatbaseBotId } = useVariables();
   const fetch = useFetch();
@@ -154,6 +177,44 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
         }
       },
     });
+
+    // Survive Chatbase re-applying dashboard "Align: Left" after mount.
+    if (!document.getElementById(CHATBASE_PIN_STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = CHATBASE_PIN_STYLE_ID;
+      style.textContent = `
+#chatbase-bubble-button,
+#chatbase-bubble-window,
+[id^="chatbase-bubble"] {
+  left: auto !important;
+  right: 20px !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: 20px !important;
+}
+[dir="rtl"] #chatbase-bubble-button,
+[dir="rtl"] #chatbase-bubble-window,
+[dir="rtl"] [id^="chatbase-bubble"] {
+  left: 20px !important;
+  right: auto !important;
+}`;
+      document.head.appendChild(style);
+    }
+
+    const pinAll = () => {
+      document
+        .querySelectorAll<HTMLElement>(CHATBASE_PIN_SELECTOR)
+        .forEach(pinChatbaseTrailing);
+    };
+    pinAll();
+    // childList only — watching `style` would re-fire on our own setProperty.
+    const observer = new MutationObserver(pinAll);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const interval = window.setInterval(pinAll, 2000);
+
+    return () => {
+      observer.disconnect();
+      window.clearInterval(interval);
+    };
   }, []);
   return null;
 };

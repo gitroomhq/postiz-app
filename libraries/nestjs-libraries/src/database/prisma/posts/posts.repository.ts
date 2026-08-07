@@ -286,9 +286,10 @@ export class PostsRepository {
         },
       ],
       ...stateAndDate,
-      // Published posts were already posted (publishDate in the past), so fetch
-      // all of them; everything else stays upcoming. Ordering handles the rest.
-      ...(stateFilter === 'published'
+      // Published: any publishDate. Drafts: any publishDate (past drafts must
+      // stay visible in the Drafts panel — calendar already excludes DRAFT).
+      // Scheduled/other: upcoming only.
+      ...(stateFilter === 'published' || stateFilter === 'draft'
         ? {}
         : { publishDate: { gte: dayjs.utc().toDate() } }),
       deletedAt: null as Date | null,

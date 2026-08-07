@@ -227,7 +227,7 @@ export const AiVideo: FC<{
         onClick={openVideoModal}
         aria-disabled={unavailable || isLoading || loading}
         className={clsx(
-          'h-[30px] justify-center items-center flex',
+          'inline-flex h-[36px] items-center justify-center',
           unavailable || isLoading
             ? 'cursor-not-allowed opacity-50'
             : 'cursor-pointer',
@@ -238,7 +238,7 @@ export const AiVideo: FC<{
                   !isLoading &&
                   'hover:bg-pqBrandSoft hover:text-pqFocused'
               )
-            : 'rounded-[6px] bg-newColColor px-[8px]'
+            : 'rounded-[8px] bg-pqBtnSimple px-[12px] text-pqText transition-colors hover:bg-pqHover'
         )}
       >
         {loading && (
@@ -278,7 +278,7 @@ export const AiVideo: FC<{
               'font-[600]',
               ghost
                 ? 'text-[12px] whitespace-nowrap'
-                : 'text-[10px] iconBreak:hidden block'
+                : 'text-[12px] iconBreak:hidden block'
             )}
           >
             {ghost

@@ -84,7 +84,7 @@ export const UText: FC<{
       data-tooltip-id="tooltip"
       data-tooltip-content="Underline"
       onClick={mark}
-      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+      className="flex h-[36px] w-[36px] cursor-pointer select-none items-center justify-center rounded-[8px] bg-pqBtnSimple text-pqText transition-colors hover:bg-pqHover"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

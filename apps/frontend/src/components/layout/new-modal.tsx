@@ -297,8 +297,8 @@ export const ModalManagerInner: FC = () => {
     const html = document.documentElement;
     const body = document.body;
     if (modalManager.length > 0) {
-      // Reserve the scrollbar lane so `min(1040px,100%)` Settings cards do not
-      // jump when the bar disappears (prototype keeps the sheet width stable).
+      // Overflow lock only — scrollbar gutter lives on `html` always
+      // (global.scss) so Create Post / any modal does not shift the chrome.
       html.classList.add('pq-modal-open');
       body?.classList.add('overflow-hidden');
       // Settings is its own scrim route under `.blurMe` — blurring it under a
@@ -324,7 +324,7 @@ export const ModalManagerInner: FC = () => {
 
   return (
     <>
-      <style>{`html.pq-modal-open { overflow: hidden !important; scrollbar-gutter: stable; } body { overflow: hidden !important; }`}</style>
+      <style>{`html.pq-modal-open, html.pq-modal-open body { overflow: hidden !important; }`}</style>
       {modalManager.map((modal, index) => (
         <Component
           isLast={modalManager.length - 1 === index}
@@ -372,9 +372,9 @@ export const ModalManagerEmitter: FC = () => {
 };
 
 /**
- * Design form footer (`overlayVals` form card): primary (+ optional secondary)
- * then a fixed-width outline Cancel. Put the primary submit as the first child
- * with `flex-1` (and h-[42px] rounded-[10px] when matching the prototype).
+ * Settings / modal form footer: primary (+ optional secondary) then outline Cancel.
+ * Right-aligned; primary should be `shrink-0` with horizontal padding — not `flex-1`
+ * (full-bleed brand bars dwarf Cancel — owner feedback 2026-08-06).
  */
 export const ModalFormActions: FC<{
   onCancel: () => void;
@@ -383,12 +383,12 @@ export const ModalFormActions: FC<{
 }> = ({ onCancel, cancelLabel, children }) => {
   const t = useT();
   return (
-    <div className="mt-[4px] flex gap-[10px] pt-[4px]">
+    <div className="mt-[2px] flex flex-wrap items-center justify-end gap-[8px] pt-[2px]">
       {children}
       <button
         type="button"
         onClick={onCancel}
-        className="h-[44px] w-[120px] shrink-0 rounded-[10px] bg-transparent text-[14px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover"
+        className="h-[40px] w-[110px] shrink-0 rounded-[10px] bg-transparent text-[13.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover"
       >
         {cancelLabel ?? t('cancel', 'Cancel')}
       </button>

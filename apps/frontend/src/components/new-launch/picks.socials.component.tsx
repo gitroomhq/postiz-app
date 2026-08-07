@@ -40,7 +40,12 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                 }
                 return !f.inBetweenSteps && !f.disabled;
               })
-              .map((integration) => (
+              .map((integration) => {
+                const isSelected =
+                  selectedIntegrations.findIndex(
+                    (p) => p.integration.id === integration.id
+                  ) !== -1;
+                return (
                 <div
                   key={integration.id}
                   className="flex gap-[8px] items-center"
@@ -58,21 +63,36 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                     }}
                     className={clsx(
                       'relative flex cursor-pointer items-center justify-center rounded-full border-[2px] bg-pqSettings filter transition-all duration-500',
-                      selectedIntegrations.findIndex(
-                        (p) => p.integration.id === integration.id
-                      ) === -1
+                      !isSelected
                         ? 'grayscale border-transparent'
                         : 'border-pqBrand'
                     )}
                   >
+                    {isSelected && (
+                      <span className="absolute -start-[4px] -top-[4px] z-[2] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-pqBrand text-pqOnBrand">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="10"
+                          height="10"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M5 12.5l4.5 4.5L19 7.5"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    )}
                     <ImageWithFallback
                       fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
                       className={clsx(
                         'min-h-[42px] min-w-[42px] rounded-full border-[1.5px] transition-all',
-                        selectedIntegrations.findIndex(
-                          (p) => p.integration.id === integration.id
-                        ) === -1
+                        !isSelected
                           ? 'border-transparent'
                           : 'border-pqInner'
                       )}
@@ -97,7 +117,8 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       </div>

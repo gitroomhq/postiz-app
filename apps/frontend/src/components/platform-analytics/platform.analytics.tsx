@@ -98,7 +98,7 @@ export const PlatformAnalytics = () => {
   }, [collapseMenu, setCollapseMenu]);
 
   const sortedIntegrations = useMemo(() => {
-    return sortIntegrationsByProviderImportance(data) as Array<
+    return sortIntegrationsByProviderImportance(data || []) as Array<
       Integrations & {
         refreshNeeded?: boolean;
         internalId?: string;

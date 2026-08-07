@@ -33,16 +33,18 @@ const ROW =
 /**
  * The header's Help menu.
  *
- * The design's list is Setup tour · Documentation · Keyboard shortcuts ·
- * Contact support · Report a bug. Three of those exist here — the onboarding
- * modal behind `?onboarding=`, the Chatbase widget, and Sentry's feedback
- * dialog — and this is also where the browser-extension link moved, since the
- * redesign's header has no icon row left to hold it.
+ * App chrome: Setup tour · Documentation · Keyboard shortcuts · Contact
+ * support · Report a bug · (Browser extension when listed).
  *
- * Documentation opens the public docs site. Keyboard shortcuts have nothing
- * behind them yet — locked at the design's opacity with no handler.
+ * Checkout (`surface="checkout"`): no Setup tour (nothing to tour) and no
+ * locked Keyboard shortcuts — Documentation · Contact · Report a bug only.
+ * Same Sentry / Chatbase WORK as the app menu.
+ *
+ * Keyboard shortcuts stay locked in the app menu until a real handler exists.
  */
-export const HelpMenu = () => {
+export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
+  surface = 'app',
+}) => {
   const t = useT();
   const { isChatBase, extensionStoreUrl, billingEnabled } = useVariables();
   const sentry = useSentryFeedback();
@@ -53,6 +55,7 @@ export const HelpMenu = () => {
     HTMLButtonElement,
     HTMLDivElement
   >(open, 'end');
+  const isCheckout = surface === 'checkout';
 
   useEffect(() => {
     if (!open) return;
@@ -71,8 +74,9 @@ export const HelpMenu = () => {
   }, [open]);
 
   // Same condition the standalone icon carried: no listing configured means
-  // this deployment has not published an extension.
-  const showExtension = billingEnabled && !!extensionStoreUrl;
+  // this deployment has not published an extension. Checkout header has no
+  // place for the extension row — keep it on the app chrome only.
+  const showExtension = !isCheckout && billingEnabled && !!extensionStoreUrl;
 
   const live = (
     onClick: () => void,
@@ -135,13 +139,13 @@ export const HelpMenu = () => {
           role="menu"
           className="z-[60] w-[246px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
         >
-          {/* Design product tour only — old onboarding modal removed. */}
-          {live(
-            () => startTour(),
-            'M9 11.5l2.5 2.5L17 8.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
-            t('setup_tour', 'Setup tour'),
-            'tour'
-          )}
+          {!isCheckout &&
+            live(
+              () => startTour(),
+              'M9 11.5l2.5 2.5L17 8.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+              t('setup_tour', 'Setup tour'),
+              'tour'
+            )}
 
           <a
             href="https://docs.postqueen.ai"
@@ -154,13 +158,15 @@ export const HelpMenu = () => {
             <HelpIcon d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
             {t('documentation', 'Documentation')}
           </a>
-          <div
-            aria-disabled="true"
-            className={clsx(ROW, 'cursor-default text-pqMuted opacity-[0.45]')}
-          >
-            <HelpIcon d="M2 6h20v12H2V6ZM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
-            {t('keyboard_shortcuts', 'Keyboard shortcuts')}
-          </div>
+          {!isCheckout && (
+            <div
+              aria-disabled="true"
+              className={clsx(ROW, 'cursor-default text-pqMuted opacity-[0.45]')}
+            >
+              <HelpIcon d="M2 6h20v12H2V6ZM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+              {t('keyboard_shortcuts', 'Keyboard shortcuts')}
+            </div>
+          )}
 
           {isChatBase &&
             live(

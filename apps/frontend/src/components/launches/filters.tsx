@@ -12,8 +12,11 @@ import { ChannelFilter } from '@gitroom/frontend/components/launches/channel.fil
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
-import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
+import {
+  useDateFormat,
+} from '@gitroom/frontend/components/launches/helpers/date.format';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { Calendar } from '@mantine/dates';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -49,10 +52,15 @@ function getDateRange(
 export const Filters = () => {
   const calendar = useCalendar();
   const t = useT();
+  const {
+    datePattern,
+    formatWeekRange,
+    mediumDatePattern,
+  } = useDateFormat();
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
-  dayjs.locale();
+  dayjs.locale(currentLanguage);
 
   // Calculate display date range text
   const getDisplayText = () => {
@@ -61,9 +69,9 @@ export const Filters = () => {
 
     switch (calendar.display) {
       case 'day':
-        return startDate.format('dddd (L)');
+        return startDate.format(`dddd (${datePattern()})`);
       case 'week':
-        return `${startDate.format('L')} - ${endDate.format('L')}`;
+        return formatWeekRange(startDate, endDate);
       case 'month':
         return startDate.format('MMMM YYYY');
       default:
@@ -72,25 +80,25 @@ export const Filters = () => {
   };
 
   const setToday = useCallback(() => {
-    const today = newDayjs();
     const currentRange = getDateRange(
       calendar.display as 'day' | 'week' | 'month'
     );
 
-    // Check if we're already showing today's range
     if (
-      calendar.startDate === currentRange.startDate &&
-      calendar.endDate === currentRange.endDate
+      calendar.startDate !== currentRange.startDate ||
+      calendar.endDate !== currentRange.endDate
     ) {
-      return; // No need to set the same range
+      calendar.setFilters({
+        startDate: currentRange.startDate,
+        endDate: currentRange.endDate,
+        display: calendar.display as 'day' | 'week' | 'month',
+        customer: calendar.customer,
+      });
     }
 
-    calendar.setFilters({
-      startDate: currentRange.startDate,
-      endDate: currentRange.endDate,
-      display: calendar.display as 'day' | 'week' | 'month',
-      customer: calendar.customer,
-    });
+    // Always re-center Day/Week on the current hour — even when the range
+    // was already "today" (the old early-return made a second click a no-op).
+    calendar.requestScrollToNow();
   }, [calendar]);
 
   const setDay = useCallback(() => {
@@ -264,41 +272,145 @@ export const Filters = () => {
   );
 
   const isListView = calendar.display === 'list';
+  // List + Day share the Posts content column (max-w-[860px]); Week/Month are
+  // full-bleed. Owner reverted full-bleed (2026-08-06) — keep toolbar + cards aligned.
+  const containedColumn =
+    isListView || calendar.display === 'day';
   const [rangeOpen, setRangeOpen] = useState(false);
+  const [pickDateOpen, setPickDateOpen] = useState(false);
+  const [calPickOpen, setCalPickOpen] = useState(false);
   const rangeRef = useRef<HTMLDivElement>(null);
+  const calPickRef = useRef<HTMLDivElement>(null);
   const { referenceRef: rangeTriggerRef, floatingRef: rangeMenuRef } =
     useAnchoredPopover<HTMLButtonElement, HTMLDivElement>(rangeOpen, 'start');
+  // Second anchor so the Mantine calendar is `position: fixed` and escapes
+  // Filters' `overflow-y-auto` clip (absolute under the row was cut off).
+  const { referenceRef: pickTriggerRef, floatingRef: pickCalendarRef } =
+    useAnchoredPopover<HTMLButtonElement, HTMLDivElement>(pickDateOpen, 'start');
+  const { referenceRef: calPickTriggerRef, floatingRef: calPickCalendarRef } =
+    useAnchoredPopover<HTMLButtonElement, HTMLDivElement>(calPickOpen, 'start');
+  const dateMenuOpen = rangeOpen || pickDateOpen;
 
   useEffect(() => {
-    if (!rangeOpen) return;
+    if (!dateMenuOpen) return;
     const onDoc = (e: MouseEvent) => {
-      if (!rangeRef.current?.contains(e.target as Node)) setRangeOpen(false);
+      if (!rangeRef.current?.contains(e.target as Node)) {
+        setRangeOpen(false);
+        setPickDateOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, [rangeOpen]);
+  }, [dateMenuOpen]);
+
+  useEffect(() => {
+    if (!calPickOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!calPickRef.current?.contains(e.target as Node)) {
+        setCalPickOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [calPickOpen]);
+
+  const pickCalDay = useCallback(
+    (date: Date) => {
+      const display = calendar.display as 'day' | 'week' | 'month';
+      if (display !== 'day' && display !== 'week' && display !== 'month') {
+        return;
+      }
+      const picked = newDayjs(date).format('YYYY-MM-DD');
+      const range = getDateRange(display, picked);
+      calendar.setFilters({
+        startDate: range.startDate,
+        endDate: range.endDate,
+        display,
+        customer: calendar.customer,
+      });
+      setCalPickOpen(false);
+    },
+    [calendar]
+  );
+
+  const calPickAriaLabel =
+    calendar.display === 'week'
+      ? t('pick_a_week', 'Pick a week')
+      : calendar.display === 'month'
+        ? t('pick_a_month', 'Pick a month')
+        : t('pick_a_date', 'Pick a date');
+
+  const calPickTitle =
+    calendar.display === 'week'
+      ? t('pick_a_week', 'Pick a week')
+      : calendar.display === 'month'
+        ? t('pick_a_month', 'Pick a month')
+        : t('pick_a_day', 'Pick a day');
 
   const listRangeOptions = useMemo(() => {
+    // Design RANGES only (gridVals) + Pick a date below — owner: menu was too long.
+    // Extra ranges (tomorrow / next7 / month / …) stay in postInListRange for
+    // deep-links; they are not offered in this menu.
     const opts: { value: ListRangeFilter; label: string }[] = [
       { value: 'all', label: t('all_dates', 'All dates') },
       { value: 'today', label: t('today', 'Today') },
       { value: 'week', label: t('this_week', 'This week') },
       { value: 'next3', label: t('next_3_days', 'Next 3 days') },
-      { value: 'past', label: t('past_only', 'Past only') },
     ];
+    // Past-oriented presets are empty under Scheduled (API = future QUEUE).
+    if (calendar.listState !== 'scheduled') {
+      opts.push({ value: 'past', label: t('past_only', 'Past only') });
+    }
     if (calendar.listRange.startsWith('day:')) {
       const d = newDayjs(calendar.listRange.slice(4));
       opts.unshift({
         value: calendar.listRange,
-        label: d.format(isUSCitizen() ? 'dddd, MMMM D' : 'dddd, D MMMM'),
+        label: d.format(mediumDatePattern()),
       });
     }
     return opts;
-  }, [calendar.listRange, t]);
+  }, [calendar.listRange, calendar.listState, mediumDatePattern, t]);
 
-  const listRangeLabel =
-    listRangeOptions.find((o) => o.value === calendar.listRange)?.label ||
-    t('all_dates', 'All dates');
+  const listRangeLabel = useMemo(() => {
+    const fromMenu = listRangeOptions.find(
+      (o) => o.value === calendar.listRange
+    )?.label;
+    if (fromMenu) return fromMenu;
+    // Orphan range (removed from menu but still in URL / state) — keep a label.
+    const orphanLabels: Partial<Record<ListRangeFilter, string>> = {
+      tomorrow: t('tomorrow', 'Tomorrow'),
+      yesterday: t('yesterday', 'Yesterday'),
+      next7: t('next_7_days', 'Next 7 days'),
+      month: t('this_month', 'This month'),
+      nextMonth: t('next_month', 'Next month'),
+      pastWeek: t('past_week', 'Past week'),
+      past: t('past_only', 'Past only'),
+    };
+    return orphanLabels[calendar.listRange] || t('all_dates', 'All dates');
+  }, [calendar.listRange, listRangeOptions, t]);
+
+  const dayRangeDate = calendar.listRange.startsWith('day:')
+    ? newDayjs(calendar.listRange.slice(4))
+    : null;
+
+  const shiftListDay = useCallback(
+    (delta: number) => {
+      if (!dayRangeDate) return;
+      const next = dayRangeDate.add(delta, 'day').format('YYYY-MM-DD');
+      calendar.setListRange(`day:${next}` as ListRangeFilter);
+    },
+    [calendar, dayRangeDate]
+  );
+
+  const pickListDay = useCallback(
+    (date: Date) => {
+      const next = newDayjs(date).format('YYYY-MM-DD');
+      calendar.setListRange(`day:${next}` as ListRangeFilter);
+      setPickDateOpen(false);
+      setRangeOpen(false);
+    },
+    [calendar]
+  );
 
   const toggleListSort = useCallback(() => {
     calendar.setListSort(calendar.listSort === 'asc' ? 'desc' : 'asc');
@@ -314,59 +426,113 @@ export const Filters = () => {
   return (
     <div
       data-tour="cal-views"
-      className="flex select-none flex-col items-center gap-[8px] text-pqText md:flex-row"
+      className={clsx(
+        'flex w-full select-none flex-col gap-[8px] text-pqText md:flex-row md:items-center',
+        containedColumn &&
+          'mx-auto max-w-[860px] overflow-y-auto px-[4px] [scrollbar-gutter:stable]'
+      )}
     >
       {!isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
-            <div
-              onClick={previous}
-              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
+          <div
+            ref={calPickRef}
+            className={clsx(
+              'relative',
+              calPickOpen && 'z-[40]'
+            )}
+          >
+            <div className="flex h-[34px] items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
+              <div
+                onClick={previous}
+                className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
               >
-                <path
-                  d="M6.5 11L1.5 6L6.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="flex h-full min-w-[190px] items-center justify-center text-center">
-              {/* A date range is a left-to-right token: in RTL, bidi otherwise
-                  flips "03/08 - 09/08" into "09/08 - 03/08" and the week reads
-                  backwards. */}
-              <div dir="ltr" className="px-[9px] text-[13px] font-[500]">
-                {getDisplayText()}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="8"
+                  height="12"
+                  viewBox="0 0 8 12"
+                  fill="none"
+                >
+                  <path
+                    d="M6.5 11L1.5 6L6.5 1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div className="flex h-full min-w-[190px] items-center justify-center text-center">
+                {/* A date range is a left-to-right token: in RTL, bidi otherwise
+                    flips "03/08 - 09/08" into "09/08 - 03/08" and the week reads
+                    backwards. Click opens Mantine Calendar jump (list Pick a
+                    date pattern) — owner override; design may not show this. */}
+                <button
+                  type="button"
+                  ref={calPickTriggerRef}
+                  dir="ltr"
+                  aria-label={calPickAriaLabel}
+                  aria-expanded={calPickOpen}
+                  onClick={() => setCalPickOpen((o) => !o)}
+                  className={clsx(
+                    'flex h-full w-full items-center justify-center px-[9px] text-[13px] font-[500] transition-colors hover:bg-pqHover',
+                    calPickOpen && 'bg-pqHover'
+                  )}
+                >
+                  {getDisplayText()}
+                </button>
+              </div>
+              <div
+                onClick={next}
+                className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="8"
+                  height="12"
+                  viewBox="0 0 8 12"
+                  fill="none"
+                >
+                  <path
+                    d="M1.5 11L6.5 6L1.5 1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </div>
             </div>
-            <div
-              onClick={next}
-              className="flex h-full cursor-pointer items-center justify-center px-[10px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
+            {calPickOpen && (
+              <div
+                ref={calPickCalendarRef}
+                className="z-[300] rounded-pqMd border border-pqBorder bg-pqPop p-[12px] text-pqText shadow-menu"
+                onMouseDown={(e) => e.stopPropagation()}
               >
-                <path
-                  d="M1.5 11L6.5 6L1.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <div className="mb-[8px] text-[12px] font-[500] text-pqMuted">
+                  {calPickTitle}
+                </div>
+                <Calendar
+                  value={newDayjs(calendar.startDate).toDate()}
+                  onChange={(d) => {
+                    if (d) pickCalDay(d);
+                  }}
+                  dayClassName={(_date, modifiers) => {
+                    if (modifiers.weekend) return '!text-pqSoft';
+                    if (modifiers.outside) return '!text-pqSoft opacity-50';
+                    if (modifiers.selected) {
+                      return '!bg-pqBrand !text-pqOnBrand !outline-none';
+                    }
+                    return '!text-pqText';
+                  }}
+                  classNames={{
+                    day: 'hover:bg-pqHover',
+                    calendarHeaderControl: 'text-pqText hover:bg-pqHover',
+                    calendarHeaderLevel: 'text-pqText hover:bg-pqHover',
+                  }}
                 />
-              </svg>
-            </div>
+              </div>
+            )}
           </div>
           <div className="flex-1 text-[14px] font-[500]">
             <div className="flex h-[34px] text-center">
@@ -382,16 +548,48 @@ export const Filters = () => {
       )}
       {isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px]">
-          {/* Prototype list toolbar: date-range chip + Newest/Oldest — not the
-              status segment (status lives on the queue panel, hidden on Posts). */}
-          <div className="relative" ref={rangeRef}>
+          {/* List toolbar: Date → Status → flex-1 → Newest/Oldest.
+              Status lives here because PostsPanel is unmounted on list. */}
+          <div
+            className={clsx(
+              'relative flex items-center gap-[4px]',
+              // Solid strip + raised z so menus stack above Calendar sibling
+              // (launches.component: Filters then Calendar).
+              dateMenuOpen && 'z-[40] rounded-pqSm bg-pqInner'
+            )}
+            ref={rangeRef}
+          >
+            {dayRangeDate && (
+              <button
+                type="button"
+                onClick={() => shiftListDay(-1)}
+                aria-label={t('previous_day', 'Previous day')}
+                className="flex h-[32px] w-[28px] shrink-0 items-center justify-center rounded-pqSm text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
+              >
+                <svg viewBox="0 0 8 12" width="8" height="12" fill="none">
+                  <path
+                    d="M6.5 11L1.5 6L6.5 1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
             <button
               type="button"
-              ref={rangeTriggerRef}
-              onClick={() => setRangeOpen((o) => !o)}
+              ref={(el) => {
+                rangeTriggerRef.current = el;
+                pickTriggerRef.current = el;
+              }}
+              onClick={() => {
+                setPickDateOpen(false);
+                setRangeOpen((o) => !o);
+              }}
               className={clsx(
                 'flex h-[32px] items-center gap-[7px] rounded-pqSm pe-[11px] ps-[10px] text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover',
-                rangeOpen ? 'bg-pqHover' : 'bg-transparent'
+                dateMenuOpen ? 'bg-pqHover' : 'bg-transparent'
               )}
             >
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
@@ -423,10 +621,28 @@ export const Filters = () => {
                 />
               </svg>
             </button>
+            {dayRangeDate && (
+              <button
+                type="button"
+                onClick={() => shiftListDay(1)}
+                aria-label={t('next_day', 'Next day')}
+                className="flex h-[32px] w-[28px] shrink-0 items-center justify-center rounded-pqSm text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180"
+              >
+                <svg viewBox="0 0 8 12" width="8" height="12" fill="none">
+                  <path
+                    d="M1.5 1L6.5 6L1.5 11"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
             {rangeOpen && (
               <div
                 ref={rangeMenuRef}
-                className="z-[20] w-[210px] rounded-pqMd bg-pqPop p-[5px] shadow-[var(--e3),inset_0_0_0_1px_var(--border)]"
+                className="z-[300] w-[220px] rounded-pqMd border border-pqBorder bg-pqPop p-[5px] shadow-menu"
               >
                 {listRangeOptions.map((opt) => (
                   <button
@@ -435,20 +651,96 @@ export const Filters = () => {
                     onClick={() => {
                       calendar.setListRange(opt.value);
                       setRangeOpen(false);
+                      setPickDateOpen(false);
                     }}
                     className={clsx(
                       'flex h-[32px] w-full items-center rounded-pqSm px-[10px] text-start text-[13px] transition-colors',
                       calendar.listRange === opt.value
-                        ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                        ? 'bg-pqBrandSoft font-[600] text-pqFocused'
                         : 'font-[500] text-pqMuted hover:bg-pqHover hover:text-pqText'
                     )}
                   >
                     {opt.label}
                   </button>
                 ))}
+                <div className="my-[4px] h-px bg-pqLine" aria-hidden />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRangeOpen(false);
+                    setPickDateOpen(true);
+                  }}
+                  className="flex h-[32px] w-full items-center gap-[7px] rounded-pqSm px-[10px] text-start text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden>
+                    <path
+                      d="M7 3.5v3M17 3.5v3M4.5 9h15M6 5.5h12a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  {t('pick_a_date', 'Pick a date…')}
+                </button>
+              </div>
+            )}
+            {pickDateOpen && (
+              <div
+                ref={pickCalendarRef}
+                className="z-[300] rounded-pqMd border border-pqBorder bg-pqPop p-[12px] text-pqText shadow-menu"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div className="mb-[8px] text-[12px] font-[500] text-pqMuted">
+                  {t('pick_a_date', 'Pick a date…')}
+                </div>
+                <Calendar
+                  value={
+                    dayRangeDate ? dayRangeDate.toDate() : newDayjs().toDate()
+                  }
+                  onChange={(d) => {
+                    if (d) pickListDay(d);
+                  }}
+                  dayClassName={(_date, modifiers) => {
+                    if (modifiers.weekend) return '!text-pqSoft';
+                    if (modifiers.outside) return '!text-pqSoft opacity-50';
+                    if (modifiers.selected) {
+                      return '!bg-pqBrand !text-pqOnBrand !outline-none';
+                    }
+                    return '!text-pqText';
+                  }}
+                  classNames={{
+                    day: 'hover:bg-pqHover',
+                    calendarHeaderControl: 'text-pqText hover:bg-pqHover',
+                    calendarHeaderLevel: 'text-pqText hover:bg-pqHover',
+                  }}
+                />
               </div>
             )}
           </div>
+          <div className={segment}>
+            {(
+              [
+                ['all', t('all', 'All')],
+                ['scheduled', t('scheduled', 'Scheduled')],
+                ['draft', t('drafts', 'Drafts')],
+                ['published', t('posted', 'Posted')],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => calendar.setListState(value)}
+                className={clsx(
+                  segmentItem,
+                  'min-w-0 px-[8px]',
+                  calendar.listState === value ? segmentOn : segmentOff
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1" />
           <button
             type="button"
             onClick={toggleListSort}
@@ -479,7 +771,6 @@ export const Filters = () => {
               ? t('newest', 'Newest')
               : t('oldest', 'Oldest')}
           </button>
-          <div className="flex-1" />
         </div>
       )}
       <SelectCustomer

@@ -241,13 +241,21 @@ export const withProvider = function <T extends object>(params: {
           <div
             className={clsx(
               'border border-borderPreview rounded-[12px] shadow-previewShadow',
-              !current && 'hidden'
+              // Global mode stacks every selected channel preview; per-channel
+              // tab still shows only the active id. Filter chips hide via CSS
+              // data attribute when parent marks the card filtered out.
+              !current && !isGlobal && 'hidden',
+              isGlobal && 'mb-[12px] last:mb-0'
             )}
+            data-preview-channel={props.id}
           >
-            {current &&
+            {(current || isGlobal) &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
-              !value?.[0]?.content?.length && (
+              !value?.[0]?.content?.length &&
+              // Global stacks many channels — one empty hint lives on the parent
+              // so we don't repeat "Start writing…" per selected channel.
+              !isGlobal && (
                 <div>
                   {t(
                     'start_writing_your_post',
@@ -255,7 +263,7 @@ export const withProvider = function <T extends object>(params: {
                   )}
                 </div>
               )}
-            {current &&
+            {(current || isGlobal) &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !!value?.[0]?.content?.length &&
@@ -288,35 +296,45 @@ export const withProvider = function <T extends object>(params: {
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&
               createPortal(
-                <div data-id={props.id} className={isGlobal ? 'bg-newSettings pb-[12px] px-[12px]' : 'hidden bg-newSettings px-[12px] pb-[12px]'}>
+                <div
+                  data-id={props.id}
+                  className={clsx(
+                    isGlobal ? 'block' : 'hidden',
+                    'rounded-[12px] bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]'
+                  )}
+                >
                   {isGlobal && (
                     <style>{`#wrapper-settings {display: flex !important} #social-empty {display: block !important;}`}</style>
                   )}
                   {isGlobal && (
-                    <div className="flex py-[20px] items-center gap-[15px]">
+                    <div className="mb-[14px] flex items-center gap-[12px] border-b border-pqLine pb-[14px]">
                       <div className="relative">
                         <SafeImage
                           alt={selectedIntegration?.integration.name!}
-                          width={42}
-                          height={42}
-                          className="min-w-[42px] min-h-[42px] w-[42px] h-[42px] rounded-full"
+                          width={36}
+                          height={36}
+                          className="h-[36px] min-h-[36px] w-[36px] min-w-[36px] rounded-full"
                           src={selectedIntegration?.integration.picture}
                         />
                         <SafeImage
                           alt={selectedIntegration?.integration.identifier}
-                          width={16}
-                          height={16}
-                          className="rounded-[16px] min-w-[16px] min-h-[16px] w-[16px] h-[16px] absolute bottom-0 end-0"
+                          width={14}
+                          height={14}
+                          className="absolute -bottom-[2px] -end-[2px] h-[14px] min-h-[14px] w-[14px] min-w-[14px] rounded-[14px]"
                           src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
                         />
                       </div>
-                      <div className="text-[20px]">{selectedIntegration?.integration.name}</div>
+                      <div className="text-[15px] font-[600] tracking-[-0.01em] text-pqText">
+                        {selectedIntegration?.integration.name}
+                      </div>
                     </div>
                   )}
-                  <SettingsComponent />
-                  {!!data?.internalPlugs?.length && !dummy && (
-                    <InternalChannels plugs={data?.internalPlugs} />
-                  )}
+                  <div className="flex flex-col gap-[14px]">
+                    {SettingsComponent && <SettingsComponent />}
+                    {!!data?.internalPlugs?.length && !dummy && (
+                      <InternalChannels plugs={data?.internalPlugs} />
+                    )}
+                  </div>
                 </div>,
                 document.querySelector('#social-settings') ||
                   document.createElement('div')

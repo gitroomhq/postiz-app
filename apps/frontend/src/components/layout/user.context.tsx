@@ -19,6 +19,8 @@ export const UserContext = createContext<
       impersonate: boolean;
       allowTrial: boolean;
       isTrailing: boolean;
+      /** Deferred founding $49 still owed after the trial window closed. */
+      lifetimePaymentPending?: boolean;
       streakSince: string | null;
     })
 >(undefined);

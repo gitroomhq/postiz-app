@@ -25,7 +25,14 @@ async function start() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
-      ...(areCookiesSecured() ? { credentials: true } : {}),
+      // Always allow credentials for the FRONTEND_URL allowlist. Uppy's local
+      // XHR upload hard-codes withCredentials, and without
+      // Access-Control-Allow-Credentials the browser surfaces that as a
+      // generic "network error" — especially under NOT_SECURED local HTTP,
+      // where cookie Secure flags are off but CORS credentials used to be
+      // gated off with them. Cookie Secure / httpOnly / sameSite stay gated
+      // on areCookiesSecured(); this flag only answers the CORS handshake.
+      credentials: true,
       allowedHeaders: [
         'Content-Type',
         'Authorization',

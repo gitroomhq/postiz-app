@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { capitalize } from 'lodash';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -31,9 +32,6 @@ export const Plugs = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const closeDetail = useCallback(() => setDetailOpen(false), []);
 
-  const load = useCallback(async () => {
-    return (await (await fetch('/integrations/list')).json()).integrations;
-  }, [fetch]);
   const load2 = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
@@ -41,7 +39,6 @@ export const Plugs = () => {
     '/integrations/plug/list',
     load2,
     {
-      fallbackData: [],
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
@@ -50,15 +47,8 @@ export const Plugs = () => {
       refreshWhenOffline: false,
     }
   );
-  const { data, isLoading } = useSWR('analytics-list', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
+  // Do not share `analytics-list` — that key is filtered for analytics only.
+  const { data, isLoading } = useIntegrationList();
 
   const t = useT();
 
@@ -85,8 +75,9 @@ export const Plugs = () => {
   }, [collapseMenu, setCollapseMenu]);
 
   const sortedIntegrations = useMemo(() => {
+    const list = Array.isArray(data) ? data : [];
     return sortIntegrationsByProviderImportance(
-      data.filter((integration: any) =>
+      list.filter((integration: any) =>
         plugList?.plugs?.some(
           (f: any) => f.identifier === integration.identifier
         )

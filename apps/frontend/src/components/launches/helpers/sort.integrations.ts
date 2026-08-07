@@ -65,8 +65,16 @@ function platformKey(item: IntegrationSortFields): string {
  * 2. platform importance (`PROVIDER_DISPLAY_ORDER`)
  * 3. account name within the same platform
  * Unknown platforms sink after known ones, then by name.
+ *
+ * Accepts null/undefined/non-arrays safely — some SWR keys historically
+ * cached the full `{ integrations }` payload; callers should still pass arrays.
  */
-export function sortIntegrationsByProviderImportance<T>(integrations: T[]): T[] {
+export function sortIntegrationsByProviderImportance<T>(
+  integrations: T[] | null | undefined
+): T[] {
+  if (!Array.isArray(integrations)) {
+    return [];
+  }
   return [...integrations].sort((a, b) => {
     const left = a as IntegrationSortFields;
     const right = b as IntegrationSortFields;

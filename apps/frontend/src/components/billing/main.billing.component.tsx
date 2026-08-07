@@ -1,7 +1,6 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
@@ -14,15 +13,17 @@ import clsx from 'clsx';
 import {
   AnyTier,
   effectiveMonthly,
+  LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
-  lifetimeWindow,
+  LIFETIME_RETENTION_PRICE,
   monthsFree,
-  nextLifetimeTier,
   PaidTier,
   pricing,
   TRIAL_DAYS,
+  tierLabel,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
+import { BillingPeriodToggle } from '@gitroom/frontend/components/billing/billing-period-toggle';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useSearchParams } from 'next/navigation';
@@ -37,10 +38,12 @@ import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import {
+  BuyLifetime,
   FeatureRow,
   FoundingMember,
   LifetimePackages,
 } from '@gitroom/frontend/components/billing/lifetime.deal';
+import { BillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -175,15 +178,22 @@ type CancelFlowResult =
   | { action: 'canceled'; feedback: string };
 
 /**
- * Prototype `billingDlg` cancel chain: confirm → (optional 50% offer) → feedback.
- * Lifetime trial skips the discount step (owner); design's $24.50 offer is a Raise.
+ * Prototype `billingDlg` cancel chain: confirm → (optional retention) → feedback.
+ * Lifetime trial offers $24.50 founding retention; others offer 50%×3 months.
  */
 const BillingCancelDialog: FC<{
   showTeamNote: boolean;
   offerDiscount: boolean;
+  offerLifetimeRetention: boolean;
   isLifetimeTrial: boolean;
   onDone: (result: CancelFlowResult) => void;
-}> = ({ showTeamNote, offerDiscount, isLifetimeTrial, onDone }) => {
+}> = ({
+  showTeamNote,
+  offerDiscount,
+  offerLifetimeRetention,
+  isLifetimeTrial,
+  onDone,
+}) => {
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
@@ -191,6 +201,8 @@ const BillingCancelDialog: FC<{
   const [step, setStep] = useState<CancelStep>('confirm');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const showRetentionStep = offerLifetimeRetention || offerDiscount;
 
   const finishKeep = useCallback(() => onDone({ action: 'keep' }), [onDone]);
 
@@ -200,6 +212,36 @@ const BillingCancelDialog: FC<{
       await fetch('/billing/apply-discount', { method: 'POST' });
       toaster.show(
         t('discount_applied_successfully', '50% discount applied successfully')
+      );
+      onDone({ action: 'applied' });
+    } finally {
+      setLoading(false);
+    }
+  }, [fetch, onDone, t, toaster]);
+
+  const applyLifetimeRetention = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await (
+        await fetch('/billing/apply-lifetime-retention', { method: 'POST' })
+      ).json();
+      if (!res?.ok) {
+        toaster.show(
+          t(
+            'lifetime_retention_charge_failed',
+            'Could not charge {{amount}}. Update your payment method and try again.',
+            { amount: `$${LIFETIME_RETENTION_PRICE}` }
+          ),
+          'warning'
+        );
+        return;
+      }
+      toaster.show(
+        t(
+          'lifetime_retention_unlocked',
+          'Lifetime access unlocked for {{amount}}',
+          { amount: `$${LIFETIME_RETENTION_PRICE}` }
+        )
       );
       onDone({ action: 'applied' });
     } finally {
@@ -234,10 +276,19 @@ const BillingCancelDialog: FC<{
             'Are you sure you want to cancel your subscription? You keep access until the end of the current period.'
           )
       : step === 'discount'
-      ? t(
-          'accept_50_discount_3_months',
-          'Would you accept 50% discount for 3 months instead? 🙏🏻'
-        )
+      ? offerLifetimeRetention
+        ? t(
+            'accept_lifetime_retention_body',
+            'Take 50% off and keep lifetime access for {{retention}} instead of {{full}} — one payment, never charged again.',
+            {
+              retention: `$${LIFETIME_RETENTION_PRICE}`,
+              full: `$${LIFETIME_PRICE}`,
+            }
+          )
+        : t(
+            'accept_50_discount_3_months',
+            'Would you accept 50% discount for 3 months instead? 🙏🏻'
+          )
       : t(
           'would_you_mind_shortly_tell_us_what_we_could_have_done_better',
           'Would you mind shortly tell us what we could have done better?'
@@ -378,7 +429,7 @@ const BillingCancelDialog: FC<{
             <button
               type="button"
               onClick={() =>
-                setStep(offerDiscount ? 'discount' : 'feedback')
+                setStep(showRetentionStep ? 'discount' : 'feedback')
               }
               className="h-[42px] rounded-[10px] bg-pqDanger px-[18px] text-[13.5px] font-[600] text-white transition-[filter] hover:brightness-110"
             >
@@ -397,13 +448,19 @@ const BillingCancelDialog: FC<{
             </button>
             <Button
               loading={loading}
-              onClick={applyDiscount}
+              onClick={
+                offerLifetimeRetention ? applyLifetimeRetention : applyDiscount
+              }
               className="h-[42px] rounded-[10px] px-[18px] text-[13.5px] font-[600]"
             >
-              {t(
-                'apply_50_discount_3_months',
-                'Apply 50% discount for 3 months'
-              )}
+              {offerLifetimeRetention
+                ? t('get_lifetime_for_amount', 'Get lifetime for {{amount}}', {
+                    amount: `$${LIFETIME_RETENTION_PRICE}`,
+                  })
+                : t(
+                    'apply_50_discount_3_months',
+                    'Apply 50% discount for 3 months'
+                  )}
             </Button>
           </>
         )}
@@ -509,20 +566,13 @@ export const MainBillingComponent: FC<{
   // The lifetime split. `isTrailing` is the organization's trial flag, so a
   // founding member still inside the trial sees the plan grid (with the
   // LIFETIME card variant) while a paid one sees the lifetime surface.
-  const lifetimePaid = !!user?.isLifetime && !user?.isTrailing;
-  // The founding-member offer window — the same shared helper the checkout
-  // route enforces, so the upsell never advertises a deal the backend refuses.
-  const ltWindow = useMemo(
-    () => lifetimeWindow(user?.createdAt),
-    [user?.createdAt]
-  );
-  // What the founding-member purchase would actually grant this account. The
-  // ladder is shared with the redemption and checkout endpoints; the design's
-  // strip hardcodes PRO, but naming the granted tier keeps the promise honest.
-  const ltUpsellTier = useMemo(
-    () => nextLifetimeTier(subscription?.subscriptionTier),
-    [subscription]
-  );
+  // `lifetimePaymentPending` = deferred $49 still owed after the window —
+  // treat as not fully paid (lock-until-paid).
+  const lifetimePaid =
+    !!user?.isLifetime && !user?.isTrailing && !user?.lifetimePaymentPending;
+  const lifetimeUnpaid = !!user?.lifetimePaymentPending;
+  // Founding purchase always grants Pro — same as First Billing and the Stripe grant.
+  const ltUpsellTier = LIFETIME_GRANT_TIER;
   // What the running trial will charge when it ends: the subscribed tier at
   // the subscription's own period — not whichever period the toggle shows.
   const trialPrice = useMemo(() => {
@@ -540,12 +590,13 @@ export const MainBillingComponent: FC<{
       return t('plan_meta_free', 'PostQueen FREE · no active subscription');
     }
     const tier = subscription.subscriptionTier;
+    const tierName = tierLabel(tier);
     if (subscription.cancelAt) {
       return t(
         'plan_meta_access_until',
         'PostQueen {{tier}} · access until {{date}}',
         {
-          tier,
+          tier: tierName,
           date: newDayjs(subscription.cancelAt).local().format('D MMM, YYYY'),
         }
       );
@@ -554,14 +605,73 @@ export const MainBillingComponent: FC<{
       return t(
         'plan_meta_founding_trial',
         'PostQueen {{tier}} · founding-member trial',
-        { tier }
+        { tier: tierName }
       );
     }
     if (user?.isTrailing) {
-      return t('plan_meta_trial', 'PostQueen {{tier}} · free trial', { tier });
+      return t('plan_meta_trial', 'PostQueen {{tier}} · free trial', {
+        tier: tierName,
+      });
     }
-    return t('plan_meta_current', 'PostQueen {{tier}}', { tier });
+    return t('plan_meta_current', 'PostQueen {{tier}}', { tier: tierName });
   }, [subscription, user, t]);
+  // Prototype `pagesVals().plans` CTA matrix (~L8056): Current plan · Switch
+  // to yearly/monthly · Upgrade/Downgrade to {label} · trial/Purchase for FREE.
+  // Handlers stay on `moveToCheckout`; this only picks the visible label.
+  const planCardCta = useCallback(
+    (name: string) => {
+      const target = name.toUpperCase();
+      const cur = (subscription?.subscriptionTier || 'FREE').toUpperCase();
+      const viewingYearly = monthlyOrYearly === 'on';
+      const periodMismatch =
+        !!subscription?.id && viewingYearly !== (period === 'YEARLY');
+
+      if (currentPackage === target) {
+        return t('current_plan', 'Current plan');
+      }
+      if (periodMismatch && target === cur) {
+        return viewingYearly
+          ? t('switch_to_yearly', 'Switch to yearly')
+          : t('switch_to_monthly', 'Switch to monthly');
+      }
+      if (target === 'FREE') {
+        if (subscription?.cancelAt) {
+          return t('downgrade_on', 'Downgrade on {{date}}', {
+            date: dayjs.utc(subscription.cancelAt).local().format('D MMM, YYYY'),
+          });
+        }
+        return t('cancel_subscription_1', 'Cancel subscription');
+      }
+      if (cur === 'FREE') {
+        if (user?.allowTrial) {
+          return t('start_7_days_free_trial', 'Start 7 days free trial');
+        }
+        return t('purchase', 'Purchase');
+      }
+
+      const curPricing = pricing[cur] || pricing.PRO;
+      const targetPricing = pricing[target] || pricing.PRO;
+      const curPrice = viewingYearly
+        ? curPricing.year_price
+        : curPricing.month_price;
+      const targetPrice = viewingYearly
+        ? targetPricing.year_price
+        : targetPricing.month_price;
+      const plan = tierLabel(target);
+      if (targetPrice > curPrice) {
+        return t('upgrade_to_plan', 'Upgrade to {{plan}}', { plan });
+      }
+      return t('downgrade_to_plan', 'Downgrade to {{plan}}', { plan });
+    },
+    [
+      subscription,
+      monthlyOrYearly,
+      period,
+      currentPackage,
+      user,
+      t,
+    ]
+  );
   const moveToCheckout = useCallback(
     (billing: AnyTier, reactivate = false) =>
       async () => {
@@ -606,10 +716,13 @@ export const MainBillingComponent: FC<{
 
           const isLifetimeTrial = !!user?.isLifetime && !!user?.isTrailing;
           // Prefetch eligibility so confirm → discount never flashes an empty step.
+          // Lifetime trial always gets the $24.50 founding retention (never 50%×3).
+          const offerLifetimeRetention = isLifetimeTrial;
           const checkDiscount = isLifetimeTrial
             ? { offerCoupon: false as const }
             : await (await fetch('/billing/check-discount')).json();
-          const offerDiscount = !!checkDiscount.offerCoupon && !isLifetimeTrial;
+          const offerDiscount =
+            !!checkDiscount.offerCoupon && !isLifetimeTrial;
 
           const result = await new Promise<CancelFlowResult>((res) => {
             let settled = false;
@@ -628,6 +741,7 @@ export const MainBillingComponent: FC<{
                 <BillingCancelDialog
                   showTeamNote={messages.length > 0}
                   offerDiscount={offerDiscount}
+                  offerLifetimeRetention={offerLifetimeRetention}
                   isLifetimeTrial={isLifetimeTrial}
                   onDone={finish}
                 />
@@ -640,6 +754,7 @@ export const MainBillingComponent: FC<{
           }
           if (result.action === 'applied') {
             await mutate('/user/subscription');
+            await mutate('/user/self');
             return;
           }
 
@@ -761,66 +876,73 @@ export const MainBillingComponent: FC<{
         />
       )}
 
-      {/* The founding-member upsell, for trial users only — and only while the
-          24-hour window the checkout route enforces is still open, so the strip
-          never sells a deal the backend would refuse with a 410. Price and tier
-          come from pricing.ts, the same constants the charge reads. */}
-      {!user?.isLifetime && user?.isTrailing && ltWindow.open && (
+      {/* Founding-member upsell — design `ltUpsellDisplay`: every active trial
+          that is not already on lifetime. Not gated on the 24h signup window
+          (that only closed the strip for most of a 7-day trial). Backend allows
+          checkout while `isTrailing` OR within `lifetimeWindow`. */}
+      {!user?.isLifetime && user?.isTrailing && (
         <div
           data-lifetime-upsell="1"
-          className="flex flex-wrap items-center gap-[18px] rounded-[16px] bg-[linear-gradient(110deg,var(--ltSoft),color-mix(in_srgb,var(--ltSoft)_45%,var(--inner))_58%,color-mix(in_srgb,var(--ltSoft)_18%,var(--inner)))] p-[16px_18px] outline outline-1 -outline-offset-1 outline-pqLtOutline"
+          className="flex flex-col gap-[14px] rounded-[16px] bg-pqLtCardOn p-[20px_22px] outline outline-1 -outline-offset-1 outline-pqLtOutline"
         >
-          <span className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqLtChipBg text-pqLtAmber">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
-              <path d="M3 8.5 7.2 12 12 4.5 16.8 12 21 8.5l-1.7 9.7a1 1 0 0 1-1 .8H5.7a1 1 0 0 1-1-.8L3 8.5Z" />
-            </svg>
-          </span>
-          <div className="min-w-[260px] flex-1">
-            <div className="flex flex-wrap items-center gap-[9px]">
-              <span className="text-[15.5px] font-[600] -tracking-[0.01em] text-pqText">
-                {t('lt_upsell_title', 'Lifetime access & updates')}
-              </span>
-              <span className="grid h-[19px] place-items-center rounded-full bg-pqLtSolid px-[8px] text-[9px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
-                {t('lt_upsell_badge', 'Become a founding member')}
-              </span>
-            </div>
-            <div className="mt-[4px] text-[12.5px] text-pqMuted">
-              {t(
-                'lt_upsell_sub',
-                'Everything in {{tier}} · no renewal, ever · all future updates',
-                { tier: ltUpsellTier }
-              )}
+          <div className="flex items-start gap-[14px]">
+            <span className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqLtChipBg text-pqLtAmber">
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="currentColor"
+              >
+                <path d="M3 8.5 7.2 12 12 4.5 16.8 12 21 8.5l-1.7 9.7a1 1 0 0 1-1 .8H5.7a1 1 0 0 1-1-.8L3 8.5Z" />
+              </svg>
+            </span>
+            <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-x-[16px] gap-y-[10px]">
+              <div className="flex min-w-0 flex-col items-start gap-[8px]">
+                <span className="grid h-[19px] place-items-center rounded-full bg-pqLtSolid px-[8px] text-[9px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
+                  {t('lt_upsell_badge', 'Become a founding member')}
+                </span>
+                <span className="text-[18px] font-[600] -tracking-[0.01em] text-pqText">
+                  {t('lt_upsell_title', 'Lifetime access & updates')}
+                </span>
+                <div className="text-[14px] leading-[1.45] text-pqText">
+                  {t(
+                    'lt_upsell_sub_trial',
+                    'Switch before your trial ends — {{tier}} for ${{price}} once.',
+                    { tier: tierLabel(ltUpsellTier), price: LIFETIME_PRICE }
+                  )}
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-[10px]">
+                <div className="flex items-baseline gap-[6px]">
+                  <span className="text-[13px] text-pqLtDimmer line-through">
+                    {t('lt_upsell_compare', '${{price}}/yr', {
+                      price: pricing.PRO.year_price,
+                    })}
+                  </span>
+                  <span className="font-display text-[26px] font-[700] leading-none -tracking-[0.02em] text-pqLtAmber">
+                    ${LIFETIME_PRICE}
+                  </span>
+                  <span className="text-[12px] text-pqSoft">
+                    {t('lt_once', 'once')}
+                  </span>
+                </div>
+                <BuyLifetime label={t('lt_upsell_cta', 'Switch to lifetime')} />
+              </div>
             </div>
           </div>
-          <div className="flex items-baseline gap-[6px]">
-            <span className="text-[13px] text-pqSoft line-through">
-              {t('lt_upsell_compare', '${{price}}/yr', {
-                price: pricing[ltUpsellTier].year_price,
-              })}
-            </span>
-            <span className="font-display text-[26px] font-[700] leading-none -tracking-[0.02em] text-pqLtAmber">
-              ${LIFETIME_PRICE}
-            </span>
-            <span className="text-[12px] text-pqSoft">
-              {t('lt_once', 'once')}
-            </span>
-          </div>
-          <Link
-            href="/billing/lifetime"
-            className="grid h-[38px] shrink-0 place-items-center whitespace-nowrap rounded-[10px] bg-pqLtSolid px-[17px] text-[13px] font-[700] text-pqLtSolidFg transition-all hover:brightness-105"
-          >
-            {t('lt_upsell_cta', 'Switch to lifetime')}
-          </Link>
+          <div aria-hidden className="h-px bg-pqLtLine" />
+          <BillingFeatures tier={ltUpsellTier} tone="lifetime" />
         </div>
       )}
 
       {/* A renewal Stripe could not charge. Stripe retries on its own schedule,
           so this says what is true — nothing is cancelled — rather than
           threatening. The design puts `payFailShow` in this position, above the
-          trial banner and below the lifetime upsell. */}
-      {!!paymentFailed && !subscription?.cancelAt && (
+          trial banner and below the lifetime upsell. Same strip for deferred
+          founding $49 that failed after the trial window (lock-until-paid). */}
+      {(!!paymentFailed || lifetimeUnpaid) && !subscription?.cancelAt && (
         <div
-          data-payment-failed="1"
+          data-payment-failed={lifetimeUnpaid ? 'lifetime' : '1'}
           className="flex flex-wrap items-center gap-[14px] rounded-[16px] bg-gradient-to-r from-pqDangerSoft to-transparent p-[14px_16px] outline outline-1 -outline-offset-1 outline-pqDangerLine"
         >
           <div className="grid size-[38px] shrink-0 place-items-center rounded-[12px] bg-pqDangerChip text-pqDanger">
@@ -839,10 +961,15 @@ export const MainBillingComponent: FC<{
               {t('payment_failed_title', 'We could not charge your credit card')}
             </div>
             <div className="mt-[3px] text-[12.5px] text-pqMuted">
-              {t(
-                'payment_failed_body',
-                'Update your payment method and we will try again. Nothing is cancelled yet.'
-              )}
+              {lifetimeUnpaid
+                ? t(
+                    'lifetime_payment_pending_body',
+                    'Your founding member fee could not be collected. Update your payment method and we will try again. Founding access stays locked until payment succeeds.'
+                  )
+                : t(
+                    'payment_failed_body',
+                    'Update your payment method and we will try again. Nothing is cancelled yet.'
+                  )}
             </div>
           </div>
           <button
@@ -861,7 +988,8 @@ export const MainBillingComponent: FC<{
       {user?.isTrailing &&
         !!subscription?.id &&
         !subscription?.cancelAt &&
-        !paymentFailed && (
+        !paymentFailed &&
+        !lifetimeUnpaid && (
           <div
             data-trial-banner="1"
             className={clsx(
@@ -1024,44 +1152,19 @@ export const MainBillingComponent: FC<{
           hero below, so the whole row goes — exactly the prototype's zeroing of
           it. */}
       {!lifetimePaid && (
-        <div className="mt-[12px] flex flex-wrap items-center gap-[12px] border-t border-pqLine pt-[22px]">
-          <div className="min-w-[240px] flex-1">
+        <div className="mt-[12px] flex w-full items-center justify-between gap-[12px] border-t border-pqLine pt-[22px]">
+          <div className="min-w-0 flex-1">
             <div data-plan-meta="1" className="text-[13px] text-pqMuted">
               {planMeta}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-[4px] rounded-full bg-pqSettings p-[4px]">
-            <button
-              type="button"
-              onClick={() => setMonthlyOrYearly('off')}
-              className={clsx(
-                'h-[34px] rounded-full px-[18px] text-[13px] font-[600] transition-colors',
-                // Owner override: inactive Monthly/Yearly was too grey in light.
-                monthlyOrYearly === 'off'
-                  ? 'bg-pqInner text-pqText shadow-pqE2'
-                  : 'bg-transparent text-pqText'
-              )}
-            >
-              {t('billing_monthly', 'Monthly')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMonthlyOrYearly('on')}
-              className={clsx(
-                'flex h-[34px] items-center gap-[8px] rounded-full ps-[18px] pe-[12px] text-[13px] font-[600] transition-colors',
-                monthlyOrYearly === 'on'
-                  ? 'bg-pqInner text-pqText shadow-pqE2'
-                  : 'bg-transparent text-pqText'
-              )}
-            >
-              {t('billing_yearly', 'Yearly')}
-              <span className="grid h-[22px] place-items-center rounded-full bg-pqOkSoft px-[9px] text-[11px] font-[700] tracking-[0.01em] text-pqOk">
-                {t('billing_months_free', '{{n}} months free', {
-                  n: monthsFree(subscription?.subscriptionTier || 'PRO'),
-                })}
-              </span>
-            </button>
-          </div>
+          <BillingPeriodToggle
+            period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
+            monthsFreeN={monthsFree(subscription?.subscriptionTier || 'PRO')}
+            onChange={(next) =>
+              setMonthlyOrYearly(next === 'YEARLY' ? 'on' : 'off')
+            }
+          />
         </div>
       )}
 
@@ -1117,7 +1220,7 @@ export const MainBillingComponent: FC<{
                         ltOn ? 'text-pqLtAmber' : 'text-pqText'
                       )}
                     >
-                      {name}
+                      {tierLabel(name)}
                     </div>
                     <div className="flex items-baseline gap-[5px]">
                       <span className="font-display text-[29px] font-[600] -tracking-[0.02em] text-pqText">
@@ -1208,26 +1311,7 @@ export const MainBillingComponent: FC<{
                       )}
                       onClick={moveToCheckout(name.toUpperCase() as PaidTier)}
                     >
-                      {currentPackage === name.toUpperCase()
-                        ? t('current_plan', 'Current Plan')
-                        : name.toUpperCase() === 'FREE'
-                        ? subscription?.cancelAt
-                          ? t('downgrade_on', 'Downgrade on {{date}}', {
-                              date: dayjs
-                                .utc(subscription?.cancelAt)
-                                .local()
-                                .format('D MMM, YYYY'),
-                            })
-                          : t('cancel_subscription_1', 'Cancel subscription')
-                        : // @ts-ignore
-                        (user?.tier === 'FREE' ||
-                            user?.tier?.current === 'FREE') &&
-                          user.allowTrial
-                        ? t(
-                            'start_7_days_free_trial',
-                            'Start 7 days free trial'
-                          )
-                        : t('purchase', 'Purchase')}
+                      {planCardCta(name)}
                     </Button>
                   )}
                   <div className="h-[1px] bg-pqLine" />

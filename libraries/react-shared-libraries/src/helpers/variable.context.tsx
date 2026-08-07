@@ -4,6 +4,8 @@ import { createContext, FC, ReactNode, useContext, useEffect } from 'react';
 interface VariableContextInterface {
   stripeClient: string;
   billingEnabled: boolean;
+  /** OpenAI key present — CopilotKit and CopilotTextarea are safe to mount. */
+  aiEnabled: boolean;
   passwordlessLogin: boolean;
   turnstileSiteKey: string;
   isChatBase: boolean;
@@ -64,6 +66,7 @@ interface VariableContextInterface {
 const VariableContext = createContext({
   stripeClient: '',
   billingEnabled: false,
+  aiEnabled: false,
   passwordlessLogin: false,
   turnstileSiteKey: '',
   isGeneral: true,

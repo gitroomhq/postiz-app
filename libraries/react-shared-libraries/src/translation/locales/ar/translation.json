@@ -427,7 +427,7 @@
   "label_when_post": "متى يجب أن ننشره؟",
   "label_autogenerate_content": "توليد المحتوى تلقائيًا",
   "label_generate_picture": "توليد صورة؟",
-  "label_company": "الشركة",
+  "label_organization": "المنظمة",
   "label_tag_color": "لون الوسم",
   "label_select_board": "اختر لوحة",
   "label_select_organization": "اختر منظمة",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "تم تحديث النشر التلقائي بنجاح",
   "autopost_added_successfully": "تمت إضافة النشر التلقائي بنجاح",
   "write_your_post_placeholder": "اكتب منشورك...",
-  "select_or_upload_pictures_max_5": "اختر أو حمّل صورًا (بحد أقصى 5 في المرة الواحدة).",
   "you_can_drag_drop_pictures": "يمكنك أيضًا سحب وإفلات الصور.",
   "you_dont_have_any_media_yet": "ليس لديك أي وسائط بعد",
   "media_library": "مكتبة الوسائط",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "شاهد هذا الفيديو القصير لتتعلم كيف تستفيد من PostQueen بأفضل شكل",
   "back": "رجوع",
   "get_started": "ابدأ",
-  "kick_select_channel": "اختر القناة"
+  "kick_select_channel": "اختر القناة",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

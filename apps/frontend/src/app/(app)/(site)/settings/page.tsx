@@ -1,16 +1,9 @@
 import { SettingsPage } from '@gitroom/frontend/components/layout/settings.component';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'PostQueen' : 'PostQueen'} Settings`,
-  description: '',
+  title: 'Settings',
 };
-export default async function Index(props: {
-  searchParams: Promise<{
-    code: string;
-  }>;
-}) {
-  const searchParams = await props.searchParams;
-  return <SettingsPage />;
+export default async function Index() {
+  return <SettingsPage mode="page" />;
 }

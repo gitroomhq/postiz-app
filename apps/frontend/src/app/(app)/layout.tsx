@@ -5,6 +5,7 @@ import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
+import { Metadata } from 'next';
 import { ReactNode } from 'react';
 import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
@@ -29,7 +30,40 @@ import {
   THEME_COOKIE,
 } from '@gitroom/frontend/components/layout/theme';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import { isAiEnabled } from '@gitroom/helpers/utils/ai.enabled';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
+
+function metadataBaseUrl(): URL {
+  try {
+    const raw = process.env.FRONTEND_URL || '';
+    if (raw) return new URL(raw);
+  } catch {
+    /* fall through */
+  }
+  return new URL('https://postqueen.com');
+}
+
+export const metadata: Metadata = {
+  metadataBase: metadataBaseUrl(),
+  title: {
+    default: 'PostQueen',
+    template: '%s · PostQueen',
+  },
+  description:
+    'Schedule and generate posts with AI across 30+ social and chat channels.',
+  icons: {
+    icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png', sizes: '48x48' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  openGraph: {
+    siteName: 'PostQueen',
+    type: 'website',
+  },
+};
 
 /**
  * Domain reported to the analytics providers. Taken from this deployment rather
@@ -57,7 +91,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <head>
-        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         {!!process.env.DATAFAST_WEBSITE_ID && (
           <Script
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
@@ -85,6 +118,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           onboardingVideoUrl={process.env.ONBOARDING_VIDEO_URL || ''}
           repositoryUrl={process.env.REPOSITORY_URL || ''}
           billingEnabled={isBillingEnabled()}
+          aiEnabled={isAiEnabled()}
           passwordlessLogin={process.env.PASSWORDLESS_LOGIN === 'true'}
           turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
           frontEndUrl={process.env.FRONTEND_URL!}

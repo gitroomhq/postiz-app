@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
@@ -10,8 +10,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { array, boolean, object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
+import { FormChoice } from '@gitroom/react/form/form.choice';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -19,6 +21,7 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 export const Autopost: FC = () => {
   const fetch = useFetch();
   const t = useT();
@@ -37,12 +40,13 @@ export const Autopost: FC = () => {
   );
   const deleteHook = useCallback(
     (data: any) => async () => {
+      const label = data.title || data.name || '';
       if (
         await deleteDialog(
           t(
             'are_you_sure_you_want_to_delete',
-            `Are you sure you want to delete ${data.name}?`,
-            { name: data.name }
+            `Are you sure you want to delete ${label}?`,
+            { name: label }
           )
         )
       ) {
@@ -50,10 +54,13 @@ export const Autopost: FC = () => {
           method: 'DELETE',
         });
         mutate();
-        toaster.show(t('webhook_deleted_successfully', 'Webhook deleted successfully'), 'success');
+        toaster.show(
+          t('autopost_deleted_successfully', 'Autopost deleted successfully'),
+          'success'
+        );
       }
     },
-    []
+    [fetch, mutate, toaster, t]
   );
   const changeActive = useCallback(
     (data: any) => async (ac: 'on' | 'off') => {
@@ -75,6 +82,10 @@ export const Autopost: FC = () => {
             ? t('edit_autopost', 'Edit Autopost')
             : t('add_autopost_title', 'Add Autopost')
         }
+        description={t(
+          'autopost_editor_description',
+          'Watch an RSS or Atom feed and turn new items into scheduled posts.'
+        )}
         onBack={closeEditor}
       >
         <AddOrEditWebhook
@@ -129,6 +140,7 @@ export const Autopost: FC = () => {
                 type="button"
                 onClick={addWebhook(p)}
                 aria-label={t('edit', 'Edit')}
+                title={t('edit', 'Edit')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <svg
@@ -148,6 +160,7 @@ export const Autopost: FC = () => {
                 type="button"
                 onClick={deleteHook(p)}
                 aria-label={t('delete', 'Delete')}
+                title={t('delete', 'Delete')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
               >
                 <svg
@@ -171,7 +184,7 @@ export const Autopost: FC = () => {
         type="button"
         onClick={addWebhook()}
         className={clsx(
-          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
         )}
       >
@@ -244,16 +257,22 @@ export const AddOrEditWebhook: FC<{
   const { data, reload, onCancel } = props;
   const fetch = useFetch();
   const t = useT();
+  const { aiEnabled } = useVariables();
   const options = getOptions(t);
   const optionsChoose = getOptionsChoose(t);
   const postImmediately = getPostImmediately(t);
+  const [step, setStep] = useState(0);
   const [allIntegrations, setAllIntegrations] = useState(
     (JSON.parse(data?.integrations || '[]')?.length || 0) > 0
       ? options[1]
       : options[0]
   );
   const toast = useToaster();
-  const [valid, setValid] = useState(data?.url || '');
+  const isEdit = !!data?.id;
+  // Create: valid stays empty until Send Test. Edit: trust the saved URL until
+  // the user changes it (otherwise Next stays locked forever when lastUrl is
+  // empty and syncLast is off).
+  const [valid, setValid] = useState('');
   const [lastUrl, setLastUrl] = useState(data?.lastUrl || '');
   const form = useForm({
     resolver: yupResolver(details),
@@ -278,9 +297,7 @@ export const AddOrEditWebhook: FC<{
   const url = form.watch('url');
   const syncLast = form.watch('syncLast');
   const integrations = form.watch('integrations');
-  const integration = useCallback(async () => {
-    return (await fetch('/integrations/list')).json();
-  }, []);
+  const title = form.watch('title');
   const changeIntegration = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const findValue = options.find(
@@ -293,14 +310,9 @@ export const AddOrEditWebhook: FC<{
     },
     []
   );
-  const { data: dataList, isLoading } = useSWR('integrations', integration, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-  });
+  // Shared list cache — array shape. Never reuse key `'integrations'` with a
+  // full `{ integrations }` response (poisons AgentList / other consumers).
+  const { data: dataList, isLoading } = useIntegrationList();
   const callBack = useCallback(
     async (values: any) => {
       await fetch(data?.id ? `/autopost/${data?.id}` : '/autopost', {
@@ -332,10 +344,10 @@ export const AddOrEditWebhook: FC<{
     [data, integrations, lastUrl, syncLast]
   );
   const sendTest = useCallback(async () => {
-    const url = form.getValues('url');
+    const feedUrl = form.getValues('url');
     try {
       const { success, url: newUrl } = await (
-        await fetch(`/autopost/send?url=${encodeURIComponent(url)}`, {
+        await fetch(`/autopost/send?url=${encodeURIComponent(feedUrl)}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -344,168 +356,293 @@ export const AddOrEditWebhook: FC<{
       ).json();
       if (!success) {
         setValid('');
-        toast.show(t('could_not_use_rss_feed', 'Could not use this RSS feed'), 'warning');
+        toast.show(
+          t('could_not_use_rss_feed', 'Could not use this RSS feed'),
+          'warning'
+        );
         return;
       }
       toast.show(t('rss_valid', 'RSS valid!'), 'success');
-      setValid(url);
+      setValid(feedUrl);
       setLastUrl(newUrl);
     } catch (e: any) {
       /** empty **/
     }
   }, []);
 
+  const urlUnchanged = isEdit && !!url && url === (data?.url || '');
+  const feedReady =
+    !!url &&
+    (urlUnchanged || (valid === url && (syncLast || !!lastUrl)));
+  const channelsOk =
+    allIntegrations.value !== 'specific' || !!integrations?.length;
+  const canSave = feedReady && form.formState.isValid && channelsOk;
+
+  const steps = [
+    {
+      key: 'feed',
+      label: t('autopost_step_feed', 'Feed'),
+    },
+    {
+      key: 'timing',
+      label: t('autopost_step_timing', 'Timing'),
+    },
+    {
+      key: 'content',
+      label: t('autopost_step_content', 'Content'),
+    },
+    {
+      key: 'channels',
+      label: t('autopost_step_channels', 'Channels'),
+    },
+  ] as const;
+
+  const goNext = useCallback(() => {
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+  }, [steps.length]);
+  const goBack = useCallback(() => {
+    setStep((s) => Math.max(s - 1, 0));
+  }, []);
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        {/* Match Webhooks in-pane form: no outer pqLine box (that token is a
-            light hairline on dark and read as unintended white rules). */}
         <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
-          <Input
-            label="Title"
-            translationKey="label_title"
-            {...form.register('title')}
-          />
-          <Input
-            label="URL"
-            translationKey="label_url"
-            {...form.register('url')}
-          />
-          <Select
-            label="Should we sync the current last post?"
-            translationKey="label_should_sync_last_post"
-            {...form.register('syncLast', {
-              setValueAs: (value) => {
-                return value === 'true' || value === true;
-              },
-            })}
+          {/* Step chrome — numbered pills (owner stepped LOOK). */}
+          <div
+            data-autopost-steps="1"
+            className="flex flex-wrap items-center gap-[8px]"
           >
-            {optionsChoose.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="When should we post it?"
-            translationKey="label_when_post"
-            {...form.register('onSlot', {
-              setValueAs: (value) => value === 'true' || value === true,
-            })}
-          >
-            {postImmediately.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Autogenerate content"
-            translationKey="label_autogenerate_content"
-            {...form.register('generateContent', {
-              setValueAs: (value) => value === 'true' || value === true,
-            })}
-          >
-            {optionsChoose.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          {!generateContent && (
-            <div className="flex flex-col gap-[6px]">
-              <div className="text-[14px] text-pqMuted">
-                {t('post_content', 'Post content')}
-              </div>
-              <div className="overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
-                <CopilotTextarea
-                  disableBranding={true}
+            {steps.map((s, i) => (
+              <div key={s.key} className="flex items-center gap-[8px]">
+                {i > 0 && (
+                  <span
+                    aria-hidden
+                    className="h-px w-[10px] bg-pqLine mobile:hidden"
+                  />
+                )}
+                <span
+                  role={i === 0 || feedReady ? 'button' : undefined}
+                  tabIndex={i === 0 || feedReady ? 0 : undefined}
+                  onClick={() => {
+                    if (i === 0 || feedReady) setStep(i);
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      (i === 0 || feedReady) &&
+                      (e.key === 'Enter' || e.key === ' ')
+                    ) {
+                      e.preventDefault();
+                      setStep(i);
+                    }
+                  }}
                   className={clsx(
-                    '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
+                    'flex h-[26px] items-center gap-[7px] rounded-full pe-[10px] ps-[4px] text-[12px] font-[600]',
+                    i === step
+                      ? 'bg-pqBrand text-pqOnBrand'
+                      : i < step
+                        ? 'bg-pqBrandSoft text-pqText'
+                        : 'bg-pqSettings text-pqMuted',
+                    (i === 0 || feedReady) && 'cursor-pointer'
                   )}
-                  value={content}
-                  onChange={(e) => {
-                    form.setValue('content', e.target.value);
-                  }}
-                  placeholder={t(
-                    'write_your_post_placeholder',
-                    'Write your post...'
-                  )}
-                  autosuggestionsConfig={{
-                    textareaPurpose: `Assist me in writing social media post`,
-                    chatApiConfigs: {},
-                  }}
-                />
+                >
+                  <span
+                    className={clsx(
+                      'grid size-[18px] place-items-center rounded-full text-[11px] font-[700]',
+                      i === step
+                        ? 'bg-pqOnBrand text-pqBrand'
+                        : i < step
+                          ? 'bg-pqBrand text-pqOnBrand'
+                          : 'bg-pqInner text-pqMuted'
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  {s.label}
+                </span>
               </div>
+            ))}
+          </div>
+
+          {step === 0 && (
+            <div className="flex flex-col gap-[12px]">
+              <Input
+                label="Title"
+                translationKey="label_title"
+                removeError={true}
+                {...form.register('title')}
+              />
+              <Input
+                label="URL"
+                translationKey="label_url"
+                removeError={true}
+                {...form.register('url')}
+              />
+              <p className="text-[13px] leading-[1.45] text-pqMuted">
+                {urlUnchanged
+                  ? t(
+                      'autopost_feed_tip_edit',
+                      'This feed is already saved. Change the URL and Send Test again, or continue with Next.'
+                    )
+                  : t(
+                      'autopost_feed_tip',
+                      'Send Test checks the feed once. Next unlocks after a successful check.'
+                    )}
+              </p>
             </div>
           )}
-          <Select
-            label="Generate Picture?"
-            translationKey="label_generate_picture"
-            {...form.register('addPicture', {
-              setValueAs: (value) => value === 'true' || value === true,
-            })}
-          >
-            {optionsChoose.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            value={allIntegrations.value}
-            name="integrations"
-            label="Integrations"
-            translationKey="label_integrations"
-            disableForm={true}
-            onChange={changeIntegration}
-          >
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-            {allIntegrations.value === 'specific' && dataList && !isLoading && (
-              <PickPlatforms
-                integrations={sortIntegrationsByProviderImportance(
-                  dataList.integrations || []
-                )}
-                selectedIntegrations={integrations as any[]}
-                onChange={(e) => form.setValue('integrations', e)}
-                singleSelect={false}
-                toolTip={true}
-                isMain={true}
+
+          {step === 1 && (
+            <div className="flex flex-col gap-[12px]">
+              <FormChoice
+                name="syncLast"
+                label="Should we sync the current last post?"
+                translationKey="label_should_sync_last_post"
+                options={optionsChoose}
               />
-            )}
+              <FormChoice
+                name="onSlot"
+                label="When should we post it?"
+                translationKey="label_when_post"
+                options={postImmediately}
+              />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="flex flex-col gap-[12px]">
+              <FormChoice
+                name="generateContent"
+                label="Autogenerate content"
+                translationKey="label_autogenerate_content"
+                options={optionsChoose}
+              />
+              {!generateContent && (
+                <div className="flex flex-col gap-[5px]">
+                  <div className="text-[13px] font-[500] text-pqMuted">
+                    {t('post_content', 'Post content')}
+                  </div>
+                  <div className="overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
+                    {aiEnabled ? (
+                      <CopilotTextarea
+                        disableBranding={true}
+                        className={clsx(
+                          '!min-h-28 !max-h-56 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
+                        )}
+                        value={content}
+                        onChange={(e) => {
+                          form.setValue('content', e.target.value);
+                        }}
+                        placeholder={t(
+                          'write_your_post_placeholder',
+                          'Write your post...'
+                        )}
+                        autosuggestionsConfig={{
+                          textareaPurpose: `Assist me in writing social media post`,
+                          chatApiConfigs: {},
+                        }}
+                      />
+                    ) : (
+                      <textarea
+                        className={clsx(
+                          '!min-h-28 !max-h-56 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft w-full resize-none border-0'
+                        )}
+                        value={content}
+                        onChange={(e) => {
+                          form.setValue('content', e.target.value);
+                        }}
+                        placeholder={t(
+                          'write_your_post_placeholder',
+                          'Write your post...'
+                        )}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+              <FormChoice
+                name="addPicture"
+                label="Generate Picture?"
+                translationKey="label_generate_picture"
+                options={optionsChoose}
+              />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="flex flex-col gap-[12px]">
+              <Select
+                value={allIntegrations.value}
+                name="integrations"
+                label="Integrations"
+                translationKey="label_integrations"
+                disableForm={true}
+                hideErrors={true}
+                onChange={changeIntegration}
+              >
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              {allIntegrations.value === 'specific' &&
+                dataList &&
+                !isLoading && (
+                  <PickPlatforms
+                    integrations={sortIntegrationsByProviderImportance(
+                      dataList
+                    )}
+                    selectedIntegrations={integrations as any[]}
+                    onChange={(e) => form.setValue('integrations', e)}
+                    singleSelect={false}
+                    toolTip={true}
+                    isMain={true}
+                  />
+                )}
+            </div>
+          )}
+
           <ModalFormActions onCancel={() => onCancel?.()}>
-            {valid === url && (syncLast || !!lastUrl) && (
+            {step > 0 && (
+              <Button
+                type="button"
+                secondary={true}
+                className="h-[40px] shrink-0 rounded-[10px] px-[16px] text-[13.5px] font-[600]"
+                onClick={goBack}
+              >
+                {t('back', 'Back')}
+              </Button>
+            )}
+            {step === 0 && (
+              <Button
+                type="button"
+                secondary={true}
+                className="h-[40px] shrink-0 rounded-[10px] px-[16px] text-[13.5px] font-[600]"
+                onClick={sendTest}
+                disabled={!url || !title}
+              >
+                {t('send_test', 'Send Test')}
+              </Button>
+            )}
+            {step < steps.length - 1 ? (
+              <Button
+                type="button"
+                className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
+                onClick={goNext}
+                disabled={step === 0 && !feedReady}
+              >
+                {t('next', 'Next')}
+              </Button>
+            ) : (
               <Button
                 type="submit"
-                className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
-                disabled={
-                  valid !== url ||
-                  !form.formState.isValid ||
-                  (allIntegrations.value === 'specific' &&
-                    !integrations?.length)
-                }
+                className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
+                disabled={!canSave}
               >
                 {t('save', 'Save')}
               </Button>
             )}
-            <Button
-              type="button"
-              secondary={true}
-              className="h-[44px] rounded-[8px] px-[18px] text-[14px] font-[600]"
-              onClick={sendTest}
-              disabled={
-                !form.formState.isValid ||
-                (allIntegrations.value === 'specific' &&
-                  !integrations?.length)
-              }
-            >
-              {t('send_test', 'Send Test')}
-            </Button>
           </ModalFormActions>
         </div>
       </form>

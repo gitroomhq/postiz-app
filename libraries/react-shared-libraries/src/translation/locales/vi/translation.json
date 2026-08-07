@@ -427,7 +427,7 @@
   "label_when_post": "Khi nào chúng ta nên đăng?",
   "label_autogenerate_content": "Tự động tạo nội dung",
   "label_generate_picture": "Tạo hình ảnh?",
-  "label_company": "Công ty",
+  "label_organization": "Tổ chức",
   "label_tag_color": "Màu thẻ",
   "label_select_board": "Chọn bảng",
   "label_select_organization": "Chọn tổ chức",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "Cập nhật tự động đăng thành công",
   "autopost_added_successfully": "Tự động đăng bài đã được thêm thành công",
   "write_your_post_placeholder": "Viết bài đăng của bạn...",
-  "select_or_upload_pictures_max_5": "Chọn hoặc tải lên hình ảnh (tối đa 5 hình cùng lúc).",
   "you_can_drag_drop_pictures": "Bạn cũng có thể kéo và thả hình ảnh.",
   "you_dont_have_any_media_yet": "Bạn chưa có phương tiện nào",
   "media_library": "Thư viện phương tiện",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "Xem video ngắn này để biết cách tận dụng tối đa PostQueen",
   "back": "Quay lại",
   "get_started": "Bắt đầu",
-  "kick_select_channel": "Chọn kênh"
+  "kick_select_channel": "Chọn kênh",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

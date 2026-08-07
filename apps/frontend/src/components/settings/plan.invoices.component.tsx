@@ -6,7 +6,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { pricing, tierLabel } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 /**
  * Settings → Plan & invoices.
@@ -59,7 +59,7 @@ export const PlanInvoicesComponent: FC = () => {
           {t('current_plan', 'Current plan')}
         </div>
         <div className="font-display text-[24px] font-[600] -tracking-[0.015em]">
-          {tier}
+          {tierLabel(tier)}
         </div>
         <div className="text-[13.5px] leading-[1.55] text-pqMuted">
           {lifetime

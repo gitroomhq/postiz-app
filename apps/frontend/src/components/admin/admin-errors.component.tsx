@@ -9,6 +9,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 interface ErrorRow {
   id: string;
@@ -44,6 +45,7 @@ const safeParse = (value: string) => {
 const ErrorDetailsModal: FC<{ row: ErrorRow }> = ({ row }) => {
   const modal = useModals();
   const toaster = useToaster();
+  const { formatDateTime } = useDateFormat();
   const parsedMessage = useMemo(() => safeParse(row.message), [row.message]);
   const parsedBody = useMemo(() => safeParse(row.body), [row.body]);
 
@@ -94,7 +96,7 @@ const ErrorDetailsModal: FC<{ row: ErrorRow }> = ({ row }) => {
         </div>
         <div>
           <div className="opacity-60">Created</div>
-          <div>{new Date(row.createdAt).toLocaleString()}</div>
+          <div>{formatDateTime(row.createdAt)}</div>
         </div>
         <div>
           <div className="opacity-60">Organization</div>
@@ -173,6 +175,7 @@ export const AdminErrorsComponent: FC = () => {
   const user = useUser();
   const modal = useModals();
   const toaster = useToaster();
+  const { formatDateTime } = useDateFormat();
 
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
@@ -352,7 +355,7 @@ export const AdminErrorsComponent: FC = () => {
                 className="grid grid-cols-[170px_120px_220px_1fr_220px] gap-[12px] px-[12px] py-[10px] text-[13px] border-b border-newTableBorder last:border-b-0 items-start"
               >
                 <div className="opacity-90">
-                  {new Date(row.createdAt).toLocaleString()}
+                  {formatDateTime(row.createdAt)}
                 </div>
                 <div>
                   <span

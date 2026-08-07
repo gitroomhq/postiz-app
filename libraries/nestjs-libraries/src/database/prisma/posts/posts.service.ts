@@ -1047,13 +1047,16 @@ export class PostsService {
 
     if (action === 'schedule') {
       try {
+        // Always QUEUE after a schedule changeDate — the DB row was just
+        // promoted. Passing the *old* DRAFT state made startWorkflow no-op
+        // (Drafts panel → calendar drop never started Temporal).
         await this.startWorkflow(
           getPostById.integration.providerIdentifier
             .split('-')[0]
             .toLowerCase(),
           getPostById.id,
           orgId,
-          getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
+          'QUEUE'
         );
       } catch (err) {}
     }

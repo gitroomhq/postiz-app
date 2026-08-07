@@ -194,6 +194,14 @@ export interface SocialProvider
    * a worse outcome than letting one trial account keep it.
    */
   trialLocked?: boolean;
+  /**
+   * Whether the Add Channel grid shows a NEW corner badge on this provider.
+   *
+   * Same placement rule as `category` / `trialLocked`: the flag lives on the
+   * provider so the grid stays generic and forgetting to list an id elsewhere
+   * cannot leave a stale badge (or miss one). Unset means no badge.
+   */
+  isNew?: boolean;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];

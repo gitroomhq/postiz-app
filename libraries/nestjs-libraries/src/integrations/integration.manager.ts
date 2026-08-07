@@ -95,6 +95,9 @@ export class IntegrationManager {
           // trialing comes from the user, so the flag is the same for everyone
           // and this list stays cacheable.
           trialLocked: !!p.trialLocked,
+          // Same idea as trialLocked: the NEW corner badge is a provider
+          // property, so the grid never hardcodes identifiers.
+          isNew: !!p.isNew,
           ...(p.extensionCookies
             ? { extensionCookies: p.extensionCookies }
             : {}),

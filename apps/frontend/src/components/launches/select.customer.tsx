@@ -35,7 +35,7 @@ export const SelectCustomer: FC<{
   const { referenceRef, floatingRef } = useAnchoredPopover<
     HTMLDivElement,
     HTMLDivElement
-  >(open, 'start');
+  >(open, 'end', { offsetPx: 8, placement: 'bottom-end' });
 
   const openClose = useCallback(() => {
     setOpen((prev) => !prev);
@@ -70,7 +70,7 @@ export const SelectCustomer: FC<{
       {open && (
         <div
           ref={floatingRef}
-          className="flex min-w-[250px] flex-col bg-pqInner pt-[12px] menu-shadow"
+          className="z-[300] flex min-w-[250px] flex-col bg-pqInner pt-[12px] menu-shadow"
         >
           <div className="mb-[5px] px-[12px] text-[14px] font-[600]">
             {t('customers', 'Customers')}

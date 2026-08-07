@@ -139,13 +139,13 @@ export const NewPost = () => {
     <div className="relative shrink-0" ref={menuRef}>
       <div
         ref={referenceRef}
-        className="flex h-[36px] overflow-hidden rounded-[8px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand"
+        className="flex h-[36px] overflow-hidden rounded-[10px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand"
       >
         <button
           type="button"
           data-pq="create-post"
           onClick={createAPost}
-          className="flex h-full items-center gap-[6px] ps-[12px] pe-[12px] outline-none transition-opacity hover:opacity-90"
+          className="flex h-full items-center gap-[6px] ps-[14px] pe-[10px] outline-none transition-colors hover:bg-black/10"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -173,7 +173,7 @@ export const NewPost = () => {
           aria-label={t('create_post_options', 'Create post options')}
           onClick={() => setMenuOpen((open) => !open)}
           className={clsx(
-            'flex h-full w-[32px] items-center justify-center border-s border-pqOnBrand/20 outline-none transition-opacity hover:opacity-90',
+            'flex h-full w-[32px] items-center justify-center outline-none transition-colors hover:bg-black/10',
             menuOpen && 'bg-black/10'
           )}
         >

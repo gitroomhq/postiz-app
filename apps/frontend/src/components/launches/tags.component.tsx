@@ -18,6 +18,7 @@ import {
   PlusIcon,
   CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 export const TagsComponent: FC<{
   name: string;
@@ -68,6 +69,11 @@ export const TagsComponentInner: FC<{
     })
   );
   const modals = useModals();
+  // Escape Create Post footer overflow clip (same as DatePicker / Repeat).
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(isOpen, 'start', { offsetPx: 10, placement: 'top-start' });
 
   const ref = useClickOutside(() => {
     if (!isOpen || !allowClose) {
@@ -166,6 +172,7 @@ export const TagsComponentInner: FC<{
       )}
     >
       <div
+        ref={referenceRef}
         onClick={() => setIsOpen(!isOpen)}
         className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
       >
@@ -194,7 +201,10 @@ export const TagsComponentInner: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+        <div
+          ref={floatingRef}
+          className="z-[300] flex w-[240px] flex-col bg-newBgColorInner p-[12px] menu-shadow"
+        >
           {(data?.tags || []).map((p: any) => (
             <div
               onClick={() => {

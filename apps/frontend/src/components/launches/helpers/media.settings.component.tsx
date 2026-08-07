@@ -13,6 +13,7 @@ import {
 } from '@gitroom/frontend/components/layout/new-modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Button } from '@gitroom/react/form/button';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -243,14 +244,14 @@ export const CreateThumbnail: FC<{
               step="0.1"
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 bg-fifth rounded-lg appearance-none cursor-pointer slider"
+              className="w-full h-2 bg-pqSettings rounded-lg appearance-none cursor-pointer slider"
               style={{
-                background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
+                background: `linear-gradient(to right, var(--brand) 0%, var(--brand) ${
                   (currentTime / duration) * 100
-                }%, #374151 ${(currentTime / duration) * 100}%, #374151 100%)`,
+                }%, var(--border) ${(currentTime / duration) * 100}%, var(--border) 100%)`,
               }}
             />
-            <div className="flex justify-between text-sm text-textColor">
+            <div className="flex justify-between text-sm text-pqMuted">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -274,9 +275,9 @@ export const CreateThumbnail: FC<{
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #4f46e5;
+          background: var(--brand);
           cursor: pointer;
-          border: 2px solid #ffffff;
+          border: 2px solid var(--onBrand);
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
@@ -284,9 +285,9 @@ export const CreateThumbnail: FC<{
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #4f46e5;
+          background: var(--brand);
           cursor: pointer;
-          border: 2px solid #ffffff;
+          border: 2px solid var(--onBrand);
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
       `}</style>
@@ -316,6 +317,7 @@ export const MediaComponentInner: FC<{
 }> = (props) => {
   const { onClose, onSelect, media } = props;
   const t = useT();
+  const toaster = useToaster();
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   const newFetch = useFetch();
   const [newThumbnail, setNewThumbnail] = useState<string | null>(null);
@@ -366,6 +368,7 @@ export const MediaComponentInner: FC<{
     ).json();
 
     onSelect(media);
+    toaster.show(t('alt_text_saved', 'Alt text saved'));
     onClose();
   }, [altText, newThumbnail, thumbnail, thumbnailTimestamp]);
 
@@ -384,10 +387,6 @@ export const MediaComponentInner: FC<{
         <textarea
           value={altText}
           onChange={(e) => setAltText(e.target.value)}
-          placeholder={t(
-            'alt_text_placeholder',
-            'A product shot of the v3.2 dashboard'
-          )}
           className={modalTextareaClass}
           rows={4}
         />
@@ -401,13 +400,13 @@ export const MediaComponentInner: FC<{
                 {/* Show existing thumbnail if it exists */}
                 {(newThumbnail || thumbnail) && (
                   <div className="flex flex-col space-y-2">
-                    <span className="text-sm text-textColor">
+                    <span className="text-sm text-pqMuted">
                       Current Thumbnail:
                     </span>
                     <img
                       src={newThumbnail || thumbnail}
                       alt="Current thumbnail"
-                      className="max-w-full max-h-[500px] object-contain rounded-lg border border-tableBorder"
+                      className="max-w-full max-h-[500px] object-contain rounded-lg border border-pqBorder"
                     />
                   </div>
                 )}
@@ -443,7 +442,7 @@ export const MediaComponentInner: FC<{
                 <div className="flex justify-start">
                   <button
                     onClick={() => setIsEditingThumbnail(false)}
-                    className="text-textColor hover:text-pqText transition-colors flex items-center space-x-2"
+                    className="text-pqMuted hover:text-pqText transition-colors flex items-center space-x-2"
                   >
                     <svg
                       width="16"
@@ -493,7 +492,7 @@ export const MediaComponentInner: FC<{
           <Button
             disabled={loading}
             onClick={save}
-            className="h-[44px] flex-1 rounded-[10px]"
+            className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
           >
             {t('save', 'Save')}
           </Button>

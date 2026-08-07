@@ -152,15 +152,26 @@ export const Sets: FC = () => {
 
   const deleteSet = useCallback(
     (data: any) => async () => {
-      if (await deleteDialog(`Are you sure you want to delete ${data.name}?`)) {
+      if (
+        await deleteDialog(
+          t(
+            'are_you_sure_you_want_to_delete',
+            `Are you sure you want to delete ${data.name}?`,
+            { name: data.name }
+          )
+        )
+      ) {
         await fetch(`/sets/${data.id}`, {
           method: 'DELETE',
         });
         mutate();
-        toaster.show('Set deleted successfully', 'success');
+        toaster.show(
+          t('set_deleted_successfully', 'Set deleted successfully'),
+          'success'
+        );
       }
     },
-    []
+    [fetch, mutate, toaster, t]
   );
 
   return (
@@ -203,7 +214,7 @@ export const Sets: FC = () => {
         type="button"
         onClick={addSet()}
         className={clsx(
-          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
         )}
       >

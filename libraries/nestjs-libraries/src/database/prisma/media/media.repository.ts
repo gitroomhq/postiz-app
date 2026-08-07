@@ -140,6 +140,7 @@ export class MediaRepository {
         // The list view shows a size beside each file. Old rows default to 0,
         // which the UI treats as "not recorded" rather than "0 bytes".
         fileSize: true,
+        createdAt: true,
       },
       skip: pageNum * 18,
       take: 18,

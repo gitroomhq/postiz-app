@@ -427,7 +427,7 @@
   "label_when_post": "Quando devemos postar?",
   "label_autogenerate_content": "Gerar conteúdo automaticamente",
   "label_generate_picture": "Gerar imagem?",
-  "label_company": "Empresa",
+  "label_organization": "Organização",
   "label_tag_color": "Cor da tag",
   "label_select_board": "Selecionar quadro",
   "label_select_organization": "Selecionar organização",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "Autopost atualizado com sucesso",
   "autopost_added_successfully": "Autopost adicionado com sucesso",
   "write_your_post_placeholder": "Escreva sua postagem...",
-  "select_or_upload_pictures_max_5": "Selecione ou envie fotos (máximo de 5 por vez).",
   "you_can_drag_drop_pictures": "Você também pode arrastar e soltar fotos.",
   "you_dont_have_any_media_yet": "Você ainda não tem nenhuma mídia",
   "media_library": "Biblioteca de Mídia",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "Assista a este vídeo curto para aprender a tirar o máximo proveito do PostQueen",
   "back": "Voltar",
   "get_started": "Começar",
-  "kick_select_channel": "Selecionar canal"
+  "kick_select_channel": "Selecionar canal",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

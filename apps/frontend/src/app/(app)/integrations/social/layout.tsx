@@ -1,3 +1,9 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Connect channel',
+};
+
 import { ReactNode } from 'react';
 
 export default async function IntegrationLayout({

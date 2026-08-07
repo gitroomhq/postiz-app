@@ -14,9 +14,9 @@ import clsx from 'clsx';
 import useCookie from 'react-use-cookie';
 import useSWR from 'swr';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useWaitForClass } from '@gitroom/helpers/utils/use.wait.for.class';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
@@ -52,10 +52,10 @@ export const MediaPortal: FC<{
     };
   }) => void;
 }> = ({ media, setMedia, value, part = 'toolbar' }) => {
-  const waitForClass = useWaitForClass('copilotKitMessages');
-  if (!waitForClass) return null;
-  // Rendered inside the composer frame (agent.input.tsx), where the design
-  // draws the media buttons as ghosts rather than the post composer's pills.
+  // Rendered inside the composer frame (agent.input.tsx / UnconfiguredAgentShell).
+  // Do not gate on CopilotKit's `.copilotKitMessages` — that class is only on
+  // the live SDK tree; waiting for it hid Insert media / Design / AI when the
+  // unconfigured shell was shown (and could race on mount).
   return (
     <MultiMediaComponent
       ghost={true}
@@ -87,10 +87,6 @@ export const AgentList: FC<{
   const router = useRouter();
   const [selected, setSelected] = useState([]);
   const colRef = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(async () => {
-    return (await (await fetch('/integrations/list')).json()).integrations;
-  }, []);
 
   const { mobile, tablet } = useViewport();
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
@@ -130,15 +126,9 @@ export const AgentList: FC<{
     colRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [expandNonce, collapseMenu, setCollapseMenu]);
 
-  const { data, mutate } = useSWR('integrations', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
+  // Shared `/integrations/list` cache (array shape). Do not use the bare
+  // `'integrations'` key — webhooks/autopost historically cached `{ integrations }`.
+  const { data, mutate } = useIntegrationList();
 
   const openAddChannel = useCallback(() => {
     router.push('/channels?add=1');
@@ -475,7 +465,9 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [drawerTop, setDrawerTop] = useState(0);
   const [channelExpandNonce, setChannelExpandNonce] = useState(0);
   // Design: Copilot waits until the trial ends (or the person ends it early).
-  const trialLocked = !!user?.isTrailing;
+  // Lock-until-paid also blocks when deferred founding $49 is still owed.
+  const trialLocked =
+    !!user?.isTrailing || !!user?.lifetimePaymentPending;
 
   // Below 760 both side columns leave the chat about 200px — two or three
   // words a line, and a message box the shape of a bookmark. They become

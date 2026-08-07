@@ -20,8 +20,56 @@ interface Organization {
   id: string;
 }
 
-const initialOf = (name?: string) =>
-  (name?.trim()?.[0] || '?').toUpperCase();
+const RailOrgChrome: FC<{
+  name?: string;
+  collapsed?: boolean;
+  open?: boolean;
+  buttonRef?: React.Ref<HTMLButtonElement>;
+  onClick?: () => void;
+  ariaLabel: string;
+}> = ({ name, collapsed, open, buttonRef, onClick, ariaLabel }) => {
+  return (
+    <button
+      type="button"
+      ref={buttonRef}
+      onClick={onClick}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      aria-label={ariaLabel}
+      className={clsx(
+        'flex h-[34px] min-w-0 flex-1 items-center gap-[11px] rounded-pqSm px-[8px] text-start transition-colors hover:bg-pqHover',
+        collapsed ? 'justify-center' : 'justify-start',
+        open && 'bg-pqHover'
+      )}
+    >
+      {/* Always in the DOM with data-sbl so collapsed-rail hover can reveal
+          the name the way the design does — do not unmount on collapse. */}
+      <span
+        data-sbl="1"
+        className="min-w-0 flex-1 truncate text-[13px] font-[500] text-pqMuted"
+      >
+        {name}
+      </span>
+      <svg
+        data-sbl="1"
+        viewBox="0 0 24 24"
+        width="13"
+        height="13"
+        fill="none"
+        aria-hidden="true"
+        className="shrink-0 text-pqSoft"
+      >
+        <path
+          d="M8 10l4-4 4 4M8 14l4 4 4-4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+};
 
 export const OrganizationSelector: FC<{
   asOpenSelect?: boolean;
@@ -52,7 +100,7 @@ export const OrganizationSelector: FC<{
     revalidateOnReconnect: false,
   });
   const current = useMemo(() => {
-    return data?.find((d: any) => d.id === user?.orgId);
+    return data?.find((d: any) => d.id === user?.orgId) ?? data?.[0];
   }, [data, user?.orgId]);
   const changeOrg = useCallback(
     (org: Organization) => async () => {
@@ -83,60 +131,38 @@ export const OrganizationSelector: FC<{
     };
   }, [open]);
 
-  if (isLoading || (!isLoading && data?.length === 1)) {
-    return null;
-  }
-
-  // The rail row. Unlike the icon variant this opens on click and closes on
-  // Escape or an outside click — the hover-only menu had no keyboard path at
-  // all.
+  // Rail: always interactive switcher chrome (even with one org — menu lists
+  // the only membership; a second org only appears via Teams invite).
+  // Icon / billing: keep multi-org-only visibility.
   if (variant === 'rail') {
-    if (!(data?.length > 1)) {
-      return null;
-    }
-    return (
-      <div ref={ref} className="relative flex items-center" data-keepdrawer="1">
-        <button
-          type="button"
-          ref={referenceRef}
-          onClick={() => setOpen((o) => !o)}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          className={clsx(
-            'flex h-[34px] min-w-0 flex-1 items-center gap-[11px] rounded-pqSm px-[8px] text-start transition-colors hover:bg-pqHover',
-            collapsed ? 'justify-center' : 'justify-start',
-            open && 'bg-pqHover'
-          )}
+    if (isLoading) {
+      return (
+        <div
+          className="flex h-[34px] min-w-0 flex-1 items-center gap-[11px] rounded-pqSm px-[8px]"
+          data-keepdrawer="1"
+          aria-hidden="true"
         >
-          <span className="grid size-[21px] shrink-0 place-items-center rounded-[6px] bg-pqBrand text-[10px] font-[700] text-white">
-            {initialOf(current?.name)}
-          </span>
-          {/* Always in the DOM with data-sbl so collapsed-rail hover can reveal
-              the name the way the design does — do not unmount on collapse. */}
           <span
             data-sbl="1"
-            className="min-w-0 flex-1 truncate text-[13px] font-[500] text-pqMuted"
-          >
-            {current?.name}
-          </span>
-          <svg
-            data-sbl="1"
-            viewBox="0 0 24 24"
-            width="13"
-            height="13"
-            fill="none"
-            aria-hidden="true"
-            className="shrink-0 text-pqSoft"
-          >
-            <path
-              d="M8 10l4-4 4 4M8 14l4 4 4-4"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+            className="h-[12px] min-w-0 flex-1 animate-pulse rounded-pqSm bg-pqHover"
+          />
+        </div>
+      );
+    }
+    if (!data?.length) {
+      return null;
+    }
+
+    return (
+      <div ref={ref} className="relative flex items-center" data-keepdrawer="1">
+        <RailOrgChrome
+          name={current?.name}
+          collapsed={collapsed}
+          open={open}
+          buttonRef={referenceRef}
+          onClick={() => setOpen((o) => !o)}
+          ariaLabel={t('switch_organization', 'Switch organization')}
+        />
         {open && (
           <div
             ref={floatingRef}
@@ -146,49 +172,50 @@ export const OrganizationSelector: FC<{
             <div className="px-[9px] pb-[5px] pt-[7px] text-[10px] font-[600] uppercase tracking-[0.07em] text-pqSoft">
               {t('organizations', 'Organizations')}
             </div>
-            {data?.map((org: Organization) => (
-              <button
-                key={org.id}
-                type="button"
-                role="menuitem"
-                onClick={
-                  org.id === user?.orgId
-                    ? () => setOpen(false)
-                    : changeOrg(org)
-                }
-                className={clsx(
-                  'flex w-full items-center gap-[9px] rounded-pqSm px-[9px] py-[7px] text-start text-[13px] text-pqText transition-colors hover:bg-pqHover',
-                  org.id === user?.orgId && 'bg-pqBoxFocused'
-                )}
-              >
-                <span className="grid size-[22px] shrink-0 place-items-center rounded-[6px] bg-pqBrand text-[10.5px] font-[700] text-white">
-                  {initialOf(org.name)}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{org.name}</span>
-                {org.id === user?.orgId && (
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    aria-hidden="true"
-                    className="shrink-0 text-pqBrand"
-                  >
-                    <path
-                      d="M5 12.5l4.5 4.5L19 7.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </button>
-            ))}
+            {data.map((org: Organization) => {
+              const isCurrent =
+                org.id === user?.orgId || org.id === current?.id;
+              return (
+                <button
+                  key={org.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={isCurrent ? () => setOpen(false) : changeOrg(org)}
+                  className={clsx(
+                    'flex w-full items-center gap-[9px] rounded-pqSm px-[9px] py-[7px] text-start text-[13px] text-pqText transition-colors hover:bg-pqHover',
+                    isCurrent && 'bg-pqBoxFocused'
+                  )}
+                >
+                  <span className="min-w-0 flex-1 truncate">{org.name}</span>
+                  {isCurrent && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      aria-hidden="true"
+                      className="shrink-0 text-pqBrand"
+                    >
+                      <path
+                        d="M5 12.5l4.5 4.5L19 7.5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
     );
+  }
+
+  if (isLoading || (!isLoading && data?.length === 1)) {
+    return null;
   }
 
   return (

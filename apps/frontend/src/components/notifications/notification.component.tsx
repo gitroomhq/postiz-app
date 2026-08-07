@@ -17,6 +17,7 @@ import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 function replaceLinks(text: string) {
   const urlRegex =
@@ -44,7 +45,8 @@ export const ShowNotification: FC<{
     new Date(notification.createdAt) > new Date(unreadCutoff);
   const createdAt = dayjs(notification.createdAt);
   const isWithin24h = dayjs().diff(createdAt, 'hour') < 24;
-  const fullDate = createdAt.format('MMM D, YYYY h:mm A');
+  const { mediumDateTimePattern } = useDateFormat();
+  const fullDate = createdAt.format(mediumDateTimePattern());
   return (
     <div
       className={clsx(

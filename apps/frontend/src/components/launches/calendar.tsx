@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -42,7 +43,10 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { random } from 'lodash';
 import { extend } from 'dayjs';
-import { isUSCitizen } from './helpers/isuscitizen.utils';
+import {
+  use12HourClock,
+  useDateFormat,
+} from './helpers/date.format';
 import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
@@ -57,6 +61,8 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { isClientDemoPost } from '@gitroom/frontend/components/launches/ui-demo-posts';
+import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -78,7 +84,7 @@ i18next.on('languageChanged', () => {
 updateDayjsLocale();
 
 const convertTimeFormatBasedOnLocality = (time: number) => {
-  if (isUSCitizen()) {
+  if (use12HourClock()) {
     return `${time === 12 ? 12 : time % 12}:00 ${time >= 12 ? 'PM' : 'AM'}`;
   } else {
     return `${time}:00`;
@@ -91,6 +97,21 @@ export const hours = Array.from(
   },
   (_, i) => i
 );
+
+/**
+ * Card chrome only: a QUEUE slot whose publish time has passed reads as
+ * Published (matches the drag dialog that already treats past QUEUE as
+ * "already published"). Does not change API / drag payload state.
+ */
+function displayPostState(
+  state: State,
+  publishDate: string | Date
+): State {
+  if (state === 'QUEUE' && dayjs().isAfter(dayjs.utc(publishDate))) {
+    return 'PUBLISHED';
+  }
+  return state;
+}
 
 /**
  * Demo / tour seed posts look real but have no API backing. Match media's
@@ -277,15 +298,64 @@ export const usePostActions = (onMutate?: () => void) => {
 /**
  * Opens week/day grids at 07:00 instead of midnight.
  *
- * The prototype does the same for the week scroller (`scrollTop = 7 * 78`).
- * A calendar that opens on the small hours shows an empty night first.
- * Computed from the container: 24 equal hour rows → seven twenty-fourths = 07:00.
+ * Day rows are variable height — prefer `[data-cal-hour]="7"` (same as
+ * scroll-to-now). Week falls back to equal-row math when markers are absent.
  */
 const openAtMorning = (el: HTMLDivElement | null) => {
   if (!el || el.dataset.scrolled === '1') return;
   const apply = () => {
     if (el.scrollHeight <= el.clientHeight) return false;
-    el.scrollTop = (el.scrollHeight / 24) * 7;
+    const target = el.querySelector(
+      '[data-cal-hour="7"]'
+    ) as HTMLElement | null;
+    if (target) {
+      const sticky = el.querySelector(
+        '[data-cal-sticky-head]'
+      ) as HTMLElement | null;
+      const top =
+        target.offsetTop - (sticky ? sticky.getBoundingClientRect().height : 0);
+      el.scrollTop = Math.max(0, top);
+    } else {
+      el.scrollTop = (el.scrollHeight / 24) * 7;
+    }
+    el.dataset.scrolled = '1';
+    return true;
+  };
+  if (!apply()) {
+    let tries = 0;
+    const tick = () => {
+      if (apply() || tries++ > 40) return;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+};
+
+/**
+ * Jump a Day/Week scroller to a local hour. Prefers `[data-cal-hour]` markers
+ * (Day rows are variable height). Falls back to equal-row math for Week.
+ * Ignores `dataset.scrolled` so Today can re-center after the morning open.
+ */
+const scrollScrollerToHour = (el: HTMLElement | null, hour: number) => {
+  if (!el) return;
+  const clamped = Math.max(0, Math.min(23, hour));
+  const apply = () => {
+    if (el.scrollHeight <= el.clientHeight) return false;
+    const target = el.querySelector(
+      `[data-cal-hour="${clamped}"]`
+    ) as HTMLElement | null;
+    if (target) {
+      const sticky = el.querySelector(
+        '[data-cal-sticky-head]'
+      ) as HTMLElement | null;
+      const stickyH = sticky?.offsetHeight ?? 0;
+      const elRect = el.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      el.scrollTop += targetRect.top - elRect.top - stickyH;
+      el.dataset.scrolled = '1';
+      return true;
+    }
+    el.scrollTop = (el.scrollHeight / 24) * clamped;
     el.dataset.scrolled = '1';
     return true;
   };
@@ -300,18 +370,27 @@ const openAtMorning = (el: HTMLDivElement | null) => {
 };
 
 export const DayView = () => {
-  const { startDate } = useCalendar();
+  const { startDate, scrollToNowToken } = useCalendar();
   const currentDay = newDayjs(startDate).startOf('day');
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const setScrollerRef = useCallback((el: HTMLDivElement | null) => {
+    scrollerRef.current = el;
+    openAtMorning(el);
+  }, []);
 
-  // Owner: Day matches Posts list LOOK (860 column, list cards, hour headers) —
-  // not the prototype left timeline / compact day chips.
+  useEffect(() => {
+    if (!scrollToNowToken) return;
+    scrollScrollerToHour(scrollerRef.current, newDayjs().hour());
+  }, [scrollToNowToken]);
+
+  // Owner: Day matches Posts list LOOK (860 column, list cards, hour headers).
   return (
     <div className="relative flex flex-1 flex-col text-pqText">
       <div className="relative flex-1">
         <div
           data-tour="cal-day"
-          ref={openAtMorning}
-          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+          ref={setScrollerRef}
+          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner [scrollbar-gutter:stable]"
         >
           <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
             {hours.map((hour) => (
@@ -329,8 +408,49 @@ export const DayView = () => {
 };
 
 export const WeekView = () => {
-  const { startDate, endDate, openPostsForDay } = useCalendar();
+  const { startDate, openPostsForDay, scrollToNowToken } = useCalendar();
   const t = useT();
+  const { mobile } = useViewport();
+  // Subscribe so hour labels re-render when Date Metrics (12h/24h) changes.
+  useDateFormat();
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [swipeHint, setSwipeHint] = useState(false);
+  const setScrollerRef = useCallback((el: HTMLDivElement | null) => {
+    scrollerRef.current = el;
+    openAtMorning(el);
+  }, []);
+
+  useEffect(() => {
+    if (!scrollToNowToken) return;
+    scrollScrollerToHour(scrollerRef.current, newDayjs().hour());
+  }, [scrollToNowToken]);
+
+  // Phone week is wider than the viewport — bring today into view and surface
+  // a one-time swipe hint so sideways scroll is discoverable (no Day invent).
+  useEffect(() => {
+    if (!mobile) {
+      setSwipeHint(false);
+      return;
+    }
+    const el = scrollerRef.current;
+    const todayCol = el?.querySelector<HTMLElement>('[data-cal-today="1"]');
+    todayCol?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    try {
+      if (localStorage.getItem('pq-cal-swipe-hint') === '1') return;
+    } catch {
+      /* private mode */
+    }
+    setSwipeHint(true);
+  }, [mobile, startDate]);
+
+  const dismissSwipeHint = useCallback(() => {
+    setSwipeHint(false);
+    try {
+      localStorage.setItem('pq-cal-swipe-hint', '1');
+    } catch {
+      /* private mode */
+    }
+  }, []);
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -343,7 +463,7 @@ export const WeekView = () => {
       const day = weekStart.add(i, 'day');
       days.push({
         name: day.format('dddd'),
-        day: day.format('L'),
+        day: day.format('YYYY-MM-DD'),
         date: day,
       });
     }
@@ -351,7 +471,7 @@ export const WeekView = () => {
   }, [i18next.resolvedLanguage, startDate]);
 
   return (
-    <div className="flex flex-1 flex-col text-pqText">
+    <div className="relative flex flex-1 flex-col text-pqText">
       <div className="relative flex-1">
         {/* A floor on the day columns rather than `minmax(0, 1fr)` is what stops
             them collapsing into each other at phone widths — below seven
@@ -365,25 +485,37 @@ export const WeekView = () => {
             "12:00 AM" there and 62px wrapped it onto two lines. */}
         <div
           data-tour="cal-grid"
-          ref={openAtMorning}
-          className="absolute inset-0 grid content-start overflow-auto bg-pqInner [grid-template-columns:72px_repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+          ref={setScrollerRef}
+          className={clsx(
+            'absolute inset-0 grid content-start bg-pqInner [grid-template-columns:72px_repeat(7,_minmax(84px,_1fr))] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner',
+            mobile ? 'overflow-x-scroll overflow-y-auto' : 'overflow-auto'
+          )}
         >
-          <div className="sticky top-0 z-[12] h-[54px] border-b border-pqBorder bg-pqInner" />
+          {/* Opaque bg + z above grid hatch: past cells scroll under this row;
+              brandFaint/hover are alpha tokens and must layer as images, not
+              replace background-color, or the hatch shows through the labels. */}
+          <div
+            data-cal-sticky-head="1"
+            className="sticky top-0 z-[30] h-[54px] border-b border-pqBorder bg-pqInner"
+          />
           {localizedDays.map((day) => {
-            const today = day.day === newDayjs().format('L');
+            const today = day.date.isSame(newDayjs(), 'day');
             const past = day.date.endOf('day').isBefore(newDayjs());
             return (
               <button
                 type="button"
-                key={day.name}
+                key={day.day}
+                data-cal-today={today ? '1' : undefined}
                 onClick={() => openPostsForDay(day.date.startOf('day'))}
                 title={t('see_all_posts_on', 'See all posts on {{day}}').replace(
                   '{{day}}',
                   day.date.format('dddd')
                 )}
                 className={clsx(
-                  'sticky top-0 z-[13] flex h-[54px] min-w-0 flex-col items-center justify-center gap-[2px] overflow-hidden border-b border-pqBorder px-[6px] transition-colors hover:bg-pqHover',
-                  today ? 'bg-pqBrandFaint' : 'bg-pqInner'
+                  'sticky top-0 z-[30] flex h-[54px] min-w-0 flex-col items-center justify-center gap-[2px] overflow-hidden border-b border-pqBorder bg-pqInner px-[6px]',
+                  today
+                    ? '[background-image:linear-gradient(var(--brandFaint),var(--brandFaint))] hover:[background-image:linear-gradient(var(--hover),var(--hover)),linear-gradient(var(--brandFaint),var(--brandFaint))]'
+                    : 'hover:[background-image:linear-gradient(var(--hover),var(--hover))]'
                 )}
               >
                 <div className="flex items-baseline gap-[4px]">
@@ -426,6 +558,7 @@ export const WeekView = () => {
               {/* `dir="ltr"`: a clock reading is a left-to-right token even in
                   an RTL layout. Without it bidi reorders "0:00 AM" to "AM 0:00". */}
               <div
+                data-cal-hour={hour}
                 dir="ltr"
                 className="flex min-h-[108px] -translate-y-[6px] items-start justify-end whitespace-nowrap border-e border-pqBorder px-[8px] pt-[11px] text-[11.5px] font-[500] text-pqMuted rtl:justify-start"
               >
@@ -440,6 +573,22 @@ export const WeekView = () => {
             </Fragment>
           ))}
         </div>
+        {mobile && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 end-0 z-[20] w-[28px] bg-gradient-to-l from-pqInner to-transparent"
+          />
+        )}
+        {swipeHint && mobile && (
+          <button
+            type="button"
+            onClick={dismissSwipeHint}
+            data-pq="cal-swipe-hint"
+            className="absolute bottom-[16px] start-1/2 z-[40] -translate-x-1/2 rounded-full bg-pqPop px-[14px] py-[8px] text-[12.5px] font-[600] text-pqText shadow-pqE2"
+          >
+            {t('cal_swipe_for_days', 'Swipe sideways for more days')}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -501,7 +650,7 @@ export const MonthView = () => {
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="sticky top-0 z-[20] flex h-[54px] min-w-0 items-center justify-center overflow-hidden border-b border-s border-pqBorder bg-pqInner px-[6px] text-[12.5px] font-[600] tracking-[0.01em] text-pqMuted"
+              className="sticky top-0 z-[30] flex h-[54px] min-w-0 items-center justify-center overflow-hidden border-b border-s border-pqBorder bg-pqInner px-[6px] text-[12.5px] font-[600] tracking-[0.01em] text-pqMuted"
             >
               <span className="truncate">{day}</span>
             </div>
@@ -522,6 +671,9 @@ export const MonthView = () => {
 export const ListView = () => {
   const t = useT();
   const user = useUser();
+  const fetch = useFetch();
+  const modal = useModals();
+  const { longDatePattern } = useDateFormat();
   const {
     loading,
     listPosts,
@@ -530,6 +682,12 @@ export const ListView = () => {
     listTotal,
     listTotalPages,
     setListPage,
+    listSort,
+    listRange,
+    setListRange,
+    integrations,
+    reloadCalendarView,
+    sets,
   } = useCalendar();
   const emptyMessage =
     listState === 'scheduled'
@@ -539,6 +697,88 @@ export const ListView = () => {
       : listState === 'published'
       ? t('no_published_posts', 'No published posts')
       : t('no_posts', 'No posts');
+  const emptySubtitle =
+    listState === 'scheduled'
+      ? t(
+          'list_empty_scheduled_hint',
+          'Nothing matches this filter. Try All dates or create a post.'
+        )
+      : listState === 'draft'
+      ? t(
+          'list_empty_draft_hint',
+          'Save a draft from Create Post, or move a scheduled post to drafts.'
+        )
+      : listState === 'published'
+      ? t(
+          'list_empty_published_hint',
+          'Published posts will show up here once they go live.'
+        )
+      : t(
+          'list_empty_all_hint',
+          'No posts yet. Create one to get started.'
+        );
+
+  // Same blank-compose path as header Create Post (NewPost.createAPost).
+  const createPost = useCallback(async () => {
+    const date = (await (await fetch('/posts/find-slot')).json()).date;
+
+    const set: any = !sets.length
+      ? undefined
+      : await new Promise((resolve) => {
+          modal.openModal({
+            title: t('select_set', 'Select a Set'),
+            closeOnClickOutside: true,
+            closeOnEscape: true,
+            withCloseButton: false,
+            onClose: () => resolve('exit'),
+            classNames: {
+              modal: 'text-textColor',
+            },
+            children: (
+              <SetSelectionModal
+                sets={sets}
+                onSelect={(selectedSet) => {
+                  resolve(selectedSet);
+                  modal.closeAll();
+                }}
+                onContinueWithoutSet={() => {
+                  resolve(undefined);
+                  modal.closeAll();
+                }}
+              />
+            ),
+          });
+        });
+
+    if (set === 'exit') return;
+
+    modal.openModal({
+      id: 'add-edit-modal',
+      closeOnClickOutside: false,
+      removeLayout: true,
+      closeOnEscape: false,
+      withCloseButton: false,
+      askClose: true,
+      fullScreen: true,
+      classNames: {
+        modal: 'w-[100%] max-w-[1400px] text-textColor',
+      },
+      children: (
+        <AddEditModal
+          allIntegrations={integrations.map((p) => ({
+            ...p,
+          }))}
+          {...(set?.content ? { set: JSON.parse(set.content) } : {})}
+          reopenModal={createPost}
+          mutate={reloadCalendarView}
+          integrations={integrations}
+          date={dayjs.utc(date).local()}
+        />
+      ),
+      size: '80%',
+      title: ``,
+    });
+  }, [fetch, integrations, modal, reloadCalendarView, sets, t]);
 
   // Use shared post actions hook
   const {
@@ -549,7 +789,7 @@ export const ListView = () => {
     openMissingRelease,
   } = usePostActions();
 
-  // Group posts by date
+  // Group posts by date; day headers follow listSort (Newest → later days first).
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
@@ -559,8 +799,10 @@ export const ListView = () => {
       }
       groups[dateKey].push(post);
     });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [listPosts]);
+    return Object.entries(groups).sort(([a], [b]) =>
+      listSort === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
+    );
+  }, [listPosts, listSort]);
 
   const showMore = useCallback(
     () => setListPage(listPage + 1),
@@ -583,24 +825,36 @@ export const ListView = () => {
 
   if (listPosts.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-[10px] py-[80px] text-center">
-        <span className="grid size-[44px] place-items-center rounded-[13px] bg-pqSettings text-pqSoft">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none">
-            <path
-              d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19V6a1.5 1.5 0 0 1 1.5-1.5Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-            />
-            <path
-              d="M6.5 9h11M6.5 12.5h11M6.5 16h7"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
+      <div className="flex flex-1 flex-col items-center justify-center gap-[20px] px-[26px] py-[80px] text-center">
+        <span className="grid size-[76px] place-items-center rounded-full bg-pqBrandFaint">
+          <PostQueenLogo
+            tileClassName="size-[52px]"
+            glyphClassName="size-[28px]"
+          />
         </span>
-        <div className="text-[14.5px] font-[600] text-pqText">
-          {emptyMessage}
+        <div className="max-w-[360px]">
+          <div className="text-[15px] font-[600] text-pqText">{emptyMessage}</div>
+          <div className="mt-[8px] text-[13px] leading-[1.6] text-pqMuted">
+            {emptySubtitle}
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-[16px]">
+          <button
+            type="button"
+            onClick={createPost}
+            className="h-[34px] min-w-[180px] rounded-pqSm bg-pqBrand px-[18px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+          >
+            {t('create_new_post', 'Create Post')}
+          </button>
+          {listRange !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setListRange('all')}
+              className="text-[12.5px] font-[500] text-pqSoft underline-offset-[3px] transition-colors hover:text-pqMuted hover:underline"
+            >
+              {t('show_all_dates', 'Show all dates')}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -608,15 +862,13 @@ export const ListView = () => {
 
   return (
     <div className="relative flex flex-1 flex-col">
-      <div className="absolute inset-0 overflow-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner">
+      <div className="absolute inset-0 overflow-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner [scrollbar-gutter:stable]">
         <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
           {groupedPosts.map(([dateKey, datePosts]) => (
             <Fragment key={dateKey}>
-              <div className="flex items-center gap-[10px] px-[2px] pb-[9px] pt-[18px]">
+              <div className="flex items-center gap-[10px] pb-[9px] pt-[18px]">
                 <span className="shrink-0 text-[11.5px] font-[600] uppercase tracking-[0.05em] text-pqSoft">
-                  {newDayjs(dateKey).format(
-                    isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY'
-                  )}
+                  {newDayjs(dateKey).format(longDatePattern())}
                 </span>
                 <span className="h-[1px] flex-1 bg-pqLine" aria-hidden="true" />
                 <span className="shrink-0 text-[11.5px] text-pqSoft">
@@ -720,6 +972,7 @@ export const CalendarColumn: FC<{
   outOfMonth?: boolean;
 }> = memo((props) => {
   const t = useT();
+  const { formatShortWeekdayTime } = useDateFormat();
 
   const { getDate, randomHour, outOfMonth } = props;
   const [num, setNum] = useState(0);
@@ -756,7 +1009,7 @@ export const CalendarColumn: FC<{
         display === 'day' || display === 'week'
           ? pList.isSameOrAfter(getDate.startOf('hour')) &&
             pList.isBefore(getDate.endOf('hour'))
-          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
+          : pList.isSame(getDate, 'day');
       return check;
     });
   }, [posts, display, getDate]);
@@ -811,6 +1064,12 @@ export const CalendarColumn: FC<{
       accept: 'post',
       drop: async (item: any) => {
         if (isBeforeNow) return;
+
+        // Month cells arrive as endOf('day'); schedule at noon instead of 23:59.
+        const dropAt =
+          display === 'month'
+            ? getDate.startOf('day').hour(12).minute(0).second(0)
+            : getDate;
 
         // Find the post to check its state
         const post = posts.find((p) => p.id === item.id);
@@ -878,21 +1137,21 @@ export const CalendarColumn: FC<{
         }
 
         if (!item.interval) {
-          changeDate(item.id, getDate);
+          changeDate(item.id, dropAt);
         }
         const { status } = await fetch(`/posts/${item.id}/date`, {
           method: 'PUT',
           body: JSON.stringify({
-            date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+            date: dropAt.utc().format('YYYY-MM-DDTHH:mm:ss'),
             action,
           }),
         });
-        if (status !== 500) {
+        if (status >= 200 && status < 300) {
           if (action === 'schedule') {
             toaster.show(
               t('scheduled_for_when', 'Scheduled for {when}').replace(
                 '{when}',
-                getDate.format('ddd · HH:mm')
+                formatShortWeekdayTime(dropAt)
               ),
               'success'
             );
@@ -916,7 +1175,18 @@ export const CalendarColumn: FC<{
           : !!monitor.canDrop() && !monitor.isOver(),
       }),
     }),
-    [posts, changeDate, fetch, getDate, modal, reloadCalendarView, t, toaster]
+    [
+      posts,
+      changeDate,
+      fetch,
+      getDate,
+      display,
+      modal,
+      reloadCalendarView,
+      t,
+      toaster,
+      isBeforeNow,
+    ]
   );
 
   const addModal = useCallback(async () => {
@@ -1227,6 +1497,7 @@ const CalendarItem: FC<{
   };
 }> = memo((props) => {
   const t = useT();
+  const { timePattern } = useDateFormat();
   const {
     editPost,
     duplicatePost,
@@ -1234,10 +1505,13 @@ const CalendarItem: FC<{
     post,
     date,
     isBeforeNow,
-    state,
+    state: rawState,
     deletePost,
     lineClamp = 2,
   } = props;
+  const state = displayPostState(rawState, post.publishDate);
+  // Past QUEUE paints as Published, but the API row is still editable QUEUE.
+  const canEdit = rawState !== 'PUBLISHED';
   const user = useUser();
   const demo = isClientDemoPost(post.id);
   const { explain: explainDemo, demoTooltip } = useDemoPostAction();
@@ -1286,6 +1560,9 @@ const CalendarItem: FC<{
         interval: !!post.intervalInDays,
         date,
         state: post.state,
+        // Distinguishes calendar→Posts-panel (convert to draft on any tab)
+        // from list→Scheduled (put-back / cancel reschedule, leave QUEUE).
+        source: 'calendar' as const,
       },
       canDrag: !demo,
       collect: (monitor) => ({
@@ -1297,12 +1574,16 @@ const CalendarItem: FC<{
     }),
     [demo, post.id, post.intervalInDays, post.state, date]
   );
-  // The accent stripe carries the tag colour when the post has one, which is
-  // where the tag used to be visible before the actions moved off the top bar.
+  // The accent stripe: tag colour when tagged; else published → ok, draft →
+  // soft brand stripe (day view), otherwise brand for scheduled.
   const accent = post?.tags?.[0]?.tag?.color
     ? post.tags[0].tag.color
+    : state === 'PUBLISHED'
+    ? 'var(--ok)'
     : state === 'DRAFT'
-    ? 'var(--brand)'
+    ? 'var(--soft)'
+    : state === 'ERROR'
+    ? 'var(--warn)'
     : 'var(--brand)';
   const tagNames = post.tags.map((p) => p.tag.name).join(', ');
   const actionButton =
@@ -1313,7 +1594,7 @@ const CalendarItem: FC<{
   const timeLabel = dayjs
     .utc(post.publishDate)
     .local()
-    .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm');
+    .format(timePattern());
 
   // Month view: compact 24px chips (prototype data-mpost), not full week cards.
   if (props.display === 'month') {
@@ -1327,7 +1608,8 @@ const CalendarItem: FC<{
         className={clsx(
           'relative z-[2] flex h-[24px] w-full min-w-0 shrink-0 cursor-pointer items-center gap-[5px] overflow-hidden rounded-[6px] bg-pqPop pe-[6px] ps-[4px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
           state === 'ERROR' && 'ring-1 ring-pqDanger',
-          isBeforeNow && 'opacity-70 grayscale'
+          state === 'PUBLISHED' &&
+            'shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ok)_35%,var(--border))]'
         )}
         style={{ opacity }}
       >
@@ -1335,6 +1617,11 @@ const CalendarItem: FC<{
           className="h-[14px] w-[3px] shrink-0 rounded-[2px]"
           style={{ background: accent }}
           aria-hidden="true"
+        />
+        <img
+          className="size-[13px] shrink-0 rounded-[4px] object-cover"
+          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+          alt=""
         />
         <span className="relative size-[13px] shrink-0">
           <img
@@ -1375,7 +1662,8 @@ const CalendarItem: FC<{
         className={clsx(
           'group relative z-[2] flex w-full max-w-[560px] min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[9px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border),var(--e1)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
           state === 'ERROR' && 'ring-2 ring-pqDanger',
-          isBeforeNow && 'grayscale'
+          state === 'PUBLISHED' &&
+            'shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ok)_40%,var(--border)),var(--e1)]'
         )}
         style={{ opacity }}
       >
@@ -1395,29 +1683,41 @@ const CalendarItem: FC<{
             {contentPreview}
           </div>
           <div className="flex items-center gap-[7px]">
-            <span className="relative size-[16px] shrink-0">
-              <img
-                className="size-[16px] rounded-full object-cover"
-                src={post.integration.picture! || '/no-picture.jpg'}
-                alt=""
-              />
-              <img
-                className="absolute -bottom-[1px] -end-[1px] size-[9px] rounded-full ring-1 ring-pqBadgeRing"
-                src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-                alt=""
-              />
-            </span>
+            <img
+              className="size-[16px] shrink-0 rounded-[4px] object-cover"
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              alt=""
+            />
+            <img
+              className="size-[16px] shrink-0 rounded-full object-cover"
+              src={post.integration.picture! || '/no-picture.jpg'}
+              alt=""
+            />
             <span className="min-w-0 truncate text-[11.5px] text-pqSoft">
               {post.integration.name}
             </span>
             <span className="min-w-0 flex-1" />
+            {/* Status chip: design only shows Draft; owner wants Scheduled too
+                (Posts panel colours). Sits before time — actions are top-end. */}
+            {state === 'QUEUE' && (
+              <span className="flex shrink-0 items-center gap-[4px] text-[9.5px] font-[700] uppercase tracking-[0.04em] text-pqFocused">
+                <span
+                  className="size-[5px] rounded-full bg-pqFocused"
+                  aria-hidden
+                />
+                {t('scheduled', 'Scheduled')}
+              </span>
+            )}
             {state === 'DRAFT' && (
               <span className="shrink-0 text-[9.5px] font-[700] uppercase tracking-[0.04em] text-pqSoft">
                 {t('draft', 'Draft')}
               </span>
             )}
             {state === 'PUBLISHED' && (
-              <span className="size-[5px] shrink-0 rounded-full bg-pqOk" />
+              <span className="flex shrink-0 items-center gap-[4px] text-[9.5px] font-[700] uppercase tracking-[0.04em] text-pqOk">
+                <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
+                {t('published', 'Published')}
+              </span>
             )}
             {state === 'ERROR' && (
               <span
@@ -1449,7 +1749,7 @@ const CalendarItem: FC<{
               <CopyDebug />
             </button>
           )}
-          {state !== 'PUBLISHED' && (
+          {canEdit && (
             <button type="button" className={dayAction} onClick={onEdit}>
               <EditPost tooltip={demo ? demoTooltip : undefined} />
             </button>
@@ -1482,7 +1782,8 @@ const CalendarItem: FC<{
         // z-[2]: stay above empty-slot past label / hatch stacking if both ever coexist.
         'group relative z-[2] flex w-full min-w-0 shrink-0 cursor-pointer overflow-hidden rounded-[7px] bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:z-[3] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
         state === 'ERROR' && 'ring-2 ring-red-500',
-        isBeforeNow && 'grayscale'
+        state === 'PUBLISHED' &&
+          'shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ok)_40%,var(--border))]'
       )}
       style={{
         opacity,
@@ -1505,18 +1806,16 @@ const CalendarItem: FC<{
       />
       <div className="flex min-w-0 flex-1 flex-col gap-[3px] py-[5px] pe-[6px] ps-[7px]">
         <div className="flex min-w-0 items-center gap-[5px]">
-          <span className="relative size-[16px] shrink-0">
-            <img
-              className="size-[16px] rounded-full object-cover"
-              src={post.integration.picture! || '/no-picture.jpg'}
-              alt=""
-            />
-            <img
-              className="absolute -bottom-[1px] -end-[1px] size-[9px] rounded-full ring-1 ring-pqBadgeRing"
-              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-              alt=""
-            />
-          </span>
+          <img
+            className="size-[16px] shrink-0 rounded-[4px] object-cover"
+            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+            alt=""
+          />
+          <img
+            className="size-[16px] shrink-0 rounded-full object-cover"
+            src={post.integration.picture! || '/no-picture.jpg'}
+            alt=""
+          />
           <span className="shrink-0 text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
             {/* `dayjs.utc(...).local()`, the same reading the cell above uses to
                 decide which hour row this card belongs in. `newDayjs(x)` parses
@@ -1543,7 +1842,21 @@ const CalendarItem: FC<{
             </span>
           )}
           {state === 'PUBLISHED' && (
-            <span className="size-[5px] shrink-0 rounded-full bg-pqOk" />
+            <span className="flex shrink-0 items-center gap-[4px] text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqOk">
+              <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
+              {t('published', 'Published')}
+            </span>
+          )}
+          {/* Top-right status: design Draft chip + Scheduled (owner). Hover
+              actions stay bottom-end so they don't cover this. */}
+          {state === 'QUEUE' && (
+            <span className="flex shrink-0 items-center gap-[4px] text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqFocused">
+              <span
+                className="size-[5px] rounded-full bg-pqFocused"
+                aria-hidden
+              />
+              {t('scheduled', 'Scheduled')}
+            </span>
           )}
           {state === 'DRAFT' && (
             <span className="shrink-0 text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqSoft">
@@ -1576,7 +1889,7 @@ const CalendarItem: FC<{
             <CopyDebug />
           </button>
         )}
-        {state !== 'PUBLISHED' && (
+        {canEdit && (
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />
           </button>
@@ -1619,6 +1932,7 @@ const ListItem: FC<{
   };
 }> = memo((props) => {
   const t = useT();
+  const { timePattern } = useDateFormat();
   const {
     editPost,
     duplicatePost,
@@ -1629,7 +1943,9 @@ const ListItem: FC<{
     post,
   } = props;
   const { disableXAnalytics } = useVariables();
-  const state = post.state;
+  const state = displayPostState(post.state, post.publishDate);
+  // Same as calendar cells: display may say Published for past QUEUE.
+  const canEdit = post.state !== 'PUBLISHED';
   const demo = isClientDemoPost(post.id);
   const { explain: explainDemo, demoTooltip } = useDemoPostAction();
   // Design list cards always show the soft method pill (WEB/API/CLI/MCP).
@@ -1694,20 +2010,16 @@ const ListItem: FC<{
       />
       <div className="flex min-w-0 flex-1 flex-col gap-[9px] pb-[11px] pe-[13px] ps-[14px] pt-[12px]">
         <div className="flex min-w-0 items-center gap-[9px]">
-          <span className="relative size-[26px] shrink-0">
-            <img
-              className="size-[26px] rounded-[8px] object-cover"
-              src={post.integration.picture! || '/no-picture.jpg'}
-              alt=""
-            />
-            <span className="absolute -bottom-[4px] -end-[4px] grid size-[15px] place-items-center rounded-full bg-pqBadgeRing">
-              <img
-                className="size-[11px] rounded-full"
-                src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-                alt=""
-              />
-            </span>
-          </span>
+          <img
+            className="size-[26px] shrink-0 rounded-[8px] object-cover"
+            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+            alt=""
+          />
+          <img
+            className="size-[26px] shrink-0 rounded-[8px] object-cover"
+            src={post.integration.picture! || '/no-picture.jpg'}
+            alt=""
+          />
           <span className="min-w-0 truncate text-[13px] font-[600] text-pqText">
             {post.integration.name}
           </span>
@@ -1715,7 +2027,7 @@ const ListItem: FC<{
             {dayjs
               .utc(post.publishDate)
               .local()
-              .format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+              .format(timePattern())}
           </span>
           <span className="min-w-0 flex-1" />
           {state === 'ERROR' && (
@@ -1795,7 +2107,7 @@ const ListItem: FC<{
             <CopyDebug />
           </button>
         )}
-        {state !== 'PUBLISHED' && (
+        {canEdit && (
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />
           </button>
@@ -1846,6 +2158,7 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
   ({ hour, day }) => {
     const t = useT();
     const user = useUser();
+    const { formatShortWeekdayTime } = useDateFormat();
     const getDate = useMemo(
       () => day.hour(hour).startOf('hour'),
       [day, hour]
@@ -1881,11 +2194,17 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
       });
     }, [posts, getDate]);
 
+    const [hourTick, setHourTick] = useState(0);
     const isBeforeNow = useMemo(() => {
       return getDate
         .startOf('hour')
         .isBefore(newDayjs().startOf('hour').utc());
-    }, [getDate]);
+    }, [getDate, hourTick]);
+
+    useEffect(() => {
+      const id = window.setInterval(() => setHourTick((n) => n + 1), 60_000);
+      return () => window.clearInterval(id);
+    }, []);
 
     const [{ canDrop, isTarget }, drop] = useDrop(
       () => ({
@@ -1966,12 +2285,12 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
               action,
             }),
           });
-          if (status !== 500) {
+          if (status >= 200 && status < 300) {
             if (action === 'schedule') {
               toaster.show(
                 t('scheduled_for_when', 'Scheduled for {when}').replace(
                   '{when}',
-                  getDate.format('ddd · HH:mm')
+                  formatShortWeekdayTime(getDate)
                 ),
                 'success'
               );
@@ -2095,6 +2414,7 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
       <div
         ref={drop as any}
         data-dayslot="1"
+        data-cal-hour={hour}
         data-filled={postList.length ? '1' : '0'}
         data-past={isBeforeNow ? '1' : '0'}
         className={clsx(
@@ -2198,6 +2518,7 @@ const DayDraggableListItem: FC<{
         id: post.id,
         interval: !!post.intervalInDays,
         state: post.state,
+        source: 'calendar' as const,
       },
       canDrag: !demo,
       collect: (monitor) => ({

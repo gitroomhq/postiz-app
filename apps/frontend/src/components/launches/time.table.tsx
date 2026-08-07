@@ -17,6 +17,7 @@ import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.windo
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 import clsx from 'clsx';
 import {
   TrashIcon,
@@ -50,6 +51,7 @@ export const TimeTable: FC<{
   const fetch = useFetch();
   const modal = useModals();
   const toast = useToaster();
+  const { timePattern } = useDateFormat();
   usePreventWindowUnload(true);
 
   // Scheduled Times is low-stakes — Escape/X discard unsaved slot edits by
@@ -103,11 +105,11 @@ export const TimeTable: FC<{
           .startOf('day')
           .add(time, 'minutes')
           .local()
-          .format('HH:mm'),
+          .format(timePattern()),
       })),
       (p) => p.value
     );
-  }, [currentTimes]);
+  }, [currentTimes, timePattern]);
 
   const save = useCallback(async () => {
     await fetch(`/integrations/${props.integration.id}/time`, {

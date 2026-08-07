@@ -209,12 +209,6 @@ export const Rail: FC<RailProps> = ({
               type="button"
               data-keepdrawer="1"
               data-sb-pin="1"
-              data-tooltip-id="tooltip"
-              data-tooltip-content={
-                rc
-                  ? t('pin_sidebar', 'Pin sidebar')
-                  : t('unpin_sidebar', 'Unpin sidebar')
-              }
               onClick={() => {
                 if (!rc) setHovSuppressed(true);
                 onToggleCollapse();
@@ -358,7 +352,11 @@ export const Rail: FC<RailProps> = ({
 
         <div
           data-sb-foot="1"
-          className="mt-auto flex shrink-0 flex-col gap-[1px] border-t border-pqLine pt-[6px]"
+          // Pinned to the rail bottom: outside [data-sb-scroll], mt-auto +
+          // shrink-0, opaque bg so page content cannot show through. Chatbase
+          // must stay bottom-trailing (see chatbase.component / global.scss)
+          // or it covers this block.
+          className="mt-auto flex shrink-0 flex-col gap-[1px] border-t border-pqLine bg-pqRail pt-[6px]"
         >
           <OrganizationSelector variant="rail" collapsed={rc} />
           {showSettings && (

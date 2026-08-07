@@ -22,7 +22,10 @@ export const BillingAdminRequiredComponent = () => {
   const t = useT();
 
   return (
-    <div className="flex flex-1 flex-col bg-pqBg">
+    <div
+      data-pq-admin-required="1"
+      className="flex min-h-0 flex-1 flex-col bg-pqBg"
+    >
       <div className="flex h-[68px] shrink-0 items-center gap-[14px] border-b border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:!px-[16px]">
         <PostQueenLogo
           wordmark

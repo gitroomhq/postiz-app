@@ -4,6 +4,10 @@ import { FC, useState } from 'react';
 import Link from 'next/link';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { trialWindow } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import dayjs from 'dayjs';
 
 export type TrialLockCardProps = {
   /** Short name for titles/CTAs — e.g. "X", "AI Copilot". */
@@ -11,7 +15,10 @@ export type TrialLockCardProps = {
   title: string;
   description: string;
   perks: string[];
-  /** Optional real trial-end date; never invent one. */
+  /**
+   * Optional trial-end date override. When omitted, derived from
+   * `trialWindow(user.createdAt)` — same clock as billing heroes. Never invent.
+   */
   unlocksOn?: Date | string | null;
   /** Card sits in a page (channel step) vs centered modal overlay (AI). */
   variant?: 'inline' | 'overlay';
@@ -30,19 +37,21 @@ export const TrialLockCard: FC<TrialLockCardProps> = ({
   variant = 'inline',
 }) => {
   const t = useT();
+  const user = useUser();
   const [finishTrial, setFinishTrial] = useState(false);
+  const { shortDatePattern } = useDateFormat();
+
+  const endsAt =
+    unlocksOn !== undefined && unlocksOn !== null
+      ? unlocksOn
+      : trialWindow(user?.createdAt).endsAt;
 
   let foot: string;
-  if (unlocksOn) {
-    const d =
-      typeof unlocksOn === 'string' ? new Date(unlocksOn) : unlocksOn;
+  if (endsAt) {
+    const d = typeof endsAt === 'string' ? new Date(endsAt) : endsAt;
     const formatted = Number.isNaN(d.getTime())
       ? null
-      : d.toLocaleDateString(undefined, {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        });
+      : dayjs(d).format(shortDatePattern());
     foot = formatted
       ? t(
           'or_wait_unlocks_on_date',
@@ -126,18 +135,26 @@ export const TrialLockCard: FC<TrialLockCardProps> = ({
       </div>
 
       <div className="relative mt-[2px] flex w-full justify-center">
+        {/* Design AI/X lock CTA: bloom halo + button glow + sheen sweep
+            (pqbtnbloom / pqbtnglow / pqbtnsheen). `pq-loop` gates reduced motion. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-x-[26px] -inset-y-[18px] rounded-full bg-[radial-gradient(60%_100%_at_50%_50%,rgba(124,58,237,.5),rgba(124,58,237,0)_72%)] blur-[14px]"
+          className="pq-loop pointer-events-none absolute -inset-x-[26px] -inset-y-[18px] rounded-full bg-[radial-gradient(60%_100%_at_50%_50%,rgba(124,58,237,.5),rgba(124,58,237,0)_72%)] blur-[14px] animate-pqBtnBloom"
         />
         <button
           type="button"
           onClick={() => setFinishTrial(true)}
-          className="relative h-[44px] w-full overflow-hidden rounded-[12px] bg-pqBrand text-[14px] font-[600] text-pqOnBrand transition-[filter] hover:brightness-110"
+          className="pq-loop relative h-[44px] w-full overflow-hidden rounded-[12px] bg-pqBrand text-[14px] font-[600] text-pqOnBrand animate-pqBtnGlow transition-[filter] hover:brightness-110"
         >
-          {t('end_trial_to_unlock', 'End free trial to unlock {{name}}', {
-            name,
-          })}
+          <span
+            aria-hidden="true"
+            className="pq-loop pointer-events-none absolute inset-y-0 start-0 w-[44%] bg-[linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.42),rgba(255,255,255,0))] animate-pqBtnSheen"
+          />
+          <span className="relative">
+            {t('end_trial_to_unlock', 'End free trial to unlock {{name}}', {
+              name,
+            })}
+          </span>
         </button>
       </div>
 
@@ -151,7 +168,9 @@ export const TrialLockCard: FC<TrialLockCardProps> = ({
         )}
       </Link>
 
-      <div className="text-[12.5px] text-pqSoft">{foot}</div>
+      <div className="w-full text-center text-[12.5px] text-pqSoft text-pretty">
+        {foot}
+      </div>
 
       {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
     </div>

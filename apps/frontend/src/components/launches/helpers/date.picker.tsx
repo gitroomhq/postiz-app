@@ -3,10 +3,12 @@ import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
-import { isUSCitizen } from './isuscitizen.utils';
+import { useDateFormat } from './date.format';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
@@ -14,6 +16,13 @@ export const DatePicker: FC<{
   const { date, onChange } = props;
   const [open, setOpen] = useState(false);
   const t = useT();
+  const { dateTimePattern } = useDateFormat();
+  // Fixed positioning escapes Create Post footer's overflow-y-hidden and the
+  // shell's overflow-hidden (absolute bottom-[100%] was clipped behind chrome).
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(open, 'start', { offsetPx: 16, placement: 'top' });
 
   const changeShow = useCallback(() => {
     setOpen((prev) => !prev);
@@ -36,19 +45,23 @@ export const DatePicker: FC<{
   return (
     <div
       className="px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1"
-      onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">
-        <CalendarIcon />
-      </div>
-      <div className="cursor-pointer">
-        {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
+      <div
+        className="flex flex-1 cursor-pointer items-center justify-center gap-[8px]"
+        onClick={changeShow}
+        ref={referenceRef}
+      >
+        <div>
+          <CalendarIcon />
+        </div>
+        <div>{date.format(dateTimePattern())}</div>
       </div>
       {open && (
         <div
+          ref={floatingRef}
           onClick={(e) => e.stopPropagation()}
-          className="animate-fadeIn absolute bottom-[100%] mb-[16px] start-[50%] -translate-x-[50%] bg-pqPop border border-pqBorder text-pqText rounded-[16px] z-[300] p-[16px] flex flex-col shadow-pqE2"
+          className="animate-fadeIn z-[300] flex flex-col rounded-[16px] border border-pqBorder bg-pqPop p-[16px] text-pqText shadow-pqE2"
         >
           <Calendar
             onChange={changeDate('date')}

@@ -30,11 +30,13 @@ import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
 import Link from '@tiptap/extension-link';
 import NextLink from 'next/link';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import {
   useEditor,
   EditorContent,
@@ -70,6 +72,34 @@ import {
 import { DelayComponent } from '@gitroom/frontend/components/new-launch/delay.component';
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
+
+/** Copilot bindings only mount when AI is configured (needs CopilotKit provider). */
+const EditorCopilotBindings: FC<{
+  contents: string[];
+  setValue: (content: string[]) => void;
+}> = ({ contents, setValue }) => {
+  useCopilotReadable({
+    description: 'Current content of posts',
+    value: contents,
+  });
+
+  useCopilotAction({
+    name: 'setPosts',
+    description: 'a thread of posts',
+    parameters: [
+      {
+        name: 'content',
+        type: 'string[]',
+        description: 'a thread of posts',
+      },
+    ],
+    handler: async ({ content }) => {
+      setValue(content);
+    },
+  });
+
+  return null;
+};
 
 const InterceptBoldShortcut = Extension.create({
   name: 'preventBoldWithUnderline',
@@ -217,25 +247,7 @@ export const EditorWrapper: FC<{
     [internal, items]
   );
 
-  useCopilotReadable({
-    description: 'Current content of posts',
-    value: items.map((p) => p.content),
-  });
-
-  useCopilotAction({
-    name: 'setPosts',
-    description: 'a thread of posts',
-    parameters: [
-      {
-        name: 'content',
-        type: 'string[]',
-        description: 'a thread of posts',
-      },
-    ],
-    handler: async ({ content }) => {
-      setValue(content);
-    },
-  });
+  const { aiEnabled } = useVariables();
 
   const changeValue = useCallback(
     (index: number) => (value: string) => {
@@ -367,6 +379,12 @@ export const EditorWrapper: FC<{
           'bg-pqSettings rounded-[12px]'
       )}
     >
+      {aiEnabled && (
+        <EditorCopilotBindings
+          contents={items.map((p) => p.content)}
+          setValue={setValue}
+        />
+      )}
       {isCreateSet && current !== 'global' && (
         <>
           <div className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
@@ -725,11 +743,30 @@ export const Editor: FC<{
           <div {...getRootProps()} className="flex flex-1 flex-col">
             <div
               className={clsx(
-                'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
-                !isDragActive ? 'pointer-events-none opacity-0' : 'opacity-100'
+                // Solid cover like DropFiles — never frost thumbs through.
+                'absolute left-0 top-0 z-[300] flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-pqSm bg-pqInner shadow-[inset_0_0_0_2px_var(--brand)] transition-opacity',
+                !isDragActive
+                  ? 'pointer-events-none opacity-0'
+                  : 'opacity-100'
               )}
             >
-              {t('drop_files_here_to_upload', 'Drop your files here to upload')}
+              <span className="grid h-[40px] w-[40px] place-items-center rounded-[12px] bg-pqBrand text-pqOnBrand">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                  <path
+                    d="M12 16V4M7.5 8.5 12 4l4.5 4.5M4 20h16"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <div className="text-[14px] font-[600] text-pqText">
+                {t(
+                  'drop_files_here_to_upload',
+                  'Drop your files here to upload'
+                )}
+              </div>
             </div>
             <div className="px-[10px] pt-[10px] bg-pqInner rounded-t-[6px] relative z-[99]">
               <OnlyEditor
@@ -773,55 +810,96 @@ export const Editor: FC<{
                 editorRef?.current?.editor?.commands?.focus('end');
               }}
             />
-            {/* Raise: design routes Claude/ChatGPT into an aiagents picker; repo
-                WORK is /connections (MCP). Banner is LOOK + deep-link only. */}
+            {/* Ephemeral Connections tip — no filled panel; dismiss persists. */}
             {!num && !aiHintOff && !valueWithoutHtml.trim() && (
-              <div className="mx-[2px] mb-[4px] mt-[12px] flex items-center gap-[10px] rounded-[12px] bg-[linear-gradient(100deg,color-mix(in_srgb,var(--brand)_16%,transparent),color-mix(in_srgb,var(--focused)_10%,transparent))] p-[12px_13px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand)_24%,transparent)]">
-                <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-[linear-gradient(135deg,var(--focused),var(--brand))] text-pqOnBrand">
+              <div className="mx-[2px] mb-[2px] mt-[10px] flex flex-wrap items-center gap-x-[12px] gap-y-[8px] border-t border-pqLine pt-[12px]">
+                <span
+                  className="grid h-[28px] w-[28px] shrink-0 place-items-center text-pqBrand"
+                  aria-hidden="true"
+                >
                   <svg
                     viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    fill="none"
                   >
-                    <path d="M12 4l1.85 4.65L18.5 10.5l-4.65 1.85L12 17l-1.85-4.65L5.5 10.5l4.65-1.85L12 4Z" />
+                    <path
+                      d="M12 3.5 13.1 8.4 18 9.5l-4.9 1.1L12 15.5l-1.1-4.9L6 9.5l4.9-1.1L12 3.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M18.5 14.5 19.1 16.4 21 17l-1.9.6-.6 1.9-.6-1.9L16 17l1.9-.6.6-1.9Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M5.5 15.5 5.9 16.7 7.1 17.1 5.9 17.5 5.5 18.7 5.1 17.5 3.9 17.1 5.1 16.7 5.5 15.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-[1px]">
-                  <span className="text-[13px] font-[600] text-pqText">
-                    {t('let_ai_write_this_post', 'Let AI write this post')}
+                <span className="flex min-w-[180px] flex-1 flex-col gap-[2px]">
+                  <span className="text-[13.5px] font-[600] tracking-[-0.01em] text-pqText">
+                    {t('let_ai_write_this_post', 'Draft with your AI')}
                   </span>
-                  <span className="text-[12px] text-pqMuted">
+                  <span className="text-[12.5px] leading-[1.45] text-pqMuted">
                     {t(
                       'let_ai_write_this_post_sub',
-                      'Use PostQueen from Claude, ChatGPT or your own agent'
+                      'Connect Claude, ChatGPT, OpenClaw or Hermes — then ask them to draft this post'
                     )}
                   </span>
                 </span>
-                <NextLink
-                  href="/connections"
-                  className="flex h-[30px] shrink-0 items-center gap-[6px] rounded-full bg-pqInner ps-[7px] pe-[11px] text-[12px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
-                >
-                  <span className="grid h-[19px] w-[19px] place-items-center rounded-[6px] bg-pqSettings text-[9px] font-[700] text-pqText">
-                    C
-                  </span>
-                  {t('claude', 'Claude')}
-                </NextLink>
-                <NextLink
-                  href="/connections"
-                  className="flex h-[30px] shrink-0 items-center gap-[6px] rounded-full bg-pqInner ps-[7px] pe-[11px] text-[12px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
-                >
-                  <span className="grid h-[19px] w-[19px] place-items-center rounded-[6px] bg-pqSettings text-[9px] font-[700] text-pqText">
-                    G
-                  </span>
-                  {t('chatgpt', 'ChatGPT')}
-                </NextLink>
+                <span className="flex shrink-0 flex-wrap items-center gap-[6px]">
+                  {(
+                    [
+                      {
+                        id: 'claude',
+                        label: t('claude', 'Claude'),
+                        icon: '/icons/connections/claude.svg',
+                      },
+                      {
+                        id: 'chatgpt',
+                        label: t('chatgpt', 'ChatGPT'),
+                        icon: '/icons/connections/chatgpt.svg',
+                      },
+                      {
+                        id: 'openclaw',
+                        label: t('openclaw', 'OpenClaw'),
+                        icon: '/icons/connections/openclaw.svg',
+                      },
+                      {
+                        id: 'hermes',
+                        label: t('hermes', 'Hermes'),
+                        icon: '/icons/connections/hermes.svg',
+                      },
+                    ] as const
+                  ).map((tool) => (
+                    <NextLink
+                      key={tool.id}
+                      href="/connections"
+                      className="flex h-[28px] shrink-0 items-center gap-[6px] rounded-full ps-[6px] pe-[10px] text-[12px] font-[600] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+                    >
+                      <SafeImage
+                        src={tool.icon}
+                        alt=""
+                        width={17}
+                        height={17}
+                        className="h-[17px] w-[17px] shrink-0 rounded-[5px] object-contain"
+                      />
+                      {tool.label}
+                    </NextLink>
+                  ))}
+                </span>
                 <button
                   type="button"
                   onClick={dismissAiHint}
                   aria-label={t('hide', 'Hide')}
-                  className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                  className="ms-auto grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -861,7 +939,7 @@ export const Editor: FC<{
                     />
                   }
                   toolBar={
-                    <div className="flex gap-[5px]">
+                    <div className="flex flex-wrap items-center gap-[6px]">
                       <SignatureBox editor={editorRef?.current?.editor} />
                       {editorType !== 'none' && (
                         <>
@@ -895,7 +973,7 @@ export const Editor: FC<{
                       <div
                         data-tooltip-id="tooltip"
                         data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-pqColColor flex justify-center items-center"
+                        className="flex h-[36px] w-[36px] cursor-pointer select-none items-center justify-center rounded-[8px] bg-pqBtnSimple text-pqText transition-colors hover:bg-pqHover"
                         onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                       >
                         <EmojiIcon />

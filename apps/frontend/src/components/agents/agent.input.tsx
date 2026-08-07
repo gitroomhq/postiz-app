@@ -177,12 +177,13 @@ export const Input = ({
                   ? 'copilot-chat-request-in-progress'
                   : 'copilot-chat-ready'
               }
-              className="copilotKitInputControlButton flex shrink-0 items-center justify-center"
+              className="copilotKitInputControlButton shrink-0"
+              data-pq-agent-send="1"
             >
               {isInProgress && !hideStopButton ? (
                 context.icons.stopIcon
               ) : (
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                   <path
                     d="M12 19V5M6 11l6-6 6 6"
                     stroke="currentColor"

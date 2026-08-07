@@ -11,7 +11,7 @@ import { CopilotKit } from '@copilotkit/react-core';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
-  const { backendUrl } = useVariables();
+  const { backendUrl, aiEnabled } = useVariables();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -22,19 +22,26 @@ export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
     refreshWhenOffline: false,
     refreshWhenHidden: false,
   });
+  const chrome = (
+    <MantineWrapper>
+      <Toaster />
+      <ToolTip />
+      {children}
+    </MantineWrapper>
+  );
   return (
     <ContextWrapper user={user}>
-      <CopilotKit
-        credentials="include"
-        runtimeUrl={backendUrl + '/copilot/chat'}
-        showDevConsole={false}
-      >
-        <MantineWrapper>
-          <Toaster />
-          <ToolTip />
-          {children}
-        </MantineWrapper>
-      </CopilotKit>
+      {aiEnabled ? (
+        <CopilotKit
+          credentials="include"
+          runtimeUrl={backendUrl + '/copilot/chat'}
+          showDevConsole={false}
+        >
+          {chrome}
+        </CopilotKit>
+      ) : (
+        chrome
+      )}
     </ContextWrapper>
   );
 };

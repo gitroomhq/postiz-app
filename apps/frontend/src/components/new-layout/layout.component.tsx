@@ -22,6 +22,7 @@ import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.comp
 import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { MediaSettingsLayout } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { Toaster } from '@gitroom/react/toaster/toaster';
+import { NotificationsLiveBridge } from '@gitroom/frontend/components/notifications/live.bridge';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
 import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
 import { Support } from '@gitroom/frontend/components/layout/support';
@@ -48,7 +49,7 @@ import {
 } from '@gitroom/frontend/components/layout/use.viewport';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { Tour } from '@gitroom/frontend/components/onboarding/tour';
+import { Tour, useTourStepKey } from '@gitroom/frontend/components/onboarding/tour';
 import {
   DevBillingStageProvider,
   useDevBillingStage,
@@ -57,9 +58,9 @@ import { DevBillingStageSwitcher } from '@gitroom/frontend/components/billing/de
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { isDevBillingStageEnabled } from '@gitroom/frontend/components/billing/dev-billing-stage';
 
-/** A fixed vertical divider for the header. */
+/** Quiet hairline between header action strip and identity. Spacing comes from the parent gap. */
 const HeaderDivider = () => (
-  <div className="mx-[5px] h-[20px] w-[1px] shrink-0 bg-pqLine" />
+  <div className="h-[20px] w-[1px] shrink-0 bg-pqLine" aria-hidden="true" />
 );
 
 /**
@@ -77,7 +78,7 @@ const HeaderIcon = ({ children }: { children: ReactNode }) => (
 
 /** Chrome placeholder shown while the user request is in flight. */
 const LayoutSkeleton = () => (
-  <div className="flex min-h-screen w-full flex-col text-newTextColor">
+  <div className="flex h-dvh max-h-dvh w-full flex-col overflow-hidden text-newTextColor">
     <div className="flex h-[56px] shrink-0 items-center gap-[12px] border-b border-pqRailLine bg-pqRail pe-[16px]">
       <div className="flex h-[56px] w-[236px] shrink-0 items-center gap-[9px] border-e border-pqRailLine px-[12px]">
         <span className="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-pqBrand">
@@ -152,8 +153,18 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
 
   const closeDrawer = useCallback(() => setDrawer(false), []);
 
-  const showFoundingChip =
-    !mobile && (!!user?.isLifetime || !!user?.isTrailing);
+  // Tour steps that spotlight rail targets need the mobile drawer open —
+  // otherwise `connect-pq` / `nav-channels` measure nothing off-screen.
+  const tourStep = useTourStepKey();
+  useEffect(() => {
+    if (!mobile) return;
+    if (tourStep === 'connect-pq' || tourStep === 'nav-channels') {
+      setDrawer(true);
+    }
+  }, [mobile, tourStep]);
+
+  // Lifetime / founding only — not ordinary trials (matches rail isFoundingRail).
+  const showFoundingChip = !mobile && !!user?.isLifetime;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -217,18 +228,19 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
           </span>
         )}
 
-        {/* Filled by the page, if it has a primary action. */}
-        <HeaderActionSlot />
-        <div className="flex items-center gap-[2px] text-pqMuted">
-          <StreakComponent />
+        {/* End cluster: Create Post → tools → identity. One hairline only. */}
+        <div className="flex shrink-0 items-center gap-[10px]">
+          <HeaderActionSlot />
+          <div className="flex items-center gap-[4px] text-pqMuted">
+            <StreakComponent />
+            <HelpMenu />
+            <HeaderIcon>
+              <NotificationComponent />
+            </HeaderIcon>
+          </div>
           <HeaderDivider />
-          <HelpMenu />
-          <HeaderIcon>
-            <NotificationComponent />
-          </HeaderIcon>
+          <UserMenu />
         </div>
-        <HeaderDivider />
-        <UserMenu />
       </header>
 
       <div
@@ -272,65 +284,82 @@ const LayoutBody = ({
   overlay?: ReactNode;
   mutate: () => void;
 }) => {
-  const { backendUrl, billingEnabled, isGeneral } = useVariables();
+  const { backendUrl, billingEnabled, isGeneral, aiEnabled } = useVariables();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { overriddenUser, finishTrialPreviewOpen, closeFinishTrialPreview } =
     useDevBillingStage();
 
+  // Without OPENAI_API_KEY the backend returns plain 503 JSON from /copilot/chat;
+  // CopilotKit treats that as a Network CombinedError and Next overlays it on
+  // every page. Skip the provider when AI is not configured.
+  const chrome = (
+    <MantineWrapper>
+      <ToolTip />
+      <Toaster />
+      <NotificationsLiveBridge />
+      <TrialTracker />
+      <CheckPayment
+        check={searchParams.get('check') || ''}
+        mutate={mutate}
+      >
+        <ShowMediaBoxModal />
+        <ShowLinkedinCompany />
+        <MediaSettingsLayout />
+        <ShowPostSelector />
+        <PreConditionComponent />
+        <NewSubscription />
+        <ContinueProvider />
+        {/* h-dvh + overflow-hidden: chrome (and the rail footer) stay
+            viewport-tall. min-h-screen alone lets flex-1 grow with page
+            content and parks Settings / Upgrade below the fold. */}
+        <div className="flex h-dvh max-h-dvh w-full flex-col overflow-hidden text-newTextColor">
+          <div className="shrink-0">
+            {overriddenUser?.admin ? <Impersonate /> : <div />}
+          </div>
+          {isDevBillingStageEnabled() && <DevBillingStageSwitcher />}
+          {overriddenUser.tier === 'FREE' &&
+          isGeneral &&
+          billingEnabled &&
+          !pathname.startsWith('/billing/lifetime') ? (
+            ['ADMIN', 'SUPERADMIN'].includes(overriddenUser?.role!) ? (
+              <FirstBillingComponent />
+            ) : (
+              <BillingAdminRequiredComponent />
+            )
+          ) : (
+            <>
+              <div className="shrink-0">
+                <AnnouncementBanner />
+              </div>
+              <Support />
+              <AppChrome>{children}</AppChrome>
+              {overlay}
+              <Tour />
+            </>
+          )}
+        </div>
+        {finishTrialPreviewOpen && (
+          <FinishTrial close={closeFinishTrialPreview} dryRun />
+        )}
+      </CheckPayment>
+    </MantineWrapper>
+  );
+
   return (
     <ContextWrapper user={overriddenUser}>
       <ViewportProvider>
-        <CopilotKit
-          credentials="include"
-          runtimeUrl={backendUrl + '/copilot/chat'}
-          showDevConsole={false}
-        >
-          <MantineWrapper>
-            <ToolTip />
-            <Toaster />
-            <TrialTracker />
-            <CheckPayment
-              check={searchParams.get('check') || ''}
-              mutate={mutate}
-            >
-              <ShowMediaBoxModal />
-              <ShowLinkedinCompany />
-              <MediaSettingsLayout />
-              <ShowPostSelector />
-              <PreConditionComponent />
-              <NewSubscription />
-              <ContinueProvider />
-              <div className="flex flex-col min-h-screen w-full text-newTextColor">
-                <div>
-                  {overriddenUser?.admin ? <Impersonate /> : <div />}
-                </div>
-                {isDevBillingStageEnabled() && <DevBillingStageSwitcher />}
-                {overriddenUser.tier === 'FREE' &&
-                isGeneral &&
-                billingEnabled &&
-                !pathname.startsWith('/billing/lifetime') ? (
-                  ['ADMIN', 'SUPERADMIN'].includes(overriddenUser?.role!) ? (
-                    <FirstBillingComponent />
-                  ) : (
-                    <BillingAdminRequiredComponent />
-                  )
-                ) : (
-                  <>
-                    <AnnouncementBanner />
-                    <Support />
-                    <AppChrome>{children}</AppChrome>
-                    {overlay}
-                    <Tour />
-                  </>
-                )}
-              </div>
-              {finishTrialPreviewOpen && (
-                <FinishTrial close={closeFinishTrialPreview} dryRun />
-              )}
-            </CheckPayment>
-          </MantineWrapper>
-        </CopilotKit>
+        {aiEnabled ? (
+          <CopilotKit
+            credentials="include"
+            runtimeUrl={backendUrl + '/copilot/chat'}
+            showDevConsole={false}
+          >
+            {chrome}
+          </CopilotKit>
+        ) : (
+          chrome
+        )}
       </ViewportProvider>
     </ContextWrapper>
   );

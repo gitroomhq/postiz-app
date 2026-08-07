@@ -19,6 +19,7 @@ import { ShowAllProviders } from '@gitroom/frontend/components/new-launch/provid
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 import { useShallow } from 'zustand/react/shallow';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
@@ -30,6 +31,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { capitalize } from 'lodash';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
@@ -43,10 +45,14 @@ import { useShortlinkPreference } from '@gitroom/frontend/components/settings/sh
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import NextLink from 'next/link';
+import { useClickOutside } from '@mantine/hooks';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
+  const { aiEnabled } = useVariables();
   const { mobile } = useViewport();
   const ref = useRef(null);
   const existingData = useExistingData();
@@ -54,8 +60,20 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const [postNowOpen, setPostNowOpen] = useState(false);
   const toaster = useToaster();
   const modal = useModals();
+  const { formatShortWeekdayTime } = useDateFormat();
   const [showSettings, setShowSettings] = useState(false);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
+  // Footer overflow-y-hidden clips absolute menus; fixed popover escapes it.
+  const { referenceRef: postNowRef, floatingRef: postNowMenuRef } =
+    useAnchoredPopover<HTMLDivElement, HTMLDivElement>(postNowOpen, 'end', {
+      offsetPx: 10,
+      placement: 'top-end',
+    });
+  const postNowClickRef = useClickOutside(() => {
+    if (postNowOpen) {
+      setPostNowOpen(false);
+    }
+  });
 
   const { addEditSets, mutate, customClose, dummy } = props;
 
@@ -444,11 +462,31 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         if (!addEditSets) {
           mutate();
-          toaster.show(
-            !existingData.integration
-              ? t('added_successfully', 'Added successfully')
-              : t('updated_successfully', 'Updated successfully')
-          );
+          if (type === 'draft') {
+            toaster.show(
+              t('saved_as_draft', 'Saved as draft'),
+              'success'
+            );
+          } else if (type === 'schedule') {
+            toaster.show(
+              t('scheduled_for_when', 'Scheduled for {when}').replace(
+                '{when}',
+                formatShortWeekdayTime(date.local())
+              ),
+              'success'
+            );
+          } else if (type === 'now') {
+            toaster.show(
+              t('publishing_now', 'Publishing now…'),
+              'success'
+            );
+          } else {
+            toaster.show(
+              !existingData.integration
+                ? t('added_successfully', 'Added successfully')
+                : t('updated_successfully', 'Updated successfully')
+            );
+          }
         }
         if (customClose) {
           setTimeout(() => {
@@ -525,7 +563,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     </div>
                   </div>
                   <div className="flex flex-1 gap-[6px] flex-col">
-                    <div>{!existingData.integration && <SelectCurrent />}</div>
+                    <div>
+                      <SelectCurrent />
+                    </div>
                     <div className="flex-1 flex">
                       {!hide && <EditorWrapper totalPosts={1} value="" />}
                     </div>
@@ -542,39 +582,38 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <div
                 id="wrapper-settings"
                 className={clsx(
-                  'pb-[20px] px-[20px] select-none',
-                  showSettings && 'flex-1 flex pt-[20px]',
+                  'px-[20px] pb-[20px] select-none',
+                  showSettings && 'flex flex-1 flex-col pt-[12px]',
                   current === 'global' && 'hidden'
                 )}
               >
-                <div className="flex flex-1 flex-col gap-[12px] overflow-hidden rounded-[12px]">
-                  <div
+                <div className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-hidden rounded-[14px] bg-pqSettings p-[12px] shadow-[inset_0_0_0_1px_var(--border)]">
+                  <button
+                    type="button"
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx(
-                      'flex h-[44px] cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqTableHeader px-[14px] shadow-[inset_0_0_0_1px_var(--border)]',
-                      showSettings && 'rounded-b-none'
+                      'flex h-[48px] w-full cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqTableHeader px-[14px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover',
+                      showSettings && 'rounded-b-[10px]'
                     )}
                   >
-                    <div className="flex-1 text-[14px] font-[600] text-pqText">
+                    <div className="flex-1 text-[13.5px] font-[600] text-pqText">
                       {currentIntegrationText}
                     </div>
-                    <div>
-                      <ChevronDownIcon
-                        rotated={showSettings}
-                        className="text-pqMuted"
-                      />
-                    </div>
-                  </div>
+                    <ChevronDownIcon
+                      rotated={showSettings}
+                      className="text-pqMuted"
+                    />
+                  </button>
                   <div
                     className={clsx(
-                      !showSettings ? 'hidden' : 'flex-1',
-                      'text-[14px] text-textColor font-[500] relative'
+                      !showSettings ? 'hidden' : 'relative min-h-0 flex-1',
+                      'text-[14px] font-[500] text-pqText'
                     )}
                   >
-                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-pqInner scrollbar-track-pqColColor">
+                    <div className="absolute inset-0 flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqSettings">
                       <div
                         id="social-settings"
-                        className="flex flex-col gap-[20px] bg-pqBg"
+                        className="flex flex-col gap-[12px] pe-[4px]"
                       />
                     </div>
                   </div>
@@ -619,8 +658,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex items-center">
-          <div className="flex-1 flex ps-[20px] gap-[8px]">
+        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center overflow-x-auto overflow-y-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent">
+          <div className="flex min-w-0 flex-1 items-center gap-[8px] ps-[20px]">
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -636,7 +675,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
+          <div className="flex shrink-0 items-center justify-end gap-[8px] pe-[20px]">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -679,8 +718,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="relative">
-                <div className="flex">
+              <div className="relative" ref={postNowClickRef}>
+                <div className="flex" ref={postNowRef}>
                   <button
                     type="button"
                     disabled={
@@ -696,7 +735,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     )}
                     <span className={clsx(loading && 'invisible')}>
                       {selectedIntegrations.length === 0
-                        ? t('check_circles_above', 'Check the circles above')
+                        ? t(
+                            'check_circles_above',
+                            'Check the circles above to pick a channel'
+                          )
                         : dummy
                         ? t('create_output', 'Create output')
                         : !existingData?.integration
@@ -737,7 +779,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   )}
                 </div>
                 {!dummy && postNowOpen && (
-                  <div className="absolute bottom-[52px] end-0 z-[300] w-[206px] rounded-[8px] border border-pqBorder bg-pqInner p-[12px] shadow-pq">
+                  <div
+                    ref={postNowMenuRef}
+                    className="z-[300] w-[206px] rounded-[8px] border border-pqBorder bg-pqInner p-[12px] shadow-pq"
+                  >
                     <button
                       type="button"
                       onClick={schedule('now')}
@@ -755,11 +800,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
       </div>
-      <CopilotPopup
-        hitEscapeToClose={false}
-        clickOutsideToClose={true}
-        instructions={`
-You are an assistant that help the user to schedule their social media posts,
+      {/* CopilotKit only when AI configured — otherwise show discoverability shell. */}
+      {aiEnabled ? (
+        <CopilotPopup
+          hitEscapeToClose={false}
+          clickOutsideToClose={true}
+          instructions={`
+You are an assistant that helps the user schedule social media posts.
+You can only edit post text in the compose thread. You cannot generate images or video.
 Here are the things you can do:
 - Add a new comment / post to the list of posts
 - Delete a comment / post from the list of posts
@@ -769,14 +817,42 @@ Here are the things you can do:
 Post content can be added using the addPostContentFor{num} function.
 After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
 `}
-        labels={{
-          title: t('your_assistant', 'Your Assistant'),
-          initial: t(
-            'assistant_initial_message',
-            'Hi! I can help you to refine your social media posts.'
-          ),
-        }}
-      />
+          labels={{
+            title: t('your_assistant', 'AI writing help'),
+            initial: t(
+              'assistant_initial_message',
+              'Hi! I can refine or rewrite your post text. I cannot generate images — use AI Image / AI Video in the toolbar for that.'
+            ),
+          }}
+        />
+      ) : (
+        <NextLink
+          href="/connections"
+          data-tooltip-id="tooltip"
+          data-tooltip-content={t(
+            'compose_ai_unconfigured_tip',
+            'AI assistant needs OpenAI configured. Discover Claude, ChatGPT, and MCP agents in Connections.'
+          )}
+          className="absolute bottom-[104px] end-[24px] z-[40] grid h-[56px] w-[56px] place-items-center rounded-full bg-pqBrand text-pqOnBrand shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--brand)_80%,transparent)] transition-transform hover:scale-[1.04]"
+          aria-label={t('compose_ai_unconfigured_tip', 'AI writing help')}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="26"
+            height="26"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M17.4 6.6l1.4-1.4M5.2 18.8l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </NextLink>
+      )}
     </div>
   );
 };

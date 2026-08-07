@@ -233,8 +233,8 @@ Body `:3598` `gap:56px; padding:56px 40px 40px`.
 | Amber team-removal note on confirm | when downgrading from team plan | Match |
 | Before you cancel + Apply 50% | when `check-discount` + not lifetime trial | Match |
 | Feedback ≥20 chars → cancel | same APIs | Match |
-| Lifetime trial skips 50% | owner override | Match (intentional) |
-| Lifetime trial $24.50 retention | — | Raise (not in this pass) |
+| Lifetime trial skips 50%×3 | owner — uses $24.50 instead | Match |
+| Lifetime trial $24.50 retention | `POST /billing/apply-lifetime-retention` | Match |
 | Confusing “No, cancel!” | removed on this path | Match |
 
 ## E) Legacy styling to clear (billing tree)

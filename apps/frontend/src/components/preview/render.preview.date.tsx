@@ -3,9 +3,17 @@
 import { FC } from 'react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+
 dayjs.extend(utc);
 
 export const RenderPreviewDate: FC<{ date: string }> = ({ date }) => {
-  console.log(date);
-  return <>{dayjs.utc(date).local().format('MMMM D, YYYY h:mm A')}</>;
+  const { longDateTimePattern } = useDateFormat();
+  const t = useT();
+  const parsed = dayjs.utc(date);
+  if (!date || !parsed.isValid()) {
+    return <>{t('not_scheduled', 'Not scheduled')}</>;
+  }
+  return <>{parsed.local().format(longDateTimePattern())}</>;
 };

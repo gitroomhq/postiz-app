@@ -36,6 +36,19 @@ export class SubscriptionRepository {
     });
   }
 
+  getCodesByOrgId(orgId: string) {
+    return this._usedCodes.model.usedCodes.findMany({
+      where: { orgId },
+      select: { code: true },
+    });
+  }
+
+  createUsedCode(orgId: string, code: string) {
+    return this._usedCodes.model.usedCodes.create({
+      data: { code, orgId },
+    });
+  }
+
   updateAccount(userId: string, account: string) {
     return this._user.model.user.update({
       where: {
@@ -94,6 +107,14 @@ export class SubscriptionRepository {
         organization: {
           paymentId: customerId,
         },
+      },
+    });
+  }
+
+  deleteSubscriptionByOrganizationId(organizationId: string) {
+    return this._subscription.model.subscription.deleteMany({
+      where: {
+        organizationId,
       },
     });
   }

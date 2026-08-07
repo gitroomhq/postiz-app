@@ -1,12 +1,12 @@
 'use client';
 
 import { FC, useMemo, useState } from 'react';
-import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
-import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import clsx from 'clsx';
 import { RepeatIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
+import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+
 const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
@@ -57,6 +57,11 @@ export const RepeatComponent: FC<{
   const t = useT();
   const list = getList(t);
   const [isOpen, setIsOpen] = useState(false);
+  // Same overflow escape as DatePicker / Delay — footer clips absolute menus.
+  const { referenceRef, floatingRef } = useAnchoredPopover<
+    HTMLDivElement,
+    HTMLDivElement
+  >(isOpen, 'start', { offsetPx: 10, placement: 'top-start' });
 
   const ref = useClickOutside(() => {
     if (!isOpen) {
@@ -77,10 +82,11 @@ export const RepeatComponent: FC<{
       ref={ref}
       className={clsx(
         'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-pqBrand' : 'border-newTextColor/10',
+        isOpen ? 'border-pqBrand' : 'border-newTextColor/10'
       )}
     >
       <div
+        ref={referenceRef}
         onClick={() => setIsOpen(!isOpen)}
         className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
       >
@@ -97,7 +103,10 @@ export const RepeatComponent: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
+        <div
+          ref={floatingRef}
+          className="z-[300] flex w-[240px] flex-col bg-newBgColorInner p-[12px] menu-shadow"
+        >
           {list.map((p) => (
             <div
               onClick={() => {

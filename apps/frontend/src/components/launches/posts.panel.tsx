@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { useDrag, useDrop } from 'react-dnd';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import {
-  ListStateFilter,
+  PanelListStateFilter,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@gitroom/frontend/components/launches/calendar';
 import { isClientDemoPost } from '@gitroom/frontend/components/launches/ui-demo-posts';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 import { useTourNeeds } from '@gitroom/frontend/components/onboarding/tour';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -35,8 +36,12 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
  * when the viewport becomes phone-width, and open as an overlay so the calendar
  * keeps the full width.
  *
- * Dropping a calendar QUEUE/DRAFT card here converts it to DRAFT via
- * PUT /posts/:id/status (not date change). Posted tab rejects drops.
+ * Drop sources (react-dnd `source` on the item):
+ * - calendar → Posts panel (any tab): QUEUE/DRAFT → DRAFT via PUT
+ *   /posts/:id/status, then switch UI to Drafts.
+ * - list → Drafts tab: same convert-to-draft gesture.
+ * - list → Scheduled: put-back / cancel reschedule — leave QUEUE (do not
+ *   convert). That was the earlier regression when Scheduled accepted all drops.
  */
 export const PostsPanel: FC = () => {
   const t = useT();
@@ -45,8 +50,8 @@ export const PostsPanel: FC = () => {
   const { mobile } = useViewport();
   const {
     listPosts,
-    listState,
-    setListState,
+    panelListState,
+    setPanelListState,
     postsPanelOpen,
     setPostsPanelOpen,
     posts,
@@ -79,16 +84,20 @@ export const PostsPanel: FC = () => {
         ['scheduled', t('scheduled', 'Scheduled')],
         ['draft', t('drafts', 'Drafts')],
         ['published', t('posted', 'Posted')],
-      ] as Array<[ListStateFilter, string]>,
+      ] as Array<[PanelListStateFilter, string]>,
     [t]
   );
 
   const showPanel = postsPanelOpen || tourNeedsPanel;
-  const acceptDraftDrop =
-    showPanel && (listState === 'scheduled' || listState === 'draft');
+
+  type PostDragItem = {
+    id: string;
+    state?: string;
+    source?: 'calendar' | 'list';
+  };
 
   const resolveState = useCallback(
-    (item: { id: string; state?: string }) => {
+    (item: PostDragItem) => {
       if (item.state) return item.state;
       const fromCalendar = posts.find((p: any) => p.id === item.id);
       if (fromCalendar?.state) return fromCalendar.state;
@@ -98,20 +107,26 @@ export const PostsPanel: FC = () => {
     [posts, listPosts]
   );
 
+  // Calendar drops convert on any tab; list drops only on Drafts (Scheduled
+  // put-back must not force draft).
+  const isDraftConvertDrop = useCallback(
+    (item: PostDragItem) => {
+      if (!showPanel) return false;
+      if (isClientDemoPost(item.id)) return false;
+      const state = resolveState(item);
+      if (state !== 'QUEUE' && state !== 'DRAFT') return false;
+      if (item.source === 'calendar') return true;
+      return panelListState === 'draft';
+    },
+    [showPanel, resolveState, panelListState]
+  );
+
   const [{ isOver, canDrop }, dropRef] = useDrop(
     () => ({
       accept: 'post',
-      canDrop: (item: { id: string; state?: string }) => {
-        if (!acceptDraftDrop) return false;
-        if (isClientDemoPost(item.id)) return false;
-        const state = resolveState(item);
-        return state === 'QUEUE' || state === 'DRAFT';
-      },
-      drop: async (item: { id: string; state?: string }) => {
-        if (!acceptDraftDrop) return;
-        if (isClientDemoPost(item.id)) return;
-        const state = resolveState(item);
-        if (state !== 'QUEUE' && state !== 'DRAFT') return;
+      canDrop: (item: PostDragItem) => isDraftConvertDrop(item),
+      drop: async (item: PostDragItem) => {
+        if (!isDraftConvertDrop(item)) return;
 
         const res = await fetch(`/posts/${item.id}/status`, {
           method: 'PUT',
@@ -125,7 +140,7 @@ export const PostsPanel: FC = () => {
           return;
         }
         toaster.show(t('moved_to_drafts', 'Moved to drafts'), 'success');
-        setListState('draft');
+        setPanelListState('draft');
         reloadCalendarView();
       },
       collect: (monitor) => ({
@@ -134,12 +149,11 @@ export const PostsPanel: FC = () => {
       }),
     }),
     [
-      acceptDraftDrop,
-      resolveState,
+      isDraftConvertDrop,
       fetch,
       toaster,
       t,
-      setListState,
+      setPanelListState,
       reloadCalendarView,
     ]
   );
@@ -225,10 +239,10 @@ export const PostsPanel: FC = () => {
                 key={value}
                 type="button"
                 data-posts-tab={value}
-                onClick={() => setListState(value)}
+                onClick={() => setPanelListState(value)}
                 className={clsx(
                   'h-[28px] min-w-0 flex-1 truncate rounded-[6px] px-[4px] text-[12px] transition-colors',
-                  listState === value
+                  panelListState === value
                     ? 'bg-pqInner font-[600] text-pqText shadow-pqE1'
                     : 'font-[500] text-pqSoft hover:text-pqText'
                 )}
@@ -240,13 +254,13 @@ export const PostsPanel: FC = () => {
         </div>
 
         <div
-          // @ts-ignore react-dnd drop ref
-          ref={acceptDraftDrop ? dropRef : undefined}
-          data-posts-drop={acceptDraftDrop ? '1' : undefined}
+          // @ts-ignore react-dnd drop ref — always registered so calendar→panel
+          // works on Scheduled/Posted; canDrop gates conversion per source.
+          ref={dropRef}
+          data-posts-drop="1"
           className={clsx(
             'flex min-h-0 flex-1 flex-col gap-[6px] overflow-y-auto px-[12px] pb-[14px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner',
-            acceptDraftDrop &&
-              isOver &&
+            isOver &&
               canDrop &&
               'bg-pqBrandSoft shadow-[inset_0_0_0_1px_var(--brand)]'
           )}
@@ -265,13 +279,13 @@ export const PostsPanel: FC = () => {
                 </svg>
               </span>
               <div className="text-[13.5px] text-pqMuted">
-                {listState === 'draft'
+                {panelListState === 'draft'
                   ? t('no_drafts_yet', 'No drafts yet')
-                  : listState === 'published'
+                  : panelListState === 'published'
                   ? t('nothing_published_yet', 'Nothing published yet')
                   : t('no_posts_yet', 'No posts yet')}
               </div>
-              {acceptDraftDrop && (
+              {(panelListState === 'draft' || (isOver && canDrop)) && (
                 <div className="max-w-[200px] text-[12px] text-pqSoft">
                   {t(
                     'drop_posts_here_to_move_to_drafts',
@@ -304,6 +318,7 @@ const QueueCard: FC<{
   deletePost: () => void;
 }> = ({ post, editPost, duplicatePost, deletePost }) => {
   const t = useT();
+  const { formatShortWeekdayTime } = useDateFormat();
   const demo = isClientDemoPost(post.id);
   const { explain: explainDemo, demoTooltip } = useDemoPostAction();
   const onEdit = useCallback(() => {
@@ -338,6 +353,7 @@ const QueueCard: FC<{
         interval: !!post.intervalInDays,
         date: dayjs.utc(post.publishDate).local(),
         state: post.state,
+        source: 'list' as const,
       },
       canDrag: !demo && post.state !== 'PUBLISHED',
       collect: (monitor) => ({
@@ -358,25 +374,23 @@ const QueueCard: FC<{
       className="group relative cursor-pointer rounded-pqMd border border-pqBorder bg-pqBg p-[10px] transition-colors hover:border-pqBrand"
     >
       <div className="mb-[7px] flex min-w-0 items-center gap-[7px]">
-        <span className="relative size-[24px] shrink-0">
-          <ImageWithFallback
-            fallbackSrc={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-            src={post.integration?.picture || '/no-picture.jpg'}
-            alt=""
-            width={24}
-            height={24}
-            className="rounded-[7px]"
-          />
-          <span className="absolute -bottom-[2px] -end-[3px] grid size-[14px] place-items-center rounded-full bg-pqBadgeRing">
-            <img
-              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-              alt=""
-              className="size-[10px] rounded-full"
-            />
-          </span>
-        </span>
+        {/* Platform + avatar side-by-side (calendar card pattern) — corner
+            badge was too small to read which network. */}
+        <img
+          className="size-[20px] shrink-0 rounded-[5px] object-cover"
+          src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+          alt=""
+        />
+        <ImageWithFallback
+          fallbackSrc={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+          src={post.integration?.picture || '/no-picture.jpg'}
+          alt=""
+          width={20}
+          height={20}
+          className="size-[20px] shrink-0 rounded-full object-cover"
+        />
         <span className="min-w-0 flex-1 truncate text-[11.5px] text-pqMuted">
-          {dayjs.utc(post.publishDate).local().format('ddd · HH:mm')}
+          {formatShortWeekdayTime(dayjs.utc(post.publishDate).local())}
         </span>
         <span
           className={clsx(
@@ -399,7 +413,7 @@ const QueueCard: FC<{
             : t('scheduled', 'Scheduled')}
         </span>
       </div>
-      <div className="line-clamp-2 pe-[72px] text-[13px] leading-[1.5] text-pqText">
+      <div className="min-w-0 w-full break-words line-clamp-2 text-[13px] leading-[1.5] text-pqText">
         {(post.content || '').replace(/<[^>]*>/g, ' ').trim()}
       </div>
       {!!post.tags?.length && (

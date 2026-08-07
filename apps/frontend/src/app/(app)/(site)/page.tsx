@@ -2,8 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'PostQueen',
-  description: '',
+  title: 'Calendar',
 };
 
 // The app home is the Calendar (Launches), the primary scheduling workspace;

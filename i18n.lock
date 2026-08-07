@@ -431,7 +431,7 @@ checksums:
     label_when_post: f249f20f27d17dfc455a21c9e501da36
     label_autogenerate_content: a8eafda792174ddf5e50afc57ca680d0
     label_generate_picture: e3ecb483e82d6652317797df4fb3f83e
-    label_company: 9e36d11fa82d1bd4563eef2abc4fcfba
+    label_organization: 9e36d11fa82d1bd4563eef2abc4fcfba
     label_tag_color: 345f477064799625270f2d1ba49444f0
     label_select_board: e48a1d2044b2298b4ecbb48779754b44
     label_select_organization: 2a7834bd0f487b5e7cb2dac06c40bb2d
@@ -590,7 +590,6 @@ checksums:
     autopost_updated_successfully: eb9b6518aa38dd4011435fbd8358d570
     autopost_added_successfully: c83af96759f9baa9059984501ea33f73
     write_your_post_placeholder: 0f4d124dbef4685590d5a95af3b5df64
-    select_or_upload_pictures_max_5: af063197b75e970f03303afcce5bde63
     you_can_drag_drop_pictures: d41ac7a74ca936f4b388af721830f9d9
     you_dont_have_any_media_yet: 59257169efa001e5dc0a7bf67867f77e
     media_library: 2b05965bcc34712a764496206514c087

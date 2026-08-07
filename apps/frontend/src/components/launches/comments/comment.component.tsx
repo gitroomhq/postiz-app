@@ -9,6 +9,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 export const CommentBox: FC<{
   value?: string;
   type: 'textarea' | 'input';
@@ -147,6 +148,7 @@ export const CommentComponent: FC<{
   const [commentsList, setCommentsList] = useState<Comments[]>([]);
   const user = useUser();
   const fetch = useFetch();
+  const { dateTimePattern } = useDateFormat();
   const load = useCallback(async () => {
     const data = await (
       await fetch(`/comments/${date.utc().format('YYYY-MM-DDTHH:mm:00')}`)
@@ -267,7 +269,7 @@ export const CommentComponent: FC<{
   }, []);
   return (
     <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-pqLine bg-pqTableHeader p-[16px] pt-0">
-      <TopTitle title={`Comments for ${date.format('DD/MM/YYYY HH:mm')}`} />
+      <TopTitle title={`Comments for ${date.format(dateTimePattern())}`} />
       <button
         onClick={closeAll}
         className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"

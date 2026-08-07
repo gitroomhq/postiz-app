@@ -14,7 +14,7 @@
 // label on the channels column. All of those read a subscription row.
 //
 // It writes the same row `StripeService.grantLifetimeFromPayment` writes — same
-// tier ladder, same isLifetime — so this does not become a third way to become
+// Pro grant, same isLifetime — so this does not become a third way to become
 // a lifetime member that can drift from the other two.
 //
 // `--revoke` puts it back. A script that cannot undo itself is a script nobody
@@ -33,9 +33,9 @@ const arg = (name) => {
 
 const dry = process.argv.includes('--dry');
 const revoke = process.argv.includes('--revoke');
-// --tier <TIER> overrides the ladder. It exists because this database's enum
-// may not know the renamed tiers yet: `prisma db push` has never run here, so
-// Postgres rejects CREATOR/GROWTH/AGENCY outright with
+// --tier <TIER> overrides the default Pro grant. It exists because this
+// database's enum may not know the renamed tiers yet: `prisma db push` has
+// never run here, so Postgres rejects CREATOR/GROWTH/AGENCY outright with
 //   invalid input value for enum "SubscriptionTier": "CREATOR"
 // Passing PRO — a value the enum has always had — unblocks the screens without
 // pushing a schema change to somebody's development database as a side effect
@@ -43,26 +43,9 @@ const revoke = process.argv.includes('--revoke');
 const tierOverride = arg('tier');
 const orgId = arg('org');
 
-// The ladder, kept identical to `lifetimeLadder` in pricing.ts. Duplicated
-// rather than imported because this is a plain node script with no TS build
-// step; if the two ever disagree, pricing.ts is right.
-const LADDER = {
-  FREE: 'CREATOR',
-  CREATOR: 'GROWTH',
-  STANDARD: 'GROWTH',
-  GROWTH: 'PRO',
-  TEAM: 'PRO',
-  PRO: 'AGENCY',
-  ULTIMATE: 'AGENCY',
-  AGENCY: 'AGENCY',
-};
-
-const CHANNELS = {
-  CREATOR: 5,
-  GROWTH: 10,
-  PRO: 30,
-  AGENCY: 1000000,
-};
+// Founding always grants Pro (same as LIFETIME_GRANT_TIER in pricing.ts).
+const GRANT_TIER = 'PRO';
+const GRANT_CHANNELS = 30;
 
 const IDENTIFIER = 'dev-granted-lifetime';
 
@@ -127,18 +110,12 @@ async function main() {
     return;
   }
 
-  const current = existing?.subscriptionTier ?? 'FREE';
-  const next = tierOverride || LADDER[current] || 'CREATOR';
-  // At the top of the ladder a further grant buys channels instead of a tier,
-  // which is what the redemption path does.
-  const channels =
-    existing && next === current
-      ? existing.totalChannels + 5
-      : CHANNELS[next] ?? 5;
+  const next = tierOverride || GRANT_TIER;
+  const channels = GRANT_CHANNELS;
 
   console.log(
     `${dry ? '[dry] would grant' : 'granting'} lifetime to ${org.name}: ` +
-      `${current} -> ${next}, ${channels} channels`
+      `${next}, ${channels} channels`
   );
 
   if (dry) return;

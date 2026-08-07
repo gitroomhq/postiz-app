@@ -42,7 +42,8 @@ export const BotPicture: FC<{
   );
   const openMedia = useCallback(() => {
     showMediaBox((values) => {
-      setPicture(values.path);
+      const first = values[0];
+      if (first?.path) setPicture(first.path);
     });
   }, []);
   return (

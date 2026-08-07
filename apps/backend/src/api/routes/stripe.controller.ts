@@ -47,17 +47,33 @@ export class StripeController {
 
     try {
       switch (event.type) {
-        // A lifetime purchase is `mode: 'payment'`, which emits none of the
-        // subscription events below — it emits this one. Without the case the
-        // money arrives and nothing is granted, so this branch exists before
-        // anything can create such a session.
+        // Lifetime checkout: immediate `mode: 'payment'`, or deferred
+        // `mode: 'setup'` (+ lifetime_deferred) that grants now and charges
+        // $49 when the trial ends. Neither is a subscription event.
         case 'checkout.session.completed': {
           // @ts-ignore — the session shape is narrower than Stripe.Event
           const session = event.data.object as any;
+          const organizationId = session?.metadata?.organizationId;
+
+          // Deferred founding checkout: card on file, charge later.
+          if (
+            session?.mode === 'setup' &&
+            session?.metadata?.lifetime_deferred === '1'
+          ) {
+            if (!organizationId) {
+              throw new Error(
+                'checkout.session.completed setup lifetime missing organizationId'
+              );
+            }
+            return this._stripeService.completeDeferredLifetimeSetup(
+              organizationId,
+              session
+            );
+          }
+
           if (session?.mode !== 'payment') {
             return { ok: true };
           }
-          const organizationId = session?.metadata?.organizationId;
           if (!organizationId) {
             // Nothing to grant it to. Loud rather than silent: a paid session
             // with no organization is a bug in whatever created it.

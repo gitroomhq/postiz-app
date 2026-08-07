@@ -6,10 +6,11 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
   lifetimeWindow,
-  nextLifetimeTier,
   pricing,
+  tierLabel,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -68,6 +69,7 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
   createdAt,
 }) => {
   const t = useT();
+  const user = useUser();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -76,10 +78,12 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
   }, []);
 
   const window_ = useMemo(() => lifetimeWindow(createdAt), [createdAt, now]);
+  // Mid-trial Plans upsell can land here after the 24h founding clock closed.
+  const trialConvert = !!user?.isTrailing && !user?.isLifetime;
 
-  if (!window_.endsAt) return null;
+  if (!window_.endsAt && !trialConvert) return null;
 
-  if (!window_.open) {
+  if (!window_.open && !trialConvert) {
     return (
       <div
         data-lifetime-window="closed"
@@ -93,7 +97,7 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
     );
   }
 
-  const total = Math.floor(window_.msLeft / 1000);
+  const total = window_.open ? Math.floor(window_.msLeft / 1000) : 0;
   const parts = [
     Math.floor(total / 3600),
     Math.floor((total % 3600) / 60),
@@ -115,24 +119,24 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
           </svg>
         </span>
         <div className="min-w-[220px] flex-1">
-          <div className="flex flex-wrap items-center gap-[9px]">
-            <span className="text-[15.5px] font-[600] -tracking-[0.01em] text-pqText">
-              {t('lt_upsell_title', 'Lifetime access & updates')}
-            </span>
+          <div className="flex flex-col items-start gap-[8px]">
             <span className="grid h-[19px] place-items-center rounded-full bg-pqLtSolid px-[8px] text-[9px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
               {t('lt_upsell_badge', 'Become a founding member')}
+            </span>
+            <span className="text-[15.5px] font-[600] -tracking-[0.01em] text-pqText">
+              {t('lt_upsell_title', 'Lifetime access & updates')}
             </span>
           </div>
           <div className="mt-[4px] text-[12.5px] text-pqMuted">
             {t(
               'lt_upsell_sub',
               'Everything in {{tier}} · no renewal, ever · all future updates',
-              { tier: 'PRO' }
+              { tier: tierLabel(LIFETIME_GRANT_TIER) }
             )}
           </div>
         </div>
         <div className="flex items-baseline gap-[6px]">
-          <span className="text-[13px] text-pqSoft line-through">
+          <span className="text-[13px] text-pqLtDimmer line-through">
             {t('lt_upsell_compare', '${{price}}/yr', {
               price: pricing.PRO.year_price,
             })}
@@ -144,50 +148,64 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-[12px] border-t border-pqLtLine pt-[15px]">
-        <span
-          data-lifetime-remaining={total}
-          className="flex h-[28px] items-center gap-[7px] rounded-[8px] bg-pqLtChipBg pe-[11px] ps-[9px]"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="14"
-            height="14"
-            fill="none"
-            className="shrink-0 text-pqLtAmber"
-          >
-            <path
-              d="M12 7.5V12l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="font-display text-[13.5px] font-[700] tracking-[0.02em] text-pqLtAmber tabular-nums">
-            {parts.join(':')}
+        {window_.open ? (
+          <>
+            <span
+              data-lifetime-remaining={total}
+              className="flex h-[28px] items-center gap-[7px] rounded-[8px] bg-pqLtChipBg pe-[11px] ps-[9px]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                className="shrink-0 text-pqLtAmber"
+              >
+                <path
+                  d="M12 7.5V12l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="font-display text-[13.5px] font-[700] tracking-[0.02em] text-pqLtAmber tabular-nums">
+                {parts.join(':')}
+              </span>
+            </span>
+            <span className="min-w-0 flex-1 text-[13px] text-pqLtDim">
+              {t('lifetime_window_left', 'left at this price')}
+            </span>
+          </>
+        ) : (
+          <span className="min-w-0 flex-1 text-[13px] text-pqLtDim">
+            {t(
+              'lt_upsell_sub_trial_short',
+              'Switch before your trial ends — ${{price}} once, never renews.',
+              { price: LIFETIME_PRICE }
+            )}
           </span>
-        </span>
-        <span className="min-w-0 flex-1 text-[13px] text-pqLtDim">
-          {t('lifetime_window_left', 'left at this price')}
-        </span>
-        <BuyLifetime />
+        )}
+        <BuyLifetime
+          label={
+            trialConvert
+              ? t('lt_upsell_cta', 'Switch to lifetime')
+              : undefined
+          }
+        />
       </div>
     </div>
   );
 };
 
 /**
- * The purchase itself.
- *
- * Only ever rendered inside the open branch above, so it cannot offer a closed
- * deal — and the route refuses anyway, because a hidden button is a UI decision
- * and the window is a rule.
- *
- * The price comes from `pricing.ts`, the same constant the checkout session
- * charges. Reading it here rather than writing "$49" in the markup is what
- * stops the screen and the charge from disagreeing.
+ * The purchase itself — founding window or mid-trial convert (Plans upsell).
+ * Route still enforces eligibility; a hidden button is not the rule.
  */
-const BuyLifetime: FC = () => {
+export const BuyLifetime: FC<{
+  label?: string;
+  className?: string;
+}> = ({ label, className }) => {
   const t = useT();
   const fetch = useFetch();
   const toast = useToaster();
@@ -196,14 +214,17 @@ const BuyLifetime: FC = () => {
   const buy = useCallback(async () => {
     setBusy(true);
     try {
-      const { url } = await (
-        await fetch('/billing/lifetime-checkout', { method: 'POST' })
-      ).json();
-      if (url) {
-        window.location.href = url;
+      const res = await fetch('/billing/lifetime-checkout', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body?.url) {
+        window.location.href = body.url;
         return;
       }
-      toast.show(t('something_went_wrong', 'Something went wrong'), 'warning');
+      toast.show(
+        body?.message ||
+          t('something_went_wrong', 'Something went wrong'),
+        'warning'
+      );
     } finally {
       setBusy(false);
     }
@@ -215,11 +236,17 @@ const BuyLifetime: FC = () => {
       data-lifetime-buy="1"
       disabled={busy}
       onClick={buy}
-      className="grid h-[38px] shrink-0 place-items-center whitespace-nowrap rounded-[10px] bg-pqLtSolid px-[17px] text-[13px] font-[700] text-pqLtSolidFg transition-all hover:brightness-105 disabled:opacity-60"
+      className={
+        className ||
+        'grid h-[38px] shrink-0 place-items-center whitespace-nowrap rounded-[10px] bg-pqLtSolid px-[17px] text-[13px] font-[700] text-pqLtSolidFg transition-all hover:brightness-105 disabled:opacity-60'
+      }
     >
-      {t('lt_upsell_cta_purchase', 'Get lifetime for ${{price}}', {
-        price: LIFETIME_PRICE,
-      })}
+      {busy
+        ? t('billing_redirecting', 'Redirecting…')
+        : label ||
+          t('lt_upsell_cta_purchase', 'Get lifetime for ${{price}}', {
+            price: LIFETIME_PRICE,
+          })}
     </button>
   );
 };
@@ -248,6 +275,7 @@ export const FoundingMember: FC<{
 }> = ({ tier, trialing, memberSince }) => {
   const t = useT();
   const plan = pricing[tier] ? tier : 'PRO';
+  const planName = tierLabel(plan);
   const channels = pricing[plan]?.channel ?? 0;
 
   const facts: Array<[string, string, boolean]> = [];
@@ -292,7 +320,7 @@ export const FoundingMember: FC<{
         <div className="min-w-[240px] flex-1">
           <div className="flex flex-wrap items-center gap-[9px]">
             <span className="font-display text-[22px] font-[600] -tracking-[0.02em] text-pqText">
-              {t('lt_hero_title', 'PostQueen {{plan}}', { plan })}
+              {t('lt_hero_title', 'PostQueen {{plan}}', { plan: planName })}
             </span>
             <span
               data-founding-badge="1"
@@ -323,12 +351,12 @@ export const FoundingMember: FC<{
               ? t(
                   'lt_hero_sub_trial',
                   'Nothing has been charged yet. Everything in {{plan}} is already unlocked while your trial runs.',
-                  { plan }
+                  { plan: planName }
                 )
               : t(
                   'lt_hero_sub_paid',
                   'One payment, done. You keep PostQueen {{plan}} and everything we build for it, with nothing to renew.',
-                  { plan }
+                  { plan: planName }
                 )}
           </div>
         </div>
@@ -407,12 +435,8 @@ export const LifetimePackages: FC<{ showHeading?: boolean }> = ({
     }
     setCode('');
   }, [code]);
-  // The ladder is shared with the redemption endpoint so this preview always
-  // names the tier the backend will actually grant.
-  const nextPackage = useMemo(
-    () => nextLifetimeTier(user?.tier?.current),
-    [user?.tier]
-  );
+  // Founding / code grant always Pro — same as Stripe grantLifetimeFromPayment.
+  const nextPackage = LIFETIME_GRANT_TIER;
   const features = useMemo(() => {
     if (!user?.tier) {
       return [];
@@ -506,7 +530,9 @@ export const LifetimePackages: FC<{ showHeading?: boolean }> = ({
             {t('current_package', 'Current package')}
           </div>
           <div className="font-display text-[24px] font-[600] -tracking-[0.02em] text-pqText">
-            {user?.totalChannels > 8 ? 'EXTRA' : user?.tier?.current}
+            {user?.totalChannels > 8
+              ? 'EXTRA'
+              : tierLabel(user?.tier?.current)}
           </div>
           <div className="flex flex-col gap-[9px]">
             {features.map((feature) => (
@@ -517,22 +543,13 @@ export const LifetimePackages: FC<{ showHeading?: boolean }> = ({
 
         <div className="flex flex-col gap-[14px] rounded-[14px] bg-pqInner p-[20px] outline outline-[1.5px] -outline-offset-1 outline-pqBrand">
           <div className="text-[12px] font-[600] uppercase tracking-[0.06em] text-pqBrand">
-            {t('next_package', 'Next package')}
+            {t('lifetime_grants', 'Lifetime grants')}
           </div>
           <div className="font-display text-[24px] font-[600] -tracking-[0.02em] text-pqText">
-            {nextPackage}
+            {tierLabel(nextPackage)}
           </div>
           <div className="flex flex-col gap-[9px]">
-            {(user?.tier?.current === 'PRO'
-              ? [
-                  {
-                    label: t('plan_n_channels', '{{count}} channels', {
-                      count: (user?.totalChannels || 0) + 5,
-                    }),
-                  },
-                ]
-              : nextFeature
-            ).map((feature) => (
+            {nextFeature.map((feature) => (
               <FeatureRow key={feature.label} {...feature} />
             ))}
           </div>
@@ -571,7 +588,14 @@ export const LifetimeDeal = () => {
   if (!user?.tier) {
     return null;
   }
-  if (user?.id && user?.tier?.current !== 'FREE' && !user?.isLifetime) {
+  // FREE accounts claim codes / founding window. Trialing paid tiers can still
+  // convert to lifetime (Plans upsell) — do not bounce them back to /billing.
+  if (
+    user?.id &&
+    user?.tier?.current !== 'FREE' &&
+    !user?.isLifetime &&
+    !user?.isTrailing
+  ) {
     router.replace('/billing');
     return null;
   }

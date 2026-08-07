@@ -427,7 +427,7 @@
   "label_when_post": "언제 게시할까요?",
   "label_autogenerate_content": "콘텐츠 자동 생성",
   "label_generate_picture": "이미지 생성할까요?",
-  "label_company": "회사",
+  "label_organization": "조직",
   "label_tag_color": "태그 색상",
   "label_select_board": "게시판 선택",
   "label_select_organization": "조직 선택",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "자동 게시가 성공적으로 업데이트되었습니다",
   "autopost_added_successfully": "자동 게시가 성공적으로 추가되었습니다",
   "write_your_post_placeholder": "게시글을 작성하세요...",
-  "select_or_upload_pictures_max_5": "사진을 선택하거나 업로드하세요 (최대 5장까지 한 번에 가능합니다).",
   "you_can_drag_drop_pictures": "사진을 드래그 앤 드롭하여 추가할 수도 있습니다.",
   "you_dont_have_any_media_yet": "아직 미디어가 없습니다",
   "media_library": "미디어 라이브러리",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "이 짧은 영상을 통해 PostQueen를 최대한 활용하는 방법을 알아보세요",
   "back": "뒤로가기",
   "get_started": "시작하기",
-  "kick_select_channel": "채널 선택"
+  "kick_select_channel": "채널 선택",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

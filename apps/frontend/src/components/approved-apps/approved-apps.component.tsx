@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 const useApprovedApps = () => {
   const fetch = useFetch();
@@ -23,6 +24,7 @@ export const ApprovedAppsComponent: FC = () => {
   const fetch = useFetch();
   const toaster = useToaster();
   const t = useT();
+  const { formatDate } = useDateFormat();
   const { data: apps, mutate } = useApprovedApps();
 
   const revokeApp = useCallback(
@@ -92,7 +94,7 @@ export const ApprovedAppsComponent: FC = () => {
                 )}
                 <div className="text-[12px] text-pqMuted">
                   {t('authorized_on', 'Authorized on')}{' '}
-                  {new Date(app.createdAt).toLocaleDateString()}
+                  {formatDate(app.createdAt)}
                 </div>
               </div>
               <button

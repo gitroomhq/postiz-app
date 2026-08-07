@@ -16,7 +16,7 @@ export const ApiModal: FC<{
   update: () => void;
   onCancel?: () => void;
 }> = (props) => {
-  const { identifier, update, onCancel } = props;
+  const { identifier, title, update, onCancel } = props;
   const fetch = useFetch();
   const router = useRouter();
   const toaster = useToaster();
@@ -38,7 +38,10 @@ export const ApiModal: FC<{
       });
 
       if (add.ok) {
-        toaster.show('Integration added successfully', 'success');
+        toaster.show(
+          t('integration_added_successfully', 'Integration added successfully'),
+          'success'
+        );
         onCancel?.();
         router.refresh();
         if (update) update();
@@ -53,7 +56,7 @@ export const ApiModal: FC<{
 
       setLoading(false);
     },
-    [identifier, update, fetch, toaster, onCancel, router, methods]
+    [identifier, update, fetch, toaster, onCancel, router, methods, t]
   );
 
   return (
@@ -62,14 +65,29 @@ export const ApiModal: FC<{
         className="flex flex-col gap-[16px]"
         onSubmit={methods.handleSubmit(submit)}
       >
-        <Input label={t('api_key', 'API Key')} name="api" />
+        <Input
+          label={t('api_key', 'API Key')}
+          name="api"
+          placeholder={t(
+            'paste_your_api_key',
+            'Paste your {{name}} API key',
+            { name: title }
+          )}
+        />
+        <p className="-mt-[4px] text-[12.5px] leading-[1.45] text-pqMuted">
+          {t(
+            'add_integration_api_hint',
+            'Keys stay on your workspace and are only used to call {{name}}.',
+            { name: title }
+          )}
+        </p>
         <ModalFormActions onCancel={() => onCancel?.()}>
           <Button
             loading={loading}
             type="submit"
-            className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+            className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
           >
-            {t('add_integration', 'Add Integration')}
+            {t('add_integration', 'Add integration')}
           </Button>
         </ModalFormActions>
       </form>

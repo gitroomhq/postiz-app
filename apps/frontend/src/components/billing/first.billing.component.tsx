@@ -7,19 +7,19 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
-import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
-import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
 import { PostQueenLogo, appVersionLabel } from '@gitroom/frontend/components/ui/logo.component';
 import {
   effectiveMonthly,
+  LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
   lifetimeWindow,
   monthsFree,
   pricing,
   TRIAL_DAYS,
+  tierLabel,
+  trialWindow,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { capitalize } from 'lodash';
 import clsx from 'clsx';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
@@ -34,6 +34,14 @@ import { HelpMenu } from '@gitroom/frontend/components/new-layout/help.menu';
 import { DeveloperIconComponent } from '@gitroom/frontend/components/developer/developer.icon.component';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { SubmitBarFallback } from '@gitroom/frontend/components/billing/embedded.billing';
+import {
+  CHECKOUT_MAX,
+  CheckoutPayBarShell,
+} from '@gitroom/frontend/components/billing/checkout-pay-bar';
+import { BillingPeriodToggle } from '@gitroom/frontend/components/billing/billing-period-toggle';
+import { CouponChrome } from '@gitroom/frontend/components/billing/coupon-chrome';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -52,12 +60,12 @@ const EmbeddedBilling = dynamic(
   }
 );
 
-/** The design's 18px green circle-check, used by the hero's trust row. */
+/** Green circle-check for the hero trust row (20px — above design's 18). */
 const TrustCheck = () => (
   <svg
     viewBox="0 0 24 24"
-    width="18"
-    height="18"
+    width="20"
+    height="20"
     fill="none"
     aria-hidden="true"
     className="shrink-0 text-pqOk"
@@ -102,7 +110,7 @@ const OrderSummaryFallbackCard: FC<{
       </div>
       <div className="flex items-center justify-between gap-[16px]">
         <span className="text-[15px] text-pqMuted">
-          {capitalize(tier)}, {t('billing_billed', 'billed')} {periodWord}
+          {tierLabel(tier)}, {t('billing_billed', 'billed')} {periodWord}
         </span>
         <span className="text-[15px]">{unitLabel}</span>
       </div>
@@ -116,20 +124,7 @@ const OrderSummaryFallbackCard: FC<{
           <span className="font-[600]">-${amount}</span>
         </div>
       )}
-      {period === 'MONTHLY' && (
-        <button
-          type="button"
-          disabled
-          className="flex h-[44px] items-center gap-[9px] rounded-[12px] bg-pqInner px-[14px] text-start text-pqText shadow-[inset_0_0_0_1px_var(--border)] opacity-70"
-        >
-          <span className="flex-1 text-[14px] font-[600]">
-            {t('billing_have_discount_coupon', 'Have a coupon code?')}
-          </span>
-          <span className="text-[13.5px] font-[600] text-pqBrand">
-            {t('billing_add', 'Add')}
-          </span>
-        </button>
-      )}
+      <CouponChrome />
       <div className="h-px bg-pqLine" />
       <div className="flex items-baseline justify-between gap-[16px]">
         <span className="text-[16px] font-[600]">
@@ -156,13 +151,85 @@ const OrderSummaryFallbackCard: FC<{
   );
 };
 
+/** Plan / lifetime radio — stronger unselected ring so choice affordance reads. */
+const CheckoutRadio: FC<{
+  selected: boolean;
+  tone?: 'brand' | 'lifetime';
+  size?: 'md' | 'lg';
+}> = ({ selected, tone = 'brand', size = 'md' }) => {
+  const dim = size === 'lg' ? 'size-[22px]' : 'size-[20px]';
+  const icon = size === 'lg' ? 12 : 11;
+  if (tone === 'lifetime') {
+    return (
+      <span
+        className={clsx(
+          'grid shrink-0 place-items-center rounded-full',
+          dim,
+          selected
+            ? 'bg-pqLtSolid ring-[3px] ring-pqLtChipBg'
+            : 'bg-pqInner ring-2 ring-inset ring-pqLtDim'
+        )}
+      >
+        {selected && (
+          <svg
+            viewBox="0 0 24 24"
+            width={icon}
+            height={icon}
+            fill="none"
+            aria-hidden="true"
+            className="text-pqLtSolidFg"
+          >
+            <path
+              d="m5 12.5 4.5 4.5L19 7.5"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-full',
+        dim,
+        selected
+          ? 'bg-pqBrand ring-[3px] ring-pqBrandSoft'
+          : 'bg-pqSettings ring-2 ring-inset ring-pqMuted'
+      )}
+    >
+      {selected && (
+        <svg
+          viewBox="0 0 24 24"
+          width={icon}
+          height={icon}
+          fill="none"
+          aria-hidden="true"
+          className="text-pqOnBrand"
+        >
+          <path
+            d="m5 12.5 4.5 4.5L19 7.5"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </span>
+  );
+};
+
 /**
  * Founding-member card in the checkout right column + "OR SUBSCRIBE" divider.
  *
  * Design: selectable in-place (`paywallTier: 'LIFETIME'`). Pay still goes
- * through `POST /billing/lifetime-checkout` (hosted Stripe), not Embedded —
- * honest $49 due today, not the prototype's fake $0 lifetime trial.
- * Marketing + features: Everything in Pro (design), not the code-redemption ladder.
+ * through `POST /billing/lifetime-checkout` (hosted Stripe), not Embedded.
+ * When `allowTrial`, checkout is `mode: 'setup'` ($0 today; $49 after trial);
+ * otherwise immediate `mode: 'payment'`. Marketing: Everything in Pro.
  */
 const LifetimeOfferCard: FC<{
   selected: boolean;
@@ -182,8 +249,9 @@ const LifetimeOfferCard: FC<{
     [user?.createdAt, now]
   );
 
-  if (!window_.open) return null;
-
+  // Always draw while First Billing can still sell lifetime
+  // (`lifetimeWindow.open || isTrailing` — gated by the parent). The 24h
+  // window only drives the countdown strip below — not whether the card exists.
   const proPlan = pricing.PRO;
   const total = Math.floor(window_.msLeft / 1000);
   const parts = [
@@ -206,33 +274,7 @@ const LifetimeOfferCard: FC<{
         )}
       >
         <div className="flex flex-wrap items-center gap-[11px]">
-          <span
-            className={clsx(
-              'grid size-[20px] shrink-0 place-items-center rounded-full',
-              selected
-                ? 'bg-pqLtSolid'
-                : 'ring-[1.5px] ring-inset ring-pqBorder'
-            )}
-          >
-            {selected && (
-              <svg
-                viewBox="0 0 24 24"
-                width="12"
-                height="12"
-                fill="none"
-                aria-hidden="true"
-                className="text-pqLtSolidFg"
-              >
-                <path
-                  d="m5 12.5 4.5 4.5L19 7.5"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </span>
+          <CheckoutRadio selected={selected} tone="lifetime" size="lg" />
           <span className="grid h-[21px] place-items-center rounded-full bg-pqLtSolid px-[10px] text-[10px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
             {selected
               ? t('billing_founding_member', 'Founding member')
@@ -268,9 +310,12 @@ const LifetimeOfferCard: FC<{
             </span>
           </div>
         </div>
-        <BillingFeatures tier="PRO" tone="lifetime" />
+        {/* Subtle hairline between price row and feature grid — card felt dense
+            without a break (owner 2026-08-06). Same lt line token as the footer. */}
+        <div aria-hidden className="h-px bg-pqLtLine" />
+        <BillingFeatures tier={LIFETIME_GRANT_TIER} tone="lifetime" />
         <div className="flex flex-wrap items-center gap-[12px] border-t border-pqLtLine pt-[15px]">
-          {user?.allowTrial ? (
+          {window_.open && user?.allowTrial ? (
             <>
               <span className="flex h-[28px] items-center gap-[7px] whitespace-nowrap rounded-[8px] bg-pqLtChipBg pe-[11px] ps-[9px]">
                 <svg
@@ -302,24 +347,8 @@ const LifetimeOfferCard: FC<{
             </>
           ) : (
             <span className="flex h-[28px] items-center gap-[7px] whitespace-nowrap rounded-[8px] bg-pqLtChipBg pe-[11px] ps-[9px]">
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                aria-hidden="true"
-                className="shrink-0 text-pqLtAmber"
-              >
-                <path
-                  d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
               <span className="text-[12.5px] font-[700] uppercase tracking-[0.02em] text-pqLtAmber">
-                {t('billing_last_chance', 'Last chance')}
+                {t('billing_founding_price', 'Founding price')}
               </span>
             </span>
           )}
@@ -340,43 +369,90 @@ const LifetimeOfferCard: FC<{
   );
 };
 
-/** Static Order summary while Lifetime is selected (no Stripe Embedded session). */
+/**
+ * Static Order summary while Lifetime is selected (no Stripe Embedded session).
+ *
+ * LOOK inventory matches App v2 paywall Order summary (gap 14 → 18 for
+ * breathing room after density feedback). Stripe trust lives on the pay bar
+ * left only — design omits it from this card; duplicating it here made the
+ * panel feel busier than the prototype.
+ */
 const LifetimeOrderSummary: FC = () => {
   const t = useT();
+  const user = useUser();
+  const allowTrial = !!user?.allowTrial;
+  const trialEndLabel = useMemo(() => {
+    const endsAt = trialWindow(user?.createdAt).endsAt;
+    return endsAt ? newDayjs(endsAt).format('D MMM, YYYY') : null;
+  }, [user?.createdAt]);
+
   return (
     <div
       data-lifetime-order-summary="1"
-      className="flex flex-col gap-[14px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine"
+      className="flex flex-col gap-[18px] rounded-[22px] bg-pqInner p-[24px_26px_26px] shadow-pqE1 ring-1 ring-inset ring-pqLine"
     >
       <div className="text-[17px] font-[600] tracking-[-0.015em]">
         {t('billing_order_summary', 'Order summary')}
       </div>
-      <div className="flex items-center justify-between gap-[16px]">
-        <span className="text-[15px] text-pqMuted">
-          {t('billing_lifetime_billed_once', 'Lifetime')}
-          {', '}
-          {t('billing_one_time_payment', 'One-time payment').toLowerCase()}
-        </span>
-        <span className="text-[15px]">
-          ${LIFETIME_PRICE} / {t('billing_once', 'once')}
-        </span>
+      <div className="flex flex-col gap-[14px]">
+        <div className="flex items-center justify-between gap-[16px]">
+          <span className="text-[15px] text-pqMuted">
+            {t('billing_lifetime_billed_once', 'Lifetime')}
+            {', '}
+            {t('billing_one_time_payment', 'One-time payment').toLowerCase()}
+          </span>
+          <span className="text-[15px]">
+            ${LIFETIME_PRICE} / {t('billing_once', 'once')}
+          </span>
+        </div>
+        {allowTrial && (
+          // Design: muted label, green weight only on the credit amount.
+          <div className="flex items-center justify-between gap-[16px] text-[15px]">
+            <span className="text-pqMuted">
+              {t('billing_n_day_free_trial', '{{n}}-day free trial', {
+                n: TRIAL_DAYS,
+              })}
+            </span>
+            <span className="font-[600] text-pqOk">-${LIFETIME_PRICE}</span>
+          </div>
+        )}
+        <CouponChrome
+          pendingHint={t(
+            'billing_coupon_on_stripe_checkout',
+            'You can enter your coupon on the Stripe checkout page after you continue.'
+          )}
+        />
       </div>
       <div className="h-px bg-pqLine" />
-      <div className="flex items-baseline justify-between gap-[16px]">
-        <span className="text-[16px] font-[600]">
-          {t('billing_due_today', 'Due today')}
-        </span>
-        <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
-          ${LIFETIME_PRICE}.00
-        </span>
+      <div className="flex flex-col gap-[10px]">
+        <div className="flex items-baseline justify-between gap-[16px]">
+          <span className="text-[16px] font-[600]">
+            {t('billing_due_today', 'Due today')}
+          </span>
+          <span className="font-display text-[26px] font-[600] tracking-[-0.025em]">
+            {allowTrial ? '$0.00' : `$${LIFETIME_PRICE}.00`}
+          </span>
+        </div>
+        <div className="text-[14px] text-pqMuted">
+          {allowTrial
+            ? t(
+                'billing_lifetime_then_after_trial',
+                'Then ${{price}} once on {{date}} · never charged again',
+                {
+                  price: LIFETIME_PRICE,
+                  date: trialEndLabel || t('billing_trial_end', 'trial end'),
+                }
+              )
+            : t(
+                'billing_lifetime_then_line',
+                'One payment of ${{price}} · never charged again',
+                { price: LIFETIME_PRICE }
+              )}
+        </div>
       </div>
-      <div className="text-[14px] text-pqMuted">
-        {t(
-          'billing_lifetime_then_line',
-          'One payment of ${{price}} · never charged again',
-          { price: LIFETIME_PRICE }
-        )}
-      </div>
+      {/* Design: one body colour (no muted second sentence). Trial tail =
+          App v2 pwCancelTail; non-trial keeps founding never-renews
+          (subscription “billing period” tail is wrong for lifetime). */}
       <div className="flex items-start gap-[10px] rounded-[13px] bg-pqBrandSoft p-[13px_15px] text-[14px] leading-[1.5]">
         <svg
           viewBox="0 0 24 24"
@@ -406,33 +482,55 @@ const LifetimeOrderSummary: FC = () => {
               'Cancel anytime from settings without talking to a person.'
             )}
           </strong>{' '}
-          <span className="text-pqMuted">
-            {t(
-              'billing_lifetime_no_renewal_note',
-              'Founding member access never renews.'
-            )}
-          </span>
+          {allowTrial
+            ? t(
+                'billing_cancel_notice_trial',
+                'Cancel before the trial ends and you are never charged.'
+              )
+            : t(
+                'billing_lifetime_no_renewal_note',
+                'Founding member access never renews.'
+              )}
         </span>
       </div>
     </div>
   );
 };
 
+/** Re-enable when the founding-member deal is retired from First Billing. */
+const SHOW_PRO_POPULAR_BADGE = false;
+
 /** Fixed pay bar for Lifetime — hosted Checkout, not Embedded confirm. */
 const LifetimePayBar: FC = () => {
   const t = useT();
+  const user = useUser();
   const fetch = useFetch();
   const toaster = useToaster();
   const [busy, setBusy] = useState(false);
+  const allowTrial = !!user?.allowTrial;
+  const trialEndLabel = useMemo(() => {
+    const endsAt = trialWindow(user?.createdAt).endsAt;
+    return endsAt ? newDayjs(endsAt).format('D MMM, YYYY') : null;
+  }, [user?.createdAt]);
 
   const buy = useCallback(async () => {
     setBusy(true);
     try {
-      const { url } = await (
-        await fetch('/billing/lifetime-checkout', { method: 'POST' })
-      ).json();
-      if (url) {
-        window.location.href = url;
+      const res = await fetch('/billing/lifetime-checkout', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // 410 when the founding window closed — surface the API message.
+        toaster.show(
+          friendlyCheckoutError(
+            typeof body?.message === 'string' ? body.message : undefined,
+            t('something_went_wrong', 'Something went wrong')
+          ),
+          'warning'
+        );
+        return;
+      }
+      if (body?.url) {
+        window.location.href = body.url;
         return;
       }
       toaster.show(t('something_went_wrong', 'Something went wrong'), 'warning');
@@ -442,45 +540,80 @@ const LifetimePayBar: FC = () => {
   }, [fetch, t, toaster]);
 
   return (
-    <div
-      data-lifetime-pay-bar="1"
-      className="animate-fadeIn fixed bottom-0 left-0 z-[100] flex h-[92px] w-full items-center gap-[28px] border-t border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:h-auto mobile:flex-col mobile:gap-[12px] mobile:!px-[16px] mobile:py-[14px]"
-    >
-      <div className="min-w-0 flex-1 mobile:hidden" />
-      <div className="shrink-0 text-end mobile:text-center">
-        <div className="text-[15.5px] font-[600]">
-          ${LIFETIME_PRICE} {t('billing_due_today_lower', 'due today')}
-        </div>
-        <div className="mt-[2px] text-[14px] text-pqMuted">
-          {t(
-            'billing_founding_bar_sub',
-            'Founding member · ${{price}} once · never charged again',
-            { price: LIFETIME_PRICE }
-          )}
-        </div>
-      </div>
-      <div className="shrink-0 mobile:w-full">
+    <CheckoutPayBarShell
+      data-pay-bar="lifetime"
+      summary={
+        <>
+          <div className="text-[15.5px] font-[600]">
+            {allowTrial
+              ? t(
+                  'billing_zero_due_today_until',
+                  '$0 due today, free until {{date}}',
+                  {
+                    date:
+                      trialEndLabel ||
+                      t('billing_trial_end', 'trial end'),
+                  }
+                )
+              : `$${LIFETIME_PRICE} ${t('billing_due_today_lower', 'due today')}`}
+          </div>
+          <div className="mt-[2px] text-[14px] text-pqMuted">
+            {allowTrial
+              ? t(
+                  'billing_founding_bar_sub_trial',
+                  'Founding member · ${{amount}} once after the trial · never charged again',
+                  { amount: LIFETIME_PRICE }
+                )
+              : t(
+                  'billing_founding_bar_sub',
+                  'Founding member · {{amount}} once · never charged again',
+                  { amount: `$${LIFETIME_PRICE}` }
+                )}
+          </div>
+        </>
+      }
+      action={
         <button
           type="button"
           disabled={busy}
           onClick={buy}
-          className="grid h-[56px] place-items-center rounded-[15px] bg-pqBrand px-[30px] text-[16px] font-[700] text-pqOnBrand shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] transition-all hover:bg-pqBrandHover disabled:opacity-60 mobile:w-full"
+          // Full brand contrast while busy — label changes; no washed opacity.
+          className="grid h-[56px] w-full place-items-center rounded-[15px] bg-pqBrand px-[30px] text-[16px] font-[700] text-pqOnBrand shadow-[0_14px_30px_-14px_rgba(124,58,237,.95)] transition-all hover:bg-pqBrandHover disabled:cursor-wait"
         >
           {busy
             ? t('billing_redirecting', 'Redirecting…')
+            : allowTrial
+            ? t(
+                'billing_pay_0_start_trial',
+                'Pay $0 Today – Start your free trial!'
+              )
             : t(
                 'billing_get_lifetime_access',
-                'Get lifetime access — ${{price}} once',
-                { price: LIFETIME_PRICE }
+                'Get lifetime access — {{amount}} once',
+                { amount: `$${LIFETIME_PRICE}` }
               )}
         </button>
-      </div>
-    </div>
+      }
+    />
   );
+};
+
+/** Hide Nest/Express "Internal server error" chrome; keep real API messages. */
+const friendlyCheckoutError = (raw: string | undefined, fallback: string) => {
+  if (!raw?.trim()) return fallback;
+  if (/internal server error|^error$|econnrefused|fetch failed/i.test(raw)) {
+    return fallback;
+  }
+  return raw;
 };
 
 const CheckoutEmbedNotice: FC<{ message: string }> = ({ message }) => {
   const t = useT();
+  const fallback = t(
+    'billing_checkout_load_failed',
+    'Could not load checkout. Please refresh the page or try again in a moment.'
+  );
+  const display = friendlyCheckoutError(message, fallback);
   return (
     <div className="billing-form flex w-full flex-1 flex-col gap-[22px] rounded-[22px] bg-pqInner p-[34px_32px] shadow-pqE1 ring-1 ring-inset ring-pqLine mobile:p-[24px_20px]">
       <div className="mb-[2px] flex items-center gap-[16px]">
@@ -505,7 +638,15 @@ const CheckoutEmbedNotice: FC<{ message: string }> = ({ message }) => {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="flex-1 font-[500] leading-[1.5]">{message}</span>
+        <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
+          <span className="font-[600]">
+            {t(
+              'billing_payment_form_unavailable',
+              'Payment form could not be loaded'
+            )}
+          </span>
+          <span className="font-[500] leading-[1.5] text-pqMuted">{display}</span>
+        </div>
       </div>
     </div>
   );
@@ -520,9 +661,10 @@ export const FirstBillingComponent = () => {
   // it would open the paywall with nothing selected.
   const [tier, setTier] = useState('CREATOR');
   const [period, setPeriod] = useState('MONTHLY');
-  // Design: Lifetime is a selectable plan mode on this screen, not a redirect.
+  // Owner: open with Lifetime selected when the founding window is available
+  // (radio was empty before). Subscription stays available via the plan grid.
   const [checkoutMode, setCheckoutMode] = useState<'subscription' | 'lifetime'>(
-    'subscription'
+    'lifetime'
   );
   const fetch = useFetch();
   const modals = useModals();
@@ -541,7 +683,8 @@ export const FirstBillingComponent = () => {
 
   // Preselect whatever the visitor picked on the marketing site. UtmSaver
   // stashed it before registration redirected them here; read it after mount so
-  // the server render stays deterministic.
+  // the server render stays deterministic. A marketing plan pick also leaves
+  // Lifetime mode so the stashed tier is actually selected.
   useEffect(() => {
     const selectedPlan = localStorage.getItem('selectedPlan');
     // A plan stashed by the marketing site before registration. Ignore it if it
@@ -552,6 +695,7 @@ export const FirstBillingComponent = () => {
       !pricing[selectedPlan].retired
     ) {
       setTier(selectedPlan);
+      setCheckoutMode('subscription');
     }
 
     const selectedPeriod = localStorage.getItem('selectedPeriod');
@@ -620,25 +764,40 @@ export const FirstBillingComponent = () => {
     []
   );
 
-  // Whether the founding-member offer is still open, read once per render.
-  // The card itself ticks every second and hides the moment the window
-  // closes; the divider and upsell that accompany it read this snapshot, so
-  // they leave on the next render rather than dragging a 1s interval through
-  // the whole checkout (and the Stripe form with it).
-  const lifetimeOpen = useMemo(
-    () => lifetimeWindow(user?.createdAt).open,
-    [user?.createdAt]
-  );
+  // Founding deal only while the 24h window is open, or while the org is
+  // still on trial (`isTrailing`) — same rule as Main Billing's retention
+  // offer. Closed window + no trial → no lifetime CTA/mode (plan cards only).
+  const canBuyLifetime =
+    !user?.isLifetime &&
+    (!!user?.isTrailing || lifetimeWindow(user?.createdAt).open);
+  const activeMode =
+    canBuyLifetime && checkoutMode === 'lifetime' ? 'lifetime' : 'subscription';
+  // Stripe Embedded mounts its own pay bar; when it cannot (loading / error /
+  // blocked / lifetime), the parent owns the fixed bar so it never disappears.
+  const embedChromeLive =
+    activeMode === 'subscription' &&
+    !!stripe &&
+    !!data?.client_secret &&
+    !isLoading &&
+    !embedFetchError &&
+    !data?.blocked;
+
+  const trialEndedLabel = useMemo(() => {
+    const endsAt = trialWindow(user?.createdAt).endsAt;
+    return endsAt ? newDayjs(endsAt).format('D MMM, YYYY') : null;
+  }, [user?.createdAt]);
 
   const JoinOver = () => {
     return (
-      <div className="flex flex-col gap-[18px]">
+      <div className="flex flex-col gap-[22px]">
         <h1
           className={clsx(
-            'font-display font-[800] leading-[1.06] tracking-[-0.035em] whitespace-pre-line text-balance',
-            mobile && 'text-[34px]',
-            tablet && 'text-[42px]',
-            desktop && 'text-[54px]'
+            // Design pwH1 is 34/42/54 — owner asked for more presence twice
+            // (2026-08-06): 38/48/60 then 42/52/64.
+            'font-display font-[800] leading-[1.05] tracking-[-0.035em] whitespace-pre-line text-balance',
+            mobile && 'text-[42px]',
+            tablet && 'text-[52px]',
+            desktop && 'text-[64px]'
           )}
         >
           {/* Doc 03 asks for a different headline once somebody has subscribed
@@ -674,7 +833,7 @@ export const FirstBillingComponent = () => {
           )}
         </h1>
 
-        <p className="max-w-[50ch] text-[17px] leading-[1.5] text-pqMuted">
+        <p className="max-w-[52ch] text-[21px] leading-[1.5] text-pqMuted">
           {user?.allowTrial
             ? t(
                 'billing_trial_hero_sub',
@@ -709,7 +868,7 @@ export const FirstBillingComponent = () => {
         )}
 
         {!!user?.allowTrial && (
-          <div className="mt-[2px] flex flex-nowrap mobile:flex-col gap-x-[22px] gap-y-[10px] text-[14.5px] font-[500]">
+          <div className="mt-[2px] flex flex-nowrap mobile:flex-col gap-x-[22px] gap-y-[10px] text-[17px] font-[500]">
             <div className="flex items-center gap-[9px] whitespace-nowrap">
               <TrustCheck />
               <div>{t('billing_no_risk_trial', '100% no-risk free trial')}</div>
@@ -732,41 +891,40 @@ export const FirstBillingComponent = () => {
         {!user?.allowTrial && (
           <div
             data-lapsed-banner="1"
-            className="mt-[6px] flex items-start gap-[11px] rounded-[14px] bg-pqAmberSoft p-[14px_16px] text-[14.5px] text-pqText ring-[1.5px] ring-inset ring-pqWarn/35"
+            className="mt-[6px] flex items-center gap-[11px] rounded-[14px] bg-pqAmberSoft p-[14px_17px] text-[15.5px] text-pqText ring-1 ring-inset ring-pqAmberLine"
           >
-            <span className="mt-[1px] grid size-[22px] shrink-0 place-items-center rounded-full bg-pqWarn text-white">
-              <svg
-                viewBox="0 0 24 24"
-                width="13"
-                height="13"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 8v4.5M12 16.2h.01"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                />
-              </svg>
+            {/* Prototype: 18×18 stroke warn circle — not a filled disc. */}
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              aria-hidden="true"
+              className="shrink-0 text-pqWarn"
+            >
+              <path
+                d="M12 8v4.5M12 16.2h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {/* Title only (pwLapsedTitle). pwLapsedBody exists in Vals but is
+                not in the prototype template — do not render it. Trial date
+                from trialWindow(createdAt); missing createdAt → dateless. */}
+            <span className="min-w-0 flex-1 font-[700] leading-[1.4]">
+              {trialEndedLabel
+                ? t(
+                    'billing_trial_ended_on',
+                    'Your trial ended on {{date}}.',
+                    { date: trialEndedLabel }
+                  )
+                : t(
+                    'billing_subscription_ended',
+                    'Your subscription ended.'
+                  )}
             </span>
-            {/* Design: "Your subscription ended on {date}". The Subscription
-                row is hard-deleted in this state, so no reliable end date is
-                on the client — title stays dateless; body matches design. */}
-            <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-              <span className="font-[700] leading-[1.35]">
-                {t(
-                  'billing_subscription_ended',
-                  'Your subscription ended.'
-                )}
-              </span>
-              <span className="text-[13.5px] font-[500] leading-[1.45] text-pqMuted">
-                {t(
-                  'billing_subscription_ended_body',
-                  'Nothing will go out until you subscribe again.'
-                )}
-              </span>
-            </div>
           </div>
         )}
       </div>
@@ -780,9 +938,20 @@ export const FirstBillingComponent = () => {
       // reports that now instead of counting it as coverage — the same reason
       // it reports redirects.
       data-pq-paywall="1"
-      className="blurMe flex flex-1 flex-col bg-pqBg pb-[132px] mobile:pb-[190px]"
+      className="blurMe flex min-h-0 flex-1 flex-col overflow-y-auto bg-pqBg pb-[132px] mobile:pb-[190px]"
     >
-      <div className="sticky top-0 z-40 flex h-[68px] shrink-0 items-center gap-[14px] border-b border-pqLine bg-pqInner px-[40px] tablet:px-[32px] mobile:!px-[16px]">
+      <div className="sticky top-0 z-40 shrink-0 border-b border-pqLine bg-pqInner">
+        <div
+          className={clsx(
+            CHECKOUT_MAX,
+            'flex h-[68px] items-center gap-[14px]',
+            mobile
+              ? 'px-[16px]'
+              : tablet
+              ? 'px-[28px]'
+              : 'px-[40px]'
+          )}
+        >
         {/* 34px tile + 19px wordmark + version chip, the checkout header's own
             scale. Version reads NEXT_PUBLIC_APP_VERSION — same source as the
             app rail — not a marketing placeholder. */}
@@ -810,10 +979,10 @@ export const FirstBillingComponent = () => {
           </div>
         </div>
         <div className="flex min-w-0 items-center gap-[2px] text-pqMuted">
-          {/* The design's checkout header carries Help. It is the same menu
-              the app uses, not a second one — documentation, support and bug
-              report are the same three places from here. */}
-          <HelpMenu />
+          {/* Checkout Help: docs / support / report a bug — no Setup tour or
+              locked shortcuts (nothing to tour on the paywall). Report a bug
+              lives here; the extra Sentry icon below was a duplicate. */}
+          <HelpMenu surface="checkout" />
           <div className="flex h-[36px] cursor-pointer items-center rounded-[10px] px-[12px] text-[14.5px] font-[500] transition-colors hover:bg-pqHover hover:text-pqText">
             <DeveloperIconComponent />
           </div>
@@ -826,11 +995,6 @@ export const FirstBillingComponent = () => {
           </div>
           <div className="flex h-[36px] items-center rounded-[10px] px-[8px] empty:hidden">
             <OrganizationSelector />
-          </div>
-          {/* Not in the design's header — the repo's Sentry feedback entry,
-              kept as a quiet icon button in the design's idiom. */}
-          <div className="grid h-[36px] w-[36px] place-items-center rounded-[10px] transition-colors empty:hidden hover:bg-pqHover hover:text-pqText">
-            <AttachToFeedbackIcon />
           </div>
           {/*<NotificationComponent />*/}
           {user?.tier.current === 'FREE' && (
@@ -848,21 +1012,23 @@ export const FirstBillingComponent = () => {
             </>
           )}
         </div>
+        </div>
       </div>
       <div
         className={clsx(
+          CHECKOUT_MAX,
           'flex flex-1 items-start gap-[56px] pb-[40px]',
-          stackCheckout
-            ? 'flex-col-reverse items-stretch'
-            : 'flex-row',
+          // Left: hero + payment + FAQ. Right: Lifetime + plans + order summary.
+          // Reverse on phone so plans stay first.
+          stackCheckout ? 'flex-col-reverse items-stretch gap-[28px]' : 'flex-row',
           mobile
             ? 'px-[16px] pt-[24px]'
             : tablet
-            ? 'px-[32px] pt-[40px]'
-            : 'px-[40px] pt-[56px]'
+            ? 'px-[28px] pt-[36px]'
+            : 'px-[40px] pt-[48px]'
         )}
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-[40px]">
+        <div className="flex min-w-0 flex-1 flex-col gap-[28px]">
           <JoinOver />
           {data?.blocked ? (
             <div className="rounded-[20px] p-[24px] text-[16px] font-[500] ring-[1.5px] ring-inset ring-pqBorder">
@@ -888,9 +1054,9 @@ export const FirstBillingComponent = () => {
             <EmbeddedBilling
               stripe={stripe}
               secret={data.client_secret}
-              showCoupon={period === 'MONTHLY'}
+              showCoupon
               autoApplyCoupon={data.auto_apply_coupon}
-              suppressCheckoutChrome={checkoutMode === 'lifetime'}
+              suppressCheckoutChrome={activeMode === 'lifetime'}
               fallbackTier={tier}
               fallbackPeriod={period}
               fallbackAllowTrial={!!user?.allowTrial}
@@ -907,77 +1073,40 @@ export const FirstBillingComponent = () => {
               }
             />
           )}
-          {/* The design keeps the FAQ in the left column, under the payment
-              card, on every breakpoint. */}
+          {/* FAQ under payment on the left. */}
           <FAQComponent scale="checkout" />
         </div>
         <div
           className={clsx(
             'flex shrink-0 flex-col gap-[20px]',
-            stackCheckout ? 'w-full' : 'w-[560px]'
+            stackCheckout ? 'w-full' : 'sticky top-[84px] w-[min(520px,42%)]'
           )}
         >
-          {lifetimeOpen && (
+          {canBuyLifetime && (
             <LifetimeOfferCard
-              selected={checkoutMode === 'lifetime'}
+              selected={activeMode === 'lifetime'}
               onSelect={() => setCheckoutMode('lifetime')}
             />
           )}
-          <div
-            className={clsx(
-              'flex flex-col rounded-[22px] bg-pqInner shadow-pqE1 ring-1 ring-inset ring-pqLine',
-              checkoutMode === 'lifetime' && 'opacity-55'
-            )}
-          >
+          <div className="flex flex-col rounded-[22px] bg-pqInner shadow-pqE1 ring-1 ring-inset ring-pqLine">
             <div className="flex flex-col gap-[18px] p-[24px_26px_22px]">
-              <div className="flex flex-wrap items-center gap-[14px]">
-                <div className="min-w-[120px] flex-1 font-display text-[19px] font-[600] tracking-[-0.02em]">
+              <div className="flex w-full items-center justify-between gap-[14px]">
+                <div className="min-w-0 font-display text-[21px] font-[600] tracking-[-0.02em]">
                   {t('billing_choose_plan', 'Choose a plan')}
                 </div>
-                <div className="flex shrink-0 select-none items-center gap-[4px] rounded-full bg-pqSettings p-[4px]">
-                  <div
-                    className={clsx(
-                      'flex h-[32px] cursor-pointer items-center justify-center rounded-full px-[16px] text-[13px] font-[600]',
-                      period === 'MONTHLY' && checkoutMode === 'subscription'
-                        ? 'bg-pqInner text-pqText'
-                        : 'text-pqMuted'
-                    )}
-                    onClick={() => {
-                      setCheckoutMode('subscription');
-                      setPeriod('MONTHLY');
-                    }}
-                  >
-                    {t('billing_monthly', 'Monthly')}
-                  </div>
-                  <div
-                    className={clsx(
-                      'flex h-[32px] cursor-pointer items-center justify-center gap-[8px] rounded-full pe-[10px] ps-[16px] text-[13px] font-[600]',
-                      period === 'YEARLY' && checkoutMode === 'subscription'
-                        ? 'bg-pqInner text-pqText'
-                        : 'text-pqMuted'
-                    )}
-                    onClick={() => {
-                      setCheckoutMode('subscription');
-                      setPeriod('YEARLY');
-                    }}
-                  >
-                    <div>{t('billing_yearly', 'Yearly')}</div>
-                    {/* Was a hardcoded "20% Off", true of the old prices and an
-                        understatement of every current one. Derived, and exact:
-                        the design's pill quotes the figure for the plan that is
-                        actually selected. */}
-                    <div className="flex h-[21px] items-center whitespace-nowrap rounded-full bg-pqOkSoft px-[8px] text-[11px] font-[700] text-pqOk">
-                      {t('billing_months_free', '{{n}} months free', {
-                        n: monthsFree(tier),
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <BillingPeriodToggle
+                  period={period === 'YEARLY' ? 'YEARLY' : 'MONTHLY'}
+                  monthsFreeN={monthsFree(tier)}
+                  onChange={(next) => {
+                    setCheckoutMode('subscription');
+                    setPeriod(next);
+                  }}
+                />
               </div>
               <div className="grid grid-cols-2 gap-[11px]">
                 {price.map(([key, value]) => {
                   const selected =
-                    checkoutMode === 'subscription' && key === tier;
+                    activeMode === 'subscription' && key === tier;
                   return (
                     <div
                       onClick={() => {
@@ -986,53 +1115,26 @@ export const FirstBillingComponent = () => {
                       }}
                       key={key}
                       className={clsx(
-                        'relative flex cursor-pointer select-none flex-col gap-[7px] rounded-[14px] p-[14px_16px]',
+                        'relative flex cursor-pointer select-none flex-col gap-[8px] rounded-[16px] p-[16px_18px]',
                         selected
                           ? 'bg-pqBrandSoft ring-[1.5px] ring-inset ring-pqBrand'
                           : 'ring-1 ring-inset ring-pqBorder'
                       )}
                     >
                       <div className="flex items-center gap-[9px]">
+                        <CheckoutRadio selected={selected} />
                         <span
                           className={clsx(
-                            'grid size-[18px] shrink-0 place-items-center rounded-full',
-                            selected
-                              ? 'bg-pqBrand'
-                              : 'ring-[1.5px] ring-inset ring-pqBorder'
-                          )}
-                        >
-                          {selected && (
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="11"
-                              height="11"
-                              fill="none"
-                              aria-hidden="true"
-                              className="text-pqOnBrand"
-                            >
-                              <path
-                                d="m5 12.5 4.5 4.5L19 7.5"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          )}
-                        </span>
-                        <span
-                          className={clsx(
-                            'flex-1 text-[14.5px] font-[600]',
+                            'flex-1 text-[15px] font-[600]',
                             selected ? 'text-pqText' : 'text-pqMuted'
                           )}
                         >
-                          {capitalize(key)}
+                          {tierLabel(key)}
                         </span>
-                        {/* The design puts this on one plan and names it there:
-                            `badgeDisplay: key === 'PRO' ? 'flex' : 'none'`. It
-                            is the only steer the checkout gives, so it is not
-                            decoration. */}
-                        {key === 'PRO' && (
+                        {/* Design puts Popular on PRO. Hidden while the
+                            founding deal steers checkout — flip
+                            SHOW_PRO_POPULAR_BADGE when that deal retires. */}
+                        {key === 'PRO' && SHOW_PRO_POPULAR_BADGE && (
                           <span
                             data-plan-popular="1"
                             className="flex h-[19px] items-center rounded-full bg-pqBrand px-[8px] text-[9.5px] font-[800] uppercase tracking-[0.05em] text-pqOnBrand"
@@ -1044,14 +1146,14 @@ export const FirstBillingComponent = () => {
                       {/* Both periods quote a monthly figure — yearly quotes
                           the effective per-month price, and the order summary
                           carries the billed total. */}
-                      <div className="flex items-baseline gap-[4px] ps-[27px]">
-                        <span className="font-display text-[24px] font-[600] tracking-[-0.025em] text-pqText">
+                      <div className="flex items-baseline gap-[4px] ps-[29px]">
+                        <span className="font-display text-[26px] font-[600] tracking-[-0.025em] text-pqText">
                           $
                           {period === 'MONTHLY'
                             ? value.month_price
                             : effectiveMonthly(key)}
                         </span>
-                        <span className="text-[12.5px] text-pqMuted">
+                        <span className="text-[13px] text-pqMuted">
                           {t('billing_per_month_short', '/mo')}
                         </span>
                       </div>
@@ -1061,35 +1163,38 @@ export const FirstBillingComponent = () => {
               </div>
               {/* The design shows this only under PRO — the plan the lifetime
                   deal replaces — and only while the founding-member window is
-                  open. The tier named is the one the ladder actually grants. */}
-              {tier === 'PRO' && lifetimeOpen && checkoutMode === 'subscription' && (
-                <button
-                  type="button"
-                  data-lifetime-upsell="1"
-                  onClick={() => setCheckoutMode('lifetime')}
-                  className="flex w-full items-center gap-[14px] rounded-[14px] p-[13px_16px] text-start ring-1 ring-inset ring-pqLtOutline transition-colors hover:bg-pqLtChipBg"
-                >
-                  <span className="min-w-0 flex-1 text-[14.5px] font-[500] text-pqMuted">
-                    {t('billing_or_pay', 'Or pay')}{' '}
-                    <span className="font-[700] text-pqLtAmber">
-                      ${LIFETIME_PRICE}
-                    </span>{' '}
-                    {t(
-                      'billing_once_and_keep_forever',
-                      'once and keep {{tier}} forever',
-                      { tier: 'Pro' }
-                    )}
-                  </span>
-                  <span className="shrink-0 text-[13px] font-[700] text-pqLtAmber">
-                    {t('billing_switch', 'Switch')}
-                  </span>
-                </button>
-              )}
-              {/* The design computes this line but never renders it — its slot
-                  is taken by the lifetime upsell. It stays (the exact figure
-                  for the selected plan is worth a strip, not only a badge) and
-                  fills that same slot once the lifetime offer has closed. */}
-              {period === 'MONTHLY' && !lifetimeOpen && (
+                  open. Founding always grants Pro. */}
+              {tier === 'PRO' &&
+                canBuyLifetime &&
+                activeMode === 'subscription' && (
+                  <button
+                    type="button"
+                    data-lifetime-upsell="1"
+                    onClick={() => setCheckoutMode('lifetime')}
+                    className="flex w-full items-center gap-[14px] rounded-[14px] p-[13px_16px] text-start ring-1 ring-inset ring-pqLtOutline transition-colors hover:bg-pqLtChipBg"
+                  >
+                    <span className="min-w-0 flex-1 text-[14.5px] font-[500] text-pqMuted">
+                      {t('billing_or_pay', 'Or pay')}{' '}
+                      <span className="font-[700] text-pqLtAmber">
+                        ${LIFETIME_PRICE}
+                      </span>{' '}
+                      {t(
+                        'billing_once_and_keep_forever',
+                        'once and keep {{tier}} forever',
+                        { tier: 'Pro' }
+                      )}
+                    </span>
+                    <span className="shrink-0 text-[13px] font-[700] text-pqLtAmber">
+                      {t('billing_switch', 'Switch')}
+                    </span>
+                  </button>
+                )}
+              {/* Yearly nudge when Lifetime is not the selected mode. Hidden
+                  under PRO while the founding lifetime upsell is also shown —
+                  two Switch rows stacked is noise. */}
+              {period === 'MONTHLY' &&
+                activeMode === 'subscription' &&
+                !(tier === 'PRO' && canBuyLifetime) && (
                 <div
                   data-yearly-switch="1"
                   className="flex flex-wrap items-center gap-[10px] rounded-[14px] bg-pqOkSoft p-[13px_16px] text-[14.5px] text-pqOk"
@@ -1129,17 +1234,19 @@ export const FirstBillingComponent = () => {
             <div className="flex flex-col gap-[13px] border-t border-pqLine p-[22px_26px_24px]">
               <div className="text-[14px] font-[600] text-pqMuted">
                 {t('billing_included_in', 'Included in {{plan}}', {
-                  plan: capitalize(tier),
+                  plan: tierLabel(tier),
                 })}
               </div>
               <BillingFeatures tier={tier} />
             </div>
           </div>
-          {/* Order summary: Lifetime is local; subscription is portaled from
-              EmbeddedBilling into #pq-order-summary (or fallback while loading). */}
-          {checkoutMode === 'lifetime' ? (
+          {/* Order summary bottom-right (portals from EmbeddedBilling). */}
+          {activeMode === 'lifetime' ? (
             <LifetimeOrderSummary />
-          ) : isLoading || !data?.client_secret || embedFetchError || data?.blocked ? (
+          ) : isLoading ||
+            !data?.client_secret ||
+            embedFetchError ||
+            data?.blocked ? (
             <OrderSummaryFallbackCard
               tier={tier}
               period={period}
@@ -1150,7 +1257,15 @@ export const FirstBillingComponent = () => {
           )}
         </div>
       </div>
-      {checkoutMode === 'lifetime' && lifetimeOpen && <LifetimePayBar />}
+      {activeMode === 'lifetime' && <LifetimePayBar />}
+      {activeMode === 'subscription' && !embedChromeLive && !data?.blocked && (
+        <SubmitBarFallback
+          tier={tier}
+          period={period}
+          allowTrial={!!user?.allowTrial}
+          pending={isLoading || !stripe}
+        />
+      )}
     </div>
   );
 };
@@ -1253,7 +1368,7 @@ export const BillingFeatures: FC<{
   };
 
   return (
-    <div className="grid grid-cols-2 mobile:grid-cols-1 gap-y-[10px] gap-x-[14px]">
+    <div className="grid grid-cols-2 gap-x-[18px] gap-y-[10px] mobile:grid-cols-1">
       {features.map((feature) => {
         // The one row the design lets glow — carrying `pq-loop` so
         // prefers-reduced-motion can switch the loop off (see global.scss).
@@ -1262,7 +1377,7 @@ export const BillingFeatures: FC<{
           <div
             key={feature.key}
             className={clsx(
-              'flex items-center gap-[9px] font-[600]',
+              'flex min-w-0 items-center gap-[9px] font-[600]',
               tone === 'lifetime'
                 ? 'text-[13.5px] text-pqLtText'
                 : 'text-[14px] text-pqText',

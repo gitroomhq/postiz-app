@@ -1,6 +1,12 @@
 export interface PricingInnerInterface {
   current: string;
   /**
+   * Commercial name shown in the UI. The identifier (`current` / object key)
+   * can differ — live top tier is keyed `AGENCY` but labeled "Ultimate" so we
+   * do not collide with the retired `ULTIMATE` enum/pricing row.
+   */
+  label: string;
+  /**
    * Kept so live subscriptions on an old tier still resolve, but never offered
    * for sale again. Anything that *lists plans to buy* must filter these out;
    * anything that *looks a subscriber's tier up* must not.
@@ -28,6 +34,7 @@ export interface PricingInterface {
 export const pricing: PricingInterface = {
   FREE: {
     current: 'FREE',
+    label: 'Free',
     month_price: 0,
     year_price: 0,
     channel: 0,
@@ -63,6 +70,7 @@ export const pricing: PricingInterface = {
   // them costs a data migration on live subscriptions.
   CREATOR: {
     current: 'CREATOR',
+    label: 'Creator',
     month_price: 20,
     // 6.6x the monthly where the other three are 8x. Doc 06 §B guessed this was
     // a typo. It is not: 132 / 12 is exactly $11 a month, where 8x would be
@@ -85,6 +93,7 @@ export const pricing: PricingInterface = {
   },
   GROWTH: {
     current: 'GROWTH',
+    label: 'Growth',
     month_price: 33,
     year_price: 264,
     channel: 10,
@@ -103,6 +112,7 @@ export const pricing: PricingInterface = {
   },
   PRO: {
     current: 'PRO',
+    label: 'Pro',
     month_price: 49,
     // 470 -> 396, the design's number, which is the 8x that makes the yearly
     // badge honest. PRO is the one tier that keeps its name, so unlike the
@@ -126,6 +136,7 @@ export const pricing: PricingInterface = {
   },
   AGENCY: {
     current: 'AGENCY',
+    label: 'Ultimate',
     month_price: 99,
     year_price: 792,
     // Unlimited, decided by the owner on 2026-08-04. It was left at 100 while
@@ -151,6 +162,7 @@ export const pricing: PricingInterface = {
   // --- retired: kept so existing subscriptions still resolve ---------------
   STANDARD: {
     current: 'STANDARD',
+    label: 'Standard',
     retired: true,
     month_price: 29,
     year_price: 278,
@@ -170,6 +182,7 @@ export const pricing: PricingInterface = {
   },
   TEAM: {
     current: 'TEAM',
+    label: 'Team',
     retired: true,
     month_price: 39,
     year_price: 374,
@@ -189,6 +202,7 @@ export const pricing: PricingInterface = {
   },
   ULTIMATE: {
     current: 'ULTIMATE',
+    label: 'Ultimate',
     retired: true,
     month_price: 99,
     year_price: 950,
@@ -209,14 +223,6 @@ export const pricing: PricingInterface = {
 };
 
 /**
- * A lifetime code stacks the organization one tier up. The ladder has to name
- * the tiers on sale today and still understand a legacy subscriber, who sits on
- * the equivalent rung: STANDARD ~ CREATOR, TEAM ~ GROWTH, ULTIMATE ~ AGENCY.
- *
- * The redemption endpoint and the screen that previews it both read this, so
- * the tier the UI promises is the tier the backend actually grants.
- */
-/**
  * Every tier a *subscription row* can hold — retired ones included, because
  * live subscriptions still hold them and the code has to be able to read one.
  */
@@ -232,19 +238,24 @@ export type PaidTier =
 /** What a *user* can be on, which includes having no subscription at all. */
 export type AnyTier = 'FREE' | PaidTier;
 
-export const lifetimeLadder: { [key: string]: PaidTier } = {
-  FREE: 'CREATOR',
-  CREATOR: 'GROWTH',
-  STANDARD: 'GROWTH',
-  GROWTH: 'PRO',
-  TEAM: 'PRO',
-  PRO: 'AGENCY',
-  AGENCY: 'AGENCY',
-  ULTIMATE: 'AGENCY',
-};
+/**
+ * Founding-member / lifetime purchase always grants Pro — not the trial tier
+ * and not one rung up the old ladder. Owner 2026-08-07.
+ */
+export const LIFETIME_GRANT_TIER: PaidTier = 'PRO';
 
-export const nextLifetimeTier = (current?: string | null): PaidTier =>
-  lifetimeLadder[current || 'FREE'] || 'CREATOR';
+/**
+ * Tier granted by a founding purchase or lifetime code. Argument kept so call
+ * sites stay stable; the current subscription no longer changes the grant.
+ */
+export const nextLifetimeTier = (_current?: string | null): PaidTier =>
+  LIFETIME_GRANT_TIER;
+
+/** Commercial plan name for UI. Falls back to the raw key if unknown. */
+export function tierLabel(tier: string | undefined | null): string {
+  if (!tier) return '';
+  return pricing[tier]?.label ?? tier;
+}
 
 /**
  * What a yearly plan works out to per month. Every tier is priced so this lands
@@ -284,16 +295,20 @@ export const LIFETIME_WINDOW_HOURS = 24;
 /**
  * What the founding-member offer costs, in whole dollars.
  *
- * One figure for everybody, decided by the owner on 2026-08-04. The *tier* it
- * grants still comes from `lifetimeLadder` — FREE buys CREATOR, a CREATOR buys
- * GROWTH, and at the top a further purchase buys channels instead — so the same
- * payment is worth more to an account that already pays. That is the ladder's
- * existing behaviour and predates this price.
+ * One figure for everybody. The tier it grants is always Pro
+ * (`LIFETIME_GRANT_TIER`) — channels, AI images/videos, and plan limits come
+ * from `pricing.PRO`, independent of the account's current trial or paid tier.
  *
  * Here rather than in the checkout code because the screen that shows the price
  * and the session that charges it must not be able to disagree.
  */
 export const LIFETIME_PRICE = 49;
+
+/**
+ * Cancel-flow retention price for a founding-member trial: 50% off the one-time
+ * founding fee ($24.50). Shown instead of the monthly 50%×3 coupon.
+ */
+export const LIFETIME_RETENTION_PRICE = LIFETIME_PRICE / 2;
 
 /**
  * The founding-member window for an account, from its registration date.

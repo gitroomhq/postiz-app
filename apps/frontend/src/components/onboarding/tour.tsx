@@ -165,7 +165,7 @@ const useSteps = (): Step[] => {
         title: t('tour_clients_title', 'Works with the tools you already use'),
         text: t(
           'tour_clients_text',
-          'Claude, ChatGPT, Cursor, Windsurf, Codex, n8n and every other MCP client.'
+          'Pick a category on the left — AI agents, MCP, Agent Skills, automation, CLI & API — then open a connector for install steps.'
         ),
       },
       'nav-channels': {
@@ -370,10 +370,15 @@ interface Rect {
 /**
  * Where the card goes relative to the target. Ported from the prototype — the
  * order of the branches is what stops the card covering the thing it explains.
+ * Horizontal placement mirrors when `dir=rtl` so the card stays beside the
+ * ring instead of sitting on the wrong side of the viewport.
  */
 const place = (r: Rect, huge: boolean, key: string) => {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const rtl =
+    typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('dir') === 'rtl';
   let l: number;
   let t: number;
 
@@ -384,15 +389,20 @@ const place = (r: Rect, huge: boolean, key: string) => {
     if (key === 'cal-grid') {
       // The grid is mostly empty space, so the card can sit inside it — offset
       // off-centre so it covers a corner rather than the hours it describes.
-      l = r.l + r.w * 0.54;
+      l = r.l + r.w * (rtl ? 0.1 : 0.54);
       t = r.t + r.h * 0.3 - CARD_H / 2;
     } else if (key === 'platform-grid') {
-      // Add Channel grid is tall — park the card near the top of the pane so
-      // we never scroll the page to the bottom to "center" the whole grid.
-      l = r.l + Math.min(48, r.w * 0.08);
-      t = r.t + 28;
-    } else if (r.l + r.w + MARGIN + CARD_W <= vw - MARGIN) {
-      l = r.l + r.w + MARGIN;
+      // Upper-mid of the Add Channel grid — not flush under the page title
+      // (owner: finish card sat too high and covered the heading / first row).
+      const inset = Math.min(48, r.w * 0.08);
+      l = rtl ? r.l + r.w - CARD_W - inset : r.l + inset;
+      t = r.t + Math.min(Math.max(r.h * 0.26, 140), r.h * 0.4) - CARD_H / 4;
+    } else if (
+      rtl
+        ? r.l - MARGIN - CARD_W >= MARGIN
+        : r.l + r.w + MARGIN + CARD_W <= vw - MARGIN
+    ) {
+      l = rtl ? r.l - CARD_W - MARGIN : r.l + r.w + MARGIN;
       t = r.t;
     } else if (r.t + r.h + MARGIN + CARD_H <= vh - MARGIN) {
       l = r.l;
@@ -406,9 +416,15 @@ const place = (r: Rect, huge: boolean, key: string) => {
     }
   } else if (r.w < 340) {
     // Narrow target: card to the side, flipped when it would run off.
-    l = r.l + r.w + MARGIN;
-    t = r.h > 360 ? r.t + r.h / 2 - CARD_H / 2 : r.t + r.h / 2 - 62;
-    if (l + CARD_W > vw - MARGIN) l = r.l - CARD_W - MARGIN;
+    if (rtl) {
+      l = r.l - CARD_W - MARGIN;
+      t = r.h > 360 ? r.t + r.h / 2 - CARD_H / 2 : r.t + r.h / 2 - 62;
+      if (l < MARGIN) l = r.l + r.w + MARGIN;
+    } else {
+      l = r.l + r.w + MARGIN;
+      t = r.h > 360 ? r.t + r.h / 2 - CARD_H / 2 : r.t + r.h / 2 - 62;
+      if (l + CARD_W > vw - MARGIN) l = r.l - CARD_W - MARGIN;
+    }
   } else {
     // Wide target: card below, flipped above when it would run off.
     l = r.l;
@@ -446,21 +462,35 @@ export const Tour: FC = () => {
   const current = running ? steps[Math.min(step, steps.length - 1)] : null;
   const last = step >= steps.length - 1;
 
+  const stripTourQuery = useCallback(() => {
+    const params = new URLSearchParams(query.toString());
+    if (!params.has('tour') && !params.has('onboarding')) return;
+    params.delete('tour');
+    params.delete('onboarding');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [query, pathname, router]);
+
   const finish = useCallback(
     (opts?: { leaveOnAddChannel?: boolean }) => {
       markSeen();
-      // Design Finish leaves Add Channel open; Skip just dismisses.
+      // Design Finish leaves Add Channel open; Skip / Esc / scrim just dismiss.
       if (opts?.leaveOnAddChannel) {
         router.push('/channels?add=1');
+      } else {
+        // Sticky `?tour=` / `?onboarding=` would restart the overlay on refresh.
+        stripTourQuery();
       }
       stop();
       setRect(null);
     },
-    [router, stop]
+    [router, stop, stripTourQuery]
   );
 
   // First-run and Help both land here. `?onboarding=` is kept as an alias so
   // auth redirects and OAuth return URLs keep working after the old modal died.
+  // Soft entry only: if this browser already finished the tour, leave the URL
+  // alone as a no-op (Help → Setup tour still calls `start()` directly).
   const { start } = useTourStore(
     useShallow((state) => ({ start: state.start }))
   );
@@ -472,8 +502,12 @@ export const Tour: FC = () => {
       return;
     }
     urlStarted.current = true;
+    if (tourSeen()) {
+      stripTourQuery();
+      return;
+    }
     start();
-  }, [query, start]);
+  }, [query, start, stripTourQuery]);
 
   // A step's path may carry a query — the settings tabs are deep-linked — so
   // "are we there yet" has to compare the params too, not just the pathname.
@@ -628,6 +662,17 @@ export const Tour: FC = () => {
     (offscreen || covers || !!current.dim);
   const spot = !!rect && !huge;
   const pos = rect ? place(rect, huge, current.key) : null;
+  const rtl =
+    typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('dir') === 'rtl';
+  // Caret only when the card sits beside the target (LTR: right; RTL: left).
+  const showCaret =
+    !!spot &&
+    !!rect &&
+    !!pos &&
+    (rtl
+      ? pos.l + CARD_W < rect.l
+      : pos.l > rect.l + rect.w);
 
   return (
     <div
@@ -698,16 +743,18 @@ export const Tour: FC = () => {
       )}
 
       {/* The caret the design draws from the card back to what it is pointing
-          at. Only when the card ended up to the *right* of the target — that is
-          the one case where the gap between them reads as ambiguous, and it is
-          the only case the prototype draws it in either. */}
-      {spot && rect && pos && pos.l > rect.l + rect.w && (
+          at. Only when the card ended up beside the target — LTR to the right,
+          RTL to the left — that is the case where the gap reads as ambiguous. */}
+      {showCaret && rect && pos && (
         <div
           aria-hidden="true"
           data-tour-caret="1"
-          className="pointer-events-none absolute h-[16px] w-[16px] rotate-45 border-b border-s border-pqBorder bg-pqPop"
+          className={clsx(
+            'pointer-events-none absolute h-[16px] w-[16px] rotate-45 border-b bg-pqPop',
+            rtl ? 'border-e border-pqBorder' : 'border-s border-pqBorder'
+          )}
           style={{
-            left: pos.l - 8,
+            left: rtl ? pos.l + CARD_W - 8 : pos.l - 8,
             top: Math.max(
               pos.t + 22,
               Math.min(pos.t + 136, rect.t + rect.h / 2 - 8)

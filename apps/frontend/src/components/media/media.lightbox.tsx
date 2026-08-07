@@ -20,13 +20,30 @@ export type LightboxMedia = {
 };
 
 function mediaMetaLabel(media: LightboxMedia) {
-  if (media.meta) return media.meta;
   const name = media.originalName || media.name || media.path;
   const isVideo =
     hasExtension(media.path, 'mp4') || /\.webm$/i.test(media.path);
-  if (isVideo) return 'MP4';
-  const ext = name.split('.').pop()?.toUpperCase();
-  return ext || 'Image';
+  let format = media.meta;
+  if (!format) {
+    if (isVideo) format = 'MP4';
+    else {
+      const ext = name.split('.').pop()?.toUpperCase();
+      format = ext && ext.length <= 5 ? ext : 'Image';
+    }
+  }
+  if (media.fileSize && media.fileSize > 0) {
+    const kb = media.fileSize / 1024;
+    const size =
+      kb >= 1024
+        ? `${(kb / 1024).toFixed(kb >= 10240 ? 0 : 1)} MB`
+        : `${Math.max(1, Math.round(kb))} KB`;
+    // Prefer EXT · size when meta was dimensions-only (demo) or bare format.
+    if (!media.meta || !/\d+\s*(KB|MB)/i.test(media.meta)) {
+      const extOnly = format.split('·')[0].trim();
+      return `${extOnly} · ${size}`;
+    }
+  }
+  return format;
 }
 
 export const MediaLightbox: FC<{
@@ -39,15 +56,32 @@ export const MediaLightbox: FC<{
   const mediaDirectory = useMediaDirectory();
   const [imgFailed, setImgFailed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const title = media.originalName || media.name || t('media', 'Media');
   const isVideo =
     hasExtension(media.path, 'mp4') || /\.webm$/i.test(media.path);
   const url = media.uiDemo ? media.path : mediaDirectory.set(media.path);
   const gradient = media.thumbGradient;
+  const metaLabel = mediaMetaLabel(media);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mounted, onClose]);
 
   const stop = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -57,7 +91,7 @@ export const MediaLightbox: FC<{
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[130] flex items-center justify-center bg-pqMediaScrim p-[48px] tablet:p-[24px] mobile:p-[16px]"
+      className="fixed inset-0 z-[400] flex items-center justify-center bg-pqMediaScrim p-[48px] tablet:p-[24px] mobile:p-[16px]"
       onClick={onClose}
       data-pq="media-lightbox"
     >
@@ -68,11 +102,9 @@ export const MediaLightbox: FC<{
         <div className="flex items-center gap-[8px]">
           <div className="min-w-0 flex-1">
             <div className="truncate text-[15px] font-[600] text-white">
-              {title}
+              {t('media', 'Media')}
             </div>
-            <div className="mt-[2px] text-[12px] text-white/60">
-              {mediaMetaLabel(media)}
-            </div>
+            <div className="mt-[2px] text-[12px] text-white/60">{metaLabel}</div>
           </div>
           {onDownload && (
             <button
@@ -151,7 +183,7 @@ export const MediaLightbox: FC<{
           ) : !imgFailed ? (
             <img
               src={url}
-              alt={title}
+              alt={t('media', 'Media')}
               className="relative z-[1] max-h-full max-w-full object-contain"
               onError={() => setImgFailed(true)}
             />

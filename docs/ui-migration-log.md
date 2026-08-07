@@ -26,7 +26,7 @@ Design reference: `design/handoff/`. Working rules: root `CLAUDE.md`.
 | 6 · Settings, Analytics, Media, Plugs, Integrations | done for everything this install renders |
 | 7 · Billing, paywall, checkout | **not done.** `/billing` does not render here at all — see below |
 | 8 · Feature-gating audit | done — no gate has drifted |
-| 9 · Onboarding + tour | tour built and photographed; the existing onboarding modal is unchanged apart from Get Started now starting the tour |
+| 9 · Onboarding + tour | **tour-only first-run** — design spotlight tour (`Tour`); dead fullscreen `OnboardingModal` removed |
 | E · Lifetime redemption | route added — it was missing entirely, see the finding below. Purchase flow still open |
 | D · Prices and tier rename | done in code and schema. Live rows move with `scripts/migrate-tiers.mjs`, **run by the owner after a deploy has pushed the schema** |
 | 10 · Leftovers (auth, admin, errors) | auth screens checked and already consistent; admin and error pages untouched |
@@ -330,6 +330,10 @@ inline (same `AddProviderComponent` as the modal). Calendar no longer hosts a ch
 `chromeVals` handlers are dead. Blank/AI split now sits on the calendar toolbar so the
 capability stays reachable. Confirm toolbar vs cells/Channels-only.
 
+**G. Lifetime ladder retired — no backfill (2026-08-07).** New founding grants always
+land on Pro. Accounts already on lifetime Agency/Creator (or other ladder outcomes)
+are left as-is. Confirm whether a one-off migrate to Pro is wanted.
+
 ### Closed
 
 **1. Renaming the tiers is a data migration, not a restyle.** *Decided: full rename, and the design's
@@ -574,8 +578,7 @@ condition (`billingEnabled && extensionStoreUrl`) moved intact into the Help men
 **What the design asks for that this repo cannot answer** — flagged, not built:
 
 - **Setup tour, Documentation, Keyboard shortcuts** in the Help menu. Setup tour is real here — it
-  opens the existing onboarding modal via `/launches?onboarding=true`, which is where `<Onboarding/>`
-  is mounted. The other two have no target and render at the design's own locked opacity with
+  starts the design product tour (`Tour` / `?tour=true`). The other two have no target and render at the design's own locked opacity with
   `aria-disabled` and no handler, so the menu reads complete without a row pretending to work.
   Wiring them is follow-up work.
 - **The streak popover** (7-day grid, "Longest: N days"). The repo has `user.streakSince` and
@@ -664,13 +667,16 @@ unverifiable:
   this step should carry.
 
 **Also worth writing down, since it explains a piece of chrome that looks broken and is not:** there
-is no way to name an organisation. The name comes from the *Company* field at registration
-(`auth/register.tsx:176` → `organization.repository.ts:277`) and nothing in the app or the API can
-change it afterwards; there is no create-organisation endpoint either. A second organisation only
-appears when somebody invites you from Settings → Teams. So the rail's org switcher is invisible to
-most accounts by design, and `layout/organization.selector.tsx` is the only file in the frontend that
-touches `/user/organizations` or `/user/change-org`. Naming and creating organisations is real
-missing product, not a migration task.
+is no way to *rename* an organisation after signup. The name comes from the *Organization* field at
+registration (`auth/register.tsx` → `organization.repository.ts`, DTO field still `company`) and
+nothing in the app or the API can change it afterwards; there is no create-organisation endpoint
+either. A second organisation only appears when somebody invites you from Settings → Teams.
+
+The rail footer **always** shows the current organisation name (switch icon + truncated
+label + chevron). The row is always clickable switcher chrome — with one org the menu lists
+only that membership; with two or more you can change org. Billing’s globe
+`OrganizationSelector` stays multi-org-only. Naming and creating organisations remains real
+missing product, not a migration task. Teams unlocks invites only — it does not gate the name row.
 
 ---
 
@@ -2869,8 +2875,9 @@ holds:
   the part that distinguishes this from the paywall a member must never be shown
 - Logout in the header ✓
 
-The org switcher doc 03 also lists is absent, correctly: this member belongs to
-one organization, so there is nothing to switch between.
+The org *switcher* doc 03 lists is correctly absent for this member (one
+organization — nothing to switch between). The rail footer still shows the
+organisation **name** as a static row; only the chevron/menu is multi-org.
 
 **Doc 03's ten states are now all accounted for.** Eight have been rendered and
 looked at — `not_started`, `trial`, `active`, `canceling`, `ended`, `lifetime`,
@@ -5110,3 +5117,2617 @@ destination never opened.
 Upgrade, Open Connections, and `?tab=` redirects.
 
 
+
+### AGENCY commercial label → Ultimate (2026-08-06)
+
+Live top-tier **identifier** stays `AGENCY` (Prisma enum, Stripe metadata/lookup_keys,
+lifetime ladder, DTO). Commercial **label** is `Ultimate` via `pricing.AGENCY.label`
+and `tierLabel()` — billing cards, checkout, plan & invoices, LOOK toolbar, etc.
+
+Retired `ULTIMATE` pricing row is unchanged (100 channels / $950 yearly). Do not
+rename the enum key to `ULTIMATE`; that would collide with legacy rows.
+
+**Org rail switcher polish:** single-org row is always a clickable switcher
+(switch icon + chevron + menu); left letter badge replaced with switch arrows.
+i18n: `switch_organization` (aria-label).
+
+**Teams LOOK unlock:** DEV billing override + `team_members` treats GET `/settings/team` 402 as empty list (not lock). Gates baseline recount (`tier.team_members` call sites).
+
+### Checkout columns + pay bar + Lifetime default (2026-08-06)
+
+**Owner:** Plan / order summary on the **left**; FAQ under payment on the **right**;
+fixed bottom pay bar for every selection (not only Lifetime); open with Lifetime
+selected when the founding window is open.
+
+**Fixes** (`first.billing.component.tsx`): swapped columns; FAQ moved with payment;
+`checkoutMode` defaults to `lifetime` (`activeMode` falls back to subscription when
+the window is closed); marketing `selectedPlan` still forces subscription; parent
+`SubmitBarFallback` when Embedded Stripe chrome is not live so the bar survives
+load/error states. Design prototype also keeps a always-on bottom bar.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — gates `allowTrial` 34→36
+(parent `SubmitBarFallback` + `fallbackAllowTrial` usage); api/i18n/routes unchanged.
+
+### CopilotKit Network CombinedError without OPENAI (2026-08-06)
+
+Empty `OPENAI_API_KEY` made `/copilot/chat` return plain 503 JSON; CopilotKit's
+mount-time `availableAgents()` became `CombinedError: [Network] Unknown error
+occurred`, and Next canary overlaid it on every authenticated page.
+
+**Fix:** `isAiEnabled()` + `aiEnabled` on VariableContext (same pattern as
+`billingEnabled`). Layout and preview mount `<CopilotKit>` only when enabled;
+editor / pick-platform Copilot hooks live in child components gated the same way;
+signatures / plugs / autopost fall back to plain `<textarea>`; Agents shows an
+empty state. i18n: `ai_not_configured_title`, `ai_not_configured_body`. Baseline
+`--update` (i18n + incidental api/gates drift from earlier settings form removal).
+
+### Agents unconfigured shell (no blocking empty state) (2026-08-06)
+
+**Owner:** When OpenAI is off, Agents must not center-takeover with
+"AI is not configured". Show normal empty Copilot LOOK without remounting
+CopilotKit against a broken `/copilot/agent` (CombinedError overlay).
+
+**Fix:** `agent.chat.tsx` — extract presentational `EmptyStateHero` (no
+`useCopilotMessagesContext`); live `EmptyState` still gates on messages/`new`.
+`!aiEnabled` renders `UnconfiguredAgentShell`: same hero + **working** local
+composer (type + send → user bubbles in-thread, no assistant reply / no
+network). Hint under the input removed. CopilotKit stays unmounted. Channel
+rail / `openChannels` unchanged. Send button: `.agent` CSS forces
+`inline-grid` + `place-items: center` + 32×32 (overrides SDK
+`inline-block` / 24px that left the ↑ glyph tiny in a corner).
+
+**Checks:** `scripts/ui-migration-check.sh` — types/api/i18n/routes/gates PASS
+(no baseline rewrite).
+
+**Month chips:** platform icon (13px) then avatar — same order as Week/Day
+(`calendar.tsx` `data-mpost`).
+
+### Trial lock amber tip + shimmer CTA (2026-08-06)
+
+**Owner:** While X (or any trial-locked provider) is locked, hide the amber
+`guide.requirement` strip — connect is not open yet. Unlock CTA should bloom /
+glow / sheen like the design AI Copilot lock button.
+
+**Fix:** `ProviderSetupStep` shows requirement only when `!locked`.
+`TrialLockCard` primary CTA uses `animate-pqBtnBloom` / `Glow` / `Sheen` +
+`pq-loop` (keyframes already in `global.scss`).
+
+### Trial lock: no padlock on Add-channel tile (2026-08-06)
+
+**Owner:** Lock badge on the X (trial-locked) tile in the SOCIAL grid looked
+wrong — user should only see the lock when they open the channel.
+
+**Fix:** Removed the absolute padlock overlay from the provider tile. Tile stays
+clickable (`data-provider-trial-locked` kept); `ProviderSetupStep` still shows
+`TrialLock` / `TrialLockCard` when `trialLocked && isTrailing`.
+
+### Checkout layout correction + pay bar label + scroll (2026-08-06)
+
+**Owner:** FAQ right under pricing — not all pricing moved left. Order summary
+only under payment on the left. Page must scroll; bottom CTA must show label.
+
+**Fix:** Columns restored (left: hero + payment + order summary; right: plans +
+FAQ). Paywall root `min-h-0 overflow-y-auto` inside shell `h-dvh`.
+`SubmitBarFallback` takes `pending` — error/idle keeps CTA text visible (was
+blank purple from perpetual `loading` + `invisible` children). Lifetime bar
+interpolation uses `{{amount}}` with `$49` to avoid `${{price}}` i18n quirks.
+
+### Checkout fidelity pass (coupon / trust / dimming / spinner) (2026-08-06)
+
+**Why it looked wrong:** An earlier fidelity plan was written but never
+shipped while other multitask work ran. Gaps matched the screenshots —
+no usable coupon on yearly/lifetime/error, `opacity-55` on Choose a plan
+when Lifetime selected, Stripe trust only under live Payment details,
+`ReactLoading` border shorthand overlay.
+
+**Shipped (LOOK + small WORK):**
+- `button.tsx` — longhand borders only (no Router/style overlay on pay bar)
+- Removed subscribe `opacity-55` when Lifetime selected
+- Coupon chrome always on order summaries (subscription live `CouponInput`,
+  fallbacks + lifetime `CouponChrome`); `allow_promotion_codes: true` for
+  monthly **and** yearly Embedded/hosted + lifetime Checkout
+- Shared `StripeTrust` under summaries and on pay-bar **left** (owner trust
+  override; design bar left was empty)
+- Lapsed/`!allowTrial`: still no trial credit; coupon + trust remain; CTAs
+  unchanged
+
+**Raise (unchanged):** Design Lifetime `$0` today / charge after trial needs
+deferred SetupIntent + trial-end PaymentIntent — not in this pass. Lifetime
+summary stays honest `$49` due today.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — types/api/routes/gates
+ok; i18n baseline refreshed for `billing_coupon_when_checkout_ready` /
+`billing_coupon_on_stripe_checkout` (new) and removed
+`ai_not_configured_*` (Agents unconfigured shell earlier same day).
+
+### Toast vs bell notifications (2026-08-06)
+
+**Owner:** Schedule / draft / publish-intent while present → bottom-right toast,
+no bell. Async (Temporal publish, etc.) while focused → toast + auto-read so
+badge stays clear. Offline async → bell unread as today.
+
+**Shipped:**
+- `toaster.tsx` — bottom-end position; `show(text, type?)` kept; optional
+  `{ title, kind: success|warning|info, duration }` for reuse
+- Compose (`manage.modal.tsx`) toasts: Saved as draft / Scheduled for … /
+  Publishing now… (no `inAppNotification` from those paths)
+- `NotificationsLiveBridge` — poll list while visible (~20s + focus); toast
+  rows newer than session start; `POST /notifications/read` + clear badge SWR.
+  Pre-session unread still badge until bell open
+- Drag schedule / move-to-drafts toasts unchanged (already client-only)
+
+**Out of scope:** websockets, per-row read flags, email digest.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — i18n adds
+`saved_as_draft`, `publishing_now` (compose toasts).
+
+### Header chrome polish (2026-08-06)
+
+**Owner:** Top-right uneven gaps/dividers; name too bold; Create Post chevron
+seam too harsh (bright slash on brand).
+
+**Fix:** End cluster wrapped with even `gap-[10px]`; single hairline before
+UserMenu (no divider inside streak/help/bell strip). Header name
+`font-[500]`. Create Post pill `rounded-[10px]`, no `border-s` on chevron —
+shared hover wash instead.
+
+### Settings inline form density (2026-08-06)
+
+**Owner:** Edit Autopost (and sibling Settings panes) wasted vertical space —
+full-width Yes/No selects, broken-looking native chevron, empty error
+spacers, forced scroll. Not required to match prototype 1:1.
+
+**Fix:**
+- Shared `Select`: `appearance-none` + SVG chevron; no empty error row
+- New `FormChoice` segmented pills for short Yes/No (and schedule) options
+- Autopost / signatures use `FormChoice`; webhooks/teams denser selects
+- Input denser (h40, label 13px); drop reserved `&nbsp;` error spacer
+- SettingsPaneEditor + ModalFormActions tighter gaps/heights
+
+**Checks:** `scripts/ui-migration-check.sh` (no new i18n/API surface).
+
+### Integrations SWR shape crash (2026-08-06)
+
+**Symptom:** Next overlay `TypeError: integrations is not iterable` on
+`/agents` at `sortIntegrationsByProviderImportance` ← `AgentList`.
+
+**Root cause:** SWR cache key `'integrations'` was shared with incompatible
+shapes. Webhooks + Autopost fetchers stored the full JSON
+`{ integrations: [...] }`. AgentList expected a bare array and did
+`data || []` — a truthy object still spread-crashes. Plugs also reused
+`analytics-list` (analytics-filtered) for the full channel list.
+
+**Shipped:**
+- `sort.integrations.ts` — accept `T[] | null | undefined`; non-arrays → `[]`
+- `use.integration.list.tsx` — `Array.isArray` before sort
+- AgentList / Webhooks / Autopost / Plugs → `useIntegrationList()` (shared
+  `/integrations/list` array cache); drop colliding `'integrations'` /
+  wrong `analytics-list` usage
+- Analytics sort + agent.chat selectable list + onboarding list fetcher
+  hardened
+
+**Deferred:** `'sets'` shared by calendar + Settings Sets (same endpoint —
+  low risk). Accidental `*.js` / `*.js.map` build artifacts untracked —
+  ignore.
+
+**Checks:** `scripts/ui-migration-check.sh` — PASS (types/api/i18n/routes/gates).
+
+### Checkout composition polish (2026-08-06)
+
+**Owner:** Edge-to-edge felt wrong; order summary belonged bottom-right (not
+under payment); FAQ left; plan/payment radios too faint; pay CTA looked
+disabled/washed when payment details empty — prefer full brand + click error.
+
+**Layout (`first.billing.component.tsx`):** Content + pay bars constrained to
+`max-w-[1120px] mx-auto` with side padding. **Left:** hero + Payment details +
+FAQ. **Right (sticky):** Lifetime / Choose a plan + **Order summary** at foot
+(`#pq-order-summary` portal). Mobile still `flex-col-reverse` (plans first).
+
+**Radios:** Shared `CheckoutRadio` — unselected `ring-2` on `pqMuted` /
+`pqLtDim`; selected brand/lifetime fill + soft outer ring. Stripe Elements
+appearance: stronger `.RadioIconOuter` / `.Tab` borders + `colorPrimary`
+(hex mirrors tokens — iframe exception).
+
+**CTA:** `SubmitBarFallback` no longer `disabled`/`loading` (was `opacity-50`).
+Full brand; click toasts `billing_complete_payment_details`. Live `SubmitBar`
+keeps full opacity while processing (`!opacity-100`, label swap). Lifetime bar
+drops `disabled:opacity-60`.
+
+**Error chrome:** Nest “Internal server error” in Payment details mapped to
+friendly copy (`friendlyCheckoutError` + Stripe session status) — no Stripe
+backend inventing.
+
+**Left alone (WORK):** Prices, lifetime $49 honesty, Embedded/hosted Stripe
+flows, coupon allow flags, trial credit math.
+
+**Raise (unchanged):** Design Lifetime `$0` today / charge-after-trial needs
+deferred SetupIntent — not this pass.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — PASS (types 0/0;
+api 154; i18n 1335 incl. `billing_complete_payment_details` /
+`billing_processing`; routes 30; gates 14).
+
+### Create Post compose polish (2026-08-06)
+
+**Owner:** Toolbar cramped; “Add post in a thread” wording doubtful; platform
+settings full-bleed; Claude/ChatGPT area odd; show AI section when OpenAI off;
+document what compose AI actually does.
+
+**AI WORK (evidence — keep copy honest):**
+- `CopilotPopup` + `EditorCopilotBindings.setPosts` — **text only**: read/rewrite
+  thread contents; cannot generate images/video via the chat.
+- Empty-editor Claude/ChatGPT pills — **deep-link LOOK only** → `/connections`
+  (MCP / agents). Do not invent an in-compose Claude write API.
+- `AiImage` / `AiVideo` toolbar — separate, `tier.ai` gated; media generation
+  endpoints. Polonto Design Media is separate.
+
+**Thread control label:** `add_post` **Add post in a thread** → **Continue
+thread**. WORK: `PostComment.POST` (X/Threads/Bluesky/…) publishes the next
+item as a reply chaining the thread (`in_reply_to` / equivalent). Not a
+public “comment” metaphor. `PostComment.COMMENT` stays **Add comment**.
+`add_comment_or_post` → **Add another post**. Raise if product wants a single
+generic label across both APIs.
+
+**Shipped (LOOK; handlers untouched):**
+- Toolbar: 36px hit targets, `pqBtnSimple`, media vs format groups + divider,
+  wrap — `media.component`, signature/bold/underline/emoji/link/bullets/heading,
+  third-party + AI image/video chips
+- Settings: contained card shell in `manage.modal` + portal cards in
+  `high.order.provider` (inset ring, padding; all fields still reachable)
+- AI banner reframed (“AI writing help” + Connections CTA); unconfigured FAB
+  shell → `/connections` (no CopilotKit mount when `!aiEnabled`)
+- Copilot labels/instructions: text-only honesty
+
+**Raise / deferred:** Design in-sheet AI FAB vs CopilotPopup (composer.md R1);
+provider field internals; screenshot matrix @ 420/900/1440; non-en locale
+string refresh beyond `en`/`tr` for thread label.
+
+**Checks:** `scripts/ui-migration-check.sh --update` (new i18n keys).
+
+---
+
+### Modal open layout jump (Create Post) (2026-08-06)
+
+**Symptom:** Clicking Create Post (and any `openModal`) made the background
+chrome jump left for a frame.
+
+**Cause:** `ModalManagerInner` applied `scrollbar-gutter: stable` only while
+`.pq-modal-open` was set. Our shell is mostly `h-dvh` + inner scroll, and macOS
+often uses overlay scrollbars — so opening a modal *introduced* a gutter and
+narrowed the layout. Same path for every ModalManager modal (media, AI image,
+confirm dialogs, nested Settings forms, etc.).
+
+**Fix:** `scrollbar-gutter: stable` always on `html` (`global.scss`); modal open
+only locks `overflow: hidden`.
+
+### Agents composer toolbar + send size (2026-08-06)
+
+**Symptom:** Insert media / Design / AI chips missing under the Copilot input;
+send looked tiny (SDK 24px).
+
+**Cause:** `MediaPortal` waited for `.copilotKitMessages` before rendering —
+that class only exists on the live CopilotKit tree, so the OpenAI-off
+`UnconfiguredAgentShell` never got the toolbar (and mount races could hide it
+even when AI was on). Shell also omitted `MediaPortal` entirely.
+
+**Fix:** Drop the wait gate; wire thumbs + toolbar into the unconfigured
+shell; send control → 40×40 brand square (hard override of SDK 24px).
+
+### Checkout widen + founding deal always visible (2026-08-06)
+
+**Owner:** Checkout felt cramped in a narrow center with empty side margins;
+Founding member card missing; “Included in …” features in a two-column grid
+wrapped awkwardly.
+
+**Fix:**
+- Shell `max-w` 1120 → **1360**; right column ~520px; pay bars match
+- `BillingFeatures` back to **single column** (no 2-col wrap)
+- Founding Lifetime card always shown on First Billing while `!isLifetime`
+  (24h window only drives countdown; closed → “Founding price” chip). Backend
+  already accepts lifetime checkout without a window check.
+
+---
+
+## Connections catalog redesign — 2026-08-06
+
+Owner priority: redesign `/connections` for look + docs accuracy. Not a 1:1
+prototype pass — take initiative; do not invent features.
+
+### Before
+
+`connections.component.tsx` was a **17-card** catalog in 5 groups
+(Assistants · Coding agents · Chat with your agent · Automation · Build on
+PostQueen). Two lumps violated the owner brief:
+
+- **`editors`** — Cursor, VS Code, Windsurf, Warp, Amp in one card
+- **`chat-bridge`** — WhatsApp, Slack, Discord, Telegram in one card
+
+Card tint colours were per-item hex literals. Docs deep-links were sparse
+(OpenClaw / chat bridge only). Amp had no docs page. VS Code had no dedicated
+MCP guide.
+
+### After — IA (7 sections, **28 cards**)
+
+| Section | Cards |
+| --- | --- |
+| **Agents** | OpenClaw, Hermes (hero) |
+| **Chat front doors** | WhatsApp, Telegram, Slack, Discord — each separate; labeled CHAT, not publishing |
+| **Assistants** | Claude Desktop, Claude Web & Mobile, ChatGPT, Claude Code, Cursor, Codex, Gemini CLI — one card per dedicated docs page; MCP / CLI skill CTAs where docs document both |
+| **More MCP clients** | Warp, Cline, Windsurf, Any MCP client (streamable HTTP) |
+| **Automation** | n8n, Zapier (SOON), Make (SOON), Webhooks, RSS AutoPost |
+| **CLI & API** | CLI, Public API, Node SDK, OAuth apps |
+| **Media** | HeyGen, Reel.Farm |
+
+Publishing channels stay under Channels / Add Channel (not duplicated here).
+
+### LOOK
+
+- Section blurbs + filter chips (All / each section) + search
+- Denser auto-fill grid (`minmax(260px,1fr)`), wider page (`max-w-[1100px]`)
+- Brand icons from docs mintcdn → `apps/frontend/public/icons/connections/*.svg`
+  (plus existing `/icons/third-party/{heygen,reelfarm}.png`)
+- Kind badges: AGENT · CHAT · MCP · SKILL · FLOW · API · MEDIA (token soft fills)
+- Card + detail CTAs deep-link to `https://docs.postqueen.ai/…`
+- Prompt hero gradient uses `--brand*` tokens (no per-card hex tint)
+- Gate unchanged: `tier.public_api` + `isGeneral` + ADMIN/SUPERADMIN
+- Tour hooks preserved: `data-tour="connections-page"`, `data-conn-card`,
+  `data-connector`
+
+### Docs URLs (card → primary)
+
+- OpenClaw → `/agents/openclaw`
+- Hermes → `/agents/hermes`
+- WhatsApp / Telegram / Slack / Discord → `/agents/chat-channels#…`
+- Claude Desktop → `/mcp/clients/claude-desktop` (+ `/agents/claude-apps` hub)
+- Claude Web & Mobile → `/mcp/clients/claude-app` (+ `/agents/claude-apps` hub)
+- ChatGPT → `/agents/chatgpt` (+ `/mcp/clients/chatgpt`)
+- Claude Code → `/agents/claude-code` (+ `/mcp/clients/claude-code`, skill)
+- Cursor → `/agents/cursor` (+ `/mcp/clients/cursor`, CLI)
+- Codex → `/agents/codex` (+ `/mcp/clients/codex`, skill)
+- Gemini CLI → `/agents/gemini-cli` (+ `/mcp/clients/gemini-cli`)
+- Warp / Cline / Windsurf → `/mcp/clients/other-clients#…`
+- Any MCP client → `/mcp/clients/other-clients`
+- n8n / Zapier / Make / Webhooks / RSS → `/automation/…`
+- CLI → `/cli/introduction` · API → `/public-api/introduction` · SDK →
+  `/public-api/sdk` · OAuth → `/public-api/oauth`
+- HeyGen / Reel.Farm → `/using/third-party-integrations`
+
+Setup steps stay install-local (this install's `backendUrl` + API key). OpenClaw
+/ Hermes / chat front doors use **Agent Skills** only
+(`npx skills add GkhanKINAY/postqueen-agent`) — no invented `openclaw mcp add`.
+
+### Raises
+
+1. **Amp** — was in the old editors lump; **no docs page** and no other WORK —
+   dropped. Re-add only if docs land.
+2. **VS Code / Zed / Continue** — no dedicated MCP pages; covered by **Any MCP
+   client** (streamable HTTP) with an honest note. Do not invent a VS Code card.
+3. **Claude Desktop vs Claude Web & Mobile** — **resolved 2026-08-06 (follow-up):**
+   owner wants maximum separate cards. Split into two MCP cards mirroring
+   dedicated docs pages (`/mcp/clients/claude-desktop`, `/mcp/clients/claude-app`);
+   `/agents/claude-apps` hub linked on both. Still no Amp / VS Code cards.
+4. **Screenshot matrix** — not run here (needs `PQ_AUTH` + local app).
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` — **intentional i18n move** for the
+expanded catalog (lump keys removed: `conn_editors_*`, `conn_bridge_{name,short,
+intro,link,step_*}`, `conn_group_chat`, `conn_group_coding`, `conn_openclaw_link`,
+later `conn_claude_apps_name` / shared `conn_claude_*` / `conn_path_mcp_{desktop,web}`;
+new keys for per-card copy, section blurbs, docs/path CTAs, filters, then
+`conn_claude_desktop_*` + `conn_claude_app_*`).
+
+- types (frontend) 0 · types (backend) 0
+- api 154 unchanged
+- routes 30 unchanged
+- gates 14 unchanged
+- i18n **1326 → 1429** (+123 / −20), then Claude split **1429 → 1439**
+  (`--update`; see follow-up below)
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.component.tsx`
+- `apps/frontend/public/icons/connections/*.svg` (16 brand icons)
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+---
+
+## Connections — Claude Desktop / Web & Mobile split — 2026-08-06
+
+Owner follow-up on Raise #3: maximum separate cards. Replaced the single
+**Claude Apps** card with two MCP cards mirroring dedicated docs:
+
+1. **Claude Desktop** → `/mcp/clients/claude-desktop` (+ hub `/agents/claude-apps`)
+2. **Claude Web & Mobile** → `/mcp/clients/claude-app` (+ hub)
+
+Verified still separate (no re-lumping): WhatsApp, Telegram, Slack, Discord;
+Cursor; Warp, Cline, Windsurf. No Amp / VS Code cards invented.
+
+Catalog now **28 cards**. Gate / SOON unchanged.
+
+**Checks:** `scripts/ui-migration-check.sh --update` — types 0/0, api 154,
+routes 30, gates 14 unchanged; i18n **1429 → 1439**.
+
+---
+
+## Connections — visual polish (merge Claude + logos) — 2026-08-06
+
+Owner feedback on noisy tiles / tiny logos / duplicate Claude cards:
+
+### LOOK
+
+- **ConnIcon:** drop filled `bg-pqSettings` chrome when an SVG exists; list
+  ~40px, hero ~50px, detail ~60px. Glyph-only fallback keeps a soft tile + ring.
+- **Claude Code** icon → shared orange `/icons/connections/claude.svg` (no
+  purple nested frame).
+- **Claude Desktop + Web & Mobile** merged back into one **Claude** card
+  (`id: claude-apps`). Detail keeps both MCP docs + apps hub; steps cover
+  Desktop and claude.ai / mobile.
+- List cards: more padding, softer kind badge (`bg-pqBtnSimple` / `text-pqSoft`),
+  at most one path chip + Docs on the face (dual MCP/Skill CTAs stay in detail).
+
+Catalog **28 → 27**. Gate / SOON / chat+IDE separation unchanged. No Amp /
+VS Code cards.
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` — types 0/0, api 154, routes 30,
+gates 14 unchanged; i18n **1439 → 1432** (retire `conn_claude_desktop_*` /
+`conn_claude_app_*`; restore `conn_claude_apps_*`).
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.component.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+---
+
+## Lifetime deal — 7-day trial copy + deferred $49 (2026-08-06)
+
+**Raise resolved:** Checkout previously kept honest **$49 due today** because
+hosted Checkout `mode: 'payment'` charged immediately. Design/owner want every
+package including Lifetime to show **$0 due today** with charge after the
+7-day trial — shipping that copy alone would have been false advertising.
+
+### LOOK
+
+`LifetimeOrderSummary` + `LifetimePayBar` gate on `user.allowTrial` (same as
+subscription):
+
+| | Trial (`allowTrial`) | Lapsed (`!allowTrial`) |
+|---|---|---|
+| Due today | `$0.00` | `$49.00` |
+| Then | `$49 once on {trialEnd}` | One payment of $49 |
+| CTA | Pay $0 Today – Start your free trial! | Get lifetime access — $49 once |
+
+Trial end date reuses `trialWindow(createdAt)` / `TRIAL_DAYS` — not a second clock.
+
+### WORK
+
+- `createLifetimeCheckout`: `mode: 'setup'` + `lifetime_deferred: '1'` when
+  `allowTrial`; else keep immediate `mode: 'payment'`.
+- Webhook `checkout.session.completed` setup branch →
+  `completeDeferredLifetimeSetup` (default PM + `grantLifetimeFromPayment` with
+  `lifetime-setup:{sessionId}`; still trialing).
+- `captureFoundingLifetimeIfDue`: off-session PaymentIntent for `LIFETIME_PRICE`
+  once; idempotent via `lifetime-charge:{piId}` + skip if already `cs_*`.
+- `POST /billing/finish-trial` force-captures before local `endTrial`.
+- `GET /billing/is-trial-finished` lazy-captures when `trialWindow` closed.
+
+### Files
+
+- `apps/frontend/src/components/billing/first.billing.component.tsx`
+- `libraries/nestjs-libraries/src/services/stripe.service.ts`
+- `libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.{service,repository}.ts`
+- `apps/backend/src/api/routes/stripe.controller.ts`
+- `apps/backend/src/api/routes/billing.controller.ts`
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` PASS — types 0/0; api 154, routes 30,
+gates 14 unchanged; i18n **1432 → 1451** (lifetime trial copy keys:
+`billing_lifetime_then_after_trial`, `billing_zero_due_today_until`,
+`billing_founding_bar_sub_trial`, `billing_pay_0_start_trial`, etc.).
+
+### Posts list filter toolbar containment (2026-08-06)
+
+Owner: Posts list filters pinned to far left/right of the page while cards sit in
+the centred `max-w-[860px]` column (unlike Media).
+
+**Fix:** `filters.tsx` — for `list` and `day` (same content column as cards),
+toolbar uses `mx-auto max-w-[860px] px-[4px]` matching `ListView`/`DayView`.
+Week/Month stay full-bleed with their grids. Pattern mirrors Media
+(`media.box.tsx` standalone: `mx-auto max-w-[980px]` wrapping toolbar + grid).
+Handlers unchanged.
+
+**Superseded (same day):** Owner then wanted All dates / calendar·list icons on
+the content edges (860 gutters felt like padding). Dropped `max-w-[860]` for
+list + day — toolbar and cards fill the launches `p-[20px]` pane together.
+Week/Month unchanged. Shell pad stays; header title still outside that pad.
+
+**RAISE:** Reading-column width for list/day removed (was intentional Day≈Posts
+LOOK).
+
+**Reverted (same day, owner):** Full-bleed was not requested — restore
+`max-w-[860]` containment for list + day. Also enrich All dates with
+**Pick a date…** (Mantine `Calendar` → `listRange` `day:YYYY-MM-DD`) and
+prev/next when a day is selected. Design RANGES have no picker — owner raise;
+list filter remains client-side on `/posts/list`.
+
+
+---
+
+### Compose thread button label (2026-08-06)
+
+**Owner:** Global-edit coral button labeled **Add another post** is misleading —
+WORK appends a thread/comment segment under the current compose thread, not a
+separate new post.
+
+**Design (authoritative LOOK):** `PostQueen App v2.dc.html` compose template
+~L644 — **Add comment or post** (`onClick="{{addComment}}"` → appends
+`composeComments`). Calendar cell **Add post** (~L1504) is unrelated.
+
+**Fix (copy only):** `add_comment_or_post` English fallback + `en`/`tr` locale
+strings **Add another post** → **Add comment or post** (design). Key unchanged;
+`PostComment.POST` / `COMMENT` labels (**Continue thread** / **Add comment**)
+untouched. Handler still `AddPostButton` → `addValue`. Corrects the earlier
+compose-polish raise that shipped the wrong ALL-mode label.
+
+### Billing plan-card CTAs: Purchase → Upgrade / Downgrade / Switch (2026-08-06)
+
+Owner: Plans cards said **Purchase** on every non-current tier during a Pro
+trial; design had Upgrade / Downgrade / Switch.
+
+**Design source:** `pagesVals()` → `plans` CTA (~L8056–8057) in
+`design/handoff/design/PostQueen App v2.dc.html` (prototype outranks handoff
+markdown). Matrix:
+
+| Condition | Label |
+| --- | --- |
+| Same tier + same period | Current plan |
+| Lifetime on that tier | Current plan · lifetime |
+| Same tier + period toggle mismatch | Switch to yearly / Switch to monthly |
+| Higher price at viewed period | Upgrade to {name} |
+| Lower price at viewed period | Downgrade to {name} |
+| FREE (canceling) | Downgrade on {date} (repo WORK) / Cancel subscription |
+| FREE org + allowTrial | Start 7 days free trial |
+| FREE org, no trial | Purchase |
+
+**Fix:** `planCardCta()` in `main.billing.component.tsx` — labels only;
+`moveToCheckout` unchanged. Plan name in Upgrade/Downgrade uses `tierLabel`
+(Creator / Growth / Pro / Ultimate) so AGENCY matches the card title; prototype
+used the raw key.
+
+**Raise — Pay Today:** Design fakes prorate (`(diff * 0.5).toFixed(1)`); repo
+keeps real `POST /billing/prorate` + `(Pay Today $X)`. Owner focused on CTA
+verbs; left WORK as-is. Design also shows "Renews {date}" on the current card;
+Stripe renewal date is not in local state — empty spacer stays.
+
+**First billing / checkout CTAs untouched.** Lifetime card CTA unchanged.
+
+**Checks:** `scripts/ui-migration-check.sh --update` PASS — types 0/0; api 154,
+routes 30, gates 14 unchanged; i18n **1451 → 1455** (`upgrade_to_plan`,
+`downgrade_to_plan`, `switch_to_yearly`, `switch_to_monthly`; `purchase` en
+locale filled to match the existing t() key).
+
+---
+
+## Lapsed checkout — “Your trial ended on {date}” (2026-08-06)
+
+**Raise resolved:** First Billing amber strip was dateless (“Your subscription
+ended.”) because the Subscription row is hard-deleted — no `cancelAt` on the
+client. Owner + design want the trial end date.
+
+**LOOK:** When `!allowTrial`, title uses `trialWindow(createdAt).endsAt` formatted
+`D MMM, YYYY` → `Your trial ended on {{date}}.` (`billing_trial_ended_on`).
+Missing `createdAt` keeps the dateless fallback. Body unchanged.
+
+**Raise (unchanged):** A paid-then-cancelled FREE org would still show the
+*trial* end (createdAt+7), not Stripe cancel day — needs `cancel_at` later if
+product cares.
+
+**File:** `apps/frontend/src/components/billing/first.billing.component.tsx`
+
+**Checks:** `scripts/ui-migration-check.sh --update` PASS — i18n **1455 → 1456**
+(`billing_trial_ended_on`).
+
+---
+
+## Checkout Help menu inventory (2026-08-06)
+
+**Owner:** Checkout Help showed Setup tour + locked Keyboard shortcuts; Report a
+bug was missing from the menu.
+
+**Why Report a bug was missing:** row is gated on `sentryDsn`. Separately, the
+Help menu mounts the Sentry button only while open — `useRef` + attach-on-mount
+never re-attached, so even with a DSN the menu row could be dead while the
+standalone header icon worked. Fixed with a callback ref.
+
+**LOOK:** `HelpMenu surface="checkout"` — Documentation · Contact support ·
+Report a bug. No Setup tour, no Keyboard shortcuts, no extension row.
+Standalone `AttachToFeedbackIcon` removed from checkout header (Help owns it).
+
+**Files:** `help.menu.tsx`, `sentry.feedback.component.tsx`,
+`first.billing.component.tsx`
+
+---
+
+## Checkout Pro Popular badge — temporarily off (2026-08-06)
+
+While the founding-member deal steers First Billing, hide the Pro **Popular**
+pill so Lifetime is the only checkout steer. Flip
+`SHOW_PRO_POPULAR_BADGE` in `first.billing.component.tsx` when the deal retires.
+`/billing` Plans “Most popular” unchanged. i18n key `billing_popular` kept.
+
+---
+
+## Lapsed banner icon + copy fidelity (2026-08-06)
+
+**Owner:** filled warn-disc `!` looked bad; “Nothing will go out…” is weak English.
+
+**Prototype check:** paywall template renders **title only** (`pwLapsedTitle`) with
+an 18×18 **stroke** warn circle. `pwLapsedBody` sits in Vals but is unused in
+that template — shipping it was a LOOK mistake.
+
+**Fix** (`first.billing.component.tsx`): stroke icon + `ring-pqAmberLine`; drop
+body line. Keep trial date title via `trialWindow`.
+
+---
+
+## Edit Post — restore Global + channel tabs (2026-08-06)
+
+Edit hid `SelectCurrent` behind `!existingData.integration`, so only the
+Select channels picker showed — no Global / per-channel editor switcher.
+Always render `SelectCurrent` again (same as Create). Handlers unchanged.
+
+---
+
+## Calendar & Posts bug audit fixes (2026-08-06)
+
+**P0:** Draft → calendar `changeDate(schedule)` called `startWorkflow` with the
+*old* DRAFT state → Temporal no-op. Always pass `QUEUE` after schedule.
+
+**P1:** Posts list status segment (Scheduled/Drafts/Posted) — panel is unmounted
+on list. Drafts API allows any `publishDate` (past drafts visible). List
+pagination uses server `total` even with client channel/range filters. Hide
+Past-only under Scheduled.
+
+**P2:** Drop success = `res.ok` (2xx); week/month `useDrop` deps include
+`isBeforeNow`; Day hour pastness ticks every minute; month drop at noon;
+`openAtMorning` uses `[data-cal-hour]="7"`; Newest sorts day headers desc.
+
+---
+
+## Checkout width — use more horizontal space (2026-08-06)
+
+Owner: checkout felt dense while wide screens left empty side margins.
+`CHECKOUT_MAX` **1360 → 1600px** (header / body / pay bar stay aligned); desktop
+column gap **48 → 56px**. Right column still `min(520px, 42%)` — plans stay 2×2.
+
+---
+
+## Checkout Monthly/Yearly contrast + plan cards (2026-08-06)
+
+**Owner:** Monthly vs Yearly selected state invisible in dark — `--inner`
+pill on `--settings` trough is *darker* than the track.
+
+**Fix:** Inverted selected pill `bg-pqText text-pqBg shadow-pqE2` on checkout
+and Plans period toggles; period state no longer requires `activeMode ===
+'subscription'` (Lifetime selected used to mute both). Plan cards slightly
+larger (16px pad, 26px price, 21px Choose a plan).
+
+---
+
+## Channels add-grid category spacing (2026-08-06)
+
+**Owner feedback:** Category groups on Channels → Add a channel looked glued —
+only ~6px (`mt-[6px]`) between the last cards of one group and the next
+header.
+
+**Fix** (`add.provider.component.tsx`): groups wrapper `gap-[24px]`; each
+group `flex flex-col gap-[10px]` (label→grid matches design); label row is
+uppercase title + `h-[1px] flex-1 bg-pqLine` hairline (design `var(--line)`).
+Dropped `mt-[6px]` / `mb-[10px]` / `first:mt-0`. Behavior unchanged.
+
+---
+
+## Channels Add Channel NEW badges on Whop / Skool (2026-08-06)
+
+**Owner feedback:** Design shows NEW corner labels on Skool and Whop tiles;
+production grid only had Whop’s tooltip “?”.
+
+**Fix:** Generic `isNew` on `SocialProvider` (set on Whop + Skool), passed
+through `IntegrationManager`, rendered top-start on tiles in
+`add.provider.component.tsx` (`bg-pqBrand text-pqOnBrand`, design radius /
+type). Coexists with tooltip (top-end) and trial lock on icon. No
+identifier hardcoding in the grid.
+
+---
+
+## Posts list date filter enrichment (2026-08-06)
+
+**Owner:** “enrich” (zenginleştir) the Posts date-range dropdown (was only
+All dates / Today / This week / Next 3 days on Scheduled).
+
+**Design inventory** (`gridVals` `RANGES`): All dates, Today, This week,
+Next 3 days, Past only (+ ephemeral `dayN` from calendar See all). Design
+equals the previous repo set (Past only already gated off Scheduled).
+
+**After (enriched, same `listRange` / `postInListRange` plumbing):**
+- Always: All dates, Today, Tomorrow, This week, Next 3 days, Next 7 days,
+  This month, Next month
+- Drafts / Posted only: Yesterday, Past week, Past only
+- Unchanged: `day:YYYY-MM-DD` chip from calendar See all; purple selected
+  highlight; status tabs + sort
+
+**Ranges (client-side on loaded list pages — no new API):** tomorrow /
+yesterday = single day; next7 = today…today+6; month / nextMonth =
+calendar month bounds; pastWeek = previous ISO week (pairs with This week).
+Past-oriented presets reset to All dates when switching to Scheduled.
+
+**RAISE:** No custom date-range picker in design or this pass. List endpoint
+still has no `startDate`/`endDate` — range filters only the pages already
+fetched. A true calendar picker or server-side date bounds would need a
+backend param (and/or UI) if owner wants that next.
+
+**i18n:** `tomorrow`, `yesterday`, `next_7_days`, `this_month`,
+`next_month`, `past_week` (+ existing keys). English fallbacks in `t()`.
+
+**Files:** `filters.tsx`, `calendar.context.tsx`, this log.
+
+---
+
+## Lifetime Order Summary declutter (2026-08-06)
+
+**Owner feedback (TR):** Lifetime checkout Order Summary felt too dense
+(plan + trial credit + coupon + due today + then + dual callout + Stripe).
+
+**Design vs us (App v2 paywall Order summary):** Same inventory except we
+had Stripe trust inside the card (design puts it under Payment details /
+pay bar) and a muted second callout sentence (“Founding member…”) while
+design uses one body colour + `pwCancelTail` (trial never-charged line).
+
+**LOOK (no WORK change):**
+- Outer gap 14 → 18; line items stay 14; due/then grouped at 10
+- Trial label muted; green only on `-$49` amount (design)
+- Callout: drop muted dual-tone; trial → `billing_cancel_notice_trial`;
+  non-trial keeps `billing_lifetime_no_renewal_note` (sub “billing period”
+  tail is wrong for lifetime)
+- Remove `StripeTrust` from `LifetimeOrderSummary` (still on `LifetimePayBar`)
+- Coupon chrome kept (design has it; WORK for hosted Checkout codes)
+
+**Raise:** Stripe under summary was an earlier owner trust override; for
+Lifetime it duplicated the pay-bar left. Confirm Stripe stays pay-bar-only
+here.
+
+
+---
+
+## Compose AI writing banner polish (2026-08-06)
+
+**Owner:** Banner must not imply draft-only (agents prepare + schedule);
+Claude/ChatGPT letter placeholders; right-side Connections CTA awkward;
+optionally add OpenClaw/Hermes if real Connections.
+
+**Design (`overlayVals` / compose `aiHint*`):** title *Let AI write this post*;
+subtitle *Use PostQueen from Claude, ChatGPT or your own agent*; chips
+Claude + ChatGPT only (glyph tint tiles); **no** separate Connections CTA;
+dismiss.
+
+**Shipped (`editor.tsx`):**
+- Title restored to design English; subtitle adds prepare + schedule (WORK).
+- Removed standalone Connections pill — chips are the CTAs (→ `/connections`).
+- Chip group on the right (`gap-[6px]`); sizes match design (30px chips,
+  19px icons, 26px dismiss).
+- Logos: `/icons/connections/{claude,chatgpt,openclaw,hermes}.svg` via
+  `SafeImage` (same assets as Connections page).
+- OpenClaw + Hermes chips **added** — real Connections catalog entries +
+  assets exist.
+
+**Raises:**
+- Design banner subtitle understates scheduling (no “schedule”); Connections
+  cards say draft/schedule/publish. Subtitle adjusted for WORK truth.
+- Design `aiHintTools` is Claude + ChatGPT only; OpenClaw/Hermes are product
+  Connections heroes — chips added per owner optional ask.
+- Design chips use letter glyphs; we use real SVG assets (LOOK upgrade).
+- `hermes.svg` in repo is itself an “H” tile glyph (same as Connections page).
+
+**Checks:** Added `openclaw` / `hermes` to `docs/ui-migration-baseline/i18n.txt`.
+`let_ai_write_this_post*` fallback text only (same keys). Handlers / dismiss /
+`pq-compose-ai-hint-off` unchanged. Full `scripts/ui-migration-check.sh` still
+reports pre-existing WIP drift on other i18n keys + gate counts — not from this
+banner change; do not `--update` those baselines here.
+
+
+---
+
+## Checkout pay bar Stripe shift fix (2026-08-06)
+
+**Owner:** Switching Lifetime ↔ subscription moved the bottom-bar Stripe
+trust row (and felt like other chrome broke).
+
+**Root cause:** Page rail used `max-w-[1600px]` (`CHECKOUT_MAX`) while
+`SubmitBar` / `SubmitBarFallback` still used `max-w-[1360px]`. `mx-auto` on a
+narrower bar pulled the left edge inward. Secondary: `flex-1` + variable
+`shrink-0` mid/CTA widths + remount/`animate-fadeIn` between Lifetime and
+subscription bars. Stripe SVG also had `mt-[2px]` which looked bottom-stuck.
+
+**Fix (LOOK/layout only — no checkout WORK change):**
+- Shared [`checkout-pay-bar.tsx`](apps/frontend/src/components/billing/checkout-pay-bar.tsx):
+  exported `CHECKOUT_MAX` (1600) + `CheckoutPayBarShell` with stable
+  `grid-cols-[1fr_minmax(320px,max-content)_auto]`.
+- `LifetimePayBar`, `SubmitBar`, `SubmitBarFallback` all use the shell.
+- Removed StripeTrust SVG `mt-[2px]` (baseline via `items-center`).
+
+**Not in scope:** Payment form load failure / embed `client_secret`.
+
+
+---
+
+## Signatures Add form polish (2026-08-06)
+
+**Owner:** Save CTA too wide (`flex-1`); Auto add Yes/No pills feel heavy for a boolean.
+
+**Design:** Prototype form uses a Yes/No **select** for Auto add + Save.
+**Owner ask:** checkbox instead — implemented (boolean WORK unchanged).
+
+**LOOK:**
+- Replaced `FormChoice` Yes/No with a compact checkbox + hint
+  (`Append this signature when you create a new post.`)
+- Save no longer `flex-1`; `px-[22px]` beside Cancel; actions right-aligned
+- Placeholder via `t(write_your_signature)`
+
+**Files:** `signatures.component.tsx`; i18n baseline +
+`auto_add_signature_hint`, `write_your_signature`, `label_auto_add_signature`.
+
+
+---
+
+## Checkbox face: white + brand tick (2026-08-06)
+
+**Owner:** Solid purple checkbox squares (Create Post X settings “Made with
+AI” / “Paid partnership”) are unreadable — look like blocks, not controls.
+Prefer white face + purple tick everywhere.
+
+**Cause:** Shared `Checkbox` always used `bg-forth` (= `--brand`) even when
+unchecked; tick was `text-pqOnBrand` (white on purple) and easy to miss.
+
+**Fix:** `libraries/react-shared-libraries/src/form/checkbox.tsx` — face
+`bg-pqOnBrand` (white token) + inset border; checked shows `text-pqBrand`
+tick. Also fixed `watch || checked` so `false` is not treated as missing.
+Signature Add form checkbox matched the same treatment.
+
+**Call sites:** X / TikTok / LinkedIn / Instagram / Teams / Generator all
+import the shared component — one fix covers them.
+
+
+---
+
+## Add Member form polish (2026-08-06)
+
+**Owner:** Add Member title/body felt weak; Send Invitation Link CTA too wide;
+checkbox still showed solid purple (stale compiled `checkbox.js` shadowed the
+TSX face fix).
+
+**LOOK:**
+- `SettingsPaneEditor`: stronger title (`20/600`) + optional `description`
+- Add Member: description, integrated checkbox label + contextual hint,
+  compact right-aligned CTA (no `flex-1`); CTA sentence case
+- Deleted stale `libraries/.../form/checkbox.js(.map)` so white+brand-tick
+  TSX is what resolves
+
+**WORK unchanged:** POST `/settings/team`, email/copy branches.
+
+
+---
+
+## Settings form footers + Integrations polish (2026-08-06)
+
+**Owner:** Integrations Add API key (and similar Settings editors) had a
+full-bleed primary next to a tiny Cancel; titles felt bare.
+
+**Shared:** `ModalFormActions` is `justify-end`; stop recommending `flex-1`
+primaries. Compact `shrink-0 px-[18px]` CTAs on Integrations, Autopost,
+Webhooks, Plugs.
+
+**Integrations:** SettingsPaneEditor description; API placeholder + hint;
+sentence-case Add integration.
+
+**Also:** Signature / Autopost / Webhook editor descriptions.
+
+
+---
+
+## Order Summary: drop Stripe trust (subscription) (2026-08-06)
+
+**Owner:** Stripe line under Order Summary made the card too dense.
+
+Removed `StripeTrust` from subscription `PriceBreakdown`,
+`PriceBreakdownFallback`, and checkout `OrderSummaryFallback`. Trust stays on
+the pay bar (+ payment-details column under the form). Matches Lifetime pass.
+
+
+---
+
+## Checkout / ended hero type bump (2026-08-06)
+
+**Owner:** Hero title + subtitle on checkout and ended felt a bit small.
+
+**Design:** `pwH1` 34/42/54, sub 17px. Already matched; bumped for presence:
+- H1 → 38 / 48 / 60; sub → 19px; trust row 15.5; lapsed banner 15.5 + 20px icon
+- Hero stack gap 18 → 22
+
+**Second bump (same day):** Still small — H1 → **42 / 52 / 64**; sub → **21px**;
+trust row → **17px** + check SVG 18 → **20**. Lapsed amber banner left at 15.5
+(owner asked about the green-check row).
+
+**RAISE:** Farther above prototype type scale per owner readability ask.
+
+
+---
+
+## Monthly/Yearly toggle balance (2026-08-06)
+
+**Owner:** Yearly selected looked lopsided — selected pill grew around the
+“N months free” chip while Monthly floated in empty trough.
+
+**Fix:** Shared `BillingPeriodToggle` — equal visual weight for both segments.
+Checkout + Plans `/billing` both use it.
+
+**Follow-up (same day):** Toggle sat under “Choose a plan” (wrap) and Yearly-on
+used inverted white/black + green-on-white chip — owner rejected.
+
+**Fix 2:** Header `justify-between` (title left, toggle right, no wrap). Selected
+segment = brand fill + on-brand label; “N months free” chip = on-brand face /
+brand text when Yearly is on, ok-soft when off. Auto-width flex (not `grid-cols-2`).
+
+
+---
+
+## Lifetime switch during entire trial (2026-08-06)
+
+**Owner:** Mid-trial Plans page hid Lifetime; design shows `ltUpsell` for every
+`onTrial` account. Want convert only while trialing — not after first paid charge.
+
+**Cause:** Upsell gated on `lifetimeWindow` (24h from signup), so most of the
+7-day trial hid the strip. `/billing/lifetime` also redirected non-FREE non-lifetime
+users away, so “Switch to lifetime” bounced back to Plans.
+
+**Fix:**
+- Plans upsell: `isTrailing && !isLifetime` (design). CTA = `BuyLifetime` →
+  `POST /billing/lifetime-checkout` (no dead Link).
+- Backend: allow checkout while `org.isTrailing` OR founding 24h window; refuse
+  paid lifetime / already-on-lt-trial. Deferred setup uses `isTrailing|allowTrial`.
+- `/billing/lifetime` allows trailing converts; countdown optional when window closed.
+
+**Still true:** After first paid subscription (not trailing), no Lifetime convert.
+Code redemption remains 24h-window gated.
+
+
+---
+
+## Plans Lifetime upsell: features + type (2026-08-06)
+
+**Owner:** Trial Plans strip showed title/sub only — easy to forget what $49
+unlocks vs checkout founding card. Title/sub felt small; muted grey unreadable.
+
+**Design:** `ltUpsellFeatures: []` — strip has no feature bullets.
+
+**Fix (owner override):** Same `BillingFeatures` grid as checkout
+(`tier={ltUpsellTier}`, `tone="lifetime"`) under a `pqLtLine` hairline. Title
+15.5 → 18; sub 12.5 muted → 14 `text-pqText`; pad 18×20.
+
+**RAISE:** Features on Plans upsell are beyond prototype inventory.
+
+
+---
+
+## Channels: disable New post when reconnect needed; drop kebabs (2026-08-06)
+
+**Owner:** Disconnected channel still allowed New post; ⋯ menu redundant on
+Channels settings (detail + list).
+
+**Design:** Keeps New post enabled while reconnect CTA shows — owner prefers
+disable so the banner/Reconnect affordances are not undercut.
+
+**Fix:** `needsAttention` → New post `disabled` + tooltip; `openComposer`
+guard. Remove `Menu` from channel list rows and detail header (actions live in
+Channel / Access groups). Calendar/sidebar menus unchanged.
+
+
+---
+
+## Posts list toolbar vs content alignment (2026-08-06)
+
+**Owner:** All dates / calendar icon sat right of day headers + cards.
+
+**Cause:** List scroller reserved a scrollbar while the Filters row
+(`max-w-[860px] mx-auto`) did not — different center widths. Day headers also
+had an extra `px-[2px]`.
+
+**Fix:** `[scrollbar-gutter:stable]` on list + day scrollers and on the
+contained Filters row; drop day-header `px-[2px]`; Filters `items-center` only
+on `md:flex-row`.
+
+
+---
+
+## Checkout lifetime card: timer gating + feature hairline (2026-08-06)
+
+**Owner:** Missing duration near “FOUNDING PRICE”; card felt dense above features.
+
+**Timer:** Not a bug. `LifetimeOfferCard` shows the HH:MM:SS countdown only while
+`lifetimeWindow(createdAt).open` (24h from signup) **and** `allowTrial`. After
+the window closes, the strip switches to the static “Founding price” chip — the
+card itself stays (trial convert is still allowed). Confirmed intentional.
+
+**Look:** `h-px bg-pqLtLine` hairline between the title/price row and
+`BillingFeatures` on the founding-member checkout card.
+
+
+---
+
+## Posts panel: platform icon beside avatar (2026-08-06)
+
+**Owner:** Queue cards (Scheduled / Drafts / Posted) hid the network under a
+tiny corner badge on the avatar — hard to tell LinkedIn vs X at a glance.
+
+**Fix:** `QueueCard` matches calendar cards — platform logo `20px` square then
+avatar circle side-by-side; drop overlay badge.
+
+
+---
+
+## Autopost stepped form redesign (2026-08-06)
+
+**Owner:** Add Autopost still felt like a dense flat Settings form (small muted
+subtitle, long Yes/No scroll, Save often missing until Send Test).
+
+**Design:** Flat modal with the same fields — no wizard.
+
+**Fix (owner LOOK upgrade):** In-pane `AddOrEditWebhook` is four steps — Feed →
+Timing → Content → Channels. Numbered pills; Send Test on step 1; Next gated on
+successful RSS check (`valid === url` + syncLast|lastUrl); Save always visible
+on step 4 (disabled until ready). APIs/DTO unchanged.
+
+**Also:** `SettingsPaneEditor` description 13.5 muted → 14.5 `text-pqText`.
+
+**RAISE:** Stepped pane beyond prototype flat inventory; Save still test-gated
+(WORK) but no longer hidden.
+
+
+---
+
+## Posts list: restore 860 + Pick a date (2026-08-06)
+
+**Owner:** Full-bleed list was not requested — revert. Date filter needs a real
+calendar day pick, not only presets.
+
+**Fix:**
+- Restore `max-w-[860px]` + scrollbar-gutter for list/day Filters + ListView/DayView.
+- All dates menu → **Pick a date…** opens Mantine `Calendar`; sets
+  `listRange` `day:YYYY-MM-DD` (existing filter). Prev/next chevrons when a day
+  is active.
+
+**RAISE:** Design RANGES have no custom picker; list API still has no date
+params (client-side only).
+
+
+---
+
+## Lifetime surfaces: flat fills + Plans upsell tidy (2026-08-06)
+
+**Owner:** Diagonal amber → dark fade on lifetime cards felt heavy (“sağa
+karartma”) on Plans upsell, Founding Member thank-you, checkout/ended founding
+card, `/billing/lifetime`.
+
+**Fix:**
+- `--ltCardOn` / `--ltCardOff` → solid washes (dark + light); Tailwind
+  `pqLtCardOn`/`Off` moved from `backgroundImage` → `colors`.
+- Plans trial upsell: drop inline gradient → `bg-pqLtCardOn`; two-zone layout
+  (offer+features | price+CTA); badge under title; shorter sub fallback.
+
+**RAISE:** Flat fills vs prototype fade-to-transparent; upsell layout beyond
+design one-row strip (features kept).
+
+
+## Connect PostQueen panel — 2026-08-06
+
+Replaced the full-page `/connections` marketing catalog with a Settings-scale
+dual-pane **Connect PostQueen** panel (LOOK inspired by connectors catalogs;
+WORK and copy stay PostQueen-only).
+
+### IA (left nav → right pane)
+
+| Nav | Right pane |
+| --- | --- |
+| AI Agents | Hub: Claude, ChatGPT, Claude Code, Cursor, Codex, Gemini CLI, OpenClaw, Hermes + chat front-doors |
+| MCP | Warp, Cline, Windsurf, Any MCP client + URL/Bearer callout |
+| Agent Skills | Skill install callout (`npx skills add GkhanKINAY/postqueen-agent`) + OpenClaw / Hermes / Claude Code / Codex |
+| Automation | n8n, Zapier/Make (SOON), Webhooks, RSS AutoPost |
+| CLI & API | CLI, Public API, Node SDK, OAuth (links into Developers) |
+| Developers | Embedded `PublicComponent` (Access + Apps) — no duplicate rotate API |
+| Approved Apps | Embedded `ApprovedAppsComponent` |
+| Media | HeyGen / Reel.Farm cards → Settings → Integrations |
+
+### Entry points
+
+1. Rail **Connect PostQueen** → `/connections` (panel scrim)
+2. Settings → Developers → **Connect PostQueen** row → same route (`leaveSettingsFor`)
+3. `/connections` → `ConnectPage` (min 1040×680 card on scrim)
+4. Deep-links `?nav=mcp&connector=claude` (aliases: `claude` → `claude-apps`, etc.)
+
+### Docs accuracy
+
+Verified against `docs.postqueen.ai` / `llms.txt`:
+
+- Skill: `npx skills add GkhanKINAY/postqueen-agent` ✓
+- MCP: `{backendUrl}/mcp/{apiKey}` and Bearer on `/mcp` — API key, not OAuth ✓
+- OpenClaw / Hermes: Agent Skills only — no invented `openclaw mcp add` ✓
+- CLI: `npm install -g postqueen` · SDK: `@postqueen/node` ✓
+- Catalog docs URLs unchanged and still match live docs paths ✓
+
+Tour: `connect-pq` stays on the rail button; `connections-page` spotlights
+`[data-connect-panel]` / `[data-tour="connections-page"]` on the panel card.
+Copy updated for category-left IA.
+
+### Raises
+
+1. **Typefully / Notion Agents** — not invented; panel inventory is PostQueen catalog only.
+2. **Settings Developers still has its own Access/Apps** — Connect embeds the same
+   components; not removed from Settings (capability must stay reachable).
+3. **Screenshot matrix** — not run here (needs `PQ_AUTH` + local app).
+4. **`set_delay` i18n key** — picked up from `delay.component.tsx` during baseline
+   update; unrelated to Connect panel (incidental).
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` PASS
+
+- types (frontend) 0 · types (backend) 0
+- api 154 unchanged
+- routes 30 unchanged
+- gates 14 unchanged
+- i18n **~1451 → 1520** (Connect panel nav/hub/MCP callout keys + incidental `set_delay`)
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.catalog.ts` (catalog + nav map)
+- `apps/frontend/src/components/public-api/connect-panel.tsx` (**new** panel)
+- `apps/frontend/src/components/public-api/connections.component.tsx` (thin re-exports)
+- `apps/frontend/src/components/public-api/public.component.tsx` (`embeddedInConnect`)
+- `apps/frontend/src/components/layout/settings.component.tsx` (Connect row)
+- `apps/frontend/src/components/layout/leave-settings.ts` (connect scrim)
+- `apps/frontend/src/components/onboarding/tour.tsx` (connections-page copy)
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Posts list date filter: stacking + sort placement (2026-08-06)
+
+**Owner:** Date presets/`Pick a date` menu sat under the Calendar sibling and was
+clipped by Filters `overflow-y-auto`. Sort sat mid-toolbar (design-left);
+owner wants Newest/Oldest on the right after the flex spacer.
+
+**Fix (`filters.tsx` only):**
+- Presets menu `z-[300]` + opaque `bg-pqPop border-pqBorder shadow-menu`; selected
+  row `bg-pqBrandSoft text-pqFocused` (no raw rgba).
+- Open date cluster: `relative z-[40] bg-pqInner` strip above Calendar sibling.
+- Second `useAnchoredPopover` for Pick a date — fixed flip/shift, escapes
+  overflow clip; Mantine day selected `bg-pqBrand text-pqOnBrand`.
+- List toolbar order: Date → Status → `flex-1` → Newest/Oldest.
+
+**WORK unchanged:** `listRange` / `postInListRange` / `day:YYYY-MM-DD` / sort
+handlers / chevrons.
+
+**RAISE:** Design keeps sort left of the spacer; owner override places it right.
+
+
+## Connect panel nav polish — 2026-08-06
+
+Sidebar IA polish for the Connect PostQueen panel. WORK unchanged (catalog
+copy, API keys, deep-link aliases for connectors); LOOK/nav only.
+
+### Changes
+
+1. **Sidebar label** — Settings-style soft label `Connectors`
+   (`connect_nav_section`). Frame title, Settings → Developers row, and mobile
+   chrome keep `connect_postqueen` ("Connect PostQueen").
+2. **Chat nav** — New `chat` ConnectNavId; AI Agents is agents + assistants only.
+   Flat Chat hub; Chat front-doors subsection removed from AI Agents.
+3. **Chat icons** — WhatsApp / Telegram / Slack / Discord replaced with 30×30
+   square brand tiles (Claude/Cursor pattern) under `/icons/connections/`.
+4. **CLI · API split** — `cli-api` → `cli` (CLI only) and `api` (API, SDK,
+   OAuth). Legacy `?nav=cli-api` aliases to `api`.
+5. **Automation accordion** — Parent row toggles expand (chevron). Children:
+   n8n, Zapier (SOON), Make (SOON), Webhooks, RSS AutoPost — child click opens
+   detail. `?connector=zapier|n8n|make|webhooks|rss` expands + detail;
+   `?nav=automation` alone shows a compact pick list. Mobile: five flat chips
+   (no nested accordion).
+6. **Connectors vs Account** — Connectors group then hairline + muted Account
+   label with Developers · Approved Apps.
+7. **Media dropped from Connect nav** — HeyGen / Reel.Farm stay in catalog data;
+   keys via Settings → Integrations. `?nav=media` → `ai-agents`.
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.catalog.ts`
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `apps/frontend/public/icons/connections/{whatsapp,telegram,slack,discord}.svg`
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Posts list All tab + richer empty state (2026-08-06)
+
+**LOOK:** List toolbar status segments restore **All** left of Scheduled →
+Drafts → Posted. Default `listState` is `'all'` (list fetch sends `state=all`).
+Posts panel tabs stay Scheduled / Drafts / Posted only (design queue inventory;
+no All invented there).
+
+**Empty state (ListView):** Owner override vs design's icon+line — richer empty
+matching Media/Analytics: 46px token tile, headline (existing per-`listState`
+keys; All uses `no_posts`), muted subtitle, primary Create Post CTA (same
+`find-slot` + set picker + `AddEditModal` path as header `NewPost`), and a
+secondary "Show all dates" text link when `listRange !== 'all'`.
+
+**WORK unchanged:** Past-oriented date presets still reset only when switching
+**to** Scheduled; `listRange` / `writeLaunchesUrl` / list paging untouched.
+Connect panel not touched.
+
+### Files
+
+- `apps/frontend/src/components/launches/filters.tsx` (All segment)
+- `apps/frontend/src/components/launches/calendar.context.tsx` (default `all`)
+- `apps/frontend/src/components/launches/calendar.tsx` (ListView empty)
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Connect AI Agents hub order — 2026-08-06
+
+**LOOK:** AI Agents hub sorts by explicit id order (OpenClaw → Hermes → Claude
+→ Claude Code → ChatGPT → Codex → Cursor → Gemini). Hub splits into two muted
+uppercase strips — **Agents** (OpenClaw, Hermes) and **Assistants** (the rest).
+Blurb em dash softened to a period.
+
+**WORK unchanged:** same catalog inventory; no new connectors. `connectionsForNav`
+sort only; unknown ids append after the list.
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.catalog.ts`
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Posts list empty state polish (2026-08-06)
+
+**LOOK:** ListView empty swaps the doc icon for `PostQueenLogo` (52px tile /
+28px crown) on a soft `bg-pqBrandFaint` circle. Subtitle English fallbacks drop
+em/en dashes. Single primary Create Post CTA (`min-w-[180px]`); “Show all
+dates” stays a muted `text-pqSoft` link below only when `listRange !== 'all'`.
+
+**WORK unchanged:** All-tab default, list fetch, posts.panel empty, Connect
+panel.
+
+### Files
+
+- `apps/frontend/src/components/launches/calendar.tsx` (ListView empty)
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Posts list date menu trim (2026-08-06)
+
+**Owner:** All dates dropdown felt too long (11+ presets).
+
+**LOOK:** Menu back to design RANGES — All dates, Today, This week, Next 3 days;
+Drafts/Posted/All status also get Past only; **Pick a date…** kept. Removed
+Tomorrow / Yesterday / Next 7 / months / Past week from the menu.
+
+**WORK:** `postInListRange` still understands the removed presets (orphan URL /
+state keeps a chip label until changed).
+
+### Files
+
+- `apps/frontend/src/components/launches/filters.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Calendar Day/Week/Month click-label jump (2026-08-06)
+
+**Owner override:** design may not show this. Middle Day/Week/Month range label
+is now a button; click opens the same floating Mantine `Calendar` pattern as
+list **Pick a date** (`useAnchoredPopover`, `z-[300]`, `bg-pqPop` / token day
+styles). Picking a day jumps via `getDateRange(display, YYYY-MM-DD)` (ISO week
+or month containing the day). Prev/next/Today and list All dates menu unchanged.
+
+### Files
+
+- `apps/frontend/src/components/launches/filters.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+
+---
+
+## Connect hub: drop kind badges (2026-08-06)
+
+**Owner:** AGENT / MCP / SKILL / CHAT / API pills next to card titles are
+redundant with the left nav category.
+
+**LOOK:** Hub cards and detail headers no longer show kind labels. **SOON** /
+**OFFICIAL APP SOON** kept for Zapier/Make. Catalog `kind` unchanged (skills
+filter / nav).
+
+### Files
+
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+---
+
+## Connect hub — Typefully-style short copy (2026-08-06)
+
+Typefully-style Connect hub `short` copy rewrite in
+`connections.catalog.ts`. Detail `intro` unchanged. Design raise: owner copy
+outranks long handoff blurbs for hub cards. heygen / reelfarm left as-is
+(already concise).
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.catalog.ts`
+- `docs/ui-migration-log.md` (this entry)
+
+---
+
+## Date format preference (2026-08-06)
+
+**Design raise:** Prototype Settings has Date Metrics (AM/PM vs 24h) only — no
+separate date-order control (MM/DD/YYYY vs DD/MM/YYYY). Shipped anyway so English
+UI no longer hardcodes US order via dayjs `format('L')` / fixed `DD/MM` strings.
+Owner can decide later whether the control stays in Global Settings or moves.
+
+### What shipped
+
+- Split preferences: `localStorage.dateFormat` = `MDY` | `DMY` (date order);
+  `localStorage.isUS` = `US` | `GLOBAL` remains **time-only** (Date Metrics UI
+  unchanged).
+- Soft migration: missing `dateFormat` → from `isUS` (US→MDY) else navigator
+  `en-US`→MDY else DMY.
+- Central helper `date.format.tsx` + `useDateFormat()` (`useSyncExternalStore`)
+  so Settings changes re-render calendar without reload. Optional dayjs
+  `formats.L` override as safety net.
+- Settings: sibling **Date format** chip card under Date Metrics
+  (`date_format`, `date_format_mdy`, `date_format_dmy`).
+- Call sites: calendar/filters/date.picker, comments, post-url-selector,
+  analytics chart/stars table/trending, notifications, preview date, posts
+  panel / manage modal toasts, time table, billing long dates, trial-lock,
+  media / approved-apps / announcements / impersonate / admin-stats /
+  admin-errors / import-debug. Wire formats stay ISO / `YYYY-MM-DD`.
+- `isUSCitizen` documented + implemented as time-only alias of
+  `use12HourClock()`; no remaining date-order call sites.
+
+### Checks
+
+```
+scripts/ui-migration-check.sh
+```
+
+- **types** (frontend + backend): ok — 0 errors
+- **api**: ok — 154 entries, unchanged
+- **routes**: ok — 30 entries, unchanged
+- **gates**: ok — 14 entries, unchanged
+- **i18n**: baseline patched for `date_format`, `date_format_mdy`, `date_format_dmy`
+  only. Remaining i18n set drift (`connect_hub_*` / `connect_nav_*` renames,
+  `list_empty_*`, `pick_a_*`, `show_all_dates`) is pre-existing WIP on this
+  working tree — not introduced by this preference. Not absorbed into this
+  step’s baseline update.
+
+### Files
+
+- `apps/frontend/src/components/launches/helpers/date.format.tsx` (new)
+- `apps/frontend/src/components/launches/helpers/isuscitizen.utils.tsx`
+- `apps/frontend/src/components/settings/date.format.component.tsx` (new)
+- `apps/frontend/src/components/settings/metric.component.tsx`
+- `apps/frontend/src/components/settings/global.settings.tsx`
+- `apps/frontend/src/components/launches/filters.tsx`
+- `apps/frontend/src/components/launches/calendar.tsx`
+- `apps/frontend/src/components/launches/helpers/date.picker.tsx`
+- `apps/frontend/src/components/launches/repeat.component.tsx`
+- comments / post-url-selector / analytics / notifications / preview /
+  posts.panel / manage.modal / time.table / billing / trial-lock / media /
+  approved-apps / announcement / impersonate / admin-stats / admin-errors /
+  import-debug-post
+- `docs/ui-migration-baseline/i18n.txt` (+3 keys)
+- `docs/ui-migration-log.md` (this entry)
+
+---
+
+## Connect hub — card density + full-bleed marks (2026-08-06)
+
+Typefully-style density for Connect hub cards and bare-mark logos.
+
+### LOOK
+
+- **hubCard:** removed forced `min-h-[108px]` / hero `min-h-[124px]` so cards
+  hug content (no bottom dead band). Removed `line-clamp-2` on `short` — natural
+  wrap; title still `truncate`. Padding / horizontal icon+text layout unchanged.
+- **SVGs:** stripped purple inset frames (`rect` + nested 20×20 mark) from bare
+  marks used on AI Agents / Assistants (`chatgpt`, `cursor`, `codex`,
+  `gemini-cli`, `openclaw`, `hermes`, plus sibling Assistants `cline`,
+  `windsurf`, `warp`, `other-clients`). Tight viewBox on the glyph so ConnIcon
+  40px fills the box. No CSS ring added around image icons.
+- **Claude peach tile retained** (`claude.svg` `#d97757`) — Claude Code reuses
+  the same asset. Chat brand tiles (WhatsApp / Telegram / Slack / Discord)
+  unchanged. Glyph fallbacks keep `ring-1` box in ConnIcon.
+- OpenClaw hub short confirmed Typefully copy: “Post from WhatsApp, Telegram,
+  Slack, and Discord” (no revert to long “A personal agent…”).
+
+### Files
+
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `apps/frontend/public/icons/connections/{chatgpt,cursor,codex,gemini-cli,openclaw,hermes,cline,windsurf,warp,other-clients}.svg`
+- `docs/ui-migration-log.md` (this entry)
+
+
+## Settings Connect group + faster leave (2026-08-06)
+
+**Owner:** Settings left-nav section **DEVELOPERS → CONNECT**; Connect PostQueen
+row shows an external-link affordance; click closes Settings and opens
+`/connections`.
+
+**Why Connect felt slow:** `leaveSettingsFor` used `window.location.assign`
+(full reload) to avoid a prior `back()`+`push` race. Switched to a single
+client `router.push(path)` — dismisses `@modal/(.)settings` without remounting
+the app.
+
+**Raise:** Prototype section label was Developers; owner copy Connect outranks.
+
+### Files
+
+- `apps/frontend/src/components/layout/settings.component.tsx`
+- `apps/frontend/src/components/layout/leave-settings.ts`
+- `apps/frontend/src/components/settings/teams.component.tsx` (comment)
+
+---
+
+## Connect CLI — docs-accurate auth (2026-08-06)
+
+Aligned Connect panel CLI copy/steps with
+[CLI introduction](https://docs.postqueen.ai/cli/introduction) and
+[Authentication](https://docs.postqueen.ai/cli/authentication).
+
+### WORK (docs)
+
+- **Steps:** (1) `npm install -g postqueen` (+ pnpm / `--help` detail),
+  (2) `export POSTQUEEN_API_KEY=…` from Settings → Developers → Public API,
+  (3) `postqueen integrations:list`. Dropped `auth:login` as the primary path
+  (hosted auth server unavailable; OAuth device flow is advanced/self-hosted —
+  noted in step detail + Authentication docs link).
+- **Hub blurb:** install / export key / schedule from shell — not skill-install
+  language (`npx skills add`).
+- **CliSetupCallout** on CLI hub (mirrors SkillInstallCallout): three steps,
+  masked API key until Reveal, prominent docs link to CLI introduction.
+
+### LOOK
+
+- External-link icon (same path as Settings → Connect PostQueen) on detail-pane
+  `docs` / `paths` CTAs (replaced trailing `→`) and on Skill/CLI callout docs
+  links.
+
+### Files
+
+- `apps/frontend/src/components/public-api/connections.catalog.ts`
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Connect soft-open via (.)connections (2026-08-06)
+
+**Owner:** Opening Connect must keep the previous page visible under the
+translucent `bg-pqPopup` scrim (same as Settings) — not a solid black void.
+
+**Cause:** `/connections` was only a hard page route, so client nav replaced
+`children` and nothing sat under the scrim.
+
+**Fix:** Soft intercept `@modal/(.)connections/page.tsx` mirroring Settings
+(`(.)settings`). Hard `connections/page.tsx` kept for refresh / direct URL.
+Rail `<Link href="/connections">` and Settings `leaveSettingsFor` (`router.push`)
+hit the intercept from in-app pages. Close = `router.back()` on ConnectPage.
+`bg-pqPopup` unchanged.
+
+### Files
+
+- `apps/frontend/src/app/(app)/(site)/@modal/(.)connections/page.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Checkout ended CTA: Resubscribe not Pay Now (2026-08-06)
+
+**Bug:** `SubmitBarFallback` (Stripe session not ready) used `billing_pay_now` whenever `!allowTrial`, so ended/lapsed checkout showed **Pay Now**. Live `SubmitBar` already used **Resubscribe to {plan} – $X** for the same signal.
+
+**Fix:** Fallback matches SubmitBar — `!allowTrial` → `billing_resubscribe_to_plan` with `tierLabel(tier)` and `$amount`. Trial CTA unchanged.
+
+### Files
+
+- `apps/frontend/src/components/billing/embedded.billing.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Trial lock Or wait: dated (2026-08-06)
+
+**LOOK:** `TrialLockCard` foot shows `Or wait — {name} unlocks on {date} when your trial ends.` when `trialWindow(user.createdAt).endsAt` is known (same clock as billing heroes). Explicit `unlocksOn` prop still wins; missing/invalid → undated fallback. Foot is **start-aligned** (prototype `xLockFoot` sits in the CTA row, not a centered full-width line). An earlier pass briefly used `text-center`; corrected below.
+
+### Files
+
+- `apps/frontend/src/components/billing/trial-lock-card.tsx`
+- `apps/frontend/src/components/launches/add.provider.component.tsx` (comment)
+- `docs/ui-migration-log.md` (this entry)
+
+## Create Post selected channels: checkmark (2026-08-06)
+
+**Owner:** SELECT CHANNELS row was purple ring + grayscale only — hard to see selected. Match AI Copilot channel tick.
+
+**LOOK:** Selected avatars in `PicksSocialsComponent` get the same brand check badge as Agents (`absolute -start/-top`, 16px `bg-pqBrand` circle + white path). Ring/grayscale unchanged.
+
+### Files
+
+- `apps/frontend/src/components/new-launch/picks.socials.component.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Compose tabs: hint above, check not X, Remove channel (2026-08-06)
+
+**Owner:** Global-mode hint was below the tabs and hard to notice; red X on channel tabs was unclear; active tab needed a clear check like SELECT CHANNELS / AI Copilot.
+
+**LOOK / WORK:**
+- Hint (“You are in global editing mode · Click a channel…”) moved **above** the tab row.
+- Channel tabs: larger round avatars (46px), brand ring + purple check when active; no red X. Deselected tabs grayscale.
+- **Remove channel** text button on the editor top-end (confirm dialog; store still flips `current` to global).
+
+### Files
+
+- `apps/frontend/src/components/new-launch/select.current.tsx`
+- `apps/frontend/src/components/new-launch/editor.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Compose AI hint: lighter, better copy (2026-08-06)
+
+**Owner:** Filled purple/grey panel felt permanent and ugly (title, sub, icon).
+
+**LOOK:** Dropped gradient fill + inset ring + filled icon tile. Tip is now a hairline row (border-t only): outline sparkles in brand, clearer copy, ghost agent chips (hover only), dismiss control. Same keys / dismiss / `/connections` links.
+
+**Copy (en):** “Draft with your AI” / “Connect Claude, ChatGPT, OpenClaw or Hermes — then ask them to draft this post”.
+
+### Files
+
+- `apps/frontend/src/components/new-launch/editor.tsx`
+- `libraries/react-shared-libraries/src/translation/locales/en/translation.json`
+- `docs/ui-migration-log.md` (this entry)
+
+## Compose preview: no channel empty state (2026-08-06)
+
+**Bug:** Global preview fell back to `allIntegrations[0]` when nothing selected, so Post Preview showed the first connected account (e.g. X) while the badge said “none yet”.
+
+**Fix:** Empty selection → design empty copy (“Check the circles above to pick a channel”). Preview only uses a selected channel.
+
+### Files
+
+- `apps/frontend/src/components/new-launch/providers/show.all.providers.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Soft Settings/Connections: freeze chrome under scrim (2026-08-06)
+
+**Bug:** Soft-open Settings (`@modal/(.)settings`) or Connections (`@modal/(.)connections`)
+changed the blurred header title (e.g. Calendar → Settings) and rail active state,
+even though the previous page stayed mounted in `(site)` children under the scrim.
+
+**Root cause:** Intercept keeps `children` correct, but `Title` / `MenuItem` read
+`usePathname()` — the URL is `/settings` or `/connections` during soft-open.
+
+**Fix:** `useChromeLocation()` freezes the last non-overlay location for chrome.
+Hard load of `/settings` or `/connections` (no prior page) still titles itself.
+`router.back()` restores the original page and chrome together.
+
+### Files
+
+- `apps/frontend/src/components/layout/use-chrome-location.ts`
+- `apps/frontend/src/components/layout/title.tsx`
+- `apps/frontend/src/components/new-layout/menu-item.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Soft-open Connect/Settings: stop Calendar↔Posts flip (2026-08-06)
+
+**Bug:** Soft `/connections` or `/settings` keeps `CalendarWeekProvider` mounted while URL loses `?display=`. Sync effect fell back to stale `calendar-display` cookie → background flipped Calendar↔Posts.
+
+**Fix:** Bail the searchParams sync unless `pathname` starts with `/launches`. When URL has `display`, also write the cookie so rail switches stay aligned.
+
+### Files
+
+- `apps/frontend/src/components/launches/calendar.context.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Settings: Your user section (2026-08-06)
+
+**Owner:** Workspace settings ≠ user settings. Open a **Your user** nav group; move
+email notification prefs there; add timezone + delete-account surfaces; restyle
+Notifications toward a Typefully-like page using **only** existing WORK.
+
+### Shipped
+
+- Settings nav groups: **Workspace** → **Your user** → **More** → **Connect**.
+- **Your user → Notifications** (`?tab=notifications`): Success / Failure /
+  Streak email toggles (existing `/user/email-notifications` API), Email card
+  with address, Typefully-inspired row layout (toggle right-aligned). Soft-open
+  Settings + deep-link still work.
+- **Your user → Account** (`?tab=account`): Timezone row (shows
+  `localStorage`/`dayjs.tz.guess()` via `getTimezone()`), Change/Detect disabled
+  + Coming soon; Delete Account + Request Account Deletion muted + Coming soon.
+- **Global Settings** no longer hosts email prefs (metrics / date format /
+  shortlink remain).
+
+### Timezone decision
+
+**Coming soon (option 2), not a live picker.** `SetTimezone` is commented out in
+`(app)/layout.tsx`; calendar/scheduling use `newDayjs` and channel `timezone Int`
+offsets. Writing `localStorage` + `dayjs.tz.setDefault` mid-session without a
+careful rollout risks confusing schedule display. UI shows current guessed/stored
+value; full picker needs a deliberate pass (optionally re-enable `SetTimezone`).
+
+### Raises (not silently invented)
+
+| Reference / ask | Repo WORK | Action |
+| --- | --- | --- |
+| Typefully Email + Slack BETA + Comments + Activity | Only success / failure / streak email prefs | Shipped the three; no Slack connect, comment checkboxes, or activity section |
+| Workspace name rename | No org-rename endpoint/UI after create (`company` only at signup) | Not surfaced |
+| Delete / request account deletion | No delete-account API | Coming soon UI only |
+| User name / photo under Your user | `/user/personal` + `UserDetailDto` exist; no Settings UI | Deferred (owner: later) |
+| Timezone picker | `localStorage` key `timezone` + `set.timezone.tsx`; layout hook disabled | Display + Coming soon; raise full picker |
+| Prototype `settingsVals` still puts Email under Global Settings | Owner product decision outranks stale prototype inventory for this split | Logged |
+
+### Checks (`scripts/ui-migration-check.sh --update`)
+
+Types 0. Baselines rewritten at tip: **api 154**, **i18n 1555**, **routes 31**,
+**gates 14** (i18n delta includes `your_user`, `account`, `timezone*`,
+`delete_account*`, `coming_soon`, etc.; api/routes/gates reflect broader tip WIP
+plus this step).
+
+### Files
+
+- `apps/frontend/src/components/layout/settings.component.tsx`
+- `apps/frontend/src/components/settings/global.settings.tsx`
+- `apps/frontend/src/components/settings/email-notifications.component.tsx`
+- `apps/frontend/src/components/settings/user.account.component.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Trial lock Or wait: start-aligned (2026-08-06)
+
+**LOOK:** Foot stays start-aligned (`text-start`), matching prototype `xLockFoot` — not centered. Date wiring unchanged (`trialWindow` / `unlocksOn`). Description copy left as OAuth tip pending owner choice.
+
+### Files
+
+- `apps/frontend/src/components/billing/trial-lock-card.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Trial lock: design sub + centered foot (2026-08-07)
+
+**Owner:** Locked X step still showed the OAuth “logged in into your current
+account…” tip (connect-step copy). Foot “Or wait…” looked left-shifted under
+full-width CTAs.
+
+**LOOK:** Description = prototype channel-lock sub (`X charges us per post…`).
+Foot `text-center`. OAuth tip stays on the live connect step only.
+
+### Files
+
+- `apps/frontend/src/components/billing/trial-lock-card.tsx`
+- `apps/frontend/src/components/launches/add.provider.component.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Connect panel: Settings-like search chrome (2026-08-06)
+
+**Ask:** CONNECTORS left-rail top should match Settings (search field) and filter
+the nav (AI Agents, Chat, MCP, …).
+
+### Shipped
+
+- Left column now starts with the same search chrome as Settings
+  (`p-[14px_12px_10px]`, 34px input, magnifier, `bg-pqInner` inset border /
+  brand focus) — mirrored from `settings.component.tsx` / prototype
+  `settingsVals`.
+- Placeholder `search_connectors` → “Search connectors”.
+- Filters CONNECTORS + ACCOUNT rows by label substring; empty groups hide.
+  Automation children match by name and auto-expand the accordion while
+  querying. Right-pane hub/detail WORK unchanged.
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` PASS — types 0 · api 154 · routes 31 ·
+gates 14 · i18n tip **1555 → 1557** (this step adds `search_connectors`; other
+delta is existing tip WIP already reflected in prior Settings entry).
+
+### Files
+
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Settings nav: drop Your user / Account (2026-08-06)
+
+**Owner:** Nav felt too dense. For now remove the **Your user** section and the
+**Account** row; park **Notifications** under **Workspace**.
+
+### Shipped
+
+- Settings nav groups: **Workspace** → **More** → **Connect** (no Your user).
+- Workspace inventory: Global Settings, Language, Teams (admin), Notifications.
+- Account hidden from the sub-nav; `user.account.component.tsx` kept;
+  `?tab=account` still opens the pane if deep-linked.
+- Notifications deep-link (`?tab=notifications`) unchanged.
+
+### Files
+
+- `apps/frontend/src/components/layout/settings.component.tsx`
+- `apps/frontend/src/components/settings/global.settings.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Media Library / Insert Media UX polish (2026-08-06)
+
+**Owner:** Insert Media sheet was near-fullscreen and noisy (names + search +
+hover enlarge). Tighten to a design-like sheet; simplify picker vs Media page
+name/search rules; click-to-select with a hard 5-item cap.
+
+### Shipped
+
+1. **shrink-modal** — Both Insert Media `showModal` sites (`MultiMediaComponent` /
+   `MediaComponent`) drop `fullScreen` / viewport `height`; open at
+   `size`/`maxSize` `1000px` so the shell’s `max-h-[86vh]` applies. Picker body
+   uses `max-h-[calc(86vh-120px)]` + internal scroll (no forced
+   `calc(100% - 80px)` height). Design Media / Polonto fullscreen unchanged.
+2. **names-search** — Insert picker: no search field, no `originalName` overlay.
+   Media page grid: no caption under thumb (type/duration badges kept); search
+   hidden. Media page list: name column + search kept. Clearing search when
+   picker mounts / when Media page switches to grid.
+3. **picker-select-ux** — Tile click = select/deselect; hover enlarge/preview
+   removed from picker (Media page lightbox unchanged). Subtitle copy via
+   `select_or_upload_pictures_max_5` + `you_can_drag_drop_pictures`. Cap at 5 in
+   `addRemoveSelected` (toast on exceed); uploads auto-selected into the picker
+   also sliced to remaining room. Footer shows `Add selected media (n)` when
+   `n > 0` (same key). Pagination kept when `pages > 1`; spacing tightened
+   (`mt-[8px]`).
+
+### Raises / deviations
+
+- `maxSize: '1000px'` paired with `size` so Tailwind’s default modal
+  `max-w-[min(920px,…)]` does not clamp the 1000px sheet.
+- Upload→selected path silently respects the same 5 cap (toast only on click
+  select over cap).
+
+### Checks
+
+Code-path review only (picker vs standalone). No new i18n keys; handlers / API
+paths unchanged. Prefer source `.tsx` — ignore compile artifacts.
+
+### Files
+
+- `apps/frontend/src/components/media/media.component.tsx`
+- `apps/frontend/src/components/media/media.box.tsx`
+- `apps/frontend/src/components/media/media.pagination.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Settings Workspace: Teams 2nd (2026-08-06)
+
+**LOOK:** Workspace nav order is Global Settings → Teams (org admin) → Language → Notifications.
+
+### Files
+
+- `apps/frontend/src/components/layout/settings.component.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Split Developers → API Keys + Developers (2026-08-06)
+
+**LOOK / WORK:** Settings CONNECT and Connect panel ACCOUNT no longer share one Developers row with Access|Apps tabs. Inventory is Connect PostQueen → **API Keys** (public key) → **Developers** (OAuth apps) → Approved Apps. Access|Apps chrome removed from `PublicComponent`.
+
+### Files
+
+- `apps/frontend/src/components/public-api/public.component.tsx`
+- `apps/frontend/src/components/layout/settings.component.tsx`
+- `apps/frontend/src/components/public-api/connections.catalog.ts`
+- `apps/frontend/src/components/public-api/connect-panel.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Baseline refresh after API Keys / Developers split (2026-08-07)
+
+`scripts/ui-migration-check.sh --update`: i18n drop of unused Access|Apps keys
+(`access`, `apps`, `developers_description`); gates `tier.public_api` 3→4 (API Keys
++ Developers panes). Copilot inset + Generate video visibility already shipped
+(see 2026-08-06 entry) — re-verified in code.
+
+### Files
+
+- `docs/ui-migration-baseline/{i18n,gates,api,routes}.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Owner backlog ship (2026-08-07)
+
+1. **Global multi-preview:** every selected channel’s native preview stacks in global mode; Ads Manager–style **All** + channel chips filter visibility without leaving global edit. Empty selection empty state kept; single `GeneralPreview` global block removed.
+2. **Media page:** lightbox hides filename; search removed; list = Alt text / Format / Upload date / Size; API returns `createdAt`; ALL FILES spacing.
+3. **Insert Media:** wider sheet (~1200px), denser 8-col grid, inset selection (no cut badge), ⋯ menu (Preview/Download/Delete), visible dashed drop zone.
+4. **Settings Account:** Connect PostQueen row removed; section label **Account**; key icon for API Keys; OAuth empty/create/manage copy + form chrome tightened.
+
+### Files
+
+- `show.all.providers.tsx`, `high.order.provider.tsx`
+- `media.box.tsx`, `media.lightbox.tsx`, `media.component.tsx`, `media.repository.ts`
+- `settings.component.tsx`, `developer.component.tsx`, `connect-panel.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Public share preview polish (2026-08-07)
+
+Calendar → Preview opens `/p/[id]?share=true` (public client-share page), not the
+compose preview. That route was never migrated and looked sparse: void canvas,
+tiny left-aligned card, blank Publication Date (`dynamic` + `ssr: false`), lone
+login button, and `@@handle` when the profile already included `@`.
+
+**LOOK:** Centered ~1100px stage, header hairline, bordered `bg-pqInner` post
+cards + comments panel. Logged-out comments show muted helper + full-width CTA.
+Date renders as a normal client component (SSR-safe defaults via
+`useDateFormat`); invalid/missing → `Not scheduled`. Profile handle only prepends
+`@` when missing.
+
+**WORK unchanged:** same public fetch, share copy, comments APIs, calendar
+`window.open`. No native channel previews (raise separately).
+
+`scripts/ui-migration-check.sh`: types/api/routes/gates ok; i18n +2
+(`login_to_leave_feedback`, `not_scheduled`) — baseline updated with `--update`.
+
+### Files
+
+- `apps/frontend/src/app/(app)/(preview)/p/[id]/layout.tsx`
+- `apps/frontend/src/app/(app)/(preview)/p/[id]/page.tsx`
+- `apps/frontend/src/components/preview/comments.components.tsx`
+- `apps/frontend/src/components/preview/render.preview.date.tsx`
+- `apps/frontend/src/components/preview/render.preview.date.client.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Final full-app audit — 2026-08-07
+
+Evidence-only pass across gates + authenticated browser (dev billing stage +
+session). Fixed only confirmed defects; soft-outs left documented.
+
+### Phase 0 — Gates
+
+`scripts/ui-migration-check.sh` **PASS** (types 0; api 154; i18n 1560; routes 31;
+gates 14). Frontend `:4200` / backend `:3000` smoke OK. No baseline `--update`
+this pass (no key/route/API deltas).
+
+### Phase 1 — Billing / trial / lifetime matrix
+
+Dev billing stage @1440 (light) + code review. States exercised: `active`,
+`trial`, `ended` (resubscribe + lifetime CTA), `payment_failed`, `canceling`,
+`lifetime`, `lifetime_trial`. End-trial preview opens FinishTrial overlay
+(pending → charged thank-you) and closes cleanly. Lifetime route shows founding
+`$49` — no invented `$24.50` retention. First-checkout / portal / cancel CTAs
+match stage.
+
+**Defect fixed:** FinishTrial opened from trial-lock card without `period` /
+`charged` defaulted to monthly. Now loads `/user/subscription` when those props
+are omitted (`finish.trial.tsx` `useFinishTrialSubscription`).
+
+### Phase 2 — Surfaces (420 / 1440 + themes via body class / viewport)
+
+Checked green (no new defects): shell + mobile Menu drawer; Calendar; Channels
+(+ Add Channel); Media (All / Images / Video — no ALL FILES strip); Analytics;
+Auto-Plugs; AI Copilot trial lock CTA; Settings soft-open nav (Global Settings /
+Teams / Notifications / API Keys / Developers / Approved Apps — **no Plugs or
+Affiliate**); Connections (search + API Keys / Developers); auth login / forgot
+smoke (out of redesign); `/err` smoke; lifetime deal.
+
+Compose empty global preview: single hint only (see fix below).
+
+### Phase 3 — Fixes shipped
+
+1. `finish.trial.tsx` — resolve period/tier from `/user/subscription` when
+   billing props missing (yearly trial thank-you amount).
+2. `show.all.providers.tsx` — skip provider shells when global preview is empty
+   (one hint, no hollow cards).
+
+Re-gate after fixes: **PASS** (unchanged baseline).
+
+### Phase 4 — Polish
+
+Only the empty-preview shell trim above (repeated empty-channel chrome). No
+invented redesigns. Auth / Media density / breakpoint retargeting not touched.
+
+### Soft-outs reconfirmed (unchanged)
+
+- Calendar week horizontal clip @420
+- Compose footer crowding @420
+- Auth / admin largely out of redesign
+- Media legacy density
+- Tailwind `mobile:` / `tablet:` breakpoints not retargeted
+
+### Raises for owner
+
+None new this pass. `scripts/ui-shot.mjs` hung with no output in this
+environment (headless Chrome CDP); matrix done via IDE browser + prior
+`docs/ui-shots/responsive/` corpus instead of fresh `docs/ui-shots/qa/` dumps.
+
+### Files
+
+- `apps/frontend/src/components/billing/finish.trial.tsx`
+- `apps/frontend/src/components/new-launch/providers/show.all.providers.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+### Escape on Settings/Connect
+
+- Settings and Connect scrims: Escape closes via the same `back` path as scrim click / X (rail keydown pattern; Soft-outs unchanged).
+
+---
+
+## Billing / payment deep checkup (2026-08-07)
+
+Evidence-based pass over lifetime, cancel → ended, finish-trial, resubscribe,
+`payment_failed`, Stripe webhooks, and Prisma subscription fields. Prefer false
+alarms; only confirmed defects were patched. No schema / migration changes.
+
+### Flow map (actual semantics)
+
+**Cancel (recurring Stripe sub)**  
+UI `POST /billing/cancel` → `StripeService.setToCancel` →
+`cancel_at_period_end: true` (or immediate cancel if `past_due` / open invoice).
+Webhook `customer.subscription.updated` writes `Subscription.cancelAt`.
+When the period ends, `customer.subscription.deleted` → local row deleted →
+FREE / paywall (`ended`). Reactivate toggles `cancel_at_period_end: false`
+via the same cancel endpoint.
+
+**Finish trial**  
+`POST /billing/finish-trial` → Stripe `trial_end: 'now'` when a trialing sub
+exists; else local `endTrial`. Deferred founding also `captureFoundingLifetimeIfDue({ force: true })` ($49). Overlay polls `GET /billing/is-trial-finished`.
+
+**Lifetime purchase**  
+`POST /billing/lifetime-checkout` → Checkout `mode: 'setup'` + deferred when
+`isTrailing || allowTrial`, else `mode: 'payment'` at `LIFETIME_PRICE` (49).
+Webhook `checkout.session.completed` → grant (`isLifetime` + UsedCodes ref).
+Deferred fee captured at finish-trial or when the 7-day `trialWindow` has
+closed (now also from `GET /user/self`).
+
+### Confirmed correct (left alone)
+
+- Regular cancel → `cancelAt` → deleted → FREE
+- `payment_failed` webhook → in-app notification; `hasFailedPayment` read from Stripe (no local copy)
+- `invoice.*` exempt from `metadata.service` filter
+- Lifetime protects `modifySubscription` from Stripe plan webhooks
+- FinishTrial yearly/monthly amount via billing props or `/user/subscription` lookup
+- Dev billing stage is LOOK-only (`subscriptionOverride`); real SWR paths unchanged
+- Code redemption `POST /billing/lifetime` + 24h `lifetimeWindow` server enforcement
+- No raw SQL; Subscription model fields adequate
+
+### Confirmed bugs fixed
+
+1. **Founding-trial cancel was a no-op** — `setToCancel` with no Stripe sub returned `cancel_at: now` without deleting `isLifetime`. Now revokes local row + `endTrial` (+ cancels leftover Stripe subs).
+2. **`customer.subscription.deleted` wiped lifetime** — `deleteSubscription` now no-ops when `isLifetime`.
+3. **Mid-trial lifetime convert could double-bill** — `grantLifetimeFromPayment` cancels open Stripe subscriptions after grant.
+4. **Deferred $49 never ran on natural trial expiry** — capture only lived behind FinishTrial polling. Added `settleFoundingLifetimeAfterTrial` on `GET /user/self` + fixed `is-trial-finished` (middleware-derived `isTrailing` made lazy `endTrial` dead).
+5. **Finish-trial cleared trial after a failed founding charge** — do not `endTrial` when capture returns `error` / incomplete `status`.
+
+### Raises for owner
+
+- Failed deferred founding charge after the window closes: middleware already derives `isTrailing=false`, so the UI unlocks while `isLifetime` remains. Settle retries on `/user/self`, but a permanently dead card can leave unpaid lifetime. Product choice: revoke, keep locked until paid, or accept retries.
+- FinishTrial overlay has no failure UI if the founding charge fails mid-trial (spinner until window/settle); only the flag is preserved.
+- Design’s $24.50 retention offer on cancel remains intentionally unimplemented.
+
+### Schema / migrations
+
+**No.**
+
+### Files
+
+- `libraries/nestjs-libraries/src/services/stripe.service.ts`
+- `libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.service.ts`
+- `libraries/nestjs-libraries/src/database/prisma/subscriptions/subscription.repository.ts`
+- `apps/backend/src/api/routes/billing.controller.ts`
+- `apps/backend/src/api/routes/users.controller.ts`
+- `docs/ui-migration-log.md` (this entry)
+
+## Regression audit + launch polish (2026-08-07)
+
+Evidence-only pass across Autopost, Webhooks, Media, Integrations/Signatures/Sets,
+Channels, Compose, Settings/Connections, Analytics, Agents, Billing. Fixed only
+confirmed defects; then a short high-traffic visual polish pass. Soft-outs left
+alone.
+
+### Surfaces verified (green)
+
+- Autopost (list + stepped editor unlock: edit same-URL Next; create needs Send Test)
+- Webhooks (list/create/edit/delete editor; APIs 200)
+- Media (All/Images/Video; no ALL FILES strip; alt-text modal has no example placeholder; menu closes before lightbox/modal)
+- Signatures / Social Sets / Teams / Integrations path
+- Channels, Analytics, Agents, Auto-Plugs, Calendar/launches, Connections, Billing
+- Settings nav: Workspace / More / Connect — **no Plugs or Affiliate** rows; API Keys split intact
+- HTML titles + auth cookie smoke for the routes above (no Application error markers)
+
+### Confirmed defects fixed
+
+1. `autopost.tsx` — delete confirm used `data.name` (undefined; Autopost has `title`) and toast reused `webhook_deleted_successfully`. Now uses title + `autopost_deleted_successfully`.
+
+### Visual polish shipped
+
+- Settings list brand CTAs (Autopost / Webhooks / Signatures / Sets / Teams / API Keys “Open Connections”) → `text-pqOnBrand` (match Media Upload)
+- Icon-only Edit/Delete on Autopost / Webhooks / Signatures → `title=` tooltips (design `data-tip`)
+- Signatures / Sets delete toasts (and Sets delete dialog) → `t()` + English fallbacks
+- Media alt/thumbnail chrome: leftover `text-textColor` / `border-tableBorder` / indigo hex slider → pq tokens / `var(--brand)`
+
+### Soft-outs / raises left alone
+
+- Calendar week horizontal clip @420
+- Compose footer crowding @420
+- Auth / admin largely out of redesign
+- Media legacy density (not restyled into a new system)
+- Tailwind `mobile:` / `tablet:` breakpoints not retargeted
+- Browser MCP tab automation flaky this pass — route/API/HTML smoke used instead of interactive CDP
+
+### Checks
+
+`scripts/ui-migration-check.sh --update` then plain re-run **PASS** — types 0 ·
+api 154 · routes 31 · gates 14 · i18n **1560 → 1563** (`autopost_deleted_successfully`,
+`signature_deleted_successfully`, `set_deleted_successfully`).
+
+### Files
+
+- `apps/frontend/src/components/autopost/autopost.tsx`
+- `apps/frontend/src/components/webhooks/webhooks.tsx`
+- `apps/frontend/src/components/settings/signatures.component.tsx`
+- `apps/frontend/src/components/sets/sets.tsx`
+- `apps/frontend/src/components/settings/teams.component.tsx`
+- `apps/frontend/src/components/public-api/public.component.tsx`
+- `apps/frontend/src/components/launches/helpers/media.settings.component.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- `docs/ui-migration-log.md` (this entry)
+
+## Remaining launch gaps — safe fixes (2026-08-07)
+
+Product defaults: unpaid founding = **lock-until-paid** (no revoke); **$24.50
+retention** stays intentional out.
+
+### P0 — FinishTrial failure UI
+- `POST /billing/finish-trial` and `GET /is-trial-finished` surface
+  `captureBlocked` (+ error/status). Unpaid deferred founding after the window
+  never reports `finished: true` (no false thank-you).
+- `finish.trial.tsx`: `failed` phase — payment-failed tone + Update payment
+  method (portal) / Close. Poll stops on `captureBlocked`.
+
+### P0 — Unpaid founding lock-until-paid
+- `StripeService.isDeferredFoundingFeeOwed` + `/user/self`
+  `lifetimePaymentPending` when deferred $49 owed and trial window closed.
+- Billing strip (same look as payment_failed) + X/AI locks treat pending like
+  trial lock. Settle retry on self unchanged. No revoke.
+
+### P1 — Week @420 scroll discoverability
+- Already `overflow-auto` / minmax 84px. Mobile: `overflow-x-scroll`, scroll
+  today into view, edge fade, one-time “Swipe sideways for more days” hint.
+  No Day auto-switch.
+
+### P1 — Media
+- Lightbox Escape + body scroll lock.
+- Alt save success toast (`alt_text_saved`). Density unify / Rename still out.
+
+### P2 — Compose footer @420
+- Footer row `overflow-x-auto` + `min-w-0` / shrink-0 actions — capabilities
+  stay reachable without redesign.
+
+### Checks
+`scripts/ui-migration-check.sh --update` — i18n +5 intentional:
+`ft_failed_title`, `ft_failed_body`, `lifetime_payment_pending_body`,
+`cal_swipe_for_days`, `alt_text_saved`.
+
+### Files
+- `billing.controller.ts`, `users.controller.ts`, `stripe.service.ts`
+- `finish.trial.tsx`, `main.billing.component.tsx`, `user.context.tsx`
+- `add.provider.component.tsx`, `agent.tsx`
+- `calendar.tsx`, `media.lightbox.tsx`, `media.settings.component.tsx`
+- `manage.modal.tsx`
+- `docs/ui-migration-baseline/i18n.txt`, `docs/ui-migration-log.md`
+
+## Launch readiness (2026-08-07)
+
+Ship-ready stamp after titles/meta/OG polish + final gates. Soft-outs and
+owner raises unchanged.
+
+### Titles / URL / meta
+- Root [`(app)/layout.tsx`](apps/frontend/src/app/(app)/layout.tsx): `metadataBase`
+  from `FRONTEND_URL` (fallback `https://postqueen.com`), `title.template`
+  `%s · PostQueen`, default description, icons (`favicon.ico` + `logo.svg` +
+  apple `favicon.png`), `openGraph.siteName`.
+- Public share [`/p/[id]`](apps/frontend/src/app/(app)/(preview)/p/[id]/page.tsx):
+  `generateMetadata` from `/public/posts/:id` — title/description + OG/Twitter
+  images (absolute media URLs). No more static “PostQueen Preview” / empty
+  description.
+- [`robots.ts`](apps/frontend/src/app/robots.ts): allow `/auth`, `/p/`; disallow
+  app surfaces.
+- Page titles normalized to segments (Calendar, Login, AI Copilot, …); dead
+  `isGeneralServerSide` ternaries removed; `/auth/login-required`, `/err`,
+  OAuth Authorize, forgot-token Reset password, Connect channel layout filled.
+
+**Smoke:** `Login · PostQueen`, `Calendar · PostQueen`, `Error · PostQueen`,
+`Login required · PostQueen`; `/robots.txt` serves allow/disallow rules.
+
+### Polish
+- Removed `console.log` in `new.uploader.tsx` and `pick.platform.component.tsx`.
+- Agent empty-state already uses drawer-safe copy (no left/right menu invent).
+
+### Prior P0 money (still in tree)
+FinishTrial `captureBlocked` failure UI; `lifetimePaymentPending` lock-until-paid
++ Billing strip; settle retry. Manual Stripe matrix remains operator checklist
+(success + fail FinishTrial, unpaid founding strip, cancel→ended).
+
+### Gates
+`scripts/ui-migration-check.sh` **PASS** (types 0; api 154; i18n 1568; routes 31;
+gates 14). No baseline `--update` this pass.
+
+### Soft-outs / outs (unchanged)
+Week clip @420 (swipe hint shipped earlier); compose footer scroll; Media density;
+auth/admin redesign; breakpoint retarget; unpaid revoke;
+CREATOR yearly $132 copy Raise.
+
+### Files
+- `apps/frontend/src/app/(app)/layout.tsx`
+- `apps/frontend/src/app/(app)/(preview)/p/[id]/page.tsx`
+- `apps/frontend/src/app/robots.ts`
+- site/auth/oauth/integrations page metadata files
+- `media/new.uploader.tsx`, `pick.platform.component.tsx`
+- `docs/ui-migration-log.md` (this entry)
+
+## Cancel retention: trial %50 + lifetime $24.50 (2026-08-07)
+
+Owner: normal trial cancel skipped the 50%×3 offer; lifetime trial had no
+$24.50 founding retention (design Raise).
+
+**Root cause (regular):** `checkDiscount` required a prior Stripe charge
+`amount > 1000` — trials usually have none. Also dead null-check on
+`{ data: find(...) }`.
+
+**Fix:** Drop the prior-charge gate; gate on missing `active|trialing` sub.
+Keep `STRIPE_DISCOUNT_ID`, monthly-only, no existing discount. Local/prod still
+need `STRIPE_DISCOUNT_ID` set (test coupon historically `G9mLivv8`) or the offer
+cannot appear.
+
+**Lifetime trial:** confirm → Before you cancel ($24.50 copy) → Accept charges
+`LIFETIME_RETENTION_PRICE` (`LIFETIME_PRICE / 2`) via off-session PaymentIntent,
+records `lifetime-charge:` + `lifetime-retention:` so `$49` capture cannot
+double-bill, then `endTrial`. Decline → feedback → cancel (existing revoke path).
+`POST /billing/apply-lifetime-retention`.
+
+**UI:** `BillingCancelDialog` branches on `offerLifetimeRetention` vs
+`offerDiscount`; mutates `/user/subscription` + `/user/self` on apply.
+
+**Checks:** `scripts/ui-migration-check.sh --update` then PASS (types 0; api 155;
+i18n 1572; routes 31; gates 14). `STRIPE_DISCOUNT_ID` present in local `.env`.
+
+## Media density + calendar published + favicon (2026-08-07)
+
+Owner: Media felt denser than prototype (missing search / ALL FILES / captions);
+past calendar cards showed SCHEDULED + grayscale (draft-like); favicon had white
+corner triangles on dark tabs.
+
+### Media
+- Rename confirmed absent (alt text only); Raise docs → omitted.
+- Restored design density on `/media` standalone: search, All files + count,
+  grid `gap-y-18` + name/meta captions, lightbox filename `15/600`.
+- Compose picker unchanged.
+
+### Calendar
+- Demo past `QUEUE` → `PUBLISHED` when materializing.
+- Week/day/month: drop card `grayscale`; published `--ok` accent + Published chip;
+  soft ok inset ring. Real past QUEUE stays Scheduled (honest). Empty past cells
+  keep hatch / Date passed.
+
+### Favicon
+- Regenerated transparent `favicon.png` / `favicon.ico` from `logo.svg` (corner
+  alpha 0). Apple touch = full-bleed `#7c3aed` 180px. Metadata prefers SVG first.
+
+### Gates
+`scripts/ui-migration-check.sh --update` **PASS** (types 0; api 155; i18n 1574;
+routes 31; gates 14).
+
+### Files
+- `media.box.tsx`, `media.lightbox.tsx`
+- `calendar.tsx`, `calendar.context.tsx`
+- `apps/frontend/public/favicon.*`, `apple-touch-icon.png`
+- `(app)/layout.tsx` icons
+- `docs/ui-fidelity-audit/MASTER.md`, `rail-pin-media-lightbox.md`
+
+## Title branding + past Published + Media strip (2026-08-07)
+
+Owner: Agents tab/chrome felt unbranded vs Analytics; past seeded QUEUE cards
+still showed SCHEDULED; Media density restore brought back search / ALL FILES /
+filenames the owner wanted gone.
+
+### Titles
+- Agents metadata kept once on `agents/layout.tsx` (deduped page copies).
+- `(provider)` / `(extension)` layouts gain the same `default` +
+  `template: '%s · PostQueen'` as `(app)`.
+
+### Calendar
+- `displayPostState`: past `QUEUE` renders Published chip + ok accent (API state
+  unchanged; matches drag “already published” dialog).
+- Seeds: past QUEUE → `PUBLISHED` (`seed-dev-posts` / `seed-dev-workspace`).
+
+### Media (`/media` standalone)
+- Density restore reverted for names/search/count: no search, no ALL FILES strip,
+  no filename/meta captions under grid thumbs (video duration badge kept).
+- List view unchanged (Alt / Format / Date / Size).
+- Lightbox: generic “Media” title — no filename; type/size meta kept.
+- Compose Insert Media picker untouched.
+
+### Gates
+`scripts/ui-migration-check.sh --update` then PASS. i18n drops unused
+`all_files`, `search_by_file_name`.
+
+### Files
+- `agents/page.tsx`, `agents/[id]/page.tsx`, `(provider)/layout.tsx`,
+  `(extension)/layout.tsx`
+- `calendar.tsx`, `scripts/seed-dev-posts.mjs`, `scripts/seed-dev-workspace.mjs`
+- `media.box.tsx`, `media.lightbox.tsx`
+- `docs/ui-migration-baseline/i18n.txt`, this log
+
+## Media picker: duplicate attach + selection audit (2026-08-07)
+
+Owner: re-adding the same library asset produced React duplicate-key console
+errors; reopening Insert Media did not show already-attached items as selected.
+
+### Root cause
+`MultiMediaComponent.changeMedia` blindly appended; picker had no
+`attachedMedia` awareness; max-5 counted only the current picker session.
+
+### Shipped
+- Deduped append by `id`; React list keys `${id}-${index}` as belt-and-suspenders.
+- `MediaBox` takes `attachedMedia`: ✓ badge, toast on re-click, excluded from Add
+  payload; max-5 includes attached + selected (+ upload auto-select).
+- Delete clears `selected` + `accumulated` (no ghost / dead Add refs).
+- `closeModal()` wired for `ShowMediaBoxModal`; `showMediaBox` / bot picture take
+  an **array**.
+- ReactSortable + alt-text update local `currentMedia` and use prop `name`.
+- Single `MediaComponent`: sync `value`, `mediaDirectory.set` preview,
+  `changeMedia` deps.
+
+### Gates
+`scripts/ui-migration-check.sh` PASS (i18n 1573 incl. `media_already_on_post`).
+
+### Files
+- `media.component.tsx`, `media.box.tsx`, `bot.picture.tsx`
+- this log
+
+## Lifetime always grants Pro (2026-08-07)
+
+Owner: founding ($49) was still laddering one tier up (`lifetimeLadder` /
+`nextLifetimeTier`), so Growth/Pro/Ultimate trials saw matching lifetime cards
+and Pro/Agency grants could climb to Agency. Rule: **Lifetime = always Pro**
+(30 channels, `pricing.PRO`).
+
+### Shipped
+- `LIFETIME_GRANT_TIER = 'PRO'`; `nextLifetimeTier()` always returns it;
+  `lifetimeLadder` removed.
+- `grantLifetimeFromPayment` + `lifetimeDeal` (+ compiled `.js` +
+  `grant-lifetime.mjs`): always Pro, always `pricing.PRO.channel` — no floor /
+  equal-tier +5.
+- Billing trial upsell: Pro copy/features; badge above title; price top-right.
+- `lifetime.deal` + First Billing: grant preview / features use
+  `LIFETIME_GRANT_TIER`.
+
+### Raise
+Existing lifetime rows (e.g. Agency/Creator from the old ladder) are **not**
+backfilled — only new grants use Pro. Owner decides if a one-off migrate is
+wanted.
+
+### Gates
+`scripts/ui-migration-check.sh --update` then PASS (types 0/0; api 155; i18n
+1573; routes 31; gates 14).
+
+### Files
+- `pricing.ts` / `.js`, `stripe.service.ts` / `.js`, `scripts/grant-lifetime.mjs`
+- `main.billing.component.tsx`, `lifetime.deal.tsx`, `first.billing.component.tsx`
+- baselines + this log
+
+## Critical billing audit harden (2026-08-07)
+
+Audit PASS: **lifetime = Pro** (grant paths + upsell UI). `member_no_plan`
+maps to the ask-admin gate (`BillingAdminRequiredComponent`), not First Billing
+/ plan picker. Raise G unchanged — existing non-Pro lifetime rows are not
+backfilled.
+
+### Verify
+- Layout gate (`layout.component.tsx`): FREE + non-ADMIN →
+  `BillingAdminRequiredComponent` (“A subscription is needed”).
+- Root now `min-h-0 flex-1` under `h-dvh overflow-hidden` so the screen paints
+  (same flex pattern as First Billing paywall).
+- DEV state label: `member_no_plan (ask admin)`.
+- Marker: `data-pq-admin-required="1"`.
+
+### Cleanup
+- Stale “ladder” comments in `stripe.service.ts` / `.js`, `first.billing`,
+  `grant-lifetime.mjs`.
+- `grant-lifetime.mjs`: channels always `GRANT_CHANNELS` (30).
+- `nextLifetimeTier` stub kept (always Pro).
+
+### Calendar (same pass)
+SCHEDULED (`QUEUE`) status chips get a purple `bg-pqFocused` dot matching
+PUBLISHED’s green `bg-pqOk` pattern (day + week cards). `displayPostState`
+unchanged.
+
+### Gates
+`scripts/ui-migration-check.sh` PASS (types 0/0; api 155; i18n 1573; routes 31;
+gates 14). No `--update`.
+
+### Files
+- `billing.admin.required.component.tsx`, `dev-billing-stage.switcher.tsx`
+- `stripe.service.ts` / `.js`, `first.billing.component.tsx`,
+  `scripts/grant-lifetime.mjs`
+- `calendar.tsx`, this log
+
+## Media Library modal redesign (2026-08-07)
+
+**Owner:** Insert Media / Media Library sheet still looked like the old picker
+(wide thin drop strip, bare thumbs, weak gray helper copy) despite prior asks.
+Earlier passes intentionally left the compose picker “untouched” while stripping
+`/media` search / ALL FILES / filenames — that is why the modal lagged.
+
+**Shipped (MediaBox picker + shared captions):** type · size under gallery
+thumbs; tall dashed drop zone matching `/media` LOOK + readable
+`text-pqText` / `text-pqMuted` copy; no re-add of search / ALL FILES / filenames
+on standalone `/media`. Compose attached strip is a separate component (no
+`fileSize` on attach payload) — not redesigned here.
+
+**Gates:** `scripts/ui-migration-check.sh --update` — drop unused
+`you_can_drag_drop_pictures` (picker drop zone now uses Media-page 1 GB copy).
+
+### Files
+- `apps/frontend/src/components/media/media.box.tsx`
+- `docs/ui-migration-baseline/i18n.txt`
+- this log
+
+## Media page + picker selection polish (2026-08-07)
+
+**Owner:** `/media` wasted space under the title and put All/Images/Video +
+grid/list above the drop zone; Insert Media had a blank strip between filters
+and thumbs (idle Uppy bar) plus a heavy purple ring + check badge.
+
+### Shipped
+- **Standalone `/media`:** Upload row → drop zone → filter+view toolbar →
+  gallery. Tighter top padding (`pt-[8px]`). Type L / size R meta kept; no
+  search / ALL FILES / filenames restored.
+- **Picker:** Uppy progress collapses when idle; filters sit `gap-[8px]` above
+  the grid. Selected thumbs use a 1px brand outline + top-start numbered badge
+  (selection order 1…5); already-attached keeps a small check.
+- Hover kebab / alt-text menu / captions unchanged.
+
+### Files
+- `apps/frontend/src/components/media/media.box.tsx`
+- this log
+
+## Media select copy + upload feedback (2026-08-07)
+
+**Owner:** Hitting the Insert Media 5-cap showed helper copy as an error
+(`Select or upload pictures…`) — wrong tone and “pictures” when video is
+allowed. Drag-to-upload used a near-black `bg-black/90` overlay (kapkaranlık).
+Upload complete had weak/missing success feedback.
+
+### Findings (limit of 5)
+
+| Source | Behavior |
+|--------|----------|
+| `origin/main` `media.box` `addRemoveSelected` | **No hard cap** — select freely |
+| `origin/main` Uppy `maxNumberOfFiles: 5` | **Commented out** (soft guidance only) |
+| Current picker (UI migration 2026-08-06) | Hard cap: `selected.length + attachedCount >= 5` — **post-level total** (already-attached on the post counts), not merely “5 per picker session” |
+| Helper string historically | Soft copy “maximum 5 at a time” — not enforcement |
+
+**Provider `checkValidity` media caps (not a product-wide 5):**
+
+- Instagram carousel: up to **10**
+- X: max **4** images or **1** video
+- Bluesky: max **4** images or **1** video
+- Pinterest: max **5** images (or video + cover = 2)
+- Tumblr: up to **30** images
+- Telegram media groups: **10** per group
+- LinkedIn: carousel ≥2 images; video = max 1
+- Facebook: photos or one video (stories: each media separate)
+
+### Raise (owner decision needed)
+
+**Do not silently raise the picker cap.** Original app had **no hard picker limit**;
+platforms allow more than 5 (notably Instagram 10, Tumblr 30). The migration-era
+hard 5 is a UX guardrail, not a platform rule. Recommend: keep 5 until owner
+picks a higher shared cap (e.g. 10 to match Instagram) or per-provider limits in
+the composer — then raise in a dedicated change.
+
+### Shipped
+
+1. **Toast:** New keys `media_select_max` / `media_select_max_with_attached` —
+   accurate post-level wording; no longer reuses helper string. Uses “media”.
+2. **Helper:** `select_or_upload_pictures_max_5` English → “Select or upload media
+   (maximum 5 for this post).” (key kept).
+3. **Drag overlay:** `DropFiles` and compose editor drop hint use brand-faint +
+   inset brand ring (design `isMedia` drag) — removed `bg-black/90` / `bg-black/70`.
+4. **Upload feedback:** Drop zone shows “Uploading media…” + spinner while busy;
+   light Uppy progress strip (`.uppyChange` token chrome); success toast on
+   complete (`media_upload_complete` / `_one` + `upload_complete` title).
+
+### Gates
+
+`scripts/ui-migration-check.sh --update` after new i18n keys.
+
+### Files
+
+- `apps/frontend/src/components/media/media.box.tsx`
+- `apps/frontend/src/components/layout/drop.files.tsx`
+- `apps/frontend/src/components/new-launch/editor.tsx`
+- `apps/frontend/src/app/global.scss`
+- `libraries/react-shared-libraries/src/translation/locales/en/translation.json`
+- `docs/ui-migration-baseline/i18n.txt` (via --update)
+- this log
+
+
+## Media delete success toast (2026-08-07)
+
+**Owner:** Deleting media (kebab / lightbox) removed the tile with no success feedback.
+
+**Shipped:** On `DELETE /media/:id` success, toast `media_deleted` (“Media deleted”).
+On failure, existing `something_went_wrong` warning. Optimistic grid remove unchanged.
+
+**Checks:** `scripts/ui-migration-check.sh --update` for new `media_deleted` i18n key.
+
+**Files:** `apps/frontend/src/components/media/media.box.tsx`, baseline i18n, this log.
+
+
+## Fix Media Library upload + restore original pick limit (2026-08-07)
+
+**Owner:** Insert Media modal looked broken — translucent purple “Drop files to
+upload” panel over thumbs (“yarım / bozulmuş”). Root cause: picker inherited
+`/media`’s tall idle strip **and** wrapped the whole modal (gallery + footer) in
+`DropFiles` `brandOverlay` (`bg-pqInner/95`), so drag cover sat on top of the
+grid. Design `libraryOpen` has neither; tall strip + page drag cover belong only
+to standalone Media (`isMedia`).
+
+Hard select cap of 5 was a migration guardrail — `origin/main` had **no** hard
+picker limit (copy-only). Platforms allow more (e.g. Instagram 10).
+
+### Shipped
+
+1. **Picker (`!standalone` / `libraryOpen`):** Removed tall idle dashed strip.
+   Structure: helper + Upload → filters → gallery → footer. `DropFiles` scoped
+   to the toolbar only (no `brandOverlay`) so a drag cover never overlays thumbs.
+   Upload still works via Upload button, paste, OS browse, and toolbar drop.
+2. **Standalone `/media` (`isMedia`):** Unchanged idle layout (Upload → in-flow
+   dashed strip → filters + gallery). Page-level `brandOverlay` kept with
+   `inset-[12px]`.
+3. **`drop.files.tsx`:** Overlay fill is solid `bg-pqInner` (not `/95`); removed
+   backdrop-blur that still revealed thumbs. `brandOverlay` still means inset-12.
+4. **Hard-5 removed:** Deleted `selected.length + attachedCount >= 5` gate and
+   upload auto-select `slice(0, room)`. Helper → `select_or_upload_media`
+   (“Select or upload media.”). Dropped unused `media_select_max` /
+   `media_select_max_with_attached` / `select_or_upload_pictures_max_5` usage.
+   Provider `checkValidity` caps untouched.
+
+### Gates
+
+`scripts/ui-migration-check.sh --update` — types clean; i18n key list reflects
+helper rename and removed max toasts; baseline also refreshed to current WIP
+branch surface (api / routes / gates).
+
+### Files
+
+- `apps/frontend/src/components/media/media.box.tsx`
+- `apps/frontend/src/components/layout/drop.files.tsx`
+- `libraries/react-shared-libraries/src/translation/locales/en/translation.json`
+- `docs/ui-migration-baseline/*` (via --update)
+- this log
+
+
+## Critical + Major fix sprints (2026-08-07)
+
+Audit backlog Critical/Major closed in four sprints. Out of scope (Raise):
+G backfill, CREATOR $132, cancel-date, groupCell, Keyboard unlock, streak
+Longest, week @420 clip.
+
+### A — Critical
+- **Tour sticky query:** `finish` / Skip / Esc / scrim `router.replace` strips
+  `tour` + `onboarding`. Soft URL auto-start skips when `tourSeen()`; Help →
+  Setup still calls `start()` directly. Finish → `/channels?add=1` unchanged.
+- **First Billing lifetime:** card / mode only when
+  `lifetimeWindow(createdAt).open || user.isTrailing`. `LifetimePayBar` toasts
+  API `message` on `!res.ok` (410 offer closed).
+- **/media empty:** `showEmptyState` only swaps gallery body; drop zone +
+  All/Images/Video + view toggle stay (no filter trap on blank library).
+
+### B — Touch / overlay / validation
+- Media grid kebabs + compose thumb controls: `data-ci-actions` (mobile /
+  `hover:none` visibility). Ghost thumbs get `.dragging` for reorder.
+- Editor drag overlay: solid `bg-pqInner` + brand ring (matches `DropFiles`).
+- Validation chip: details always open when invalid; tap toggle when valid +
+  global limits.
+- Dead `select_or_upload_pictures_max_5` removed from locales; Uppy hard-5
+  comment cleaned.
+
+### C — Tour mobile / RTL + dead modal
+- Mobile: `connect-pq` / `nav-channels` open the rail drawer so spotlight
+  targets exist.
+- RTL: `place()` + caret mirrored for `dir=rtl`.
+- Deleted unmounted `onboarding.tsx` / `onboarding.modal.tsx` (dead hex CTAs).
+  Status table → tour-only first-run.
+
+### D — QUEUE honesty + upload clarity
+- Calendar / list Edit uses **API** state (`QUEUE` stays editable even when
+  display paints Published for past slots). Posts panel already used API state
+  and keeps past QUEUE as Scheduled — Raise if design wants panel display map.
+- `.env.example`: `UPLOAD_VIA_SERVER` CORS note; prod default stays commented
+  (do not flip).
+
+**Checks:** `scripts/ui-migration-check.sh --update` then plain — PASS
+(types 0/0; api 155; i18n 1569; routes 31; gates 14).
+
+## Settings/Connections scrim: cover header, no stack (2026-08-07)
+
+**Owner:** Settings / API Keys / Connect felt “squashed”; page chrome h1
+“Settings” / “Workspace, publishing…” stayed visible around the sheet.
+
+**Root cause:** Hard `/settings` (and `/connections`) rendered the fixed scrim
+as `(site)` `children` inside `.blurMe` (`z-0`, below the header). Soft
+intercept already mounts the sheet in the `overlay` slot outside AppChrome —
+hard load did not. Card `h-[min(680px,100%)]` then sized to the content column
+under the header. Soft-push from hard Settings → `(.)connections` also kept
+Settings mounted as children under the new intercept (stacked sheets). Design
+`goConnections` closes Settings first.
+
+**Fix (LOOK / layer only):**
+- `RouteOverlayScrim` portals Settings + Connect scrims to `document.body`
+  (`mode=page` | `intercept` on the route files).
+- `leaveSettingsFor`: hard page (`data-route-mode=page`) → `location.assign`
+  so Connections does not stack; soft intercept still `router.push`.
+- Hard overlay blanks header title/subtitle via `useChromeLocation.isHardOverlay`.
+
+**Files:** `leave-settings.tsx`, `settings.component.tsx`, `connect-panel.tsx`,
+`use-chrome-location.ts`, `title.tsx`, `@modal/(.)settings|connections`,
+`settings/page.tsx`, `connections/page.tsx`.
+
+## Launch finish: panel smart default + media picker rows (2026-08-07)
+
+**Posts panel smart tab:** Shared `listState` defaulted to `'all'` (List toolbar
+owner default). Panel has no All tab; `state=all` hides past drafts
+(`publishDate >= now`). Panel now uses separate `panelListState`. On first open
+(and on org/customer change) probes `GET /posts/list?state=…&limit=1` —
+scheduled → draft → published. Manual tab clicks stick. List All untouched.
+
+**Insert Media picker:** Grid viewport capped to ~2 thumb rows
+(`max-h-[min(280px,32vh)]`); pagination moved outside the scroll so page
+controls are visible without scrolling the sheet.
+
+**Settings/Connect overlay:** Verified WIP — `RouteOverlayScrim` portals to
+`document.body`; hard leave uses `leaveSettingsFor` → `location.assign`. No
+further LOOK change this pass.
+
+**Intentional defer (launch):** CREATOR yearly **$132** stays; **Raise G**
+(lifetime backfill, cancel-date, groupCell, keyboard unlock, week @420 clip)
+deferred.
+
+### Checks
+
+`scripts/ui-migration-check.sh` — PASS (types 0/0; api 155; i18n 1569; routes
+31; gates 14). No `--update` needed.
+
+### Files
+
+- `calendar.context.tsx`, `posts.panel.tsx`
+- `media.box.tsx`
+- `leave-settings.tsx` (verified)
+- this log

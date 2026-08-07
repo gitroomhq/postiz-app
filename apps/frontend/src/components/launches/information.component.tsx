@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useMemo } from 'react';
+import React, { FC, Fragment, useMemo, useState } from 'react';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
@@ -63,6 +63,7 @@ export const InformationComponent: FC<{
   text?: string;
 }> = ({ totalChars, totalAllowedChars, chars, isPicture, text }) => {
   const t = useT();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { isGlobal, selectedIntegrations, internal, currentIntegration } =
     useLaunchStore(
       useShallow((state) => ({
@@ -168,66 +169,96 @@ export const InformationComponent: FC<{
     return validLimit ?? limits[0];
   }, [isGlobal, selectedIntegrations, chars, isInternal, totalChars]);
 
+  const hasDetails =
+    (isGlobal && selectedIntegrations.length > 0) || !isValid;
+  // Invalid details must be reachable without hover (touch / keyboard).
+  const showDetails = hasDetails && (!isValid || detailsOpen);
+
   return (
     <div
       className={clsx(
-        'group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
+        'group relative flex h-[30px] items-center justify-center gap-[4px] rounded-[6px] px-[6px]',
         isValid ? 'border border-newColColor' : 'bg-pqWarn'
       )}
     >
       {isValid ? <Valid /> : <Invalid />}
 
       {!isGlobal && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-pqOnBrand')}>
+        <div
+          className={clsx(
+            'flex items-center justify-center text-[10px] font-[600]',
+            !isValid && 'text-pqOnBrand'
+          )}
+        >
           {totalChars}/{totalAllowedChars}
         </div>
       )}
       {isGlobal && globalDisplayLimit !== null && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-pqOnBrand')}>
+        <div
+          className={clsx(
+            'flex items-center justify-center text-[10px] font-[600]',
+            !isValid && 'text-pqOnBrand'
+          )}
+        >
           {totalChars}/{globalDisplayLimit}
         </div>
       )}
-      {((isGlobal && selectedIntegrations.length) || !isValid) && (
-        <svg
-          className={clsx('group-hover:rotate-180', !isValid && 'text-pqOnBrand')}
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
+      {hasDetails && (
+        <button
+          type="button"
+          aria-expanded={showDetails}
+          aria-label={t('validation_details', 'Validation details')}
+          onClick={() => setDetailsOpen((o) => !o)}
+          className={clsx(
+            'grid place-items-center rounded-[4px] p-[1px]',
+            !isValid && 'text-pqOnBrand'
+          )}
         >
-          <path
-            d="M5.4563 6L10.5437 6C10.9494 6 11.1526 6.56798 10.8657 6.90016L8.32201 9.84556C8.14417 10.0515 7.85583 10.0515 7.67799 9.84556L5.13429 6.90016C4.84741 6.56798 5.05059 6 5.4563 6Z"
-            fill="currentColor"
-          />
-        </svg>
+          <svg
+            className={clsx(showDetails && 'rotate-180')}
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M5.4563 6L10.5437 6C10.9494 6 11.1526 6.56798 10.8657 6.90016L8.32201 9.84556C8.14417 10.0515 7.85583 10.0515 7.67799 9.84556L5.13429 6.90016C4.84741 6.56798 5.05059 6 5.4563 6Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
       )}
-      {((isGlobal && selectedIntegrations.length) || !isValid) && (
+      {showDetails && (
         <div
           className={clsx(
-            'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
+            'absolute bottom-[100%] end-0 z-[300] mb-[5px] flex flex-col rounded-[12px] bg-newBgColorInner p-[12px]',
             isValid ? 'border border-newColColor' : 'border border-pqWarn'
           )}
         >
           {!isPicture && !totalChars && (
             <div
               className={clsx(
-                'text-sm text-pqWarn whitespace-nowrap',
+                'whitespace-nowrap text-sm text-pqWarn',
                 isGlobal && selectedIntegrations.length && 'mb-[12px]'
               )}
             >
-              {t('your_post_should_have_at_least_one_character_or_one_image', 'Your post should have at least one character or one image.')}
+              {t(
+                'your_post_should_have_at_least_one_character_or_one_image',
+                'Your post should have at least one character or one image.'
+              )}
             </div>
           )}
           {isGlobal && (
-            <div className="grid grid-cols-[auto_auto_auto] text-[14px] font-[500] gap-[8px] items-center">
+            <div className="grid grid-cols-[auto_auto_auto] items-center gap-[8px] text-[14px] font-[500]">
               {selectedIntegrations.map((p, index) => (
                 <Fragment key={p.integration.id}>
                   <div>
                     <SafeImage
                       src={`/icons/platforms/${p.integration.identifier}.png`}
                       alt={p.integration.name}
-                      className="rounded-[4px] w-[16px] h-[16px] min-w-[16px] min-h-[16px]"
+                      className="h-[16px] w-[16px] min-h-[16px] min-w-[16px] rounded-[4px]"
                       width={16}
                       height={16}
                     />
@@ -266,7 +297,7 @@ export const InformationComponent: FC<{
           {showStripLinkWarning && (
             <div
               className={clsx(
-                'text-sm text-pqWarn whitespace-nowrap',
+                'whitespace-nowrap text-sm text-pqWarn',
                 ((isGlobal && selectedIntegrations.length) ||
                   (!isPicture && !totalChars)) &&
                   'mt-[12px]'

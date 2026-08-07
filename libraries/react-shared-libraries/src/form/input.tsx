@@ -9,7 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { clsx } from 'clsx';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { TranslatedLabel } from '../translation/translated-label';
 
 export const Input: FC<
@@ -50,9 +50,9 @@ export const Input: FC<
     }
   }, [watch]);
   return (
-    <div className="flex flex-col gap-[6px]">
+    <div className="flex flex-col gap-[5px]">
       {!!label && (
-        <div className="text-[14px] text-pqMuted">
+        <div className="text-[13px] font-[500] text-pqMuted">
           <TranslatedLabel
             label={label}
             translationKey={translationKey}
@@ -60,10 +60,10 @@ export const Input: FC<
           />
         </div>
       )}
-      {/* Prototype form fields: h44, --tableHeader, inset border, r10. */}
+      {/* Prototype form fields: denser h40, --tableHeader, inset border, r10. */}
       <div
         className={clsx(
-          'flex h-[44px] items-center justify-center rounded-[10px] bg-pqTableHeader text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow',
+          'flex h-[40px] items-center justify-center rounded-[10px] bg-pqTableHeader text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-shadow',
           'focus-within:shadow-[inset_0_0_0_1px_var(--brand)]',
           className
         )}
@@ -78,9 +78,9 @@ export const Input: FC<
           {...rest}
         />
       </div>
-      {!removeError && (
-        <div className="text-[12px] text-red-400">{err || <>&nbsp;</>}</div>
-      )}
+      {!removeError && err ? (
+        <div className="text-[12px] text-pqDanger">{err}</div>
+      ) : null}
     </div>
   );
 };

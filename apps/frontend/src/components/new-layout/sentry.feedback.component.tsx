@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 
@@ -12,11 +12,19 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
  *
  * Returns `enabled: false` when the deployment has no DSN, in which case the
  * caller should not render the row at all.
+ *
+ * The Help menu mounts the Report a bug button only while open — a plain
+ * `useRef` would stay null through the first attach effect. A callback ref
+ * re-runs attach whenever the button enters the DOM.
  */
 export const useSentryFeedback = () => {
   const { sentryDsn } = useVariables();
   const [feedback, setFeedback] = useState<any>();
-  const ref = useRef<HTMLButtonElement | null>(null);
+  const [target, setTarget] = useState<HTMLButtonElement | null>(null);
+
+  const ref = useCallback((node: HTMLButtonElement | null) => {
+    setTarget(node);
+  }, []);
 
   useEffect(() => {
     if (!sentryDsn) return;
@@ -29,12 +37,12 @@ export const useSentryFeedback = () => {
   }, [sentryDsn]);
 
   useEffect(() => {
-    if (feedback && ref.current) {
-      const unsubscribe = feedback.attachTo(ref.current);
+    if (feedback && target) {
+      const unsubscribe = feedback.attachTo(target);
       return unsubscribe;
     }
     return () => {};
-  }, [feedback]);
+  }, [feedback, target]);
 
   return { enabled: !!sentryDsn, ref };
 };

@@ -8,15 +8,15 @@ import {
   useModals,
 } from '@gitroom/frontend/components/layout/new-modal';
 import { boolean, object, string } from 'yup';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
-import { Select } from '@gitroom/react/form/select';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const SignaturesComponent: FC<{
   appendSignature?: (value: string) => void;
@@ -81,7 +81,10 @@ export const SignaturesComponent: FC<{
           method: 'DELETE',
         });
         mutate();
-        toaster.show('Signature deleted successfully', 'success');
+        toaster.show(
+          t('signature_deleted_successfully', 'Signature deleted successfully'),
+          'success'
+        );
       }
     },
     [fetch, mutate, toaster, t]
@@ -95,6 +98,10 @@ export const SignaturesComponent: FC<{
             ? t('edit_signature', 'Edit Signature')
             : t('add_signature', 'Add Signature')
         }
+        description={t(
+          'signature_editor_description',
+          'Write a short sign-off to append to your posts.'
+        )}
         onBack={closeEditor}
       >
         <AddOrRemoveSignature
@@ -159,6 +166,7 @@ export const SignaturesComponent: FC<{
                 type="button"
                 onClick={openEditor(p)}
                 aria-label={t('edit', 'Edit')}
+                title={t('edit', 'Edit')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <svg
@@ -178,6 +186,7 @@ export const SignaturesComponent: FC<{
                 type="button"
                 onClick={deleteSignature(p)}
                 aria-label={t('delete', 'Delete')}
+                title={t('delete', 'Delete')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
               >
                 <svg
@@ -201,7 +210,7 @@ export const SignaturesComponent: FC<{
         type="button"
         onClick={openEditor()}
         className={clsx(
-          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
         )}
       >
@@ -259,48 +268,101 @@ const AddOrRemoveSignature: FC<{
   );
 
   const t = useT();
+  const { aiEnabled } = useVariables();
+  const autoAdd = !!useWatch({ control: form.control, name: 'autoAdd' });
+  const signatureFieldClass = clsx(
+    '!min-h-28 !max-h-56 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft w-full resize-none border-0'
+  );
 
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
         <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
           <div className="relative overflow-hidden rounded-[10px] bg-pqTableHeader shadow-[inset_0_0_0_1px_var(--border)] focus-within:shadow-[inset_0_0_0_1px_var(--brand)]">
-            <CopilotTextarea
-              disableBranding={true}
-              className={clsx(
-                '!min-h-40 !max-h-80 !bg-transparent p-[10px_12px] text-[14px] leading-[1.55] text-pqText outline-none overflow-x-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent placeholder:text-pqSoft'
-              )}
-              value={text}
-              onChange={(e) => {
-                form.setValue('content', e.target.value);
-              }}
-              placeholder="Write your signature..."
-              autosuggestionsConfig={{
-                textareaPurpose: `Assist me in writing social media signature`,
-                chatApiConfigs: {},
-              }}
-            />
+            {aiEnabled ? (
+              <CopilotTextarea
+                disableBranding={true}
+                className={signatureFieldClass}
+                value={text}
+                onChange={(e) => {
+                  form.setValue('content', e.target.value);
+                }}
+                placeholder={t(
+                  'write_your_signature',
+                  'Write your signature...'
+                )}
+                autosuggestionsConfig={{
+                  textareaPurpose: `Assist me in writing social media signature`,
+                  chatApiConfigs: {},
+                }}
+              />
+            ) : (
+              <textarea
+                className={signatureFieldClass}
+                value={text}
+                onChange={(e) => {
+                  form.setValue('content', e.target.value);
+                }}
+                placeholder={t(
+                  'write_your_signature',
+                  'Write your signature...'
+                )}
+              />
+            )}
           </div>
 
-          <Select
-            label="Auto add signature?"
-            translationKey="label_auto_add_signature"
-            {...form.register('autoAdd', {
-              setValueAs: (value) => value === 'true',
-            })}
+          {/* Boolean → checkbox (design uses Yes/No select; owner preferred check). */}
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={autoAdd}
+            onClick={() => form.setValue('autoAdd', !autoAdd, { shouldDirty: true })}
+            className="flex w-fit max-w-full items-start gap-[10px] rounded-[8px] text-start transition-colors"
           >
-            <option value="false">{t('no', 'No')}</option>
-            <option value="true">{t('yes', 'Yes')}</option>
-          </Select>
-
-          <ModalFormActions onCancel={onCancel}>
-            <Button
-              type="submit"
-              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+            <span
+              className={clsx(
+                'mt-[1px] grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] bg-pqOnBrand text-pqBrand shadow-[inset_0_0_0_1px_var(--border)] transition-colors'
+              )}
+              aria-hidden="true"
             >
-              {t('save', 'Save')}
-            </Button>
-          </ModalFormActions>
+              {autoAdd && (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </span>
+            <span className="flex min-w-0 flex-col gap-[2px]">
+              <span className="text-[14px] font-[500] text-pqText">
+                {t('label_auto_add_signature', 'Auto add signature')}
+              </span>
+              <span className="text-[12.5px] leading-[1.45] text-pqMuted">
+                {t(
+                  'auto_add_signature_hint',
+                  'Append this signature when you create a new post.'
+                )}
+              </span>
+            </span>
+          </button>
+
+          <div className="flex justify-end">
+            <ModalFormActions onCancel={onCancel}>
+              <Button
+                type="submit"
+                className="h-[40px] shrink-0 rounded-[10px] px-[22px] text-[13.5px] font-[600]"
+              >
+                {t('save', 'Save')}
+              </Button>
+            </ModalFormActions>
+          </div>
         </div>
       </form>
     </FormProvider>

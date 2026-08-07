@@ -213,54 +213,39 @@ export const DeveloperComponent: FC = () => {
     return null;
   }
 
-  // No app yet — show create prompt
+  // No app yet — show create prompt (pane header already explains OAuth)
   if (!app && !creating) {
     return (
-      <div className="flex flex-col gap-[40px]">
-        <div className="text-[14px] text-pqText leading-[1.7]">
-          {t(
-            'oauth_app_note_line1',
-            'Create an OAuth App to let other PostQueen users authorize your product to post on their behalf.'
-          )}
-          <br />
-          {t(
-            'oauth_app_note_line2',
-            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
-          )}
+      <div className="mt-[4px] overflow-hidden rounded-[14px] bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-start justify-between gap-[12px] border-b border-pqLine px-[18px] py-[16px]">
+          <div className="min-w-0">
+            <div className="text-[14px] font-[600] text-pqText">
+              {t('oauth_application', 'OAuth Application')}
+            </div>
+            <div className="mt-[4px] text-[13px] leading-[1.5] text-pqMuted">
+              {t(
+                'oauth_app_empty_hint',
+                'One app per workspace. Users authorize it once, then you receive a pos_ token for API, MCP, and CLI.'
+              )}
+            </div>
+          </div>
+          <a
+            className="flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+            href="https://docs.postqueen.ai/public-api/oauth"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('read_the_docs', 'Docs')}
+          </a>
         </div>
-        <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="flex items-start justify-between gap-[12px] border-b border-pqLine px-[16px] py-[14px]">
-            <div>
-              <div className="text-[13.5px] font-[600]">
-                {t('oauth_application', 'OAuth Application')}
-              </div>
-              <div className="mt-[3px] text-[12.5px] text-pqMuted">
-                {t(
-                  'create_an_oauth_application',
-                  'Create an OAuth application to allow third-party integrations with PostQueen on behalf of your users.'
-                )}
-              </div>
-            </div>
-            <div className="flex shrink-0 gap-[6px] pt-[2px]">
-              <a
-                className="flex h-[30px] cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
-                href="https://docs.postqueen.ai/public-api/oauth"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t('read_the_docs', 'Docs')}
-              </a>
-            </div>
-          </div>
-          <div className="p-[16px]">
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="flex h-[34px] cursor-pointer items-center rounded-pqSm bg-pqBrand px-[13px] text-[13px] font-[600] text-white transition-[filter] hover:brightness-110"
-            >
-              {t('create_oauth_app', 'Create OAuth App')}
-            </button>
-          </div>
+        <div className="p-[18px]">
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="flex h-[38px] cursor-pointer items-center rounded-[10px] bg-pqBrand px-[16px] text-[13.5px] font-[600] text-white transition-[filter] hover:brightness-110"
+          >
+            {t('create_oauth_app', 'Create OAuth App')}
+          </button>
         </div>
       </div>
     );
@@ -269,107 +254,97 @@ export const DeveloperComponent: FC = () => {
   // Create form
   if (creating && !app) {
     return (
-      <div className="flex flex-col gap-[40px]">
-        <div className="text-[14px] text-pqText leading-[1.7]">
-          {t(
-            'oauth_app_note_line1',
-            'Create an OAuth App to let other PostQueen users authorize your product to post on their behalf.'
-          )}
-          <br />
-          {t(
-            'oauth_app_note_line2',
-            'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
-          )}
+      <div className="mt-[4px] overflow-hidden rounded-[14px] bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="border-b border-pqLine px-[18px] py-[16px]">
+          <div className="text-[15px] font-[600] text-pqText">
+            {t('create_oauth_app', 'Create OAuth App')}
+          </div>
+          <div className="mt-[3px] text-[13px] text-pqMuted">
+            {t(
+              'fill_in_the_details_for_your_oauth_application',
+              'Fill in the details for your OAuth application.'
+            )}
+          </div>
         </div>
-        <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="bg-pqInner px-[20px] py-[14px] border-b border-pqBorder">
-            <div className="text-[15px] font-[600]">
-              {t('create_oauth_app', 'Create OAuth App')}
-            </div>
-            <div className="text-[13px] text-pqMuted mt-[2px]">
-              {t(
-                'fill_in_the_details_for_your_oauth_application',
-                'Fill in the details for your OAuth application.'
+        <div className="flex flex-col gap-[14px] p-[18px]">
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-[12.5px] font-[600] text-pqMuted">
+              {t('app_name', 'App Name')} *
+            </label>
+            <input
+              className="h-[42px] rounded-[10px] bg-pqInner px-[14px] text-[13.5px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] focus:shadow-[inset_0_0_0_1px_var(--brand)]"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('my_application', 'My Application')}
+              maxLength={100}
+            />
+          </div>
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-[12.5px] font-[600] text-pqMuted">
+              {t('description', 'Description')}
+            </label>
+            <textarea
+              className="min-h-[88px] resize-y rounded-[10px] bg-pqInner p-[14px] text-[13.5px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] focus:shadow-[inset_0_0_0_1px_var(--brand)]"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t(
+                'describe_what_your_app_does',
+                'Describe what your app does'
               )}
+              maxLength={500}
+            />
+          </div>
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-[12.5px] font-[600] text-pqMuted">
+              {t('profile_picture', 'Profile Picture')}
+            </label>
+            <div className="flex items-center gap-[12px]">
+              {picturePath ? (
+                <img
+                  src={picturePath}
+                  alt="App picture"
+                  className="h-[48px] w-[48px] rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-pqSettings text-pqMuted">
+                  ?
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={openMedia}
+                className="flex h-[34px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[12px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
+              >
+                {t('choose_image', 'Choose Image')}
+              </button>
             </div>
           </div>
-          <div className="p-[20px] flex flex-col gap-[16px]">
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-pqMuted">
-                {t('app_name', 'App Name')} *
-              </label>
-              <input
-                className="bg-pqInner border border-pqBorder rounded-[8px] px-[16px] h-[44px] text-pqText outline-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My Application"
-                maxLength={100}
-              />
-            </div>
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-pqMuted">
-                {t('description', 'Description')}
-              </label>
-              <textarea
-                className="bg-pqInner border border-pqBorder rounded-[8px] p-[16px] text-pqText outline-none min-h-[80px]"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what your app does"
-                maxLength={500}
-              />
-            </div>
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-pqMuted">
-                {t('profile_picture', 'Profile Picture')}
-              </label>
-              <div className="flex items-center gap-[12px]">
-                {picturePath ? (
-                  <img
-                    src={picturePath}
-                    alt="App picture"
-                    className="w-[48px] h-[48px] rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-[48px] h-[48px] rounded-full bg-pqSettings flex items-center justify-center text-pqMuted">
-                    ?
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={openMedia}
-                  className="flex h-[30px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
-                >
-                  {t('choose_image', 'Choose Image')}
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-[6px]">
-              <label className="text-[13px] font-[600] text-pqMuted">
-                {t('redirect_url', 'Redirect URL')} *
-              </label>
-              <input
-                className="bg-pqInner border border-pqBorder rounded-[8px] px-[16px] h-[44px] text-pqText outline-none"
-                value={redirectUrl}
-                onChange={(e) => setRedirectUrl(e.target.value)}
-                placeholder="https://yourapp.com/callback"
-              />
-            </div>
-            <div className="flex gap-[8px]">
-              <button
-                type="button"
-                onClick={createApp}
-                className="flex h-[34px] cursor-pointer items-center rounded-pqSm bg-pqBrand px-[13px] text-[13px] font-[600] text-white transition-[filter] hover:brightness-110"
-              >
-                {t('create', 'Create')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                className="flex h-[34px] cursor-pointer items-center rounded-pqSm bg-pqSettings px-[13px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
-              >
-                {t('cancel', 'Cancel')}
-              </button>
-            </div>
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-[12.5px] font-[600] text-pqMuted">
+              {t('redirect_url', 'Redirect URL')} *
+            </label>
+            <input
+              className="h-[42px] rounded-[10px] bg-pqInner px-[14px] text-[13.5px] text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] focus:shadow-[inset_0_0_0_1px_var(--brand)]"
+              value={redirectUrl}
+              onChange={(e) => setRedirectUrl(e.target.value)}
+              placeholder="https://yourapp.com/callback"
+            />
+          </div>
+          <div className="flex gap-[8px] pt-[4px]">
+            <button
+              type="button"
+              onClick={createApp}
+              className="flex h-[38px] cursor-pointer items-center rounded-[10px] bg-pqBrand px-[16px] text-[13.5px] font-[600] text-white transition-[filter] hover:brightness-110"
+            >
+              {t('create', 'Create')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreating(false)}
+              className="flex h-[38px] cursor-pointer items-center rounded-[10px] bg-pqSettings px-[16px] text-[13.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+            >
+              {t('cancel', 'Cancel')}
+            </button>
           </div>
         </div>
       </div>
@@ -378,39 +353,27 @@ export const DeveloperComponent: FC = () => {
 
   // App exists — show details
   return (
-    <div className="flex flex-col gap-[40px]">
-      <div className="text-[14px] text-pqText leading-[1.7]">
-        {t(
-          'oauth_app_note_line1',
-          'Create an OAuth App to let other PostQueen users authorize your product to post on their behalf.'
-        )}
-        <br />
-        {t(
-          'oauth_app_note_line2',
-          'After a user completes the OAuth2 flow, you receive a pos_ prefixed token that works everywhere an API Key does — API, MCP, and CLI.'
-        )}
-      </div>
-      {/* App details / edit */}
-      <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
-        <div className="bg-pqInner px-[20px] py-[14px] border-b border-pqBorder flex items-start justify-between gap-[12px]">
+    <div className="mt-[4px] flex flex-col gap-[14px]">
+      <div className="overflow-hidden rounded-[14px] bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-start justify-between gap-[12px] border-b border-pqLine px-[18px] py-[16px]">
           <div>
-            <div className="text-[15px] font-[600]">
+            <div className="text-[15px] font-[600] text-pqText">
               {t('oauth_application', 'OAuth Application')}
             </div>
-            <div className="text-[13px] text-pqMuted mt-[2px]">
+            <div className="mt-[3px] text-[13px] text-pqMuted">
               {t(
                 'manage_your_oauth_application',
                 'Manage your OAuth application for third-party integrations.'
               )}
             </div>
           </div>
-          <div className="flex gap-[6px] shrink-0 pt-[2px]">
+          <div className="flex shrink-0 gap-[6px] pt-[2px]">
             <a
               className="flex h-[30px] cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqSettings px-[11px] text-[12.5px] font-[500] text-pqText transition-colors hover:bg-pqHover"
               href="https://docs.postqueen.ai/public-api/oauth"
               target="_blank"
+              rel="noreferrer"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
               {t('read_the_docs', 'Docs')}
             </a>
           </div>

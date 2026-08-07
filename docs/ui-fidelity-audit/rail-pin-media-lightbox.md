@@ -24,8 +24,8 @@ Prototype lightbox ~2570–2587; owner screenshots require a **real/demo preview
 | Demo stills | data-URI SVG + gradient underlay on card + lightbox | Match |
 | Demo video grid | `thumbGradient` tile | Match |
 | Demo video lightbox | sample URL + gradient underlay | Match |
-| Rename | no API | Raise |
+| Rename | omitted | Owner: Change alt text only (no rename API) |
 
 ## Raises
 
-- Media Rename in lightbox (no rename API).
+- (none for Rename — intentionally omitted)

@@ -84,7 +84,7 @@ Status legend:
 | --- | --- | --- | --- |
 | Connections | `connections.component.tsx` | Match | Rail primary CTA |
 | Analytics | `platform-analytics/*` | Match | Channels column = shared chrome panel (260/100, no ghost opacity); Chart.js theme |
-| Media | `media/*` | Match | Thumbs OK with real upload URLs; seed default was silhouette (`no-picture.jpg`) — now generates NW PNG. Rename still Raise (no API) |
+| Media | `media/*` | Match | Thumbs OK with real upload URLs; seed default was silhouette (`no-picture.jpg`) — now generates NW PNG. Rename omitted (owner: alt text only, no API) |
 
 ## Composer / overlays — `overlayVals`
 
@@ -102,7 +102,7 @@ Prototype LOOK cues vs app — **do not fake Match with invented WORK**.
 | --- | --- | --- | --- |
 | Sets editor shell | in-sheet `openSetEditor` (`settingsVals`) | Fullscreen `AddEditModal` (`sets.tsx`) | Modal WORK |
 | Copilot draft-plan card | `chatHasPlan` + drafts (`pagesVals`) | No reply-format hook (`agent.chat.tsx`) | No card |
-| Media Rename | menu → `openForm('rename')` | Preview / Download / Alt / Delete | No rename API |
+| Media Rename | menu → `openForm('rename')` | Preview / Download / Alt / Delete | Omitted — owner alt text only, no API |
 | Streak Longest | `streakBest` (`chromeVals`) | `streakSince` only | No schema field |
 | CREATOR yearly $132 / months-free | `year_price` / `MONTHS_FREE` | Same in `pricing.ts` — Stripe honesty Raise | Don’t invent prices |
 | Help shortcuts | live shortcuts sheet | Locked Intentional (`help.menu.tsx`) | Stay locked |

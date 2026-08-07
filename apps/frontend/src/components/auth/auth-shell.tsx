@@ -56,7 +56,7 @@ export function AuthShell({
   onContinueEmail: () => void;
   onBack: () => void;
   extraProviders?: ReactNode;
-  /** The email + password (+ company) fields and submit button. */
+  /** The email + password (+ organization) fields and submit button. */
   emailStep: ReactNode;
 }) {
   const t = useT();

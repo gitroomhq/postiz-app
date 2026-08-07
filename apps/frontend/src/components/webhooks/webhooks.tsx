@@ -12,6 +12,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -77,6 +78,10 @@ export const Webhooks: FC = () => {
             ? t('update_webhook', 'Update webhook')
             : t('add_webhook', 'Add webhook')
         }
+        description={t(
+          'webhook_editor_description',
+          'Send a ping when posts publish so your other tools can react.'
+        )}
         onBack={closeEditor}
       >
         <AddOrEditWebhook
@@ -124,6 +129,7 @@ export const Webhooks: FC = () => {
                 type="button"
                 onClick={() => setEditing(p)}
                 aria-label={t('edit', 'Edit')}
+                title={t('edit', 'Edit')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <svg
@@ -143,6 +149,7 @@ export const Webhooks: FC = () => {
                 type="button"
                 onClick={deleteHook(p)}
                 aria-label={t('delete', 'Delete')}
+                title={t('delete', 'Delete')}
                 className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
               >
                 <svg
@@ -166,7 +173,7 @@ export const Webhooks: FC = () => {
         type="button"
         onClick={() => setEditing(null)}
         className={clsx(
-          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white transition-colors hover:bg-pqBrandHover',
+          'flex h-[34px] items-center gap-[6px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
           (data?.length || 0) > 0 ? 'mt-[13px]' : 'mt-[18px]'
         )}
       >
@@ -223,9 +230,6 @@ export const AddOrEditWebhook: FC<{
     },
   });
   const integrations = form.watch('integrations');
-  const integration = useCallback(async () => {
-    return (await fetch('/integrations/list')).json();
-  }, []);
   const changeIntegration = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const findValue = options.find(
@@ -238,14 +242,9 @@ export const AddOrEditWebhook: FC<{
     },
     []
   );
-  const { data: dataList, isLoading } = useSWR('integrations', integration, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-  });
+  // Shared list cache — array shape. Never reuse key `'integrations'` with a
+  // full `{ integrations }` response (poisons AgentList / other consumers).
+  const { data: dataList, isLoading } = useIntegrationList();
   const callBack = useCallback(
     async (values: any) => {
       await fetch('/webhooks', {
@@ -331,15 +330,17 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
+        <div className="relative flex flex-1 flex-col gap-[12px] pt-0">
           <Input
             label="Name"
             translationKey="label_name"
+            removeError={true}
             {...form.register('name')}
           />
           <Input
             label="URL"
             translationKey="label_url"
+            removeError={true}
             {...form.register('url')}
           />
           <Select
@@ -348,6 +349,7 @@ export const AddOrEditWebhook: FC<{
             label="Integrations"
             translationKey="label_integrations"
             disableForm={true}
+            hideErrors={true}
             onChange={changeIntegration}
           >
             {options.map((option) => (
@@ -358,9 +360,7 @@ export const AddOrEditWebhook: FC<{
           </Select>
           {allIntegrations.value === 'specific' && dataList && !isLoading && (
             <PickPlatforms
-              integrations={sortIntegrationsByProviderImportance(
-                dataList.integrations || []
-              )}
+              integrations={sortIntegrationsByProviderImportance(dataList)}
               selectedIntegrations={integrations as any[]}
               onChange={(e) => form.setValue('integrations', e)}
               singleSelect={false}
@@ -371,7 +371,7 @@ export const AddOrEditWebhook: FC<{
           <ModalFormActions onCancel={() => onCancel?.()}>
             <Button
               type="submit"
-              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
+              className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
               disabled={
                 !form.formState.isValid ||
                 (allIntegrations.value === 'specific' && !integrations?.length)
@@ -382,7 +382,7 @@ export const AddOrEditWebhook: FC<{
             <Button
               type="button"
               secondary={true}
-              className="h-[44px] rounded-[8px] px-[18px] text-[14px] font-[600]"
+              className="h-[40px] shrink-0 rounded-[10px] px-[16px] text-[13.5px] font-[600]"
               onClick={sendTest}
               disabled={
                 !form.formState.isValid ||

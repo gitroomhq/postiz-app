@@ -2,7 +2,7 @@
 
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
@@ -54,7 +54,7 @@ export const RenderComponents: FC<{
             {...register('comment', {
               required: true,
             })}
-            className="flex w-full min-h-[80px] h-[98px] resize-none rounded-[10px] border-0 bg-pqTableHeader px-3 py-2 text-sm text-pqText outline-none shadow-[inset_0_0_0_1px_var(--border)] placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-[98px] min-h-[80px] w-full resize-none rounded-[10px] border-0 bg-pqTableHeader px-3 py-2 text-sm text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--brand)] disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Add a comment..."
             defaultValue={''}
           />
@@ -87,7 +87,7 @@ export const RenderComponents: FC<{
         {data.comments.map((comment: any) => (
           <div
             key={comment.id}
-            className="flex space-x-3 border-t border-tableBorder py-3"
+            className="flex space-x-3 border-t border-pqBorder py-3"
           >
             <div className="flex-1 space-y-1">
               <div className="flex items-center space-x-2">
@@ -116,12 +116,23 @@ export const CommentsComponents: FC<{
   }, []);
   if (!user?.id) {
     return (
-      <Button onClick={goToComments}>
-        {t(
-          'login_register_to_add_comments',
-          'Login / Register to add comments'
-        )}
-      </Button>
+      <div className="flex flex-col gap-[12px]">
+        <h3 className="text-[15px] font-[600] text-pqText">
+          {t('comments', 'Comments')}
+        </h3>
+        <p className="text-[13px] leading-[1.45] text-pqMuted">
+          {t(
+            'login_to_leave_feedback',
+            'Sign in to leave feedback on this preview.'
+          )}
+        </p>
+        <Button onClick={goToComments} className="w-full">
+          {t(
+            'login_register_to_add_comments',
+            'Login / Register to add comments'
+          )}
+        </Button>
+      </div>
     );
   }
   return <RenderComponents postId={postId} />;

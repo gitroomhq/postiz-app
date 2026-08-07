@@ -5,7 +5,10 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { lifetimeWindow } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  lifetimeWindow,
+  trialWindow,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { LifetimeDto } from '@gitroom/nestjs-libraries/dtos/billing/lifetime.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
@@ -62,6 +65,11 @@ export class BillingController {
     await this._stripeService.applyDiscount(org.paymentId);
   }
 
+  @Post('/apply-lifetime-retention')
+  async applyLifetimeRetention(@GetOrgFromRequest() org: Organization) {
+    return this._stripeService.applyLifetimeRetentionOffer(org.id);
+  }
+
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
     // Two ways a trial ends, and the caller polls `is-trial-finished` until the
@@ -73,24 +81,84 @@ export class BillingController {
     // is ever coming, so the flag is cleared here. Without this the caller
     // polled forever and the "End free trial" dialog never closed.
     //
+    // Deferred founding purchases charge $49 here (force) before the flag
+    // clears, so "End free trial" matches money the same way a Stripe
+    // subscription trial does. If that charge fails (dead card), leave the
+    // trial flag alone — clearing it would unlock a founding member who never
+    // paid. The FinishTrial overlay keeps polling until money clears or the
+    // window closes and settleFoundingLifetimeAfterTrial runs.
+    //
     // The error is still swallowed, as before, so a Stripe outage cannot leave
     // somebody stuck in a dialog. But `ended: false` is not an error, and only
     // that specific answer clears the flag locally.
+    let captureBlocked = false;
+    let error: string | undefined;
+    let status: string | undefined;
     try {
       const { ended } = await this._stripeService.finishTrial(org.paymentId);
-      if (!ended) {
+      const capture = await this._stripeService.captureFoundingLifetimeIfDue(
+        org.id,
+        {
+          force: true,
+        }
+      );
+      captureBlocked = !!(
+        ('error' in capture && capture.error) ||
+        ('status' in capture && capture.status)
+      );
+      if ('error' in capture && capture.error) error = String(capture.error);
+      if ('status' in capture && capture.status) status = String(capture.status);
+      if (!ended && !captureBlocked) {
         await this._organizationService.endTrial(org.id);
       }
     } catch (err) {}
     return {
       finish: true,
+      captureBlocked,
+      ...(error ? { error } : {}),
+      ...(status ? { status } : {}),
     };
   }
 
   @Get('/is-trial-finished')
   async isTrialFinished(@GetOrgFromRequest() org: Organization) {
+    // Lazy capture when the derived trial window has already closed (no
+    // finish-trial click). force:false so we never charge mid-trial.
+    //
+    // Use settleFoundingLifetimeAfterTrial (raw DB isTrailing) — the request
+    // org's isTrailing is middleware-derived, so `org.isTrailing && !window`
+    // was dead code and never cleared the row after natural expiry.
+    let captureBlocked = false;
+    let error: string | undefined;
+    let status: string | undefined;
+    try {
+      const capture =
+        await this._stripeService.settleFoundingLifetimeAfterTrial(org.id);
+      captureBlocked = !!(
+        ('error' in capture && capture.error) ||
+        ('status' in capture && capture.status)
+      );
+      if ('error' in capture && capture.error) error = String(capture.error);
+      if ('status' in capture && capture.status) status = String(capture.status);
+    } catch (err) {}
+
+    // Deferred founding still unpaid after the window — never report finished
+    // (avoids false thank-you). Mid-trial owed alone is fine: finish-trial uses
+    // force:true and surfaces captureBlocked on the POST itself.
+    const windowOpen = trialWindow(org.createdAt).open;
+    const owed = await this._stripeService.isDeferredFoundingFeeOwed(org.id);
+    if (captureBlocked || (owed && !windowOpen)) {
+      return {
+        finished: false,
+        captureBlocked: true,
+        ...(error ? { error } : {}),
+        ...(status ? { status } : {}),
+      };
+    }
+
     return {
-      finished: !org.isTrailing,
+      finished: !org.isTrailing || !windowOpen,
+      captureBlocked: false,
     };
   }
 
@@ -266,9 +334,25 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization
   ) {
-    // Same window as redemption, same 410. The button is hidden once the offer
-    // closes, but a hidden button is a UI decision and this is the rule.
-    if (!lifetimeWindow(user.createdAt).open) {
+    const sub =
+      await this._subscriptionService.getSubscriptionByOrganizationId(org.id);
+    // Paid founding member: no second purchase. Lifetime-on-trial already converted.
+    if (sub?.isLifetime && !org.isTrailing) {
+      throw new HttpException(
+        { success: false, message: 'Already a founding member.' },
+        HttpStatus.CONFLICT
+      );
+    }
+    if (sub?.isLifetime && org.isTrailing) {
+      throw new HttpException(
+        { success: false, message: 'Already on the founding-member trial.' },
+        HttpStatus.CONFLICT
+      );
+    }
+    // Trial convert (design): entire trial, not only the 24h founding window.
+    // Founding window still covers free / non-trial signups on /billing/lifetime.
+    const trialConvert = !!org.isTrailing;
+    if (!trialConvert && !lifetimeWindow(user.createdAt).open) {
       throw new HttpException(
         { success: false, message: 'The founding-member offer has closed.' },
         HttpStatus.GONE

@@ -9,7 +9,6 @@ import React, {
 import { Button } from '@gitroom/react/form/button';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
-import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import EventEmitter from 'events';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
@@ -23,12 +22,8 @@ import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpe
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
-  CloseCircleIcon,
-  DragHandleIcon,
-  MediaSettingsIcon,
   InsertMediaIcon,
   DesignMediaIcon,
-  VerticalDividerIcon,
 } from '@gitroom/frontend/components/ui/icons';
 
 const Polonto = dynamic(
@@ -65,7 +60,7 @@ export const ShowMediaBoxModal: FC = () => {
   );
 };
 export const showMediaBox = (
-  callback: (params: { id: string; path: string }) => void
+  callback: (params: { id: string; path: string }[]) => void
 ) => {
   showModalEmitter.emit('show-modal', callback);
 };
@@ -133,9 +128,7 @@ export const MultiMediaComponent: FC<{
   const modals = useModals();
   const t = useT();
   useEffect(() => {
-    if (value) {
-      setCurrentMedia(value);
-    }
+    setCurrentMedia(value);
   }, [value]);
 
   const [currentMedia, setCurrentMedia] = useState(value);
@@ -153,7 +146,13 @@ export const MultiMediaComponent: FC<{
           }[]
     ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
-      const newMedia = [...(currentMedia || []), ...mediaArray];
+      const existing = currentMedia || [];
+      const seen = new Set(existing.map((x) => x.id));
+      const additions = mediaArray.filter((x) => x?.id && !seen.has(x.id));
+      if (additions.length === 0) {
+        return;
+      }
+      const newMedia = [...existing, ...additions];
       setCurrentMedia(newMedia);
       onChange({
         target: {
@@ -162,21 +161,24 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [currentMedia, name, onChange]
   );
   const showModal = useCallback(() => {
     modals.openModal({
       title: t('media_library', 'Media Library'),
       askClose: false,
       closeOnEscape: true,
-      fullScreen: true,
-      size: 'calc(100% - 80px)',
-      height: 'calc(100% - 80px)',
+      size: 'min(1200px, calc(100vw - 64px))',
+      maxSize: 'min(1200px, calc(100vw - 64px))',
       children: (close) => (
-        <MediaBox setMedia={changeMedia} closeModal={close} />
+        <MediaBox
+          setMedia={changeMedia}
+          closeModal={close}
+          attachedMedia={currentMedia || []}
+        />
       ),
     });
-  }, [changeMedia, t]);
+  }, [changeMedia, currentMedia, t]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
@@ -189,7 +191,7 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [currentMedia, name, onChange]
   );
 
   const designMedia = useCallback(() => {
@@ -231,9 +233,10 @@ export const MultiMediaComponent: FC<{
             {!!currentMedia && (
               <ReactSortable
                 list={currentMedia}
-                setList={(next) =>
-                  onChange({ target: { name: 'upload', value: next } })
-                }
+                setList={(next) => {
+                  setCurrentMedia(next);
+                  onChange({ target: { name, value: next } });
+                }}
                 className={clsx(
                   'sortable-container flex',
                   ghost ? 'flex-wrap gap-[7px]' : 'gap-[10px]'
@@ -244,22 +247,80 @@ export const MultiMediaComponent: FC<{
               >
                 {currentMedia.map((media, index) => (
                   <div
-                    key={media.id}
+                    key={`${media.id}-${index}`}
                     className={clsx(
-                      'relative flex cursor-pointer transition-all',
+                      'group relative overflow-hidden transition-[box-shadow]',
                       ghost
-                        ? 'h-[58px] w-[58px] rounded-[9px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)]'
-                        : 'h-[40px] w-[40px] rounded-[5px] border-2 border-tableBorder'
+                        ? 'dragging h-[58px] w-[58px] cursor-move rounded-[9px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)]'
+                        : 'h-[48px] w-[48px] cursor-pointer rounded-[8px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                     )}
                   >
-                    {!ghost && (
-                      <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
-                    )}
+                    <div className="relative h-full w-full overflow-hidden rounded-[inherit]">
+                      {hasExtension(media?.path, 'mp4') ? (
+                        <VideoFrame url={mediaDirectory.set(media?.path)} />
+                      ) : (
+                        <img
+                          className="h-full w-full object-cover"
+                          src={mediaDirectory.set(media?.path)}
+                          alt=""
+                        />
+                      )}
+                    </div>
 
-                    <div className="w-full h-full relative group overflow-hidden rounded-[inherit]">
-                      {!ghost && (
-                        <div
-                          onClick={async () => {
+                    {!ghost && (
+                      <>
+                        <button
+                          type="button"
+                          data-ci-actions="1"
+                          aria-label={t('reorder_media', 'Reorder')}
+                          title={t('reorder_media', 'Reorder')}
+                          className="dragging absolute start-[4px] top-[4px] z-[20] grid h-[18px] w-[18px] cursor-move place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-pqText"
+                        >
+                          <svg
+                            viewBox="0 0 12 12"
+                            width="10"
+                            height="10"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <circle cx="3.5" cy="3.5" r="1.1" />
+                            <circle cx="8.5" cy="3.5" r="1.1" />
+                            <circle cx="3.5" cy="8.5" r="1.1" />
+                            <circle cx="8.5" cy="8.5" r="1.1" />
+                          </svg>
+                        </button>
+
+                        <button
+                          type="button"
+                          data-ci-actions="1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearMedia(index)();
+                          }}
+                          aria-label={t('remove', 'Remove')}
+                          title={t('remove', 'Remove')}
+                          className="absolute end-[4px] top-[4px] z-[20] grid h-[18px] w-[18px] place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-pqDangerChip hover:text-pqDanger"
+                        >
+                          <svg
+                            viewBox="0 0 12 12"
+                            width="9"
+                            height="9"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M3 3l6 6M9 3L3 9"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+
+                        <button
+                          type="button"
+                          data-ci-actions="1"
+                          onClick={() => {
                             modals.openModal({
                               title: t('change_alt_text', 'Change alt text'),
                               children: (close) => (
@@ -267,18 +328,20 @@ export const MultiMediaComponent: FC<{
                                   media={media as any}
                                   onClose={close}
                                   onSelect={(next: any) => {
+                                    const updated = currentMedia.map((p) => {
+                                      if (p.id === media.id) {
+                                        return {
+                                          ...p,
+                                          ...next,
+                                        };
+                                      }
+                                      return p;
+                                    });
+                                    setCurrentMedia(updated);
                                     onChange({
                                       target: {
-                                        name: 'upload',
-                                        value: currentMedia.map((p) => {
-                                          if (p.id === media.id) {
-                                            return {
-                                              ...p,
-                                              ...next,
-                                            };
-                                          }
-                                          return p;
-                                        }),
+                                        name,
+                                        value: updated,
                                       },
                                     });
                                   }}
@@ -286,38 +349,42 @@ export const MultiMediaComponent: FC<{
                               ),
                             });
                           }}
-                          className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-black/80 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-[9]"
+                          aria-label={t('media_settings', 'Media settings')}
+                          title={t('media_settings', 'Media settings')}
+                          className="absolute bottom-[4px] left-1/2 z-[20] grid h-[18px] w-[18px] -translate-x-1/2 place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-pqText"
                         >
-                          <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
-                        </div>
-                      )}
-                      {hasExtension(media?.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media?.path)} />
-                      ) : (
-                        <img
-                          className={clsx(
-                            'w-full h-full object-cover',
-                            ghost ? 'rounded-[9px]' : 'rounded-[4px]'
-                          )}
-                          src={mediaDirectory.set(media?.path)}
-                        />
-                      )}
-                    </div>
+                          <svg
+                            viewBox="0 0 16 16"
+                            width="11"
+                            height="11"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M8 10.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z"
+                              stroke="currentColor"
+                              strokeWidth="1.3"
+                            />
+                            <path
+                              d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M4.1 4.1l.85.85M11.05 11.05l.85.85M11.9 4.1l-.85.85M4.95 11.05l-.85.85"
+                              stroke="currentColor"
+                              strokeWidth="1.3"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      </>
+                    )}
 
-                    {ghost ? (
+                    {ghost && (
                       <button
                         type="button"
                         onClick={clearMedia(index)}
-                        aria-label="Remove"
+                        aria-label={t('remove', 'Remove')}
                         className="absolute -end-[5px] -top-[5px] z-[20] grid h-[17px] w-[17px] place-items-center rounded-full bg-pqWarn text-[10px] font-[700] leading-none text-pqOnBrand"
                       >
                         ×
                       </button>
-                    ) : (
-                      <CloseCircleIcon
-                        onClick={clearMedia(index)}
-                        className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
-                      />
                     )}
                   </div>
                 ))}
@@ -328,75 +395,54 @@ export const MultiMediaComponent: FC<{
         {showToolbar && (
         <div
           className={clsx(
-            'flex gap-[8px] w-full b1',
+            'flex w-full flex-wrap items-center gap-x-[10px] gap-y-[8px] b1',
             ghost
-              ? 'flex-wrap items-center'
-              : 'px-[12px] border-t border-newColColor text-textColor'
+              ? 'items-center'
+              : 'border-t border-pqLine px-[12px] py-[10px] text-pqText'
           )}
         >
           {!mediaNotAvailable && (
-            <div
-              className={clsx(
-                'flex b2 items-center gap-[4px]',
-                !ghost && 'py-[10px]'
-              )}
-            >
-              <div
+            <div className="flex flex-wrap items-center gap-[6px]">
+              <button
+                type="button"
                 // The media picker opens from here and nowhere else, so the
                 // screenshot tool needs a handle on it. The icons inside it had
                 // never been seen for exactly this reason.
                 data-pq="insert-media"
                 onClick={showModal}
                 className={clsx(
-                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  'inline-flex h-[36px] cursor-pointer items-center justify-center gap-[8px] font-[600]',
                   ghost
-                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
-                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                    ? 'rounded-[8px] px-[10px] text-[12px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[8px] bg-pqBtnSimple px-[12px] text-[12px] text-pqText transition-colors hover:bg-pqHover'
                 )}
               >
-                <div className="flex gap-[8px] items-center">
-                  <div>
-                    <InsertMediaIcon />
-                  </div>
-                  <div
-                    className={clsx(
-                      'font-[600]',
-                      ghost
-                        ? 'text-[12px] whitespace-nowrap'
-                        : 'text-[10px] maxMedia:hidden block'
-                    )}
-                  >
-                    {t('insert_media', 'Insert media')}
-                  </div>
-                </div>
-              </div>
-              <div
+                <InsertMediaIcon />
+                <span className={clsx(!ghost && 'maxMedia:hidden')}>
+                  {t('insert_media', 'Insert media')}
+                </span>
+              </button>
+              <button
+                type="button"
                 onClick={designMedia}
                 className={clsx(
-                  'cursor-pointer h-[30px] justify-center items-center flex',
+                  'inline-flex h-[36px] cursor-pointer items-center justify-center gap-[6px] font-[600]',
                   ghost
-                    ? 'rounded-[8px] px-[10px] text-pqSoft hover:bg-pqHover hover:text-pqText'
-                    : 'rounded-[6px] bg-newColColor px-[8px]'
+                    ? 'rounded-[8px] px-[10px] text-[12px] text-pqSoft hover:bg-pqHover hover:text-pqText'
+                    : 'rounded-[8px] bg-pqBtnSimple px-[12px] text-[12px] text-pqText transition-colors hover:bg-pqHover'
                 )}
               >
-                <div className="flex gap-[5px] items-center">
-                  <div>
-                    <DesignMediaIcon />
-                  </div>
-                  <div
-                    className={clsx(
-                      'font-[600]',
-                      ghost
-                        ? 'text-[12px] whitespace-nowrap'
-                        : 'text-[10px] iconBreak:hidden block'
-                    )}
-                  >
-                    {t('design_media', 'Design Media')}
-                  </div>
-                </div>
-              </div>
+                <DesignMediaIcon />
+                <span className={clsx(!ghost && 'iconBreak:hidden')}>
+                  {t('design_media', 'Design Media')}
+                </span>
+              </button>
 
-              <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              <ThirdPartyMedia
+                ghost={ghost}
+                allData={allData}
+                onChange={changeMedia}
+              />
 
               {!!user?.tier?.ai && (
                 <>
@@ -407,17 +453,18 @@ export const MultiMediaComponent: FC<{
             </div>
           )}
           {!mediaNotAvailable && (!!toolBar || !!information) && (
-            <div className="text-newColColor h-full flex items-center">
-              <VerticalDividerIcon />
-            </div>
+            <div
+              className="hidden h-[22px] w-px shrink-0 self-center bg-pqLine sm:block"
+              aria-hidden="true"
+            />
           )}
           {!!toolBar && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex flex-wrap items-center gap-[6px]">
               {toolBar}
             </div>
           )}
           {information && (
-            <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+            <div className="ms-auto flex items-center gap-[4px]">
               {information}
             </div>
           )}
@@ -453,18 +500,26 @@ export const MediaComponent: FC<{
 
   const { name, type, label, description, onChange, value, width, height } =
     props;
-  const { getValues } = useSettings();
-  const user = useUser();
-  useEffect(() => {
-    const settings = getValues()[props.name];
-    if (settings) {
-      setCurrentMedia(settings);
-    }
-  }, []);
   const [currentMedia, setCurrentMedia] = useState(value);
+  useEffect(() => {
+    setCurrentMedia(value);
+  }, [value]);
   const modals = useModals();
   const mediaDirectory = useMediaDirectory();
 
+  const changeMedia = useCallback(
+    (m: { path: string; id: string }[]) => {
+      const next = m[0];
+      setCurrentMedia(next);
+      onChange({
+        target: {
+          name,
+          value: next,
+        },
+      });
+    },
+    [name, onChange]
+  );
   const showDesignModal = useCallback(() => {
     modals.openModal({
       title: t('media_editor', 'Media Editor'),
@@ -482,29 +537,24 @@ export const MediaComponent: FC<{
         />
       ),
     });
-  }, [t]);
-  const changeMedia = useCallback((m: { path: string; id: string }[]) => {
-    setCurrentMedia(m[0]);
-    onChange({
-      target: {
-        name,
-        value: m[0],
-      },
-    });
-  }, []);
+  }, [t, width, height, changeMedia, modals]);
   const showModal = useCallback(() => {
     modals.openModal({
       title: t('media_library', 'Media Library'),
       askClose: false,
       closeOnEscape: true,
-      fullScreen: true,
-      size: 'calc(100% - 80px)',
-      height: 'calc(100% - 80px)',
+      size: 'min(1200px, calc(100vw - 64px))',
+      maxSize: 'min(1200px, calc(100vw - 64px))',
       children: (close) => (
-        <MediaBox setMedia={changeMedia} closeModal={close} type={type} />
+        <MediaBox
+          setMedia={changeMedia}
+          closeModal={close}
+          type={type}
+          attachedMedia={currentMedia ? [currentMedia] : []}
+        />
       ),
     });
-  }, [t]);
+  }, [t, changeMedia, type, currentMedia]);
   const clearMedia = useCallback(() => {
     setCurrentMedia(undefined);
     onChange({
@@ -513,7 +563,7 @@ export const MediaComponent: FC<{
         value: undefined,
       },
     });
-  }, [value]);
+  }, [name, onChange]);
   return (
     <div className="flex flex-col gap-[8px]">
       <div className="text-[14px] text-pqMuted">{label}</div>
@@ -522,7 +572,7 @@ export const MediaComponent: FC<{
         <div className="my-[20px] cursor-pointer w-[200px] h-[200px] border-2 border-tableBorder">
           <img
             className="w-full h-full object-cover"
-            src={currentMedia.path}
+            src={mediaDirectory.set(currentMedia.path)}
             onClick={() => window.open(mediaDirectory.set(currentMedia.path))}
           />
         </div>

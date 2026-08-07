@@ -18,6 +18,32 @@ const fetchUploadApiEndpoint = async (
   return res.json();
 };
 
+/**
+ * Mirror customFetch's NOT_SECURED path: when cookies are readable from
+ * document.cookie, send them as request headers. Secured (httpOnly) sessions
+ * leave these empty and rely on withCredentials instead.
+ */
+const readNonSecuredAuthHeaders = (): Record<string, string> => {
+  if (typeof document === 'undefined') {
+    return {};
+  }
+  const pick = (name: string) =>
+    document.cookie
+      .split(';')
+      .map((p) => p.trim())
+      .find((p) => p.startsWith(`${name}=`))
+      ?.slice(name.length + 1);
+
+  const headers: Record<string, string> = {};
+  const auth = pick('auth');
+  const showorg = pick('showorg');
+  const impersonate = pick('impersonate');
+  if (auth) headers.auth = auth;
+  if (showorg) headers.showorg = showorg;
+  if (impersonate) headers.impersonate = impersonate;
+  return headers;
+};
+
 // Define the factory to return appropriate Uppy configuration
 export const getUppyUploadPlugin = (
   provider: string,
@@ -98,6 +124,11 @@ export const getUppyUploadPlugin = (
         options: {
           endpoint: `${backendUrl}/media/upload-server`,
           withCredentials: true,
+          // Auth middleware accepts header OR cookie. Under NOT_SECURED the
+          // session lives in a readable cookie; customFetch sends it as a
+          // header, so Uppy must do the same or the XHR arrives anonymous.
+          // Function form re-reads at upload time (Uppy is memoized once).
+          headers: () => readNonSecuredAuthHeaders(),
         },
       };
 

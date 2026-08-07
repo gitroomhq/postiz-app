@@ -21,6 +21,7 @@
 /billing-${tier}-${period}
 /billing/add-subscription
 /billing/apply-discount
+/billing/apply-lifetime-retention
 /billing/cancel
 /billing/cancel-subscription
 /billing/charges
@@ -147,7 +148,6 @@
 /user/oauth-app
 /user/oauth-app/rotate-secret
 /user/organizations
-/user/personal
 /user/self
 /user/switch
 /webhooks

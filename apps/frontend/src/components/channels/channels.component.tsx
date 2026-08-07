@@ -7,7 +7,6 @@ import copy from 'copy-to-clipboard';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { TimeTable } from '@gitroom/frontend/components/launches/time.table';
-import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useSWR from 'swr';
@@ -696,7 +695,7 @@ export const ChannelsComponent: FC = () => {
   const detailScrollKey = `${adding ? 'add' : 'detail'}-${addStepOpen ? 'step' : 'root'}`;
 
   const openComposer = useCallback(async () => {
-    if (!current) return;
+    if (!current || needsAttention(current)) return;
     const slot = await (
       await fetch(`/posts/find-slot/${current.id}`)
     ).json();
@@ -758,36 +757,6 @@ export const ChannelsComponent: FC = () => {
     }
     window.location.href = url;
   }, [current, fetch, t, toast]);
-
-  // Same factory the calendar / Copilot channel rows pass into Menu.
-  const refreshChannel = useCallback(
-    (integration: {
-      identifier: string;
-      internalId?: string;
-    }) =>
-      () => {
-        void (async () => {
-          const { url } = await (
-            await fetch(
-              `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
-              { method: 'GET' }
-            )
-          ).json();
-          if (!url) {
-            toast.show(
-              t(
-                'could_not_connect_platform',
-                'Could not connect to the platform, please try again later'
-              ),
-              'warning'
-            );
-            return;
-          }
-          window.location.href = url;
-        })();
-      },
-    [fetch, t, toast]
-  );
 
   const openBot = useCallback(() => {
     if (!current) return;
@@ -1038,23 +1007,6 @@ export const ChannelsComponent: FC = () => {
                     : integration.identifier}
                 </span>
               </span>
-              <div
-                data-crl="1"
-                className="shrink-0 group-[.sidebar]:hidden"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <Menu
-                  id={integration.id}
-                  canEnable={!!integration.disabled}
-                  canDisable={!integration.disabled}
-                  canChangeProfilePicture={!!integration.changeProfilePicture}
-                  canChangeNickName={!!integration.changeNickName}
-                  refreshChannel={refreshChannel}
-                  mutate={mutate}
-                  onChange={() => mutate()}
-                />
-              </div>
             </div>
           ))}
         </div>
@@ -1216,20 +1168,6 @@ export const ChannelsComponent: FC = () => {
                     </span>
                   </div>
                 </div>
-                {mobile && (
-                  <div className="ms-auto shrink-0">
-                    <Menu
-                      id={current.id}
-                      canEnable={!!current.disabled}
-                      canDisable={!current.disabled}
-                      canChangeProfilePicture={!!current.changeProfilePicture}
-                      canChangeNickName={!!current.changeNickName}
-                      refreshChannel={refreshChannel}
-                      mutate={mutate}
-                      onChange={() => mutate()}
-                    />
-                  </div>
-                )}
               </div>
               <div
                 className={clsx(
@@ -1261,9 +1199,21 @@ export const ChannelsComponent: FC = () => {
                 <button
                   type="button"
                   onClick={openComposer}
+                  disabled={needsAttention(current)}
+                  title={
+                    needsAttention(current)
+                      ? t(
+                          'reconnect_before_new_post',
+                          'Reconnect this channel before creating a post'
+                        )
+                      : undefined
+                  }
                   className={clsx(
-                    'flex h-[34px] items-center justify-center gap-[7px] rounded-pqSm bg-pqBrand pe-[13px] ps-[11px] text-[13px] font-[600] text-pqOnBrand',
-                    mobile && 'min-w-0 flex-1'
+                    'flex h-[34px] items-center justify-center gap-[7px] rounded-pqSm pe-[13px] ps-[11px] text-[13px] font-[600]',
+                    mobile && 'min-w-0 flex-1',
+                    needsAttention(current)
+                      ? 'cursor-not-allowed bg-pqSettings text-pqSoft'
+                      : 'bg-pqBrand text-pqOnBrand'
                   )}
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
@@ -1277,18 +1227,6 @@ export const ChannelsComponent: FC = () => {
                   </svg>
                   {t('new_post', 'New post')}
                 </button>
-                {!mobile && (
-                  <Menu
-                    id={current.id}
-                    canEnable={!!current.disabled}
-                    canDisable={!current.disabled}
-                    canChangeProfilePicture={!!current.changeProfilePicture}
-                    canChangeNickName={!!current.changeNickName}
-                    refreshChannel={refreshChannel}
-                    mutate={mutate}
-                    onChange={() => mutate()}
-                  />
-                )}
               </div>
             </div>
 

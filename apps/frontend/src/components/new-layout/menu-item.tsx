@@ -1,8 +1,8 @@
 'use client';
 import { FC, ReactNode, useMemo } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { useChromeLocation } from '@gitroom/frontend/components/layout/use-chrome-location';
 
 export const MenuItem: FC<{
   label: string;
@@ -13,8 +13,9 @@ export const MenuItem: FC<{
   /** Product-tour spotlight target (`data-tour`). */
   tourKey?: string;
 }> = ({ label, icon, path, collapsed, onClick, tourKey }) => {
-  const currentPath = usePathname();
-  const searchParams = useSearchParams();
+  // Soft Settings/Connections overlays must not steal the rail highlight from
+  // the page still mounted under the scrim.
+  const { pathname: currentPath, searchParams } = useChromeLocation();
   // Calendar/Posts share `/launches`; Settings More rows share `/settings?tab=`.
   // Pathname-only matching lights every More row whenever Settings is open.
   const isActive = useMemo(() => {
@@ -31,7 +32,7 @@ export const MenuItem: FC<{
         // More shortcut: only the matching settings tab.
         return searchParams.get('tab') === pathTab;
       }
-      // Footer Settings gear: any /settings visit.
+      // Footer Settings gear: any /settings visit (hard load / no prior page).
       return true;
     }
     return currentPath.indexOf(base) === 0;

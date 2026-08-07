@@ -4,7 +4,7 @@ import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Select } from '@gitroom/react/form/select';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { pricing, tierLabel } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
@@ -16,6 +16,7 @@ import { ImportDebugPostModal } from '@gitroom/frontend/components/launches/impo
 import { useForm, FormProvider } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 interface Charge {
   id: string;
@@ -44,6 +45,7 @@ const useCharges = () => {
 const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   const fetch = useFetch();
   const t = useT();
+  const { formatDate } = useDateFormat();
   const { data: charges, mutate } = useCharges();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [refunding, setRefunding] = useState(false);
@@ -168,7 +170,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                     </div>
                   </td>
                   <td className="p-[8px]">
-                    {new Date(charge.created * 1000).toLocaleDateString()}
+                    {formatDate(charge.created * 1000)}
                   </td>
                   <td className="p-[8px]">
                     ${(charge.amount / 100).toFixed(2)}{' '}
@@ -302,7 +304,7 @@ export const Subscription = () => {
         .filter((f) => !f.includes('FREE'))
         .map((key) => (
           <option key={key} value={key}>
-            {key}
+            {tierLabel(key)}
           </option>
         ))}
     </Select>

@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { Slider } from '@gitroom/react/form/slider';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 interface EmailNotifications {
   sendSuccessEmails: boolean;
@@ -18,7 +19,7 @@ export const useEmailNotifications = () => {
 
   const load = useCallback(async () => {
     return (await fetch('/user/email-notifications')).json();
-  }, []);
+  }, [fetch]);
 
   return useSWR<EmailNotifications>('email-notifications', load, {
     revalidateOnFocus: false,
@@ -32,6 +33,7 @@ export const useEmailNotifications = () => {
 
 const EmailNotificationsComponent = () => {
   const t = useT();
+  const user = useUser();
   const fetch = useFetch();
   const toaster = useToaster();
   const { data, isLoading } = useEmailNotifications();
@@ -55,7 +57,6 @@ const EmailNotificationsComponent = () => {
 
   const updateSetting = useCallback(
     async (key: keyof EmailNotifications, value: boolean) => {
-      // Use ref to get the latest state
       const currentSettings = settingsRef.current;
       const previous = currentSettings;
       const newData = {
@@ -63,7 +64,6 @@ const EmailNotificationsComponent = () => {
         [key]: value,
       };
 
-      // Update local state immediately
       setLocalSettings(newData);
 
       try {
@@ -86,31 +86,41 @@ const EmailNotificationsComponent = () => {
     [fetch, toaster, t]
   );
 
-  const handleSuccessEmailsChange = useCallback(
-    (value: 'on' | 'off') => {
-      updateSetting('sendSuccessEmails', value === 'on');
+  const rows: {
+    key: keyof EmailNotifications;
+    name: string;
+    description: string;
+  }[] = [
+    {
+      key: 'sendSuccessEmails',
+      name: t('success_emails', 'Success Emails'),
+      description: t(
+        'success_emails_description',
+        'Receive email notifications when posts are published successfully'
+      ),
     },
-    [updateSetting]
-  );
-
-  const handleFailureEmailsChange = useCallback(
-    (value: 'on' | 'off') => {
-      updateSetting('sendFailureEmails', value === 'on');
+    {
+      key: 'sendFailureEmails',
+      name: t('failure_emails', 'Failure Emails'),
+      description: t(
+        'failure_emails_description',
+        'Receive email notifications when posts fail to publish'
+      ),
     },
-    [updateSetting]
-  );
-
-  const handleStreakEmailsChange = useCallback(
-    (value: 'on' | 'off') => {
-      updateSetting('sendStreakEmails', value === 'on');
+    {
+      key: 'sendStreakEmails',
+      name: t('streak_emails', 'Streak Reminder Emails'),
+      description: t(
+        'streak_emails_description',
+        'Receive email reminders when your posting streak is about to end'
+      ),
     },
-    [updateSetting]
-  );
+  ];
 
   if (isLoading) {
     return (
-      <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[15px_16px]">
-        <div className="animate-pulse">
+      <div className="mt-[18px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="animate-pulse text-[13px] text-pqMuted">
           {t('loading', 'Loading...')}
         </div>
       </div>
@@ -118,67 +128,43 @@ const EmailNotificationsComponent = () => {
   }
 
   return (
-    <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] p-[15px_16px] flex flex-col">
-      <div className="text-[13.5px] font-[600] pb-[6px]">
-        {t('email_notifications', 'Email Notifications')}
-      </div>
-      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-[500]">
-            {t('success_emails', 'Success Emails')}
-          </div>
-          <div className="text-[12px] text-pqMuted mt-[2px]">
-            {t(
-              'success_emails_description',
-              'Receive email notifications when posts are published successfully'
+    <div className="mt-[18px] flex flex-col gap-[10px]">
+      <div className="rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-center justify-between gap-[14px] pb-[6px]">
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-[600] text-pqText">
+              {t('email', 'Email')}
+            </div>
+            {!!user?.email && (
+              <div className="mt-[2px] truncate text-[12px] text-pqMuted">
+                {user.email}
+              </div>
             )}
           </div>
         </div>
-        <Slider
-          value={localSettings.sendSuccessEmails ? 'on' : 'off'}
-          onChange={handleSuccessEmailsChange}
-          fill={true}
-        />
-      </div>
-      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-[500]">
-            {t('failure_emails', 'Failure Emails')}
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className="flex items-center gap-[14px] border-t border-pqLine py-[11px]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-[500] text-pqText">{row.name}</div>
+              <div className="mt-[2px] text-[12px] text-pqMuted">
+                {row.description}
+              </div>
+            </div>
+            <Slider
+              value={localSettings[row.key] ? 'on' : 'off'}
+              onChange={(value) =>
+                updateSetting(row.key, value === 'on')
+              }
+              fill={true}
+            />
           </div>
-          <div className="text-[12px] text-pqMuted mt-[2px]">
-            {t(
-              'failure_emails_description',
-              'Receive email notifications when posts fail to publish'
-            )}
-          </div>
-        </div>
-        <Slider
-          value={localSettings.sendFailureEmails ? 'on' : 'off'}
-          onChange={handleFailureEmailsChange}
-          fill={true}
-        />
-      </div>
-      <div className="flex items-center gap-[14px] py-[11px] border-t border-pqLine">
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-[500]">
-            {t('streak_emails', 'Streak Reminder Emails')}
-          </div>
-          <div className="text-[12px] text-pqMuted mt-[2px]">
-            {t(
-              'streak_emails_description',
-              'Receive email reminders when your posting streak is about to end'
-            )}
-          </div>
-        </div>
-        <Slider
-          value={localSettings.sendStreakEmails ? 'on' : 'off'}
-          onChange={handleStreakEmailsChange}
-          fill={true}
-        />
+        ))}
       </div>
     </div>
   );
 };
 
 export default EmailNotificationsComponent;
-

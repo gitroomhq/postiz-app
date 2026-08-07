@@ -11,7 +11,7 @@ function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
   return res.map((row) => {
     return {
       date: `${row[0].date} - ${row?.at(-1)?.date}`,
-      total: row.reduce((acc, curr) => acc + curr.total, 0),
+      total: row.reduce((acc, curr) => acc + Number(curr.total), 0),
     };
   });
 }

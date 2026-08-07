@@ -8,6 +8,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Button } from '@gitroom/react/form/button';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 type AnnouncementColor = 'INFO' | 'WARNING' | 'ERROR';
 
@@ -44,6 +45,7 @@ const AnnouncementDetailModal: FC<{
 }> = ({ announcement, close, isAdmin, onDelete }) => {
   const t = useT();
   const [deleting, setDeleting] = useState(false);
+  const { formatDate } = useDateFormat();
 
   const handleDelete = useCallback(async () => {
     if (
@@ -71,7 +73,7 @@ const AnnouncementDetailModal: FC<{
   return (
     <div className="flex flex-col gap-[16px] min-w-[500px]">
       <div className="text-newTextColor/60 text-[13px]">
-        {new Date(announcement.createdAt).toLocaleDateString()}
+        {formatDate(announcement.createdAt)}
       </div>
       <div className="whitespace-pre-wrap text-newTextColor">
         {announcement.description}

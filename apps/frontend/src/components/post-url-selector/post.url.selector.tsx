@@ -10,6 +10,7 @@ import removeMd from 'remove-markdown';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 const postUrlEmitter = new EventEmitter();
 export const ShowPostSelector = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);
@@ -76,6 +77,7 @@ export const PostSelector: FC<{
 }> = (props) => {
   const { onClose, onSelect, only, date, noModal } = props;
   const fetch = useFetch();
+  const { dateTimeSecondsPattern } = useDateFormat();
   const fetchOldPosts = useCallback(() => {
     return fetch(
       '/posts/old?date=' + date.utc().format('YYYY-MM-DDTHH:mm:00'),
@@ -134,7 +136,7 @@ export const PostSelector: FC<{
                     <TopTitle
                       title={
                         'Select Post Before ' +
-                        date.format('DD/MM/YYYY HH:mm:ss')
+                        date.format(dateTimeSecondsPattern())
                       }
                     />
                   </div>

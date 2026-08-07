@@ -20,7 +20,10 @@ import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  pricing,
+  trialWindow,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -91,6 +94,34 @@ export class UsersController {
       throw new HttpForbiddenException();
     }
 
+    // Deferred founding purchase: charge $49 once the 7-day window closes even
+    // if the user never opens FinishTrial (that overlay was the only caller).
+    // Early-returns inside settle when nothing is owed; idempotent when due.
+    // @ts-ignore
+    if (isBillingEnabled() && organization?.subscription?.isLifetime) {
+      try {
+        await this._stripeService.settleFoundingLifetimeAfterTrial(
+          organization.id
+        );
+      } catch (err) {}
+    }
+
+    // Lock-until-paid: deferred founding fee still owed after the trial window
+    // closes. Mid-trial failures keep DB isTrailing set; after the window,
+    // middleware-derived isTrailing is false — this flag keeps founding locks
+    // and the Billing strip honest until settle succeeds.
+    let lifetimePaymentPending = false;
+    // @ts-ignore
+    if (isBillingEnabled() && organization?.subscription?.isLifetime) {
+      try {
+        const owed = await this._stripeService.isDeferredFoundingFeeOwed(
+          organization.id
+        );
+        lifetimePaymentPending =
+          owed && !trialWindow(organization.createdAt).open;
+      } catch (err) {}
+    }
+
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
     // @ts-ignore
     return {
@@ -116,6 +147,7 @@ export class UsersController {
       isTrailing: !isBillingEnabled()
         ? false
         : organization?.isTrailing,
+      lifetimePaymentPending,
       allowTrial: organization?.allowTrial,
       streakSince: organization?.streakSince || null,
       publicApi:

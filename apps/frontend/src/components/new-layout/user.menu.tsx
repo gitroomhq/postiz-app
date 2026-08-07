@@ -22,6 +22,17 @@ function initialOf(user: { name?: string; email?: string } | undefined) {
   return source ? source[0].toUpperCase() : '?';
 }
 
+/**
+ * Full label for the menu header: trimmed `user.name`, else email local-part,
+ * else "Account". Header chip uses only the first whitespace token (given name).
+ */
+function userDisplayNames(user: { name?: string; email?: string }) {
+  const fullName =
+    user.name?.trim() || user.email?.split('@')[0] || 'Account';
+  const firstName = fullName.split(/\s+/)[0] || fullName;
+  return { fullName, firstName };
+}
+
 const ROW =
   'flex w-full items-center gap-[10px] rounded-pqSm px-[10px] py-[8px] text-start text-[13px] transition-colors hover:bg-pqHover';
 
@@ -30,8 +41,13 @@ const Divider = ({ className }: { className?: string }) => (
 );
 
 /**
- * Identity in the top-right: avatar that opens a menu with the user's email,
- * Settings, Billing, the theme switch and Logout.
+ * Identity in the top-right: avatar + given name that opens a menu with the
+ * full name, email, Settings, Billing, the theme switch and Logout.
+ *
+ * The design chrome is avatar-only (name lives in the menu / tooltip); owner
+ * asked to show the given name in the header too. Avatar stays before the name
+ * in DOM order (left→right in LTR; start→end in RTL). `data-hdr-name` hides
+ * the label under tablet width, matching the prototype's leftover rule.
  *
  * The theme control used to be its own header icon. The redesign folds it in
  * here, so this is now the only place the app writes the `mode` cookie outside
@@ -89,7 +105,7 @@ export const UserMenu = () => {
 
   if (!user) return null;
 
-  const displayName = user.name?.trim() || user.email?.split('@')[0] || 'Account';
+  const { fullName, firstName } = userDisplayNames(user);
   const picture = (user as { picture?: { path?: string } }).picture?.path;
 
   // Same gate the rail applies, so the menu cannot reach a screen the rail
@@ -128,9 +144,18 @@ export const UserMenu = () => {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('account_menu', 'Account menu')}
-        className="grid size-[30px] place-items-center rounded-full transition-all hover:brightness-110"
+        className={clsx(
+          'flex h-[30px] max-w-[200px] items-center gap-[8px] rounded-[8px] p-[2px] transition-colors hover:bg-pqHover',
+          open && 'bg-pqHover'
+        )}
       >
         {avatar('size-[26px]', 'text-[11px]')}
+        <span
+          data-hdr-name="1"
+          className="min-w-0 truncate pe-[6px] text-[12.5px] font-[500] -tracking-[0.1px] text-pqText"
+        >
+          {firstName}
+        </span>
       </button>
 
       {open && (
@@ -143,7 +168,7 @@ export const UserMenu = () => {
             {avatar('size-[32px]', 'text-[13px]')}
             <div className="flex min-w-0 flex-1 flex-col leading-[1.3]">
               <span className="truncate text-[13px] font-[600] text-pqText">
-                {displayName}
+                {fullName}
               </span>
               <span className="truncate text-[11.5px] text-pqSoft">
                 {user.email}

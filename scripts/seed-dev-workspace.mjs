@@ -750,6 +750,9 @@ async function seed(org, user) {
   // —— posts ——
   const base = new Date();
   base.setHours(0, 0, 0, 0);
+  // Short fixtures for a fresh workspace. For long multi-paragraph bodies
+  // (calendar truncation / Create Post overflow QA), also run:
+  //   node scripts/seed-dev-posts.mjs --org <id> --reset
   const postRows = [
     [1, 9, 30, 'QUEUE', 'Launch teaser', 'Something new is coming on Friday.'],
     [1, 14, 0, 'QUEUE', 'Community update', 'Notes from this week, in one place.'],
@@ -765,11 +768,16 @@ async function seed(org, user) {
   if (!dry) {
     const healthy = channels.filter((c) => !c.disabled);
     for (let i = 0; i < postRows.length; i++) {
-      const [day, hour, minute, state, title, content] = postRows[i];
+      const [day, hour, minute, rowState, title, content] = postRows[i];
       const when = new Date(base);
       when.setDate(when.getDate() + day);
       when.setHours(hour, minute, 0, 0);
       const channel = healthy[i % healthy.length];
+      // Aged QUEUE seeds would otherwise sit as Scheduled on past cells.
+      const state =
+        rowState === 'QUEUE' && when.getTime() <= Date.now()
+          ? 'PUBLISHED'
+          : rowState;
       await prisma.post.create({
         data: {
           organizationId: org.id,

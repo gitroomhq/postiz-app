@@ -427,7 +427,7 @@
   "label_when_post": "いつ投稿しますか？",
   "label_autogenerate_content": "コンテンツを自動生成",
   "label_generate_picture": "画像を生成しますか？",
-  "label_company": "会社",
+  "label_organization": "組織",
   "label_tag_color": "タグの色",
   "label_select_board": "ボードを選択",
   "label_select_organization": "組織を選択",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "自動投稿が正常に更新されました",
   "autopost_added_successfully": "自動投稿が正常に追加されました",
   "write_your_post_placeholder": "投稿内容を入力してください...",
-  "select_or_upload_pictures_max_5": "画像を選択またはアップロード（最大5枚まで同時に可能）",
   "you_can_drag_drop_pictures": "画像をドラッグ＆ドロップすることもできます。",
   "you_dont_have_any_media_yet": "まだメディアがありません",
   "media_library": "メディアライブラリ",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "この短い動画を見て、PostQueenを最大限に活用する方法を学びましょう",
   "back": "戻る",
   "get_started": "開始",
-  "kick_select_channel": "チャンネルを選択"
+  "kick_select_channel": "チャンネルを選択",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

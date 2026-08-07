@@ -10,9 +10,11 @@ import { useSettingsTabChrome } from '@gitroom/frontend/components/settings/sett
  */
 export const SettingsPaneEditor: FC<{
   title: string;
+  /** Optional one-line context under the title (Add Member, Signature, …). */
+  description?: string;
   onBack: () => void;
   children: ReactNode;
-}> = ({ title, onBack, children }) => {
+}> = ({ title, description, onBack, children }) => {
   const t = useT();
   const { setInEditor } = useSettingsTabChrome();
 
@@ -22,17 +24,20 @@ export const SettingsPaneEditor: FC<{
   }, [setInEditor]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[16px]" data-settings-pane="edit">
+    <div
+      className="flex min-h-0 flex-1 flex-col gap-[14px]"
+      data-settings-pane="edit"
+    >
       {/* Channels-style boxed back — muted pill, not a faint text link. */}
       <button
         type="button"
         onClick={onBack}
-        className="flex h-[32px] w-fit items-center gap-[6px] self-start rounded-[9px] bg-pqSettings pe-[12px] ps-[8px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        className="flex h-[28px] w-fit items-center gap-[5px] self-start rounded-[8px] bg-pqSettings pe-[10px] ps-[7px] text-[12px] font-[600] text-pqText transition-colors hover:bg-pqHover"
       >
         <svg
           viewBox="0 0 24 24"
-          width="15"
-          height="15"
+          width="14"
+          height="14"
           fill="none"
           aria-hidden="true"
           className="rtl:rotate-180"
@@ -47,9 +52,16 @@ export const SettingsPaneEditor: FC<{
         </svg>
         {t('back', 'Back')}
       </button>
-      <h3 className="text-[20px] font-[500] tracking-[-0.01em] text-pqText">
-        {title}
-      </h3>
+      <div className="flex flex-col gap-[4px]">
+        <h3 className="text-[20px] font-[600] tracking-[-0.02em] text-pqText">
+          {title}
+        </h3>
+        {!!description && (
+          <p className="max-w-[420px] text-[14.5px] leading-[1.45] text-pqText">
+            {description}
+          </p>
+        )}
+      </div>
       <div className="min-h-0 flex-1">{children}</div>
     </div>
   );

@@ -6,6 +6,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 interface PerSocial {
   provider: string;
@@ -122,6 +123,7 @@ const PerSocialTable: FC<{ title: string; block: StatsBlock }> = ({
 
 export const AdminStatsComponent: FC = () => {
   const user = useUser();
+  const { formatDate } = useDateFormat();
 
   const [fromInput, setFromInput] = useState(today());
   const [toInput, setToInput] = useState(today());
@@ -150,8 +152,7 @@ export const AdminStatsComponent: FC = () => {
         <div className="text-[20px] font-[600]">Admin Stats</div>
         {data && (
           <div className="text-[13px] opacity-70">
-            {new Date(data.from).toLocaleDateString()} —{' '}
-            {new Date(data.to).toLocaleDateString()}
+            {formatDate(data.from)} — {formatDate(data.to)}
           </div>
         )}
       </div>

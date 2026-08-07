@@ -17,6 +17,7 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
   identifier = 'skool';
   category = 'chat' as const;
   name = 'Skool';
+  isNew = true;
   isBetweenSteps = false;
   isChromeExtension = true;
   scopes = [] as string[];

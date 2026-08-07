@@ -8,6 +8,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 interface DebugPostData {
   type: string;
@@ -45,6 +46,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
   const fetch = useFetch();
   const toaster = useToaster();
   const t = useT();
+  const { formatDateTime } = useDateFormat();
   const [jsonInput, setJsonInput] = useState('');
   const [parsed, setParsed] = useState<DebugPostData | null>(null);
   const [parseError, setParseError] = useState('');
@@ -188,7 +190,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                 <span className="font-[500]">
                   {t('original_date', 'Original Date')}:
                 </span>{' '}
-                {new Date(parsed._debug.originalPublishDate).toLocaleString()}
+                {formatDateTime(parsed._debug.originalPublishDate)}
               </div>
             </div>
           </div>

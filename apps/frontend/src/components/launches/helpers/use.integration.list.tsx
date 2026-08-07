@@ -10,8 +10,10 @@ export const useIntegrationList = () => {
 
   const load = useCallback(async (path: string): Promise<any[]> => {
     const integrations = (await (await fetch(path)).json()).integrations;
-    return sortIntegrationsByProviderImportance(integrations || []);
-  }, []);
+    return sortIntegrationsByProviderImportance(
+      Array.isArray(integrations) ? integrations : []
+    );
+  }, [fetch]);
 
   return useSWR('/integrations/list', load, {
     revalidateOnFocus: false,

@@ -172,12 +172,12 @@ export function RegisterAfter({
           </>
         )}
         <Input
-          label="Company"
-          translationKey="label_company"
+          label="Organization"
+          translationKey="label_organization"
           {...form.register('company')}
           autoComplete="off"
           type="text"
-          placeholder={t('label_company', 'Company')}
+          placeholder={t('label_organization', 'Organization')}
         />
       </div>
       {/* Only claim the user agreed to terms when this deployment actually

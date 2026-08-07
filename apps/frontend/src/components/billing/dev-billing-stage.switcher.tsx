@@ -12,6 +12,7 @@ import {
 import { useDevBillingStage } from '@gitroom/frontend/components/billing/dev-billing-stage.provider';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { tierLabel } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 const selectClass =
   'h-[32px] rounded-[6px] border border-pqLine bg-pqInner px-[8px] text-[12px] text-pqText outline-none';
@@ -95,7 +96,9 @@ export const DevBillingStageSwitcher: FC = () => {
         >
           {DEV_BILLING_STATES.map((state) => (
             <option key={state} value={state}>
-              {state}
+              {state === 'member_no_plan'
+                ? 'member_no_plan (ask admin)'
+                : state}
             </option>
           ))}
         </select>
@@ -109,7 +112,7 @@ export const DevBillingStageSwitcher: FC = () => {
         >
           {DEV_BILLING_TIERS.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {tierLabel(t)}
             </option>
           ))}
         </select>

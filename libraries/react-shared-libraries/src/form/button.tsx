@@ -17,7 +17,11 @@ const ReactLoading = ({ color = 'currentColor', width = 20, height = 20 }: { typ
       style={{
         width: size,
         height: size,
-        border: `${borderWidth}px solid transparent`,
+        // Longhands only — mixing `border` shorthand with `borderTopColor`
+        // triggers React's "Updating a style property during rerender" overlay.
+        borderWidth,
+        borderStyle: 'solid',
+        borderColor: 'transparent',
         borderTopColor: color,
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite',

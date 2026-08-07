@@ -62,7 +62,7 @@ export const Pagination: FC<{
   }, [current, totalPages]);
 
   return (
-    <ul className="mt-[15px] flex flex-row items-center justify-center gap-1">
+    <ul className="mt-[8px] flex flex-row items-center justify-center gap-1">
       <li className={clsx(current === 0 && 'pointer-events-none opacity-20')}>
         <div
           className="inline-flex h-10 cursor-pointer items-center justify-center gap-1 rounded-md px-4 py-2 ps-2.5 text-sm font-medium text-pqMuted hover:bg-pqHover hover:text-pqText"

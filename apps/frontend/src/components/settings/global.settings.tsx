@@ -2,7 +2,6 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
 import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
 
 const MetricComponent = dynamic(
@@ -12,11 +11,19 @@ const MetricComponent = dynamic(
   }
 );
 
+const DateFormatComponent = dynamic(
+  () => import('@gitroom/frontend/components/settings/date.format.component'),
+  {
+    ssr: false,
+  }
+);
+
+/** Workspace defaults only — email prefs live under Settings → Notifications. */
 export const GlobalSettings = () => {
   return (
     <div className="mt-[18px] flex flex-col gap-[10px]">
       <MetricComponent />
-      <EmailNotificationsComponent />
+      <DateFormatComponent />
       <ShortlinkPreferenceComponent />
     </div>
   );

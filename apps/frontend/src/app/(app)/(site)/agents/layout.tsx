@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import { Agent } from '@gitroom/frontend/components/agents/agent';
 export const metadata: Metadata = {
-  title: 'PostQueen - Agent',
-  description: 'agents',
+  title: 'AI Copilot',
 };
 export default async function Layout({
   children,

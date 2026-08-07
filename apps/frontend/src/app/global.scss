@@ -11,6 +11,15 @@
   to { transform: rotate(360deg); }
 }
 
+// Reserve the scrollbar lane on every page load. ModalManager used to add
+// `scrollbar-gutter: stable` only while a modal was open — on macOS overlay
+// scrollbars (and our h-dvh shell which rarely scrolls <html>) that *created*
+// a gutter on open and everything jumped left. Keep gutter always; lock
+// overflow only when `.pq-modal-open` is set (see new-modal.tsx).
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--new-bgColor) !important;
   color: var(--new-btn-text);
@@ -39,6 +48,13 @@ body {
   [data-streak] {
     display: none !important;
   }
+}
+
+// User-menu display name — prototype hides `[data-hdr-name]` under 1020px.
+// Map that to our tablet + mobile stamps (desktop is ≥1180).
+[data-mobile='1'] [data-hdr-name],
+[data-tablet='1'] [data-hdr-name] {
+  display: none !important;
 }
 
 // Header streak popover — design chrome `:115–116` hover show.
@@ -915,23 +931,35 @@ html[dir='rtl'] .lbox {
     color: var(--soft);
   }
 
-  // Send: 32px brand square, white glyph. The SDK flips `disabled` while the
-  // input is empty — that state carries the design's .4 opacity.
+  // Send: 40px brand square (SDK defaults to a 24px ghost — override hard).
   .copilotKitInputControlButton,
-  .copilotKitInputControlButton:not([disabled]) {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    background: var(--brand);
-    color: var(--onBrand);
+  .copilotKitInputControlButton:not([disabled]),
+  .copilotKitInputControlButton[data-pq-agent-send] {
+    display: inline-grid !important;
+    place-items: center;
+    padding: 0 !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 12px;
+    background: var(--brand) !important;
+    color: var(--onBrand) !important;
+    line-height: 0;
+  }
+  .copilotKitInputControlButton svg {
+    display: block;
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0;
   }
   .copilotKitInputControlButton:not([disabled]):hover {
-    transform: none;
-    color: var(--onBrand);
-    background: var(--brandHover);
+    transform: none !important;
+    color: var(--onBrand) !important;
+    background: var(--brandHover) !important;
   }
   .copilotKitInputControlButton[disabled] {
-    color: var(--onBrand);
+    color: var(--onBrand) !important;
     opacity: 0.4;
     cursor: default;
   }
@@ -994,6 +1022,49 @@ html[dir='rtl'] .lbox {
 
 .uppyChange .uppy-Dashboard-inner {
   width: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+// Media upload progress strip — light chrome matching design uploaderOpen
+// (filename + % + brand bar). Avoid Uppy’s default dark status panel.
+.uppyChange .uppy-Dashboard-inner,
+.uppyChange .uppy-StatusBar {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--text) !important;
+}
+.uppyChange .uppy-StatusBar {
+  height: 40px !important;
+  padding: 0 !important;
+}
+.uppyChange .uppy-StatusBar-content {
+  color: var(--muted) !important;
+  font-size: 12.5px !important;
+  padding: 0 !important;
+}
+.uppyChange .uppy-StatusBar-statusPrimary,
+.uppyChange .uppy-StatusBar-statusSecondary {
+  color: var(--muted) !important;
+}
+.uppyChange .uppy-StatusBar-progress {
+  background: var(--brand) !important;
+  border-radius: 999px;
+}
+.uppyChange .uppy-StatusBar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--tableBorder);
+  pointer-events: none;
+}
+.uppyChange .uppy-StatusBar.is-complete .uppy-StatusBar-statusPrimary {
+  color: var(--ok) !important;
 }
 
 .btnSub:disabled .arrow-change {
@@ -1302,10 +1373,13 @@ html[dir='rtl'] .lbox {
   }
 }
 
-// Chatbase embed defaults to bottom-left and covers the rail footer
-// (Settings / Upgrade). Pin the bubble and window bottom-trailing instead.
+// Chatbase embed defaults to bottom-left (dashboard Align: Left) and covers
+// the rail footer (Settings / Upgrade). Pin bottom-trailing. JS in
+// chatbase.component.tsx re-applies the same rules when the widget rewrites
+// inline `left` after mount.
 #chatbase-bubble-button,
-#chatbase-bubble-window {
+#chatbase-bubble-window,
+[id^='chatbase-bubble'] {
   inset-inline-start: auto !important;
   inset-inline-end: 20px !important;
   left: auto !important;
@@ -1313,7 +1387,8 @@ html[dir='rtl'] .lbox {
 }
 
 [dir='rtl'] #chatbase-bubble-button,
-[dir='rtl'] #chatbase-bubble-window {
+[dir='rtl'] #chatbase-bubble-window,
+[dir='rtl'] [id^='chatbase-bubble'] {
   left: 20px !important;
   right: auto !important;
 }

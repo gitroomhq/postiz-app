@@ -9,13 +9,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import dayjs from 'dayjs';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Post, Integration, Tags } from '@prisma/client';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
@@ -29,11 +30,42 @@ import {
   UI_DEMO_ROWS,
   UI_DEMO_STORAGE_KEY,
 } from '@gitroom/frontend/components/launches/ui-demo-posts';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 extend(isoWeek);
 extend(weekOfYear);
 
 function localDayKey(publishDate: string | Date) {
   return dayjs.utc(publishDate).local().format('YYYY-MM-DD');
+}
+
+export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
+/** Posts panel tabs — no All (design queue inventory). */
+export type PanelListStateFilter = 'scheduled' | 'draft' | 'published';
+/** Prototype listRange: presets, or `day:YYYY-MM-DD` from calendar See all. */
+export type ListRangeFilter =
+  | 'all'
+  | 'today'
+  | 'tomorrow'
+  | 'yesterday'
+  | 'week'
+  | 'next3'
+  | 'next7'
+  | 'month'
+  | 'nextMonth'
+  | 'pastWeek'
+  | 'past'
+  | `day:${string}`;
+export type ListSortOrder = 'asc' | 'desc';
+
+/** Ranges that only make sense with past rows (Drafts / Posted). */
+export const PAST_ORIENTED_LIST_RANGES: readonly ListRangeFilter[] = [
+  'past',
+  'yesterday',
+  'pastWeek',
+];
+
+function isPastOrientedListRange(range: ListRangeFilter) {
+  return (PAST_ORIENTED_LIST_RANGES as readonly string[]).includes(range);
 }
 
 function postInListRange(
@@ -48,6 +80,8 @@ function postInListRange(
     return d.format('YYYY-MM-DD') === range.slice(4);
   }
   if (range === 'today') return d.isSame(today, 'day');
+  if (range === 'tomorrow') return d.isSame(today.add(1, 'day'), 'day');
+  if (range === 'yesterday') return d.isSame(today.subtract(1, 'day'), 'day');
   if (range === 'week') {
     return (
       !d.isBefore(weekStart, 'day') &&
@@ -59,20 +93,30 @@ function postInListRange(
       !d.isBefore(today, 'day') && !d.isAfter(today.add(2, 'day'), 'day')
     );
   }
+  if (range === 'next7') {
+    return (
+      !d.isBefore(today, 'day') && !d.isAfter(today.add(6, 'day'), 'day')
+    );
+  }
+  if (range === 'month') {
+    const start = today.startOf('month');
+    const end = today.endOf('month').startOf('day');
+    return !d.isBefore(start, 'day') && !d.isAfter(end, 'day');
+  }
+  if (range === 'nextMonth') {
+    const start = today.add(1, 'month').startOf('month');
+    const end = today.add(1, 'month').endOf('month').startOf('day');
+    return !d.isBefore(start, 'day') && !d.isAfter(end, 'day');
+  }
+  if (range === 'pastWeek') {
+    // Previous ISO week (Mon–Sun), pairing with "This week".
+    const start = weekStart.subtract(7, 'day');
+    const end = weekStart.subtract(1, 'day');
+    return !d.isBefore(start, 'day') && !d.isAfter(end, 'day');
+  }
   if (range === 'past') return d.isBefore(today, 'day');
   return true;
 }
-
-export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
-/** Prototype listRange: presets, or `day:YYYY-MM-DD` from calendar See all. */
-export type ListRangeFilter =
-  | 'all'
-  | 'today'
-  | 'week'
-  | 'next3'
-  | 'past'
-  | `day:${string}`;
-export type ListSortOrder = 'asc' | 'desc';
 
 const LIST_PAGE_SIZE = 100;
 
@@ -137,6 +181,11 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  // Calendar posts panel — separate from list toolbar All default.
+  panelListState: 'scheduled' as PanelListStateFilter,
+  setPanelListState: (_state: PanelListStateFilter) => {
+    /** empty **/
+  },
   listRange: 'all' as ListRangeFilter,
   setListRange: (_range: ListRangeFilter) => {
     /** empty **/
@@ -156,6 +205,11 @@ export const CalendarContext = createContext({
   },
   /** True when calendar/list are filled with non-persisted UI demo rows. */
   uiDemoActive: false,
+  /** Bumped by Today to scroll Day/Week to the current hour. */
+  scrollToNowToken: 0,
+  requestScrollToNow: () => {
+    /** empty **/
+  },
 });
 
 export interface Integrations {
@@ -217,14 +271,24 @@ export const CalendarWeekProvider: FC<{
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
   const display = searchParams.get('display') || displaySaved;
 
   // List view state
   const [listPage, setListPage] = useState(0);
-  // Scheduled, not all: the posts panel opens on it and the design has no
-  // "All" tab. The list view's own filter still offers All.
-  const [listState, setListStateRaw] = useState<ListStateFilter>('scheduled');
+  // List toolbar defaults to All (owner). Posts panel tabs stay
+  // Scheduled / Drafts / Posted only — no All there (design queue inventory).
+  // Panel state is separate so calendar never inherits state=all (which hides
+  // past drafts via publishDate >= now).
+  const [listState, setListStateRaw] = useState<ListStateFilter>('all');
+  const [panelListState, setPanelListStateRaw] =
+    useState<PanelListStateFilter>('scheduled');
+  // Last org|customer scope we auto-pinned (or manually stuck) for the panel.
+  const pinnedPanelScope = useRef<string | null>(null);
+  // Bumped to drop a stale probe result after a manual tab click.
+  const panelPinGeneration = useRef(0);
+  const user = useUser();
   // The design keeps a posts panel beside the calendar, and lets you hide it.
   // Its data is the list view's, so the list query has to run when the panel is
   // open as well — and stop when it is hidden, which is the point of a toggle.
@@ -237,13 +301,25 @@ export const CalendarWeekProvider: FC<{
   const setListState = useCallback((next: ListStateFilter) => {
     setListStateRaw(next);
     setListPage(0);
+    // Past-oriented ranges are empty for Scheduled (future QUEUE only).
+    if (next === 'scheduled' && isPastOrientedListRange(listRangeRef.current)) {
+      setListRangeRaw('all');
+    }
   }, []);
 
   const [channelFilter, setChannelFilter] = useState<string[]>([]);
+  const [scrollToNowToken, setScrollToNowToken] = useState(0);
+  const requestScrollToNow = useCallback(() => {
+    setScrollToNowToken((n) => n + 1);
+  }, []);
   const initListDay = searchParams.get('listDay');
   const [listRange, setListRangeRaw] = useState<ListRangeFilter>(
     initListDay ? (`day:${initListDay}` as ListRangeFilter) : 'all'
   );
+  // Keep a ref so event-handler URL writes can read the latest range without
+  // putting side effects inside a setState updater (those run during render).
+  const listRangeRef = useRef(listRange);
+  listRangeRef.current = listRange;
   // Prototype default for the Posts list is Oldest (asc).
   const [listSort, setListSortRaw] = useState<ListSortOrder>('asc');
   const setListRange = useCallback((next: ListRangeFilter) => {
@@ -271,6 +347,18 @@ export const CalendarWeekProvider: FC<{
     customer: initCustomer || null,
     display,
   });
+
+  const panelPinScope = `${user?.orgId || ''}|${filters.customer || ''}`;
+  const setPanelListState = useCallback(
+    (next: PanelListStateFilter) => {
+      // Manual tab click — stick until org/customer changes.
+      panelPinGeneration.current += 1;
+      pinnedPanelScope.current = panelPinScope;
+      setPanelListStateRaw(next);
+      setListPage(0);
+    },
+    [panelPinScope]
+  );
 
   // Persist uiDemo query into localStorage so a hard refresh keeps the fixture.
   useEffect(() => {
@@ -305,15 +393,19 @@ export const CalendarWeekProvider: FC<{
     return expandPosts(data);
   }, [filters, params]);
 
+  // List view uses toolbar All/Scheduled/…; calendar panel uses its own tab.
+  const activeListState: ListStateFilter =
+    filters.display === 'list' ? listState : panelListState;
+
   // List view data fetcher
   const listParams = useMemo(() => {
     return new URLSearchParams({
       page: listPage.toString(),
       limit: String(LIST_PAGE_SIZE),
       customer: filters?.customer?.toString() || '',
-      state: listState,
+      state: activeListState,
     }).toString();
-  }, [listPage, filters.customer, listState]);
+  }, [listPage, filters.customer, activeListState]);
 
   // Reads every page up to the current one, not just the newest: the design's
   // list grows downward under a "Show more" button, so the pages already on
@@ -327,7 +419,7 @@ export const CalendarWeekProvider: FC<{
           page: page.toString(),
           limit: String(LIST_PAGE_SIZE),
           customer: filters?.customer?.toString() || '',
-          state: listState,
+          state: activeListState,
         }).toString();
         const response = await fetch(`/posts/list?${pageParams}`);
         return expandPostsList(await response.json());
@@ -337,7 +429,47 @@ export const CalendarWeekProvider: FC<{
       posts: pages.flatMap((page: any) => page?.posts || []),
       total: pages[0]?.total || 0,
     };
-  }, [listPage, filters.customer, listState]);
+  }, [listPage, filters.customer, activeListState, fetch]);
+
+  // First open of the posts panel (or org/customer change): pick a tab that
+  // has rows — scheduled → draft → published. Manual tab clicks stick via
+  // pinnedPanelScope. List toolbar All default is untouched.
+  useEffect(() => {
+    if (!postsPanelOpen || filters.display === 'list') return;
+    if (pinnedPanelScope.current === panelPinScope) return;
+
+    let cancelled = false;
+    const generation = ++panelPinGeneration.current;
+    const scopeAtStart = panelPinScope;
+
+    const customer = filters?.customer?.toString() || '';
+    const probe = async (state: PanelListStateFilter) => {
+      const params = new URLSearchParams({
+        page: '0',
+        limit: '1',
+        customer,
+        state,
+      });
+      const response = await fetch(`/posts/list?${params}`);
+      if (!response.ok) return false;
+      const data = await response.json();
+      return (data?.total || 0) > 0;
+    };
+
+    (async () => {
+      let next: PanelListStateFilter = 'published';
+      if (await probe('scheduled')) next = 'scheduled';
+      else if (await probe('draft')) next = 'draft';
+      if (cancelled || generation !== panelPinGeneration.current) return;
+      pinnedPanelScope.current = scopeAtStart;
+      setPanelListStateRaw(next);
+      setListPage(0);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postsPanelOpen, filters.display, panelPinScope, filters.customer, fetch]);
 
   // SWR for calendar view
   const {
@@ -440,14 +572,13 @@ export const CalendarWeekProvider: FC<{
       setListPage(0);
 
       // Leaving Posts clears a day chip; entering list without a day keeps it.
+      // writeLaunchesUrl must stay outside setState updaters — React runs those
+      // during render, and replaceState updates Next's Router mid-render.
       if (newFilters.display !== 'list') {
         setListRangeRaw('all');
         writeLaunchesUrl(newFilters, 'all');
       } else {
-        setListRangeRaw((prev) => {
-          writeLaunchesUrl(newFilters, prev);
-          return prev;
-        });
+        writeLaunchesUrl(newFilters, listRangeRef.current);
       }
     },
     [setDisplaySaved, writeLaunchesUrl]
@@ -455,13 +586,25 @@ export const CalendarWeekProvider: FC<{
 
   // Rail Link → `/launches?display=list` updates Next searchParams without
   // remounting this provider; keep filters.display in lockstep.
+  // Soft-open Settings/Connect keep this provider mounted under `/settings` or
+  // `/connections` (no `display` query). Falling back to the cookie then flips
+  // Calendar↔Posts — bail unless we are still on launches.
   useEffect(() => {
-    const urlDisplay = (searchParams.get('display') ||
-      displaySaved) as typeof filters.display;
+    if (!pathname?.startsWith('/launches')) {
+      return;
+    }
+
+    const fromUrl = searchParams.get('display');
+    const urlDisplay = (fromUrl || displaySaved) as typeof filters.display;
     const urlStart = searchParams.get('startDate');
     const urlEnd = searchParams.get('endDate');
     const urlCustomer = searchParams.get('customer');
     const urlListDay = searchParams.get('listDay');
+
+    // Rail navigations update the URL but not the cookie; keep them aligned.
+    if (fromUrl && fromUrl !== displaySaved) {
+      setDisplaySaved(fromUrl);
+    }
 
     setFilters((prev) => {
       if (
@@ -493,7 +636,21 @@ export const CalendarWeekProvider: FC<{
     } else if (urlDisplay !== 'list') {
       setListRangeRaw('all');
     }
-  }, [searchParams, displaySaved]);
+
+    // Logo / home: `now=<ts>` recenters Day/Week on the current hour, then
+    // strip the param so the address bar stays clean.
+    if (searchParams.get('now')) {
+      requestScrollToNow();
+      const cleaned = new URLSearchParams(searchParams.toString());
+      cleaned.delete('now');
+      const q = cleaned.toString();
+      window.history.replaceState(
+        null,
+        '',
+        q ? `/launches?${q}` : '/launches'
+      );
+    }
+  }, [pathname, searchParams, displaySaved, setDisplaySaved, requestScrollToNow]);
 
   const realPosts = useMemo(
     () => calendarData?.posts || [],
@@ -522,53 +679,57 @@ export const CalendarWeekProvider: FC<{
 
   const mapUiDemo = useCallback(
     () =>
-      UI_DEMO_ROWS.map((row, index) => ({
-        id: `pq-ui-demo-${index}`,
-        content: `<p>${row.body}</p>`,
-        publishDate: demoWeekStart
+      UI_DEMO_ROWS.map((row, index) => {
+        const publishDate = demoWeekStart
           .add(row.day, 'day')
           .hour(row.hour)
           .minute(0)
-          .second(0)
-          .utc()
-          .format('YYYY-MM-DDTHH:mm:ss'),
-        state: row.state,
-        group: `pq-ui-demo-${index}`,
-        creationMethod: row.method,
-        integration: {
-          id: `pq-ui-demo-integration-${index}`,
-          name: row.channel,
-          picture: null,
-          providerIdentifier: row.provider,
-        },
-        tags: row.tags.map((tag, ti) => ({
-          tag: { id: `pq-ui-demo-tag-${index}-${ti}`, ...tag },
-        })),
-      })),
+          .second(0);
+        const past = publishDate.isBefore(newDayjs());
+        const state =
+          past && row.state === 'QUEUE' ? ('PUBLISHED' as const) : row.state;
+        return {
+          id: `pq-ui-demo-${index}`,
+          content: `<p>${row.body}</p>`,
+          publishDate: publishDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          state,
+          group: `pq-ui-demo-${index}`,
+          creationMethod: row.method,
+          integration: {
+            id: `pq-ui-demo-integration-${index}`,
+            name: row.channel,
+            picture: null,
+            providerIdentifier: row.provider,
+          },
+          tags: row.tags.map((tag, ti) => ({
+            tag: { id: `pq-ui-demo-tag-${index}-${ti}`, ...tag },
+          })),
+        };
+      }),
     [demoWeekStart]
   );
 
   const mapTourDemo = useCallback(
     () =>
-      tourDemo.map(({ day, hour, provider, title, body }, index) => ({
-        id: `pq-tour-demo-${index}`,
-        content: `<p>${title} — ${body}</p>`,
-        publishDate: demoWeekStart
-          .add(day, 'day')
-          .add(hour, 'hour')
-          .utc()
-          .format('YYYY-MM-DDTHH:mm:ss'),
-        state: 'QUEUE' as const,
-        group: `pq-tour-demo-${index}`,
-        creationMethod: 'WEB' as const,
-        integration: {
-          id: `pq-tour-demo-integration-${index}`,
-          name: title,
-          picture: null,
-          providerIdentifier: provider,
-        },
-        tags: [],
-      })),
+      tourDemo.map(({ day, hour, provider, title, body }, index) => {
+        const publishDate = demoWeekStart.add(day, 'day').add(hour, 'hour');
+        const past = publishDate.isBefore(newDayjs());
+        return {
+          id: `pq-tour-demo-${index}`,
+          content: `<p>${title} — ${body}</p>`,
+          publishDate: publishDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          state: (past ? 'PUBLISHED' : 'QUEUE') as 'PUBLISHED' | 'QUEUE',
+          group: `pq-tour-demo-${index}`,
+          creationMethod: 'WEB' as const,
+          integration: {
+            id: `pq-tour-demo-integration-${index}`,
+            name: title,
+            picture: null,
+            providerIdentifier: provider,
+          },
+          tags: [],
+        };
+      }),
     [tourDemo, demoWeekStart]
   );
 
@@ -631,14 +792,13 @@ export const CalendarWeekProvider: FC<{
     listSort,
   ]);
 
-  const listTotal =
-    listRange !== 'all' || channelFilter.length || uiDemoActive || tourDemo.length
-      ? listPosts.length
-      : listData?.total || 0;
-  const listTotalPages = Math.ceil(
-    (listRange !== 'all' || channelFilter.length || uiDemoActive || tourDemo.length
-      ? listPosts.length
-      : listData?.total || 0) / LIST_PAGE_SIZE
+  // Always use the server total for pagination. Client channel/range filters
+  // shrink the *current page* only — deriving hasMore from that length stopped
+  // "Show more" early while later pages still matched.
+  const listTotal = listData?.total || 0;
+  const listTotalPages = Math.max(
+    1,
+    Math.ceil((listData?.total || 0) / LIST_PAGE_SIZE)
   );
 
   const openPostsForDay = useCallback(
@@ -739,6 +899,8 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        panelListState,
+        setPanelListState,
         listRange,
         setListRange: setListRangeAndUrl,
         listSort,
@@ -749,6 +911,8 @@ export const CalendarWeekProvider: FC<{
         channelFilter,
         setChannelFilter,
         uiDemoActive,
+        scrollToNowToken,
+        requestScrollToNow,
       }}
     >
       {children}

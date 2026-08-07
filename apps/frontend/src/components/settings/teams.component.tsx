@@ -3,7 +3,7 @@
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
 import { ModalFormActions } from '@gitroom/frontend/components/layout/new-modal';
@@ -21,6 +21,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
 import { useRouter } from 'next/navigation';
 import { leaveSettingsFor } from '@gitroom/frontend/components/layout/leave-settings';
+import { useDevBillingStageOptional } from '@gitroom/frontend/components/billing/dev-billing-stage.provider';
 
 const roles = [
   {
@@ -78,15 +79,15 @@ export const AddMember: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="relative flex flex-1 flex-col gap-[10px] pt-0">
+        <div className="relative flex flex-1 flex-col gap-[16px] pt-0">
           {sendEmail && (
             <Input
-              label="Email"
+              label={t('email', 'Email')}
               placeholder={t('enter_email', 'Enter email')}
               name="email"
             />
           )}
-          <Select label="Role" name="role">
+          <Select label={t('role', 'Role')} name="role" hideErrors={true}>
             <option value="">{t('select_role', 'Select Role')}</option>
             {roles.map((role) => (
               <option key={role.value} value={role.value}>
@@ -94,24 +95,36 @@ export const AddMember: FC<{
               </option>
             ))}
           </Select>
-          <div className="flex gap-[5px]">
-            <div>
-              <Checkbox name="sendEmail" />
-            </div>
-            <div>
-              {t('send_invitation_via_email', 'Send invitation via email?')}
-            </div>
+          <Checkbox
+            name="sendEmail"
+            label={t(
+              'send_invitation_via_email',
+              'Send invitation via email'
+            )}
+          />
+          <p className="-mt-[8px] ps-[28px] text-[12.5px] leading-[1.45] text-pqMuted">
+            {sendEmail
+              ? t(
+                  'add_member_email_hint',
+                  'We’ll email them a link to join this workspace.'
+                )
+              : t(
+                  'add_member_copy_hint',
+                  'Copy a link and share it yourself — no email is sent.'
+                )}
+          </p>
+          <div className="flex justify-end">
+            <ModalFormActions onCancel={onCancel}>
+              <Button
+                type="submit"
+                className="h-[40px] shrink-0 rounded-[10px] px-[18px] text-[13.5px] font-[600]"
+              >
+                {sendEmail
+                  ? t('send_invitation_link', 'Send invitation link')
+                  : t('copy_link', 'Copy invite link')}
+              </Button>
+            </ModalFormActions>
           </div>
-          <ModalFormActions onCancel={onCancel}>
-            <Button
-              type="submit"
-              className="h-[42px] flex-1 rounded-[10px] text-[14px] font-[600]"
-            >
-              {sendEmail
-                ? t('send_invitation_link', 'Send Invitation Link')
-                : t('copy_link', 'Copy Link')}
-            </Button>
-          </ModalFormActions>
         </div>
       </form>
     </FormProvider>
@@ -135,6 +148,9 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
   const user = useUser();
   const t = useT();
   const [inviting, setInviting] = useState(false);
+  const lookBilling = useDevBillingStageOptional();
+  const lookUnlocksTeams =
+    !!lookBilling?.active && !!user?.tier?.team_members;
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
     (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
@@ -143,10 +159,13 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
   );
   const loadTeam = useCallback(async (): Promise<TeamLoadResult> => {
     const res = await fetch('/settings/team');
-    // Backend is source of truth. Frontend tier (incl. DEV billing override)
-    // can claim team_members while GET still 402s — show inline lock, never
-    // leave an empty list after a silent/global payment dialog.
+    // Backend is source of truth for real subscriptions. DEV LOOK override can
+    // claim team_members while GET still 402s — unlock the Teams UI for preview
+    // (empty list) instead of forcing TeamsUpgradeLock.
     if (res.status === 402) {
+      if (lookUnlocksTeams) {
+        return { kind: 'ok', users: [] };
+      }
       return { kind: 'upgrade' };
     }
     if (!res.ok) {
@@ -154,12 +173,17 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
     }
     const body = await res.json();
     return { kind: 'ok', users: (body.users || []) as TeamRow[] };
-  }, [fetch]);
+  }, [fetch, lookUnlocksTeams]);
   const { data, mutate } = useSWR('/api/teams', loadTeam, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
   });
+
+  useEffect(() => {
+    void mutate();
+  }, [lookUnlocksTeams, mutate]);
+
   const remove = useCallback(
     (toRemove: {
         user: {
@@ -193,6 +217,10 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
     return (
       <SettingsPaneEditor
         title={t('top_title_add_member', 'Add Member')}
+        description={t(
+          'add_member_description',
+          'Invite a teammate by email, or copy a link to share yourself.'
+        )}
         onBack={() => setInviting(false)}
       >
         <AddMember
@@ -259,7 +287,7 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
       <button
         type="button"
         onClick={() => setInviting(true)}
-        className="flex h-[34px] items-center gap-[7px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-white hover:bg-pqBrandHover"
+        className="flex h-[34px] items-center gap-[7px] self-start rounded-pqSm bg-pqBrand ps-[11px] pe-[13px] text-[13px] font-[600] text-pqOnBrand hover:bg-pqBrandHover"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
           <path
@@ -287,8 +315,8 @@ export const TeamsComponent: FC<{ onClose?: () => void }> = ({ onClose }) => {
  * ("Upgrade plan"); team seats unlock at Growth, so do not say "Upgrade to Pro".
  *
  * Settings is an intercepting `@modal/(.)settings` overlay — a bare Link to
- * `/billing` leaves the scrim; `back()`+`push()` races and often only closes.
- * Use `leaveSettingsFor` (hard assign while scrim is open).
+ * `/billing` can leave the scrim stranded; `back()`+`push()` races. Use
+ * `leaveSettingsFor` (single soft `router.push`).
  */
 export const TeamsUpgradeLock: FC<{ onClose?: () => void }> = () => {
   const t = useT();

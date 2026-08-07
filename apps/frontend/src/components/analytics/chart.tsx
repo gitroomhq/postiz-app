@@ -8,12 +8,14 @@ import {
 } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import dayjs from 'dayjs';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 export const Chart: FC<{
   list: StarsList[] | ForksList[];
 }> = (props) => {
   const { list } = props;
   const ref = useRef<any>(null);
   const chart = useRef<null | DrawChart>(null);
+  const { datePattern } = useDateFormat();
   useEffect(() => {
     const gradient = ref.current
       .getContext('2d')
@@ -49,7 +51,7 @@ export const Chart: FC<{
         },
       },
       data: {
-        labels: list.map((row) => newDayjs(row.date).format('DD/MM/YYYY')),
+        labels: list.map((row) => newDayjs(row.date).format(datePattern())),
         datasets: [
           {
             borderColor: '#fff',
@@ -66,6 +68,6 @@ export const Chart: FC<{
     return () => {
       chart?.current?.destroy();
     };
-  }, []);
+  }, [list, datePattern]);
   return <canvas className="w-full h-full" ref={ref} />;
 };

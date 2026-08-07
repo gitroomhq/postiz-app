@@ -427,7 +427,7 @@
   "label_when_post": "Когда опубликовать?",
   "label_autogenerate_content": "Автоматически сгенерировать контент",
   "label_generate_picture": "Сгенерировать изображение?",
-  "label_company": "Компания",
+  "label_organization": "Организация",
   "label_tag_color": "Цвет тега",
   "label_select_board": "Выбрать доску",
   "label_select_organization": "Выбрать организацию",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "Автопост успешно обновлён",
   "autopost_added_successfully": "Автопост успешно добавлен",
   "write_your_post_placeholder": "Напишите свой пост...",
-  "select_or_upload_pictures_max_5": "Выберите или загрузите изображения (максимум 5 за раз).",
   "you_can_drag_drop_pictures": "Вы также можете перетащить изображения.",
   "you_dont_have_any_media_yet": "У вас ещё нет медиафайлов",
   "media_library": "Медиатека",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "Посмотрите это короткое видео, чтобы узнать, как получить максимум от PostQueen",
   "back": "Назад",
   "get_started": "Начать",
-  "kick_select_channel": "Выберите канал"
+  "kick_select_channel": "Выберите канал",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

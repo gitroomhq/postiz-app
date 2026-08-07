@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { object, string } from 'zod';
 import { Select } from '@gitroom/react/form/select';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const aspectRatio = [
   { key: 'portrait', value: 'Portrait' },
@@ -34,30 +35,33 @@ const SelectAvatarComponent: FC<{
   const { avatarList, onChange } = props;
 
   return (
-    <div className="grid grid-cols-4 gap-[10px] justify-items-center justify-center">
-      {avatarList?.map((p) => (
-        <div
-          onClick={() => {
-            setCurrent(p.avatar_id === current?.avatar_id ? undefined : p);
-            onChange(p.avatar_id === current?.avatar_id ? {} : p.avatar_id);
-          }}
-          key={p.avatar_id}
-          className={clsx(
-            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
-            current?.avatar_id === p.avatar_id
-              ? 'bg-input border border-red-500'
-              : 'bg-third'
-          )}
-        >
-          <div>
+    <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
+      {avatarList?.map((p) => {
+        const selected = p.avatar_id === current?.avatar_id;
+        return (
+          <button
+            type="button"
+            key={p.avatar_id}
+            onClick={() => {
+              setCurrent(selected ? undefined : p);
+              onChange(selected ? ({} as any) : p.avatar_id);
+            }}
+            className={clsx(
+              'flex flex-col gap-[10px] overflow-hidden rounded-pqMd p-[10px] text-start text-[13px] font-[500] text-pqText transition-shadow',
+              selected
+                ? 'bg-pqBrandSoft shadow-[inset_0_0_0_1.5px_var(--brand)]'
+                : 'bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
+            )}
+          >
             <img
               src={p.preview_image_url}
-              className="w-full h-full object-cover"
+              alt=""
+              className="aspect-square w-full rounded-pqSm object-cover"
             />
-          </div>
-          <div>{p.avatar_name}</div>
-        </div>
-      ))}
+            <div className="line-clamp-2 px-[2px]">{p.avatar_name}</div>
+          </button>
+        );
+      })}
     </div>
   );
 };
@@ -70,32 +74,37 @@ const SelectVoiceComponent: FC<{
   const { voiceList, onChange } = props;
 
   return (
-    <div className="grid grid-cols-6 gap-[10px] justify-items-center justify-center">
-      {voiceList?.map((p) => (
-        <div
-          onClick={() => {
-            setCurrent(p.voice_id === current?.voice_id ? undefined : p);
-            onChange(p.voice_id === current?.voice_id ? {} : p.voice_id);
-          }}
-          key={p.avatar_id}
-          className={clsx(
-            'w-full h-full p-[20px] min-h-[100px] text-[14px] hover:bg-input transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer',
-            current?.voice_id === p.voice_id
-              ? 'bg-input border border-red-500'
-              : 'bg-third'
-          )}
-        >
-          <div className="text-[14px] text-balance whitespace-pre-line">
-            {p.name}
-          </div>
-          <div className="text-[12px]">{p.language}</div>
-        </div>
-      ))}
+    <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(120px,1fr))]">
+      {voiceList?.map((p) => {
+        const selected = p.voice_id === current?.voice_id;
+        return (
+          <button
+            type="button"
+            key={p.voice_id || p.avatar_id}
+            onClick={() => {
+              setCurrent(selected ? undefined : p);
+              onChange(selected ? ({} as any) : p.voice_id);
+            }}
+            className={clsx(
+              'flex min-h-[88px] flex-col gap-[6px] rounded-pqMd p-[12px] text-start transition-shadow',
+              selected
+                ? 'bg-pqBrandSoft shadow-[inset_0_0_0_1.5px_var(--brand)]'
+                : 'bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
+            )}
+          >
+            <div className="text-[13px] font-[600] leading-[1.35] text-pqText text-balance">
+              {p.name}
+            </div>
+            <div className="text-[11.5px] text-pqMuted">{p.language}</div>
+          </button>
+        );
+      })}
     </div>
   );
 };
 
 const HeygenProviderComponent = () => {
+  const t = useT();
   const thirdParty = useThirdParty();
   const load = useThirdPartyFunction('EVERYTIME');
   const { data } = useThirdPartyFunctionSWR('LOAD_ONCE', 'avatars');
@@ -127,7 +136,12 @@ const HeygenProviderComponent = () => {
 
   const generateVoice = useCallback(async () => {
     if (
-      !(await deleteDialog('Are you sure? it will delete the current text'))
+      !(await deleteDialog(
+        t(
+          'heygen_replace_voice_confirm',
+          'Are you sure? It will replace the current script text.'
+        )
+      ))
     ) {
       return;
     }
@@ -145,37 +159,48 @@ const HeygenProviderComponent = () => {
 
     setVoiceLoading(false);
     setHideVoiceGenerator(true);
-  }, [thirdParty]);
+  }, [thirdParty, form, load, t]);
 
   const submit: SubmitHandler<{ voice: string; avatar: string }> = useCallback(
     async (params) => {
       thirdParty.onChange(await send(params));
       thirdParty.close();
     },
-    []
+    [send, thirdParty]
   );
 
   return (
-    <div>
+    <div className="flex flex-col gap-[4px]">
       {form.formState.isSubmitting && (
-        <div className="fixed left-0 top-0 w-full leading-[50px] pt-[200px] h-screen bg-black/90 z-50 flex flex-col justify-center items-center text-center text-3xl">
-          Grab a coffee and relax, this may take a while...
-          <br />
-          You can also track the progress directly in HeyGen Dashboard.
-          <br />
-          DO NOT CLOSE THIS WINDOW!
-          <br />
-          <LoadingComponent width={200} height={200} />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-[16px] bg-pqBg/95 px-[24px] text-center">
+          <LoadingComponent width={120} height={120} />
+          <div className="max-w-[420px] text-[16px] font-[600] leading-[1.45] text-pqText">
+            {t(
+              'heygen_generating_title',
+              'Grab a coffee — this may take a while.'
+            )}
+          </div>
+          <div className="max-w-[420px] text-[13.5px] leading-[1.5] text-pqMuted">
+            {t(
+              'heygen_generating_body',
+              'You can also track progress in the HeyGen dashboard. Do not close this window.'
+            )}
+          </div>
         </div>
       )}
 
       <FormProvider {...form}>
         <form
           onSubmit={form.handleSubmit(submit)}
-          className="w-full flex flex-col"
+          className="flex w-full flex-col gap-[4px]"
         >
-          <Select label="Aspect Ratio" {...form.register('aspect_ratio')}>
-            <option value="">--SELECT--</option>
+          <Select
+            label={t('heygen_aspect_ratio', 'Aspect ratio')}
+            {...form.register('aspect_ratio')}
+          >
+            <option value="">
+              {t('heygen_select_placeholder', 'Select…')}
+            </option>
             {aspectRatio.map((p) => (
               <option key={p.key} value={p.key}>
                 {p.value}
@@ -183,8 +208,13 @@ const HeygenProviderComponent = () => {
             ))}
           </Select>
 
-          <Select label="Generate Captions" {...form.register('captions')}>
-            <option value="">--SELECT--</option>
+          <Select
+            label={t('heygen_generate_captions', 'Generate captions')}
+            {...form.register('captions')}
+          >
+            <option value="">
+              {t('heygen_select_placeholder', 'Select…')}
+            </option>
             {generateCaptions.map((p) => (
               <option key={p.key} value={p.key}>
                 {p.value}
@@ -192,16 +222,38 @@ const HeygenProviderComponent = () => {
             ))}
           </Select>
 
-          <div className="text-lg mb-3">Voice to generate</div>
-          {!hideVoiceGenerator && (
-            <Button onClick={generateVoice} loading={voiceLoading}>
-              Generate Voice From My Post Text
-            </Button>
-          )}
-          <Textarea label="" {...form.register('voice')} />
+          <div className="mt-[8px] flex flex-col gap-[8px]">
+            <div>
+              <div className="text-[13px] font-[600] text-pqText">
+                {t('heygen_voice_script', 'Voice script')}
+              </div>
+              <div className="mt-[2px] text-[12px] leading-[1.45] text-pqMuted">
+                {t(
+                  'heygen_voice_script_help',
+                  'This text is spoken by the avatar in the video.'
+                )}
+              </div>
+            </div>
+            <Textarea label="" {...form.register('voice')} />
+            {!hideVoiceGenerator && (
+              <button
+                type="button"
+                onClick={generateVoice}
+                disabled={voiceLoading}
+                className="flex h-[36px] w-fit items-center justify-center rounded-pqSm bg-pqBtnSimple px-[14px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {voiceLoading
+                  ? t('heygen_filling', 'Filling…')
+                  : t('heygen_fill_from_post', 'Fill from post text')}
+              </button>
+            )}
+          </div>
+
           {!!data?.length && (
-            <>
-              <div className="text-lg my-3">Select Avatar</div>
+            <div className="mt-[12px] flex flex-col gap-[10px]">
+              <div className="text-[13px] font-[600] text-pqText">
+                {t('heygen_select_avatar', 'Select avatar')}
+              </div>
               <SelectAvatarComponent
                 avatarList={data.map((p: any) => ({
                   avatar_id: p.avatar_id || p.id,
@@ -218,26 +270,36 @@ const HeygenProviderComponent = () => {
                   );
                 }}
               />
-              <div className="text-red-400 text-[12px] mb-3">
-                {form?.formState?.errors?.avatar?.message || ''}
-              </div>
-            </>
+              {!!form?.formState?.errors?.avatar?.message && (
+                <div className="text-[12px] text-pqWarn">
+                  {form.formState.errors.avatar.message}
+                </div>
+              )}
+            </div>
           )}
 
           {!!voices?.length && (
-            <>
-              <div className="text-lg my-3">Select Voice</div>
+            <div className="mt-[12px] flex flex-col gap-[10px]">
+              <div className="text-[13px] font-[600] text-pqText">
+                {t('heygen_select_voice', 'Select voice')}
+              </div>
               <SelectVoiceComponent
                 voiceList={voices}
                 onChange={(id: string) => form.setValue('selectedVoice', id)}
               />
-              <div className="text-red-400 text-[12px] mb-3">
-                {form?.formState?.errors?.selectedVoice?.message || ''}
-              </div>
-            </>
+              {!!form?.formState?.errors?.selectedVoice?.message && (
+                <div className="text-[12px] text-pqWarn">
+                  {form.formState.errors.selectedVoice.message}
+                </div>
+              )}
+            </div>
           )}
 
-          <Button type="submit">Generate Video</Button>
+          <div className="mt-[16px]">
+            <Button type="submit" className="w-full">
+              {t('heygen_generate_video', 'Generate video')}
+            </Button>
+          </div>
         </form>
       </FormProvider>
     </div>

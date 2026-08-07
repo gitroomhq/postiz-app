@@ -8,8 +8,9 @@ import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/bill
 import { groupBy } from 'lodash';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
 import {
+  LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
-  nextLifetimeTier,
+  LIFETIME_RETENTION_PRICE,
   PaidTier,
   pricing,
   trialWindow,
@@ -403,6 +404,24 @@ export class StripeService {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
+    const localSub =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+
+    // Founding-member trial is a local row (often with no Stripe subscription).
+    // The Plans cancel copy promises an immediate return to FREE — honour that
+    // instead of reporting success while leaving `isLifetime` intact.
+    if (localSub?.isLifetime && org?.isTrailing) {
+      await this.cancelOpenStripeSubscriptions(customer);
+      await this._subscriptionService.revokeLocalSubscription(organizationId);
+      await this._organizationService.endTrial(organizationId);
+      return {
+        id,
+        cancel_at: new Date(),
+      };
+    }
+
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -466,6 +485,20 @@ export class StripeService {
       id,
       cancel_at: cancel_at ? new Date(cancel_at * 1000) : undefined,
     };
+  }
+
+  /**
+   * Cancel every non-canceled Stripe subscription on a customer.
+   * Used when converting to lifetime so the recurring sub cannot also bill.
+   */
+  private async cancelOpenStripeSubscriptions(customer: string) {
+    const list = await stripe.subscriptions.list({
+      customer,
+      status: 'all',
+    });
+    for (const sub of list.data.filter((f) => f.status !== 'canceled')) {
+      await stripe.subscriptions.cancel(sub.id);
+    }
   }
 
   async getCustomerByOrganizationId(organizationId: string) {
@@ -594,7 +627,8 @@ export class StripeService {
             },
           }
         : {}),
-      allow_promotion_codes: body.period === 'MONTHLY',
+      // Yearly and monthly both accept promotion codes (checkout fidelity).
+      allow_promotion_codes: true,
       line_items: [
         {
           price,
@@ -650,7 +684,7 @@ export class StripeService {
           ud,
         },
       },
-      allow_promotion_codes: body.period === 'MONTHLY',
+      allow_promotion_codes: true,
       line_items: [
         {
           price,
@@ -759,33 +793,24 @@ export class StripeService {
       return false;
     }
 
-    const list = await stripe.charges.list({
-      customer,
-      limit: 1,
-    });
-
-    if (!list.data.filter((f) => f.amount > 1000).length) {
-      return false;
-    }
-
-    const currentUserSubscription = {
-      data: (
-        await stripe.subscriptions.list({
-          customer,
-          status: 'all',
-          expand: ['data.discounts'],
-        })
-      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
-    };
+    // Monthly active|trialing only — no prior-charge gate so normal trials can
+    // see the 50%×3 retention offer (trials usually have no paid charge yet).
+    const currentUserSubscription = (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+        expand: ['data.discounts'],
+      })
+    ).data.find((f) => f.status === 'active' || f.status === 'trialing');
 
     if (!currentUserSubscription) {
       return false;
     }
 
     if (
-      currentUserSubscription.data?.items.data[0]?.price.recurring?.interval ===
+      currentUserSubscription.items.data[0]?.price.recurring?.interval ===
         'year' ||
-      currentUserSubscription.data?.discounts.length
+      currentUserSubscription.discounts.length
     ) {
       return false;
     }
@@ -799,21 +824,19 @@ export class StripeService {
       return false;
     }
 
-    const currentUserSubscription = {
-      data: (
-        await stripe.subscriptions.list({
-          customer,
-          status: 'all',
-          expand: ['data.discounts'],
-        })
-      ).data.find((f) => f.status === 'active' || f.status === 'trialing'),
-    };
+    const currentUserSubscription = (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+        expand: ['data.discounts'],
+      })
+    ).data.find((f) => f.status === 'active' || f.status === 'trialing');
 
-    if (!currentUserSubscription.data) {
+    if (!currentUserSubscription) {
       return false;
     }
 
-    await stripe.subscriptions.update(currentUserSubscription.data.id, {
+    await stripe.subscriptions.update(currentUserSubscription.id, {
       discounts: [
         {
           coupon: process.env.STRIPE_DISCOUNT_ID!,
@@ -1378,37 +1401,57 @@ export class StripeService {
   }
 
   /**
-   * A one-off checkout session for the founding-member offer.
+   * A founding-member checkout session.
    *
-   * `mode: 'payment'`, not `'subscription'` — there is nothing to renew, which
-   * is the whole product. Two consequences follow and both are load-bearing:
+   * When the org is trial-eligible (`allowTrial`), use `mode: 'setup'` so we
+   * collect a card without charging today — `$0 due today` on the paywall must
+   * match money. The founding fee is captured later via
+   * `captureFoundingLifetimeIfDue` (finish-trial or trial window closed).
    *
-   * - The metadata goes on the **session**, not on `subscription_data`, because
-   *   there is no subscription to hang it from. `stripe.controller.ts` reads
-   *   `data.object.metadata.service` to decide whether an event is ours and
-   *   drops anything else, so without the tag this app would discard its own
-   *   webhook.
-   * - It emits `checkout.session.completed` rather than any of the
-   *   `customer.subscription.*` events. That branch exists already; it was
-   *   written before this method so a half-finished state could never take
-   *   money with nothing to answer it.
+   * When not trial-eligible, keep `mode: 'payment'` and charge `LIFETIME_PRICE`
+   * immediately (lapsed / returning purchasers).
    *
-   * `price_data` rather than a stored price: the amount lives in `pricing.ts`
-   * next to everything else about what a plan costs, and a Stripe price object
-   * created by hand is one more place for the number to drift.
+   * Session metadata carries `service` (webhook filter) and `organizationId`.
+   * Deferred sessions also set `lifetime_deferred: '1'`.
    */
   async createLifetimeCheckout(organization: Organization) {
     const customer = await this.createOrGetCustomer(organization);
+    // Mid-trial converts are usually past `allowTrial` (trial already started).
+    // Defer the $49 charge until trial end whenever the org is still trailing.
+    const deferCharge =
+      !!organization.isTrailing || !!organization.allowTrial;
+    const urls = {
+      cancel_url: process.env['FRONTEND_URL'] + '/billing/lifetime?cancel=true',
+      success_url:
+        process.env['FRONTEND_URL'] + '/billing/lifetime?purchased=true',
+    };
+
+    if (deferCharge) {
+      const { url } = await stripe.checkout.sessions.create({
+        customer,
+        mode: 'setup',
+        currency: 'usd',
+        payment_method_types: ['card'],
+        ...urls,
+        billing_address_collection: 'required',
+        customer_update: { address: 'auto' },
+        metadata: {
+          service: SUBSCRIPTION_SERVICE_TAG,
+          organizationId: organization.id,
+          lifetime_deferred: '1',
+        },
+      });
+      return { url };
+    }
 
     const { url } = await stripe.checkout.sessions.create({
       customer,
       mode: 'payment',
-      cancel_url: process.env['FRONTEND_URL'] + '/billing/lifetime?cancel=true',
-      success_url:
-        process.env['FRONTEND_URL'] + '/billing/lifetime?purchased=true',
+      ...urls,
       automatic_tax: { enabled: true },
       customer_update: { address: 'auto' },
       billing_address_collection: 'required',
+      allow_promotion_codes: true,
       metadata: {
         service: SUBSCRIPTION_SERVICE_TAG,
         organizationId: organization.id,
@@ -1433,21 +1476,276 @@ export class StripeService {
   }
 
   /**
-   * Grants a lifetime entitlement that was paid for rather than redeemed.
-   *
-   * Deliberately the *same* effect as `lifetimeDeal` — same ladder, same
-   * `createOrUpdateSubscription` call — so there is one way to become a
-   * founding member and not two that can drift apart.
-   *
-   * `paymentRef` stands in for the redemption code. The repository derives
-   * `isLifetime` from that argument being present, and using the Stripe session
-   * id means the row records which payment granted it. A generated placeholder
-   * would set the flag just as well and tell nobody anything.
-   *
-   * Idempotent by the same route redemption is: a session id already stored as
-   * a used code is a webhook Stripe delivered twice, and it grants nothing the
-   * second time.
+   * After a deferred (setup) founding checkout: attach the payment method as
+   * the customer default, then grant lifetime while the trial is still running.
+   * Money is not taken here — `captureFoundingLifetimeIfDue` does that later.
    */
+  async completeDeferredLifetimeSetup(
+    organizationId: string,
+    session: {
+      id: string;
+      customer?: string | { id?: string } | null;
+      setup_intent?: string | { id?: string } | null;
+    }
+  ) {
+    const setupIntentId =
+      typeof session.setup_intent === 'string'
+        ? session.setup_intent
+        : session.setup_intent?.id;
+    if (!setupIntentId) {
+      throw new Error('lifetime setup session missing setup_intent');
+    }
+
+    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+    const paymentMethodId =
+      typeof setupIntent.payment_method === 'string'
+        ? setupIntent.payment_method
+        : setupIntent.payment_method?.id;
+    const customerId =
+      (typeof session.customer === 'string'
+        ? session.customer
+        : session.customer?.id) ||
+      (typeof setupIntent.customer === 'string'
+        ? setupIntent.customer
+        : setupIntent.customer?.id);
+
+    if (customerId && paymentMethodId) {
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+      });
+    }
+
+    return this.grantLifetimeFromPayment(
+      organizationId,
+      `lifetime-setup:${session.id}`
+    );
+  }
+
+  /**
+   * Charge the founding-member fee once when a deferred lifetime purchase's
+   * trial ends (button or window). No-ops for code redemption, immediate
+   * payment checkouts, or orgs already charged.
+   *
+   * `force: true` — finish-trial (early end while window still open).
+   * `force: false` (default) — only charge once the trial window has closed.
+   */
+  /**
+   * Deferred founding checkout (`lifetime-setup:`) that has not yet recorded a
+   * charge (`lifetime-charge:` / immediate `cs_`). Used by FinishTrial polling
+   * and `/user/self` lock-until-paid — does not talk to Stripe.
+   */
+  async isDeferredFoundingFeeOwed(organizationId: string): Promise<boolean> {
+    const subscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+    if (!subscription?.isLifetime) {
+      return false;
+    }
+    const codes = await this._subscriptionService.getCodesByOrgId(
+      organizationId
+    );
+    const codeList = codes.map((c) => c.code);
+    const hasDeferred = codeList.some((c) => c.startsWith('lifetime-setup:'));
+    const alreadyPaid =
+      codeList.some((c) => c.startsWith('lifetime-charge:')) ||
+      codeList.some((c) => c.startsWith('lifetime-retention:')) ||
+      codeList.some((c) => /^cs_/.test(c));
+    return hasDeferred && !alreadyPaid;
+  }
+
+  async captureFoundingLifetimeIfDue(
+    organizationId: string,
+    opts: { force?: boolean } = {}
+  ) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return { charged: false };
+    }
+
+    if (!(await this.isDeferredFoundingFeeOwed(organizationId))) {
+      return { charged: false };
+    }
+
+    const windowOpen = trialWindow(org.createdAt).open;
+    if (windowOpen && !opts.force) {
+      return { charged: false };
+    }
+
+    const customer = await stripe.customers.retrieve(org.paymentId);
+    if ((customer as { deleted?: boolean }).deleted) {
+      return { charged: false };
+    }
+    const live = customer as Stripe.Customer;
+    const defaultPm =
+      typeof live.invoice_settings?.default_payment_method === 'string'
+        ? live.invoice_settings.default_payment_method
+        : live.invoice_settings?.default_payment_method?.id;
+
+    if (!defaultPm) {
+      return { charged: false, error: 'no_payment_method' };
+    }
+
+    try {
+      const pi = await stripe.paymentIntents.create(
+        {
+          amount: LIFETIME_PRICE * 100,
+          currency: 'usd',
+          customer: org.paymentId,
+          payment_method: defaultPm,
+          off_session: true,
+          confirm: true,
+          description: 'PostQueen — founding member',
+          metadata: {
+            service: SUBSCRIPTION_SERVICE_TAG,
+            organizationId,
+            lifetime_charge: '1',
+          },
+        },
+        { idempotencyKey: `lifetime-charge-${organizationId}` }
+      );
+
+      if (pi.status === 'succeeded' || pi.status === 'processing') {
+        const existing = await this._subscriptionService.getCode(
+          `lifetime-charge:${pi.id}`
+        );
+        if (!existing) {
+          await this._subscriptionService.createUsedCode(
+            organizationId,
+            `lifetime-charge:${pi.id}`
+          );
+        }
+        return { charged: true };
+      }
+      return { charged: false, status: pi.status };
+    } catch (err) {
+      return { charged: false, error: 'stripe_error' };
+    }
+  }
+
+  /**
+   * Cancel-flow retention for founding-member trial: charge half of
+   * `LIFETIME_PRICE` ($24.50), mark the founding fee settled (so a later
+   * `captureFoundingLifetimeIfDue` cannot bill $49), and end the trial.
+   */
+  async applyLifetimeRetentionOffer(organizationId: string): Promise<{
+    ok: boolean;
+    error?: 'not_eligible' | 'no_payment_method' | 'capture_failed' | 'stripe_error';
+    status?: string;
+  }> {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId || !org.isTrailing) {
+      return { ok: false, error: 'not_eligible' };
+    }
+
+    const subscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+    if (!subscription?.isLifetime) {
+      return { ok: false, error: 'not_eligible' };
+    }
+
+    const codes = await this._subscriptionService.getCodesByOrgId(
+      organizationId
+    );
+    const codeList = codes.map((c) => c.code);
+    if (codeList.some((c) => c.startsWith('lifetime-retention:'))) {
+      await this._organizationService.endTrial(organizationId);
+      return { ok: true };
+    }
+
+    const customer = await stripe.customers.retrieve(org.paymentId);
+    if ((customer as { deleted?: boolean }).deleted) {
+      return { ok: false, error: 'no_payment_method' };
+    }
+    const live = customer as Stripe.Customer;
+    const defaultPm =
+      typeof live.invoice_settings?.default_payment_method === 'string'
+        ? live.invoice_settings.default_payment_method
+        : live.invoice_settings?.default_payment_method?.id;
+
+    if (!defaultPm) {
+      return { ok: false, error: 'no_payment_method' };
+    }
+
+    try {
+      const pi = await stripe.paymentIntents.create(
+        {
+          amount: Math.round(LIFETIME_RETENTION_PRICE * 100),
+          currency: 'usd',
+          customer: org.paymentId,
+          payment_method: defaultPm,
+          off_session: true,
+          confirm: true,
+          description: 'PostQueen — founding member (retention)',
+          metadata: {
+            service: SUBSCRIPTION_SERVICE_TAG,
+            organizationId,
+            lifetime_retention: '1',
+            lifetime_charge: '1',
+          },
+        },
+        { idempotencyKey: `lifetime-retention-${organizationId}` }
+      );
+
+      if (pi.status === 'succeeded' || pi.status === 'processing') {
+        const chargeCode = `lifetime-charge:${pi.id}`;
+        const retentionCode = `lifetime-retention:${pi.id}`;
+        if (!(await this._subscriptionService.getCode(chargeCode))) {
+          await this._subscriptionService.createUsedCode(
+            organizationId,
+            chargeCode
+          );
+        }
+        if (!(await this._subscriptionService.getCode(retentionCode))) {
+          await this._subscriptionService.createUsedCode(
+            organizationId,
+            retentionCode
+          );
+        }
+        await this._organizationService.endTrial(organizationId);
+        return { ok: true };
+      }
+      return { ok: false, error: 'capture_failed', status: pi.status };
+    } catch (err) {
+      return { ok: false, error: 'stripe_error' };
+    }
+  }
+
+  /**
+   * Lazy settlement when a deferred founding purchase's trial window has
+   * closed: charge once (idempotent), then clear the DB trial flag.
+   *
+   * Needed because `captureFoundingLifetimeIfDue` used to run only from
+   * `/billing/is-trial-finished`, which the FinishTrial overlay alone polls —
+   * somebody who waited out the seven days and never pressed the button kept
+   * lifetime without ever being charged. Auth middleware derives `isTrailing`
+   * read-only and cannot write or charge.
+   *
+   * If the founding fee is still owed and the charge fails, leave `isTrailing`
+   * set in the DB. Middleware already hides the trial UI once the window
+   * closes; clearing the flag here would unlock a founding member who never
+   * paid.
+   */
+  async settleFoundingLifetimeAfterTrial(organizationId: string) {
+    const capture = await this.captureFoundingLifetimeIfDue(organizationId, {
+      force: false,
+    });
+    const captureBlocked = !!(
+      ('error' in capture && capture.error) ||
+      ('status' in capture && capture.status)
+    );
+    if (captureBlocked) {
+      return capture;
+    }
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (org?.isTrailing && !trialWindow(org.createdAt).open) {
+      await this._organizationService.endTrial(organizationId);
+    }
+    return capture;
+  }
+
   /**
    * Whether this organization's free trial is still running.
    *
@@ -1462,44 +1760,50 @@ export class StripeService {
     return !!org?.isTrailing && trialWindow(org.createdAt).open;
   }
 
+  /**
+   * Grants a lifetime entitlement that was paid for rather than redeemed.
+   *
+   * Deliberately the *same* effect as `lifetimeDeal` — same Pro grant, same
+   * `createOrUpdateSubscription` call — so there is one way to become a
+   * founding member and not two that can drift apart.
+   *
+   * `paymentRef` stands in for the redemption code. The repository derives
+   * `isLifetime` from that argument being present, and using the Stripe session
+   * id (or `lifetime-setup:…`) means the row records which checkout granted it.
+   *
+   * Idempotent by the same route redemption is: a ref already stored as a used
+   * code is a webhook Stripe delivered twice, and it grants nothing the second
+   * time.
+   */
   async grantLifetimeFromPayment(organizationId: string, paymentRef: string) {
     const existing = await this._subscriptionService.getCode(paymentRef);
     if (existing) {
       return { success: true, duplicate: true };
     }
 
-    const getCurrentSubscription =
-      await this._subscriptionService.getSubscriptionByOrganizationId(
-        organizationId
-      );
-
-    const currentTier = getCurrentSubscription?.subscriptionTier;
-    // Founding-member purchase markets "Everything in Pro" — floor the ladder
-    // at PRO so FREE/CREATOR/GROWTH buyers get what the checkout promises.
-    // Code redemption (`lifetimeDeal`) keeps the one-tier ladder unchanged.
-    const ladderTier = nextLifetimeTier(currentTier);
-    const paidOrder = ['CREATOR', 'GROWTH', 'PRO', 'AGENCY'] as const;
-    const ladderIdx = paidOrder.indexOf(
-      ladderTier as (typeof paidOrder)[number]
-    );
-    const proIdx = paidOrder.indexOf('PRO');
-    const nextPackage =
-      ladderIdx >= 0 && ladderIdx < proIdx ? 'PRO' : ladderTier;
+    // Founding purchase always grants Pro — not the trial tier, not one rung up.
+    const nextPackage = LIFETIME_GRANT_TIER;
     const findPricing = pricing[nextPackage];
 
     await this._subscriptionService.createOrUpdateSubscription(
       await this.stillTrialing(organizationId),
       makeId(10),
       organizationId,
-      currentTier && nextPackage === currentTier
-        ? getCurrentSubscription!.totalChannels + 5
-        : findPricing.channel!,
+      findPricing.channel!,
       nextPackage,
       'MONTHLY',
       null,
       paymentRef,
       organizationId
     );
+
+    // Mid-trial convert: cancel any recurring Stripe subscription so trial-end
+    // cannot bill the plan price *and* the founding fee. Safe now that
+    // `deleteSubscription` leaves lifetime rows alone.
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (org?.paymentId) {
+      await this.cancelOpenStripeSubscriptions(org.paymentId);
+    }
 
     return { success: true, tier: nextPackage };
   }
@@ -1522,8 +1826,8 @@ export class StripeService {
         };
       }
 
-      const currentTier = getCurrentSubscription?.subscriptionTier;
-      const nextPackage = nextLifetimeTier(currentTier);
+      // Same grant as paid founding: always Pro (30 channels).
+      const nextPackage = LIFETIME_GRANT_TIER;
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
@@ -1532,11 +1836,7 @@ export class StripeService {
         await this.stillTrialing(organizationId),
         makeId(10),
         organizationId,
-        // At the top of the ladder a further code can no longer raise the tier,
-        // so it buys channels instead — what PRO did before the rename.
-        currentTier && nextPackage === currentTier
-          ? getCurrentSubscription!.totalChannels + 5
-          : findPricing.channel!,
+        findPricing.channel!,
         nextPackage,
         'MONTHLY',
         null,

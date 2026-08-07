@@ -427,7 +427,7 @@
   "label_when_post": "מתי לפרסם את זה?",
   "label_autogenerate_content": "צור תוכן אוטומטית",
   "label_generate_picture": "להפיק תמונה?",
-  "label_company": "חברה",
+  "label_organization": "ארגון",
   "label_tag_color": "צבע תגית",
   "label_select_board": "בחר לוח",
   "label_select_organization": "בחר ארגון",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "הפרסום האוטומטי עודכן בהצלחה",
   "autopost_added_successfully": "הפוסט האוטומטי נוסף בהצלחה",
   "write_your_post_placeholder": "כתוב את הפוסט שלך...",
-  "select_or_upload_pictures_max_5": "בחר או העלה תמונות (מקסימום 5 בכל פעם).",
   "you_can_drag_drop_pictures": "ניתן גם לגרור ולשחרר תמונות.",
   "you_dont_have_any_media_yet": "עדיין אין לך מדיה",
   "media_library": "ספריית מדיה",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "צפה בסרטון הקצר הזה ולמד כיצד להפיק את המרב מ-PostQueen",
   "back": "חזרה",
   "get_started": "התחלה",
-  "kick_select_channel": "בחר ערוץ"
+  "kick_select_channel": "בחר ערוץ",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }

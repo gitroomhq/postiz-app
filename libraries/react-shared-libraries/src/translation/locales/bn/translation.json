@@ -427,7 +427,7 @@
   "label_when_post": "পোস্ট সময়",
   "label_autogenerate_content": "কন্টেন্ট স্বয়ংক্রিয় তৈরি করা",
   "label_generate_picture": "ছবি তৈরি করা",
-  "label_company": "কমপানি",
+  "label_organization": "সংস্থা",
   "label_tag_color": "ট্যাগ কলর",
   "label_select_board": "বোর্ড নির্বাচন করুন",
   "label_select_organization": "সংস্থান নির্বাচন করুন",
@@ -586,7 +586,6 @@
   "autopost_updated_successfully": "অটোপোস্ট সফলভাবে আপডেট হয়েছে",
   "autopost_added_successfully": "অটোপোস্ট সফলভাবে যোগ হয়েছে",
   "write_your_post_placeholder": "আপনার পোস্ট লিখুন...",
-  "select_or_upload_pictures_max_5": "ছবি নির্বাচন করুন বা আপলোড করুন (একসাথে সর্বাধিক ৫টি)।",
   "you_can_drag_drop_pictures": "আপনি চাইলে ছবি ড্র্যাগ ও ড্রপও করতে পারেন।",
   "you_dont_have_any_media_yet": "আপনার কাছে এখনও কোনো মিডিয়া নেই",
   "media_library": "মিডিয়া লাইব্রেরি",
@@ -696,5 +695,7 @@
   "watch_tutorial_description": "PostQueen সর্বোচ্চভাবে কাজে লাগাতে এই সংক্ষিপ্ত ভিডিওটি দেখুন",
   "back": "পেছনে যান",
   "get_started": "শুরু করুন",
-  "kick_select_channel": "চ্যানেল নির্বাচন করুন"
+  "kick_select_channel": "চ্যানেল নির্বাচন করুন",
+  "ai_not_configured_title": "AI is not configured",
+  "ai_not_configured_body": "AI features are not configured on this installation."
 }
