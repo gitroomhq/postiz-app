@@ -1082,7 +1082,7 @@ const CalendarItem: FC<{
       >
         <div
           className={clsx(
-            post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
+            post?.tags?.[0]?.tag?.color ? 'text-shadow-tags' : '',
             'group-hover:hidden cursor-pointer'
           )}
         >
@@ -1092,7 +1092,7 @@ const CalendarItem: FC<{
           <div
             className={clsx(
               'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+              post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
             )}
             onClick={copyDebugJson}
           >
@@ -1102,7 +1102,7 @@ const CalendarItem: FC<{
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
           )}
           onClick={duplicatePost}
         >
@@ -1111,7 +1111,7 @@ const CalendarItem: FC<{
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
           )}
           onClick={preview}
         >
@@ -1123,7 +1123,7 @@ const CalendarItem: FC<{
           <div
             className={clsx(
               'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+              post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
             )}
             onClick={missingRelease}
           >
@@ -1133,7 +1133,7 @@ const CalendarItem: FC<{
           <div
             className={clsx(
               'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+              post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
             )}
             onClick={statistics}
           >
@@ -1145,7 +1145,7 @@ const CalendarItem: FC<{
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
           )}
           onClick={deletePost}
         >
