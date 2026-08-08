@@ -9,7 +9,6 @@ import {
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
@@ -69,9 +68,9 @@ export class PinterestProvider
 
   dto = PinterestSettingsDto;
 
-  override async checkValidity(
-    [firstItem]: Array<ValidityMedia[]>
-  ): Promise<string | true> {
+  override async checkValidity([firstItem]: Array<ValidityMedia[]>): Promise<
+    string | true
+  > {
     const isMp4 = firstItem?.find(
       (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
     );
@@ -125,20 +124,22 @@ export class PinterestProvider
     if (body.indexOf('Unable to reach the URL') > -1) {
       return {
         type: 'retry' as const,
-        value: 'Pinterest was unable to reach the URL provided. Please check the link and try again.',
-      }
+        value:
+          'Pinterest was unable to reach the URL provided. Please check the link and try again.',
+      };
     }
     if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'The board ID must be a numeric string. Please check the board ID format.',
-      }
+        value:
+          'The board ID must be a numeric string. Please check the board ID format.',
+      };
     }
     if (body.indexOf('Board not found') > -1) {
       return {
         type: 'bad-body' as const,
         value: 'The specified board was not found. Please check the board ID.',
-      }
+      };
     }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
@@ -298,7 +299,7 @@ export class PinterestProvider
         })
       ).json();
 
-      const { data } = await axios.get(findMp4.path, {
+      const { data } = await this.getSsrfSafeAxios().get(findMp4.path, {
         responseType: 'stream',
       });
 
@@ -310,7 +311,7 @@ export class PinterestProvider
         }, new FormData());
 
       formData.append('file', data);
-      await axios.post(upload_url, formData);
+      await this.getSsrfSafeAxios().post(upload_url, formData);
 
       mediaId = media_id;
     }
