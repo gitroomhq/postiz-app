@@ -17,6 +17,10 @@ import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
+import { ItalicText } from '@gitroom/frontend/components/new-launch/italic.text';
+import { CodeText } from '@gitroom/frontend/components/new-launch/code.text';
+import { StrikeText } from '@gitroom/frontend/components/new-launch/strike.text';
+import { BlockquoteText } from '@gitroom/frontend/components/new-launch/blockquote.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import {
@@ -45,6 +49,10 @@ import Bold from '@tiptap/extension-bold';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
+import Italic from '@tiptap/extension-italic';
+import Code from '@tiptap/extension-code';
+import Strike from '@tiptap/extension-strike';
+import Blockquote from '@tiptap/extension-blockquote';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
@@ -363,7 +371,7 @@ export const EditorWrapper: FC<{
         'relative flex-col gap-[20px] flex-1',
         (items.length === 1 || !canEdit || !comments) && 'flex',
         ((!canEdit && !isCreateSet) || !comments) &&
-          'bg-newSettings rounded-[12px]'
+        'bg-newSettings rounded-[12px]'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -571,7 +579,7 @@ export const Editor: FC<{
       uppy.clear();
     },
     allowedFileTypes: 'image/*,video/mp4',
-    onStart: () => {},
+    onStart: () => { },
     onEnd: () => setLoading(false),
   });
 
@@ -788,8 +796,34 @@ export const Editor: FC<{
                             editor={editorRef?.current?.editor}
                             currentValue={props.value!}
                           />
+                          <ItalicText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <StrikeText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <BlockquoteText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <CodeText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
                         </>
                       )}
+                      {/* link insertion may not work on all providers e.g insta, x, facebook */}
+                      {(editorType === 'html' || editorType === 'markdown') &&
+                        identifier === 'telegram' && (
+                          <>
+                            <AComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                          </>
+                        )}
                       {(editorType === 'markdown' || editorType === 'html') &&
                         identifier !== 'telegram' && (
                           <>
@@ -843,8 +877,8 @@ export const Editor: FC<{
                   onChange={(value) => {
                     setImages(value.target.value);
                   }}
-                  onOpen={() => {}}
-                  onClose={() => {}}
+                  onOpen={() => { }}
+                  onClose={() => { }}
                 />
               )}
             </div>
@@ -911,6 +945,10 @@ export const OnlyEditor = forwardRef<
       Text,
       Underline,
       Bold,
+      Italic,
+      Code,
+      Strike,
+      Blockquote,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
       BulletList,
@@ -921,108 +959,108 @@ export const OnlyEditor = forwardRef<
       }),
       ...(editorType === 'html' || editorType === 'markdown'
         ? [
-            Link.configure({
-              openOnClick: false,
-              autolink: true,
-              defaultProtocol: 'https',
-              protocols: ['http', 'https'],
-              isAllowedUri: (url, ctx) => {
-                try {
-                  // prevent transforming plain emails like foo@bar.com into links
-                  const trimmed = String(url).trim();
-                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                  if (emailPattern.test(trimmed)) {
-                    return false;
-                  }
-
-                  // construct URL
-                  const parsedUrl = url.includes(':')
-                    ? new URL(url)
-                    : new URL(`${ctx.defaultProtocol}://${url}`);
-
-                  // use default validation
-                  if (!ctx.defaultValidate(parsedUrl.href)) {
-                    return false;
-                  }
-
-                  // disallowed protocols
-                  const disallowedProtocols = ['ftp', 'file', 'mailto'];
-                  const protocol = parsedUrl.protocol.replace(':', '');
-
-                  if (disallowedProtocols.includes(protocol)) {
-                    return false;
-                  }
-
-                  // only allow protocols specified in ctx.protocols
-                  const allowedProtocols = ctx.protocols.map((p) =>
-                    typeof p === 'string' ? p : p.scheme
-                  );
-
-                  if (!allowedProtocols.includes(protocol)) {
-                    return false;
-                  }
-
-                  // all checks have passed
-                  return true;
-                } catch {
+          Link.extend({ inclusive: false }).configure({
+            openOnClick: false,
+            autolink: true,
+            defaultProtocol: 'https',
+            protocols: ['http', 'https'],
+            isAllowedUri: (url, ctx) => {
+              try {
+                // prevent transforming plain emails like foo@bar.com into links
+                const trimmed = String(url).trim();
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailPattern.test(trimmed)) {
                   return false;
                 }
-              },
-              shouldAutoLink: (url) => {
-                try {
-                  // prevent auto-linking of plain emails like foo@bar.com
-                  const trimmed = String(url).trim();
-                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                  if (emailPattern.test(trimmed)) {
-                    return false;
-                  }
 
-                  // construct URL
-                  const parsedUrl = url.includes(':')
-                    ? new URL(url)
-                    : new URL(`https://${url}`);
+                // construct URL
+                const parsedUrl = url.includes(':')
+                  ? new URL(url)
+                  : new URL(`${ctx.defaultProtocol}://${url}`);
 
-                  // only auto-link if the domain is not in the disallowed list
-                  const disallowedDomains = [
-                    'example-no-autolink.com',
-                    'another-no-autolink.com',
-                  ];
-                  const domain = parsedUrl.hostname;
-
-                  return !disallowedDomains.includes(domain);
-                } catch {
+                // use default validation
+                if (!ctx.defaultValidate(parsedUrl.href)) {
                   return false;
                 }
-              },
-            }),
-          ]
+
+                // disallowed protocols
+                const disallowedProtocols = ['ftp', 'file', 'mailto'];
+                const protocol = parsedUrl.protocol.replace(':', '');
+
+                if (disallowedProtocols.includes(protocol)) {
+                  return false;
+                }
+
+                // only allow protocols specified in ctx.protocols
+                const allowedProtocols = ctx.protocols.map((p) =>
+                  typeof p === 'string' ? p : p.scheme
+                );
+
+                if (!allowedProtocols.includes(protocol)) {
+                  return false;
+                }
+
+                // all checks have passed
+                return true;
+              } catch {
+                return false;
+              }
+            },
+            shouldAutoLink: (url) => {
+              try {
+                // prevent auto-linking of plain emails like foo@bar.com
+                const trimmed = String(url).trim();
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailPattern.test(trimmed)) {
+                  return false;
+                }
+
+                // construct URL
+                const parsedUrl = url.includes(':')
+                  ? new URL(url)
+                  : new URL(`https://${url}`);
+
+                // only auto-link if the domain is not in the disallowed list
+                const disallowedDomains = [
+                  'example-no-autolink.com',
+                  'another-no-autolink.com',
+                ];
+                const domain = parsedUrl.hostname;
+
+                return !disallowedDomains.includes(domain);
+              } catch {
+                return false;
+              }
+            },
+          }),
+        ]
         : []),
       ...(internal?.integration?.id
         ? [
-            Mention.configure({
-              HTMLAttributes: {
-                class: 'mention',
-              },
-              renderHTML({ options, node }) {
-                return [
-                  'span',
-                  mergeAttributes(options.HTMLAttributes, {
-                    'data-mention-id': node.attrs.id || '',
-                    'data-mention-label': node.attrs.label || '',
-                  }),
-                  `@${node.attrs.label}`,
-                ];
-              },
-              suggestion: suggestion(loadList),
-            }),
-          ]
+          Mention.configure({
+            HTMLAttributes: {
+              class: 'mention',
+            },
+            renderHTML({ options, node }) {
+              return [
+                'span',
+                mergeAttributes(options.HTMLAttributes, {
+                  'data-mention-id': node.attrs.id || '',
+                  'data-mention-label': node.attrs.label || '',
+                }),
+                `@${node.attrs.label}`,
+              ];
+            },
+            suggestion: suggestion(loadList),
+          }),
+        ]
         : []),
       ...(editorType === 'html' || editorType === 'markdown'
         ? [
-            Heading.configure({
-              levels: [1, 2, 3],
-            }),
-          ]
+          Heading.configure({
+            levels: [1, 2, 3],
+          }),
+        ]
         : []),
       History.configure({
         depth: 100, // default is 100
