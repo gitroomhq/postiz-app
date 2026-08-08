@@ -87,39 +87,47 @@ export class IntegrationsController {
 
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
-    return {
-      integrations: await Promise.all(
-        (
-          await this._integrationService.getIntegrationsList(org.id)
-        ).map(async (p) => {
-          const findIntegration = this._integrationManager.getSocialIntegration(
-            p.providerIdentifier
+    const integrations = await Promise.all(
+      (
+        await this._integrationService.getIntegrationsList(org.id)
+      ).map(async (p) => {
+        const findIntegration = this._integrationManager.getSocialIntegration(
+          p.providerIdentifier
+        );
+        if (!findIntegration) {
+          console.warn(
+            `Skipping integration ${p.id}: provider "${p.providerIdentifier}" is not registered`
           );
-          return {
-            name: p.name,
-            id: p.id,
-            internalId: p.internalId,
-            disabled: p.disabled,
-            editor: findIntegration.editor,
-            stripLinks: !!findIntegration?.stripLinks?.(),
-            picture: p.picture || '/no-picture.jpg',
-            identifier: p.providerIdentifier,
-            inBetweenSteps: p.inBetweenSteps,
-            refreshNeeded: p.refreshNeeded,
-            isCustomFields: !!findIntegration.customFields,
-            ...(findIntegration.customFields
-              ? { customFields: await findIntegration.customFields() }
-              : {}),
-            display: p.profile,
-            type: p.type,
-            time: JSON.parse(p.postingTimes),
-            changeProfilePicture: !!findIntegration?.changeProfilePicture,
-            changeNickName: !!findIntegration?.changeNickname,
-            customer: p.customer,
-            additionalSettings: p.additionalSettings || '[]',
-          };
-        })
-      ),
+          return undefined;
+        }
+        return {
+          name: p.name,
+          id: p.id,
+          internalId: p.internalId,
+          disabled: p.disabled,
+          editor: findIntegration.editor,
+          stripLinks: !!findIntegration?.stripLinks?.(),
+          picture: p.picture || '/no-picture.jpg',
+          identifier: p.providerIdentifier,
+          inBetweenSteps: p.inBetweenSteps,
+          refreshNeeded: p.refreshNeeded,
+          isCustomFields: !!findIntegration.customFields,
+          ...(findIntegration.customFields
+            ? { customFields: await findIntegration.customFields() }
+            : {}),
+          display: p.profile,
+          type: p.type,
+          time: JSON.parse(p.postingTimes),
+          changeProfilePicture: !!findIntegration?.changeProfilePicture,
+          changeNickName: !!findIntegration?.changeNickname,
+          customer: p.customer,
+          additionalSettings: p.additionalSettings || '[]',
+        };
+      })
+    );
+
+    return {
+      integrations: integrations.filter(Boolean),
     };
   }
 
