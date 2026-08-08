@@ -24,11 +24,13 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
-import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import {
+  getSsrfSafeAxios,
+  getSsrfSafeDispatcher,
+} from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
-import axios from 'axios';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -36,7 +38,9 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
     // Fetch the image from the URL
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const response = await getSsrfSafeAxios().get(url, {
+      responseType: 'arraybuffer',
+    });
     let imageBuffer = Buffer.from(response.data);
 
     // Use sharp to get the metadata of the image
@@ -228,7 +232,8 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
   name = 'Bluesky';
-  toolTip = "We don’t currently support two-factor authentication. If it’s enabled on Bluesky, you’ll need to disable it."
+  toolTip =
+    'We don’t currently support two-factor authentication. If it’s enabled on Bluesky, you’ll need to disable it.';
   isBetweenSteps = false;
   scopes = ['write:statuses', 'profile', 'write:media'];
   editor = 'normal' as const;
@@ -564,7 +569,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
           // skipped): hand back to the workflow to keep polling.
           return {
             status: 'pending',
-            pendingData: { ...pendingData, attempting: false, confirmed: false },
+            pendingData: {
+              ...pendingData,
+              attempting: false,
+              confirmed: false,
+            },
           };
         }
 
@@ -655,9 +664,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     return {
       status: 'completed',
       postId: uri,
-      releaseURL: `https://bsky.app/profile/${
-        integration.internalId
-      }/post/${uri.split('/').pop()}`,
+      releaseURL: `https://bsky.app/profile/${integration.internalId}/post/${uri
+        .split('/')
+        .pop()}`,
     };
   }
 
@@ -765,9 +774,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     // @ts-ignore
     const parentCid = parentThread.data.thread.post?.cid;
     // @ts-ignore
-    const rootUri = parentThread.data.thread.post?.record?.reply?.root?.uri || postId;
+    const rootUri =
+      parentThread.data.thread.post?.record?.reply?.root?.uri || postId;
     // @ts-ignore
-    const rootCid = parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
+    const rootCid =
+      parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
 
     // @ts-ignore
     const { cid, uri, commit } = await agent.post({
@@ -792,7 +803,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         id: commentPost.id,
         postId: uri,
         status: 'completed',
-        releaseURL: `https://bsky.app/profile/${id}/post/${uri.split('/').pop()}`,
+        releaseURL: `https://bsky.app/profile/${id}/post/${uri
+          .split('/')
+          .pop()}`,
       },
     ];
   }

@@ -10,7 +10,6 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import axios from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
@@ -97,8 +96,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('invalidTags')) {
       return {
         type: 'bad-body',
-        value:
-          'The maximum allowed is 500 characters in total.',
+        value: 'The maximum allowed is 500 characters in total.',
       };
     }
 
@@ -785,7 +783,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           videoId,
           media: {
             body: (
-              await axios({
+              await this.getSsrfSafeAxios()({
                 url: pendingData.thumbnail,
                 method: 'GET',
                 responseType: 'stream',
