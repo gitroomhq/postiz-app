@@ -429,9 +429,12 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   private async youtubeMediaSize(path: string): Promise<number> {
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request
+      // this.fetch applies to every other outbound request. identity encoding
+      // so content-length matches the bytes a later GET actually streams
+      // (fetch transparently decompresses encoded bodies).
       const head = await fetch(path, {
         method: 'HEAD',
+        headers: { 'accept-encoding': 'identity' },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
       const length = head.headers.get('content-length');
@@ -454,8 +457,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   // read stream for local files.
   private async youtubeChunkStream(path: string, start: number, end: number) {
     if (path.indexOf('http') === 0) {
+      // identity encoding so the store keeps content-length and can answer
+      // with the requested range: a transformed (compressed) response loses
+      // its length, and a length-less object is answered with the full body.
       const response = await fetch(path, {
-        headers: { Range: `bytes=${start}-${end}` },
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
 
