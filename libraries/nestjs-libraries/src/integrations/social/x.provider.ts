@@ -985,7 +985,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           pushBlock(node, 'header-two');
           break;
         case 'h3':
-          pushBlock(node, 'header-three');
+          // header-three is documented as valid but X's draft endpoint 503s on
+          // it (https://devcommunity.x.com/t/-/271312), downgrade to header-two
+          // until X fixes their side.
+          pushBlock(node, 'header-two');
           break;
         case 'ul':
         case 'ol':
