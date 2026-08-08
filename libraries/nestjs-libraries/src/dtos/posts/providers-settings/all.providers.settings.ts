@@ -25,6 +25,7 @@ import { SkoolDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setting
 import { WhopDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/whop.dto';
 import { MeweDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/mewe.dto';
 import { TumblrDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tumblr.dto';
+import { PeerTubeDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/peertube.dto';
 
 export type ProviderExtension<T extends string, M> = { __type: T } & M;
 export type AllProvidersSettings =
@@ -61,6 +62,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'skool', SkoolDto>
   | ProviderExtension<'mewe', MeweDto>
   | ProviderExtension<'tumblr', TumblrDto>
+  | ProviderExtension<'peertube', PeerTubeDto>
   | ProviderExtension<'whop', WhopDto>;
 
 type None = NonNullable<unknown>;
@@ -101,6 +103,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: WhopDto, name: 'whop' },
     { value: MeweDto, name: 'mewe' },
     { value: TumblrDto, name: 'tumblr' },
+    { value: PeerTubeDto, name: 'peertube' }
   ].filter((f) => f.value);
 };
 
