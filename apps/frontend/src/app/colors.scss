@@ -2,19 +2,19 @@
   .dark {
     --new-back-drop: #000;
     --new-settings: #242323;
-    --new-border: #252525;
-    --new-bgColor: #0e0e0e;
-    --new-bgColorInner: #1a1919;
+    --new-border: rgb(38, 39, 46);
+    --new-bgColor: rgb(0, 0, 0);
+    --new-bgColorInner: rgb(15, 15, 15);
     --new-sep: #454444;
     --new-bgLineColor: #212121;
-    --new-textItemFocused: #1a1919;
+    --new-textItemFocused: rgb(43, 101, 255);
     --new-textItemBlur: #999999;
-    --new-boxFocused: #fff;
+    --new-boxFocused: rgb(0, 14, 57);
     --new-textColor: 255 255 255;
     --new-blockSeparator: #272626;
     --new-btn-simple: #313030;
     --new-btn-text: #ffffff;
-    --new-btn-primary: #612bd3;
+    --new-btn-primary: rgb(43, 101, 255);
     --new-ai-btn: #d82d7e;
     --new-box-hover: #201f1f;
     --new-table-border: #2b2b2b;
@@ -47,18 +47,18 @@
     --new-back-drop: #2d1b57;
     --new-settings: #eceef1;
     --new-sep: #d5d9dd;
-    --new-border: #eaecee;
-    --new-bgColor: #f0f2f4;
-    --new-bgColorInner: #ffffff;
+    --new-border: rgb(231, 228, 228);
+    --new-bgColor: rgb(252, 252, 252);
+    --new-bgColorInner: rgb(250, 250, 250);
     --new-bgLineColor: #e7e9eb;
-    --new-textItemFocused: #3900b2;
+    --new-textItemFocused: rgb(46, 103, 255);
     --new-textItemBlur: #777b7f;
-    --new-boxFocused: #ebe8ff;
+    --new-boxFocused: rgb(255, 255, 255);
     --new-textColor: 14 14 14;
     --new-blockSeparator: #f2f2f4;
     --new-btn-simple: #eceef1;
     --new-btn-text: #0e0e0e;
-    --new-btn-primary: #612bd3;
+    --new-btn-primary: rgb(46, 103, 255);
     --new-ai-btn: #d82d7e;
     --new-box-hover: #f4f6f8;
     --new-table-border: #e7e9eb;
@@ -98,14 +98,14 @@
 
 :root {
   .dark {
-    --color-primary: #0e0e0e;
+    --color-primary: rgb(0, 0, 0);
     --color-secondary: #090b13;
     --color-text: #ffffff;
     --color-third: #080b13;
-    --color-forth: #612ad5;
+    --color-forth: rgb(43, 101, 255);
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
-    --color-seventh: #7236f1;
+    --color-seventh: rgb(43, 101, 255);
     --color-gray: #8c8c8c;
     --color-input: var(--new-table-header);
     --color-input-text: #64748b;
@@ -168,14 +168,14 @@
     --color-modalCustom: #000000;
   }
   .light {
-    --color-primary: #f0f2f4;
+    --color-primary: rgb(252, 252, 252);
     --color-secondary: #fff;
-    --color-text: #000;
+    --color-text: rgb(14, 20, 43);
     --color-third: white;
-    --color-forth: #612ad5;
+    --color-forth: rgb(46, 103, 255);
     --color-fifth: var(--new-bgLineColor);
     --color-sixth: var(--new-table-header);
-    --color-seventh: #7236f1;
+    --color-seventh: rgb(46, 103, 255);
     --color-gray: #8c8c8c;
     --color-input: var(--new-table-header);
     --color-input-text: #64748b;
