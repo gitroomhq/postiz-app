@@ -47,6 +47,15 @@ export class InstagramAudio {
   @Min(0)
   @Max(100)
   video_volume?: number;
+
+  /**
+   * Loop the attached audio when it is shorter than the video.
+   * Attested in Meta's Audio API workflow example but absent from the
+   * parameter table, so it is only forwarded when explicitly set — never
+   * defaulted — and Meta's own default applies when omitted.
+   */
+  @IsOptional()
+  should_loop_audio?: boolean;
 }
 export class InstagramDto {
   @IsIn(['post', 'story'])

@@ -23,6 +23,7 @@ interface SelectedAudio {
   image?: string;
   audio_volume?: number;
   video_volume?: number;
+  should_loop_audio?: boolean;
 }
 
 const formatDuration = (ms: number) => {
@@ -170,6 +171,19 @@ export const InstagramAudioSelector: FC<{
     [emit, value]
   );
 
+  const changeLoop = useCallback(
+    (shouldLoop: boolean) => {
+      if (!value) {
+        return;
+      }
+      emit({
+        ...value,
+        should_loop_audio: shouldLoop,
+      });
+    },
+    [emit, value]
+  );
+
   if (disabled) {
     return (
       <div className="flex flex-col gap-[6px]">
@@ -247,6 +261,17 @@ export const InstagramAudioSelector: FC<{
               />
             </div>
           </div>
+          <label className="flex items-center gap-[8px] text-[12px] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!value.should_loop_audio}
+              onChange={(e) => changeLoop(e.target.checked)}
+            />
+            {t(
+              'instagram_should_loop_audio',
+              'Loop the audio if it is shorter than the video'
+            )}
+          </label>
         </div>
       ) : !open ? (
         <div>
