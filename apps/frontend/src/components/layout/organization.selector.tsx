@@ -49,7 +49,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
             <div className="bg-btnPrimary !flex !relative max-w-[500px] mx-auto py-[12px] px-[12px]">Select Organization</div>
           )}
           {!asOpenSelect && (
-            <div className="flex items-center">
+            <div className="flex items-center gap-[6px]">
               <svg
                 className={user?.tier.current === 'FREE' ? 'animate-bounce drop-shadow-glow': ''}
                 width="24"
@@ -63,20 +63,45 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                   fill="currentColor"
                 />
               </svg>
+              {!!current?.name && (
+                <div className="max-w-[240px] truncate">{current?.name}</div>
+              )}
             </div>
           )}
           {data?.length > 1 && (
             <div
               className={clsx(
-                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
+                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
-              {data?.map((org: { name: string; id: string }) => (
-                <div key={org.id} onClick={changeOrg(org)}>
-                  {org.name}
-                </div>
-              ))}
+              {withoutCurrent?.map(
+                (org: {
+                  name: string;
+                  id: string;
+                  users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
+                }) => (
+                  <div
+                    key={org?.id}
+                    onClick={changeOrg(org)}
+                    className="whitespace-nowrap truncate"
+                  >
+                    {org?.name}
+                    {!!org?.users?.[0]?.role && (
+                      <span className="text-customColor18">
+                        {' '}
+                        (
+                        {org?.users?.[0]?.role === 'SUPERADMIN'
+                          ? 'Super-Admin'
+                          : org?.users?.[0]?.role === 'ADMIN'
+                          ? 'Admin'
+                          : 'User'}
+                        )
+                      </span>
+                    )}
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
