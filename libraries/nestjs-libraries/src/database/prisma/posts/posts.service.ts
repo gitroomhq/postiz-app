@@ -837,9 +837,7 @@ export class PostsService {
 
         const tooLong = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
-          const weighted = isX ? weightedLength(strip) : strip.length;
-          const totalCharacters =
-            weighted > strip.length ? weighted : strip.length;
+          const totalCharacters = isX ? weightedLength(strip) : strip.length;
           return totalCharacters > (maximumCharacters || 1000000);
         });
 

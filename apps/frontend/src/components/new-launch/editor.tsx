@@ -46,6 +46,7 @@ import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { weightedLength } from '@gitroom/helpers/utils/count.length';
 import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
 import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
@@ -663,6 +664,12 @@ export const Editor: FC<{
     return stripHtmlValidation('normal', props.value || '', true);
   }, [props.value]);
 
+  const valueWithoutHtmlChars = useMemo(() => {
+    return identifier === 'x'
+      ? weightedLength(valueWithoutHtml)
+      : valueWithoutHtml.length;
+  }, [valueWithoutHtml, identifier]);
+
   const addText = useCallback(
     (emoji: string) => {
       editorRef?.current?.editor?.commands?.insertContent(emoji);
@@ -770,7 +777,7 @@ export const Editor: FC<{
                     <InformationComponent
                       isPicture={pictures?.length > 0}
                       chars={chars}
-                      totalChars={valueWithoutHtml.length}
+                      totalChars={valueWithoutHtmlChars}
                       totalAllowedChars={props.totalChars}
                       text={valueWithoutHtml}
                     />
