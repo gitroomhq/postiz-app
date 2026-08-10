@@ -9,12 +9,15 @@ export const setSentryUserContext = (params: {
   paymentId?: string | null;
 }) => {
   try {
-    Sentry.setUser(
-      params.userId
-        ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
-        : null
-    );
+    if (params.email) {
+      // 'user' itself is a reserved tag key - Sentry discards it if set directly
+      Sentry.setTag('user.email', params.email);
+    }
+    if (params.userId) {
+      Sentry.setTag('user.id', params.userId);
+    }
     if (params.orgId) {
+      Sentry.setTag('organization', params.orgId);
       Sentry.setTag('organization.id', params.orgId);
     }
     if (params.paymentId?.startsWith('cus_')) {
