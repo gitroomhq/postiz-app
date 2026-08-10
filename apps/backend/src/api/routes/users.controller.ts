@@ -262,10 +262,14 @@ export class UsersController {
   async changeOrg(
     @GetUserFromRequest() user: User,
     @Body('id') id: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request
   ) {
+    // While impersonating, `user` is the impersonated account, so persisting
+    // here would change where that user lands on their next login.
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
     const organizations = await this._orgService.getOrgsByUserId(user.id);
-    if (organizations.some((org) => org.id === id)) {
+    if (!impersonate && organizations.some((org) => org.id === id)) {
       await this._userService.updateLastSelectedOrg(user.id, id);
     }
 
