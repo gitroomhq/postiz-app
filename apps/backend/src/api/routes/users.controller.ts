@@ -305,10 +305,46 @@ export class UsersController {
   }
 
   @Post('/change-org')
-  changeOrg(
+  async changeOrg(
+    @GetUserFromRequest() user: User,
     @Body('id') id: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request
   ) {
+    // While impersonating, the org is pinned to the impersonated
+    // UserOrganization row and `showorg` is never read, so move the
+    // impersonation to the requested org instead.
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate && user.isSuperAdmin) {
+      const userOrg = await this._orgService.getUserOrgByOrganization(
+        user.id,
+        id
+      );
+
+      if (!userOrg || userOrg.disabled) {
+        throw new HttpException('Invalid organization', 400);
+      }
+
+      response.cookie('impersonate', userOrg.id, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('impersonate', userOrg.id);
+      }
+
+      response.status(200).send();
+      return;
+    }
+
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED

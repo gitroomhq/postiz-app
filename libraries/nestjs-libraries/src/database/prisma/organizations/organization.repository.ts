@@ -73,6 +73,21 @@ export class OrganizationRepository {
     return this._organization.model.organization.count();
   }
 
+  getUserOrgByOrganization(userId: string, organizationId: string) {
+    return this._userOrg.model.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId,
+        },
+      },
+      select: {
+        id: true,
+        disabled: true,
+      },
+    });
+  }
+
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
       where: {
