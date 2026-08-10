@@ -268,7 +268,9 @@ export class UsersController {
     // While impersonating, `user` is the impersonated account, so persisting
     // here would change where that user lands on their next login.
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
-    const organizations = await this._orgService.getOrgsByUserId(user.id);
+    const organizations = (
+      await this._orgService.getOrgsByUserId(user.id)
+    ).filter((f) => !f.users[0].disabled);
     if (!impersonate && organizations.some((org) => org.id === id)) {
       await this._userService.updateLastSelectedOrg(user.id, id);
     }
