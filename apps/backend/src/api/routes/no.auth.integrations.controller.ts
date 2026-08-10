@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   Param,
@@ -333,6 +334,33 @@ export class NoAuthIntegrationsController {
     const org = await this._organizationService.getOrgById(organization);
 
     return this._integrationService.saveProviderPage(org.id, id, body);
+  }
+
+  @Delete('/public/provider/:id')
+  async cancelProviderPage(@Param('id') id: string, @Body() body: any) {
+    if (!body.state) {
+      throw new HttpException('Invalid state', 400);
+    }
+
+    const organization = await ioRedis.get(`organization:${body.state}`);
+    if (!organization) {
+      throw new HttpException('Organization not found', 404);
+    }
+
+    const org = await this._organizationService.getOrgById(organization);
+    const integration = await this._integrationService.getIntegrationById(
+      org.id,
+      id
+    );
+
+    if (!integration || !integration.inBetweenSteps) {
+      throw new HttpException('Integration not found', 404);
+    }
+
+    await this._integrationService.deleteChannel(org.id, id);
+    await ioRedis.del(`organization:${body.state}`, `redirect:${body.state}`);
+
+    return { success: true };
   }
 
   @Post('/extension-refresh')

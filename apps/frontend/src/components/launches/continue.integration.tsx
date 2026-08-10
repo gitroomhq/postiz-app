@@ -11,6 +11,7 @@ import { continueProviderList } from '@gitroom/frontend/components/new-launch/pr
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { Button } from '@gitroom/react/form/button';
 
 interface TwoStepState {
   integrationId: string;
@@ -38,6 +39,7 @@ export const ContinueIntegration: FC<{
   const [twoStepState, setTwoStepState] = useState<TwoStepState | null>(null);
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Helper to handle navigation - redirects if logged or returnURL exists, otherwise shows inline
   const navigateOrShow = useCallback(
@@ -245,6 +247,39 @@ export const ContinueIntegration: FC<{
     [twoStepState, fetch, modifiedParams, provider, navigateOrShow]
   );
 
+  const onCancel = useCallback(async () => {
+    if (!twoStepState) return;
+
+    setIsCancelling(true);
+
+    try {
+      const response = await fetch(
+        `/integrations/public/provider/${twoStepState.integrationId}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({ state: modifiedParams.state }),
+        }
+      );
+
+      if (response.status !== HttpStatusCode.Ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setErrorMessage(
+          errorData.message || 'Failed to cancel channel configuration'
+        );
+        setError(true);
+        return;
+      }
+
+      navigateOrShow(
+        '/launches',
+        twoStepState.returnURL,
+        t('channel_configuration_cancelled', 'Channel configuration cancelled')
+      );
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [twoStepState, fetch, modifiedParams.state, navigateOrShow, t]);
+
   const Provider = useMemo(() => {
     return (
       continueProviderList[provider as keyof typeof continueProviderList] ||
@@ -355,6 +390,15 @@ export const ContinueIntegration: FC<{
                 initialData={twoStepState.pages}
                 isSaving={isSaving}
               />
+              <Button
+                secondary
+                className="w-full"
+                disabled={isSaving}
+                loading={isCancelling}
+                onClick={onCancel}
+              >
+                {t('cancel', 'Cancel')}
+              </Button>
             </IntegrationContext.Provider>
           </div>
         </div>
