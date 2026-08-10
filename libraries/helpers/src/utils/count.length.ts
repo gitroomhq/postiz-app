@@ -30,7 +30,10 @@ export const textSlicer = (
 
   return {
     start: 0,
-    end: valid ? text.length : validRangeEnd,
+    // validRangeEnd is the index of the last valid character (inclusive),
+    // so the slice end (exclusive) needs a +1 or the last valid character
+    // gets highlighted as if it were part of the overflow.
+    end: valid ? text.length : validRangeEnd + 1,
   };
 };
 
