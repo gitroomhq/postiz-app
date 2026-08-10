@@ -8,6 +8,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize } from 'lodash';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { hasLinks } from '@gitroom/helpers/utils/strip.links';
+import { weightedLength } from '@gitroom/helpers/utils/count.length';
 
 const Valid: FC = () => {
   return (
@@ -91,6 +92,12 @@ export const InformationComponent: FC<{
 
   const showStripLinkWarning = stripLinkNames.length > 0;
 
+  const charsForIdentifier = useMemo(() => {
+    const xWeighted = weightedLength(text || '');
+    return (identifier: string) =>
+      identifier === 'x' ? xWeighted : totalChars;
+  }, [text, totalChars]);
+
   const isInternal = useMemo(() => {
     if (!isGlobal) {
       return [];
@@ -127,7 +134,10 @@ export const InformationComponent: FC<{
           return false;
         }
 
-        return totalChars > (chars?.[p.integration.id] || 0);
+        return (
+          charsForIdentifier(p.integration.identifier) >
+          (chars?.[p.integration.id] || 0)
+        );
       })
     ) {
       return false;
@@ -141,6 +151,8 @@ export const InformationComponent: FC<{
     isPicture,
     chars,
     showStripLinkWarning,
+    charsForIdentifier,
+    selectedIntegrations,
   ]);
 
   const globalDisplayLimit = useMemo(() => {
@@ -221,46 +233,53 @@ export const InformationComponent: FC<{
           )}
           {isGlobal && (
             <div className="grid grid-cols-[auto_auto_auto] text-[14px] font-[500] gap-[8px] items-center">
-              {selectedIntegrations.map((p, index) => (
-                <Fragment key={p.integration.id}>
-                  <div>
-                    <SafeImage
-                      src={`/icons/platforms/${p.integration.identifier}.png`}
-                      alt={p.integration.name}
-                      className="rounded-[4px] w-[16px] h-[16px] min-w-[16px] min-h-[16px]"
-                      width={16}
-                      height={16}
-                    />
-                  </div>
-                  <div
-                    className={clsx(
-                      'whitespace-nowrap',
-                      isInternal?.[index]
-                        ? ''
-                        : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
-                        : ''
-                    )}
-                  >
-                    {p.integration.name} (
-                    {capitalize(p.integration.identifier.split('-')[0])}):
-                  </div>
-                  <div
-                    className={clsx(
-                      'whitespace-nowrap',
-                      isInternal?.[index]
-                        ? ''
-                        : totalChars > (chars?.[p.integration.id] || 0)
-                        ? 'text-[#FF3F3F]'
-                        : ''
-                    )}
-                  >
-                    {isInternal?.[index]
-                      ? t('internal_edit', 'Internal Edit')
-                      : `${totalChars}/${chars?.[p.integration.id] || 0}`}
-                  </div>
-                </Fragment>
-              ))}
+              {selectedIntegrations.map((p, index) => {
+                const integrationChars = charsForIdentifier(
+                  p.integration.identifier
+                );
+                const exceeds =
+                  integrationChars > (chars?.[p.integration.id] || 0);
+                return (
+                  <Fragment key={p.integration.id}>
+                    <div>
+                      <SafeImage
+                        src={`/icons/platforms/${p.integration.identifier}.png`}
+                        alt={p.integration.name}
+                        className="rounded-[4px] w-[16px] h-[16px] min-w-[16px] min-h-[16px]"
+                        width={16}
+                        height={16}
+                      />
+                    </div>
+                    <div
+                      className={clsx(
+                        'whitespace-nowrap',
+                        isInternal?.[index]
+                          ? ''
+                          : exceeds
+                          ? 'text-[#FF3F3F]'
+                          : ''
+                      )}
+                    >
+                      {p.integration.name} (
+                      {capitalize(p.integration.identifier.split('-')[0])}):
+                    </div>
+                    <div
+                      className={clsx(
+                        'whitespace-nowrap',
+                        isInternal?.[index]
+                          ? ''
+                          : exceeds
+                          ? 'text-[#FF3F3F]'
+                          : ''
+                      )}
+                    >
+                      {isInternal?.[index]
+                        ? t('internal_edit', 'Internal Edit')
+                        : `${integrationChars}/${chars?.[p.integration.id] || 0}`}
+                    </div>
+                  </Fragment>
+                );
+              })}
             </div>
           )}
           {showStripLinkWarning && (
