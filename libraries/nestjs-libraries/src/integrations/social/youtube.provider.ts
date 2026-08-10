@@ -288,7 +288,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
-        prompt: 'consent',
+        // Force Google to show the account chooser. For users who manage a
+        // personal channel and one or more Brand Account channels, this also
+        // lets Google present the channel identity picker instead of silently
+        // authorizing the previously selected (usually personal) channel.
+        prompt: 'consent select_account',
         state,
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
