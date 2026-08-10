@@ -30,7 +30,7 @@ export const textSlicer = (
 
   return {
     start: 0,
-    end: valid ? end : validRangeEnd,
+    end: valid ? text.length : validRangeEnd,
   };
 };
 
