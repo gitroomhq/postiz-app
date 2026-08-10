@@ -46,6 +46,10 @@ services:
       THREADS_APP_SECRET: ''
       FACEBOOK_APP_ID: ''
       FACEBOOK_APP_SECRET: ''
+      # Instagram (Standalone) uses the credentials from Meta's Instagram
+      # Business Login setup, not the Facebook Login credentials above.
+      INSTAGRAM_APP_ID: ''
+      INSTAGRAM_APP_SECRET: ''
       YOUTUBE_CLIENT_ID: ''
       YOUTUBE_CLIENT_SECRET: ''
       TIKTOK_CLIENT_ID: ''
