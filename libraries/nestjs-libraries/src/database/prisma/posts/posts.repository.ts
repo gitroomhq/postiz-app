@@ -444,7 +444,10 @@ export class PostsRepository {
       },
       data: {
         state,
-        ...(errorMessage ? { error: errorMessage } : {}),
+        // Always overwrite on a new failure - keeping the previous value would
+        // show a stale (and now wrong) message for a post that failed again
+        // for a different reason.
+        ...(err ? { error: errorMessage ?? null } : {}),
       },
       include: {
         integration: {
