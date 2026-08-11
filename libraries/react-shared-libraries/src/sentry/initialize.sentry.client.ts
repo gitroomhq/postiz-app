@@ -33,6 +33,7 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget
         autoInject: false,
+        showEmail: false,
       }),
       Sentry.replayCanvasIntegration(),
     ],
