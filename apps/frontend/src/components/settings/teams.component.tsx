@@ -109,8 +109,8 @@ export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
   const modals = useModals();
+  const toast = useToaster();
   const t = useT();
-  const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
     (role: 'USER' | 'ADMIN' | 'SUPERADMIN') =>
       role === 'USER' ? 0 : role === 'ADMIN' ? 1 : 2,
@@ -141,6 +141,55 @@ export const TeamsComponent = () => {
     revalidateOnReconnect: false,
     revalidateIfStale: false,
   });
+  const myRole =
+    data?.find((member) => member.user.id === user?.id)?.role || user?.role;
+  const myLevel = myRole === 'USER' ? 0 : myRole === 'ADMIN' ? 1 : 2;
+  const changeRole = useCallback(
+    (member: {
+        role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+        user: {
+          id: string;
+        };
+      }) =>
+      async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const role = e.target.value as 'SUPERADMIN' | 'ADMIN' | 'USER';
+        if (!role || role === member.role) {
+          return;
+        }
+        if (
+          !(await deleteDialog(
+            role === 'SUPERADMIN'
+              ? t(
+                  'are_you_sure_transfer_super_admin',
+                  'Are you sure you want to transfer the super admin role? You will become an admin.'
+                )
+              : t(
+                  'are_you_sure_change_member_role',
+                  'Are you sure you want to change this team member role?'
+                ),
+            t('yes_change_it', 'Yes, change it!')
+          ))
+        ) {
+          await mutate();
+          return;
+        }
+        const response = await fetch(`/settings/team/${member.user.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ role }),
+        });
+        if (!response.ok) {
+          toast.show(
+            t('could_not_update_role', 'Could not update the role'),
+            'warning'
+          );
+          await mutate();
+          return;
+        }
+        toast.show(t('role_updated', 'Role updated'));
+        await mutate();
+      },
+    [t]
+  );
   const remove = useCallback(
     (toRemove: {
         user: {
@@ -180,11 +229,30 @@ export const TeamsComponent = () => {
                 {capitalize(p.user.email.split('@')[0]).split('.')[0]}
               </div>
               <div className="flex-1">
-                {p.role === 'USER'
-                  ? t('user', 'User')
-                  : p.role === 'ADMIN'
-                  ? t('admin', 'Admin')
-                  : t('super_admin', 'Super Admin')}
+                {+myLevel > 0 && +getLevel(p.role) < 2 ? (
+                  <Select
+                    label=""
+                    name={`role-${p.user.id}`}
+                    disableForm={true}
+                    hideErrors={true}
+                    value={p.role}
+                    onChange={changeRole(p)}
+                  >
+                    <option value="USER">{t('user', 'User')}</option>
+                    <option value="ADMIN">{t('admin', 'Admin')}</option>
+                    {myRole === 'SUPERADMIN' && (
+                      <option value="SUPERADMIN">
+                        {t('super_admin', 'Super Admin')}
+                      </option>
+                    )}
+                  </Select>
+                ) : p.role === 'USER' ? (
+                  t('user', 'User')
+                ) : p.role === 'ADMIN' ? (
+                  t('admin', 'Admin')
+                ) : (
+                  t('super_admin', 'Super Admin')
+                )}
               </div>
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">

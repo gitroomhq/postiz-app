@@ -6,7 +6,7 @@ import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.te
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Organization, ShortLinkPreference } from '@prisma/client';
+import { Organization, Role, ShortLinkPreference, User } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Injectable()
@@ -91,6 +91,67 @@ export class OrganizationService {
       );
     }
     return { url };
+  }
+
+  async updateTeamMemberRole(
+    org: Organization,
+    user: User,
+    userId: string,
+    role: Role
+  ) {
+    // @ts-ignore
+    const myRole = org.users[0].role;
+    if (myRole === 'USER') {
+      throw new Error('You do not have permission to change roles');
+    }
+
+    const team = await this._organizationRepository.getTeam(org.id);
+    const member = team?.users?.find((u) => u.user.id === userId);
+    if (!member) {
+      throw new Error('User is not part of this organization');
+    }
+
+    if (member.role === role) {
+      return { role };
+    }
+
+    if (role === 'SUPERADMIN') {
+      if (myRole !== 'SUPERADMIN') {
+        throw new Error(
+          'Only the super admin can transfer the super admin role'
+        );
+      }
+      await this._organizationRepository.transferSuperAdminRole(
+        org.id,
+        user.id,
+        userId
+      );
+    } else {
+      if (member.role === 'SUPERADMIN') {
+        throw new Error(
+          'The super admin role can only be transferred by the super admin'
+        );
+      }
+      await this._organizationRepository.updateTeamMemberRole(
+        org.id,
+        userId,
+        role
+      );
+    }
+
+    const roleName =
+      role === 'SUPERADMIN'
+        ? 'Super Admin'
+        : role === 'ADMIN'
+        ? 'Admin'
+        : 'User';
+    await this._notificationsService.sendEmail(
+      member.user.email,
+      'Your role has been changed',
+      `Your role in the organization "${org.name}" has been changed to ${roleName}.`
+    );
+
+    return { role };
   }
 
   async deleteTeamMember(org: Organization, userId: string) {
