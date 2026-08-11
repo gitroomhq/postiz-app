@@ -774,11 +774,9 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     // @ts-ignore
     const parentCid = parentThread.data.thread.post?.cid;
     // @ts-ignore
-    const rootUri =
-      parentThread.data.thread.post?.record?.reply?.root?.uri || postId;
+    const rootUri = parentThread.data.thread.post?.record?.reply?.root?.uri || postId;
     // @ts-ignore
-    const rootCid =
-      parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
+    const rootCid = parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
 
     // @ts-ignore
     const { cid, uri, commit } = await agent.post({
