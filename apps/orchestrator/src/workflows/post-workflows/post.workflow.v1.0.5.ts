@@ -77,7 +77,6 @@ export async function postWorkflowV105({
     poked = true;
   });
 
-  const startTime = new Date();
   // get all the posts and comments to post
   const firstPost = await getPost(organizationId, postId);
 
@@ -100,6 +99,13 @@ export async function postWorkflowV105({
         : dayjs(firstPost.publishDate).diff(dayjs(), 'millisecond')
     );
   }
+
+  // Anchor the repeat-interval countdown to the moment this occurrence
+  // actually starts processing (after waiting for publishDate), not to
+  // workflow-start time — otherwise the wait-for-publishDate delay gets
+  // subtracted from intervalInDays on the first cycle and every future
+  // recurrence permanently drifts away from the intended schedule.
+  const startTime = new Date();
 
   const postsListBefore = await getPostsList(organizationId, postId);
   const [post] = postsListBefore;
