@@ -26,15 +26,14 @@ export const OauthProvider = () => {
   return (
     <div
       onClick={gotoLogin}
-      className={`cursor-pointer flex-1 bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
+      className={`cursor-pointer bg-white h-[44px] rounded-[4px] flex justify-center items-center text-customColor16 gap-[4px]`}
     >
       <div>
         <SafeImage
           src={oauthLogoUrl || '/icons/generic-oauth.svg'}
           alt="genericOauth"
-          width={40}
-          height={40}
-          className="-mt-[7px]"
+          width={21}
+          height={21}
         />
       </div>
       <div>
