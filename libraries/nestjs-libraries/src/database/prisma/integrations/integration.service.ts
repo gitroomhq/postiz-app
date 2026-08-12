@@ -183,9 +183,9 @@ export class IntegrationService {
     }
   }
 
-  async disconnectChannel(orgId: string, integration: Integration) {
+  async disconnectChannel(orgId: string, integration: Integration, err = '') {
     await this._integrationRepository.disconnectChannel(orgId, integration.id);
-    await this.informAboutRefreshError(orgId, integration);
+    await this.informAboutRefreshError(orgId, integration, err);
   }
 
   async informAboutRefreshError(
@@ -195,7 +195,7 @@ export class IntegrationService {
   ) {
     await this._notificationService.inAppNotification(
       orgId,
-      `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
+      `Could not refresh your ${integration.providerIdentifier} channel`,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
       true,
       false,

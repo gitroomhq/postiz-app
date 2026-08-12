@@ -167,6 +167,7 @@ export interface SocialProvider
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;
   refreshCron?: boolean;
+  refreshErrorMessage?(err: any): string | undefined;
   dto?: any;
   maxLength: (additionalSettings?: any, settings?: any) => number;
   checkValidity(
