@@ -81,6 +81,20 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // The token is valid but belongs to the user, not to the page - the page
+    // was never granted to the app, so only reconnecting can fix it
+    if (
+      body.indexOf(
+        'Unpublished posts must be posted to a page as the page itself'
+      ) > -1
+    ) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Postiz is not authorized to publish as this page, please reconnect the channel',
+      };
+    }
+
     if (body.indexOf('1366046') > -1) {
       return {
         type: 'bad-body' as const,
