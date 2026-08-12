@@ -737,5 +737,6 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "could_not_reschedule_post": "Không thể lên lịch lại bài đăng"
 }

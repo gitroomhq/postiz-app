@@ -737,5 +737,6 @@
   "republish_the_post": "إعادة نشر المنشور",
   "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
   "republish_at": "في",
-  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن."
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "could_not_reschedule_post": "تعذّر إعادة جدولة المنشور"
 }

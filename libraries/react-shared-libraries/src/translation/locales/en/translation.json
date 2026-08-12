@@ -739,5 +739,6 @@
   "republish_the_post": "Republish the post",
   "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
   "republish_at": "at",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "could_not_reschedule_post": "Could not reschedule the post"
 }
