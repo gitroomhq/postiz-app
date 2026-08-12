@@ -455,7 +455,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { status: 'pending', pendingData };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
+    const { status, fail_reason, publicaly_available_post_id } =
+      post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
       return {
@@ -486,6 +487,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         JSON.stringify(post),
         Buffer.from(JSON.stringify(post)),
         handleError?.value || ''
+      );
+    }
+
+    // TikTok documents fail_reason alongside the FAILED status, so a post that
+    // keeps reporting progress and never publishes leaves us nothing to show
+    // the user. Log it if it ever arrives here, on a status we treat as still
+    // in progress - a no-op while the API behaves as documented.
+    if (fail_reason) {
+      console.log(
+        `[tiktok-status] publishId=${pendingData.publishId} channel=${integration.internalId} status=${status} fail_reason=${fail_reason}`
       );
     }
 
