@@ -229,6 +229,7 @@ checksums:
     please_add_at_least_one_subreddit: e142943a891554b60b4ed454bcacea3e
     add_community: c99eed390de61bf1f2461ee6dc908aad
     select_post_type: 76bdff7f68f2ad4ae103b5486bdb2212
+    instagram_share_to_feed: 203f4e3fcc8561e1b311a10ed9474a12
     we_couldn_t_find_any_business_connected_to_your_linkedin_page: ab9c8aefab51eafd55f7e176670a33d8
     please_close_this_dialog_create_a_new_page_and_add_a_new_channel_again: a75998c2cf997b9b1de736b67e91b18f
     select_linkedin_page: ec0c852d588b2b8ee56ca3fcdae2b4bc

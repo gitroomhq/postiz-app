@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDefined,
   IsIn,
   IsNumber,
@@ -54,7 +55,12 @@ export class InstagramDto {
   post_type: 'post' | 'story';
 
   @IsOptional()
+  @IsBoolean()
   is_trial_reel?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  share_to_feed?: boolean;
 
   @IsIn(['MANUAL', 'SS_PERFORMANCE'])
   @IsOptional()
