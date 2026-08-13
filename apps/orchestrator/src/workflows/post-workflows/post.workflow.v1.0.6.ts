@@ -514,9 +514,12 @@ export async function postWorkflowV106({
     }
   }
 
-  // send webhooks for the post
+  // send webhooks for the post using its internal id. postsResults[0].postId
+  // is the provider's release id (Instagram/LinkedIn/etc.), but sendWebhooks
+  // looks the post up by internal id, so passing the release id found nothing
+  // and every webhook fired with an empty body.
   await sendWebhooks(
-    postsResults[0].postId,
+    post.id,
     post.organizationId,
     post.integration.id
   );
