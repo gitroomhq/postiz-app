@@ -26,6 +26,9 @@ import {
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Context } from '@temporalio/activity';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -163,8 +166,8 @@ export class PostActivity {
     // seamlessly now, otherwise wait for the next anniversary (dissolves batch
     // bursts). Firing early when the next anniversary is close would publish
     // twice: the recycle run arms that same anniversary as its successor.
-    const now = dayjs();
-    let next = dayjs(post.publishDate);
+    const now = dayjs.utc();
+    let next = dayjs.utc(post.publishDate);
     while (!next.isAfter(now)) {
       next = next.add(post.intervalInDays, 'day');
     }

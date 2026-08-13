@@ -9,7 +9,10 @@ import {
   setHandler,
 } from '@temporalio/workflow';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import { Integration } from '@prisma/client';
+
+dayjs.extend(utc);
 import { capitalize, sortBy } from 'lodash';
 import { PostResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -147,10 +150,12 @@ export async function postWorkflowV107({
   }
 
   // Recycles fire only on the post's own schedule: the first future
-  // publishDate + k*intervalInDays anniversary (k >= 1).
+  // publishDate + k*intervalInDays anniversary (k >= 1). UTC mode keeps the
+  // day-stepping identical to the service layer regardless of the server's
+  // timezone/DST.
   const nextRecycleTime = () => {
-    let next = dayjs(firstPost.publishDate);
-    while (!next.isAfter(dayjs())) {
+    let next = dayjs.utc(firstPost.publishDate);
+    while (!next.isAfter(dayjs.utc())) {
       next = next.add(firstPost.intervalInDays, 'day');
     }
     return next.toISOString();
