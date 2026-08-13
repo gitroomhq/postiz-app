@@ -731,5 +731,12 @@
   "cancel_coupon_title": "Cancelar cupom?",
   "cancel_coupon_failed": "Não foi possível cancelar o cupom",
   "cancel_coupon_success": "Cupom cancelado",
-  "recurrence_projection": "Recorrência: uma ocorrência futura desta postagem recorrente"
+  "what_do_you_want_to_do": "O que você deseja fazer?",
+  "just_update_post_details": "Apenas atualizar os detalhes da publicação",
+  "reschedule_post": "Reagendar a publicação",
+  "republish_the_post": "Republicar a publicação",
+  "post_already_published_republish_warning": "Esta publicação já foi publicada. Republicar irá publicá-la novamente em",
+  "republish_at": "em",
+  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora.",
+  "recurrence_projection": "Recorrência: uma futura ocorrência desta publicação recorrente"
 }

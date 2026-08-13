@@ -733,5 +733,12 @@
   "cancel_coupon_title": "Cancel Coupon?",
   "cancel_coupon_failed": "Could not cancel the coupon",
   "cancel_coupon_success": "Coupon cancelled",
+  "what_do_you_want_to_do": "What do you want to do?",
+  "just_update_post_details": "Just update the post details",
+  "reschedule_post": "Reschedule the post",
+  "republish_the_post": "Republish the post",
+  "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
+  "republish_at": "at",
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
   "recurrence_projection": "Recurrence: a future occurrence of this recurring post"
 }

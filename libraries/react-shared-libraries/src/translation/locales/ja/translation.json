@@ -731,5 +731,12 @@
   "cancel_coupon_title": "クーポンをキャンセルしますか？",
   "cancel_coupon_failed": "クーポンをキャンセルできませんでした",
   "cancel_coupon_success": "クーポンがキャンセルされました",
-  "recurrence_projection": "繰り返し: この定期的な投稿の今後の発生"
+  "what_do_you_want_to_do": "何をしたいですか？",
+  "just_update_post_details": "投稿の詳細だけを更新する",
+  "reschedule_post": "投稿の日時を変更する",
+  "republish_the_post": "投稿を再公開する",
+  "post_already_published_republish_warning": "この投稿は既に公開されています。再公開すると、もう一度投稿されます：",
+  "republish_at": "公開日時：",
+  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。",
+  "recurrence_projection": "繰り返し: この定期投稿の今後の発生"
 }

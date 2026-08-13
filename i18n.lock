@@ -735,4 +735,11 @@ checksums:
     cancel_coupon_title: 6a02a23e494728ddb694f591be65900d
     cancel_coupon_failed: 7bbb5c2646ba919b7df0879225eba918
     cancel_coupon_success: ded654a3b6c5fdfe7bdd23e9b5ad711c
+    what_do_you_want_to_do: c2c352197ed13cee73ed85f9706b35de
+    just_update_post_details: fb0d9cba2fe76d06571fc30dc8db0f13
+    reschedule_post: 103d1943e23d4f71b22439a3b03885dd
+    republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
+    post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
+    republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
     recurrence_projection: defdc104f3424ff6087e13d96f837e6f

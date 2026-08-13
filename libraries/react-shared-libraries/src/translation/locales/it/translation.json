@@ -731,5 +731,12 @@
   "cancel_coupon_title": "Annulla coupon?",
   "cancel_coupon_failed": "Impossibile annullare il coupon",
   "cancel_coupon_success": "Coupon annullato",
+  "what_do_you_want_to_do": "Cosa vuoi fare?",
+  "just_update_post_details": "Aggiorna solo i dettagli del post",
+  "reschedule_post": "Ripianifica il post",
+  "republish_the_post": "Ripubblica il post",
+  "post_already_published_republish_warning": "Questo post è già stato pubblicato. Ripubblicandolo verrà pubblicato nuovamente su",
+  "republish_at": "a",
+  "republish_recurring_note": "Questo è un post ricorrente: le tue modifiche verranno applicate a tutte le future ricorrenze a partire da ora.",
   "recurrence_projection": "Ricorrenza: una futura occorrenza di questo post ricorrente"
 }

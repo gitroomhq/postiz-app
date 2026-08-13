@@ -731,5 +731,12 @@
   "cancel_coupon_title": "לבטל קופון?",
   "cancel_coupon_failed": "לא ניתן היה לבטל את הקופון",
   "cancel_coupon_success": "הקופון בוטל",
-  "recurrence_projection": "התרחשות חוזרת: הופעה עתידית של הפוסט החוזר הזה"
+  "what_do_you_want_to_do": "מה ברצונך לעשות?",
+  "just_update_post_details": "רק לעדכן את פרטי הפוסט",
+  "reschedule_post": "לתזמן מחדש את הפוסט",
+  "republish_the_post": "לפרסם מחדש את הפוסט",
+  "post_already_published_republish_warning": "הפוסט הזה כבר פורסם. פרסום מחדש יפרסם אותו שוב ב",
+  "republish_at": "בשעה",
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו.",
+  "recurrence_projection": "הופעה חוזרת: אירוע עתידי של הפוסט המחזורי הזה"
 }

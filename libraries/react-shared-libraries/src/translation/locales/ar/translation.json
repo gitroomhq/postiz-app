@@ -731,5 +731,12 @@
   "cancel_coupon_title": "إلغاء القسيمة؟",
   "cancel_coupon_failed": "تعذّر إلغاء القسيمة",
   "cancel_coupon_success": "تم إلغاء القسيمة",
-  "recurrence_projection": "التكرار: حدوث مستقبلي لهذا المنشور المتكرر"
+  "what_do_you_want_to_do": "ماذا تريد أن تفعل؟",
+  "just_update_post_details": "فقط قم بتحديث تفاصيل المنشور",
+  "reschedule_post": "إعادة جدولة المنشور",
+  "republish_the_post": "إعادة نشر المنشور",
+  "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
+  "republish_at": "في",
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "recurrence_projection": "التكرار: حدوث قادم لهذا المنشور المتكرر"
 }

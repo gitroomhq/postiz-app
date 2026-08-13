@@ -731,5 +731,12 @@
   "cancel_coupon_title": "Отменить купон?",
   "cancel_coupon_failed": "Не удалось отменить купон",
   "cancel_coupon_success": "Купон отменён",
+  "what_do_you_want_to_do": "Что вы хотите сделать?",
+  "just_update_post_details": "Просто обновить детали поста",
+  "reschedule_post": "Перепланировать пост",
+  "republish_the_post": "Опубликовать пост повторно",
+  "post_already_published_republish_warning": "Этот пост уже был опубликован. Повторная публикация опубликует его снова в",
+  "republish_at": "в",
+  "republish_recurring_note": "Это повторяющийся пост: ваши изменения будут применяться ко всем будущим публикациям, начиная с этого момента.",
   "recurrence_projection": "Повтор: будущий случай этой повторяющейся публикации"
 }

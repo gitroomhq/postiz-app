@@ -731,5 +731,12 @@
   "cancel_coupon_title": "쿠폰을 취소하시겠습니까?",
   "cancel_coupon_failed": "쿠폰을 취소할 수 없습니다.",
   "cancel_coupon_success": "쿠폰이 취소되었습니다.",
-  "recurrence_projection": "반복: 이 반복 게시글의 미래 발생"
+  "what_do_you_want_to_do": "무엇을 하시겠습니까?",
+  "just_update_post_details": "게시물 세부정보만 업데이트하기",
+  "reschedule_post": "게시물 일정 다시 잡기",
+  "republish_the_post": "게시물 다시 게시하기",
+  "post_already_published_republish_warning": "이 게시물은 이미 게시되었습니다. 다시 게시하면 다음에 다시 게시됩니다:",
+  "republish_at": "다음 시간에",
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "recurrence_projection": "반복: 이 반복 게시물의 미래 발생"
 }

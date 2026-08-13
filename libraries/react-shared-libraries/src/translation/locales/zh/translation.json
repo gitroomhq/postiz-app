@@ -731,5 +731,12 @@
   "cancel_coupon_title": "取消优惠券？",
   "cancel_coupon_failed": "无法取消该优惠券",
   "cancel_coupon_success": "优惠券已取消",
-  "recurrence_projection": "重复：该周期性帖子的未来一次发布"
+  "what_do_you_want_to_do": "你想做什么？",
+  "just_update_post_details": "仅更新帖子详情",
+  "reschedule_post": "重新安排帖子发布时间",
+  "republish_the_post": "重新发布帖子",
+  "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
+  "republish_at": "于",
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "recurrence_projection": "重复：此循环帖子的未来一次发布"
 }
