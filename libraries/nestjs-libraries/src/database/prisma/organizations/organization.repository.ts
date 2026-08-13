@@ -139,9 +139,16 @@ export class OrganizationRepository {
       },
       select: {
         id: true,
+        role: true,
         organization: {
           select: {
             id: true,
+            name: true,
+            subscription: {
+              select: {
+                subscriptionTier: true,
+              },
+            },
           },
         },
         user: {
