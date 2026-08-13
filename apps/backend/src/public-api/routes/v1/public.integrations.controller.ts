@@ -90,11 +90,16 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
+    // Capture the uploaded file's name before uploadFile replaces originalname
+    // with the generated storage name, so the media record keeps a real display
+    // name (matching the internal /upload-server handler).
+    const originalName = file?.originalname || '';
     const getFile = await this.storage.uploadFile(file);
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
-      getFile.path
+      getFile.path,
+      originalName
     );
   }
 
