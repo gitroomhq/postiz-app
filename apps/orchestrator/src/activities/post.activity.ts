@@ -24,6 +24,7 @@ import {
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { withHeartbeat } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -77,7 +78,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV106', {
+        .workflow.signalWithStart('postWorkflowV107', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -168,41 +169,47 @@ export class PostActivity {
     integration: Integration,
     posts: Post[]
   ) {
-    const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
-    );
+    // the whole body runs under the workflow's heartbeatTimeout (media
+    // conversion and the platform call can both take minutes), so it
+    // heartbeats end to end - under older workflow versions that set no
+    // heartbeatTimeout this is a no-op
+    return withHeartbeat(async () => {
+      const getIntegration = this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      );
 
-    const newPosts = await this._postService.updateTags(
-      integration.organizationId,
-      posts
-    );
+      const newPosts = await this._postService.updateTags(
+        integration.organizationId,
+        posts
+      );
 
-    return getIntegration.comment(
-      integration.internalId,
-      postId,
-      lastPostId,
-      integration.token,
-      await Promise.all(
-        (newPosts || []).map(async (p) => ({
-          id: p.id,
-          message: stripHtmlValidation(
-            getIntegration.editor,
-            p.content,
-            true,
-            false,
-            !/<\/?[a-z][\s\S]*>/i.test(p.content),
-            getIntegration.mentionFormat
-          ),
-          settings: JSON.parse(p.settings || '{}'),
-          media: await this._postService.updateMedia(
-            p.id,
-            JSON.parse(p.image || '[]'),
-            getIntegration?.convertToJPEG || false
-          ),
-        }))
-      ),
-      integration
-    );
+      return getIntegration.comment(
+        integration.internalId,
+        postId,
+        lastPostId,
+        integration.token,
+        await Promise.all(
+          (newPosts || []).map(async (p) => ({
+            id: p.id,
+            message: stripHtmlValidation(
+              getIntegration.editor,
+              p.content,
+              true,
+              false,
+              !/<\/?[a-z][\s\S]*>/i.test(p.content),
+              getIntegration.mentionFormat
+            ),
+            settings: JSON.parse(p.settings || '{}'),
+            media: await this._postService.updateMedia(
+              p.id,
+              JSON.parse(p.image || '[]'),
+              getIntegration?.convertToJPEG || false
+            ),
+          }))
+        ),
+        integration
+      );
+    });
   }
 
   @ActivityMethod()
@@ -220,6 +227,20 @@ export class PostActivity {
   }
 
   private async postSocialInternal(
+    integration: Integration,
+    posts: Post[],
+    allowPending: boolean
+  ) {
+    // the whole body runs under the workflow's heartbeatTimeout (media
+    // conversion and the platform call can both take minutes), so it
+    // heartbeats end to end - under older workflow versions that set no
+    // heartbeatTimeout this is a no-op
+    return withHeartbeat(() =>
+      this.postSocialBody(integration, posts, allowPending)
+    );
+  }
+
+  private async postSocialBody(
     integration: Integration,
     posts: Post[],
     allowPending: boolean
@@ -321,10 +342,8 @@ export class PostActivity {
       integration.providerIdentifier
     );
 
-    return getIntegration.finalizePost(
-      integration.token,
-      pendingData,
-      integration
+    return withHeartbeat(() =>
+      getIntegration.finalizePost(integration.token, pendingData, integration)
     );
   }
 
