@@ -12,6 +12,7 @@ export class OauthProvider extends AuthProviderAbstract {
       POSTIZ_OAUTH_CLIENT_SECRET,
       POSTIZ_OAUTH_TOKEN_URL,
       POSTIZ_OAUTH_USERINFO_URL,
+      POSTIZ_OAUTH_SCOPE,
       FRONTEND_URL,
     } = process.env;
 
@@ -33,14 +34,15 @@ export class OauthProvider extends AuthProviderAbstract {
       tokenUrl: POSTIZ_OAUTH_TOKEN_URL,
       userInfoUrl: POSTIZ_OAUTH_USERINFO_URL,
       frontendUrl: FRONTEND_URL,
+      scope: POSTIZ_OAUTH_SCOPE || 'openid profile email',
     };
   }
 
-  generateLink(): string {
-    const { authUrl, clientId, frontendUrl } = this.getConfig();
+  generateLink(query?: any): string {
+    const { authUrl, clientId, frontendUrl, scope } = this.getConfig();
     const params = new URLSearchParams({
       client_id: clientId,
-      scope: 'openid profile email',
+      scope: scope,
       response_type: 'code',
       redirect_uri: `${frontendUrl}/settings`,
     });
