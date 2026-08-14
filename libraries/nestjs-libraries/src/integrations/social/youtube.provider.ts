@@ -572,6 +572,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           snippet: {
             title: settings.title,
             description: firstPost?.message,
+            categoryId: settings.categoryId || '27',
             ...(settings?.tags?.length
               ? { tags: settings.tags.map((p) => p.label) }
               : {}),

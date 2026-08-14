@@ -21,6 +21,33 @@ import { Type } from 'class-transformer';
 // two extra characters per tag toward that limit.
 export const YOUTUBE_TAGS_MAX_LENGTH = 500;
 
+// YouTube video categories that accept uploads via the Data API (videos.insert).
+// IDs are the assignable categoryId values (US list; these IDs are stable across
+// locales). Some categories exist for browsing only and reject uploads, so this
+// is a curated subset, not the full list. Default is Education ('27').
+export const YOUTUBE_UPLOAD_CATEGORIES = [
+  { value: '27', label: 'Education' },
+  { value: '26', label: 'Howto & Style' },
+  { value: '22', label: 'People & Blogs' },
+  { value: '28', label: 'Science & Technology' },
+  { value: '24', label: 'Entertainment' },
+  { value: '25', label: 'News & Politics' },
+  { value: '29', label: 'Nonprofits & Activism' },
+  { value: '15', label: 'Pets & Animals' },
+  { value: '17', label: 'Sports' },
+  { value: '10', label: 'Music' },
+  { value: '23', label: 'Comedy' },
+  { value: '19', label: 'Travel & Events' },
+  { value: '1', label: 'Film & Animation' },
+  { value: '20', label: 'Gaming' },
+];
+
+export const YOUTUBE_DEFAULT_CATEGORY_ID = '27';
+
+export const YOUTUBE_UPLOAD_CATEGORY_IDS = YOUTUBE_UPLOAD_CATEGORIES.map(
+  (c) => c.value
+);
+
 export function getYoutubeTagsLength(tags: YoutubeTagsSettings[]): number {
   return (tags ?? []).reduce((total, tag) => {
     const label = tag?.label ?? '';
@@ -73,6 +100,10 @@ export class YoutubeSettingsDto {
   @IsIn(['public', 'private', 'unlisted'])
   @IsDefined()
   type: string;
+
+  @IsIn(YOUTUBE_UPLOAD_CATEGORY_IDS)
+  @IsOptional()
+  categoryId?: string;
 
   @IsIn(['yes', 'no'])
   @IsOptional()

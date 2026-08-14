@@ -5,7 +5,11 @@ import {
   PostComment,
   withProvider,
 } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
-import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
+import {
+  YoutubeSettingsDto,
+  YOUTUBE_UPLOAD_CATEGORIES,
+  YOUTUBE_DEFAULT_CATEGORY_ID,
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { Input } from '@gitroom/react/form/input';
 import { MediumTags } from '@gitroom/frontend/components/new-launch/providers/medium/medium.tags';
@@ -51,6 +55,18 @@ const YoutubeSettings: FC = () => {
         {type.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Category"
+        {...register('categoryId', {
+          value: YOUTUBE_DEFAULT_CATEGORY_ID,
+        })}
+      >
+        {YOUTUBE_UPLOAD_CATEGORIES.map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
           </option>
         ))}
       </Select>
