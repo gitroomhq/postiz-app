@@ -3,7 +3,10 @@ import { Integration } from '@prisma/client';
 import { PendingCheckResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
-import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import {
+  getSsrfSafeAxios,
+  getSsrfSafeDispatcher,
+} from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
@@ -150,6 +153,13 @@ export abstract class SocialAbstract {
       '{}',
       'finalizePost is not implemented for this provider'
     );
+  }
+
+  // axios flavor of the SSRF-safe dispatcher that `this.fetch` applies - for
+  // providers that need axios (form-data / stream uploads). Never call plain
+  // axios with a user-influenced URL.
+  protected getSsrfSafeAxios() {
+    return getSsrfSafeAxios();
   }
 
   protected assetBoolean(value: boolean | string) {

@@ -730,5 +730,12 @@
   "yes_cancel_coupon": "Đúng, hủy mã giảm giá",
   "cancel_coupon_title": "Hủy mã giảm giá?",
   "cancel_coupon_failed": "Không thể hủy mã giảm giá",
-  "cancel_coupon_success": "Đã hủy mã giảm giá"
+  "cancel_coupon_success": "Đã hủy mã giảm giá",
+  "what_do_you_want_to_do": "Bạn muốn làm gì?",
+  "just_update_post_details": "Chỉ cập nhật chi tiết bài viết",
+  "reschedule_post": "Đặt lại lịch đăng bài",
+  "republish_the_post": "Đăng lại bài viết",
+  "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
+  "republish_at": "lúc",
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
 }
