@@ -19,13 +19,15 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 @Rules(
   [
     'TikTok Business can have one video or one picture or multiple pictures (up to 35), it cannot be without an attachment.',
     'content_posting_method=DIRECT_POST publishes the post to the account. content_posting_method=UPLOAD does NOT publish: it only saves the media as a draft in the user inbox of the TikTok app, where the user must manually complete and publish it. Use DIRECT_POST unless the user explicitly asks to review or edit the post inside the TikTok app first.',
     'With content_posting_method=UPLOAD, TikTok ignores every setting except the title / post content. Never tell the user that video_made_with_ai, privacy_level, duet, stitch, comment, autoAddMusic, brand_content_toggle or brand_organic_toggle will be applied in UPLOAD mode - they are silently discarded. If the user asks for any of those settings, tell them it requires DIRECT_POST.',
-    'video_made_with_ai, duet and stitch apply to video posts only. privacy_level and autoAddMusic apply to photo posts only - the TikTok Business API has no privacy or music field for video posts, so those settings are discarded when the attachment is a video.',
+    'video_made_with_ai, duet and stitch apply to video posts only. privacy_level and autoAddMusic apply to photo posts only - the TikTok Business API has no privacy field for video posts, so those settings are discarded when the attachment is a video.',
+    'The music setting attaches a commercial music library track (found via the musicSearch function) to a video or photo post, and the location setting tags the post with a location (found via the locationSearch function). Both apply only with content_posting_method=DIRECT_POST. music.audio_volume / music.video_volume (0-100, default 50) apply to video posts only. For photos, autoAddMusic=yes attaches a RANDOM commercial music library track and overrides any music selection - use autoAddMusic=no when the user wants a specific track.',
     'Media is pulled by TikTok from its URL, so the media must be uploaded to Postiz and the media domain must be a verified URL property of the TikTok Business app.',
   ].join(' ')
 )
@@ -519,13 +521,68 @@ export class TiktokBusinessProvider
               is_ai_generated: this.assetBoolean(
                 firstPost.settings.video_made_with_ai
               ),
+              ...(firstPost.settings.location?.id
+                ? {
+                    location_id: firstPost.settings.location.id,
+                    location_name: firstPost.settings.location.name,
+                  }
+                : {}),
+              // The API defaults both volumes to 0 (muted) - the TikTok app
+              // defaults to 50, so a selected track without explicit volumes
+              // follows the app behavior instead of publishing a silent post.
+              ...(firstPost.settings.music?.id
+                ? {
+                    music_sound_info: {
+                      music_sound_id: firstPost.settings.music.id,
+                      music_sound_volume:
+                        typeof firstPost.settings.music.audio_volume !==
+                        'undefined'
+                          ? +firstPost.settings.music.audio_volume
+                          : 50,
+                      video_original_sound_volume:
+                        typeof firstPost.settings.music.video_volume !==
+                        'undefined'
+                          ? +firstPost.settings.music.video_volume
+                          : 50,
+                    },
+                  }
+                : {}),
             }),
       },
     };
   }
 
-  private buildPhotoBody(businessId: string, firstPost: PostDetails<TikTokDto>) {
+  // autoAddMusic picks a random commercial-library track instead of TikTok's
+  // auto_add_music flag, so the attached music is chosen by Postiz rather than
+  // silently by TikTok. Returns undefined when the trending list is empty or
+  // unavailable - the photo body then falls back to auto_add_music.
+  private async pickRandomMusicId(
+    accessToken: string,
+    businessId: string
+  ): Promise<string | undefined> {
+    const tracks = await this.musicSearch(accessToken, {}, businessId);
+    if (!tracks.length) {
+      return undefined;
+    }
+    return tracks[Math.floor(Math.random() * tracks.length)].id;
+  }
+
+  private async buildPhotoBody(
+    businessId: string,
+    firstPost: PostDetails<TikTokDto>,
+    accessToken: string
+  ) {
     const isDraft = this.contentPostingMethod(firstPost) === 'UPLOAD';
+
+    // Random music wins over an explicitly selected track: the UI hides the
+    // music selector while "add random music" is on, so a stale selection must
+    // not silently override it.
+    const musicId =
+      firstPost.settings.autoAddMusic === 'yes'
+        ? !isDraft
+          ? await this.pickRandomMusicId(accessToken, businessId)
+          : undefined
+        : firstPost.settings.music?.id;
 
     return {
       business_id: businessId,
@@ -548,7 +605,24 @@ export class TiktokBusinessProvider
               privacy_level:
                 firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
               disable_comment: !this.assetBoolean(firstPost.settings.comment),
-              auto_add_music: firstPost.settings.autoAddMusic === 'yes',
+              // TikTok's own recommended-music flag is only a fallback for
+              // when no track could be picked from the trending list.
+              auto_add_music:
+                !musicId && firstPost.settings.autoAddMusic === 'yes',
+              ...(firstPost.settings.location?.id
+                ? {
+                    location_id: firstPost.settings.location.id,
+                    location_name: firstPost.settings.location.name,
+                  }
+                : {}),
+              // Unlike videos, the photo music_sound_info has no volume fields.
+              ...(musicId
+                ? {
+                    music_sound_info: {
+                      music_sound_id: musicId,
+                    },
+                  }
+                : {}),
             }),
       },
     };
@@ -564,7 +638,7 @@ export class TiktokBusinessProvider
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
     const body = isPhoto
-      ? this.buildPhotoBody(id, firstPost)
+      ? await this.buildPhotoBody(id, firstPost, accessToken)
       : this.buildVideoBody(id, firstPost);
 
     const publish = await (
@@ -679,6 +753,114 @@ export class TiktokBusinessProvider
       Buffer.from(JSON.stringify({})),
       'TikTok refused to publish your post'
     );
+  }
+
+  // The trending list has no text search parameter - genre / country / date
+  // range are the only filters - so the UI filters the returned list locally.
+  @Tool({
+    description:
+      'Load commercial music library tracks that can be attached to a post via the "music" setting',
+    dataSchema: [
+      {
+        key: 'genre',
+        type: 'string',
+        description:
+          'Genre to filter the tracks by (for example POP, ROCK, ELECTRONIC), leave empty for all genres',
+      },
+    ],
+  })
+  async musicSearch(
+    accessToken: string,
+    data: { genre?: string },
+    id: string
+  ) {
+    const music = await (
+      await this.fetch(
+        `${this.baseUrl}/discovery/cml/trending_list/?business_id=${encodeURIComponent(
+          id
+        )}${data?.genre ? `&genre=${encodeURIComponent(data.genre)}` : ''}`,
+        {
+          method: 'GET',
+          headers: {
+            'Access-Token': accessToken,
+          },
+        }
+      )
+    ).json();
+
+    // Errors arrive as HTTP 200 with a non-zero code, invisible to this.fetch:
+    // a token error must surface as RefreshToken so the function endpoint
+    // refreshes and retries, anything else just returns no tracks.
+    if (music?.code !== 0) {
+      const asString = JSON.stringify(music);
+      const handleError = this.handleErrors(asString);
+      if (handleError?.type === 'refresh-token') {
+        throw new RefreshToken('tiktok-business', asString, '{}', handleError.value);
+      }
+      return [];
+    }
+
+    return (music?.data?.list || [])
+      .map((track: any) => ({
+        // song_clip_id is the value music_sound_id expects; older responses
+        // only carry commercial_music_id, which TikTok accepts as well.
+        id:
+          track?.full_duration_song_clip?.song_clip_id ||
+          track?.commercial_music_id,
+        title: track?.commercial_music_name || '',
+        artist: track?.artist || '',
+        image: track?.thumbnail_url || '',
+        duration: (track?.duration || 0) * 1000,
+        previewUrl: track?.preview_url || '',
+      }))
+      .filter((track: { id?: string }) => track.id);
+  }
+
+  @Tool({
+    description:
+      'Search location tags that can be attached to a post via the "location" setting',
+    dataSchema: [
+      {
+        key: 'q',
+        type: 'string',
+        description: 'Search query for the location',
+      },
+    ],
+  })
+  async locationSearch(accessToken: string, data: { q: string }, id: string) {
+    if (!data?.q) {
+      return [];
+    }
+
+    const locations = await (
+      await this.fetch(
+        `${this.baseUrl}/business/publish/location/?business_id=${encodeURIComponent(
+          id
+        )}&search_query=${encodeURIComponent(data.q.slice(0, 100))}`,
+        {
+          method: 'GET',
+          headers: {
+            'Access-Token': accessToken,
+          },
+        }
+      )
+    ).json();
+
+    // Same HTTP 200 + non-zero code envelope as musicSearch.
+    if (locations?.code !== 0) {
+      const asString = JSON.stringify(locations);
+      const handleError = this.handleErrors(asString);
+      if (handleError?.type === 'refresh-token') {
+        throw new RefreshToken('tiktok-business', asString, '{}', handleError.value);
+      }
+      return [];
+    }
+
+    return (locations?.data?.locations || []).map((location: any) => ({
+      id: location?.location_id,
+      name: location?.location_name || '',
+      address: location?.location_address || '',
+    }));
   }
 
   private async loadVideoList(
