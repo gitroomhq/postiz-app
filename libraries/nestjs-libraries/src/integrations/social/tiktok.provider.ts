@@ -9,6 +9,7 @@ import {
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -72,7 +73,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'disconnect';
         value: string;
       }
     | undefined {
@@ -197,10 +198,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // TikTok limits how many users of this app can post per day: refreshing
+    // the token cannot help, the channel must be re-connected (and can be
+    // migrated to another app via MIGRATE_PROVIDERS).
     if (body.indexOf('reached_active_user_cap') > -1) {
       return {
-        type: 'bad-body' as const,
-        value: 'Daily active user quota reached, please try again later',
+        type: 'disconnect' as const,
+        value:
+          'TikTok daily user limit reached, please re-connect your account',
       };
     }
 
@@ -445,7 +450,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
     } catch (err) {
-      if (err instanceof RefreshToken) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
 
