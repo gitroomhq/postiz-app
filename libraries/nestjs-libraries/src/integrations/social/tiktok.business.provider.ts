@@ -295,9 +295,7 @@ export class TiktokBusinessProvider
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
-    const {
-      data: { access_token, refresh_token, open_id },
-    } = await (
+    const response = await (
       await fetch(`${this.baseUrl}/tt_user/oauth2/refresh_token/`, {
         method: 'POST',
         headers: {
@@ -311,6 +309,23 @@ export class TiktokBusinessProvider
         }),
       })
     ).json();
+
+    // OAuth failures also arrive as HTTP 200 with a non-zero code and no data -
+    // without this check the destructure below throws an unclassified TypeError.
+    if (response?.code !== 0 || !response?.data?.access_token) {
+      const asString = JSON.stringify(response);
+      const handleError = this.handleErrors(asString);
+      throw new BadBody(
+        'tiktok-business',
+        asString,
+        Buffer.from('{}'),
+        handleError?.value ||
+          response?.message ||
+          'Could not refresh the TikTok access token'
+      );
+    }
+
+    const { access_token, refresh_token, open_id } = response.data;
 
     const { display_name, profile_image, username } =
       await this.fetchUserInformation(access_token, open_id);
@@ -350,9 +365,7 @@ export class TiktokBusinessProvider
     codeVerifier: string;
     refresh?: string;
   }) {
-    const {
-      data: { access_token, refresh_token, scope, open_id },
-    } = await (
+    const response = await (
       await fetch(`${this.baseUrl}/tt_user/oauth2/token/`, {
         method: 'POST',
         headers: {
@@ -367,6 +380,24 @@ export class TiktokBusinessProvider
         }),
       })
     ).json();
+
+    // Same HTTP 200 + non-zero code envelope as the refresh call: an expired
+    // auth_code or mismatched redirect_uri must surface TikTok's reason instead
+    // of a TypeError on the destructure.
+    if (response?.code !== 0 || !response?.data?.access_token) {
+      const asString = JSON.stringify(response);
+      const handleError = this.handleErrors(asString);
+      throw new BadBody(
+        'tiktok-business',
+        asString,
+        Buffer.from('{}'),
+        handleError?.value ||
+          response?.message ||
+          'Could not authenticate the TikTok business account'
+      );
+    }
+
+    const { access_token, refresh_token, scope, open_id } = response.data;
 
     this.checkScopes(this.scopes, scope);
 
@@ -884,7 +915,26 @@ export class TiktokBusinessProvider
       )
     ).json();
 
+    // Same HTTP 200 + non-zero code envelope: a token error must surface as
+    // RefreshToken so the analytics/missing callers refresh and retry instead
+    // of silently showing empty data until the user reconnects.
+    this.throwIfTokenError(videoListData);
+
     return videoListData?.data?.videos;
+  }
+
+  private throwIfTokenError(body: { code?: number }) {
+    if (body?.code === 0) {
+      return;
+    }
+    const asString = JSON.stringify(body);
+    const handleError = this.handleErrors(asString);
+    if (handleError?.type === 'refresh-token') {
+      throw new RefreshToken('tiktok-business', asString, '{}', handleError.value);
+    }
+    if (handleError?.type === 'disconnect') {
+      throw new Disconnect('tiktok-business', asString, '{}', handleError.value);
+    }
   }
 
   async analytics(
@@ -897,7 +947,7 @@ export class TiktokBusinessProvider
     try {
       // Real-time account stats (followers, following, likes, videos)
       const userStatsData = await (
-        await fetch(
+        await this.fetch(
           `${this.baseUrl}/business/get/?business_id=${encodeURIComponent(
             id
           )}&fields=${encodeURIComponent(
@@ -916,6 +966,8 @@ export class TiktokBusinessProvider
           }
         )
       ).json();
+
+      this.throwIfTokenError(userStatsData);
 
       const userStats = userStatsData?.data;
 
@@ -1004,6 +1056,11 @@ export class TiktokBusinessProvider
 
       return result;
     } catch (err) {
+      // The callers catch RefreshToken and retry with a refreshed token -
+      // swallowing it here would leave the panel empty until a manual reconnect.
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
       console.error('Error fetching TikTok Business analytics:', err);
       return [];
     }
@@ -1028,6 +1085,9 @@ export class TiktokBusinessProvider
         url: v.thumbnail_url,
       }));
     } catch (err) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
       console.error('Error fetching TikTok Business missing content:', err);
       return [];
     }
@@ -1046,7 +1106,7 @@ export class TiktokBusinessProvider
     // post id first.
     if (postId.indexOf('_pub_url') > -1) {
       const post = await (
-        await fetch(
+        await this.fetch(
           `${this.baseUrl}/business/publish/status/?business_id=${encodeURIComponent(
             integrationId
           )}&publish_id=${encodeURIComponent(postId)}`,
@@ -1059,6 +1119,8 @@ export class TiktokBusinessProvider
         )
       ).json();
 
+      this.throwIfTokenError(post);
+
       if (!post?.data?.post_ids?.[0]) {
         return [];
       }
@@ -1068,7 +1130,7 @@ export class TiktokBusinessProvider
 
     try {
       const videoQueryData = await (
-        await fetch(
+        await this.fetch(
           `${this.baseUrl}/business/video/list/?business_id=${encodeURIComponent(
             integrationId
           )}&fields=${encodeURIComponent(
@@ -1084,6 +1146,8 @@ export class TiktokBusinessProvider
           }
         )
       ).json();
+
+      this.throwIfTokenError(videoQueryData);
 
       const video = videoQueryData?.data?.videos?.[0];
 
@@ -1127,6 +1191,9 @@ export class TiktokBusinessProvider
 
       return result;
     } catch (err) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
       console.error('Error fetching TikTok Business post analytics:', err);
       return [];
     }

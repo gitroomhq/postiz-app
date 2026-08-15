@@ -193,7 +193,7 @@ const TikTokSettings: FC<{
           {isBusiness
             ? t(
                 'tiktok_random_music_only_for_photos',
-                'This feature available only for photos, it will add a random trending track from TikTok\'s commercial music library.'
+                'This feature is available only for photos, it adds a random trending track from TikTok\'s commercial music library.'
               )
             : t(
                 'this_feature_available_only_for_photos',

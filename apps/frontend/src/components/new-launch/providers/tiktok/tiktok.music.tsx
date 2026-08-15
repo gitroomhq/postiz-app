@@ -137,7 +137,14 @@ export const TikTokMusicSelector: FC<{
       }
       const newPlayer = new Audio(track.previewUrl);
       newPlayer.onended = () => setPlayingId('');
-      newPlayer.play();
+      // A failing preview URL rejects the play() promise - reset the playing
+      // state so the row doesn't show "Stop" while nothing is playing.
+      newPlayer.play().catch(() => {
+        if (player.current === newPlayer) {
+          player.current = undefined;
+          setPlayingId('');
+        }
+      });
       player.current = newPlayer;
       setPlayingId(track.id);
     },
