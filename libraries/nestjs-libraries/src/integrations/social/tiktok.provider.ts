@@ -17,6 +17,28 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+// Raw shape of TikTok's `creator_info/query` `data` payload (snake_case, as
+// documented by the Content Posting API).
+interface TikTokCreatorInfoApiData {
+  creator_nickname: string;
+  privacy_level_options: string[];
+  comment_disabled: boolean;
+  duet_disabled: boolean;
+  stitch_disabled: boolean;
+  max_video_post_duration_sec: number;
+}
+
+// DTO exposed to callers (publishing-ms via the public-api route) — camelCase,
+// no static/hardcoded fallback allowed on any of these fields.
+export interface TikTokCreatorInfo {
+  nickname: string;
+  privacyLevelOptions: string[];
+  duetDisabled: boolean;
+  stitchDisabled: boolean;
+  commentDisabled: boolean;
+  maxVideoPostDurationSec: number;
+}
+
 @Rules(
   'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment'
 )
@@ -384,9 +406,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async maxVideoLength(accessToken: string) {
+  /**
+   * Wraps TikTok's `creator_info/query` endpoint (Content Posting API) and
+   * returns the full creator-scoped compliance surface: display name,
+   * selectable privacy levels, per-creator interaction toggles that are
+   * disabled server-side, and the max video duration this creator can post.
+   *
+   * Callers MUST source privacy/toggle defaults from this response — TikTok's
+   * posting guidelines forbid hardcoding a static privacy_level default or
+   * assuming duet/stitch/comment are always enabled.
+   */
+  async getCreatorInfo(accessToken: string): Promise<TikTokCreatorInfo> {
     const {
-      data: { max_video_post_duration_sec },
+      data: {
+        creator_nickname,
+        privacy_level_options,
+        comment_disabled,
+        duet_disabled,
+        stitch_disabled,
+        max_video_post_duration_sec,
+      } = {} as TikTokCreatorInfoApiData,
+      error,
     } = await (
       await fetch(
         'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
@@ -400,8 +440,19 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
+    if (error && error.code !== 'ok') {
+      throw new Error(
+        error.message || 'Failed to fetch TikTok creator info'
+      );
+    }
+
     return {
-      maxDurationSeconds: max_video_post_duration_sec,
+      nickname: creator_nickname,
+      privacyLevelOptions: privacy_level_options,
+      duetDisabled: duet_disabled,
+      stitchDisabled: stitch_disabled,
+      commentDisabled: comment_disabled,
+      maxVideoPostDurationSec: max_video_post_duration_sec,
     };
   }
 

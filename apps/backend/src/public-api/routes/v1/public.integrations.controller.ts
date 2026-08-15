@@ -59,6 +59,7 @@ import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abst
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import type { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -437,6 +438,67 @@ export class PublicIntegrationsController {
         tools: tools[integration.identifier],
       },
     };
+  }
+
+  @Get('/integrations/:id/tiktok/creator-info')
+  async getTikTokCreatorInfo(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const getIntegration = await this._integrationService.getIntegrationById(
+      org.id,
+      id
+    );
+
+    if (!getIntegration) {
+      throw new HttpException({ msg: 'Integration not found' }, 404);
+    }
+
+    if (getIntegration.providerIdentifier !== 'tiktok') {
+      throw new HttpException(
+        { msg: 'Integration is not a TikTok channel' },
+        400
+      );
+    }
+
+    const integrationProvider = socialIntegrationList.find(
+      (p) => p.identifier === 'tiktok'
+    ) as TiktokProvider | undefined;
+
+    if (!integrationProvider) {
+      throw new HttpException({ msg: 'TikTok provider not found' }, 404);
+    }
+
+    try {
+      return await integrationProvider.getCreatorInfo(getIntegration.token);
+    } catch (err) {
+      if (err instanceof RefreshToken) {
+        const data = await this._refreshIntegrationService.refresh(
+          getIntegration
+        );
+
+        if (!data) {
+          await this._integrationService.disconnectChannel(
+            org.id,
+            getIntegration
+          );
+          throw new HttpException(
+            { msg: 'Channel disconnected due to expired token' },
+            401
+          );
+        }
+
+        if (data.accessToken) {
+          return await integrationProvider.getCreatorInfo(data.accessToken);
+        }
+      }
+
+      throw new HttpException(
+        { msg: 'Failed to fetch TikTok creator info' },
+        502
+      );
+    }
   }
 
   @Get('/posts/:id/missing')
