@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
@@ -42,6 +43,7 @@ function getDateRange(
 
 export const Filters = () => {
   const calendar = useCalendar();
+  const user = useUser();
   const t = useT();
 
   // Set dayjs locale based on current language
@@ -272,6 +274,9 @@ export const Filters = () => {
     { value: 'scheduled', label: t('scheduled', 'Scheduled') },
     { value: 'draft', label: t('draft', 'Draft') },
     { value: 'published', label: t('published', 'Published') },
+    ...(user?.role !== 'USER'
+      ? [{ value: 'pending_approval' as ListStateFilter, label: t('pending_approval', 'Pending Approval') }]
+      : []),
   ];
 
   const previousPage = useCallback(() => {

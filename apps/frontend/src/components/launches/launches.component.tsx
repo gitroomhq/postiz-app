@@ -183,9 +183,9 @@ export const MenuGroupComponent: FC<
             className="line-clamp-1"
             {...(collapsed
               ? {
-                  'data-tooltip-id': 'tooltip',
-                  'data-tooltip-content': group.name,
-                }
+                'data-tooltip-id': 'tooltip',
+                'data-tooltip-content': group.name,
+              }
               : {})}
           >
             {group.name}
@@ -255,9 +255,9 @@ export const MenuComponent: FC<
       })}
       {...(collapsed
         ? {
-            'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': integration.name,
-          }
+          'data-tooltip-id': 'tooltip',
+          'data-tooltip-content': integration.name,
+        }
         : {})}
       className={clsx(
         'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
@@ -316,14 +316,14 @@ export const MenuComponent: FC<
         // @ts-ignore
         ref={drag}
         {...(integration.disabled &&
-        totalNonDisabledChannels === user?.totalChannels
+          totalNonDisabledChannels === user?.totalChannels
           ? {
-              'data-tooltip-id': 'tooltip',
-              'data-tooltip-content': t(
-                'channel_disabled_upgrade_plan',
-                'This channel is disabled, please upgrade your plan to enable it.'
-              ),
-            }
+            'data-tooltip-id': 'tooltip',
+            'data-tooltip-content': t(
+              'channel_disabled_upgrade_plan',
+              'This channel is disabled, please upgrade your plan to enable it.'
+            ),
+          }
           : {})}
         role="Handle"
         className={clsx(
@@ -538,10 +538,8 @@ export const LaunchesComponent = () => {
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
               <div className="flex gap-[8px] group-[.sidebar]:flex-col">
-                {sortedIntegrations?.length > 0 && <NewPost />}
-                {sortedIntegrations?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
+                {sortedIntegrations?.length > 0 && user?.role !== 'USER' && <NewPost />}
+                {sortedIntegrations?.length > 0 && user?.role !== 'USER' && user?.tier?.ai && billingEnabled && <GeneratorComponent />}
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">

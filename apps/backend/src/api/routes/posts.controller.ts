@@ -13,6 +13,7 @@ import {
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
+import { PostApprovalStatus } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -29,6 +30,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -36,7 +38,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Get('/:id/statistics')
@@ -177,9 +180,13 @@ export class PostsController {
   }
 
   @Post('/')
-  @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
+ @CheckPolicies(
+  [AuthorizationActions.Create, Sections.POSTS_PER_MONTH],
+  [AuthorizationActions.Create, Sections.ADMIN]
+)
   async createPost(
     @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
     @Body() rawBody: any
   ) {
     // Server-side validation — never trust the client to have validated.
@@ -220,7 +227,24 @@ export class PostsController {
     }
 
     const body = await this._postsService.mapTypeToPost(rawBody, org.id);
-    return this._postsService.createPost(org.id, body, 'WEB');
+
+    const role = (org as any).users?.[0]?.role as
+      | 'USER'
+      | 'ADMIN'
+      | 'SUPERADMIN'
+      | undefined;
+
+    const approvalStatus: PostApprovalStatus =
+      role === 'SUPERADMIN' ? 'APPROVED' : 'PENDING_APPROVAL';
+
+    return this._postsService.createPost(
+      org.id,
+      body,
+      'WEB',
+      false,
+      approvalStatus,
+      role === 'SUPERADMIN' ? user.id : undefined
+    );
   }
 
   @Post('/generator/draft')
@@ -261,6 +285,7 @@ export class PostsController {
   }
 
   @Delete('/:group')
+  @CheckPolicies([AuthorizationActions.Delete, Sections.APPROVE_POST]) // or a dedicated Sections.POSTS section if Delete shouldn't require SuperAdmin
   deletePost(
     @GetOrgFromRequest() org: Organization,
     @Param('group') group: string
@@ -269,6 +294,7 @@ export class PostsController {
   }
 
   @Put('/:id/date')
+  @CheckPolicies([AuthorizationActions.Update, Sections.APPROVE_POST])
   changeDate(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
@@ -287,5 +313,28 @@ export class PostsController {
     @Body() body: { content: string; len: number }
   ) {
     return this._postsService.separatePosts(body.content, body.len);
+  }
+
+  @Get('/pending-approval')
+  @CheckPolicies([AuthorizationActions.Read, Sections.APPROVE_POST])
+  async getPendingApproval(@GetOrgFromRequest() org: Organization) {
+    return this._postsService.getPendingApproval(org.id); // NEW repository method, §4
+  }
+
+  @Put('/:id/review')
+  @CheckPolicies([AuthorizationActions.Update, Sections.APPROVE_POST])
+  async reviewPost(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string,
+    @Body() body: { decision: 'APPROVE' | 'REJECT'; reason?: string }
+  ) {
+    return this._postsService.reviewPost(
+      org.id,
+      user.id,
+      id,
+      body.decision,
+      body.reason
+    );
   }
 }
