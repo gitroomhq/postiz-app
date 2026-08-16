@@ -7,6 +7,7 @@ import {
   Post,
   State,
 } from '@prisma/client';
+import { PostApprovalStatus } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import dayjs from 'dayjs';
@@ -172,6 +173,8 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        approvalStatus: true, // NEW
+        rejectionReason: true, // NEW
         intervalInDays: true,
         group: true,
         creationMethod: true,
@@ -222,10 +225,10 @@ export class PostsRepository {
 
     const stateFilter = query.state || 'all';
     const stateAndDate =
-      stateFilter === 'scheduled'
-        ? {
-            state: State.QUEUE,
-          }
+      stateFilter === 'pending_approval'
+        ? { approvalStatus: 'PENDING_APPROVAL' as const }
+        : stateFilter === 'scheduled'
+        ? { state: State.QUEUE }
         : stateFilter === 'draft'
         ? { state: State.DRAFT }
         : stateFilter === 'published'
@@ -285,6 +288,8 @@ export class PostsRepository {
           releaseURL: true,
           releaseId: true,
           state: true,
+          approvalStatus: true, // NEW
+          rejectionReason: true, // NEW
           intervalInDays: true,
           group: true,
           creationMethod: true,
@@ -516,7 +521,10 @@ export class PostsRepository {
     // Keep the existing group instead of rotating it, so open clients
     // (calendar) holding the group stay valid. Used by out-of-band updates
     // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
-    keepGroup = false
+    keepGroup = false,
+    approvalStatus: PostApprovalStatus = 'NONE', // NEW
+    approvedById?: string,
+    createdById?: string
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -565,6 +573,9 @@ export class PostsRepository {
             id: orgId,
           },
         },
+        approvalStatus,
+        approvedById: approvalStatus === 'APPROVED' ? approvedById : null,
+        approvedAt: approvalStatus === 'APPROVED' ? new Date() : null,
       });
 
       posts.push(
@@ -936,6 +947,37 @@ export class PostsRepository {
           },
         },
       },
+    });
+  }
+
+  // posts.repository.ts
+  async setApprovalStatus(
+    orgId: string,
+    id: string,
+    status: PostApprovalStatus,
+    approvedById?: string,
+    rejectionReason?: string
+  ) {
+    return this._post.model.post.update({
+      where: { id, organizationId: orgId },
+      data: {
+        approvalStatus: status,
+        approvedById: status === 'APPROVED' ? approvedById : null,
+        approvedAt: status === 'APPROVED' ? new Date() : null,
+        rejectionReason: status === 'REJECTED' ? rejectionReason : null,
+      },
+    });
+  }
+
+  async getPendingApproval(orgId: string) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        approvalStatus: 'PENDING_APPROVAL',
+        deletedAt: null,
+        parentPostId: null,
+      },
+      include: { integration: true },
     });
   }
 }

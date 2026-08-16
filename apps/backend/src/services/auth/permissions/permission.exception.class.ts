@@ -11,6 +11,8 @@ export enum Sections {
   IMPORT_FROM_CHANNELS = 'import_from_channels',
   ADMIN = 'admin',
   WEBHOOKS = 'webhooks',
+  APPROVE_POST = 'APPROVE_POST',
+  PUBLISH_POST = 'PUBLISH_POST',
 }
 
 export enum AuthorizationActions {
@@ -18,6 +20,8 @@ export enum AuthorizationActions {
   Read = 'read',
   Update = 'update',
   Delete = 'delete',
+  Approve = 'approve',
+  Publish = 'publish'
 }
 
 export class SubscriptionException extends HttpException {

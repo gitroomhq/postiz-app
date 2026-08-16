@@ -436,22 +436,33 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         setLoading(false);
       }
 
-      if (!dummy) {
-        addEditSets
+      const response = !dummy
+        ? addEditSets
           ? addEditSets(data)
-          : await fetch('/posts', {
-              method: 'POST',
-              body: JSON.stringify(data),
-            });
+          : await fetch('/posts', { method: 'POST', body: JSON.stringify(data) })
+        : undefined;
 
-        if (!addEditSets) {
-          mutate();
-          toaster.show(
-            !existingData.integration
+        if (!addEditSets && response) {
+        if (response.status === 403) {
+          toaster.show(t('no_permission_create', "You don't have permission to create posts"), 'warning');
+          setLoading(false);
+          return;
+        }
+
+        const result = await response.json();
+        mutate();
+
+        const wasSubmittedForReview = result?.[0]?.approvalStatus === 'PENDING_APPROVAL';
+
+        toaster.show(
+          wasSubmittedForReview
+            ? t('submitted_for_approval', 'Submitted for Super Admin approval')
+            : !existingData.integration
               ? t('added_successfully', 'Added successfully')
               : t('updated_successfully', 'Updated successfully')
           );
         }
+
         if (customClose) {
           setTimeout(() => {
             customClose();
@@ -461,8 +472,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (!addEditSets) {
           modal.closeAll();
         }
-      }
-    },
+        
+      },
     [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
   );
 

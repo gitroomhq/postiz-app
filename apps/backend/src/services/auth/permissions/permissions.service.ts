@@ -161,6 +161,22 @@ export class PermissionsService {
       ) {
         can(action, section);
       }
+
+      if (
+        section === Sections.APPROVE_POST &&
+        ['SUPERADMIN'].includes(permission)
+      ) {
+        can(action, section);
+        continue;
+      }
+
+      if (
+        section === Sections.PUBLISH_POST &&
+        ['SUPERADMIN'].includes(permission)
+      ) {
+        can(action, section);
+        continue;
+      }
     }
 
     return build({

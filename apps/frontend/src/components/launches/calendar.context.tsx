@@ -26,7 +26,7 @@ import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.
 extend(isoWeek);
 extend(weekOfYear);
 
-export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
+export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published' | 'pending_approval';
 
 export const CalendarContext = createContext({
   startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),

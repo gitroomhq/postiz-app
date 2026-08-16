@@ -427,6 +427,11 @@ model Post {
   submittedForOrder          Orders?                   @relation(fields: [submittedForOrderId], references: [id])
   submittedForOrganization   Organization?             @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
   tags                       TagsPosts[]
+  approvalStatus             PostApprovalStatus @default(NONE)
+  approvedById               String?
+  approvedAt                 DateTime?
+  rejectionReason            String?
+  createdById                String?
 
   @@index([group])
   @@index([deletedAt])
@@ -960,6 +965,13 @@ enum AnnouncementColor {
   INFO
   WARNING
   ERROR
+}
+
+enum PostApprovalStatus {
+  NONE
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
 }
 
 model Announcement {

@@ -16,6 +16,7 @@ import {
   CreationMethod,
   State,
 } from '@prisma/client';
+import { PostApprovalStatus } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
 import { shuffle } from 'lodash';
@@ -54,6 +55,9 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -71,7 +75,10 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _notificationsService: NotificationService, // NEW
+    private _organizationRepository: OrganizationRepository, // NEW
+    private _usersService: UsersService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -901,7 +908,10 @@ export class PostsService {
     orgId: string,
     body: CreatePostDto,
     creationMethod: CreationMethod,
-    keepGroup = false
+    keepGroup = false,
+    approvalStatus: PostApprovalStatus = 'NONE', // NEW param
+    approvedById?: string,
+    createdById?: string
   ): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -943,14 +953,17 @@ export class PostsService {
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
+        approvalStatus,
+        approvedById,
+        createdById
       );
 
       if (!posts?.length) {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
+      if (body.type !== 'update' && this.canDispatch(approvalStatus)) {
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
@@ -959,10 +972,18 @@ export class PostsService {
         ).catch((err) => {});
       }
 
+      if (approvalStatus === 'PENDING_APPROVAL') {
+        this.notifySuperAdminsOfPendingPost(
+          orgId,
+          post.value?.[0]?.content || ''
+        ).catch((err) => {});
+      }
+
       Sentry.metrics.count('post_created', 1);
       postList.push({
         postId: posts[0].id,
         integration: post.integration.id,
+        approvalStatus, // NEW — surface it to the caller
       });
     }
 
@@ -1137,14 +1158,18 @@ export class PostsService {
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
     await this._postRepository.changeState(id, state);
 
-    try {
-      await this.startWorkflow(
-        getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
-        getPostById.id,
-        orgId,
-        state
-      );
-    } catch (err) {}
+    if (this.canDispatch(getPostById.approvalStatus)) {
+      try {
+        await this.startWorkflow(
+          getPostById.integration.providerIdentifier
+            .split('-')[0]
+            .toLowerCase(),
+          getPostById.id,
+          orgId,
+          state
+        );
+      } catch (err) {}
+    }
 
     return { id, state };
   }
@@ -1172,7 +1197,7 @@ export class PostsService {
       action
     );
 
-    if (action === 'schedule') {
+    if (action === 'schedule' && this.canDispatch(getPostById.approvalStatus)) {
       try {
         await this.startWorkflow(
           getPostById.integration.providerIdentifier
@@ -1186,6 +1211,10 @@ export class PostsService {
     }
 
     return newDate;
+  }
+
+  private canDispatch(approvalStatus: PostApprovalStatus): boolean {
+    return approvalStatus === 'NONE' || approvalStatus === 'APPROVED';
   }
 
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {
@@ -1358,5 +1387,103 @@ export class PostsService {
     comment: string
   ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
+  }
+
+  // posts.service.ts
+  async reviewPost(
+    orgId: string,
+    reviewerId: string,
+    postId: string,
+    decision: 'APPROVE' | 'REJECT',
+    reason?: string
+  ) {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    if (post.approvalStatus !== 'PENDING_APPROVAL') {
+      throw new BadRequestException('This post is not awaiting review');
+    }
+
+    const updated = await this._postRepository.setApprovalStatus(
+      orgId,
+      postId,
+      decision === 'APPROVE' ? 'APPROVED' : 'REJECTED',
+      reviewerId,
+      reason
+    );
+
+    // Retroactively start the workflow that createPost withheld.
+    if (
+      decision === 'APPROVE' &&
+      (post.state === 'QUEUE' || post.state === 'DRAFT')
+    ) {
+      try {
+        await this.startWorkflow(
+          post.integration.providerIdentifier.split('-')[0].toLowerCase(),
+          post.id,
+          orgId,
+          post.state
+        );
+      } catch (err) {}
+    }
+
+    this.notifyCreatorOfDecision(post, decision, reason).catch((err) => {});
+    return updated;
+  }
+
+  async getPendingApproval(orgId: string) {
+    return this._postRepository.getPendingApproval(orgId);
+  }
+
+  // PostsService — called from createPost() when approvalStatus === 'PENDING_APPROVAL'
+  async notifySuperAdminsOfPendingPost(orgId: string, postPreview: string) {
+    const userOrg = await this._organizationRepository.getAllUsersOrgs(orgId);
+    const superAdmins = (userOrg?.users || []).filter(
+      (u) => u.role === 'SUPERADMIN'
+    );
+    // NOTE: `.role` on this shape is inferred from the identical structure seen
+    // in deleteTeamMember/PoliciesGuard — sendEmailsToOrg itself only ever
+    // reads `.user.email`/`.user.sendSuccessEmails`, never `.role`. Worth a
+    // quick check against organization.repository.ts's getAllUsersOrgs before
+    // relying on it.
+
+    await this._notificationsService.inAppNotification(
+      orgId,
+      'New post awaiting your approval',
+      `A post is pending review: "${postPreview}"`,
+      false // email handled manually below since inAppNotification's own
+      // sendEmail path goes through sendEmailsToOrg — org-wide, not role-filtered
+    );
+
+    for (const su of superAdmins) {
+      await this._notificationsService.sendEmail(
+        su.user.email,
+        'New post awaiting your approval',
+        `A post is pending review: "${postPreview}"`
+      );
+    }
+  }
+
+  // PostsService.reviewPost() — after setApprovalStatus, before returning
+  async notifyCreatorOfDecision(
+    post: { createdById: string | null },
+    decision: 'APPROVE' | 'REJECT',
+    reason?: string
+  ) {
+    if (!post.createdById) return; // system-created posts (generatePostsDraft) have none
+
+    const creator = await this._usersService.getUserById(post.createdById);
+    if (!creator?.email) return;
+
+    await this._notificationsService.sendEmail(
+      creator.email,
+      decision === 'APPROVE'
+        ? 'Your post was approved'
+        : 'Your post was rejected',
+      decision === 'APPROVE'
+        ? 'Your post has been approved and will publish as scheduled.'
+        : `Your post was rejected: ${reason || 'no reason given'}`
+    );
   }
 }
