@@ -121,6 +121,13 @@ export class PinterestProvider
         value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
+    if (body.indexOf('Something went wrong on our end') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest reported a temporary error on their side. Please try posting again.',
+      };
+    }
     if (body.indexOf('Unable to reach the URL') > -1) {
       return {
         type: 'retry' as const,
