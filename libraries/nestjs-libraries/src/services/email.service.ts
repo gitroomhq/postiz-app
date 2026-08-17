@@ -133,7 +133,7 @@ export class EmailService {
           modifiedHtml,
           process.env.EMAIL_FROM_NAME,
           process.env.EMAIL_FROM_ADDRESS,
-          replyTo
+          replyTo || process.env.EMAIL_REPLY_TO_ADDRESS || undefined
         );
         console.log(sends);
         return;
