@@ -737,5 +737,6 @@
   "republish_the_post": "重新发布帖子",
   "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
   "republish_at": "于",
-  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "recurrence_projection": "重复：此循环帖子的未来一次发布"
 }
