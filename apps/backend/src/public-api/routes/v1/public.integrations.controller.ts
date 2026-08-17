@@ -15,6 +15,8 @@ import {
 import {
   CustomFileValidationPipe,
   getMaxSize,
+  isCompleteMp4,
+  INCOMPLETE_MP4_ERROR,
 } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -137,6 +139,10 @@ export class PublicIntegrationsController {
 
     if (buffer.length > getMaxSize(detected.mime)) {
       throw new HttpException({ msg: 'File is too large.' }, 400);
+    }
+
+    if (detected.mime === 'video/mp4' && !isCompleteMp4(buffer)) {
+      throw new HttpException({ msg: INCOMPLETE_MP4_ERROR }, 400);
     }
 
     const mimetype = detected.mime;
