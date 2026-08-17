@@ -136,7 +136,14 @@ export class NoAuthIntegrationsController {
               refresh,
               auth.accessToken
             );
-            return res({ ...newAuth, refreshToken: body.refresh });
+            // keep the fresh refresh token and expiration from the new
+            // authentication, otherwise the stored refresh token is wiped and
+            // the channel breaks again as soon as the access token expires
+            return res({
+              ...newAuth,
+              refreshToken: auth.refreshToken,
+              expiresIn: auth.expiresIn,
+            });
           } catch (err: any) {
             return res({
               error: err.message,
