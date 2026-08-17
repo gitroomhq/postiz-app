@@ -35,6 +35,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'pinterest', PinterestSettingsDto>
   | ProviderExtension<'dribbble', DribbbleDto>
   | ProviderExtension<'tiktok', TikTokDto>
+  | ProviderExtension<'tiktok-business', TikTokDto>
   | ProviderExtension<'discord', DiscordDto>
   | ProviderExtension<'slack', SlackDto>
   | ProviderExtension<'kick', KickDto>
@@ -75,6 +76,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: PinterestSettingsDto, name: 'pinterest' },
     { value: DribbbleDto, name: 'dribbble' },
     { value: TikTokDto, name: 'tiktok' },
+    { value: TikTokDto, name: 'tiktok-business' },
     { value: DiscordDto, name: 'discord' },
     { value: SlackDto, name: 'slack' },
     { value: KickDto, name: 'kick' },
