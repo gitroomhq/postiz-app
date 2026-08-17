@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "التغير المتوقع في ترند GitHub",
   "duplicate_post": "منشور مكرر",
   "preview_post": "معاينة المنشور",
+  "open_post": "فتح المشاركة",
   "post_statistics": "إحصائيات المنشور",
   "draft": "مسودة",
   "week_number": "الأسبوع {{number}}",

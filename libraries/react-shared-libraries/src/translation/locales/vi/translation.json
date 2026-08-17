@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Dự đoán thay đổi xu hướng GitHub",
   "duplicate_post": "Bài viết trùng lặp",
   "preview_post": "Xem trước bài viết",
+  "open_post": "Mở bài viết",
   "post_statistics": "Thống kê bài viết",
   "draft": "Bản nháp",
   "week_number": "Tuần {{number}}",
