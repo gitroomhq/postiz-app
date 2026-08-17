@@ -15,14 +15,6 @@ export class TikTokMusic {
 
   @IsOptional()
   @IsString()
-  @JSONSchema({
-    description:
-      'The "commercialMusicId" returned by the musicSearch function. Always include it when available - photo posts publish with this id, not with "id".',
-  })
-  commercialMusicId?: string;
-
-  @IsOptional()
-  @IsString()
   title?: string;
 
   @IsOptional()

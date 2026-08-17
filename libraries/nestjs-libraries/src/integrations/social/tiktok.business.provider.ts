@@ -27,7 +27,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
     'content_posting_method=DIRECT_POST publishes the post to the account. content_posting_method=UPLOAD does NOT publish: it only saves the media as a draft in the user inbox of the TikTok app, where the user must manually complete and publish it. Use DIRECT_POST unless the user explicitly asks to review or edit the post inside the TikTok app first.',
     'With content_posting_method=UPLOAD, TikTok ignores every setting except the title / post content. Never tell the user that video_made_with_ai, privacy_level, duet, stitch, comment, autoAddMusic, brand_content_toggle or brand_organic_toggle will be applied in UPLOAD mode - they are silently discarded. If the user asks for any of those settings, tell them it requires DIRECT_POST.',
     'video_made_with_ai, duet and stitch apply to video posts only. privacy_level and autoAddMusic apply to photo posts only - the TikTok Business API has no privacy field for video posts, so those settings are discarded when the attachment is a video.',
-    'The music setting attaches a commercial music library track (found via the musicSearch function) to a video or photo post, and the location setting tags the post with a location (found via the locationSearch function). Both apply only with content_posting_method=DIRECT_POST. When setting music, copy both "id" and "commercialMusicId" from the musicSearch result - photo posts publish with commercialMusicId. music.audio_volume / music.video_volume (0-100, default 50) apply to video posts only. For photos, autoAddMusic=yes attaches a RANDOM commercial music library track and overrides any music selection - use autoAddMusic=no when the user wants a specific track.',
+    'The music setting attaches a commercial music library track (found via the musicSearch function) to a video or photo post, and the location setting tags the post with a location (found via the locationSearch function). Both apply only with content_posting_method=DIRECT_POST. music.audio_volume / music.video_volume (0-100, default 50) apply to video posts only. For photos, autoAddMusic=yes attaches a RANDOM commercial music library track and overrides any music selection - use autoAddMusic=no when the user wants a specific track.',
     'Media is pulled by TikTok from its URL, so the media must be uploaded to Postiz and the media domain must be a verified URL property of the TikTok Business app.',
   ].join(' ')
 )
@@ -591,40 +591,11 @@ export class TiktokBusinessProvider
     accessToken: string,
     businessId: string
   ): Promise<string | undefined> {
-    // Photos publish with commercial_music_id only - a track without one
-    // returns undefined so the photo body falls back to auto_add_music.
-    const tracks = (await this.musicSearch(accessToken, {}, businessId)).filter(
-      (track: { commercialMusicId?: string }) => track.commercialMusicId
-    );
+    const tracks = await this.musicSearch(accessToken, {}, businessId);
     if (!tracks.length) {
       return undefined;
     }
-    return tracks[Math.floor(Math.random() * tracks.length)].commercialMusicId;
-  }
-
-  // The photo endpoint expects the commercial_music_id - passing the
-  // song_clip_id the video endpoint uses fails the publish with TikTok's
-  // generic 51065 "Something is wrong" error. Selections saved before
-  // commercialMusicId existed only carry the song_clip_id, so resolve those
-  // back through the trending list.
-  private async resolvePhotoMusicId(
-    accessToken: string,
-    businessId: string,
-    music: TikTokDto['music']
-  ): Promise<string | undefined> {
-    if (music?.commercialMusicId) {
-      return music.commercialMusicId;
-    }
-    if (!music?.id) {
-      return undefined;
-    }
-    const tracks = await this.musicSearch(accessToken, {}, businessId);
-    return (
-      tracks.find(
-        (track: { id: string; commercialMusicId?: string }) =>
-          track.id === music.id
-      )?.commercialMusicId || music.id
-    );
+    return tracks[Math.floor(Math.random() * tracks.length)].id;
   }
 
   private async buildPhotoBody(
@@ -637,15 +608,12 @@ export class TiktokBusinessProvider
     // Random music wins over an explicitly selected track: the UI hides the
     // music selector while "add random music" is on, so a stale selection must
     // not silently override it.
-    const musicId = isDraft
-      ? undefined
-      : firstPost.settings.autoAddMusic === 'yes'
-      ? await this.pickRandomMusicId(accessToken, businessId)
-      : await this.resolvePhotoMusicId(
-          accessToken,
-          businessId,
-          firstPost.settings.music
-        );
+    const musicId =
+      firstPost.settings.autoAddMusic === 'yes'
+        ? !isDraft
+          ? await this.pickRandomMusicId(accessToken, businessId)
+          : undefined
+        : firstPost.settings.music?.id;
 
     return {
       business_id: businessId,
@@ -865,18 +833,21 @@ export class TiktokBusinessProvider
 
     return (music?.data?.list || [])
       .map((track: any) => ({
-        // song_clip_id is the value the video music_sound_id expects; older
-        // responses only carry commercial_music_id, which TikTok accepts as
-        // well. The photo music_sound_id expects commercial_music_id instead.
+        // music_sound_id only accepts a song_clip_id: the publish endpoints
+        // reject a commercial_music_id with the generic 51065 "Something is
+        // wrong" error (verified against the live API). Chart tracks sometimes
+        // have no full_duration_song_clip - their 30-day trending clip is the
+        // only publishable id (tracks with neither are filtered out below).
         id:
           track?.full_duration_song_clip?.song_clip_id ||
-          track?.commercial_music_id,
-        commercialMusicId: track?.commercial_music_id || '',
+          track?.trending_song_clip?.song_clip_id,
         title: track?.commercial_music_name || '',
         artist: track?.artist || '',
         image: track?.thumbnail_url || '',
-        duration: (track?.duration || 0) * 1000,
-        previewUrl: track?.preview_url || '',
+        duration:
+          (track?.duration || track?.trending_song_clip?.duration || 0) * 1000,
+        previewUrl:
+          track?.preview_url || track?.trending_song_clip?.preview_url || '',
       }))
       .filter((track: { id?: string }) => track.id);
   }
