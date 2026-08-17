@@ -29,6 +29,10 @@ export class OpenaiService {
       })
     ).data[0];
 
+    if (!generate?.b64_json) {
+      throw new Error('Image generation returned no image data');
+    }
+
     return generate.b64_json;
   }
 
