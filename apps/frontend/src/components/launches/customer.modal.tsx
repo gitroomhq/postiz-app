@@ -3,7 +3,6 @@
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Integration } from '@prisma/client';
-import { Autocomplete } from '@mantine/core';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Button } from '@gitroom/react/form/button';
@@ -50,17 +49,24 @@ export const CustomerModal: FC<{
   const { data } = useSWR('/customers', loadCustomers);
   return (
     <div className="relative w-full">
-      <div className="mb-[80px]">
-        <Autocomplete
-          value={customer}
-          onChange={setCustomer}
-          classNames={{
-            label: 'text-white',
-          }}
-          label={t('select_customer_label', 'Select Customer')}
+      <div className="mb-[80px] flex flex-col gap-[6px]">
+        <label htmlFor="customer-name" className="text-[14px] text-white">
+          {t('select_customer_label', 'Select Customer')}
+        </label>
+        <input
+          id="customer-name"
+          list="customer-name-options"
+          value={customer ?? ''}
+          onChange={(e) => setCustomer(e.target.value)}
           placeholder={t('start_typing', 'Start typing...')}
-          data={data?.map((p: any) => p.name) || []}
+          autoComplete="off"
+          className="bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] text-textColor placeholder-textColor px-[16px] text-[14px] outline-none"
         />
+        <datalist id="customer-name-options">
+          {(data?.map((p: any) => p.name) || []).map((name: string) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
       </div>
 
       <div className="my-[16px] flex gap-[10px]">
