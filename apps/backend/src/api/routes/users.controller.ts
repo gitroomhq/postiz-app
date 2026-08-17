@@ -305,10 +305,22 @@ export class UsersController {
   }
 
   @Post('/change-org')
-  changeOrg(
+  async changeOrg(
+    @GetUserFromRequest() user: User,
     @Body('id') id: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request
   ) {
+    // While impersonating, `user` is the impersonated account, so persisting
+    // here would change where that user lands on their next login.
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    const organizations = (
+      await this._orgService.getOrgsByUserId(user.id)
+    ).filter((f) => !f.users[0].disabled);
+    if (!impersonate && organizations.some((org) => org.id === id)) {
+      await this._userService.updateLastSelectedOrg(user.id, id);
+    }
+
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
