@@ -25,6 +25,10 @@ import {
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { withHeartbeat } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
+import {
+  BadBody,
+  Disconnect,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -173,43 +177,45 @@ export class PostActivity {
     // conversion and the platform call can both take minutes), so it
     // heartbeats end to end - under older workflow versions that set no
     // heartbeatTimeout this is a no-op
-    return withHeartbeat(async () => {
-      const getIntegration = this._integrationManager.getSocialIntegration(
-        integration.providerIdentifier
-      );
+    return withHeartbeat(() =>
+      this.handleDisconnect(integration, async () => {
+        const getIntegration = this._integrationManager.getSocialIntegration(
+          integration.providerIdentifier
+        );
 
-      const newPosts = await this._postService.updateTags(
-        integration.organizationId,
-        posts
-      );
+        const newPosts = await this._postService.updateTags(
+          integration.organizationId,
+          posts
+        );
 
-      return getIntegration.comment(
-        integration.internalId,
-        postId,
-        lastPostId,
-        integration.token,
-        await Promise.all(
-          (newPosts || []).map(async (p) => ({
-            id: p.id,
-            message: stripHtmlValidation(
-              getIntegration.editor,
-              p.content,
-              true,
-              false,
-              !/<\/?[a-z][\s\S]*>/i.test(p.content),
-              getIntegration.mentionFormat
-            ),
-            settings: JSON.parse(p.settings || '{}'),
-            media: await this._postService.updateMedia(
-              p.id,
-              JSON.parse(p.image || '[]'),
-              getIntegration?.convertToJPEG || false
-            ),
-          }))
-        ),
-        integration
-      );
-    });
+        return getIntegration.comment(
+          integration.internalId,
+          postId,
+          lastPostId,
+          integration.token,
+          await Promise.all(
+            (newPosts || []).map(async (p) => ({
+              id: p.id,
+              message: stripHtmlValidation(
+                getIntegration.editor,
+                p.content,
+                true,
+                false,
+                !/<\/?[a-z][\s\S]*>/i.test(p.content),
+                getIntegration.mentionFormat
+              ),
+              settings: JSON.parse(p.settings || '{}'),
+              media: await this._postService.updateMedia(
+                p.id,
+                JSON.parse(p.image || '[]'),
+                getIntegration?.convertToJPEG || false
+              ),
+            }))
+          ),
+          integration
+        );
+      })
+    );
   }
 
   @ActivityMethod()
@@ -226,6 +232,41 @@ export class PostActivity {
     return this.postSocialInternal(integration, posts, true);
   }
 
+  // A Disconnect error means the platform will keep rejecting this channel no
+  // matter how many token refreshes (e.g. TikTok's daily active user cap):
+  // mark the channel as needing a re-connect and notify the user, then rethrow
+  // as BadBody so every workflow version - frozen once on main - treats it as
+  // a terminal error without needing a new workflow.
+  private async handleDisconnect<T>(
+    integration: Integration,
+    func: () => Promise<T>
+  ): Promise<T> {
+    try {
+      return await func();
+    } catch (err) {
+      if (err instanceof Disconnect) {
+        try {
+          await this._integrationService.disconnectChannel(
+            integration.organizationId,
+            integration,
+            err.message
+          );
+        } catch (e) {
+          /**empty**/
+        }
+
+        throw new BadBody(
+          integration.providerIdentifier,
+          JSON.stringify({}),
+          Buffer.from('{}'),
+          err.message
+        );
+      }
+
+      throw err;
+    }
+  }
+
   private async postSocialInternal(
     integration: Integration,
     posts: Post[],
@@ -236,7 +277,9 @@ export class PostActivity {
     // heartbeats end to end - under older workflow versions that set no
     // heartbeatTimeout this is a no-op
     return withHeartbeat(() =>
-      this.postSocialBody(integration, posts, allowPending)
+      this.handleDisconnect(integration, () =>
+        this.postSocialBody(integration, posts, allowPending)
+      )
     );
   }
 
@@ -329,10 +372,8 @@ export class PostActivity {
       integration.providerIdentifier
     );
 
-    return getIntegration.checkPostStatus(
-      integration.token,
-      pendingData,
-      integration
+    return this.handleDisconnect(integration, () =>
+      getIntegration.checkPostStatus(integration.token, pendingData, integration)
     );
   }
 
@@ -343,7 +384,9 @@ export class PostActivity {
     );
 
     return withHeartbeat(() =>
-      getIntegration.finalizePost(integration.token, pendingData, integration)
+      this.handleDisconnect(integration, () =>
+        getIntegration.finalizePost(integration.token, pendingData, integration)
+      )
     );
   }
 

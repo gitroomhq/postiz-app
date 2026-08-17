@@ -179,6 +179,10 @@ export interface SocialProvider
     pendingData: any,
     integration: Integration
   ): Promise<PendingCheckResponse>;
+  migrationMatch(
+    auth: Pick<AuthTokenDetails, 'id' | 'username'>,
+    integration: Integration
+  ): boolean;
   finalizePost(
     accessToken: string,
     pendingData: any,
