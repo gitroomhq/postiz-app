@@ -211,6 +211,65 @@ export class IntegrationRepository {
     });
   }
 
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: org,
+        internalId,
+        deletedAt: null,
+      },
+    });
+  }
+
+  // Moves a channel to another provider in place (MIGRATE_PROVIDERS): only the
+  // provider and the app-scoped ids change, so the integration id - and with it
+  // scheduled posts, settings and customers - survives the migration. The
+  // follow-up createOrUpdateIntegration upsert matches the new internalId and
+  // stores the fresh tokens.
+  async migrateIntegration(
+    org: string,
+    id: string,
+    internalId: string,
+    providerIdentifier: string,
+    rootInternalId: string
+  ) {
+    // A soft-deleted channel can still hold the target internalId
+    // (deleteChannel keeps it): rename it out of the way like updateIntegration
+    // does, otherwise the organizationId_internalId unique constraint rejects
+    // the migration. Live channels are rejected by the service before this.
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: org,
+          internalId,
+        },
+      },
+    });
+
+    if (existing && existing.deletedAt) {
+      await this._integration.model.integration.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          internalId: `deleted_${internalId}_${makeId(10)}`,
+        },
+      });
+    }
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        internalId,
+        providerIdentifier,
+        rootInternalId,
+      },
+    });
+  }
+
   async createOrUpdateIntegration(
     additionalSettings:
       | {
