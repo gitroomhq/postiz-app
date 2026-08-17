@@ -32,11 +32,13 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration({
         maskAllText: false,
-        maskAllInputs: true,
+        maskAllInputs: false,
+        blockAllMedia: false,
       }),
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget
         autoInject: false,
+        showEmail: false,
       }),
       Sentry.replayCanvasIntegration(),
     ],

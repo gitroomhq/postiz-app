@@ -9,6 +9,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -483,10 +484,28 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       'create local post'
     );
 
-    const postData = await response.json();
+    const postData = await response.json().catch(() => ({}));
+
+    if (postData?.state === 'REJECTED') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(postData),
+        JSON.stringify(postBody),
+        'Google rejected this post for a content policy violation. Please review the post content and try again.'
+      );
+    }
+
+    if (!postData?.name) {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(postData),
+        JSON.stringify(postBody),
+        'Google did not confirm the post creation. Please try again.'
+      );
+    }
 
     // Extract the post ID and construct the URL
-    const postId = postData.name || '';
+    const postId = postData.name;
     const locationId = id.split('/').pop();
 
     // GMB posts don't have direct URLs, but we can link to the business profile

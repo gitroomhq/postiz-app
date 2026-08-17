@@ -59,9 +59,12 @@ export const getTemporalModule = (
                   )
                 : undefined;
 
+              // Workflows only ever run on the `main` queue; the other Workers
+              // are activity-only, so skip the workflow bundle (webpack build,
+              // workflow thread + V8 isolate, sticky cache) on them.
               return {
                 taskQueue,
-                workflowsPath: path!,
+                ...(taskQueue === 'main' ? { workflowsPath: path! } : {}),
                 activityClasses: activityClasses!,
                 autoStart: true,
                 ...(concurrency

@@ -191,6 +191,42 @@ export class InstagramStandaloneProvider
     );
   }
 
+  async postPending(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return instagramProvider.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'graph.instagram.com'
+    );
+  }
+
+  // the graph domain travels inside pendingData, so these are pure delegations
+  override async checkPostStatus(
+    accessToken: string,
+    pendingData: any,
+    integration: Integration
+  ) {
+    return instagramProvider.checkPostStatus(
+      accessToken,
+      pendingData,
+      integration
+    );
+  }
+
+  override async finalizePost(
+    accessToken: string,
+    pendingData: any,
+    integration: Integration
+  ) {
+    return instagramProvider.finalizePost(accessToken, pendingData, integration);
+  }
+
   async comment(
     id: string,
     postId: string,
