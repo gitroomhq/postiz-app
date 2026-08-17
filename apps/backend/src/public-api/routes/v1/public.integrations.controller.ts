@@ -340,8 +340,16 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'Integration not allowed' }, 400);
     }
 
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+    // A provider migrated via MIGRATE_PROVIDERS reconnects through its target
+    // provider's OAuth: the callback lands on the target and the channel is
+    // migrated in place (see migrateIntegration).
+    const migrateTo = refresh
+      ? this._integrationManager.getMigrationTarget(integration)
+      : undefined;
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      migrateTo || integration
+    );
 
     if (integrationProvider.externalUrl) {
       throw new HttpException(
