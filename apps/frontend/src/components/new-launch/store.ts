@@ -112,6 +112,8 @@ interface StoreState {
   setTab: (tab: 0 | 1) => void;
   setHide: (hide: boolean) => void;
   setDate: (date: dayjs.Dayjs) => void;
+  customDates: Record<string, dayjs.Dayjs>;
+  setCustomDate: (integrationId: string, date?: dayjs.Dayjs) => void;
   setRepeater: (repeater: number) => void;
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
@@ -154,6 +156,7 @@ const initialState = {
   selectedIntegrations: [] as SelectedIntegrations[],
   global: [] as Values[],
   internal: [] as Internal[],
+  customDates: {} as Record<string, dayjs.Dayjs>,
   chars: {},
 };
 
@@ -533,6 +536,16 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     set((state) => ({
       date,
     })),
+  setCustomDate: (integrationId: string, date?: dayjs.Dayjs) =>
+    set((state) => {
+      const customDates = { ...state.customDates };
+      if (date) {
+        customDates[integrationId] = date;
+      } else {
+        delete customDates[integrationId];
+      }
+      return { customDates };
+    }),
   setRepeater: (repeater: number) =>
     set((state) => ({
       repeater,
