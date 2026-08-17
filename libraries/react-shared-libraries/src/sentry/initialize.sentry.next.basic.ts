@@ -52,6 +52,29 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
             }
           }
 
+          const frames = event.exception.values.flatMap(
+            (exception) => exception.stacktrace?.frames || []
+          );
+          const isExtensionFrame = (frame: { filename?: string }) =>
+            !!frame.filename &&
+            (frame.filename.endsWith('/scripts/inpage.js') ||
+              frame.filename.startsWith('chrome-extension://') ||
+              frame.filename.startsWith('moz-extension://') ||
+              frame.filename.startsWith('safari-extension://'));
+          const extensionOrigin =
+            frames.some(isExtensionFrame) &&
+            frames.every(
+              (frame) => !frame.filename || isExtensionFrame(frame)
+            );
+          if (extensionOrigin) {
+            event.tags = { ...event.tags, extension_origin: 'true' };
+            event.extra = {
+              ...event.extra,
+              hasWindowEthereum:
+                typeof window !== 'undefined' && !!(window as any).ethereum,
+            };
+          }
+
           // If there's an exception and an event id, present the user report dialog.
           if (event.event_id) {
             // Only attempt to show the dialog in a browser environment.
