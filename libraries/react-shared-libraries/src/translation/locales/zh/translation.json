@@ -670,6 +670,7 @@
   "two_weeks": "两周",
   "repeat_post_every_label": "每隔...重复发布",
   "add_new_tag": "添加新标签",
+  "edit_tag": "编辑标签",
   "tag_name": "名称",
   "post_is_too_long": "帖子太长，请修改",
   "your_post_should_have_at_least_one_character_or_one_image": "您的帖子至少应包含一个字符或一张图片。",
