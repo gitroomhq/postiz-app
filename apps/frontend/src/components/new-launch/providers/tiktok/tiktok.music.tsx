@@ -8,6 +8,7 @@ import clsx from 'clsx';
 
 interface MusicResult {
   id: string;
+  commercialMusicId: string;
   title: string;
   artist: string;
   image: string;
@@ -17,6 +18,7 @@ interface MusicResult {
 
 interface SelectedMusic {
   id: string;
+  commercialMusicId?: string;
   title?: string;
   artist?: string;
   image?: string;
@@ -157,6 +159,7 @@ export const TikTokMusicSelector: FC<{
       setOpen(false);
       emit({
         id: track.id,
+        commercialMusicId: track.commercialMusicId,
         title: track.title,
         artist: track.artist,
         image: track.image,

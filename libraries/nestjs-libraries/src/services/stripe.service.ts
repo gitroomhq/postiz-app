@@ -390,6 +390,29 @@ export class StripeService {
     };
   }
 
+  async cancelAllSubscriptions(organizationId: string) {
+    // getOrgById must not filter deletedAt, this can run for an organization
+    // that was already soft deleted by an account deletion
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return;
+    }
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: org.paymentId,
+      status: 'all',
+      limit: 100,
+    });
+
+    for (const subscription of subscriptions.data.filter(
+      (f) => f.status !== 'canceled'
+    )) {
+      await stripe.subscriptions.cancel(subscription.id);
+    }
+
+    await this._subscriptionService.deleteSubscription(org.paymentId);
+  }
+
   async getCustomerByOrganizationId(organizationId: string) {
     const org = (await this._organizationService.getOrgById(organizationId))!;
     return org.paymentId;
