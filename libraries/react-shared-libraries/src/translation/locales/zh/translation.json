@@ -743,5 +743,6 @@
   "create_new_organization": "创建新组织",
   "organization_settings": "组织设置",
   "organization_name": "组织名称",
-  "organization_name_description": "在组织切换器中显示的名称。"
+  "organization_name_description": "在组织切换器中显示的名称。",
+  "could_not_create_organization": "无法创建组织"
 }

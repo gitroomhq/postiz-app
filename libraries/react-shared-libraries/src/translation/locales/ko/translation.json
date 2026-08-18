@@ -743,5 +743,6 @@
   "create_new_organization": "새 조직 생성",
   "organization_settings": "조직 설정",
   "organization_name": "조직 이름",
-  "organization_name_description": "조직 전환기에서 표시되는 이름입니다."
+  "organization_name_description": "조직 전환기에서 표시되는 이름입니다.",
+  "could_not_create_organization": "조직을 생성할 수 없습니다"
 }

@@ -743,5 +743,6 @@
   "create_new_organization": "Yeni Organizasyon Oluştur",
   "organization_settings": "Organizasyon Ayarları",
   "organization_name": "Organizasyon adı",
-  "organization_name_description": "Organizasyon değiştiricisinde gösterilen isim."
+  "organization_name_description": "Organizasyon değiştiricisinde gösterilen isim.",
+  "could_not_create_organization": "Organizasyon oluşturulamadı"
 }

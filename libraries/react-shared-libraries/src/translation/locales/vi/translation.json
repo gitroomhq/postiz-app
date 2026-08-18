@@ -743,5 +743,6 @@
   "create_new_organization": "Tạo Tổ Chức Mới",
   "organization_settings": "Cài Đặt Tổ Chức",
   "organization_name": "Tên tổ chức",
-  "organization_name_description": "Tên được hiển thị trong bộ chuyển đổi tổ chức."
+  "organization_name_description": "Tên được hiển thị trong bộ chuyển đổi tổ chức.",
+  "could_not_create_organization": "Không thể tạo tổ chức"
 }

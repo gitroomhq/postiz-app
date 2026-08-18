@@ -743,5 +743,6 @@
   "create_new_organization": "নতুন সংস্থা তৈরি করুন",
   "organization_settings": "সংস্থার সেটিংস",
   "organization_name": "সংস্থার নাম",
-  "organization_name_description": "সংস্থা সুইচারে প্রদর্শিত নাম।"
+  "organization_name_description": "সংস্থা সুইচারে প্রদর্শিত নাম।",
+  "could_not_create_organization": "সংস্থা তৈরি করা যায়নি"
 }

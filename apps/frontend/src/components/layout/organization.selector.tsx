@@ -9,11 +9,13 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 
 export const CreateOrganization = () => {
   const t = useT();
   const fetch = useFetch();
   const modals = useModals();
+  const toaster = useToaster();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const create = useCallback(async () => {
@@ -25,6 +27,13 @@ export const CreateOrganization = () => {
           body: JSON.stringify({ name }),
         })
       ).json();
+      if (!id) {
+        toaster.show(
+          t('could_not_create_organization', 'Could not create organization'),
+          'warning'
+        );
+        return;
+      }
       await fetch('/user/change-org', {
         method: 'POST',
         body: JSON.stringify({ id }),

@@ -743,5 +743,6 @@
   "create_new_organization": "Créer une nouvelle organisation",
   "organization_settings": "Paramètres de l'organisation",
   "organization_name": "Nom de l'organisation",
-  "organization_name_description": "Le nom affiché dans le sélecteur d'organisation."
+  "organization_name_description": "Le nom affiché dans le sélecteur d'organisation.",
+  "could_not_create_organization": "Impossible de créer l'organisation"
 }

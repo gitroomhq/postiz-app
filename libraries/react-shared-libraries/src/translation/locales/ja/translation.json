@@ -743,5 +743,6 @@
   "create_new_organization": "新しい組織を作成",
   "organization_settings": "組織の設定",
   "organization_name": "組織名",
-  "organization_name_description": "組織切り替え時に表示される名前です。"
+  "organization_name_description": "組織切り替え時に表示される名前です。",
+  "could_not_create_organization": "組織を作成できませんでした"
 }

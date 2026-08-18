@@ -743,5 +743,6 @@
   "create_new_organization": "צור ארגון חדש",
   "organization_settings": "הגדרות ארגון",
   "organization_name": "שם הארגון",
-  "organization_name_description": "השם שמוצג בבורר הארגונים."
+  "organization_name_description": "השם שמוצג בבורר הארגונים.",
+  "could_not_create_organization": "לא ניתן היה ליצור ארגון"
 }
