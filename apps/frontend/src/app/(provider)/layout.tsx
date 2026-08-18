@@ -1,3 +1,4 @@
+import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 
 export const dynamic = 'force-dynamic';
@@ -71,12 +72,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <MantineWrapper>
-            <LayoutContext>
-              <UtmSaver />
-              {children}
-            </LayoutContext>
-          </MantineWrapper>
+          <SentryComponent>
+            <MantineWrapper>
+              <LayoutContext>
+                <UtmSaver />
+                {children}
+              </LayoutContext>
+            </MantineWrapper>
+          </SentryComponent>
         </VariableContextComponent>
       </body>
     </html>
