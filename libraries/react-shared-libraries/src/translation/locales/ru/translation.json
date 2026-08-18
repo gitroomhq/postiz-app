@@ -744,5 +744,6 @@
   "organization_settings": "Настройки организации",
   "organization_name": "Название организации",
   "organization_name_description": "Имя, отображаемое в переключателе организаций.",
-  "could_not_create_organization": "Не удалось создать организацию"
+  "could_not_create_organization": "Не удалось создать организацию",
+  "could_not_update_organization_name": "Не удалось обновить название организации"
 }

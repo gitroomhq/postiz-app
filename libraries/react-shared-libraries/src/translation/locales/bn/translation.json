@@ -744,5 +744,6 @@
   "organization_settings": "সংস্থার সেটিংস",
   "organization_name": "সংস্থার নাম",
   "organization_name_description": "সংস্থা সুইচারে প্রদর্শিত নাম।",
-  "could_not_create_organization": "সংস্থা তৈরি করা যায়নি"
+  "could_not_create_organization": "সংস্থা তৈরি করা যায়নি",
+  "could_not_update_organization_name": "সংস্থার নাম আপডেট করা যায়নি"
 }

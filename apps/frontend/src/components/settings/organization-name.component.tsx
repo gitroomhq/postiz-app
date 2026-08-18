@@ -40,10 +40,17 @@ const OrganizationNameComponent = () => {
   }, [data]);
 
   const save = useCallback(async () => {
-    await fetch('/settings/organization-name', {
+    const response = await fetch('/settings/organization-name', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
+    if (!response.ok) {
+      toaster.show(
+        t('could_not_update_organization_name', 'Could not update organization name'),
+        'warning'
+      );
+      return;
+    }
     mutate({ name });
     globalMutate('organizations');
     toaster.show(t('settings_updated', 'Settings updated'), 'success');

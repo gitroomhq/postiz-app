@@ -744,5 +744,6 @@
   "organization_settings": "Configurações da organização",
   "organization_name": "Nome da organização",
   "organization_name_description": "O nome exibido no seletor de organizações.",
-  "could_not_create_organization": "Não foi possível criar a organização"
+  "could_not_create_organization": "Não foi possível criar a organização",
+  "could_not_update_organization_name": "Não foi possível atualizar o nome da organização"
 }

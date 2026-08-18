@@ -746,5 +746,6 @@
   "organization_settings": "Organization Settings",
   "organization_name": "Organization name",
   "organization_name_description": "The name shown in the organization switcher.",
-  "could_not_create_organization": "Could not create organization"
+  "could_not_create_organization": "Could not create organization",
+  "could_not_update_organization_name": "Could not update organization name"
 }

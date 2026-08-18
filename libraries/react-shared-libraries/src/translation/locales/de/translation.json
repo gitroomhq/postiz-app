@@ -744,5 +744,6 @@
   "organization_settings": "Organisationseinstellungen",
   "organization_name": "Organisationsname",
   "organization_name_description": "Der Name, der im Organisationsumschalter angezeigt wird.",
-  "could_not_create_organization": "Organisation konnte nicht erstellt werden"
+  "could_not_create_organization": "Organisation konnte nicht erstellt werden",
+  "could_not_update_organization_name": "Organisationsname konnte nicht aktualisiert werden"
 }

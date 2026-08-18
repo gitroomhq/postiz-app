@@ -744,5 +744,6 @@
   "organization_settings": "إعدادات المنظمة",
   "organization_name": "اسم المنظمة",
   "organization_name_description": "الاسم المعروض في مُبدّل المنظمات.",
-  "could_not_create_organization": "تعذّر إنشاء المؤسسة"
+  "could_not_create_organization": "تعذّر إنشاء المؤسسة",
+  "could_not_update_organization_name": "تعذر تحديث اسم المؤسسة"
 }

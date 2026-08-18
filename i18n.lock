@@ -749,3 +749,4 @@ checksums:
     organization_name: e69fb0acbe75358352890a6f04e4b9c0
     organization_name_description: fc0874a90542efd411fe73f8fa552ebb
     could_not_create_organization: 632bfcc6464390bc3e8eae128e54444f
+    could_not_update_organization_name: c0c3a9387e7e418f09946de3a436c6db

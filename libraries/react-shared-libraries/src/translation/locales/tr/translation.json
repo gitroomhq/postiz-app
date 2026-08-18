@@ -744,5 +744,6 @@
   "organization_settings": "Organizasyon Ayarları",
   "organization_name": "Organizasyon adı",
   "organization_name_description": "Organizasyon değiştiricisinde gösterilen isim.",
-  "could_not_create_organization": "Organizasyon oluşturulamadı"
+  "could_not_create_organization": "Organizasyon oluşturulamadı",
+  "could_not_update_organization_name": "Organizasyon adı güncellenemedi"
 }
