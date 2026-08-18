@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
+import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@gitroom/orchestrator/app.module';
 import * as dns from 'node:dns';
@@ -41,7 +42,9 @@ Runtime.install({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new ConsoleLogger({ forceConsole: true, colors: false }),
+  });
   app.enableShutdownHooks();
   const port = process.env.ORCHESTRATOR_PORT || 3002;
   await app.listen(port);
