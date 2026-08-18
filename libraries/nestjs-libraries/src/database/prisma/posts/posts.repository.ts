@@ -172,6 +172,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,
@@ -411,15 +412,37 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    // The calendar tooltip only surfaces curated provider messages: bad_body
+    // failures whose message came from a handleErrors mapping or a
+    // hand-written provider throw (unmapped API responses carry the
+    // 'Unknown Error' placeholder instead). Those are stored as
+    // {"message":"..."} so the frontend can tell them apart from everything
+    // this column held until now (internal strings like 'Refresh channel
+    // needed', serialized failures), which keeps rendering the generic
+    // tooltip. Internal strings are still stored for debugging, and the full
+    // failure is kept in the Errors table below.
+    const failureMessage =
+      err?.cause?.failure?.message || err?.failure?.cause?.message;
+    const errorMessage = !err
+      ? undefined
+      : typeof err === 'string'
+      ? err // stored for debugging, rendered as the generic tooltip
+      : err?.cause?.type === 'bad_body' &&
+        failureMessage &&
+        failureMessage !== 'Unknown Error'
+      ? JSON.stringify({ message: failureMessage })
+      : undefined;
+
     const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        ...(err
-          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
-          : {}),
+        // Always overwrite on a new failure - keeping the previous value would
+        // show a stale (and now wrong) message for a post that failed again
+        // for a different reason.
+        ...(err ? { error: errorMessage ?? null } : {}),
       },
       include: {
         integration: {
