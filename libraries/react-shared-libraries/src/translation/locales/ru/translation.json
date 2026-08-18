@@ -575,6 +575,7 @@
   "email_address": "Адрес электронной почты",
   "email_already_exists": "Электронная почта уже существует",
   "google": "Google",
+  "apple": "Яблоко",
   "farcaster": "Farcaster",
   "edit_autopost": "Редактировать автопост",
   "add_autopost_title": "Добавить автопост",
@@ -737,5 +738,10 @@
   "republish_the_post": "Опубликовать пост повторно",
   "post_already_published_republish_warning": "Этот пост уже был опубликован. Повторная публикация опубликует его снова в",
   "republish_at": "в",
-  "republish_recurring_note": "Это повторяющийся пост: ваши изменения будут применяться ко всем будущим публикациям, начиная с этого момента."
+  "republish_recurring_note": "Это повторяющийся пост: ваши изменения будут применяться ко всем будущим публикациям, начиная с этого момента.",
+  "create": "Создать",
+  "create_new_organization": "Создать новую организацию",
+  "organization_settings": "Настройки организации",
+  "organization_name": "Название организации",
+  "organization_name_description": "Имя, отображаемое в переключателе организаций."
 }

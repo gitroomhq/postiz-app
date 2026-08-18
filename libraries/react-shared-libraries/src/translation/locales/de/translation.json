@@ -575,6 +575,7 @@
   "email_address": "E-Mail-Adresse",
   "email_already_exists": "E-Mail existiert bereits",
   "google": "Google",
+  "apple": "Apfel",
   "farcaster": "Farcaster",
   "edit_autopost": "Autopost bearbeiten",
   "add_autopost_title": "Autopost hinzufügen",
@@ -737,5 +738,10 @@
   "republish_the_post": "Beitrag erneut veröffentlichen",
   "post_already_published_republish_warning": "Dieser Beitrag wurde bereits veröffentlicht. Durch erneutes Veröffentlichen wird er erneut veröffentlicht auf",
   "republish_at": "um",
-  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen."
+  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen.",
+  "create": "Erstellen",
+  "create_new_organization": "Neue Organisation erstellen",
+  "organization_settings": "Organisationseinstellungen",
+  "organization_name": "Organisationsname",
+  "organization_name_description": "Der Name, der im Organisationsumschalter angezeigt wird."
 }

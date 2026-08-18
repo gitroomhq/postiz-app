@@ -579,6 +579,7 @@ checksums:
     email_address: 0ee22bbbe989a0c61a18023407d12dc2
     email_already_exists: ad25f0ca7a16c0d37e566a9c090a0fd2
     google: 6cc462fb53d90d404f48d5a6695c1de1
+    apple: 4e2ced07ca66bd1cf0562882d019aff2
     farcaster: b09af25fcb497663e8594b9fc514b969
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9
@@ -742,3 +743,8 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    create: 757ccd28dd533ff3a933355273c1e32a
+    create_new_organization: 66a3ebeea4f71c289e0c378459d2516e
+    organization_settings: d31952131ad5f0ec72ad96f1ed11bef6
+    organization_name: e69fb0acbe75358352890a6f04e4b9c0
+    organization_name_description: fc0874a90542efd411fe73f8fa552ebb
