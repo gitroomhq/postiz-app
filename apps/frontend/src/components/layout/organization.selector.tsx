@@ -18,18 +18,22 @@ export const CreateOrganization = () => {
   const [loading, setLoading] = useState(false);
   const create = useCallback(async () => {
     setLoading(true);
-    const { id } = await (
-      await fetch('/user/organizations', {
+    try {
+      const { id } = await (
+        await fetch('/user/organizations', {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+        })
+      ).json();
+      await fetch('/user/change-org', {
         method: 'POST',
-        body: JSON.stringify({ name }),
-      })
-    ).json();
-    await fetch('/user/change-org', {
-      method: 'POST',
-      body: JSON.stringify({ id }),
-    });
-    modals.closeAll();
-    window.location.reload();
+        body: JSON.stringify({ id }),
+      });
+      modals.closeAll();
+      window.location.reload();
+    } finally {
+      setLoading(false);
+    }
   }, [name]);
   return (
     <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
