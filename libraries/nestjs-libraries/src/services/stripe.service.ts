@@ -299,8 +299,7 @@ export class StripeService {
         customer,
         subscription: currentUserSubscription?.data?.[0]?.id,
         subscription_details: {
-          proration_behavior: 'create_prorations',
-          billing_cycle_anchor: 'now',
+          proration_behavior: 'always_invoice',
           items: [
             {
               id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
