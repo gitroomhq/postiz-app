@@ -17,6 +17,7 @@ model Organization {
   streakSince         DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
   allowTrial          Boolean              @default(false)
   isTrailing          Boolean              @default(false)
   shortlink           ShortLinkPreference  @default(ASK)
@@ -47,6 +48,7 @@ model Organization {
   @@index([apiKey])
   @@index([streakSince])
   @@index([paymentId])
+  @@index([deletedAt])
 }
 
 model Tags {
@@ -99,6 +101,7 @@ model User {
   lastOnline            DateTime             @default(now())
   ip                    String?
   agent                 String?
+  deletedAt             DateTime?
   comments              Comments[]
   items                 ItemUser[]
   groupBuyer            MessagesGroup[]      @relation("groupBuyer")
@@ -120,6 +123,7 @@ model User {
   @@index([account])
   @@index([lastOnline])
   @@index([pictureId])
+  @@index([deletedAt])
 }
 
 model UsedCodes {
@@ -923,6 +927,7 @@ enum Provider {
   LOCAL
   GITHUB
   GOOGLE
+  APPLE
   FARCASTER
   WALLET
   GENERIC
