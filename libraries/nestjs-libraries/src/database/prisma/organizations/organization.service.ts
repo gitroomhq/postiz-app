@@ -7,6 +7,7 @@ import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/a
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
+import { CreateOrganizationDto } from '@gitroom/nestjs-libraries/dtos/organizations/create.organization.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Organization, ShortLinkPreference, User } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
@@ -190,5 +191,20 @@ export class OrganizationService {
       orgId,
       shortlink
     );
+  }
+
+  createOrgForUser(userId: string, body: CreateOrganizationDto) {
+    return this._organizationRepository.createOrgForUser(
+      userId,
+      body.name?.trim() || 'My Organization'
+    );
+  }
+
+  getOrganizationName(orgId: string) {
+    return this._organizationRepository.getOrganizationName(orgId);
+  }
+
+  updateOrganizationName(orgId: string, name: string) {
+    return this._organizationRepository.updateOrganizationName(orgId, name);
   }
 }

@@ -14,6 +14,7 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { OrganizationNameDto } from '@gitroom/nestjs-libraries/dtos/settings/organization-name.dto';
 import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -87,5 +88,19 @@ export class SettingsController {
       org.id,
       body.shortlink
     );
+  }
+
+  @Get('/organization-name')
+  async getOrganizationName(@GetOrgFromRequest() org: Organization) {
+    return this._organizationService.getOrganizationName(org.id);
+  }
+
+  @Post('/organization-name')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async updateOrganizationName(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: OrganizationNameDto
+  ) {
+    return this._organizationService.updateOrganizationName(org.id, body.name);
   }
 }
