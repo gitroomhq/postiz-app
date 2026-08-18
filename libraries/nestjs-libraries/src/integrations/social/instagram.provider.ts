@@ -320,6 +320,30 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf("before impersonating a user's page") > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Facebook rejected the post because your account is missing permissions on this Page. Make sure your Facebook account has full content access to the Page, then reconnect the channel.',
+      };
+    }
+
+    if (body.indexOf('belongs to a Page that is not accessible') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The Facebook Page linked to this Instagram account is not accessible to your Facebook account (unpublished, restricted, or your access was removed). Restore your access to the Page on Facebook, then reconnect the channel.',
+      };
+    }
+
+    if (body.indexOf('in order to impersonate it') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Facebook rejected the post because your account is not an admin, editor or moderator of this Page (or the Page requires two-factor authentication on your Facebook account). Restore your role on the Page, then reconnect the channel.',
+      };
+    }
+
     if (/"code":\s*190\b/.test(body)) {
       return {
         type: 'refresh-token' as const,
@@ -511,7 +535,7 @@ export class InstagramProvider
 
     // Fetch pages the user explicitly shared during the OAuth dialog
     await fetchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
     );
 
     // Also fetch pages via Business Manager API to discover pages
@@ -527,7 +551,7 @@ export class InstagramProvider
           for (const business of bizResponse.data) {
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -535,7 +559,7 @@ export class InstagramProvider
 
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -548,40 +572,42 @@ export class InstagramProvider
       // Business Manager API not available for all users
     }
 
-    const onlyConnectedAccounts = (
-      await Promise.all(
-        allFacebookPages
-          .filter((f: any) => f.instagram_business_account)
-          .map(async (p: any) => {
-            // Pages without an access_token were never granted to the app
-            // in the OAuth dialog — selecting them would store a broken
-            // "undefined___..." token
-            const { access_token } = await (
+    const onlyConnectedAccounts = await Promise.all(
+      allFacebookPages
+        .filter((f: any) => f.instagram_business_account)
+        .map(async (p: any) => {
+          // Pages without an access_token were never granted to the app
+          // in the OAuth dialog (selecting them would store a broken
+          // "undefined___..." token); pages without the CREATE_CONTENT
+          // task can't be published to by this user. Both are shown as
+          // disabled in the picker.
+          const { access_token } = await (
+            await fetch(
+              `https://graph.facebook.com/v20.0/${p.id}?fields=access_token&access_token=${accessToken}`
+            )
+          ).json();
+
+          return {
+            pageId: p.id,
+            disabledReason: !access_token
+              ? 'not_granted'
+              : p.tasks && !p.tasks.includes('CREATE_CONTENT')
+              ? 'no_publish_permission'
+              : undefined,
+            ...(await (
               await fetch(
-                `https://graph.facebook.com/v20.0/${p.id}?fields=access_token&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
               )
-            ).json();
-
-            if (!access_token) {
-              return null;
-            }
-
-            return {
-              pageId: p.id,
-              ...(await (
-                await fetch(
-                  `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
-                )
-              ).json()),
-              id: p.instagram_business_account.id,
-            };
-          })
-      )
-    ).filter(Boolean);
+            ).json()),
+            id: p.instagram_business_account.id,
+          };
+        })
+    );
 
     return onlyConnectedAccounts.map((p: any) => ({
       pageId: p.pageId,
       id: p.id,
+      disabledReason: p.disabledReason,
       name: p.name,
       picture: { data: { url: p.profile_picture_url } },
     }));
@@ -597,6 +623,10 @@ export class InstagramProvider
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
+
+    if (!access_token) {
+      throw new Error('Page not granted to the app');
+    }
 
     const { id, name, profile_picture_url, username } = await (
       await fetch(
