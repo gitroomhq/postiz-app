@@ -270,7 +270,7 @@ export class PostsService {
             post.integration.id
           );
 
-          if (!integration) {
+          if (!integration || integration.deletedAt) {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
