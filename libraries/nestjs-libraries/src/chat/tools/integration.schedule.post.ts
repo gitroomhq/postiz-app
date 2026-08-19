@@ -203,7 +203,7 @@ If the tools return errors, you would need to rerun it with the right parameters
         for (const post of inputData.socialPost) {
           const integration = integrations[post.integrationId];
 
-          if (!integration) {
+          if (!integration || integration.deletedAt) {
             throw new Error('Integration not found');
           }
 
