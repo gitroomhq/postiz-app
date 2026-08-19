@@ -14,7 +14,7 @@ import { PublicAuthMiddleware } from '@gitroom/backend/services/auth/public.auth
 const authenticatedController = [PublicIntegrationsController];
 @Module({
   imports: [UploadModule],
-  controllers: [...authenticatedController],
+  controllers: process.env.MCP_ONLY ? [] : [...authenticatedController],
   providers: [
     AuthService,
     StripeService,
