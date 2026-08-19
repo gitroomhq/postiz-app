@@ -737,5 +737,6 @@
   "republish_the_post": "Republicar a publicação",
   "post_already_published_republish_warning": "Esta publicação já foi publicada. Republicar irá publicá-la novamente em",
   "republish_at": "em",
-  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora."
+  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora.",
+  "could_not_reschedule_post": "Não foi possível reagendar a publicação"
 }

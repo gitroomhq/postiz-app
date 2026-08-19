@@ -742,3 +742,4 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    could_not_reschedule_post: 4937abc48ca71c990a440352ed87689d

@@ -737,5 +737,6 @@
   "republish_the_post": "לפרסם מחדש את הפוסט",
   "post_already_published_republish_warning": "הפוסט הזה כבר פורסם. פרסום מחדש יפרסם אותו שוב ב",
   "republish_at": "בשעה",
-  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו."
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו.",
+  "could_not_reschedule_post": "לא ניתן היה לתזמן מחדש את הפוסט"
 }

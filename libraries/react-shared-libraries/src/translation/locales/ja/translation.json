@@ -737,5 +737,6 @@
   "republish_the_post": "投稿を再公開する",
   "post_already_published_republish_warning": "この投稿は既に公開されています。再公開すると、もう一度投稿されます：",
   "republish_at": "公開日時：",
-  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。"
+  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。",
+  "could_not_reschedule_post": "投稿の再スケジュールができませんでした"
 }

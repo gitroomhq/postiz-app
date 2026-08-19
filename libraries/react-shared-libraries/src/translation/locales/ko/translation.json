@@ -737,5 +737,6 @@
   "republish_the_post": "게시물 다시 게시하기",
   "post_already_published_republish_warning": "이 게시물은 이미 게시되었습니다. 다시 게시하면 다음에 다시 게시됩니다:",
   "republish_at": "다음 시간에",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "could_not_reschedule_post": "게시글을 다시 예약할 수 없습니다"
 }
