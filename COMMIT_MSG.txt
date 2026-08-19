@@ -1,0 +1,12 @@
+fix(analytics): log provider errors instead of silently returning empty
+
+checkAnalytics swallows every non-RefreshToken provider error and
+falls through to an empty array, making failing analytics look like
+"no data" (expired scopes, depleted API credits, malformed tokens).
+
+Log the error with provider + integration context so the failure is
+visible in server logs.
+
+Verified against a live instance: X (credits depleted) and other
+providers silently returned [] while the Integration table showed
+healthy, unexpired tokens and 315 published posts existed.

@@ -511,6 +511,10 @@ export class IntegrationService {
         if (e instanceof RefreshToken) {
           return this.checkAnalytics(org, integration, date, true);
         }
+        console.log(
+          `Failed to load analytics for ${getIntegration.providerIdentifier} (${integration}):`,
+          e
+        );
       }
     }
 
