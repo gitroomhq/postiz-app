@@ -289,6 +289,16 @@ export class PublicIntegrationsController {
     return { connected: true };
   }
 
+  @Get('/media')
+  getMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Query('page') page: number,
+    @Query('search') search?: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._mediaService.getMedia(org.id, page, search);
+  }
+
   @Get('/groups')
   async listGroups(@GetOrgFromRequest() org: Organization) {
     Sentry.metrics.count('public_api-request', 1);
