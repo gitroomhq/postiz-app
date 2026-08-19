@@ -200,7 +200,13 @@ export class OAuthRepository {
           },
         },
         user: {
-          select: { id: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            lastName: true,
+            activated: true,
+          },
         },
       },
     });

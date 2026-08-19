@@ -17,6 +17,8 @@ const fixAcceptHeader = (req: Request) => {
   }
 };
 
+const oauthScopes = ['openid', 'email', 'mcp:read', 'mcp:write'];
+
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
@@ -77,6 +79,7 @@ export const startMcp = async (app: INestApplication) => {
     oauth: {
       resource: oauthResource,
       authorizationServers: [oauthResource],
+      scopesSupported: oauthScopes,
       validateToken: async (token: string) => {
         const org = await resolveAuth(token);
         if (!org) {
@@ -94,6 +97,7 @@ export const startMcp = async (app: INestApplication) => {
     oauth: {
       resource: claudeOauthResource,
       authorizationServers: [oauthResource],
+      scopesSupported: oauthScopes,
       validateToken: async (token: string) => {
         const org = await resolveAuth(token);
         if (!org) {
@@ -148,10 +152,43 @@ export const startMcp = async (app: INestApplication) => {
       issuer: oauthResource,
       authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
       token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
+      userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
+      token_endpoint_auth_methods_supported: ['client_secret_post'],
       code_challenge_methods_supported: ['S256'],
-      scopes_supported: ['mcp:read', 'mcp:write'],
+      scopes_supported: oauthScopes,
+    });
+  });
+
+  app.use('/.well-known/openid-configuration', async (req: Request, res: Response, next: () => void) => {
+    if (req.path !== '/mcp-oauth') {
+      next();
+      return;
+    }
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'max-age=3600');
+    res.json({
+      issuer: oauthResource,
+      authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
+      token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
+      userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
+      response_types_supported: ['code'],
+      grant_types_supported: ['authorization_code'],
+      token_endpoint_auth_methods_supported: ['client_secret_post'],
+      code_challenge_methods_supported: ['S256'],
+      scopes_supported: oauthScopes,
+      subject_types_supported: ['public'],
+      claims_supported: ['sub', 'email', 'email_verified', 'name'],
     });
   });
 

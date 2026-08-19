@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpException,
   HttpStatus,
   Post,
@@ -52,6 +53,16 @@ export class OAuthController {
       body.client_id,
       body.client_secret
     );
+  }
+
+  @Get('/userinfo')
+  async userinfo(@Headers('authorization') authorization?: string) {
+    return this._oauthService.getUserInfo(authorization);
+  }
+
+  @Post('/userinfo')
+  async userinfoPost(@Headers('authorization') authorization?: string) {
+    return this._oauthService.getUserInfo(authorization);
   }
 }
 
