@@ -575,6 +575,7 @@
   "email_address": "이메일 주소",
   "email_already_exists": "이미 존재하는 이메일입니다",
   "google": "구글",
+  "apple": "애플",
   "farcaster": "파캐스터",
   "edit_autopost": "자동 게시 수정",
   "add_autopost_title": "자동 게시 추가",
@@ -737,5 +738,8 @@
   "republish_the_post": "게시물 다시 게시하기",
   "post_already_published_republish_warning": "이 게시물은 이미 게시되었습니다. 다시 게시하면 다음에 다시 게시됩니다:",
   "republish_at": "다음 시간에",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "finish_trial_failed": "체험을 완료할 수 없습니다",
+  "finish_trial_failed_description": "카드를 결제할 수 없습니다. 다시 시도해 주세요.",
+  "try_again": "다시 시도하기"
 }

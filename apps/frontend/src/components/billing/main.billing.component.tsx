@@ -28,6 +28,7 @@ import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import { usePaymentAction } from '@gitroom/frontend/components/billing/use.payment.action';
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -216,6 +217,7 @@ export const MainBillingComponent: FC<{
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
   const toast = useToaster();
+  const paymentAction = usePaymentAction();
   const user = useUser();
   const dub = useDubClickId();
   const modal = useModals();
@@ -379,7 +381,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal, blocked } = await (
+        const { url, portal, blocked, requiresAction, clientSecret } = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -423,6 +425,14 @@ export const MainBillingComponent: FC<{
             window.open(portal);
           }
         } else {
+          if (requiresAction) {
+            const { error } = await paymentAction(clientSecret);
+            if (error) {
+              toast.show(error, 'warning');
+              setLoading(false);
+              return;
+            }
+          }
           setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
           setSubscription((subs) => ({
             ...subs!,
@@ -443,7 +453,7 @@ export const MainBillingComponent: FC<{
         }
         setLoading(false);
       },
-    [monthlyOrYearly, subscription, user, utm]
+    [monthlyOrYearly, subscription, user, utm, paymentAction]
   );
   if (user?.isLifetime) {
     router.replace('/');

@@ -4,15 +4,40 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Button } from '@gitroom/react/form/button';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { usePaymentAction } from '@gitroom/frontend/components/billing/use.payment.action';
 
 export const FinishTrial: FC<{ close: () => void }> = (props) => {
   const [finished, setFinished] = useState(false);
+  const [failed, setFailed] = useState(false);
   const fetch = useFetch();
+  const toaster = useToaster();
+  const t = useT();
+  const paymentAction = usePaymentAction();
 
   const finishSubscription = useCallback(async () => {
-    await fetch('/billing/finish-trial', {
-      method: 'POST',
-    });
+    setFailed(false);
+    const { finish, requiresAction, clientSecret } = await (
+      await fetch('/billing/finish-trial', {
+        method: 'POST',
+      })
+    ).json();
+    if (requiresAction) {
+      const { error } = await paymentAction(clientSecret);
+      if (error) {
+        toaster.show(error, 'warning');
+        setFailed(true);
+        return;
+      }
+    } else if (!finish) {
+      toaster.show(
+        t('finish_trial_failed', 'We could not finish your trial'),
+        'warning'
+      );
+      setFailed(true);
+      return;
+    }
     checkFinished();
   }, []);
 
@@ -23,12 +48,22 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
       return checkFinished();
     }
 
+    setFailed(false);
     setFinished(true);
   }, []);
 
   useEffect(() => {
     finishSubscription();
   }, []);
+
+  const closeButton = (
+    <Button
+      className="flex-1"
+      onClick={() => (window.opener ? window.close() : props.close())}
+    >
+      {t('close', 'Close')}
+    </Button>
+  );
 
   return (
     <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[300] w-full h-full p-[60px] animate-fade justify-center flex bg-black/50">
@@ -62,15 +97,32 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
           <div className="relative h-[400px]">
             <div className="absolute left-0 top-0 w-full h-full overflow-hidden overflow-y-auto">
               <div className="mt-[10px] flex w-full justify-center items-center gap-[10px]">
-                {!finished && <LoadingComponent height={150} width={150} />}
+                {!finished && !failed && (
+                  <LoadingComponent height={150} width={150} />
+                )}
+                {!finished && failed && (
+                  <div className="flex flex-col">
+                    <div>
+                      {t(
+                        'finish_trial_failed_description',
+                        'We could not charge your card. Please try again.'
+                      )}
+                    </div>
+                    <div className="flex gap-[10px] mt-[20px]">
+                      <Button className="flex-1" onClick={finishSubscription}>
+                        {t('try_again', 'Try again')}
+                      </Button>
+                      {closeButton}
+                    </div>
+                  </div>
+                )}
                 {finished && (
                   <div className="flex flex-col">
                     <div>
                       You trial has been successfully finished and you have been charged.
                     </div>
                     <div className="flex gap-[10px] mt-[20px]">
-                      <Button className="flex-1" onClick={() => window.close()}>Close window</Button>
-                      <Button className="flex-1" onClick={() => props.close()}>Close dialog</Button>
+                      {closeButton}
                     </div>
                   </div>
                 )}

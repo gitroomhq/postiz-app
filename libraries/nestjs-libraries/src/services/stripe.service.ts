@@ -604,11 +604,57 @@ export class StripeService {
       await stripe.subscriptions.list({
         customer: paymentId,
       })
-    ).data.filter((f) => f.status === 'trialing');
+    ).data;
 
-    return stripe.subscriptions.update(list[0].id, {
+    const trialing = list.find((f) => f.status === 'trialing');
+    if (!trialing) {
+      const subscription = await stripe.subscriptions.retrieve(list[0].id, {
+        expand: ['latest_invoice'],
+      });
+      const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+      if (invoice?.status === 'open' && invoice.id) {
+        await stripe.invoices.pay(invoice.id).catch(() => {});
+      }
+      return this.getRequiredActionFromSubscription(list[0].id);
+    }
+
+    await stripe.subscriptions.update(trialing.id, {
       trial_end: 'now',
     });
+
+    return this.getRequiredActionFromSubscription(trialing.id);
+  }
+
+  private async getRequiredActionFromSubscription(subscriptionId: string) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['latest_invoice'],
+    });
+
+    const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+    const invoice = latestInvoice?.id
+      ? await stripe.invoices.retrieve(latestInvoice.id, {
+          expand: ['payments.data.payment.payment_intent'],
+        })
+      : null;
+    const paymentIntent = invoice?.payments?.data
+      .map((p) => p.payment.payment_intent)
+      .find((p): p is Stripe.PaymentIntent => typeof p === 'object' && !!p);
+
+    if (
+      invoice?.status === 'open' &&
+      paymentIntent &&
+      (paymentIntent.status === 'requires_action' ||
+        paymentIntent.status === 'requires_confirmation')
+    ) {
+      return {
+        requiresAction: true,
+        // Returning the client_secret to the paying customer's browser is Stripe's
+        // intended flow: https://docs.stripe.com/api/payment_intents/object#payment_intent_object-client_secret
+        clientSecret: paymentIntent.client_secret,
+      };
+    }
+
+    return { requiresAction: false };
   }
 
   async checkDiscount(customer: string) {
@@ -869,6 +915,13 @@ export class StripeService {
           },
         ],
       });
+
+      const action = await this.getRequiredActionFromSubscription(
+        currentUserSubscription.data[0].id
+      );
+      if (action.requiresAction) {
+        return { id, ...action };
+      }
 
       return { id };
     } catch (err) {
