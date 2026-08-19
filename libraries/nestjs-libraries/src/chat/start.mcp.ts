@@ -17,7 +17,13 @@ const fixAcceptHeader = (req: Request) => {
   }
 };
 
-const oauthScopes = ['openid', 'email', 'mcp:read', 'mcp:write'];
+const openAiOAuthClientId = process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
+const enableOidcEmailClaims = Boolean(openAiOAuthClientId);
+const oauthScopes = [
+  ...(enableOidcEmailClaims ? ['openid', 'email'] : []),
+  'mcp:read',
+  'mcp:write',
+];
 
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
@@ -152,7 +158,9 @@ export const startMcp = async (app: INestApplication) => {
       issuer: oauthResource,
       authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
       token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
-      userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
+      ...(enableOidcEmailClaims && {
+        userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
+      }),
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
       token_endpoint_auth_methods_supported: ['client_secret_post'],
@@ -162,7 +170,7 @@ export const startMcp = async (app: INestApplication) => {
   });
 
   app.use('/.well-known/openid-configuration', async (req: Request, res: Response, next: () => void) => {
-    if (req.path !== '/mcp-oauth') {
+    if (req.path !== '/mcp-oauth' || !enableOidcEmailClaims) {
       next();
       return;
     }
@@ -188,7 +196,7 @@ export const startMcp = async (app: INestApplication) => {
       code_challenge_methods_supported: ['S256'],
       scopes_supported: oauthScopes,
       subject_types_supported: ['public'],
-      claims_supported: ['sub', 'email', 'email_verified', 'name'],
+      claims_supported: ['sub', 'email', 'email_verified'],
     });
   });
 
