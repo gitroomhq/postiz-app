@@ -72,7 +72,7 @@ const authenticatedController = [
 @Module({
   imports: [UploadModule],
   controllers: process.env.MCP_ONLY
-    ? [RootController]
+    ? [RootController, OAuthController]
     : [
         RootController,
         StripeController,
