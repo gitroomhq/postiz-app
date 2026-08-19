@@ -207,6 +207,10 @@ If the tools return errors, you would need to rerun it with the right parameters
             throw new Error('Integration not found');
           }
 
+          if (integration.disabled) {
+            throw new Error('Integration is disabled');
+          }
+
           const output = await this._postsService.createPost(organizationId, {
             date: post.date,
             type: post.type as 'draft' | 'schedule' | 'now',
