@@ -40,7 +40,7 @@ import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notification
 import { Readable } from 'stream';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer } = require('file-type');
+const { fileTypeFromBuffer } = require('file-type');
 
 const PUBLIC_API_ALLOWED_MIME = new Set<string>([
   'image/jpeg',
@@ -130,7 +130,7 @@ export class PublicIntegrationsController {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    const detected = await fromBuffer(buffer);
+    const detected = await fileTypeFromBuffer(buffer);
     if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
       throw new HttpException({ msg: 'Unsupported file type.' }, 400);
     }
