@@ -4,6 +4,7 @@ import { CreateOAuthAppDto } from '@gitroom/nestjs-libraries/dtos/oauth/create-o
 import { UpdateOAuthAppDto } from '@gitroom/nestjs-libraries/dtos/oauth/update-oauth-app.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { extractBearerToken } from '@gitroom/nestjs-libraries/chat/oauth-types';
 
 @Injectable()
 export class OAuthService {
@@ -151,12 +152,41 @@ export class OAuthService {
       cus: paymentId,
       access_token: token,
       token_type: 'bearer',
+      scope: 'openid email mcp:read mcp:write',
     };
   }
 
   async getOrgByOAuthToken(token: string) {
     const encrypted = AuthService.fixedEncryption(token);
     return this._oauthRepository.findByAccessToken(encrypted);
+  }
+
+  async getUserInfo(authorization?: string) {
+    const token = extractBearerToken(authorization);
+    if (!token) {
+      throw new HttpException(
+        { error: 'invalid_token', error_description: 'Bearer token required' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    const authorizationRecord = await this.getOrgByOAuthToken(token);
+    if (!authorizationRecord) {
+      throw new HttpException(
+        { error: 'invalid_token', error_description: 'Token is invalid or revoked' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    const { user } = authorizationRecord;
+    return {
+      sub: user.id,
+      email: user.email,
+      email_verified: user.activated,
+      ...(user.name || user.lastName
+        ? { name: [user.name, user.lastName].filter(Boolean).join(' ') }
+        : {}),
+    };
   }
 
   async getApprovedApps(userId: string) {
