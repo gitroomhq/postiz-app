@@ -145,6 +145,14 @@ If the tools return errors, you would need to rerun it with the right parameters
               platform.integrationId
             );
 
+          if (!integrations[platform.integrationId]) {
+            throw new Error('Integration not found');
+          }
+
+          if (integrations[platform.integrationId].disabled) {
+            throw new Error('Integration is disabled');
+          }
+
           // Same server-side validation as the dashboard / public API
           // (settings DTO + media checkValidity + empty / too-long content).
           const settings = platform.settings.reduce(
@@ -202,14 +210,6 @@ If the tools return errors, you would need to rerun it with the right parameters
 
         for (const post of inputData.socialPost) {
           const integration = integrations[post.integrationId];
-
-          if (!integration) {
-            throw new Error('Integration not found');
-          }
-
-          if (integration.disabled) {
-            throw new Error('Integration is disabled');
-          }
 
           const output = await this._postsService.createPost(organizationId, {
             date: post.date,

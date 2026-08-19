@@ -789,6 +789,12 @@ export class PostsService {
           );
         }
 
+        if (integration.disabled) {
+          throw new BadRequestException(
+            `Integration with id ${post?.integration?.id} is disabled`
+          );
+        }
+
         const provider = this._integrationManager.getSocialIntegration(
           integration.providerIdentifier
         );
