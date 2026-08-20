@@ -136,7 +136,7 @@ export class NoAuthIntegrationsController {
               refresh,
               auth.accessToken
             );
-            return res({ ...newAuth, refreshToken: body.refresh });
+            return res({ ...newAuth, refreshToken: auth.refreshToken || body.refresh });
           } catch (err: any) {
             return res({
               error: err.message,
