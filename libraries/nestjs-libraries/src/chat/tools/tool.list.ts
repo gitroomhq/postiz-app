@@ -8,6 +8,7 @@ import { GenerateImageTool } from '@gitroom/nestjs-libraries/chat/tools/generate
 import { IntegrationListTool } from '@gitroom/nestjs-libraries/chat/tools/integration.list.tool';
 import { GroupListTool } from '@gitroom/nestjs-libraries/chat/tools/group.list.tool';
 import { UploadFromUrlTool } from '@gitroom/nestjs-libraries/chat/tools/upload.from.url.tool';
+import { UploadMediaBase64Tool } from '@gitroom/nestjs-libraries/chat/tools/upload.media.base64.tool';
 import { PostsListTool } from '@gitroom/nestjs-libraries/chat/tools/posts.list.tool';
 import { PostSettingsTool } from '@gitroom/nestjs-libraries/chat/tools/post.settings.tool';
 
@@ -24,4 +25,5 @@ export const toolList = [
   GenerateVideoTool,
   GenerateImageTool,
   UploadFromUrlTool,
+  UploadMediaBase64Tool,
 ];
