@@ -274,11 +274,17 @@ export abstract class SocialAbstract {
       } as any);
       // Anything but 206 means the server ignored the Range header: buffering
       // response.body here would silently load the whole file into memory and
-      // upload corrupted chunks.
+      // upload corrupted chunks. Carry the real status so the failure says
+      // which answer we got - a 200 means identity encoding was not enough, a
+      // 5xx means the store was unavailable.
       if (response.status !== 206) {
         throw new BadBody(
           identifier,
-          '{}',
+          JSON.stringify({
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+          }),
           Buffer.from('{}'),
           `Media server did not honor the range request (status ${response.status})`
         );
