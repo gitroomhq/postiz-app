@@ -469,11 +469,18 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       } as any);
 
       // A store that ignores Range (200 with the full file) or answers with an
-      // error page would corrupt the upload at this offset.
+      // error page would corrupt the upload at this offset. Carry the real
+      // status in the persisted failure details (not in the user-facing
+      // message) so the failure says which answer we got - a 200 means
+      // identity encoding was not enough, a 5xx means the store was down.
       if (response.status !== 206) {
         throw new BadBody(
           this.identifier,
-          '{}',
+          JSON.stringify({
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+          }),
           '{}',
           'The media storage did not return the requested byte range, please try again'
         );
