@@ -1,13 +1,71 @@
 'use client';
 
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import clsx from 'clsx';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+
+export const CreateOrganization = () => {
+  const t = useT();
+  const fetch = useFetch();
+  const modals = useModals();
+  const toaster = useToaster();
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const create = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { id } = await (
+        await fetch('/user/organizations', {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+        })
+      ).json();
+      if (!id) {
+        toaster.show(
+          t('could_not_create_organization', 'Could not create organization'),
+          'warning'
+        );
+        return;
+      }
+      await fetch('/user/change-org', {
+        method: 'POST',
+        body: JSON.stringify({ id }),
+      });
+      modals.closeAll();
+      window.location.reload();
+    } finally {
+      setLoading(false);
+    }
+  }, [name]);
+  return (
+    <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
+      <Input
+        value={name}
+        disableForm={true}
+        removeError={true}
+        onChange={(e) => setName(e.target.value)}
+        name="name"
+        label={t('organization_name', 'Organization name')}
+        placeholder={t('organization_name', 'Organization name')}
+      />
+      <Button type="button" className="mt-[18px]" onClick={create} disabled={loading}>
+        {t('create', 'Create')}
+      </Button>
+    </div>
+  );
+};
 export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
   asOpenSelect,
 }) => {
+  const t = useT();
+  const modals = useModals();
   const fetch = useFetch();
   const user = useUser();
   const load = useCallback(async () => {
@@ -38,7 +96,17 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
     },
     []
   );
-  if (isLoading || (!isLoading && data?.length === 1)) {
+  const createOrg = useCallback(() => {
+    modals.openModal({
+      classNames: {
+        modal: 'bg-transparent text-textColor',
+      },
+      title: t('create_new_organization', 'Create New Organization'),
+      withCloseButton: true,
+      children: <CreateOrganization />,
+    });
+  }, [t]);
+  if (isLoading) {
     return null;
   }
   return (
@@ -68,7 +136,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
               )}
             </div>
           )}
-          {data?.length > 1 && (
+          {(data?.length > 1 || !asOpenSelect) && (
             <div
               className={clsx(
                 'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 z-[300] w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
@@ -101,6 +169,11 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                     )}
                   </div>
                 )
+              )}
+              {!asOpenSelect && (
+                <div onClick={createOrg} className="whitespace-nowrap">
+                  {t('create_new_organization', 'Create New Organization')} +
+                </div>
               )}
             </div>
           )}

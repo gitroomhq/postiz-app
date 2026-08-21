@@ -575,6 +575,7 @@
   "email_address": "Địa chỉ email",
   "email_already_exists": "Email đã tồn tại",
   "google": "Google",
+  "apple": "Táo",
   "farcaster": "Farcaster",
   "edit_autopost": "Chỉnh sửa tự động đăng",
   "add_autopost_title": "Thêm tự động đăng",
@@ -737,5 +738,12 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "create": "Tạo",
+  "create_new_organization": "Tạo Tổ Chức Mới",
+  "organization_settings": "Cài Đặt Tổ Chức",
+  "organization_name": "Tên tổ chức",
+  "organization_name_description": "Tên được hiển thị trong bộ chuyển đổi tổ chức.",
+  "could_not_create_organization": "Không thể tạo tổ chức",
+  "could_not_update_organization_name": "Không thể cập nhật tên tổ chức"
 }

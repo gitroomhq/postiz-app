@@ -575,6 +575,7 @@
   "email_address": "Dirección de correo electrónico",
   "email_already_exists": "El correo electrónico ya existe",
   "google": "Google",
+  "apple": "Manzana",
   "farcaster": "Farcaster",
   "edit_autopost": "Editar autopublicación",
   "add_autopost_title": "Agregar autopublicación",
@@ -737,5 +738,12 @@
   "republish_the_post": "Volver a publicar la publicación",
   "post_already_published_republish_warning": "Esta publicación ya fue publicada. Volver a publicarla la publicará nuevamente en",
   "republish_at": "a las",
-  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora.",
+  "create": "Crear",
+  "create_new_organization": "Crear nueva organización",
+  "organization_settings": "Configuración de la organización",
+  "organization_name": "Nombre de la organización",
+  "organization_name_description": "El nombre que se muestra en el cambiador de organización.",
+  "could_not_create_organization": "No se pudo crear la organización",
+  "could_not_update_organization_name": "No se pudo actualizar el nombre de la organización"
 }

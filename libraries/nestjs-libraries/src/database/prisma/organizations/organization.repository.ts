@@ -462,4 +462,46 @@ export class OrganizationRepository {
       },
     });
   }
+
+  createOrgForUser(userId: string, name: string) {
+    return this._organization.model.organization.create({
+      data: {
+        name,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: false,
+        isTrailing: false,
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  getOrganizationName(orgId: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id: orgId,
+      },
+      select: {
+        name: true,
+      },
+    });
+  }
+
+  updateOrganizationName(orgId: string, name: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        name,
+      },
+    });
+  }
 }
