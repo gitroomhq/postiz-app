@@ -270,6 +270,12 @@ export class PostsService {
             );
           }
 
+          if (integration.disabled) {
+            throw new BadRequestException(
+              `Integration with id ${post.integration.id} is disabled`
+            );
+          }
+
           return {
             type: replaceDraft ? 'schedule' : body?.type,
             ...post,
@@ -781,6 +787,12 @@ export class PostsService {
         if (!integration) {
           throw new BadRequestException(
             `Integration with id ${post?.integration?.id} not found`
+          );
+        }
+
+        if (integration.disabled) {
+          throw new BadRequestException(
+            `Integration with id ${post?.integration?.id} is disabled`
           );
         }
 
