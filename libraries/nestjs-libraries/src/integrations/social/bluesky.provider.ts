@@ -605,11 +605,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // this is safe and beats exhausting the check budget into a misleading
       // "check your account" warning.
       if ((pendingData.prepFailures || 0) >= 4) {
+        const reason = (err as any)?.message || String(err);
         throw new BadBody(
           'bluesky',
-          JSON.stringify({}),
+          JSON.stringify({ message: reason }),
           {} as any,
-          'Could not prepare the post for Bluesky, nothing was published, please try again'
+          `Could not prepare the post for Bluesky, nothing was published: ${reason}`
         );
       }
 
