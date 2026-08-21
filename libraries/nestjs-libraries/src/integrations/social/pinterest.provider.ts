@@ -121,6 +121,12 @@ export class PinterestProvider
         value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
+    if (body.indexOf('could not fetch the image') > -1) {
+      return {
+        type: 'retry' as const,
+        value: 'Pinterest could not fetch the image. Please try again.',
+      };
+    }
     if (body.indexOf('Unable to reach the URL') > -1) {
       return {
         type: 'retry' as const,
