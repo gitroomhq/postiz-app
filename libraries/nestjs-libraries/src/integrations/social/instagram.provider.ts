@@ -307,6 +307,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('Requires instagram_content_publish permission') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram rejected the post because Postiz was not granted publishing permission for this account. Reconnect the channel and allow all requested permissions, including content publishing, for this Instagram account.',
+      };
+    }
+
     if (body.indexOf('Not enough permissions to post') > -1) {
       return {
         type: 'bad-body' as const,
