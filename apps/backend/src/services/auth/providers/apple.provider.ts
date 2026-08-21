@@ -116,6 +116,12 @@ export class AppleProvider extends AuthProviderAbstract {
       throw new Error('Invalid provider token');
     }
 
+    // native tokens carry the app bundle id as audience instead of the
+    // web services id
+    const audience: [string, ...string[]] = process.env.APPLE_APP_BUNDLE_ID
+      ? [clientId, process.env.APPLE_APP_BUNDLE_ID]
+      : [clientId];
+
     // the id_token must be verified against Apple's public keys because it is
     // sent back from the client as the providerToken during registration
     const payload = verify(
@@ -123,14 +129,10 @@ export class AppleProvider extends AuthProviderAbstract {
       createPublicKey({ key, format: 'jwk' }),
       {
         algorithms: ['RS256'],
-        // native tokens carry the app bundle id as audience instead of the
-        // web services id
-        audience: [clientId, process.env.APPLE_APP_BUNDLE_ID].filter(
-          Boolean
-        ) as string[],
+        audience,
         issuer: 'https://appleid.apple.com',
       }
-    ) as { sub: string; email: string };
+    ) as unknown as { sub: string; email: string };
 
     return {
       id: payload.sub,
