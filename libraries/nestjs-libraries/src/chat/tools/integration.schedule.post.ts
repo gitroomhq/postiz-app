@@ -212,7 +212,7 @@ If validation fails, the result contains output.errors describing what to fix; t
         for (const post of inputData.socialPost) {
           const integration = integrations[post.integrationId];
 
-          if (!integration) {
+          if (!integration || integration.deletedAt) {
             throw new Error('Integration not found');
           }
 
