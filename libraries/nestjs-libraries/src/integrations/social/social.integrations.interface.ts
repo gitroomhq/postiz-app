@@ -104,7 +104,52 @@ export interface ISocialMediaIntegration {
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
+
+  // --- Inbox ---
+  // Reading and answering comments written by other people, as opposed to
+  // `comment` above, which publishes our own first comment under a new post.
+  // Providers normalize their payload into SocialComment so that generic inbox
+  // code never has to branch per platform.
+
+  comments?(
+    id: string,
+    postId: string,
+    accessToken: string,
+    integration: Integration,
+    options?: CommentsQuery
+  ): Promise<SocialComment[]>; // Reads comments under one published post
+
+  reply?(
+    id: string,
+    commentId: string,
+    message: string,
+    accessToken: string,
+    integration: Integration
+  ): Promise<SocialCommentReply>; // Answers one specific comment
 }
+
+export type CommentsQuery = {
+  limit?: number; // Provider default when omitted
+  since?: number; // Unix seconds, only comments created after this moment
+};
+
+// One comment, normalized across providers.
+export type SocialComment = {
+  id: string; // Platform comment id, the handle `reply` takes
+  message: string;
+  createdAt: string; // ISO 8601, normalized from each platform's own format
+  authorId?: string; // Missing on platforms that hide it, never invent one
+  authorName?: string;
+  permalink?: string;
+  parentId?: string; // Set when this comment answers another comment
+  isOwnComment?: boolean; // True when we wrote it, so the inbox can skip our own
+  replies?: SocialComment[]; // Only filled by providers that return them inline
+};
+
+export type SocialCommentReply = {
+  id: string; // Platform id of the reply we just created
+  permalink?: string;
+};
 
 export type PostResponse = {
   id: string; // The db internal id of the post

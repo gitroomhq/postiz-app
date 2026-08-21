@@ -1,9 +1,12 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  CommentsQuery,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
+  SocialComment,
+  SocialCommentReply,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
@@ -870,6 +873,91 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
       pendingData = finalize.pendingData;
     }
+  }
+
+  // Reads comments under one of our videos. YouTube returns threads rather than
+  // single comments, so the top-level comment and its replies are flattened
+  // into the shared shape and linked through parentId.
+  async comments(
+    id: string,
+    postId: string,
+    accessToken: string,
+    integration: Integration,
+    options?: CommentsQuery
+  ): Promise<SocialComment[]> {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    const { data } = await youtubeClient.commentThreads.list({
+      part: ['snippet', 'replies'],
+      videoId: postId,
+      // The API caps this at 100 per page, asking for more is rejected.
+      maxResults: Math.min(options?.limit ?? 100, 100),
+      order: 'time',
+    });
+
+    const since = options?.since;
+
+    const toComment = (
+      comment: any,
+      parentId?: string
+    ): SocialComment => ({
+      id: comment.id,
+      message: comment.snippet?.textOriginal || comment.snippet?.textDisplay || '',
+      createdAt: dayjs(comment.snippet?.publishedAt).toISOString(),
+      authorId: comment.snippet?.authorChannelId?.value,
+      authorName: comment.snippet?.authorDisplayName,
+      // Deep link that opens the video with this comment highlighted.
+      permalink: `https://www.youtube.com/watch?v=${postId}&lc=${comment.id}`,
+      parentId,
+      isOwnComment: comment.snippet?.authorChannelId?.value === id,
+    });
+
+    const flattened: SocialComment[] = [];
+    for (const thread of data?.items || []) {
+      const topLevel = thread.snippet?.topLevelComment;
+      if (!topLevel) {
+        continue;
+      }
+
+      flattened.push(toComment(topLevel));
+      for (const reply of thread.replies?.comments || []) {
+        flattened.push(toComment(reply, topLevel.id!));
+      }
+    }
+
+    return flattened.filter(
+      (comment) => !since || dayjs(comment.createdAt).unix() > since
+    );
+  }
+
+  // YouTube replies always attach to the top-level comment of a thread, so
+  // passing a reply's id as parentId is rejected by the API.
+  async reply(
+    id: string,
+    commentId: string,
+    message: string,
+    accessToken: string,
+    integration: Integration
+  ): Promise<SocialCommentReply> {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+
+    const { data } = await youtubeClient.comments.insert({
+      part: ['snippet'],
+      requestBody: {
+        snippet: {
+          parentId: commentId,
+          textOriginal: message,
+        },
+      },
+    });
+
+    return {
+      id: data.id!,
+    };
   }
 
   async analytics(
