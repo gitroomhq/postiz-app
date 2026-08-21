@@ -7,6 +7,7 @@ interface InstagramItem {
   pageId: string;
   username: string;
   name: string;
+  disabledReason?: 'not_granted' | 'no_publish_permission';
   picture: {
     data: {
       url: string;
@@ -41,6 +42,30 @@ export const InstagramContinue = withContinueProvider<
       text: 'Please close this dialog, delete your integration and add a new channel again.',
     },
   ],
+  getDisabledMessage: (item) =>
+    item.disabledReason === 'not_granted'
+      ? {
+          caption: {
+            key: 'not_selectable_page_not_granted_to_postiz',
+            text: 'Not selectable: page not granted to Postiz',
+          },
+          tooltip: {
+            key: 'you_did_not_grant_postiz_access_to_this_page',
+            text: 'You did not grant Postiz access to this Page in the Facebook dialog.\nReconnect the channel and tick this Page when Facebook asks which Pages to share.',
+          },
+        }
+      : item.disabledReason === 'no_publish_permission'
+      ? {
+          caption: {
+            key: 'not_selectable_your_account_cant_publish_to_this_page',
+            text: "Not selectable: your account can't publish to this Page",
+          },
+          tooltip: {
+            key: 'your_facebook_account_does_not_have_content_permissions_on_this_page',
+            text: 'Your Facebook account does not have content permissions on this Page.\nAsk a Page admin to give you full (or content/publishing) access under Page settings > Page access (or in the Business Portfolio), then reconnect the channel.',
+          },
+        }
+      : undefined,
   getItemId: (item) => item.id,
   getSelectionValue: (item) => ({ id: item.id, pageId: item.pageId }),
   transformSaveData: (selection) => selection,

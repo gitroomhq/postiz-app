@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "আমরা নির্বাচিত পৃষ্ঠাগুলির সাথে সংযুক্ত কোনো ব্যবসা খুঁজে পাইনি।",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "আমরা আপনাকে সব পৃষ্ঠা এবং সব ব্যবসা সংযুক্ত করার পরামর্শ দিই।",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "অনুগ্রহ করে এই ডায়ালগটি বন্ধ করুন, আপনার ইন্টিগ্রেশন মুছে ফেলুন এবং আবার একটি নতুন চ্যানেল যোগ করুন।",
+  "back_to_postiz": "Postiz-এ ফিরে যান",
   "select_instagram_account": "Instagram অ্যাকাউন্ট নির্বাচন করুন:",
   "select_page": "পৃষ্ঠা নির্বাচন করুন:",
   "generate_image_with_ai": "AI দিয়ে ছবি তৈরি করুন",

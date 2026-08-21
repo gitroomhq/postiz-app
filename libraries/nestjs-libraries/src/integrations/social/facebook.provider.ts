@@ -29,6 +29,8 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
+  toolTip =
+    'Your Facebook page selection is shared across all your Meta channels, check all relevant pages';
   isBetweenSteps = true;
   scopes = [
     'pages_show_list',
@@ -81,6 +83,30 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.indexOf("before impersonating a user's page") > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Facebook rejected the post because your account is missing permissions on this Page. Make sure your Facebook account has full content access to the Page, then reconnect the channel.',
+      };
+    }
+
+    if (body.indexOf('in order to impersonate it') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Facebook rejected the post because your account is not an admin, editor or moderator of this Page (or the Page requires two-factor authentication on your Facebook account). Restore your role on the Page, then reconnect the channel.',
+      };
+    }
+
+    if (/"code":\s*190\b/.test(body)) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'The Facebook access token is invalid, please reconnect the channel',
+      };
+    }
+
     if (body.indexOf('1366046') > -1) {
       return {
         type: 'bad-body' as const,
@@ -115,7 +141,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value: 'Invalid file',
-      }
+      };
     }
 
     if (body.indexOf('1404102') > -1) {
@@ -245,6 +271,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           `${process.env.FRONTEND_URL}/integrations/social/facebook`
         )}` +
         `&state=${state}` +
+        // Re-prompt permissions/assets the user previously declined, so a
+        // bad page grant can be repaired by reconnecting
+        `&auth_type=rerequest` +
         `&scope=${this.scopes.join(',')}`,
       codeVerifier: makeId(10),
       state,
@@ -348,7 +377,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     // Fetch pages the user explicitly shared during the OAuth dialog
     await fetchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,access_token,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
     );
 
     // Also fetch pages via Business Manager API to discover pages
@@ -364,7 +393,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           for (const business of bizResponse.data) {
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,username,name,access_token,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -372,7 +401,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,username,name,access_token,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -385,7 +414,17 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // Business Manager API not available for all users
     }
 
-    return allPages;
+    // Pages without an access_token were never granted to the app in the
+    // OAuth dialog; pages without the CREATE_CONTENT task can't be published
+    // to by this user. Both are shown as disabled in the picker.
+    return allPages.map((p: any) => ({
+      ...p,
+      disabledReason: !p.access_token
+        ? 'not_granted'
+        : p.tasks && !p.tasks.includes('CREATE_CONTENT')
+        ? 'no_publish_permission'
+        : undefined,
+    }));
   }
 
   async fetchPageInformation(accessToken: string, data: { page: string }) {
@@ -401,6 +440,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             (p: any) => String(p.id) === String(pageId)
           );
           if (page) {
+            if (!page.access_token) {
+              throw new Error('Page not granted to the app');
+            }
             return {
               id: page.id,
               name: page.name,
