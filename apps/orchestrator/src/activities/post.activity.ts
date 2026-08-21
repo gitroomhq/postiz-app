@@ -57,6 +57,38 @@ function slimPost(post: any) {
   return rest;
 }
 
+// A genuinely missed occurrence (dead workflow) is only recovered by the
+// missing-posts sweep, which runs every hour - so anything later than the
+// sweep period plus retry margin is a stale anchor, not a missed publish.
+const REANCHOR_GRACE_MS = 2 * 60 * 60 * 1000;
+
+// A repeat post keeps its original anchor publishDate forever (updatePost only
+// flips the state, the calendar expands occurrences virtually). If the workflow
+// gets that raw past date, any (re)start - an accidental edit resetting the
+// state to QUEUE, or a missing-posts sweep poke - sleeps 0 and publishes
+// instantly, machine-gunning the channel. Roll the returned date forward to the
+// next occurrence on the anchor grid instead, so fresh starts wait for the next
+// real occurrence. Only for the initial QUEUE run: repeat chain children
+// (postNow) run against a PUBLISHED post and must keep publishing immediately.
+// Occurrences missed within the grace window still catch up and post.
+function reanchorInterval(post: any) {
+  if (!post?.intervalInDays || post.state !== State.QUEUE) {
+    return post;
+  }
+
+  const interval = post.intervalInDays * 24 * 60 * 60 * 1000;
+  const late = Date.now() - new Date(post.publishDate).getTime();
+  if (late <= REANCHOR_GRACE_MS) {
+    return post;
+  }
+
+  const next =
+    new Date(post.publishDate).getTime() +
+    Math.ceil(late / interval) * interval;
+
+  return { ...post, publishDate: new Date(next) };
+}
+
 @Injectable()
 @Activity()
 export class PostActivity {
@@ -131,7 +163,7 @@ export class PostActivity {
       return false;
     }
 
-    return post;
+    return reanchorInterval(post);
   }
 
   @ActivityMethod()
@@ -154,7 +186,10 @@ export class PostActivity {
       return [];
     }
 
-    return getPosts.map(slimPost);
+    // only the root drives the pre-publish sleep and the repeat schedule,
+    // the rest are comments
+    const [root, ...comments] = getPosts.map(slimPost);
+    return [reanchorInterval(root), ...comments];
   }
 
   @ActivityMethod()

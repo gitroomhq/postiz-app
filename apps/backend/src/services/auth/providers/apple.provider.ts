@@ -63,6 +63,17 @@ export class AppleProvider extends AuthProviderAbstract {
   }
 
   async getToken(code: string, redirectUri?: string): Promise<string> {
+    // the native iOS flow has no code exchange - the app sends the id_token
+    // directly, which getUser verifies against Apple's public keys
+    const decoded = decode(code);
+    if (
+      decoded &&
+      typeof decoded === 'object' &&
+      decoded.iss === 'https://appleid.apple.com'
+    ) {
+      return code;
+    }
+
     const { clientId } = getConfig();
     const response = await fetch('https://appleid.apple.com/auth/token', {
       method: 'POST',
@@ -112,7 +123,11 @@ export class AppleProvider extends AuthProviderAbstract {
       createPublicKey({ key, format: 'jwk' }),
       {
         algorithms: ['RS256'],
-        audience: clientId,
+        // native tokens carry the app bundle id as audience instead of the
+        // web services id
+        audience: [clientId, process.env.APPLE_APP_BUNDLE_ID].filter(
+          Boolean
+        ) as string[],
         issuer: 'https://appleid.apple.com',
       }
     ) as { sub: string; email: string };
