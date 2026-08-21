@@ -82,7 +82,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV108', {
+        .workflow.signalWithStart('postWorkflowV109', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -173,10 +173,10 @@ export class PostActivity {
     integration: Integration,
     posts: Post[]
   ) {
-    // the whole body runs under the workflow's heartbeatTimeout (media
-    // conversion and the platform call can both take minutes), so it
-    // heartbeats end to end - under older workflow versions that set no
-    // heartbeatTimeout this is a no-op
+    // kept only for in-flight postWorkflowV108 runs, which set a
+    // heartbeatTimeout on this activity - removing the sender would kill
+    // them. Under V109+ (no heartbeatTimeout) this is a no-op and can be
+    // dropped once all V108 executions have drained
     return withHeartbeat(() =>
       this.handleDisconnect(integration, async () => {
         const getIntegration = this._integrationManager.getSocialIntegration(
@@ -272,10 +272,10 @@ export class PostActivity {
     posts: Post[],
     allowPending: boolean
   ) {
-    // the whole body runs under the workflow's heartbeatTimeout (media
-    // conversion and the platform call can both take minutes), so it
-    // heartbeats end to end - under older workflow versions that set no
-    // heartbeatTimeout this is a no-op
+    // kept only for in-flight postWorkflowV108 runs, which set a
+    // heartbeatTimeout on this activity - removing the sender would kill
+    // them. Under V109+ (no heartbeatTimeout) this is a no-op and can be
+    // dropped once all V108 executions have drained
     return withHeartbeat(() =>
       this.handleDisconnect(integration, () =>
         this.postSocialBody(integration, posts, allowPending)
