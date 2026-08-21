@@ -785,5 +785,7 @@
   "preview_comment_failed": "コメントの投稿に失敗しました",
   "preview_comment_detach_hint": "選択テキストへのコメントは、テキストが後から編集されるとハイライトが失われます。",
   "preview_comment_text_changed": "テキストが変更されました",
-  "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。"
+  "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。",
+  "past_publish_date_warning": "公開日は過去の日付です。未来の日付を選択してください。",
+  "could_not_save_post": "投稿を保存できませんでした。"
 }
