@@ -252,7 +252,56 @@ const usePostActions = (onMutate?: () => void) => {
     [modal, t, mutate]
   );
 
-  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
+  const performReview = useCallback(
+    (post: any) => async (decision: 'APPROVE' | 'REJECT', reason?: string) => {
+      const { status } = await fetch(`/posts/${post.id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision, reason }),
+      });
+
+      if (status === 402) {
+        toaster.show(t('no_permission_review', "You don't have permission to review posts"), 'warning');
+        return;
+      }
+
+      toaster.show(
+        decision === 'APPROVE' ? t('post_approved', 'Post approved') : t('post_rejected', 'Post rejected'),
+        'success'
+      );
+      mutate();
+    },
+    [toaster, t, fetch, mutate]
+  );
+
+  const reviewPost = useCallback(
+    (post: any) => (decision: 'APPROVE' | 'REJECT') => async () => {
+      if (decision === 'APPROVE') {
+        await performReview(post)('APPROVE');
+        return;
+      }
+
+      const reason = await new Promise<string | undefined>((resolve) => {
+        modal.openModal({
+          title: t('reject_post', 'Reject Post'),
+          closeOnClickOutside: true,
+          closeOnEscape: true,
+          withCloseButton: true,
+          children: (
+            <RejectReasonModal
+              onConfirm={(r) => { resolve(r); modal.closeAll(); }}
+              onCancel={() => { resolve(undefined); modal.closeAll(); }}
+            />
+          ),
+        });
+      });
+
+      if (reason === undefined) return; // user cancelled
+      await performReview(post)('REJECT', reason);
+    },
+    [performReview, modal, t]
+  );
+
+  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, reviewPost };
 };
 
 export const DayView = () => {
@@ -490,16 +539,18 @@ export const ListView = () => {
   const user = useUser();
   const { integrations, loading, listPosts, listState } = useCalendar();
   const emptyMessage =
-    listState === 'scheduled'
-      ? t('no_upcoming_posts', 'No upcoming posts scheduled')
-      : listState === 'draft'
-      ? t('no_draft_posts', 'No draft posts')
-      : listState === 'published'
-      ? t('no_published_posts', 'No published posts')
-      : t('no_posts', 'No posts');
+    listState === 'pending_approval'
+      ? t('no_pending_posts', 'Nothing waiting on review') :
+      listState === 'scheduled'
+        ? t('no_upcoming_posts', 'No upcoming posts scheduled')
+        : listState === 'draft'
+          ? t('no_draft_posts', 'No draft posts')
+          : listState === 'published'
+            ? t('no_published_posts', 'No published posts')
+            : t('no_posts', 'No posts');
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, reviewPost } = usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
@@ -555,6 +606,8 @@ export const ListView = () => {
                   integrations={integrations}
                   deletePost={deletePost(post)}
                   showTime={true}
+                  approvalStatus={post.approvalStatus}
+                  reviewPost={reviewPost(post)}
                 />
               ))}
             </div>
@@ -604,7 +657,7 @@ export const CalendarColumn: FC<{
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, reviewPost } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -887,6 +940,8 @@ export const CalendarColumn: FC<{
                   post={post}
                   integrations={integrations}
                   deletePost={deletePost(post)}
+                  approvalStatus={post.approvalStatus}
+                  reviewPost={reviewPost(post)}
                 />
               </div>
             </div>
@@ -993,8 +1048,10 @@ const CalendarItem: FC<{
   deletePost: () => void;
   statistics: () => void;
   missingRelease?: () => void;
+  reviewPost?: (decision: 'APPROVE' | 'REJECT', reason?: string) => () => void;
   integrations: Integrations[];
   state: State;
+  approvalStatus?: 'NONE' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
   display: 'day' | 'week' | 'month';
   showTime?: boolean;
   post: Post & {
@@ -1002,6 +1059,7 @@ const CalendarItem: FC<{
     tags: {
       tag: Tags;
     }[];
+    rejectionReason?: string;
   };
 }> = memo((props) => {
   const t = useT();
@@ -1014,6 +1072,8 @@ const CalendarItem: FC<{
     date,
     isBeforeNow,
     state,
+    approvalStatus,
+    reviewPost,
     display,
     deletePost,
     showTime,
@@ -1021,6 +1081,7 @@ const CalendarItem: FC<{
   } = props;
   const { disableXAnalytics } = useVariables();
   const user = useUser();
+  const canManagePost = user?.role !== 'USER';
   const showCreationMethodBadge =
     user?.impersonate &&
     post.creationMethod &&
@@ -1028,6 +1089,10 @@ const CalendarItem: FC<{
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
+
+  const showReviewActions =
+    user?.role === 'SUPERADMIN' && approvalStatus === 'PENDING_APPROVAL' && !!reviewPost;
+
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -1049,7 +1114,9 @@ const CalendarItem: FC<{
       className={clsx(
         'w-full flex h-full flex-1 flex-col group',
         'relative',
-        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500',
+        approvalStatus === 'PENDING_APPROVAL' && 'rounded-[10px] ring-2 ring-yellow-500',
+        approvalStatus === 'REJECTED' && 'rounded-[10px] ring-2 ring-red-300'
       )}
       style={{
         opacity,
@@ -1064,6 +1131,26 @@ const CalendarItem: FC<{
           !
         </div>
       )}
+
+      {approvalStatus === 'PENDING_APPROVAL' && (
+        <div
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-yellow-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          data-tooltip-id="tooltip"
+          data-tooltip-content={t('pending_approval_tooltip', 'Waiting on Super Admin approval')}
+        >
+          ?
+        </div>
+      )}
+      {approvalStatus === 'REJECTED' && (
+        <div
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-300 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          data-tooltip-id="tooltip"
+          data-tooltip-content={post.rejectionReason || t('rejected_tooltip', 'Rejected')}
+        >
+          ✕
+        </div>
+      )}
+
       {showCreationMethodBadge && (
         <div className="absolute -bottom-[4px] -right-[4px] z-10">
           <CreationMethodBadge
@@ -1088,6 +1175,28 @@ const CalendarItem: FC<{
         >
           {post.tags.map((p) => p.tag.name).join(', ')}
         </div>
+
+        {showReviewActions && (
+          <>
+            <div
+              className={clsx('hidden group-hover:block hover:underline cursor-pointer', post?.tags?.[0]?.tag?.color && 'mix-blend-difference')}
+              onClick={reviewPost('APPROVE')}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={t('approve_post', 'Approve Post')}
+            >
+              <ApprovePost />
+            </div>
+            <div
+              className={clsx('hidden group-hover:block hover:underline cursor-pointer', post?.tags?.[0]?.tag?.color && 'mix-blend-difference')}
+              onClick={reviewPost('REJECT')}
+              data-tooltip-id="tooltip"
+              data-tooltip-content={t('reject_post', 'Reject Post')}
+            >
+              <RejectPost />
+            </div>
+          </>
+        )}
+
         {copyDebugJson && (
           <div
             className={clsx(
@@ -1099,15 +1208,14 @@ const CalendarItem: FC<{
             <CopyDebug />
           </div>
         )}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={duplicatePost}
-        >
-          <Duplicate />
-        </div>
+        {canManagePost && (
+          <div
+            className={clsx('hidden group-hover:block hover:underline cursor-pointer', post?.tags?.[0]?.tag?.color && 'mix-blend-difference')}
+            onClick={duplicatePost}
+          >
+            <Duplicate />
+          </div>
+        )}
         <div
           className={clsx(
             'hidden group-hover:block hover:underline cursor-pointer',
@@ -1142,18 +1250,17 @@ const CalendarItem: FC<{
         ) : (
           <></>
         )}{' '}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={deletePost}
-        >
-          <DeletePost />
-        </div>
+        {canManagePost && (
+          <div
+            className={clsx('hidden group-hover:block hover:underline cursor-pointer', post?.tags?.[0]?.tag?.color && 'mix-blend-difference')}
+            onClick={deletePost}
+          >
+            <DeletePost />
+          </div>
+        )}
       </div>
       <div
-        onClick={editPost}
+        onClick={canManagePost ? editPost : preview}
         className={clsx(
           'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
           'relative',
@@ -1378,5 +1485,59 @@ export const SetSelectionModal: FC<{
         </button>
       </div>
     </div>
+  );
+};
+
+const RejectReasonModal: FC<{
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+}> = ({ onConfirm, onCancel }) => {
+  const t = useT();
+  const [reason, setReason] = useState('');
+
+  return (
+    <div className="flex flex-col gap-[16px] p-[16px]">
+      <div className="text-textColor text-[14px]">
+        {t('reject_reason_prompt', 'Let the creator know why this post is being rejected')}
+      </div>
+      <textarea
+        className="w-full min-h-[100px] rounded-[8px] bg-newBgColorInner p-[12px] text-[14px] text-textColor border border-newBorder"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder={t('rejection_reason_placeholder', 'Reason for rejection (optional)')}
+      />
+      <div className="flex gap-[10px]">
+        <Button secondary onClick={onCancel}>{t('cancel', 'Cancel')}</Button>
+        <Button onClick={() => onConfirm(reason)}>{t('reject_post', 'Reject Post')}</Button>
+      </div>
+    </div>
+  );
+};
+
+const ApprovePost = () => {
+  const t = useT();
+  return (
+    <svg
+      width="15" height="15" viewBox="0 0 24 24" fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('approve_post', 'Approve Post')}
+    >
+      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+const RejectPost = () => {
+  const t = useT();
+  return (
+    <svg
+      width="15" height="15" viewBox="0 0 24 24" fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('reject_post', 'Reject Post')}
+    >
+      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 };
