@@ -2,6 +2,7 @@ import {
   ArrayMinSize,
   IsBoolean,
   IsDefined,
+  IsIn,
   IsString,
   IsUrl,
   Matches,
@@ -37,10 +38,11 @@ export class RedditSettingsDtoInner {
   title: string;
 
   @IsString()
-  @MinLength(2)
+  @IsIn(['self', 'link', 'media'])
   @IsDefined()
   @JSONSchema({
-    description: 'Must be any of link, self (normal post), image, video, videogif',
+    description:
+      "Must be one of self (text post), link (requires url), media (uploads the post's first attached image or mp4 video)",
   })
   type: string;
 
