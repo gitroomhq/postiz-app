@@ -897,6 +897,24 @@ export class PostsService {
     );
   }
 
+  // A schedule-type save carrying a past date would publish within seconds
+  // (the workflow's initial sleep is max(0, publishDate - now)): reject it.
+  // The one-minute grace absorbs clock skew and form latency. Like the
+  // republish guard, the message doubles as the dialog for API/MCP automation.
+  private guardAgainstPastSchedule(date: string) {
+    if (!date || dayjs.utc(date).isAfter(dayjs.utc().subtract(1, 'minute'))) {
+      return;
+    }
+
+    throw new BadRequestException(
+      `Publish date ${dayjs
+        .utc(date)
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC is in the past - saving would publish immediately. Pick a future date, or use type 'now' to intentionally publish right now.`
+    );
+  }
+
   async createPost(
     orgId: string,
     body: CreatePostDto,
@@ -914,6 +932,10 @@ export class PostsService {
           await this._postRepository.getPostById(post.value[0].id, orgId),
           'createPost'
         );
+      }
+
+      if (body.type === 'schedule') {
+        this.guardAgainstPastSchedule(body.date);
       }
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
@@ -1160,6 +1182,12 @@ export class PostsService {
 
     if (action === 'schedule' && !republish) {
       this.guardAgainstRepublish(getPostById, 'changeDate');
+    }
+
+    // Drafts stay drafts on a date move, nothing fires - only guard saves
+    // that (re)queue an actual publish.
+    if (action === 'schedule' && getPostById.state !== 'DRAFT') {
+      this.guardAgainstPastSchedule(date);
     }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
