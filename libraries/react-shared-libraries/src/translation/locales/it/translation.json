@@ -575,6 +575,7 @@
   "email_address": "Indirizzo email",
   "email_already_exists": "L'email esiste già",
   "google": "Google",
+  "apple": "Mela",
   "farcaster": "Farcaster",
   "edit_autopost": "Modifica autopost",
   "add_autopost_title": "Aggiungi autopost",
@@ -737,5 +738,8 @@
   "republish_the_post": "Ripubblica il post",
   "post_already_published_republish_warning": "Questo post è già stato pubblicato. Ripubblicandolo verrà pubblicato nuovamente su",
   "republish_at": "a",
-  "republish_recurring_note": "Questo è un post ricorrente: le tue modifiche verranno applicate a tutte le future ricorrenze a partire da ora."
+  "republish_recurring_note": "Questo è un post ricorrente: le tue modifiche verranno applicate a tutte le future ricorrenze a partire da ora.",
+  "finish_trial_failed": "Non siamo riusciti a completare la tua prova",
+  "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
+  "try_again": "Riprova"
 }

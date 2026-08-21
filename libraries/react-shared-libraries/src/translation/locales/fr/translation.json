@@ -575,6 +575,7 @@
   "email_address": "Adresse e-mail",
   "email_already_exists": "L'adresse e-mail existe déjà",
   "google": "Google",
+  "apple": "Pomme",
   "farcaster": "Farcaster",
   "edit_autopost": "Modifier l'autopost",
   "add_autopost_title": "Ajouter un autopost",
@@ -737,5 +738,8 @@
   "republish_the_post": "Republier la publication",
   "post_already_published_republish_warning": "Cette publication a déjà été publiée. La republier la publiera à nouveau sur",
   "republish_at": "à",
-  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant."
+  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant.",
+  "finish_trial_failed": "Nous n'avons pas pu terminer votre essai",
+  "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
+  "try_again": "Réessayer"
 }

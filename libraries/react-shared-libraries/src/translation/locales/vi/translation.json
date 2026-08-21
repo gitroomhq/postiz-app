@@ -575,6 +575,7 @@
   "email_address": "Địa chỉ email",
   "email_already_exists": "Email đã tồn tại",
   "google": "Google",
+  "apple": "Táo",
   "farcaster": "Farcaster",
   "edit_autopost": "Chỉnh sửa tự động đăng",
   "add_autopost_title": "Thêm tự động đăng",
@@ -737,5 +738,8 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "finish_trial_failed": "Chúng tôi không thể hoàn tất phiên dùng thử của bạn",
+  "finish_trial_failed_description": "Chúng tôi không thể thanh toán thẻ của bạn. Vui lòng thử lại.",
+  "try_again": "Thử lại"
 }

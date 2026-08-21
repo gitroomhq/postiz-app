@@ -575,6 +575,7 @@
   "email_address": "عنوان البريد الإلكتروني",
   "email_already_exists": "البريد الإلكتروني موجود بالفعل",
   "google": "جوجل",
+  "apple": "تفاحة",
   "farcaster": "فاركاستر",
   "edit_autopost": "تعديل النشر التلقائي",
   "add_autopost_title": "إضافة نشر تلقائي",
@@ -737,5 +738,8 @@
   "republish_the_post": "إعادة نشر المنشور",
   "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
   "republish_at": "في",
-  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن."
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "finish_trial_failed": "لم نتمكن من إنهاء الفترة التجريبية الخاصة بك",
+  "finish_trial_failed_description": "لم نتمكن من خصم المبلغ من بطاقتك. يرجى المحاولة مرة أخرى.",
+  "try_again": "حاول مرة أخرى"
 }
