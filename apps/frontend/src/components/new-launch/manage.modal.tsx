@@ -209,6 +209,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const whatToDo = await new Promise((resolve) => {
           modal.openModal({
             id: choiceModalId,
+            onClose: () => resolve('cancel'),
             title: t('what_do_you_want_to_do', 'What do you want to do?'),
             children: (
               <div className="flex flex-col">
@@ -255,6 +256,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             ),
           });
         });
+
+        if (whatToDo === 'cancel') {
+          return;
+        }
 
         modal.closeById(choiceModalId);
 
