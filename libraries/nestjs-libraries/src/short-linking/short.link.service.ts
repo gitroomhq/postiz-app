@@ -5,6 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { ShortIo } from './providers/short.io';
 import { Kutt } from './providers/kutt';
 import { LinkDrip } from './providers/linkdrip';
+import { HikrLink } from './providers/hikrlink';
 import { uniq } from 'lodash';
 import striptags from 'striptags';
 
@@ -23,6 +24,10 @@ const getProvider = (): ShortLinking => {
 
   if (process.env.LINK_DRIP_API_KEY) {
     return new LinkDrip();
+  }
+
+  if (process.env.HIKRLINK_API_KEY) {
+    return new HikrLink();
   }
 
   return new Empty();
