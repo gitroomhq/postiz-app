@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   ValidationPipe,
@@ -14,6 +15,7 @@ import {
   Media,
   From,
   CreationMethod,
+  Prisma,
   State,
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
@@ -54,10 +56,20 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import {
+  isUniqueConstraintError,
+  PublicationAttemptService,
+} from '@gitroom/nestjs-libraries/database/prisma/publication-attempt/publication-attempt.service';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
   childrenPost: Post[];
+};
+
+export type PublicationCorrelation = {
+  correlationId: string;
+  requestHash: string;
 };
 
 @Injectable()
@@ -71,7 +83,9 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _prisma: PrismaService,
+    private _publicationAttemptService: PublicationAttemptService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -826,7 +840,10 @@ export class PostsService {
           errors = err?.message || 'Invalid media';
         }
 
-        const maximumCharacters = provider.maxLength(additionalSettings, settings);
+        const maximumCharacters = provider.maxLength(
+          additionalSettings,
+          settings
+        );
         const isX = integration.providerIdentifier === 'x';
 
         const emptyContent = (post.value || []).some((a) => {
@@ -878,7 +895,11 @@ export class PostsService {
   // the platform: require the explicit `republish` opt-in instead. The message
   // doubles as the confirmation dialog for API/MCP automation.
   private guardAgainstRepublish(
-    post: { state: State; publishDate: Date; integration?: { providerIdentifier: string } } | null,
+    post: {
+      state: State;
+      publishDate: Date;
+      integration?: { providerIdentifier: string };
+    } | null,
     source: 'createPost' | 'changeDate'
   ) {
     if (post?.state !== 'PUBLISHED') {
@@ -891,7 +912,9 @@ export class PostsService {
     throw new BadRequestException(
       `This post was already published on ${dayjs
         .utc(post.publishDate)
-        .format('YYYY-MM-DD HH:mm')} UTC. Saving it this way would publish it again to ${
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC. Saving it this way would publish it again to ${
         post.integration?.providerIdentifier || 'the channel'
       }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
     );
@@ -901,9 +924,30 @@ export class PostsService {
     orgId: string,
     body: CreatePostDto,
     creationMethod: CreationMethod,
-    keepGroup = false
+    keepGroup = false,
+    publicationCorrelation?: PublicationCorrelation
   ): Promise<any[]> {
-    const postList = [];
+    if (publicationCorrelation && body.inter) {
+      throw new BadRequestException(
+        'X-Postify-Correlation-Id cannot be used with repeating posts'
+      );
+    }
+    if (publicationCorrelation) {
+      const existing =
+        await this._publicationAttemptService.resolvePublicationRequest(
+          orgId,
+          publicationCorrelation.correlationId,
+          publicationCorrelation.requestHash
+        );
+      if (existing) {
+        return existing;
+      }
+    }
+
+    // Provider-independent work stays outside the database transaction. In
+    // particular, short-link creation must not hold locks or be replayed by a
+    // serializable transaction callback.
+    const preparedPosts = [];
     for (const post of body.posts) {
       if (
         (body.type === 'schedule' || body.type === 'now') &&
@@ -935,6 +979,13 @@ export class PostsService {
         content: removeLinks ? stripLinks(updateContent[i]) : updateContent[i],
       }));
 
+      preparedPosts.push(post);
+    }
+
+    const persistPost = async (
+      post: (typeof preparedPosts)[number],
+      database?: Prisma.TransactionClient
+    ) => {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
@@ -943,26 +994,119 @@ export class PostsService {
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
+        database
       );
 
       if (!posts?.length) {
+        return null;
+      }
+
+      return {
+        postId: posts[0].id,
+        integration: post.integration.id,
+        state: posts[0].state,
+        taskQueue: post.settings.__type.split('-')[0].toLowerCase(),
+      };
+    };
+
+    const startPersistedWorkflow = (post: {
+      postId: string;
+      state: State;
+      taskQueue: string;
+    }) => {
+      if (body.type !== 'update') {
+        this.startWorkflow(
+          post.taskQueue,
+          post.postId,
+          orgId,
+          post.state
+        ).catch((err) => {});
+      }
+      Sentry.metrics.count('post_created', 1);
+    };
+
+    if (publicationCorrelation) {
+      try {
+        const persisted = await this._prisma.$transaction(
+          async (database) => {
+            // Close the check/create race inside the transaction. A concurrent
+            // winner is returned without creating or starting duplicate posts.
+            const existing =
+              await this._publicationAttemptService.resolvePublicationRequest(
+                orgId,
+                publicationCorrelation.correlationId,
+                publicationCorrelation.requestHash,
+                database
+              );
+            if (existing) {
+              return { created: false as const, posts: existing };
+            }
+
+            const posts = [];
+            for (const post of preparedPosts) {
+              const saved = await persistPost(post, database);
+              if (!saved) {
+                throw new Error('Failed to persist correlated post');
+              }
+              posts.push(saved);
+            }
+
+            await this._publicationAttemptService.createPublicationRequest(
+              database,
+              {
+                organizationId: orgId,
+                correlationId: publicationCorrelation.correlationId,
+                requestHash: publicationCorrelation.requestHash,
+                posts,
+              }
+            );
+            return { created: true as const, posts };
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        );
+
+        if (persisted.created) {
+          persisted.posts.forEach(startPersistedWorkflow);
+        }
+        return persisted.posts.map(({ postId, integration }) => ({
+          postId,
+          integration,
+        }));
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) {
+          throw error;
+        }
+
+        // The unique organization/correlation constraint selects one winner.
+        // Its request hash still has to match before this becomes an idempotent
+        // replay rather than a conflict.
+        const existing =
+          await this._publicationAttemptService.resolvePublicationRequest(
+            orgId,
+            publicationCorrelation.correlationId,
+            publicationCorrelation.requestHash
+          );
+        if (existing) {
+          return existing;
+        }
+        throw new ConflictException(
+          'A root post in this request is already bound to another correlation identity'
+        );
+      }
+    }
+
+    const postList = [];
+    for (const post of preparedPosts) {
+      const saved = await persistPost(post);
+      if (!saved) {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
-        this.startWorkflow(
-          post.settings.__type.split('-')[0].toLowerCase(),
-          posts[0].id,
-          orgId,
-          posts[0].state
-        ).catch((err) => {});
-      }
-
-      Sentry.metrics.count('post_created', 1);
+      startPersistedWorkflow(saved);
       postList.push({
-        postId: posts[0].id,
-        integration: post.integration.id,
+        postId: saved.postId,
+        integration: saved.integration,
       });
     }
 

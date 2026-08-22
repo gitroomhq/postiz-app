@@ -29,6 +29,12 @@ import {
   BadBody,
   Disconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { ApplicationFailure, Context } from '@temporalio/activity';
+import { PublicationAttemptEventType } from '@prisma/client';
+import {
+  PublicationAttemptService,
+  TemporalAttemptIdentity,
+} from '@gitroom/nestjs-libraries/database/prisma/publication-attempt/publication-attempt.service';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -55,6 +61,17 @@ function slimPost(post: any) {
     ...rest
   } = post;
   return rest;
+}
+
+function serializedFailureType(error: unknown): string {
+  let current = error as { type?: unknown; cause?: unknown } | undefined;
+  for (let depth = 0; current && depth < 5; depth++) {
+    if (current.type) {
+      return String(current.type);
+    }
+    current = current.cause as typeof current;
+  }
+  return '';
 }
 
 // A genuinely missed occurrence (dead workflow) is only recovered by the
@@ -100,8 +117,20 @@ export class PostActivity {
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
     private _temporalService: TemporalService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _publicationAttemptService: PublicationAttemptService
   ) {}
+
+  private activityIdentity(): TemporalAttemptIdentity {
+    const info = Context.current().info;
+    return {
+      workflowId: info.workflowExecution.workflowId,
+      runId: info.workflowExecution.runId,
+      activityId: info.activityId,
+      activityType: info.activityType,
+      attempt: info.attempt,
+    };
+  }
 
   @ActivityMethod()
   async getIntegrationById(orgId: string, id: string) {
@@ -145,6 +174,17 @@ export class PostActivity {
 
   @ActivityMethod()
   async updatePost(id: string, postId: string, releaseURL: string) {
+    const identity = this.activityIdentity();
+    if (
+      await this._publicationAttemptService.completeFromWorkflow(
+        id,
+        postId,
+        releaseURL,
+        identity
+      )
+    ) {
+      return;
+    }
     await this._postService.updatePost(id, postId, releaseURL);
   }
 
@@ -362,20 +402,77 @@ export class PostActivity {
       }))
     );
 
-    const postNow =
-      allowPending && getIntegration.postPending
-        ? await getIntegration.postPending(
-            integration.internalId,
-            integration.token,
-            mappedPosts,
-            integration
-          )
-        : await getIntegration.post(
-            integration.internalId,
-            integration.token,
-            mappedPosts,
-            integration
-          );
+    const publicationAttempt =
+      await this._publicationAttemptService.beginPublicationAttempt({
+        integration,
+        mappedPosts,
+        identity: this.activityIdentity(),
+      });
+    if (publicationAttempt.action === 'replay-success') {
+      return publicationAttempt.result;
+    }
+    if (publicationAttempt.action === 'outcome-unknown') {
+      throw new ApplicationFailure(
+        'A previous provider call may have completed; refusing to publish again',
+        'publication_outcome_unknown',
+        true
+      );
+    }
+
+    let postNow;
+    try {
+      postNow =
+        allowPending && getIntegration.postPending
+          ? await getIntegration.postPending(
+              integration.internalId,
+              integration.token,
+              mappedPosts,
+              integration
+            )
+          : await getIntegration.post(
+              integration.internalId,
+              integration.token,
+              mappedPosts,
+              integration
+            );
+    } catch (error) {
+      if (publicationAttempt.action === 'execute') {
+        const explicit = ['bad_body', 'disconnect', 'refresh_token'].includes(
+          String((error as { type?: unknown })?.type || '')
+        );
+        await this._publicationAttemptService.recordProviderFailure(
+          publicationAttempt.attemptId,
+          explicit
+            ? PublicationAttemptEventType.EXPLICIT_FAILURE
+            : PublicationAttemptEventType.UNKNOWN,
+          explicit ? 'provider-explicitly-rejected' : 'provider-call-threw',
+          error
+        );
+      }
+      throw error;
+    }
+
+    if (publicationAttempt.action === 'execute') {
+      const outcome =
+        await this._publicationAttemptService.recordProviderResult(
+          publicationAttempt.attemptId,
+          postNow
+        );
+      if (outcome === 'explicit-failure') {
+        throw new ApplicationFailure(
+          'Provider explicitly reported publication failure',
+          'bad_body',
+          true
+        );
+      }
+      if (outcome === 'unknown') {
+        throw new ApplicationFailure(
+          'Provider returned no publication result',
+          'publication_outcome_unknown',
+          true
+        );
+      }
+    }
 
     // The post is already published at this point: the streak is best-effort,
     // failing the activity here would retry it and publish again.
@@ -408,7 +505,11 @@ export class PostActivity {
     );
 
     return this.handleDisconnect(integration, () =>
-      getIntegration.checkPostStatus(integration.token, pendingData, integration)
+      getIntegration.checkPostStatus(
+        integration.token,
+        pendingData,
+        integration
+      )
     );
   }
 
@@ -455,6 +556,44 @@ export class PostActivity {
 
   @ActivityMethod()
   async changeState(id: string, state: State, err?: any, body?: any) {
+    const correlated = await this._publicationAttemptService.isCorrelatedPost(
+      id
+    );
+    const identity =
+      state === State.ERROR ? this.activityIdentity() : undefined;
+    if (identity) {
+      const explicit = serializedFailureType(err) === 'bad_body';
+      await this._publicationAttemptService.markOpenAttemptTerminal(
+        id,
+        identity,
+        explicit
+          ? PublicationAttemptEventType.EXPLICIT_FAILURE
+          : PublicationAttemptEventType.UNKNOWN,
+        explicit
+          ? 'workflow-observed-explicit-provider-failure'
+          : 'workflow-could-not-confirm-provider-outcome'
+      );
+    }
+    if (correlated) {
+      if (
+        identity &&
+        (await this._publicationAttemptService.hasProviderReportedSuccess(
+          id,
+          identity
+        ))
+      ) {
+        // The provider result and PUBLISHED projection committed before the
+        // posting activity response was lost. Never downgrade that durable
+        // claim merely because Temporal observed an ambiguous timeout.
+        return;
+      }
+      await this._postService.changeState(
+        id,
+        state,
+        err ? 'Publication failed; see immutable attempt evidence' : undefined
+      );
+      return;
+    }
     await this._postService.changeState(id, state, err, body);
   }
 

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpException,
   Param,
   Post,
@@ -66,6 +67,7 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { canonicalSha256 } from '@gitroom/nestjs-libraries/database/prisma/publication-attempt/publication-attempt.evidence';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -192,7 +194,8 @@ export class PublicIntegrationsController {
   @CheckPolicies([AuthorizationActions.Create, Sections.POSTS_PER_MONTH])
   async createPost(
     @GetOrgFromRequest() org: Organization,
-    @Body() rawBody: any
+    @Body() rawBody: any,
+    @Headers('x-postify-correlation-id') postifyCorrelationId?: string
   ) {
     Sentry.metrics.count('public_api-request', 1);
     const body = await this._postsService.mapTypeToPost(
@@ -265,7 +268,26 @@ export class PublicIntegrationsController {
       ? (rawBody.creationMethod as 'CLI' | 'API')
       : 'API';
 
-    return this._postsService.createPost(org.id, body, creationMethod);
+    const correlationId = postifyCorrelationId?.trim();
+    if (
+      correlationId &&
+      !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(correlationId)
+    ) {
+      throw new HttpException({ msg: 'Invalid X-Postify-Correlation-Id' }, 400);
+    }
+
+    return this._postsService.createPost(
+      org.id,
+      body,
+      creationMethod,
+      false,
+      correlationId
+        ? {
+            correlationId,
+            requestHash: canonicalSha256({ body, creationMethod }),
+          }
+        : undefined
+    );
   }
 
   @Delete('/posts/:id')

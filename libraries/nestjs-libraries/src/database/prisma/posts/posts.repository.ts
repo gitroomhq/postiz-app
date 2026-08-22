@@ -5,6 +5,7 @@ import {
   APPROVED_SUBMIT_FOR_ORDER,
   CreationMethod,
   Post,
+  Prisma,
   State,
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
@@ -516,11 +517,16 @@ export class PostsRepository {
     // Keep the existing group instead of rotating it, so open clients
     // (calendar) holding the group stay valid. Used by out-of-band updates
     // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
-    keepGroup = false
+    keepGroup = false,
+    database?: Pick<Prisma.TransactionClient, 'post' | 'tags' | 'tagsPosts'>
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
     const group = keepGroup && body.group ? body.group : uuid;
+    const postDatabase = database?.post || this._post.model.post;
+    const tagsDatabase = database?.tags || this._tags.model.tags;
+    const tagsPostsDatabase =
+      database?.tagsPosts || this._tagsPosts.model.tagsPosts;
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -568,7 +574,7 @@ export class PostsRepository {
       });
 
       posts.push(
-        await this._post.model.post.upsert({
+        await postDatabase.upsert({
           where: {
             id: value.id || uuidv4(),
           },
@@ -586,7 +592,7 @@ export class PostsRepository {
       );
 
       if (posts.length === 1) {
-        await this._tagsPosts.model.tagsPosts.deleteMany({
+        await tagsPostsDatabase.deleteMany({
           where: {
             post: {
               id: posts[0].id,
@@ -595,7 +601,7 @@ export class PostsRepository {
         });
 
         if (tags.length) {
-          const tagsList = await this._tags.model.tags.findMany({
+          const tagsList = await tagsDatabase.findMany({
             where: {
               orgId: orgId,
               name: {
@@ -605,7 +611,7 @@ export class PostsRepository {
           });
 
           if (tagsList.length) {
-            await this._post.model.post.update({
+            await postDatabase.update({
               where: {
                 id: posts[posts.length - 1].id,
               },
@@ -626,7 +632,7 @@ export class PostsRepository {
 
     const previousPost = body.group
       ? (
-          await this._post.model.post.findFirst({
+          await postDatabase.findFirst({
             where: {
               group: body.group,
               deletedAt: null,
@@ -640,7 +646,7 @@ export class PostsRepository {
       : undefined;
 
     if (body.group && !keepGroup) {
-      await this._post.model.post.updateMany({
+      await postDatabase.updateMany({
         where: {
           group: body.group,
           deletedAt: null,
@@ -655,7 +661,7 @@ export class PostsRepository {
     // keepGroup: the updated rows still carry the old group, so sweep only the
     // rows dropped from it (removed comments) by id instead of by group.
     if (body.group && keepGroup) {
-      await this._post.model.post.updateMany({
+      await postDatabase.updateMany({
         where: {
           group: body.group,
           deletedAt: null,
