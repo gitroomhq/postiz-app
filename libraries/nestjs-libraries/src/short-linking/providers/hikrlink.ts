@@ -3,17 +3,17 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 /**
  * HikrLink (https://hikrlink.com) — first-party, server-side link attribution.
  * Public API, `x-api-key` auth (API_ACCESS entitlement):
- *   POST /public/urls                         → { url, shorturlId, ... }   (short URL on the owner's domain)
+ *   POST /public/urls                         → the URL entity: { shorturlId, url (= destination), ... }
  *   GET  /public/urls?page&pageSize           → { items: [{ shorturlId, url, redirectUrl, clicks, createdAt }], total }
  *   GET  /public/urls/:shorturlId             → { shorturlId, url, redirectUrl, clicks, createdAt }
  *   GET  /public/urls/:shorturlId/statistics  → { period, series, aggregates: { totalClicks, ... } }
  * Env: HIKRLINK_API_KEY (required to activate), HIKRLINK_API_ENDPOINT (default https://api.hikrl.ink/api),
- *      HIKRLINK_SHORT_LINK_DOMAIN (default hk.ink; only used for display — the API returns the real short URL).
+ *      HIKRLINK_SHORT_LINK_DOMAIN (default hikrl.ink; the short URL is <domain>/<shorturlId>).
  */
 const HIKRLINK_API_ENDPOINT =
   process.env.HIKRLINK_API_ENDPOINT || 'https://api.hikrl.ink/api';
 const HIKRLINK_SHORT_LINK_DOMAIN =
-  process.env.HIKRLINK_SHORT_LINK_DOMAIN || 'hk.ink';
+  process.env.HIKRLINK_SHORT_LINK_DOMAIN || 'hikrl.ink';
 
 const getOptions = () => ({
   headers: {
@@ -37,10 +37,10 @@ export class HikrLink implements ShortLinking {
       throw new Error(`HikrLink: failed to create short link (HTTP ${response.status})`);
     }
     const data = await response.json();
-    if (!data?.url) {
-      throw new Error('HikrLink: create response had no url');
+    if (!data?.shorturlId) {
+      throw new Error('HikrLink: create response had no shorturlId');
     }
-    return data.url as string;
+    return `https://${this.shortLinkDomain}/${data.shorturlId}`;
   }
 
   async convertShortLinkToLink(shortLink: string) {
