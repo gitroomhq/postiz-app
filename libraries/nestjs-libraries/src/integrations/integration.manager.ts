@@ -6,6 +6,7 @@ import { SocialProvider } from '@gitroom/nestjs-libraries/integrations/social/so
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { RedditProvider } from '@gitroom/nestjs-libraries/integrations/social/reddit.provider';
 import { DevToProvider } from '@gitroom/nestjs-libraries/integrations/social/dev.to.provider';
+import { PostForMeProvider } from '@gitroom/nestjs-libraries/integrations/social/postforme.provider';
 import { HashnodeProvider } from '@gitroom/nestjs-libraries/integrations/social/hashnode.provider';
 import { MediumProvider } from '@gitroom/nestjs-libraries/integrations/social/medium.provider';
 import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
@@ -41,6 +42,10 @@ import { TumblrProvider } from '@gitroom/nestjs-libraries/integrations/social/tu
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
+  // Post for Me - publishes through postforme.dev instead of your own developer
+  // app on the platform (our TikTok app is still waiting on Business Center
+  // review). One channel, and you pick the platform when connecting it.
+  new PostForMeProvider(),
   new LinkedinProvider(),
   new LinkedinPageProvider(),
   new RedditProvider(),

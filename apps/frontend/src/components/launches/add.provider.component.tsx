@@ -4,6 +4,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, { FC, useCallback, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
+import { Select } from '@gitroom/react/form/select';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
@@ -164,7 +165,8 @@ export const CustomVariables: FC<{
     label: string;
     defaultValue?: string;
     validation: string;
-    type: 'text' | 'password';
+    type: 'text' | 'password' | 'select';
+    options?: Array<{ value: string; label: string }>;
     hint?: string;
   }>;
   close?: () => void;
@@ -249,12 +251,30 @@ export const CustomVariables: FC<{
                       i
                     </span>
                   </div>
-                  <Input
-                    label=""
-                    name={variable.key}
-                    type={variable.type == 'text' ? 'text' : 'password'}
-                  />
+                  {variable.type === 'select' ? (
+                    <Select label="" name={variable.key}>
+                      {(variable.options || []).map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Input
+                      label=""
+                      name={variable.key}
+                      type={variable.type == 'text' ? 'text' : 'password'}
+                    />
+                  )}
                 </div>
+              ) : variable.type === 'select' ? (
+                <Select label={variable.label} name={variable.key}>
+                  {(variable.options || []).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
               ) : (
                 <Input
                   label={variable.label}
@@ -392,7 +412,8 @@ export const AddProviderComponent: FC<{
       key: string;
       label: string;
       validation: string;
-      type: 'text' | 'password';
+      type: 'text' | 'password' | 'select';
+      options?: Array<{ value: string; label: string }>;
       hint?: string;
     }>;
   }>;
@@ -423,7 +444,8 @@ export const AddProviderComponent: FC<{
           label: string;
           validation: string;
           defaultValue?: string;
-          type: 'text' | 'password';
+          type: 'text' | 'password' | 'select';
+          options?: Array<{ value: string; label: string }>;
           hint?: string;
         }>
       ) =>
