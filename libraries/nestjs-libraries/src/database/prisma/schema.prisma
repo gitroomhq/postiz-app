@@ -852,41 +852,48 @@ model mastra_workflow_snapshot {
 }
 
 model OAuthApp {
-  id             String               @id @default(uuid())
-  organizationId String
-  name           String
-  description    String?
-  pictureId      String?
-  redirectUrl    String
-  clientId       String               @unique
-  clientSecret   String
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  deletedAt      DateTime?
-  organization   Organization         @relation(fields: [organizationId], references: [id])
-  picture        Media?               @relation(fields: [pictureId], references: [id])
-  authorizations OAuthAuthorization[]
+  id                      String               @id @default(uuid())
+  organizationId          String?
+  name                    String
+  description             String?
+  pictureId               String?
+  redirectUrl             String
+  redirectUris            String?
+  clientId                String               @unique
+  clientSecret            String?
+  dynamic                 Boolean              @default(false)
+  tokenEndpointAuthMethod String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  deletedAt               DateTime?
+  organization            Organization?        @relation(fields: [organizationId], references: [id])
+  picture                 Media?               @relation(fields: [pictureId], references: [id])
+  authorizations          OAuthAuthorization[]
 
   @@unique([organizationId, deletedAt])
   @@index([clientId])
   @@index([organizationId])
   @@index([deletedAt])
+  @@index([dynamic])
 }
 
 model OAuthAuthorization {
-  id                String       @id @default(uuid())
-  oauthAppId        String
-  userId            String
-  organizationId    String
-  accessToken       String?
-  authorizationCode String?
-  codeExpiresAt     DateTime?
-  revokedAt         DateTime?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  oauthApp          OAuthApp     @relation(fields: [oauthAppId], references: [id])
-  user              User         @relation(fields: [userId], references: [id])
-  organization      Organization @relation(fields: [organizationId], references: [id])
+  id                  String       @id @default(uuid())
+  oauthAppId          String
+  userId              String
+  organizationId      String
+  accessToken         String?
+  authorizationCode   String?
+  codeExpiresAt       DateTime?
+  codeChallenge       String?
+  codeChallengeMethod String?
+  redirectUri         String?
+  revokedAt           DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  oauthApp            OAuthApp     @relation(fields: [oauthAppId], references: [id])
+  user                User         @relation(fields: [userId], references: [id])
+  organization        Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([oauthAppId, userId, organizationId])
   @@index([accessToken])
