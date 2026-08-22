@@ -40,6 +40,7 @@ export const getUppyUploadPlugin = (
           },
         },
       };
+    case 's3':
     case 'cloudflare':
       return {
         plugin: AwsS3Multipart,
