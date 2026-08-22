@@ -61,15 +61,23 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // LINKEDIN_PERSONAL_SCOPES_ONLY=true: request only the scopes granted by the
+  // self-serve products (Sign In with LinkedIn + Share on LinkedIn). Lets the
+  // personal channel connect on apps that have not (yet) been approved for the
+  // Community Management API; LinkedIn rejects the whole consent otherwise
+  // (unauthorized_scope_error). The page provider overrides `scopes` itself.
+  scopes =
+    process.env.LINKEDIN_PERSONAL_SCOPES_ONLY === 'true'
+      ? ['openid', 'profile', 'email', 'w_member_social']
+      : [
+          'openid',
+          'profile',
+          'w_member_social',
+          'r_basicprofile',
+          'rw_organization_admin',
+          'w_organization_social',
+          'r_organization_social',
+        ];
   override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
@@ -237,13 +245,19 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    // /v2/me needs r_basicprofile (Community Management); without it fall back to the id.
+    let vanityName: string | undefined;
+    try {
+      ({ vanityName } = await (
+        await fetch('https://api.linkedin.com/v2/me', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+      ).json());
+    } catch {
+      vanityName = undefined;
+    }
 
     return {
       id,
@@ -252,7 +266,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       expiresIn,
       name,
       picture,
-      username: vanityName,
+      username: vanityName || id,
     };
   }
 
