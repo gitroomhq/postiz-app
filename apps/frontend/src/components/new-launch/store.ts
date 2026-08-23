@@ -130,8 +130,9 @@ interface StoreState {
   setDummy: (dummy: boolean) => void;
   setEditor: (editor: 'none' | 'normal' | 'markdown' | 'html') => void;
   setLoaded?: (loaded: boolean) => void;
-  setChars: (id: string, chars: number) => void;
+  setChars: (id: string, chars: number, charsWithMedia?: number) => void;
   chars: Record<string, number>;
+  charsWithMedia: Record<string, number>;
   setComments: (comments: boolean | 'no-media') => void;
 }
 
@@ -155,6 +156,7 @@ const initialState = {
   global: [] as Values[],
   internal: [] as Internal[],
   chars: {},
+  charsWithMedia: {},
 };
 
 export const useLaunchStore = create<StoreState>()((set) => ({
@@ -621,11 +623,15 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     set((state) => ({
       loaded,
     })),
-  setChars: (id: string, chars: number) =>
+  setChars: (id: string, chars: number, charsWithMedia?: number) =>
     set((state) => ({
       chars: {
         ...state.chars,
         [id]: chars,
+      },
+      charsWithMedia: {
+        ...state.charsWithMedia,
+        [id]: charsWithMedia ?? chars,
       },
     })),
   setComments: (comments: boolean | 'no-media') =>

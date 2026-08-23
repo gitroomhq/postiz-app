@@ -826,7 +826,12 @@ export class PostsService {
           errors = err?.message || 'Invalid media';
         }
 
-        const maximumCharacters = provider.maxLength(additionalSettings, settings);
+        const maxLengthFor = (a: { image?: any[] }) =>
+          provider.maxLength(
+            additionalSettings,
+            settings,
+            (a.image || []).length > 0
+          );
 
         const emptyContent = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
@@ -834,11 +839,15 @@ export class PostsService {
           return length === 0 && (a.image || []).length === 0;
         });
 
-        const tooLong = (post.value || []).some((a) => {
+        const tooLongValue = (post.value || []).find((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
           const counted = countLength(integration.providerIdentifier, strip);
-          return counted > (maximumCharacters || 1000000);
+          return counted > (maxLengthFor(a) || 1000000);
         });
+        const tooLong = !!tooLongValue;
+        const maximumCharacters = maxLengthFor(
+          tooLongValue || post.value?.[0] || {}
+        );
 
         return {
           id: integration.id,
