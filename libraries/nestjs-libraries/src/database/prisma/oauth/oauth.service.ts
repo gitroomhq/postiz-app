@@ -393,4 +393,16 @@ export class OAuthService {
     await this._oauthRepository.revokeAuthorization(userId, authId);
     return { success: true };
   }
+
+  async revokeToken(token: string) {
+    if (!token) {
+      return { success: false };
+    }
+    const encrypted = AuthService.fixedEncryption(token);
+    const auth = await this._oauthRepository.findByAccessToken(encrypted);
+    if (auth) {
+      await this._oauthRepository.revokeAuthorization(auth.userId, auth.id);
+    }
+    return { success: true };
+  }
 }

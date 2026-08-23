@@ -17,6 +17,7 @@ import { User, Organization } from '@prisma/client';
 import { AuthorizeOAuthQueryDto, ApproveOAuthDto } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
 import { RegisterClientDto } from '@gitroom/nestjs-libraries/dtos/oauth/register-client.dto';
+import { RevokeTokenDto } from '@gitroom/nestjs-libraries/dtos/oauth/revoke-token.dto';
 
 @ApiTags('OAuth')
 @Controller('/oauth')
@@ -79,6 +80,12 @@ export class OAuthController {
   @Post('/userinfo')
   async userinfoPost(@Headers('authorization') authorization?: string) {
     return this._oauthService.getUserInfo(authorization);
+  }
+
+  @Post('/revoke')
+  @HttpCode(200)
+  async revokeToken(@Body() body: RevokeTokenDto) {
+    return this._oauthService.revokeToken(body.token);
   }
 }
 
