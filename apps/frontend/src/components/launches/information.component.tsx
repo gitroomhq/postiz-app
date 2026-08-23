@@ -64,17 +64,31 @@ export const InformationComponent: FC<{
   text?: string;
 }> = ({ totalChars, totalAllowedChars, chars, isPicture, text }) => {
   const t = useT();
-  const { isGlobal, selectedIntegrations, internal, currentIntegration } =
-    useLaunchStore(
-      useShallow((state) => ({
-        isGlobal: state.current === 'global',
-        selectedIntegrations: state.selectedIntegrations,
-        internal: state.internal,
-        currentIntegration: state.integrations.find(
-          (p) => p.id === state.current
-        ),
-      }))
-    );
+  const {
+    isGlobal,
+    selectedIntegrations,
+    internal,
+    currentIntegration,
+    charsWithMedia,
+  } = useLaunchStore(
+    useShallow((state) => ({
+      isGlobal: state.current === 'global',
+      selectedIntegrations: state.selectedIntegrations,
+      internal: state.internal,
+      currentIntegration: state.integrations.find(
+        (p) => p.id === state.current
+      ),
+      charsWithMedia: state.charsWithMedia,
+    }))
+  );
+
+  const limitFor = (id: string) =>
+    (isPicture ? charsWithMedia?.[id] : chars?.[id]) || 0;
+
+  const allowedChars =
+    (!isGlobal && isPicture && currentIntegration
+      ? charsWithMedia?.[currentIntegration.id]
+      : undefined) || totalAllowedChars;
 
   const stripLinkNames = useMemo(() => {
     if (!hasLinks(text)) {
@@ -121,11 +135,11 @@ export const InformationComponent: FC<{
       return false;
     }
 
-    if (currentChars > totalAllowedChars && !isGlobal) {
+    if (currentChars > allowedChars && !isGlobal) {
       return false;
     }
 
-    if (currentChars <= totalAllowedChars && !isGlobal) {
+    if (currentChars <= allowedChars && !isGlobal) {
       return true;
     }
 
@@ -136,8 +150,7 @@ export const InformationComponent: FC<{
         }
 
         return (
-          countFor(p.integration.identifier) >
-          (chars?.[p.integration.id] || 0)
+          countFor(p.integration.identifier) > limitFor(p.integration.id)
         );
       })
     ) {
@@ -147,12 +160,14 @@ export const InformationComponent: FC<{
     return true;
   }, [
     totalAllowedChars,
+    allowedChars,
     totalChars,
     currentChars,
     countFor,
     isInternal,
     isPicture,
     chars,
+    charsWithMedia,
     showStripLinkWarning,
   ]);
 
@@ -164,7 +179,7 @@ export const InformationComponent: FC<{
     // Get all limits from non-internal integrations, sorted ascending
     const limits = selectedIntegrations
       .map((p, index) => ({
-        limit: chars?.[p.integration.id] || 0,
+        limit: limitFor(p.integration.id),
         count: countFor(p.integration.identifier),
         isInternal: isInternal[index],
       }))
@@ -179,7 +194,15 @@ export const InformationComponent: FC<{
     // If all are exceeded, show the smallest one
     const validLimit = limits.find((item) => item.count <= item.limit);
     return validLimit ?? limits[0];
-  }, [isGlobal, selectedIntegrations, chars, isInternal, countFor]);
+  }, [
+    isGlobal,
+    selectedIntegrations,
+    chars,
+    charsWithMedia,
+    isPicture,
+    isInternal,
+    countFor,
+  ]);
 
   return (
     <div
@@ -192,7 +215,7 @@ export const InformationComponent: FC<{
 
       {!isGlobal && (
         <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
-          {currentChars}/{totalAllowedChars}
+          {currentChars}/{allowedChars}
         </div>
       )}
       {isGlobal && globalDisplayLimit !== null && (
@@ -251,7 +274,7 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : countFor(p.integration.identifier) >
-                          (chars?.[p.integration.id] || 0)
+                          limitFor(p.integration.id)
                         ? 'text-[#FF3F3F]'
                         : ''
                     )}
@@ -265,16 +288,16 @@ export const InformationComponent: FC<{
                       isInternal?.[index]
                         ? ''
                         : countFor(p.integration.identifier) >
-                          (chars?.[p.integration.id] || 0)
+                          limitFor(p.integration.id)
                         ? 'text-[#FF3F3F]'
                         : ''
                     )}
                   >
                     {isInternal?.[index]
                       ? t('internal_edit', 'Internal Edit')
-                      : `${countFor(p.integration.identifier)}/${
-                          chars?.[p.integration.id] || 0
-                        }`}
+                      : `${countFor(p.integration.identifier)}/${limitFor(
+                          p.integration.id
+                        )}`}
                   </div>
                 </Fragment>
               ))}

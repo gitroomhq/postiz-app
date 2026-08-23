@@ -168,7 +168,11 @@ export interface SocialProvider
   stripLinks?: () => boolean;
   refreshCron?: boolean;
   dto?: any;
-  maxLength: (additionalSettings?: any, settings?: any) => number;
+  maxLength: (
+    additionalSettings?: any,
+    settings?: any,
+    hasMedia?: boolean
+  ) => number;
   checkValidity(
     posts: Array<{ path: string; thumbnail?: string }[]>,
     settings: any,
