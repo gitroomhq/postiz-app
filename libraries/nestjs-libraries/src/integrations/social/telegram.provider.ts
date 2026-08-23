@@ -58,34 +58,30 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   }) {
     const chat = await telegramBot.getChat(params.code);
 
-    console.log(JSON.stringify(chat));
-    if (!chat?.id) {
-      return 'No chat found';
-    }
+    let photo: string | undefined;
+    try {
+      if (chat.photo?.small_file_id) {
+        photo = await telegramBot.getFileLink(chat.photo.small_file_id);
+      }
+    } catch (e) {}
 
-    const photo = !chat?.photo?.big_file_id
-      ? ''
-      : await telegramBot.getFileLink(chat.photo.big_file_id);
-
-    // Modified id to work with chat.username (public groups/channels) or chat.id (private groups/channels) when chat.username is not available
     return {
-      id: String(chat.username ? chat.username : chat.id),
-      name: chat.title!,
+      id: String(chat.id),
+      name: chat.title || chat.username || 'Telegram Channel',
       accessToken: String(chat.id),
       refreshToken: '',
-      expiresIn: dayjs().add(200, 'year').unix() - dayjs().unix(),
+      expiresIn: dayjs().add(200, 'years').unix() - dayjs().unix(),
       picture: photo || '',
-      username: chat.username!,
+      username: chat.username || chat.title || 'channel',
     };
   }
 
-  async getBotId(query: { id?: number; word: string }) {
-    // Added allowed_updates Ensure only necessary updates are fetched
+  async getBotId(query: { word: string; id?: number }) {
     const res = await telegramBot.getUpdates({
       ...(query.id ? { offset: query.id } : {}),
       allowed_updates: ['message', 'channel_post'],
     });
-    //message.text is for groups, channel_post.text is for channels
+
     const match = res.find(
       (p) =>
         (p?.message?.text === `/connect ${query.word}` &&
@@ -93,34 +89,26 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
         (p?.channel_post?.text === `/connect ${query.word}` &&
           p?.channel_post?.chat?.id)
     );
-    // get correct chatId based on the channel type
+
     const chatId = match?.message?.chat?.id || match?.channel_post?.chat?.id;
 
-    // prevents the code from running while chatId is still undefined to avoid the error 'ETELEGRAM: 400 Bad Request: chat_id is empty'. the code would still work eventually but console spam is not pretty
     if (chatId) {
-      //get the numberic ID of the bot
       const botId = (await telegramBot.getMe()).id;
-      // check if the bot is an admin in the chat
       const isAdmin = await this.botIsAdmin(chatId, botId);
-      // get the messageId of the message that triggered the connection
       const connectMessageId =
         match?.message?.message_id || match?.channel_post?.message_id;
 
       if (!isAdmin) {
-        // alternatively you can replace this with a console.log if you do not want to inform the user of the bot's admin status
         telegramBot.sendMessage(
           chatId,
           "Connection Successful. I don't have admin privileges to delete these messages, please go ahead and remove them yourself."
         );
       } else {
-        // Delete the message that triggered the connection
         await telegramBot.deleteMessage(chatId, connectMessageId);
-        // Send success message to the chat
         const successMessage = await telegramBot.sendMessage(
           chatId,
           'Connection Successful. Message will be deleted in 10 seconds.'
         );
-        // Delete the success message after 10 seconds
         setTimeout(async () => {
           await telegramBot.deleteMessage(chatId, successMessage.message_id);
           console.log('Success message deleted.');
@@ -128,7 +116,6 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       }
     }
 
-    // modified lastChatId to work with any type of channel (private/public groups/channels)
     return chatId
       ? { chatId }
       : res.length > 0
@@ -138,15 +125,57 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       : {};
   }
 
+  formatTelegramText(html: string): string {
+    if (!html) return '';
+
+    let text = html
+      .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '\n<b>$1</b>\n')
+      .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '• $1\n')
+      .replace(/<\/?(ul|ol)[^>]*>/gi, '')
+      .replace(/<strong>/gi, '<b>')
+      .replace(/<\/strong>/gi, '</b>')
+      .replace(/<em>/gi, '<i>')
+      .replace(/<\/em>/gi, '</i>')
+      .replace(/<del>/gi, '<s>')
+      .replace(/<\/del>/gi, '</s>')
+      .replace(/<strike>/gi, '<s>')
+      .replace(/<\/strike>/gi, '</s>')
+      .replace(/<ins>/gi, '<u>')
+      .replace(/<\/ins>/gi, '</u>')
+      .replace(/<p><br\s*\/?>\s*<\/p>/gi, '\n')
+      .replace(/<p>\s*<\/p>/gi, '\n')
+      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1\n')
+      .replace(/<\/?p[^>]*>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return striptags(text, [
+      'b',
+      'strong',
+      'i',
+      'em',
+      'u',
+      'ins',
+      's',
+      'del',
+      'strike',
+      'a',
+      'code',
+      'pre',
+      'blockquote',
+      'tg-spoiler',
+    ]);
+  }
+
   private processMedia(mediaFiles: PostDetails['media']) {
     return (mediaFiles || []).map((media) => {
       let mediaUrl = media.path;
       if (mediaStorage === 'local' && mediaUrl.startsWith(frontendURL)) {
         mediaUrl = mediaUrl.replace(frontendURL, '');
       }
-      //get mime type to pass contentType to telegram api.
-      //some photos and videos might not pass telegram api restrictions, so they are sent as documents instead of returning errors
-      const mimeType = mime.getType(mediaUrl); // Detect MIME type
+      const mimeType = mime.getType(mediaUrl);
       let mediaType: 'photo' | 'video' | 'document';
 
       if (mimeType?.startsWith('image/')) {
@@ -175,24 +204,17 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   ): Promise<number | null> {
     let messageId: number | null = null;
     const mediaFiles = message.media || [];
-    const text = striptags(message.message || '', ['u', 'strong', 'p'])
-      .replace(/<strong>/g, '<b>')
-      .replace(/<\/strong>/g, '</b>')
-      .replace(/<p>(.*?)<\/p>/g, '$1\n');
+    const text = this.formatTelegramText(message.message || '');
 
-    console.log(text);
     const processedMedia = this.processMedia(mediaFiles);
 
-    // if there's no media, bot sends a text message only
     if (processedMedia.length === 0) {
       const response = await telegramBot.sendMessage(accessToken, text, {
         parse_mode: 'HTML',
         ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
       });
       messageId = response.message_id;
-    }
-    // if there's only one media, bot sends the media with the text message as caption
-    else if (processedMedia.length === 1) {
+    } else if (processedMedia.length === 1) {
       const media = processedMedia[0];
       const options = {
         caption: text,
@@ -221,13 +243,11 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
               media.fileOptions
             );
       messageId = response.message_id;
-    }
-    // if there are multiple media, bot sends them as a media group - max 10 media per group - with the text as a caption (if there are more than 1 group, the caption will only be sent with the first group)
-    else {
+    } else {
       const mediaGroups = this.chunkMedia(processedMedia, 10);
       for (let i = 0; i < mediaGroups.length; i++) {
         const mediaGroup = mediaGroups[i].map((m, index) => ({
-          type: m.type === 'document' ? 'document' : m.type, // Documents are not allowed in media groups
+          type: m.type === 'document' ? 'document' : m.type,
           media: m.media,
           caption: i === 0 && index === 0 ? text : undefined,
           parse_mode: 'HTML',
@@ -260,8 +280,6 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
 
     const messageId = await this.sendMessage(accessToken, firstPost);
 
-    // for private groups/channels message.id is undefined so the link generated by Postiz will be unusable "https://t.me/c/undefined/16"
-    // to avoid that, we use accessToken instead of message.id and we generate the link manually removing the -100 from the start.
     if (messageId) {
       return [
         {
@@ -306,7 +324,26 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
 
     return [];
   }
-  // chunkMedia is used to split media into groups of "size". 10 is used here because telegram api allows a maximum of 10 media per group
+
+  async updateMessage(
+    accessToken: string,
+    messageId: string,
+    postDetails: PostDetails
+  ): Promise<boolean> {
+    const text = this.formatTelegramText(postDetails.message || '');
+    try {
+      await telegramBot.editMessageText(text, {
+        chat_id: accessToken,
+        message_id: Number(messageId),
+        parse_mode: 'HTML',
+      });
+      return true;
+    } catch (e) {
+      console.error('Error editing telegram message:', e);
+      return false;
+    }
+  }
+
   private chunkMedia(media: { type: string; media: string }[], size: number) {
     const result = [];
     for (let i = 0; i < media.length; i += size) {
@@ -324,7 +361,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
         chatMember.status === 'creator'
       ) {
         const permissions = chatMember.can_delete_messages;
-        return !!permissions; // Return true if bot can delete messages
+        return !!permissions;
       }
 
       return false;

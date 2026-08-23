@@ -585,6 +585,33 @@ html[dir='rtl'] [dir='ltr'] {
 //}
 //
 
+
+.ProseMirror em,
+.ProseMirror i,
+.preview em,
+.preview i {
+  font-style: italic !important;
+}
+
+.ProseMirror strong,
+.ProseMirror b,
+.preview strong,
+.preview b {
+  font-weight: bold !important;
+}
+
+.ProseMirror u,
+.preview u {
+  text-decoration: underline !important;
+}
+
+.ProseMirror s,
+.ProseMirror del,
+.preview s,
+.preview del {
+  text-decoration: line-through !important;
+}
+
 .ProseMirror {
   font-family: Arial;
 }

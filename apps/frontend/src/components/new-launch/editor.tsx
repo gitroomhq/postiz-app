@@ -16,6 +16,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
+import { ItalicText } from '@gitroom/frontend/components/new-launch/italic.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -42,6 +43,7 @@ import {
 } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
 import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
@@ -780,33 +782,32 @@ export const Editor: FC<{
                       <SignatureBox editor={editorRef?.current?.editor} />
                       {editorType !== 'none' && (
                         <>
+                          <BoldText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <ItalicText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
                           <UText
                             editor={editorRef?.current?.editor}
                             currentValue={props.value!}
                           />
-                          <BoldText
+                          <AComponent
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <Bullets
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                          <HeadingComponent
                             editor={editorRef?.current?.editor}
                             currentValue={props.value!}
                           />
                         </>
                       )}
-                      {(editorType === 'markdown' || editorType === 'html') &&
-                        identifier !== 'telegram' && (
-                          <>
-                            <AComponent
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                            <Bullets
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                            <HeadingComponent
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                          </>
-                        )}
                       <div
                         data-tooltip-id="tooltip"
                         data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
@@ -911,6 +912,7 @@ export const OnlyEditor = forwardRef<
       Text,
       Underline,
       Bold,
+      Italic,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
       BulletList,
@@ -919,7 +921,7 @@ export const OnlyEditor = forwardRef<
         placeholder: t('write_something', 'Write something …'),
         emptyEditorClass: 'is-editor-empty',
       }),
-      ...(editorType === 'html' || editorType === 'markdown'
+      ...(editorType !== 'none'
         ? [
             Link.configure({
               openOnClick: false,
@@ -1017,7 +1019,7 @@ export const OnlyEditor = forwardRef<
             }),
           ]
         : []),
-      ...(editorType === 'html' || editorType === 'markdown'
+      ...(editorType !== 'none'
         ? [
             Heading.configure({
               levels: [1, 2, 3],

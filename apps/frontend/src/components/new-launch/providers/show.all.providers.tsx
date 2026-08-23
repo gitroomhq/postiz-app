@@ -1,5 +1,3 @@
-'use client';
-
 import DevtoProvider from '@gitroom/frontend/components/new-launch/providers/devto/devto.provider';
 import XProvider from '@gitroom/frontend/components/new-launch/providers/x/x.provider';
 import LinkedinProvider from '@gitroom/frontend/components/new-launch/providers/linkedin/linkedin.provider';
@@ -33,13 +31,14 @@ import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import WordpressProvider from '@gitroom/frontend/components/new-launch/providers/wordpress/wordpress.provider';
+import GhostProvider from '@gitroom/frontend/components/new-launch/providers/ghost/ghost.provider';
 import ListmonkProvider from '@gitroom/frontend/components/new-launch/providers/listmonk/listmonk.provider';
 import GmbProvider from '@gitroom/frontend/components/new-launch/providers/gmb/gmb.provider';
 import MoltbookProvider from '@gitroom/frontend/components/new-launch/providers/moltbook/moltbook.provider';
 import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/skool/skool.provider';
 import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
-import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
+import MaxProvider from '@gitroom/frontend/components/new-launch/providers/max/max.provider';
 
 export const Providers = [
   {
@@ -88,10 +87,6 @@ export const Providers = [
   },
   {
     identifier: 'tiktok',
-    component: TiktokProvider,
-  },
-  {
-    identifier: 'tiktok-business',
     component: TiktokProvider,
   },
   {
@@ -155,6 +150,10 @@ export const Providers = [
     component: WordpressProvider,
   },
   {
+    identifier: 'ghost',
+    component: GhostProvider,
+  },
+  {
     identifier: 'listmonk',
     component: ListmonkProvider,
   },
@@ -179,8 +178,8 @@ export const Providers = [
     component: MeweProvider,
   },
   {
-    identifier: 'tumblr',
-    component: TumblrProvider,
+    identifier: 'max',
+    component: MaxProvider,
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {
@@ -200,17 +199,17 @@ export const ShowAllProviders = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => ({
     checkAllValid: async () => {
       return Promise.all(
-        selectedIntegrations.map(async (p) => await p.ref?.current.isValid())
+        selectedIntegrations.map(async (p) => await p.ref?.current?.isValid?.())
       );
     },
     getAllValues: async () => {
       return Promise.all(
-        selectedIntegrations.map(async (p) => await p.ref?.current.getValues())
+        selectedIntegrations.map(async (p) => await p.ref?.current?.getValues?.())
       );
     },
     triggerAll: () => {
       return selectedIntegrations.map(
-        async (p) => await p.ref?.current.trigger()
+        async (p) => await p.ref?.current?.trigger?.()
       );
     },
   }));
@@ -246,9 +245,10 @@ export const ShowAllProviders = forwardRef((props, ref) => {
         </IntegrationContext.Provider>
       )}
       {selectedIntegrations.map((integration) => {
+        const ident = (integration.integration as any)?.identifier || (integration.integration as any)?.providerIdentifier;
         const { component: ProviderComponent } = Providers.find(
           (provider) =>
-            provider.identifier === integration.integration.identifier
+            provider.identifier === ident
         ) || {
           component: Empty,
         };
