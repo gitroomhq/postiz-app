@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "يجب أن يكون المنشور مكونًا من 6 أحرف على الأقل",
   "are_you_sure_you_want_to_delete_post": "هل أنت متأكد أنك تريد حذف هذا المنشور؟",
   "post_deleted_successfully": "تم حذف المنشور بنجاح",
+  "post_no_longer_exists": "هذا المنشور لم يعد موجودًا",
   "delete_post": "حذف المنشور",
   "save_as_draft": "حفظ كمسودة",
   "post_now": "انشر الآن",

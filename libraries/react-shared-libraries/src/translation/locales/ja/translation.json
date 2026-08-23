@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "投稿は6文字以上である必要があります",
   "are_you_sure_you_want_to_delete_post": "この投稿を本当に削除しますか？",
   "post_deleted_successfully": "投稿が正常に削除されました",
+  "post_no_longer_exists": "この投稿はもう存在しません",
   "delete_post": "投稿を削除",
   "save_as_draft": "下書きとして保存",
   "post_now": "今すぐ投稿",

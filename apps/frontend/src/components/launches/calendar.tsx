@@ -114,6 +114,14 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      if (!data.posts?.length) {
+        toaster.show(
+          t('post_no_longer_exists', 'This post no longer exists'),
+          'warning'
+        );
+        mutate();
+        return;
+      }
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
@@ -170,7 +178,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [integrations, fetch, modal, mutate]
+    [integrations, fetch, modal, mutate, toaster, t]
   );
 
   const copyDebugJson = useCallback(

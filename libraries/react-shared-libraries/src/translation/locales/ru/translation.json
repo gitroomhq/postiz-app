@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "Пост должен содержать не менее 6 символов",
   "are_you_sure_you_want_to_delete_post": "Вы уверены, что хотите удалить этот пост?",
   "post_deleted_successfully": "Пост успешно удалён",
+  "post_no_longer_exists": "Этот пост больше не существует",
   "delete_post": "Удалить пост",
   "save_as_draft": "Сохранить как черновик",
   "post_now": "Опубликовать сейчас",

@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "পোস্টটি কমপক্ষে ৬ অক্ষরের হতে হবে",
   "are_you_sure_you_want_to_delete_post": "আপনি কি নিশ্চিত যে আপনি এই পোস্টটি মুছে ফেলতে চান?",
   "post_deleted_successfully": "পোস্ট সফলভাবে মুছে ফেলা হয়েছে",
+  "post_no_longer_exists": "এই পোস্টটি আর নেই",
   "delete_post": "পোস্ট মুছে ফেলুন",
   "save_as_draft": "খসড়া হিসেবে সংরক্ষণ করুন",
   "post_now": "এখনই পোস্ট করুন",
