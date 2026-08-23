@@ -33,6 +33,10 @@ export class MediaService {
     return this._mediaRepository.getMediaById(id);
   }
 
+  getExistingMediaPaths(org: string, paths: string[]) {
+    return this._mediaRepository.getExistingMediaPaths(org, paths);
+  }
+
   async generateImage(
     prompt: string,
     org: Organization,

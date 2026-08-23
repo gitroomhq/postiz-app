@@ -37,6 +37,22 @@ export class MediaRepository {
     });
   }
 
+  getExistingMediaPaths(org: string, paths: string[]) {
+    return this._media.model.media.findMany({
+      where: {
+        organizationId: org,
+        OR: [
+          { path: { in: paths } },
+          { name: { in: paths.map((p) => p.split('?')[0].split('/').pop()) } },
+        ],
+      },
+      select: {
+        name: true,
+        path: true,
+      },
+    });
+  }
+
   deleteMedia(org: string, id: string) {
     return this._media.model.media.update({
       where: {
