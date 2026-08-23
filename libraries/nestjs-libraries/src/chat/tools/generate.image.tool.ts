@@ -19,6 +19,7 @@ export class GenerateImageTool implements AgentToolInterface {
       description: `Generate image to use in a post,
                     in case the user specified a platform that requires attachment and attachment was not provided,
                     ask if they want to generate a picture of a video.
+                    Wait for this tool to return before scheduling; pass the returned "path" verbatim as the attachment.
       `,
       mcp: {
         annotations: {
