@@ -7,7 +7,7 @@ import { json } from 'express';
 import { Runtime } from '@temporalio/worker';
 Runtime.install({ shutdownSignals: [] });
 
-process.env.TZ = 'UTC';
+process.env.TZ = 'Etc/UTC';
 
 import cookieParser from 'cookie-parser';
 import { Logger, ValidationPipe } from '@nestjs/common';
