@@ -41,5 +41,5 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
     replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
 
-    profilesSampleRate: environment === 'development' ? 1.0 : 0.6,
+    profilesSampleRate: environment === 'development' ? 1.0 : 0.75,
   });
