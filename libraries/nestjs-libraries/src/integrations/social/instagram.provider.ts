@@ -30,7 +30,8 @@ export class InstagramProvider
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
-  toolTip = 'Instagram must be business and connected to a Facebook page';
+  toolTip =
+    'Your Facebook page selection is shared across all your Meta channels, check all relevant pages\nInstagram must be business and connected to a Facebook page, check this page too';
   scopes = [
     'instagram_basic',
     'pages_show_list',
@@ -321,11 +322,35 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('190,') > -1) {
+    if (body.indexOf("before impersonating a user's page") > -1) {
       return {
         type: 'bad-body' as const,
         value:
-          'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
+          'Facebook rejected the post because your account is missing permissions on this Page. Make sure your Facebook account has full content access to the Page, then reconnect the channel.',
+      };
+    }
+
+    if (body.indexOf('belongs to a Page that is not accessible') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The Facebook Page linked to this Instagram account is not accessible to your Facebook account (unpublished, restricted, or your access was removed). Restore your access to the Page on Facebook, then reconnect the channel.',
+      };
+    }
+
+    if (body.indexOf('in order to impersonate it') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Facebook rejected the post because your account is not an admin, editor or moderator of this Page (or the Page requires two-factor authentication on your Facebook account). Restore your role on the Page, then reconnect the channel.',
+      };
+    }
+
+    if (/"code":\s*190\b/.test(body)) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'The Instagram access token is invalid, please reconnect the channel',
       };
     }
 
@@ -423,6 +448,9 @@ export class InstagramProvider
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
+        // Re-prompt permissions/assets the user previously declined, so a
+        // bad page grant can be repaired by reconnecting
+        `&auth_type=rerequest` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
       codeVerifier: makeId(10),
       state,
@@ -509,7 +537,7 @@ export class InstagramProvider
 
     // Fetch pages the user explicitly shared during the OAuth dialog
     await fetchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
     );
 
     // Also fetch pages via Business Manager API to discover pages
@@ -525,7 +553,7 @@ export class InstagramProvider
           for (const business of bizResponse.data) {
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -533,7 +561,7 @@ export class InstagramProvider
 
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,tasks,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -550,8 +578,24 @@ export class InstagramProvider
       allFacebookPages
         .filter((f: any) => f.instagram_business_account)
         .map(async (p: any) => {
+          // Pages without an access_token were never granted to the app
+          // in the OAuth dialog (selecting them would store a broken
+          // "undefined___..." token); pages without the CREATE_CONTENT
+          // task can't be published to by this user. Both are shown as
+          // disabled in the picker.
+          const { access_token } = await (
+            await fetch(
+              `https://graph.facebook.com/v20.0/${p.id}?fields=access_token&access_token=${accessToken}`
+            )
+          ).json();
+
           return {
             pageId: p.id,
+            disabledReason: !access_token
+              ? 'not_granted'
+              : p.tasks && !p.tasks.includes('CREATE_CONTENT')
+              ? 'no_publish_permission'
+              : undefined,
             ...(await (
               await fetch(
                 `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
@@ -565,6 +609,7 @@ export class InstagramProvider
     return onlyConnectedAccounts.map((p: any) => ({
       pageId: p.pageId,
       id: p.id,
+      disabledReason: p.disabledReason,
       name: p.name,
       picture: { data: { url: p.profile_picture_url } },
     }));
@@ -580,6 +625,10 @@ export class InstagramProvider
         `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
+
+    if (!access_token) {
+      throw new Error('Page not granted to the app');
+    }
 
     const { id, name, profile_picture_url, username } = await (
       await fetch(

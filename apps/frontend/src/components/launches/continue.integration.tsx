@@ -11,6 +11,7 @@ import { continueProviderList } from '@gitroom/frontend/components/new-launch/pr
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 
 interface TwoStepState {
   integrationId: string;
@@ -317,6 +318,7 @@ export const ContinueIntegration: FC<{
   if (twoStepState && Provider) {
     return (
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
+        <ToolTip />
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
@@ -364,6 +366,16 @@ export const ContinueIntegration: FC<{
                 existingId={[]}
                 initialData={twoStepState.pages}
                 isSaving={isSaving}
+                onBack={
+                  logged || twoStepState.returnURL
+                    ? () =>
+                        navigateOrShow(
+                          '/launches',
+                          twoStepState.returnURL,
+                          'Channel setup cancelled'
+                        )
+                    : undefined
+                }
               />
             </IntegrationContext.Provider>
           </div>
