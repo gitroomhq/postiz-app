@@ -575,6 +575,7 @@
   "email_address": "E-posta Adresi",
   "email_already_exists": "E-posta zaten mevcut",
   "google": "Google",
+  "apple": "Elma",
   "farcaster": "Farcaster",
   "edit_autopost": "Otomatik Gönderiyi Düzenle",
   "add_autopost_title": "Otomatik Gönderi Ekle",
@@ -737,5 +738,8 @@
   "republish_the_post": "Gönderiyi tekrar yayımla",
   "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
   "republish_at": "tarihinde/saatinde",
-  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır.",
+  "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
+  "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
+  "try_again": "Tekrar deneyin"
 }

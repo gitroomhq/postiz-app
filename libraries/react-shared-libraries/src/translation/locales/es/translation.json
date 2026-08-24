@@ -575,6 +575,7 @@
   "email_address": "Dirección de correo electrónico",
   "email_already_exists": "El correo electrónico ya existe",
   "google": "Google",
+  "apple": "Apple",
   "farcaster": "Farcaster",
   "edit_autopost": "Editar autopublicación",
   "add_autopost_title": "Agregar autopublicación",
@@ -737,5 +738,8 @@
   "republish_the_post": "Volver a publicar la publicación",
   "post_already_published_republish_warning": "Esta publicación ya fue publicada. Volver a publicarla la publicará nuevamente en",
   "republish_at": "a las",
-  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora.",
+  "finish_trial_failed": "No pudimos finalizar tu prueba",
+  "finish_trial_failed_description": "No pudimos cobrar en tu tarjeta. Por favor, inténtalo de nuevo.",
+  "try_again": "Intentar de nuevo"
 }

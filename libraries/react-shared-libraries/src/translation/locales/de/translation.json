@@ -575,6 +575,7 @@
   "email_address": "E-Mail-Adresse",
   "email_already_exists": "E-Mail existiert bereits",
   "google": "Google",
+  "apple": "Apple",
   "farcaster": "Farcaster",
   "edit_autopost": "Autopost bearbeiten",
   "add_autopost_title": "Autopost hinzufügen",
@@ -737,5 +738,8 @@
   "republish_the_post": "Beitrag erneut veröffentlichen",
   "post_already_published_republish_warning": "Dieser Beitrag wurde bereits veröffentlicht. Durch erneutes Veröffentlichen wird er erneut veröffentlicht auf",
   "republish_at": "um",
-  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen."
+  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen.",
+  "finish_trial_failed": "Wir konnten Ihre Testphase nicht abschließen",
+  "finish_trial_failed_description": "Wir konnten Ihre Karte nicht belasten. Bitte versuchen Sie es erneut.",
+  "try_again": "Erneut versuchen"
 }
