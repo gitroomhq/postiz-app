@@ -86,6 +86,16 @@ const InstagramCollaborators: FC<{
       {postCurrentType === 'post' && (
         <div className="mt-[18px] flex flex-col gap-[18px]">
           <Checkbox
+            {...register('share_to_feed', {
+              value: true,
+            })}
+            label={t(
+              'instagram_share_to_feed',
+              'Share Reel to Feed (Reels only - single video)'
+            )}
+          />
+
+          <Checkbox
             {...register('is_trial_reel', {
               value: false,
             })}
