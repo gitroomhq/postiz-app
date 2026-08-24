@@ -1,3 +1,4 @@
+import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -64,10 +65,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <LayoutContext>
-            <UtmSaver />
-            {children}
-          </LayoutContext>
+          <SentryComponent>
+            <LayoutContext>
+              <UtmSaver />
+              {children}
+            </LayoutContext>
+          </SentryComponent>
         </VariableContextComponent>
       </body>
     </html>
