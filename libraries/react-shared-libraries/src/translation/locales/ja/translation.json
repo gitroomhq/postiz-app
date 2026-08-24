@@ -575,6 +575,7 @@
   "email_address": "メールアドレス",
   "email_already_exists": "メールアドレスは既に存在します",
   "google": "Google",
+  "apple": "アップル",
   "farcaster": "Farcaster",
   "edit_autopost": "自動投稿を編集",
   "add_autopost_title": "自動投稿を追加",
@@ -737,5 +738,12 @@
   "republish_the_post": "投稿を再公開する",
   "post_already_published_republish_warning": "この投稿は既に公開されています。再公開すると、もう一度投稿されます：",
   "republish_at": "公開日時：",
-  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。"
+  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。",
+  "create": "作成",
+  "create_new_organization": "新しい組織を作成",
+  "organization_settings": "組織の設定",
+  "organization_name": "組織名",
+  "organization_name_description": "組織切り替え時に表示される名前です。",
+  "could_not_create_organization": "組織を作成できませんでした",
+  "could_not_update_organization_name": "組織名を更新できませんでした"
 }

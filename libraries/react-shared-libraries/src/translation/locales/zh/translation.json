@@ -575,6 +575,7 @@
   "email_address": "电子邮件地址",
   "email_already_exists": "电子邮件已存在",
   "google": "Google",
+  "apple": "苹果",
   "farcaster": "Farcaster",
   "edit_autopost": "编辑自动发布",
   "add_autopost_title": "添加自动发布",
@@ -737,5 +738,12 @@
   "republish_the_post": "重新发布帖子",
   "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
   "republish_at": "于",
-  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "create": "创建",
+  "create_new_organization": "创建新组织",
+  "organization_settings": "组织设置",
+  "organization_name": "组织名称",
+  "organization_name_description": "在组织切换器中显示的名称。",
+  "could_not_create_organization": "无法创建组织",
+  "could_not_update_organization_name": "无法更新组织名称"
 }

@@ -23,6 +23,7 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { CreateOrganizationDto } from '@gitroom/nestjs-libraries/dtos/organizations/create.organization.dto';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
@@ -302,6 +303,14 @@ export class UsersController {
     return (await this._orgService.getOrgsByUserId(user.id)).filter(
       (f) => !f.users[0].disabled
     );
+  }
+
+  @Post('/organizations')
+  createOrg(
+    @GetUserFromRequest() user: User,
+    @Body() body: CreateOrganizationDto
+  ) {
+    return this._orgService.createOrgForUser(user.id, body);
   }
 
   @Post('/change-org')

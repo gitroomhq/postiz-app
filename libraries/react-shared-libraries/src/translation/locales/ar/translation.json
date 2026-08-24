@@ -575,6 +575,7 @@
   "email_address": "عنوان البريد الإلكتروني",
   "email_already_exists": "البريد الإلكتروني موجود بالفعل",
   "google": "جوجل",
+  "apple": "تفاحة",
   "farcaster": "فاركاستر",
   "edit_autopost": "تعديل النشر التلقائي",
   "add_autopost_title": "إضافة نشر تلقائي",
@@ -737,5 +738,12 @@
   "republish_the_post": "إعادة نشر المنشور",
   "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
   "republish_at": "في",
-  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن."
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "create": "إنشاء",
+  "create_new_organization": "إنشاء منظمة جديدة",
+  "organization_settings": "إعدادات المنظمة",
+  "organization_name": "اسم المنظمة",
+  "organization_name_description": "الاسم المعروض في مُبدّل المنظمات.",
+  "could_not_create_organization": "تعذّر إنشاء المؤسسة",
+  "could_not_update_organization_name": "تعذر تحديث اسم المؤسسة"
 }

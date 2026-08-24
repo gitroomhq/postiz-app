@@ -575,6 +575,7 @@
   "email_address": "ইমেইল ঠিকানা",
   "email_already_exists": "ইমেইল ইতিমধ্যে বিদ্যমান",
   "google": "গুগল",
+  "apple": "আপেল",
   "farcaster": "ফারকাস্টার",
   "edit_autopost": "অটোপোস্ট সম্পাদনা করুন",
   "add_autopost_title": "অটোপোস্ট যোগ করুন",
@@ -737,5 +738,12 @@
   "republish_the_post": "পোস্টটি পুনঃপ্রকাশ করুন",
   "post_already_published_republish_warning": "এই পোস্টটি ইতিমধ্যে প্রকাশিত হয়েছে। পুনঃপ্রকাশ করলে এটি আবার প্রকাশিত হবে",
   "republish_at": "সময়",
-  "republish_recurring_note": "এটি একটি পুনরাবৃত্তিমূলক পোস্ট: আপনার পরিবর্তনসমূহ এখন থেকে শুরু করে সকল ভবিষ্যৎ পুনরাবৃত্তিতে প্রয়োগ হবে।"
+  "republish_recurring_note": "এটি একটি পুনরাবৃত্তিমূলক পোস্ট: আপনার পরিবর্তনসমূহ এখন থেকে শুরু করে সকল ভবিষ্যৎ পুনরাবৃত্তিতে প্রয়োগ হবে।",
+  "create": "তৈরি করুন",
+  "create_new_organization": "নতুন সংস্থা তৈরি করুন",
+  "organization_settings": "সংস্থার সেটিংস",
+  "organization_name": "সংস্থার নাম",
+  "organization_name_description": "সংস্থা সুইচারে প্রদর্শিত নাম।",
+  "could_not_create_organization": "সংস্থা তৈরি করা যায়নি",
+  "could_not_update_organization_name": "সংস্থার নাম আপডেট করা যায়নি"
 }
