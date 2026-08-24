@@ -5,6 +5,8 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { AdminApplyCouponDto } from '@gitroom/nestjs-libraries/dtos/billing/admin.apply.coupon.dto';
+import { BillingCancelDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.cancel.dto';
+import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
@@ -19,7 +21,8 @@ export class BillingController {
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
     private _notificationService: NotificationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _postsService: PostsService
   ) {}
 
   private async assertNoOtherSubscribedAccount(user: User) {
@@ -133,7 +136,7 @@ export class BillingController {
   async cancel(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @Body() body: BillingCancelDto
   ) {
     await this._notificationService.sendEmail(
       process.env.EMAIL_FROM_ADDRESS,
@@ -142,7 +145,13 @@ export class BillingController {
       user.email
     );
 
-    return this._stripeService.setToCancel(org.id);
+    const cancel = await this._stripeService.setToCancel(org.id);
+
+    if (body.deleteScheduledPosts === true) {
+      await this._postsService.deleteAllScheduledPosts(org.id);
+    }
+
+    return cancel;
   }
 
   @Post('/prorate')

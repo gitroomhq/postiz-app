@@ -338,6 +338,35 @@ export class PostsRepository {
     });
   }
 
+  async getScheduledPosts(orgId: string) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        parentPostId: null,
+        OR: [{ state: 'QUEUE' }, { intervalInDays: { not: null } }],
+      },
+      select: {
+        id: true,
+        group: true,
+      },
+    });
+  }
+
+  async deletePostsByGroups(orgId: string, groups: string[]) {
+    await this._post.model.post.updateMany({
+      where: {
+        organizationId: orgId,
+        group: {
+          in: groups,
+        },
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
   getPostsByGroup(orgId: string, group: string) {
     return this._post.model.post.findMany({
       where: {

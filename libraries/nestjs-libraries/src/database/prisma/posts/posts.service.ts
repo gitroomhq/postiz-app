@@ -684,6 +684,43 @@ export class PostsService {
     return { error: true };
   }
 
+  async deleteAllScheduledPosts(orgId: string) {
+    const posts = await this._postRepository.getScheduledPosts(orgId);
+
+    if (!posts.length) {
+      return;
+    }
+
+    await this._postRepository.deletePostsByGroups(orgId, [
+      ...new Set(posts.map((p) => p.group)),
+    ]);
+
+    for (const post of posts) {
+      try {
+        const workflows = this._temporalService.client
+          .getRawClient()
+          ?.workflow.list({
+            query: `postId="${post.id}" AND ExecutionStatus="Running"`,
+          });
+
+        for await (const executionInfo of workflows) {
+          try {
+            const workflow =
+              await this._temporalService.client.getWorkflowHandle(
+                executionInfo.workflowId
+              );
+            if (
+              workflow &&
+              (await workflow.describe()).status.name !== 'TERMINATED'
+            ) {
+              await workflow.terminate();
+            }
+          } catch (err) {}
+        }
+      } catch (err) {}
+    }
+  }
+
   async countPostsFromDay(orgId: string, date: Date) {
     return this._postRepository.countPostsFromDay(orgId, date);
   }

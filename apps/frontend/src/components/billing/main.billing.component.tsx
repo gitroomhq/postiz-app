@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Textarea } from '@gitroom/react/form/textarea';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
@@ -208,6 +209,51 @@ const Info: FC<{
     </div>
   );
 };
+const CancelSubscription: FC<{
+  messages: string[];
+  resolve: (res: { confirmed: boolean; deletePosts: boolean }) => void;
+}> = ({ messages, resolve }) => {
+  const t = useT();
+  const [deletePosts, setDeletePosts] = useState(false);
+  return (
+    <div className="flex flex-col">
+      <div className="max-w-[600px]">
+        {`${t(
+          'are_you_sure_you_want_to_cancel_your_subscription',
+          'Are you sure you want to cancel your subscription?'
+        )}
+              ${messages.join(', ')}`}
+      </div>
+      <div className="mt-[16px] flex flex-col gap-[4px]">
+        <Checkbox
+          disableForm={true}
+          checked={deletePosts}
+          onChange={(e) => setDeletePosts(e.target.value)}
+          label={t(
+            'delete_all_my_scheduled_posts',
+            'Delete all my scheduled posts'
+          )}
+        />
+        <div className="text-[12px] text-customColor18">
+          {t(
+            'delete_all_my_scheduled_posts_description',
+            'All posts scheduled to publish automatically, including recurring posts, will be deleted immediately'
+          )}
+        </div>
+      </div>
+      <div className="flex gap-[12px] mt-[16px]">
+        <Button onClick={() => resolve({ confirmed: true, deletePosts })}>
+          {t('yes_cancel', 'Yes, cancel')}
+        </Button>
+        <Button
+          onClick={() => resolve({ confirmed: false, deletePosts: false })}
+        >
+          {t('no_cancel', 'No, cancel!')}
+        </Button>
+      </div>
+    </div>
+  );
+};
 export const MainBillingComponent: FC<{
   sub?: Subscription;
 }> = (props) => {
@@ -295,7 +341,7 @@ export const MainBillingComponent: FC<{
           return;
         }
 
-        const messages = [];
+        const messages: string[] = [];
         if (
           !pricing[billing].team_members &&
           pricing[subscription?.subscriptionTier!]?.team_members
@@ -305,15 +351,30 @@ export const MainBillingComponent: FC<{
           );
         }
         if (billing === 'FREE') {
-          if (
-            subscription?.cancelAt ||
-            (await deleteDialog(
-              `Are you sure you want to cancel your subscription?
-              ${messages.join(', ')}`,
-              'Yes, cancel',
-              'Cancel Subscription'
-            ))
-          ) {
+          let deletePosts = false;
+          let confirmed = !!subscription?.cancelAt;
+          if (!confirmed) {
+            const decision = await new Promise<{
+              confirmed: boolean;
+              deletePosts: boolean;
+            }>((res) => {
+              modal.openModal({
+                title: 'Cancel Subscription',
+                withCloseButton: true,
+                classNames: {
+                  modal: 'bg-transparent text-textColor',
+                },
+                children: (
+                  <CancelSubscription messages={messages} resolve={res} />
+                ),
+              });
+            });
+
+            modal.closeAll();
+            confirmed = decision.confirmed;
+            deletePosts = decision.deletePosts;
+          }
+          if (confirmed) {
             const checkDiscount = await (
               await fetch('/billing/check-discount')
             ).json();
@@ -356,6 +417,7 @@ export const MainBillingComponent: FC<{
                 method: 'POST',
                 body: JSON.stringify({
                   feedback: info,
+                  ...(deletePosts ? { deleteScheduledPosts: true } : {}),
                 }),
                 headers: {
                   'Content-Type': 'application/json',
