@@ -52,6 +52,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
+import { RepeatIcon } from '@gitroom/frontend/components/ui/icons';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
@@ -999,6 +1000,7 @@ const CalendarItem: FC<{
   showTime?: boolean;
   post: Post & {
     integration: Integration;
+    projected?: boolean;
     tags: {
       tag: Tags;
     }[];
@@ -1070,6 +1072,18 @@ const CalendarItem: FC<{
             creationMethod={post.creationMethod}
             ringColor="var(--new-bgColor)"
           />
+        </div>
+      )}
+      {post.projected && (
+        <div
+          className="absolute -top-[6px] -right-[6px] z-20 w-[18px] h-[18px] rounded-full bg-btnPrimary flex items-center justify-center text-white"
+          data-tooltip-id="tooltip"
+          data-tooltip-content={t(
+            'recurrence_projection',
+            'Recurrence: a future occurrence of this recurring post'
+          )}
+        >
+          <RepeatIcon size={11} className="text-white" />
         </div>
       )}
       <div
