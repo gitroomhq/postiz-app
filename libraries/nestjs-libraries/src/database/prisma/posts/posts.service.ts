@@ -41,6 +41,7 @@ import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
+  postId,
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { AnalyticsData } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -71,7 +72,7 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -85,7 +86,7 @@ export class PostsService {
   async getMissingContent(
     orgId: string,
     postId: string,
-    forceRefresh = false
+    forceRefresh = false,
   ): Promise<{ id: string; url: string }[]> {
     const post = await this._postRepository.getPostById(postId, orgId);
     if (!post || post.releaseId !== 'missing') {
@@ -93,7 +94,7 @@ export class PostsService {
     }
 
     const integrationProvider = this._integrationManager.getSocialIntegration(
-      post.integration.providerIdentifier
+      post.integration.providerIdentifier,
     );
 
     if (!integrationProvider.missing) {
@@ -106,9 +107,8 @@ export class PostsService {
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       forceRefresh
     ) {
-      const data = await this._refreshIntegrationService.refresh(
-        getIntegration
-      );
+      const data =
+        await this._refreshIntegrationService.refresh(getIntegration);
       if (!data) {
         return [];
       }
@@ -130,7 +130,7 @@ export class PostsService {
     try {
       return await integrationProvider.missing(
         getIntegration.internalId,
-        getIntegration.token
+        getIntegration.token,
       );
     } catch (e) {
       console.log(e);
@@ -154,7 +154,7 @@ export class PostsService {
     orgId: string,
     postId: string,
     date: number,
-    forceRefresh = false
+    forceRefresh = false,
   ): Promise<AnalyticsData[] | { missing: true }> {
     const post = await this._postRepository.getPostById(postId, orgId);
     if (!post || !post.releaseId) {
@@ -166,7 +166,7 @@ export class PostsService {
     }
 
     const integrationProvider = this._integrationManager.getSocialIntegration(
-      post.integration.providerIdentifier
+      post.integration.providerIdentifier,
     );
 
     if (!integrationProvider.postAnalytics) {
@@ -179,9 +179,8 @@ export class PostsService {
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       forceRefresh
     ) {
-      const data = await this._refreshIntegrationService.refresh(
-        getIntegration
-      );
+      const data =
+        await this._refreshIntegrationService.refresh(getIntegration);
       if (!data) {
         return [];
       }
@@ -212,7 +211,7 @@ export class PostsService {
         getIntegration.internalId,
         getIntegration.token,
         post.releaseId,
-        date
+        date,
       );
       await ioRedis.set(
         `integration:${orgId}:${post.id}:${date}`,
@@ -220,7 +219,7 @@ export class PostsService {
         'EX',
         !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
           ? 1
-          : 3600
+          : 3600,
       );
       return loadAnalytics;
     } catch (e) {
@@ -236,9 +235,8 @@ export class PostsService {
   async getStatistics(orgId: string, id: string) {
     const getPost = await this.getPostsRecursively(id, true, orgId, true);
     const content = getPost.map((p) => p.content);
-    const shortLinksTracking = await this._shortLinkService.getStatistics(
-      content
-    );
+    const shortLinksTracking =
+      await this._shortLinkService.getStatistics(content);
 
     return {
       clicks: shortLinksTracking,
@@ -248,7 +246,7 @@ export class PostsService {
   async mapTypeToPost(
     body: CreatePostDto,
     organization: string,
-    replaceDraft: boolean = false
+    replaceDraft: boolean = false,
   ): Promise<CreatePostDto> {
     if (!body?.posts?.every((p) => p?.integration?.id)) {
       throw new BadRequestException('All posts must have an integration id');
@@ -261,12 +259,12 @@ export class PostsService {
         body?.posts?.map(async (post) => {
           const integration = await this._integrationService.getIntegrationById(
             organization,
-            post.integration.id
+            post.integration.id,
           );
 
           if (!integration) {
             throw new BadRequestException(
-              `Integration with id ${post.integration.id} not found`
+              `Integration with id ${post.integration.id} not found`,
             );
           }
 
@@ -278,7 +276,7 @@ export class PostsService {
               __type: integration.providerIdentifier,
             },
           };
-        }) || []
+        }) || [],
       ),
     };
 
@@ -300,13 +298,13 @@ export class PostsService {
     id: string,
     includeIntegration = false,
     orgId?: string,
-    isFirst?: boolean
+    isFirst?: boolean,
   ): Promise<PostWithConditionals[]> {
     const post = await this._postRepository.getPost(
       id,
       includeIntegration,
       orgId,
-      isFirst
+      isFirst,
     );
 
     if (!post) {
@@ -320,7 +318,7 @@ export class PostsService {
             post?.childrenPost?.[0]?.id,
             false,
             orgId,
-            false
+            false,
           )
         : []),
     ];
@@ -338,7 +336,7 @@ export class PostsService {
 
   async getPostsList(orgId: string, query: GetPostsListDto) {
     return minifyPostsList(
-      await this._postRepository.getPostsList(orgId, query)
+      await this._postRepository.getPostsList(orgId, query),
     );
   }
 
@@ -355,7 +353,7 @@ export class PostsService {
               }
 
               return p;
-            })
+            }),
           )
         )
           .map((m) => {
@@ -425,13 +423,13 @@ export class PostsService {
             }
 
             return m;
-          })
+          }),
       );
 
       if (imageUpdateNeeded) {
         await this._postRepository.updateImages(
           id,
-          JSON.stringify(getImageList)
+          JSON.stringify(getImageList),
         );
       }
 
@@ -444,7 +442,7 @@ export class PostsService {
   async getPostGroupDebugExport(orgId: string, group: string) {
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
     const errors = await this._postRepository.getErrorsByPostIds(
-      loadAll.map((p) => p.id)
+      loadAll.map((p) => p.id),
     );
     const posts = this.arrangePostsByGroup(loadAll, undefined);
     const rootPost = posts[0] as any;
@@ -501,9 +499,9 @@ export class PostsService {
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG
+            convertToJPEG,
           ),
-        }))
+        })),
       ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
@@ -514,7 +512,7 @@ export class PostsService {
   arrangePostsByGroup(all: any, parent?: string): PostWithConditionals[] {
     const findAll = all
       .filter((p: any) =>
-        !parent ? !p.parentPostId : p.parentPostId === parent
+        !parent ? !p.parentPostId : p.parentPostId === parent,
       )
       .map(({ integration, ...all }: any) => ({
         ...all,
@@ -539,9 +537,9 @@ export class PostsService {
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG
+            convertToJPEG,
           ),
-        }))
+        })),
       ),
       integrationPicture: posts[0]?.integration?.picture,
       integration: posts[0].integrationId,
@@ -558,21 +556,21 @@ export class PostsService {
   public async updateTags(orgId: string, post: Post[]): Promise<Post[]> {
     const plainText = JSON.stringify(post);
     const extract = Array.from(
-      plainText.match(/\(post:[a-zA-Z0-9-_]+\)/g) || []
+      plainText.match(/\(post:[a-zA-Z0-9-_]+\)/g) || [],
     );
     if (!extract.length) {
       return post;
     }
 
     const ids = (extract || []).map((e) =>
-      e.replace('(post:', '').replace(')', '')
+      e.replace('(post:', '').replace(')', ''),
     );
     const urls = await this._postRepository.getPostUrls(orgId, ids);
     const newPlainText = ids.reduce((acc, value) => {
       const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
       return acc.replace(
         new RegExp(`\\(post:${value}\\)`, 'g'),
-        findUrl.split(',')[0]
+        findUrl.split(',')[0],
       );
     }, plainText);
 
@@ -583,7 +581,7 @@ export class PostsService {
     integration: Integration,
     orgId: string,
     id: string,
-    settings: any
+    settings: any,
   ) {
     const plugs = Object.entries(settings).filter(([key]) => {
       return key.indexOf('plug-') > -1;
@@ -624,12 +622,12 @@ export class PostsService {
   public async checkPlugs(
     orgId: string,
     providerName: string,
-    integrationId: string
+    integrationId: string,
   ) {
     const loadAllPlugs = this._integrationManager.getAllPlugs();
     const getPlugs = await this._integrationService.getPlugs(
       orgId,
-      integrationId
+      integrationId,
     );
 
     const currentPlug = loadAllPlugs.find((p) => p.identifier === providerName);
@@ -637,12 +635,12 @@ export class PostsService {
     return getPlugs
       .filter((plug) => {
         return currentPlug?.plugs?.some(
-          (p: any) => p.methodName === plug.plugFunction
+          (p: any) => p.methodName === plug.plugFunction,
         );
       })
       .map((plug) => {
         const runPlug = currentPlug?.plugs?.find(
-          (p: any) => p.methodName === plug.plugFunction
+          (p: any) => p.methodName === plug.plugFunction,
         )!;
         return {
           type: 'global',
@@ -668,7 +666,7 @@ export class PostsService {
           try {
             const workflow =
               await this._temporalService.client.getWorkflowHandle(
-                executionInfo.workflowId
+                executionInfo.workflowId,
               );
             if (
               workflow &&
@@ -679,6 +677,8 @@ export class PostsService {
           } catch (err) {}
         }
       } catch (err) {}
+
+      return { postId: post.id };
     }
 
     return { error: true };
@@ -696,7 +696,7 @@ export class PostsService {
     taskQueue: string,
     postId: string,
     orgId: string,
-    state: State
+    state: State,
   ) {
     try {
       const workflows = this._temporalService.client
@@ -708,7 +708,7 @@ export class PostsService {
       for await (const executionInfo of workflows) {
         try {
           const workflow = await this._temporalService.client.getWorkflowHandle(
-            executionInfo.workflowId
+            executionInfo.workflowId,
           );
           if (
             workflow &&
@@ -769,29 +769,29 @@ export class PostsService {
         image?: Array<{ path: string; thumbnail?: string }>;
       }>;
       settings?: any;
-    }>
+    }>,
   ) {
     return Promise.all(
       (posts || []).map(async (post) => {
         const integration = await this._integrationService.getIntegrationById(
           orgId,
-          post?.integration?.id
+          post?.integration?.id,
         );
 
         if (!integration) {
           throw new BadRequestException(
-            `Integration with id ${post?.integration?.id} not found`
+            `Integration with id ${post?.integration?.id} not found`,
           );
         }
 
         const provider = this._integrationManager.getSocialIntegration(
-          integration.providerIdentifier
+          integration.providerIdentifier,
         );
 
         let additionalSettings: any[] = [];
         try {
           additionalSettings = JSON.parse(
-            integration.additionalSettings || '[]'
+            integration.additionalSettings || '[]',
           );
         } catch {
           additionalSettings = [];
@@ -820,13 +820,16 @@ export class PostsService {
           errors = await provider.checkValidity(
             media,
             settings,
-            additionalSettings
+            additionalSettings,
           );
         } catch (err: any) {
           errors = err?.message || 'Invalid media';
         }
 
-        const maximumCharacters = provider.maxLength(additionalSettings, settings);
+        const maximumCharacters = provider.maxLength(
+          additionalSettings,
+          settings,
+        );
         const isX = integration.providerIdentifier === 'x';
 
         const emptyContent = (post.value || []).some((a) => {
@@ -854,7 +857,7 @@ export class PostsService {
           tooLong,
           maximumCharacters,
         };
-      })
+      }),
     );
   }
 
@@ -878,8 +881,12 @@ export class PostsService {
   // the platform: require the explicit `republish` opt-in instead. The message
   // doubles as the confirmation dialog for API/MCP automation.
   private guardAgainstRepublish(
-    post: { state: State; publishDate: Date; integration?: { providerIdentifier: string } } | null,
-    source: 'createPost' | 'changeDate'
+    post: {
+      state: State;
+      publishDate: Date;
+      integration?: { providerIdentifier: string };
+    } | null,
+    source: 'createPost' | 'changeDate',
   ) {
     if (post?.state !== 'PUBLISHED') {
       return;
@@ -891,9 +898,11 @@ export class PostsService {
     throw new BadRequestException(
       `This post was already published on ${dayjs
         .utc(post.publishDate)
-        .format('YYYY-MM-DD HH:mm')} UTC. Saving it this way would publish it again to ${
+        .format(
+          'YYYY-MM-DD HH:mm',
+        )} UTC. Saving it this way would publish it again to ${
         post.integration?.providerIdentifier || 'the channel'
-      }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
+      }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`,
     );
   }
 
@@ -901,7 +910,7 @@ export class PostsService {
     orgId: string,
     body: CreatePostDto,
     creationMethod: CreationMethod,
-    keepGroup = false
+    keepGroup = false,
   ): Promise<any[]> {
     const postList = [];
     for (const post of body.posts) {
@@ -912,11 +921,11 @@ export class PostsService {
       ) {
         this.guardAgainstRepublish(
           await this._postRepository.getPostById(post.value[0].id, orgId),
-          'createPost'
+          'createPost',
         );
       }
       const provider = this._integrationManager.getSocialIntegration(
-        (post.settings as any)?.__type
+        (post.settings as any)?.__type,
       );
       const removeLinks = !!provider?.stripLinks?.();
 
@@ -927,7 +936,7 @@ export class PostsService {
           ? messages
           : await this._shortLinkService.convertTextToShortLinks(
               orgId,
-              messages
+              messages,
             );
 
       post.value = (post.value || []).map((p, i) => ({
@@ -943,7 +952,7 @@ export class PostsService {
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
       );
 
       if (!posts?.length) {
@@ -955,7 +964,7 @@ export class PostsService {
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
           orgId,
-          posts[0].state
+          posts[0].state,
         ).catch((err) => {});
       }
 
@@ -978,7 +987,7 @@ export class PostsService {
     orgId: string,
     postId: string,
     settings: Record<string, any>,
-    creationMethod: CreationMethod
+    creationMethod: CreationMethod,
   ): Promise<{ postId: string; publishDate: string }> {
     // Ordered as post -> comments, root includes integration and tags.
     const ordered = await this.getPostsRecursively(postId, true, orgId, true);
@@ -990,13 +999,13 @@ export class PostsService {
 
     if (root.parentPostId) {
       throw new BadRequestException(
-        'This id belongs to a comment, pass the id of the main post'
+        'This id belongs to a comment, pass the id of the main post',
       );
     }
 
     if (root.state !== 'QUEUE' && root.state !== 'DRAFT') {
       throw new BadRequestException(
-        'Only scheduled posts that were not published yet (or drafts) can be updated'
+        'Only scheduled posts that were not published yet (or drafts) can be updated',
       );
     }
 
@@ -1005,7 +1014,7 @@ export class PostsService {
       dayjs.utc(root.publishDate).isBefore(dayjs.utc())
     ) {
       throw new BadRequestException(
-        'The publish time of this post already passed, it cannot be updated'
+        'The publish time of this post already passed, it cannot be updated',
       );
     }
 
@@ -1051,7 +1060,7 @@ export class PostsService {
 
     if (validation.emptyContent) {
       throw new BadRequestException(
-        `${validation.name}: Your post should have at least one character or one image.`
+        `${validation.name}: Your post should have at least one character or one image.`,
       );
     }
 
@@ -1060,19 +1069,19 @@ export class PostsService {
         throw new BadRequestException(
           `${validation.name}: ${
             validation.settingsError || 'Please fix your settings'
-          }`
+          }`,
         );
       }
 
       if (validation.errors !== true) {
         throw new BadRequestException(
-          `${validation.name}: ${validation.errors}`
+          `${validation.name}: ${validation.errors}`,
         );
       }
 
       if (validation.tooLong) {
         throw new BadRequestException(
-          `${validation.name}: The maximum characters is ${validation.maximumCharacters}`
+          `${validation.name}: The maximum characters is ${validation.maximumCharacters}`,
         );
       }
     }
@@ -1103,7 +1112,7 @@ export class PostsService {
       creationMethod,
       // Keep the group stable: a client may have the calendar open while the
       // settings are updated out of band, and the calendar links posts by group.
-      true
+      true,
     );
 
     if (!output) {
@@ -1127,7 +1136,7 @@ export class PostsService {
   async changePostStatus(
     orgId: string,
     id: string,
-    status: 'draft' | 'schedule'
+    status: 'draft' | 'schedule',
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
     if (!getPostById) {
@@ -1142,7 +1151,7 @@ export class PostsService {
         getPostById.integration.providerIdentifier.split('-')[0].toLowerCase(),
         getPostById.id,
         orgId,
-        state
+        state,
       );
     } catch (err) {}
 
@@ -1154,7 +1163,7 @@ export class PostsService {
     id: string,
     date: string,
     action: 'schedule' | 'update' = 'schedule',
-    republish = false
+    republish = false,
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
 
@@ -1169,7 +1178,7 @@ export class PostsService {
       id,
       date,
       getPostById.state === 'DRAFT',
-      action
+      action,
     );
 
     if (action === 'schedule') {
@@ -1180,7 +1189,7 @@ export class PostsService {
             .toLowerCase(),
           getPostById.id,
           orgId,
-          getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
+          getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE',
         );
       } catch (err) {}
     }
@@ -1267,7 +1276,7 @@ export class PostsService {
               },
             ],
           },
-          'WEB'
+          'WEB',
         );
       }
     }
@@ -1288,12 +1297,12 @@ export class PostsService {
   async findFreeDateTime(orgId: string, integrationId?: string) {
     const findTimes = await this._integrationService.findFreeDateTime(
       orgId,
-      integrationId
+      integrationId,
     );
     return this.findFreeDateTimeRecursive(
       orgId,
       findTimes,
-      dayjs.utc().startOf('day')
+      dayjs.utc().startOf('day'),
     );
   }
 
@@ -1309,12 +1318,12 @@ export class PostsService {
   private async findFreeDateTimeRecursive(
     orgId: string,
     times: number[],
-    date: dayjs.Dayjs
+    date: dayjs.Dayjs,
   ): Promise<string> {
     const list = await this._postRepository.getPostsCountsByDates(
       orgId,
       times,
-      date
+      date,
     );
 
     if (!list.length) {
@@ -1355,7 +1364,7 @@ export class PostsService {
     orgId: string,
     userId: string,
     postId: string,
-    comment: string
+    comment: string,
   ) {
     return this._postRepository.createComment(orgId, userId, postId, comment);
   }
