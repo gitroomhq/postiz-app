@@ -602,6 +602,7 @@ export const CalendarColumn: FC<{
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
+  const toaster = useToaster();
 
   // Use shared post actions hook
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
@@ -735,7 +736,7 @@ export const CalendarColumn: FC<{
       if (!item.interval) {
         changeDate(item.id, getDate);
       }
-      const { status } = await fetch(`/posts/${item.id}/date`, {
+      const response = await fetch(`/posts/${item.id}/date`, {
         method: 'PUT',
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
@@ -745,6 +746,22 @@ export const CalendarColumn: FC<{
           ...(action === 'schedule' ? { republish: true } : {}),
         }),
       });
+      const { status } = response;
+      if (status === 400) {
+        // The server refused the reschedule (invalid content/settings): put the
+        // card back where it was and show why. Revalidating is not enough - the
+        // rejected write leaves the server data unchanged, so the optimistic
+        // move has to be undone explicitly.
+        if (!item.interval && post) {
+          changeDate(item.id, dayjs.utc(post.publishDate));
+        }
+        toaster.show(
+          (await response.json()).message ||
+            t('could_not_reschedule_post', 'Could not reschedule the post'),
+          'warning'
+        );
+        return;
+      }
       if (status !== 500) {
         if (item.interval || action === 'schedule') {
           reloadCalendarView();

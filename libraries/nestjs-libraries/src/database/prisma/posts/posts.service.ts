@@ -897,6 +897,85 @@ export class PostsService {
     );
   }
 
+  // Runs the same server-side validation the create routes run, but on a post
+  // that already exists in the database. `strict` is decided by the caller from
+  // the state the post is moving *to*: empty content is always rejected, the
+  // rest only when the post is (about to be) publishable.
+  private async validateExistingPostOrThrow(
+    orgId: string,
+    postId: string,
+    strict: boolean,
+    preloaded?: { ordered: any[]; settings: Record<string, any> }
+  ) {
+    const ordered =
+      preloaded?.ordered ||
+      (await this.getPostsRecursively(postId, true, orgId, true));
+
+    const [root] = ordered;
+    if (!root) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const integration = (root as any).integration;
+
+    let settings = preloaded?.settings;
+    if (!settings) {
+      let existingSettings: Record<string, any>;
+      try {
+        existingSettings = JSON.parse(root.settings || '{}');
+      } catch (err) {
+        existingSettings = {};
+      }
+
+      settings = {
+        ...existingSettings,
+        __type: integration.providerIdentifier,
+      };
+    }
+
+    const [validation] = await this.validatePosts(orgId, [
+      {
+        integration: { id: integration.id },
+        settings,
+        value: ordered.map((p) => {
+          let image = [];
+          try {
+            image = JSON.parse(p.image || '[]');
+          } catch (err) {}
+          return { content: p.content, image };
+        }),
+      },
+    ]);
+
+    if (validation.emptyContent) {
+      throw new BadRequestException(
+        `${validation.name}: Your post should have at least one character or one image.`
+      );
+    }
+
+    if (!strict) {
+      return;
+    }
+
+    if (!validation.valid) {
+      throw new BadRequestException(
+        `${validation.name}: ${
+          validation.settingsError || 'Please fix your settings'
+        }`
+      );
+    }
+
+    if (validation.errors !== true) {
+      throw new BadRequestException(`${validation.name}: ${validation.errors}`);
+    }
+
+    if (validation.tooLong) {
+      throw new BadRequestException(
+        `${validation.name}: The maximum characters is ${validation.maximumCharacters}`
+      );
+    }
+  }
+
   async createPost(
     orgId: string,
     body: CreatePostDto,
@@ -1041,41 +1120,12 @@ export class PostsService {
     });
 
     // Same server-side validation as the dashboard / public create route.
-    const [validation] = await this.validatePosts(orgId, [
-      {
-        integration: { id: integration.id },
-        settings: mergedSettings,
-        value: value.map((p) => ({ content: p.content, image: p.image })),
-      },
-    ]);
-
-    if (validation.emptyContent) {
-      throw new BadRequestException(
-        `${validation.name}: Your post should have at least one character or one image.`
-      );
-    }
-
-    if (root.state !== 'DRAFT') {
-      if (!validation.valid) {
-        throw new BadRequestException(
-          `${validation.name}: ${
-            validation.settingsError || 'Please fix your settings'
-          }`
-        );
-      }
-
-      if (validation.errors !== true) {
-        throw new BadRequestException(
-          `${validation.name}: ${validation.errors}`
-        );
-      }
-
-      if (validation.tooLong) {
-        throw new BadRequestException(
-          `${validation.name}: The maximum characters is ${validation.maximumCharacters}`
-        );
-      }
-    }
+    await this.validateExistingPostOrThrow(
+      orgId,
+      postId,
+      root.state !== 'DRAFT',
+      { ordered, settings: mergedSettings }
+    );
 
     const date = dayjs.utc(root.publishDate).format('YYYY-MM-DDTHH:mm:ss');
 
@@ -1134,6 +1184,12 @@ export class PostsService {
       throw new BadRequestException('Post not found');
     }
 
+    // Gate on the target state: promoting a draft makes it publishable, so it
+    // has to pass the same validation the create routes run.
+    if (status === 'schedule') {
+      await this.validateExistingPostOrThrow(orgId, id, true);
+    }
+
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
     await this._postRepository.changeState(id, state);
 
@@ -1160,6 +1216,12 @@ export class PostsService {
 
     if (action === 'schedule' && !republish) {
       this.guardAgainstRepublish(getPostById, 'changeDate');
+    }
+
+    // Re-arming an existing non-draft post queues it again, so it has to pass
+    // the same validation. Drafts stay drafts here, nothing becomes publishable.
+    if (action === 'schedule' && getPostById?.state !== 'DRAFT') {
+      await this.validateExistingPostOrThrow(orgId, id, true);
     }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
