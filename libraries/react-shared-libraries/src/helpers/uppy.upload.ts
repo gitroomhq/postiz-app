@@ -19,6 +19,18 @@ const fetchUploadApiEndpoint = async (
 };
 
 // Define the factory to return appropriate Uppy configuration
+/**
+ * The `auth` token, when it is readable from JavaScript.
+ *
+ * Only NOT_SECURED (header auth) mode sets this cookie client-side; the default
+ * cookie-auth mode sets it httpOnly, so this returns undefined there. That
+ * difference is what lets the local uploader pick the right auth mechanism.
+ */
+const readAuthCookie = (): string | undefined => {
+  if (typeof document === 'undefined') return undefined;
+  return document.cookie.match(/(?:^|;\s*)auth=([^;]+)/)?.[1];
+};
+
 export const getUppyUploadPlugin = (
   provider: string,
   fetch: any,
@@ -92,14 +104,33 @@ export const getUppyUploadPlugin = (
             }),
         },
       };
-    case 'local':
+    case 'local': {
+      // NOT_SECURED switches the app from cookie auth to header auth, and
+      // main.ts drops `credentials: true` from the CORS config along with it.
+      // Asking for cookie credentials there sends a cookie the server is not
+      // using against a policy that forbids them, so the browser blocks the
+      // response and Uppy reports a bare "network error".
+      //
+      // The two modes are distinguishable without extra configuration: in
+      // cookie-auth mode the `auth` cookie is set httpOnly (see
+      // users.controller.ts) and cannot be read here, while NOT_SECURED sets it
+      // client-side and it can. A readable cookie therefore means header auth.
+      const usesHeaderAuth = Boolean(readAuthCookie());
       return {
         plugin: XHRUpload,
         options: {
           endpoint: `${backendUrl}/media/upload-server`,
-          withCredentials: true,
+          withCredentials: !usesHeaderAuth,
+          // Read per request rather than once, so a token refreshed mid-session
+          // is picked up. Empty in cookie-auth mode, which leaves the request
+          // exactly as it is today.
+          headers: () => {
+            const token = readAuthCookie();
+            return token ? { auth: decodeURIComponent(token) } : {};
+          },
         },
       };
+    }
 
     // Add more cases for other cloud providers
     default:
