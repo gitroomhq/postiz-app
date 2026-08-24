@@ -344,6 +344,7 @@ export class PostsRepository {
         organizationId: orgId,
         deletedAt: null,
         parentPostId: null,
+        state: { not: 'DRAFT' },
         OR: [{ state: 'QUEUE' }, { intervalInDays: { not: null } }],
       },
       select: {
