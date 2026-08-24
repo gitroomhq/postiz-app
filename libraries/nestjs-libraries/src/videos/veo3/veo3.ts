@@ -33,7 +33,7 @@ class Veo3Params {
   dto: Veo3Params,
   tools: [],
   trial: false,
-  available: !!process.env.KIEAI_API_KEY,
+  available: !!process.env.EVOLINK_API_KEY,
 })
 export class Veo3 extends VideoAbstract<Veo3Params> {
   override dto = Veo3Params;
@@ -42,27 +42,33 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
     customParams: Veo3Params
   ): Promise<URL> {
     const value = await (
-      await fetch('https://api.kie.ai/api/v1/veo/generate', {
+      await fetch('https://api.evolink.ai/v1/videos/generations', {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.EVOLINK_API_KEY}`,
         },
         method: 'POST',
         signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
+          model: 'veo3.1-fast',
           prompt: customParams.prompt,
-          imageUrls: customParams?.images?.map((p) => p.path) || [],
-          model: 'veo3_fast',
-          aspectRatio: output === 'horizontal' ? '16:9' : '9:16',
+          image_urls: customParams?.images?.map((p) => p.path) || [],
+          aspect_ratio: output === 'horizontal' ? '16:9' : '9:16',
+          duration: 8,
+          generate_audio: true,
         }),
       })
     ).json();
 
-    if (value.code !== 200 && value.code !== 201) {
-      throw new Error(value?.msg || `Failed to generate video`);
+    const taskId = value?.id;
+    if (!taskId) {
+      throw new Error(
+        value?.error
+          ? `${value.error.code}: ${value.error.message}`
+          : `Failed to generate video`
+      );
     }
 
-    const taskId = value.data.taskId;
     console.log('veo3 taskId', taskId);
     let attempts = 0;
     const maxAttempts = 180; // ~30 minutes at 10s interval
@@ -73,38 +79,29 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
 
       console.log('waiting for video to be ready');
       const data = await (
-        await fetch(
-          'https://api.kie.ai/api/v1/veo/record-info?taskId=' + taskId,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.KIEAI_API_KEY}`,
-            },
-            signal: AbortSignal.timeout(30000),
-          }
-        )
+        await fetch('https://api.evolink.ai/v1/tasks/' + taskId, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.EVOLINK_API_KEY}`,
+          },
+          signal: AbortSignal.timeout(30000),
+        })
       ).json();
 
-      if (data.code !== 200) {
-        throw new Error(data?.msg || `Failed to get video info`);
-      }
-
-      // successFlag: 0 = generating, 1 = success, anything else = failed
-      const successFlag = data?.data?.successFlag;
-      if (successFlag !== 0 && successFlag !== 1) {
-        throw new Error(
-          data?.data?.errorMessage ||
-            `Video generation failed (status ${successFlag})`
-        );
-      }
-
-      const videoUrl = data?.data?.response?.resultUrls || [];
-      if (videoUrl.length > 0) {
-        return videoUrl[0];
-      }
-
-      if (successFlag === 1) {
+      if (data?.status === 'completed') {
+        const videoUrl = data?.results || [];
+        if (videoUrl.length > 0) {
+          return videoUrl[0];
+        }
         throw new Error('Video generation succeeded but no video URL returned');
+      }
+
+      if (data?.status !== 'pending' && data?.status !== 'processing') {
+        throw new Error(
+          data?.error
+            ? `${data.error.code}: ${data.error.message}`
+            : `Video generation failed (status ${data?.status})`
+        );
       }
 
       await timer(10000);
