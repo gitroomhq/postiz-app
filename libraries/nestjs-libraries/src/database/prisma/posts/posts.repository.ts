@@ -977,7 +977,16 @@ export class PostsRepository {
         deletedAt: null,
         parentPostId: null,
       },
-      include: { integration: true },
+      include: {
+        integration: {
+          select: {
+            id: true,
+            providerIdentifier: true,
+            name: true,
+            picture: true,
+          },
+        }
+      },
     });
   }
 }
