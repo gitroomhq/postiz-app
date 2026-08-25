@@ -630,6 +630,8 @@
   "time_table_slots": "Intervalos de horario",
   "channel_id_copied": "ID del canal copiado al portapapeles",
   "settings_updated": "Configuración actualizada",
+  "current_timezone": "Zona horaria actual",
+  "timezone_auto": "Automático (zona horaria de tu navegador)",
   "customer_updated": "Cliente actualizado",
   "custom_url": "URL personalizada",
   "picture": "Imagen",

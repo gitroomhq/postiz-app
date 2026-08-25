@@ -24,7 +24,7 @@ import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { fromUtc, newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
@@ -453,10 +453,9 @@ export const MainBillingComponent: FC<{
                       ? 'Current Plan'
                       : name.toUpperCase() === 'FREE'
                       ? subscription?.cancelAt
-                        ? `Downgrade on ${dayjs
-                            .utc(subscription?.cancelAt)
-                            .local()
-                            .format('D MMM, YYYY')}`
+                        ? `Downgrade on ${fromUtc(
+                            subscription?.cancelAt
+                          ).format('D MMM, YYYY')}`
                         : 'Cancel subscription'
                       : // @ts-ignore
                       (user?.tier === 'FREE' ||
@@ -507,7 +506,7 @@ export const MainBillingComponent: FC<{
             'your_subscription_will_be_canceled_at',
             'Your subscription will be canceled at'
           )}{' '}
-          {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+          {fromUtc(subscription.cancelAt).format('D MMM, YYYY')}
           <br />
           {t(
             'you_will_never_be_charged_again',

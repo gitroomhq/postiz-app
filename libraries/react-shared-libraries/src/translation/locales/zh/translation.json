@@ -630,6 +630,8 @@
   "time_table_slots": "时间表时段",
   "channel_id_copied": "频道 ID 已复制到剪贴板",
   "settings_updated": "设置已更新",
+  "current_timezone": "当前时区",
+  "timezone_auto": "自动（您的浏览器时区）",
   "customer_updated": "客户已更新",
   "custom_url": "自定义 URL",
   "picture": "图片",

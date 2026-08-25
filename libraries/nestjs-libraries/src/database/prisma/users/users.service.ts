@@ -6,6 +6,13 @@ import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/emai
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { TimezoneDto } from '@gitroom/nestjs-libraries/dtos/users/timezone.dto';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Injectable()
 export class UsersService {
@@ -141,6 +148,21 @@ export class UsersService {
 
   changePersonal(userId: string, body: UserDetailDto) {
     return this._usersRepository.changePersonal(userId, body);
+  }
+
+  updateTimezone(userId: string, body: TimezoneDto) {
+    // an empty name means "auto", which is stored as null
+    const timezoneName = body.timezoneName || null;
+
+    if (timezoneName) {
+      try {
+        dayjs.tz(dayjs(), timezoneName);
+      } catch (err) {
+        throw new HttpException('Invalid timezone', 400);
+      }
+    }
+
+    return this._usersRepository.updateTimezone(userId, timezoneName);
   }
 
   getEmailNotifications(userId: string) {

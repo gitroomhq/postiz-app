@@ -56,7 +56,11 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+  toUtc,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 
 // Extend dayjs with necessary plugins
@@ -117,9 +121,7 @@ const usePostActions = (onMutate?: () => void) => {
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
-      const publishDate = dayjs
-        .utc(date || data.posts[0].publishDate)
-        .local();
+      const publishDate = fromUtc(date || data.posts[0].publishDate);
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -305,12 +307,9 @@ export const DayView = () => {
         {options.map((option) => (
           <Fragment key={option[0].time}>
             <div className="text-center text-[14px] min-h-[21px]">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
+              {fromUtc(
+                dayjs.utc().startOf('day').add(option[0].time, 'minute')
+              ).format(isUSCitizen() ? 'hh:mm A' : 'LT')}
             </div>
             <div
               key={option[0].time}
@@ -323,10 +322,9 @@ export const DayView = () => {
                 }}
               >
                 <CalendarColumn
-                  getDate={currentDay
-                    .startOf('day')
-                    .add(option[0].time, 'minute')
-                    .local()}
+                  getDate={fromUtc(
+                    currentDay.startOf('day').add(option[0].time, 'minute')
+                  )}
                 />
               </CalendarContext.Provider>
             </div>
@@ -505,7 +503,7 @@ export const ListView = () => {
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
-      const dateKey = newDayjs(post.publishDate).local().format('YYYY-MM-DD');
+      const dateKey = fromUtc(post.publishDate).format('YYYY-MM-DD');
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -544,7 +542,7 @@ export const ListView = () => {
                   key={post.id}
                   display="day"
                   isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
+                  date={fromUtc(post.publishDate)}
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
@@ -607,7 +605,7 @@ export const CalendarColumn: FC<{
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
-      const pList = dayjs.utc(post.publishDate).local();
+      const pList = fromUtc(post.publishDate);
       const check =
         display === 'day'
           ? pList.format('YYYY-MM-DD HH:mm') ===
@@ -634,10 +632,8 @@ export const CalendarColumn: FC<{
   }, [postList, showAll]);
 
   const isBeforeNow = useMemo(() => {
-    const originalUtc = getDate.startOf('hour');
-    return originalUtc
-      .startOf('hour')
-      .isBefore(newDayjs().startOf('hour').utc());
+    // both sides carry the user timezone wall clock
+    return getDate.startOf('hour').isBefore(newDayjs().startOf('hour'));
   }, [getDate, num]);
 
   const { start, stop } = useInterval(
@@ -738,7 +734,7 @@ export const CalendarColumn: FC<{
       const { status } = await fetch(`/posts/${item.id}/date`, {
         method: 'PUT',
         body: JSON.stringify({
-          date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          date: toUtc(getDate).format('YYYY-MM-DDTHH:mm:ss'),
           action,
           // published posts always confirm via the modal before reaching here;
           // for QUEUE posts the flag is a no-op on the server
@@ -1183,7 +1179,7 @@ const CalendarItem: FC<{
         </div>
         {showTime && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+            {fromUtc(post.publishDate).format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
         )}
       </div>

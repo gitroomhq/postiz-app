@@ -630,6 +630,8 @@
   "time_table_slots": "Fasce orarie",
   "channel_id_copied": "ID canale copiato negli appunti",
   "settings_updated": "Impostazioni aggiornate",
+  "current_timezone": "Fuso orario attuale",
+  "timezone_auto": "Automatico (fuso orario del tuo browser)",
   "customer_updated": "Cliente aggiornato",
   "custom_url": "URL personalizzato",
   "picture": "Immagine",

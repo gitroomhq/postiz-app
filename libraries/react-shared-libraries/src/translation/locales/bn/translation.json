@@ -630,6 +630,8 @@
   "time_table_slots": "সময়সূচির স্লট",
   "channel_id_copied": "চ্যানেল আইডি ক্লিপবোর্ডে কপি হয়েছে",
   "settings_updated": "সেটিংস আপডেট হয়েছে",
+  "current_timezone": "বর্তমান টাইমজোন",
+  "timezone_auto": "স্বয়ংক্রিয় (আপনার ব্রাউজারের টাইমজোন)",
   "customer_updated": "গ্রাহক আপডেট হয়েছে",
   "custom_url": "কাস্টম URL",
   "picture": "ছবি",

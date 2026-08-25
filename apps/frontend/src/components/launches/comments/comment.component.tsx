@@ -9,6 +9,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { toUtc } from '@gitroom/frontend/components/layout/set.timezone';
 export const CommentBox: FC<{
   value?: string;
   type: 'textarea' | 'input';
@@ -149,7 +150,7 @@ export const CommentComponent: FC<{
   const fetch = useFetch();
   const load = useCallback(async () => {
     const data = await (
-      await fetch(`/comments/${date.utc().format('YYYY-MM-DDTHH:mm:00')}`)
+      await fetch(`/comments/${toUtc(date).format('YYYY-MM-DDTHH:mm:00')}`)
     ).json();
     setCommentsList(data);
   }, []);
@@ -162,7 +163,7 @@ export const CommentComponent: FC<{
         method: 'PUT',
         body: JSON.stringify({
           content,
-          date: date.utc().format('YYYY-MM-DDTHH:mm:00'),
+          date: toUtc(date).format('YYYY-MM-DDTHH:mm:00'),
         }),
       });
     },
@@ -175,7 +176,7 @@ export const CommentComponent: FC<{
           method: 'POST',
           body: JSON.stringify({
             content,
-            date: date.utc().format('YYYY-MM-DDTHH:mm:00'),
+            date: toUtc(date).format('YYYY-MM-DDTHH:mm:00'),
           }),
         })
       ).json();
@@ -231,7 +232,7 @@ export const CommentComponent: FC<{
           method: 'POST',
           body: JSON.stringify({
             content,
-            date: date.utc().format('YYYY-MM-DDTHH:mm:00'),
+            date: toUtc(date).format('YYYY-MM-DDTHH:mm:00'),
           }),
         })
       ).json();

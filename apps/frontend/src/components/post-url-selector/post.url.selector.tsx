@@ -9,7 +9,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import removeMd from 'remove-markdown';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { newDayjs, toUtc } from '@gitroom/frontend/components/layout/set.timezone';
 const postUrlEmitter = new EventEmitter();
 export const ShowPostSelector = () => {
   const [showPostSelector, setShowPostSelector] = useState(false);
@@ -78,7 +78,7 @@ export const PostSelector: FC<{
   const fetch = useFetch();
   const fetchOldPosts = useCallback(() => {
     return fetch(
-      '/posts/old?date=' + date.utc().format('YYYY-MM-DDTHH:mm:00'),
+      '/posts/old?date=' + toUtc(date).format('YYYY-MM-DDTHH:mm:00'),
       {
         method: 'GET',
         headers: {

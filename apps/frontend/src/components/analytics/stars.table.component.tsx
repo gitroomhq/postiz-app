@@ -18,6 +18,7 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const UpDown: FC<{
   name: string;
@@ -138,7 +139,7 @@ export const StarsTableComponent = () => {
     mutate();
   }, [searchParams]);
   const renderMediaLink = useCallback((date: string) => {
-    const local = dayjs.utc(date).local();
+    const local = fromUtc(date);
     const weekNumber = local.isoWeek();
     const year = local.year();
     return `/launches?week=${weekNumber}&year=${year}`;

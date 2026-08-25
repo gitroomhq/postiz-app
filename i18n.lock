@@ -634,6 +634,8 @@ checksums:
     time_table_slots: ba2e44486ebe947322acc78d3bc05a3a
     channel_id_copied: 58bf6a74adf570a5daf233ce496149de
     settings_updated: 260e10a61200b581616d766f3af5ae52
+    current_timezone: 5bc1d49a4c592ab2a7477d4bb5b6001b
+    timezone_auto: ea4175545675deec5e94c9498a81fedc
     customer_updated: ab17bcd115b14b72bb2e89f2b48883a4
     custom_url: f1e4e1c6a386d212abe94b937cf5e812
     picture: 14818ef364a0ecc8b738bdb23c46b3c3

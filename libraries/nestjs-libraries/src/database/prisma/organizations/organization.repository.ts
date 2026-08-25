@@ -87,6 +87,28 @@ export class OrganizationRepository {
     });
   }
 
+  async getOrgOwnerTimezone(orgId: string) {
+    const owner = await this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        role: Role.SUPERADMIN,
+        user: {
+          deletedAt: null,
+        },
+      },
+      select: {
+        user: {
+          select: {
+            timezoneName: true,
+          },
+        },
+      },
+    });
+
+    return owner?.user?.timezoneName || null;
+  }
+
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
       where: {

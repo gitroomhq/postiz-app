@@ -633,6 +633,8 @@
   "time_table_slots": "Time Table Slots",
   "channel_id_copied": "Channel ID copied to clipboard",
   "settings_updated": "Settings Updated",
+  "current_timezone": "Current Timezone",
+  "timezone_auto": "Auto (your browser timezone)",
   "customer_updated": "Customer Updated",
   "custom_url": "Custom URL",
   "picture": "Picture",

@@ -630,6 +630,8 @@
   "time_table_slots": "فترات الجدول الزمني",
   "channel_id_copied": "تم نسخ معرف القناة إلى الحافظة",
   "settings_updated": "تم تحديث الإعدادات",
+  "current_timezone": "المنطقة الزمنية الحالية",
+  "timezone_auto": "تلقائي (منطقة متصفحك الزمنية)",
   "customer_updated": "تم تحديث العميل",
   "custom_url": "رابط مخصص",
   "picture": "صورة",
