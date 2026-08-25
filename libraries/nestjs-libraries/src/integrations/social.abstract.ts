@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
@@ -13,6 +14,15 @@ import {
 import sharp from 'sharp';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
+
+export const stripQuery = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (err) {
+    return url.split('?')[0];
+  }
+};
 
 export type ValidityMedia = {
   path: string;
@@ -219,6 +229,7 @@ export abstract class SocialAbstract {
       path?.indexOf('http') === -1
         ? `${process.env.FRONTEND_URL}/${path}`
         : path;
+    setHeartbeatDetails(`read media ${stripQuery(url)}`);
     const { width = 0, height = 0 } = await sharp(
       await readOrFetch(url)
     ).metadata();
@@ -233,6 +244,7 @@ export abstract class SocialAbstract {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -265,6 +277,9 @@ export abstract class SocialAbstract {
     identifier = ''
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
+      setHeartbeatDetails(
+        `media chunk ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -447,6 +462,12 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
+    // A platform that accepts the connection and then goes silent leaves the
+    // activity with nothing logged until startToCloseTimeout. Record the call
+    // first so the timeout failure names it. Query string is dropped - some
+    // providers carry access_token there and details are stored by Temporal.
+    setHeartbeatDetails(`fetch ${stripQuery(url)}`);
+
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
