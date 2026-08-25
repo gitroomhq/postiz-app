@@ -135,6 +135,13 @@ export class PinterestProvider
           'The board ID must be a numeric string. Please check the board ID format.',
       };
     }
+    if (body.indexOf('block (Pins) we have in place to combat spam') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest temporarily blocked this pin as suspected spam. Please space out your pins and try again later.',
+      };
+    }
     if (body.indexOf('Board not found') > -1) {
       return {
         type: 'bad-body' as const,
