@@ -596,6 +596,12 @@ export class InstagramProvider
     };
   }
 
+  // Instagram rejects collaborator handles that carry a leading @ with
+  // error_subcode 2207018, and the tag input stores whatever the user typed.
+  private stripHandle(handle: string) {
+    return handle.replace(/^@+/, '');
+  }
+
   // Single, read-only status check of a media container - the polling loops
   // that used to live inside post() are now driven by the post workflow.
   private async igContainerStatus(
@@ -659,7 +665,9 @@ export class InstagramProvider
       firstPost?.settings?.collaborators?.length && !isStory
         ? `&collaborators=${encodeURIComponent(
             JSON.stringify(
-              firstPost?.settings?.collaborators.map((p) => p.label)
+              firstPost?.settings?.collaborators.map((p) =>
+                this.stripHandle(p.label)
+              )
             )
           )}`
         : ``;
@@ -761,8 +769,8 @@ export class InstagramProvider
           message: firstPost?.message || '',
           ...(collaborators
             ? {
-                collaborators: firstPost.settings.collaborators!.map(
-                  (p) => p.label
+                collaborators: firstPost.settings.collaborators!.map((p) =>
+                  this.stripHandle(p.label)
                 ),
               }
             : {}),
