@@ -694,7 +694,11 @@ export class InstagramProvider
         const collaborators =
           firstPost?.settings?.collaborators?.length && !isStory
             ? `&collaborators=${JSON.stringify(
-                firstPost?.settings?.collaborators.map((p) => p.label)
+                // Instagram rejects handles with a leading @ (error_subcode
+                // 2207018), and the tag input stores whatever the user typed.
+                firstPost?.settings?.collaborators.map((p) =>
+                  p.label.replace(/^@+/, '')
+                )
               )}`
             : ``;
 
