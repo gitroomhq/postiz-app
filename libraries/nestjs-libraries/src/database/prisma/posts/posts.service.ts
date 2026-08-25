@@ -1440,16 +1440,22 @@ export class PostsService {
     const superAdmins = (userOrg?.users || []).filter(
       (u) => u.role === 'SUPERADMIN'
     );
+    const safePreview = postPreview
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
     
     //it will be sent to all members of org since there is no user-level scoping remove it before raising PR
     await this._notificationsService.inAppNotification(
       orgId,
       'New post awaiting your approval',
-      `A post is pending review: "${postPreview}"`,
+      `A post is pending review: "${safePreview}"`,
       false
     );
 
-    const html = `A new post is waiting on your review.<br /><br /><strong>Preview:</strong> ${postPreview}<br /><br /><a href="${process.env.FRONTEND_URL}/launches?display=list">Review it now</a>.`;
+    const html = `A new post is waiting on your review.<br /><br /><strong>Preview:</strong> ${safePreview}<br /><br /><a href="${process.env.FRONTEND_URL}/launches?display=list">Review it now</a>.`;
 
     for (const su of superAdmins) {
       await this._notificationsService.sendEmail(
