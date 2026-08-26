@@ -1102,7 +1102,7 @@ export class InstagramProvider
     analytics.push(
       ...(data?.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: d.values.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
@@ -1113,7 +1113,7 @@ export class InstagramProvider
     analytics.push(
       ...data2.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: [
           {
             total: d.total_value.value,
