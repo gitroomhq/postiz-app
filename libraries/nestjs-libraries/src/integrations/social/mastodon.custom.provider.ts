@@ -5,6 +5,8 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 
 export class MastodonCustomProvider extends MastodonProvider {
@@ -26,6 +28,8 @@ export class MastodonCustomProvider extends MastodonProvider {
       await fetch(url + '/api/v1/apps', {
         method: 'POST',
         body: form,
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
       })
     ).json();
 
@@ -70,15 +74,45 @@ export class MastodonCustomProvider extends MastodonProvider {
     );
   }
 
+  // The user's instance URL, saved encrypted at connection time. Falls back to
+  // the default instance for legacy integrations that predate storing it.
+  private instanceUrl(integration?: Integration) {
+    try {
+      const { instanceUrl } = JSON.parse(
+        AuthService.fixedDecryption(integration?.customInstanceDetails || '')
+      );
+      return instanceUrl || process.env.MASTODON_URL || 'https://mastodon.social';
+    } catch (err) {
+      return process.env.MASTODON_URL || 'https://mastodon.social';
+    }
+  }
+
   override async post(
     id: string,
     accessToken: string,
-    postDetails: PostDetails[]
+    postDetails: PostDetails[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     return this.dynamicPost(
       id,
       accessToken,
-      process.env.MASTODON_URL || 'https://mastodon.social',
+      this.instanceUrl(integration),
+      postDetails
+    );
+  }
+
+  // checkPostStatus / finalizePost are inherited as-is: the instance url
+  // travels inside pendingData, set here once.
+  override async postPending(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return this.dynamicPostPending(
+      id,
+      accessToken,
+      this.instanceUrl(integration),
       postDetails
     );
   }
@@ -96,7 +130,7 @@ export class MastodonCustomProvider extends MastodonProvider {
       postId,
       lastCommentId,
       accessToken,
-      process.env.MASTODON_URL || 'https://mastodon.social',
+      this.instanceUrl(integration),
       postDetails
     );
   }

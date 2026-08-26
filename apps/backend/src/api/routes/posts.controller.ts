@@ -240,8 +240,21 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(org.id, body)) {
-      res.write(JSON.stringify(event) + '\n');
+    try {
+      for await (const event of this._agentGraphService.start(org.id, body)) {
+        res.write(JSON.stringify(event) + '\n');
+      }
+    } catch (err) {
+      // The stream has already started, so we cannot surface a normal HTTP
+      // error here. Emit a final error event on the open stream instead, so the
+      // client can stop and show the message rather than hang on a truncated
+      // stream. HttpExceptions carry a curated, user-facing message (e.g. the
+      // AI safety rejection); anything else gets a generic message.
+      const message =
+        err instanceof HttpException
+          ? err.message
+          : 'Something went wrong while generating your posts, please try again.';
+      res.write(JSON.stringify({ name: 'error', error: true, message }) + '\n');
     }
 
     res.end();
@@ -260,9 +273,12 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
     @Body('date') date: string,
-    @Body('action') action: 'schedule' | 'update' = 'schedule'
+    // 'update' is the safe default: clients that don't send an action must
+    // never requeue (and thereby republish) a post by accident
+    @Body('action') action: 'schedule' | 'update' = 'update',
+    @Body('republish') republish = false
   ) {
-    return this._postsService.changeDate(org.id, id, date, action);
+    return this._postsService.changeDate(org.id, id, date, action, republish);
   }
 
   @Post('/separate-posts')

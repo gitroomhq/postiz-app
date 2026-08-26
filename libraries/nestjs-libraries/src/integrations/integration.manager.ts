@@ -12,6 +12,7 @@ import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
 import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
+import { TiktokBusinessProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.business.provider';
 import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social/pinterest.provider';
 import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
@@ -36,6 +37,7 @@ import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
 import { MeweProvider } from '@gitroom/nestjs-libraries/integrations/social/mewe.provider';
+import { TumblrProvider } from '@gitroom/nestjs-libraries/integrations/social/tumblr.provider';
 
 export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new XProvider(),
@@ -49,6 +51,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new YoutubeProvider(),
   new GmbProvider(),
   new TiktokProvider(),
+  new TiktokBusinessProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),
   new DiscordProvider(),
@@ -71,25 +74,75 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new WhopProvider(),
   new SkoolProvider(),
   new MeweProvider(),
+  new TumblrProvider(),
   // new MastodonCustomProvider(),
 ];
 
 @Injectable()
 export class IntegrationManager {
+  // Both are env-driven so cloud and self-hosted instances can differ:
+  // HIDDEN_PROVIDERS ("tiktok,x") hides providers from the add-channel screen,
+  // MIGRATE_PROVIDERS ("tiktok:tiktok-business") routes a reconnect of the old
+  // provider through the new provider's OAuth and migrates the channel in
+  // place, keeping its id, scheduled posts and settings.
+  isHiddenProvider(identifier: string) {
+    return (process.env.HIDDEN_PROVIDERS || '')
+      .split(',')
+      .map((p) => p.trim())
+      .includes(identifier);
+  }
+
+  // Note: a target provider that implements `reConnect` is not supported - the
+  // connect callback would run reConnect with the old app-scoped id before the
+  // migration is attempted.
+  getMigrationTarget(identifier: string): string | undefined {
+    const [, target] =
+      (process.env.MIGRATE_PROVIDERS || '')
+        .split(',')
+        .map((p) => p.trim().split(':'))
+        .find(([from, to]) => from === identifier && !!to) || [];
+
+    return target &&
+      target !== identifier &&
+      this.getAllowedSocialsIntegrations().includes(target)
+      ? target
+      : undefined;
+  }
+
+  // Reverse lookup of MIGRATE_PROVIDERS: the providers whose channels a fresh
+  // connect of `identifier` should adopt instead of creating a duplicate.
+  getMigrationSources(identifier: string): string[] {
+    return (process.env.MIGRATE_PROVIDERS || '')
+      .split(',')
+      .map((p) => p.trim().split(':'))
+      .filter(
+        ([from, to]) =>
+          to === identifier &&
+          !!from &&
+          from !== identifier &&
+          this.getAllowedSocialsIntegrations().includes(from)
+      )
+      .map(([from]) => from);
+  }
+
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies ? { extensionCookies: p.extensionCookies } : {}),
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationList
+          .filter((p) => !this.isHiddenProvider(p.identifier))
+          .map(async (p) => ({
+            name: p.name,
+            identifier: p.identifier,
+            toolTip: p.toolTip,
+            editor: p.editor,
+            isExternal: !!p.externalUrl,
+            isWeb3: !!p.isWeb3,
+            isChromeExtension: !!p.isChromeExtension,
+            ...(p.extensionCookies
+              ? { extensionCookies: p.extensionCookies }
+              : {}),
+            ...(p.customFields ? { customFields: await p.customFields() } : {}),
+          }))
       ),
       article: [] as any[],
     };

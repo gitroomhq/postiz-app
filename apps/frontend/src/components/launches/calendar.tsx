@@ -174,24 +174,19 @@ const usePostActions = (onMutate?: () => void) => {
   );
 
   const copyDebugJson = useCallback(
-    (post: any) => async () => {
-      try {
-        const data = await (
-          await fetch(`/posts/group/${post.group}/debug-export`)
-        ).json();
-        copy(JSON.stringify(data, null, 2));
-        toaster.show(
-          t('debug_json_copied', 'Debug JSON copied to clipboard'),
-          'success'
-        );
-      } catch {
-        toaster.show(
-          t('debug_json_copy_failed', 'Failed to copy debug data'),
-          'warning'
-        );
-      }
+    (post: any) => () => {
+      modal.openModal({
+        title: t('copy_debug_json', 'Copy Debug JSON'),
+        closeOnClickOutside: true,
+        closeOnEscape: true,
+        withCloseButton: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[500px]',
+        },
+        children: <DebugJsonModal post={post} />,
+      });
     },
-    [fetch, toaster, t]
+    [modal, t]
   );
 
   const deletePost = useCallback(
@@ -684,8 +679,18 @@ export const CalendarColumn: FC<{
                 <div className="flex flex-col">
                   <div className="text-[20px] mb-[20px]">
                     {t(
-                      'post_already_published_drag',
-                      'This post was already published, what do you want to do?'
+                      'post_already_published_republish_warning',
+                      'This post was already published. Republishing will publish it again to'
+                    )}{' '}
+                    {post.integration?.name}{' '}
+                    {t('republish_at', 'at')} {getDate.format('DD/MM/YYYY HH:mm')}.
+                    {(!!item.interval || !!post.intervalInDays) && (
+                      <div className="mt-[10px]">
+                        {t(
+                          'republish_recurring_note',
+                          'This is a recurring post: your changes apply to all future recurrences starting now.'
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="flex w-full gap-[10px]">
@@ -735,6 +740,9 @@ export const CalendarColumn: FC<{
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
           action,
+          // published posts always confirm via the modal before reaching here;
+          // for QUEUE posts the flag is a no-op on the server
+          ...(action === 'schedule' ? { republish: true } : {}),
         }),
       });
       if (status !== 500) {
@@ -1182,6 +1190,56 @@ const CalendarItem: FC<{
     </div>
   );
 });
+const DebugJsonModal: FC<{ post: any }> = ({ post }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const { closeCurrent } = useModals();
+
+  const copyPostId = useCallback(() => {
+    copy(post.id);
+    toaster.show(
+      t('post_id_copied', 'Post ID copied to clipboard'),
+      'success'
+    );
+    closeCurrent();
+  }, [post, toaster, t, closeCurrent]);
+
+  const copyJson = useCallback(async () => {
+    try {
+      const data = await (
+        await fetch(`/posts/group/${post.group}/debug-export`)
+      ).json();
+      copy(JSON.stringify(data, null, 2));
+      toaster.show(
+        t('debug_json_copied', 'Debug JSON copied to clipboard'),
+        'success'
+      );
+      closeCurrent();
+    } catch {
+      toaster.show(
+        t('debug_json_copy_failed', 'Failed to copy debug data'),
+        'warning'
+      );
+    }
+  }, [fetch, post, toaster, t, closeCurrent]);
+
+  return (
+    <div className="flex flex-col gap-[16px] p-[16px]">
+      <div className="text-textColor text-[14px]">
+        {t('debug_choose_copy', 'Choose what you want to copy')}
+      </div>
+      <div className="flex gap-[10px]">
+        <Button onClick={copyPostId}>
+          {t('copy_post_id', 'Copy post id')}
+        </Button>
+        <Button secondary onClick={copyJson}>
+          {t('copy_debug_json', 'Copy Debug JSON')}
+        </Button>
+      </div>
+    </div>
+  );
+};
 const CopyDebug = () => {
   const t = useT();
   return (

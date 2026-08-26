@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
@@ -96,6 +97,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
     const load = await fetch(body.service + '/api/v3/user/login', {
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
       body: JSON.stringify({
         username_or_email: body.identifier,
         password: body.password,
@@ -115,6 +118,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     try {
       const user = await (
         await fetch(body.service + `/api/v3/user?username=${body.identifier}`, {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           headers: {
             Authorization: `Bearer ${jwt}`,
           },
@@ -146,6 +151,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
 
     const { jwt } = await (
       await fetch(body.service + '/api/v3/user/login', {
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
         body: JSON.stringify({
           username_or_email: body.identifier,
           password: body.password,
@@ -184,6 +191,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
       });
       const { post_view } = await (
         await fetch(service + '/api/v3/post', {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
             community_id: +lemmy.value.id,
             name: lemmy.value.title,
@@ -245,6 +254,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     for (const singlePostId of postIds) {
       const { comment_view } = await (
         await fetch(service + '/api/v3/comment', {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
             post_id: +singlePostId,
             content: commentPost.message,
@@ -297,6 +308,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
       await fetch(
         service + `/api/v3/search?type_=Communities&sort=Active&q=${data.word}`,
         {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           headers: {
             Authorization: `Bearer ${jwt}`,
           },

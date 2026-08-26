@@ -8,7 +8,11 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { WhopDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/whop.dto';
 import { Integration } from '@prisma/client';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
@@ -225,8 +229,28 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
     const attachments: { id: string }[] = [];
 
     for (const item of media) {
-      const fileResponse = await fetch(item.path);
-      const fileBuffer = await fileResponse.arrayBuffer();
+      // The size comes from a HEAD request; the PUT below streams the bytes
+      // so the file is never buffered in memory (it used to stay resident
+      // through the whole ~9 minute status poll).
+      const headResponse = await fetch(item.path, {
+        method: 'HEAD',
+        // identity encoding so content-length matches the bytes the GET streams
+        headers: { 'accept-encoding': 'identity' },
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
+      });
+      const contentLength = Number(
+        headResponse.headers.get('content-length') || 0
+      );
+      if (!headResponse.ok || !contentLength) {
+        // A permanent condition - fail fast instead of letting Temporal retry
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Could not determine the media size for upload'
+        );
+      }
       const fileName = item.path.split('/').pop() || 'file';
 
       const createFileResponse = await (
@@ -247,14 +271,44 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
       ).json();
 
       if (createFileResponse.upload_url) {
-        await fetch(createFileResponse.upload_url, {
-          method: 'PUT',
-          headers: createFileResponse.upload_headers || {},
-          body: fileBuffer,
+        const fileResponse = await fetch(item.path, {
+          headers: { 'accept-encoding': 'identity' },
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
         });
+        if (!fileResponse.ok || !fileResponse.body) {
+          throw new Error(`Failed to fetch media: ${fileResponse.statusText}`);
+        }
+        const uploadResponse = await fetch(createFileResponse.upload_url, {
+          method: 'PUT',
+          headers: {
+            // Whop's own upload_headers win if they ever include a length.
+            'Content-Length': String(contentLength),
+            ...(createFileResponse.upload_headers || {}),
+          },
+          body: fileResponse.body,
+          // Required by undici when streaming a request body.
+          duplex: 'half',
+        } as any);
+        // A rejected PUT leaves the file pending forever - fail fast instead
+        // of burning the ~9 minute status poll below.
+        if (!uploadResponse.ok) {
+          throw new BadBody(
+            this.identifier,
+            await uploadResponse.text().catch(() => '{}'),
+            '{}',
+            'Failed to upload the media file'
+          );
+        }
 
         let uploadStatus = 'pending';
+        let attempts = 0;
+        const maxAttempts = 108; // ~9 minutes at 5s interval
         while (uploadStatus !== 'ready') {
+          if (attempts++ >= maxAttempts) {
+            throw new Error('File upload timed out');
+          }
+
           const fileStatus = await (
             await this.fetch(
               `https://api.whop.com/api/v1/files/${createFileResponse.id}`,

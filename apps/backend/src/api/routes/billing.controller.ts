@@ -4,11 +4,14 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { AdminApplyCouponDto } from '@gitroom/nestjs-libraries/dtos/billing/admin.apply.coupon.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import dayjs from 'dayjs';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -16,8 +19,17 @@ export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
-    private _notificationService: NotificationService
+    private _notificationService: NotificationService,
+    private _usersService: UsersService
   ) {}
+
+  private async assertNoOtherSubscribedAccount(user: User) {
+    const other = await this._usersService.getUserWithActiveSubscriptionByEmail(
+      user.email,
+      user.id
+    );
+    return !!other;
+  }
 
   @Get('/check/:id')
   async checkId(
@@ -61,12 +73,16 @@ export class BillingController {
   }
 
   @Post('/embedded')
-  embedded(
+  async embedded(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.embedded(
       uniqueId,
@@ -78,12 +94,16 @@ export class BillingController {
   }
 
   @Post('/subscribe')
-  subscribe(
+  async subscribe(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Body() body: BillingSubscribeDto,
     @Req() req: Request
   ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+
     const uniqueId = req?.cookies?.track;
     return this._stripeService.subscribe(
       uniqueId,
@@ -113,17 +133,30 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @GetUserFromRequest() user: User
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await this._stripeService.setToCancel(org.id);
 
-    return this._stripeService.setToCancel(org.id);
+    if (result.cancel_at) {
+      const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
+      try {
+        await this._notificationService.sendEmail(
+          user.email,
+          'Your subscription has been cancelled',
+          `${
+            isFutureCancel
+              ? `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+                  result.cancel_at
+                ).format('MMMM D, YYYY')}.`
+              : 'Your subscription has been cancelled and access to paid features has ended.'
+          }<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+            process.env.FRONTEND_URL
+          }/billing">billing page</a>.`
+        );
+      } catch (err) {}
+    }
+
+    return result;
   }
 
   @Post('/prorate')
@@ -169,6 +202,43 @@ export class BillingController {
     }
 
     return this._stripeService.cancelSubscription(org.id);
+  }
+
+  @Get('/coupon-info')
+  async couponInfo(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.getCouponInfo(org.id);
+  }
+
+  @Post('/apply-coupon')
+  async applyCoupon(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: AdminApplyCouponDto
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.applyCoupon(org.id, body);
+  }
+
+  @Post('/cancel-coupon')
+  async cancelCoupon(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._stripeService.cancelCoupon(org.id);
   }
 
   @Get('/chatbase-refund/preview')
