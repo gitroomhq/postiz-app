@@ -11,6 +11,7 @@ import { getPublicKey, Relay, finalizeEvent, SimplePool, nip19 } from 'nostr-too
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 
 // @ts-ignore
@@ -257,7 +258,12 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
           `https://${domainPart}/.well-known/nostr.json?name=${encodeURIComponent(
             localPart
           )}`,
-          { signal: AbortSignal.timeout(5000) }
+          {
+            signal: AbortSignal.timeout(5000),
+            // @ts-ignore - undici-only option; pins DNS + blocks SSRF to
+            // internal/private IPs (same guard as mastodon/wordpress providers)
+            dispatcher: getSsrfSafeDispatcher(),
+          }
         );
 
         if (response.ok) {
