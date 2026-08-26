@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useSWRConfig } from 'swr';
+import { useState, useCallback, useMemo } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
 import { useUser } from '../layout/user.context';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -202,6 +202,7 @@ const McpSection = ({
   mcpBase: string;
 }) => {
   const t = useT();
+  const { billingEnabled } = useVariables();
   const [activeClient, setActiveClient] = useState<McpClient>('Claude Code');
   const [method, setMethod] = useState<'header' | 'path'>('header');
   const [revealed, setRevealed] = useState(false);
@@ -239,6 +240,16 @@ const McpSection = ({
           </div>
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
+          {billingEnabled && (
+            <a
+              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              href="https://claude.ai/directory/postiz"
+              target="_blank"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+              {t('add_to_claude', 'Add to Claude')}
+            </a>
+          )}
           <a
             className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
             href="https://docs.postiz.com/mcp/introduction"
@@ -350,6 +361,16 @@ const McpSection = ({
                 text={cliUrl}
                 label={t('copy_url', 'Copy URL')}
               />
+            )}
+            {method === 'path' && billingEnabled && (
+              <a
+                className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+                href="https://claude.ai/directory/postiz"
+                target="_blank"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                {t('add_to_claude', 'Add to Claude')}
+              </a>
             )}
           </div>
         </div>
@@ -709,10 +730,29 @@ const PublicApiContent = () => {
 
 export const PublicComponent = () => {
   const t = useT();
+  const fetch = useFetch();
+  const user = useUser();
   const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
+  const loadOrganizations = useCallback(async () => {
+    return await (await fetch('/user/organizations')).json();
+  }, []);
+  const { data: organizations } = useSWR('organizations', loadOrganizations, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
+    revalidateOnReconnect: false,
+  });
+  const currentOrg = useMemo(() => {
+    return organizations?.find((org: any) => org?.id === user?.orgId);
+  }, [organizations, user?.orgId]);
 
   return (
     <div className="flex flex-col gap-[20px]">
+      <h3 className="text-[20px]">
+        {t('developers', 'Developers')}
+        {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
+      </h3>
       <div className="flex gap-[6px]">
         {(['api', 'developer'] as const).map((tab) => (
           <button

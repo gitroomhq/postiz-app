@@ -1,5 +1,6 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'crypto';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -69,9 +70,14 @@ export class IntegrationRepository {
   }
 
   async checkPreviousConnections(org: string, id: string) {
+    // Deleted accounts keep their integrations with an md5 hashed
+    // rootInternalId, so match both the raw id and its hash to still catch
+    // channels that were connected by a deleted account.
     const findIt = await this._integration.model.integration.findMany({
       where: {
-        rootInternalId: id,
+        rootInternalId: {
+          in: [id, createHash('md5').update(id).digest('hex')],
+        },
       },
       select: {
         organizationId: true,
@@ -201,6 +207,65 @@ export class IntegrationRepository {
       },
       data: {
         refreshNeeded: true,
+      },
+    });
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: org,
+        internalId,
+        deletedAt: null,
+      },
+    });
+  }
+
+  // Moves a channel to another provider in place (MIGRATE_PROVIDERS): only the
+  // provider and the app-scoped ids change, so the integration id - and with it
+  // scheduled posts, settings and customers - survives the migration. The
+  // follow-up createOrUpdateIntegration upsert matches the new internalId and
+  // stores the fresh tokens.
+  async migrateIntegration(
+    org: string,
+    id: string,
+    internalId: string,
+    providerIdentifier: string,
+    rootInternalId: string
+  ) {
+    // A soft-deleted channel can still hold the target internalId
+    // (deleteChannel keeps it): rename it out of the way like updateIntegration
+    // does, otherwise the organizationId_internalId unique constraint rejects
+    // the migration. Live channels are rejected by the service before this.
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: org,
+          internalId,
+        },
+      },
+    });
+
+    if (existing && existing.deletedAt) {
+      await this._integration.model.integration.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          internalId: `deleted_${internalId}_${makeId(10)}`,
+        },
+      });
+    }
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        internalId,
+        providerIdentifier,
+        rootInternalId,
       },
     });
   }
@@ -540,6 +605,55 @@ export class IntegrationRepository {
         deletedAt: new Date(),
       },
     });
+  }
+
+  async deleteIntegrationsForAccount(org: string) {
+    const hash = (value: string) =>
+      createHash('md5').update(value).digest('hex');
+
+    await this._posts.model.post.updateMany({
+      where: {
+        organizationId: org,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    const integrations = await this._integration.model.integration.findMany({
+      where: {
+        organizationId: org,
+      },
+    });
+
+    // md5 is deterministic, so a hashed rootInternalId can still be matched
+    // by checkPreviousConnections when the same channel is connected again
+    // from a new account.
+    for (const integration of integrations) {
+      await this._integration.model.integration.update({
+        where: {
+          id: integration.id,
+        },
+        data: {
+          name: hash(integration.name),
+          internalId: hash(integration.internalId),
+          rootInternalId: integration.rootInternalId
+            ? hash(integration.rootInternalId)
+            : null,
+          token: hash(integration.token),
+          refreshToken: integration.refreshToken
+            ? hash(integration.refreshToken)
+            : null,
+          profile: integration.profile ? hash(integration.profile) : null,
+          customInstanceDetails: integration.customInstanceDetails
+            ? hash(integration.customInstanceDetails)
+            : null,
+          picture: null,
+          deletedAt: integration.deletedAt || new Date(),
+        },
+      });
+    }
   }
 
   async checkForDeletedOnceAndUpdate(org: string, page: string) {

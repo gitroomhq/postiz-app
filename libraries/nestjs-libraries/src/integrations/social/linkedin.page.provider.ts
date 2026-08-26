@@ -136,7 +136,7 @@ export class LinkedinPageProvider
   async companies(accessToken: string) {
     const { elements, ...all } = await (
       await fetch(
-        'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
+        'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&state=APPROVED&projection=(elements*(role,organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -147,15 +147,21 @@ export class LinkedinPageProvider
       )
     ).json();
 
-    return (elements || []).map((e: any) => ({
-      id: e.organizationalTarget.split(':').pop(),
-      page: e.organizationalTarget.split(':').pop(),
-      username: e['organizationalTarget~'].vanityName,
-      name: e['organizationalTarget~'].localizedName,
-      picture:
-        e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
-          ?.identifiers?.[0]?.identifier,
-    }));
+    return (elements || [])
+      .filter(
+        (e: any) =>
+          e['organizationalTarget~'] &&
+          ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'].includes(e.role)
+      )
+      .map((e: any) => ({
+        id: e.organizationalTarget.split(':').pop(),
+        page: e.organizationalTarget.split(':').pop(),
+        username: e['organizationalTarget~'].vanityName,
+        name: e['organizationalTarget~'].localizedName,
+        picture:
+          e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
+            ?.identifiers?.[0]?.identifier,
+      }));
   }
 
   async reConnect(
@@ -269,6 +275,23 @@ export class LinkedinPageProvider
     integration: Integration
   ): Promise<PostResponse[]> {
     return super.post(id, accessToken, postDetails, integration, 'company');
+  }
+
+  // checkPostStatus / finalizePost are inherited as-is: the company context
+  // travels inside pendingData (postType), set here once.
+  override async postPending(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    return super.postPending(
+      id,
+      accessToken,
+      postDetails,
+      integration,
+      'company'
+    );
   }
 
   override async comment(
@@ -431,7 +454,7 @@ export class LinkedinPageProvider
 
     const { elements: shareElements }: { elements: PostShareStatElement[] } =
       await (
-        await this.fetch(shareStatsUrl, {
+        await fetch(shareStatsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',
@@ -445,7 +468,7 @@ export class LinkedinPageProvider
     try {
       const socialActionsUrl = `https://api.linkedin.com/rest/socialActions/${encodeURIComponent(postId)}`;
       socialActions = await (
-        await this.fetch(socialActionsUrl, {
+        await fetch(socialActionsUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'LinkedIn-Version': '202601',
