@@ -55,6 +55,10 @@ export class OrganizationService {
     return this._organizationRepository.getOrgByApiKey(api);
   }
 
+  async hasSuperAdminUser(orgId: string) {
+    return !!(await this._organizationRepository.getSuperAdminUser(orgId));
+  }
+
   getUserOrg(id: string) {
     return this._organizationRepository.getUserOrg(id);
   }
