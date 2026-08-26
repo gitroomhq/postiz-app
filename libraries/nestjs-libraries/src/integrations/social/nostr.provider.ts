@@ -7,7 +7,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { getPublicKey, Relay, finalizeEvent, SimplePool, nip19 } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -23,6 +23,11 @@ const list = [
   'wss://temp.iris.to',
   'wss://vault.iris.to',
 ];
+
+// Relays that support NIP-50 (keyword search over kind:0 profile events).
+// Live-probed 2026-08-26: search.nos.today responds ~1s; relay.nostr.band kept
+// as fallback (works in some regions); nos.lol/damus ignore `search`.
+const searchRelays = [...new Set([...list, 'wss://relay.nostr.band', 'wss://search.nos.today'])];
 
 const pool = new SimplePool();
 
@@ -195,6 +200,138 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         status: 'completed',
       },
     ];
+  }
+
+  /**
+   * Profile autocomplete for the composer (@mention).
+   * Two strategies, merged:
+   *  1. Direct NIP-05 lookup when the query looks like `user@domain` / `domain.tld`
+   *  2. NIP-50 keyword search over kind:0 metadata events on search-capable relays
+   * Returns { id, label, image }; `id` is a NIP-05 handle when known, else an npub.
+   */
+  override async mention(
+    token: string,
+    d: { query: string }
+  ): Promise<{ id: string; label: string; image: string }[]> {
+    const query = (d?.query || '').trim();
+    if (query.length < 2) {
+      return [];
+    }
+
+    const results: { id: string; label: string; image: string }[] = [];
+    const seen = new Set<string>();
+
+    const pushProfile = (
+      pubkey: string,
+      content: any,
+      fallbackLabel?: string
+    ) => {
+      if (!pubkey || seen.has(pubkey)) {
+        return;
+      }
+
+      const name =
+        content?.display_name || content?.displayName || content?.name || '';
+      if (!name && !fallbackLabel) {
+        return;
+      }
+
+      seen.add(pubkey);
+      const npub = nip19.npubEncode(pubkey);
+      results.push({
+        id: content?.nip05 || npub,
+        label: name || fallbackLabel!,
+        image: content?.picture || '',
+      });
+    };
+
+    // 1) NIP-05 direct verification for domain-shaped queries
+    const nip05Match = query.match(/^([\w-.]+)@([\w-.]+\.[a-zA-Z]{2,})$/);
+    const domainOnly = !nip05Match && /^[\w-]+\.[\w-]+\.[a-zA-Z]{2,}$/.test(query);
+    if (nip05Match || domainOnly) {
+      try {
+        const [localPart, domainPart] = nip05Match
+          ? [nip05Match[1], nip05Match[2]]
+          : ['_', query];
+        const response = await fetch(
+          `https://${domainPart}/.well-known/nostr.json?name=${encodeURIComponent(
+            localPart
+          )}`,
+          { signal: AbortSignal.timeout(5000) }
+        );
+
+        if (response.ok) {
+          const wellKnown = (await response.json()) as {
+            names?: Record<string, string>;
+          };
+          const names = Object.entries(wellKnown.names || {});
+
+          for (const [name, pubkey] of names.slice(0, 8)) {
+            // Wildcard '_' entries have no profile event to parse; still useful
+            if (names.length === 1 && localPart === '_') {
+              pushProfile(pubkey, {}, name);
+              continue;
+            }
+
+            try {
+              const meta = await pool.get(list, {
+                kinds: [0],
+                authors: [pubkey],
+                limit: 1,
+              });
+              let content: any = {};
+              try {
+                content = JSON.parse(meta?.content || '{}');
+              } catch {
+                /**empty*/
+              }
+              pushProfile(pubkey, content, name);
+            } catch {
+              pushProfile(pubkey, {}, name);
+            }
+          }
+        }
+      } catch (err) {
+        /** NIP-05 lookup failed - fall through to relay search */
+      }
+    }
+
+    // 2) NIP-50 keyword search over profile metadata events
+    if (results.length < 8) {
+      try {
+        const events = await pool.querySync(
+          searchRelays,
+          {
+            kinds: [0],
+            search: query,
+            limit: 10,
+          },
+          { maxWait: 8000 }
+        );
+
+        for (const evt of events || []) {
+          if (results.length >= 8) {
+            break;
+          }
+
+          let content: any = {};
+          try {
+            content = JSON.parse(evt.content || '{}');
+          } catch {
+            continue;
+          }
+          pushProfile(evt.pubkey, content);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    return results;
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    return `@${idOrHandle || name}`;
   }
 
   async comment(
