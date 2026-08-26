@@ -173,27 +173,15 @@ export const ProviderPreviewComponent: FC<ProviderPreviewProps> = ({
       validate: async () => {
         const formValid = await form.trigger(undefined, { shouldFocus: false });
         const errs = flattenFormErrors(form.formState.errors);
-        let customError: string | true = true;
-        if (meta?.checkValidity) {
-          try {
-            customError = await meta.checkValidity(
-              posts ?? [],
-              form.getValues(),
-              resolveAdditionalSettings(),
-            );
-          } catch (e: any) {
-            customError = e?.message ?? 'checkValidity threw';
-          }
-        }
-        const checkValidityError =
-          customError === true ? null : customError;
-        if (checkValidityError) errs.push(checkValidityError);
+        // Media validation (`checkValidity`) now runs server-side at create
+        // time (`/posts/valid` + `/posts`), so the preview only does the
+        // local DTO/form validation here.
         return {
-          isValid: formValid && checkValidityError === null,
+          isValid: formValid,
           value: form.getValues() as Record<string, unknown>,
           errors: errs,
           formValid,
-          checkValidityError,
+          checkValidityError: null,
         };
       },
     };

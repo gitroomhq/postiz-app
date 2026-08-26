@@ -43,6 +43,9 @@ export class AuthService {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
         throw new Error('Email with plus sign is not allowed');
       }
+      if (body instanceof CreateOrgUserDto) {
+        body.email = body.email.toLowerCase();
+      }
       const user = await this._userService.getUserByEmail(body.email);
       if (body instanceof CreateOrgUserDto) {
         if (user) {
@@ -290,7 +293,23 @@ export class AuthService {
     return providerInstance.generateLink(query);
   }
 
-  async checkExists(provider: string, code: string, redirectUri?: string) {
+  async checkExists(
+    provider: string,
+    code: string,
+    redirectUri?: string,
+    state?: string,
+    stateCookie?: string
+  ) {
+    // the mobile app passes redirect_uri and keeps no cookies, the web flow
+    // never passes it, so the state nonce is only enforced for the web flow
+    if (
+      !process.env.NOT_SECURED &&
+      !redirectUri &&
+      (!state || state !== stateCookie)
+    ) {
+      throw new Error('Invalid state');
+    }
+
     const providerInstance = this._providerManager.getProvider(provider);
     const token = await providerInstance.getToken(code, redirectUri);
     const user = await providerInstance.getUser(token);

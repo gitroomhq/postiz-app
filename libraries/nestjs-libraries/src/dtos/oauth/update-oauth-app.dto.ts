@@ -17,6 +17,6 @@ export class UpdateOAuthAppDto {
 
   @IsString()
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   redirectUrl?: string;
 }

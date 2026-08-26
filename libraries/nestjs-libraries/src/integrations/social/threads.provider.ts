@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -8,11 +9,15 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -44,6 +49,28 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       return { type: 'refresh-token', value: 'Threads access token expired' };
     }
 
+    if (body.includes('2207051')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Error from Meta: We restrict certain activity to protect our community',
+      };
+    }
+
+    if (body.includes('4279013')) {
+      return {
+        type: 'bad-body',
+        value:
+          'User restricted',
+      };
+    }
+    if (body.includes('The media could not be fetched from this URI')) {
+      return {
+        type: 'bad-body',
+        value:
+          "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Postiz first",
+      };
+    }
     if (body.includes('text must be at most 500 characters')) {
       return {
         type: 'bad-body',
@@ -142,27 +169,60 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  private async checkLoaded(
+  // Single, read-only status check of a media container - no loops and no
+  // timers, so the post workflow can poll it with durable timers.
+  private async checkContainerStatus(
     mediaContainerId: string,
     accessToken: string
-  ): Promise<boolean> {
-    const { status, id, error_message } = await (
+  ): Promise<'FINISHED' | 'IN_PROGRESS' | 'PUBLISHED'> {
+    const { status, error_message } = await (
       await this.fetch(
         `https://graph.threads.net/v1.0/${mediaContainerId}?fields=status,error_message&access_token=${accessToken}`
       )
     ).json();
 
-    if (status === 'ERROR') {
-      throw new Error(id);
+    if (status === 'ERROR' || status === 'EXPIRED') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify({ status, error_message }),
+        '{}',
+        error_message || 'Threads could not process the media'
+      );
     }
 
-    if (status === 'FINISHED') {
-      await timer(2000);
-      return true;
+    if (status === 'FINISHED' || status === 'PUBLISHED') {
+      return status;
     }
 
-    await timer(2200);
-    return this.checkLoaded(mediaContainerId, accessToken);
+    return 'IN_PROGRESS';
+  }
+
+  private async checkLoaded(
+    mediaContainerId: string,
+    accessToken: string
+  ): Promise<boolean> {
+    // Bounded (the old version recursed forever and could hang the activity
+    // into a timeout): ~5.5 minutes at 2.2s intervals.
+    for (let i = 0; i < 150; i++) {
+      const status = await this.checkContainerStatus(
+        mediaContainerId,
+        accessToken
+      );
+
+      if (status === 'FINISHED' || status === 'PUBLISHED') {
+        await timer(2000);
+        return true;
+      }
+
+      await timer(2200);
+    }
+
+    throw new BadBody(
+      this.identifier,
+      '{}',
+      '{}',
+      'Threads took too long to process the media, please try again'
+    );
   }
 
   private async fetchUserInfo(accessToken: string) {
@@ -188,8 +248,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     isCarouselItem = false,
     replyToId?: string
   ): Promise<string> {
-    const mediaType =
-      media.path.indexOf('.mp4') > -1 ? 'video_url' : 'image_url';
+    const mediaType = hasExtension(media.path, 'mp4')
+      ? 'video_url'
+      : 'image_url';
     const mediaParams = new URLSearchParams({
       ...(mediaType === 'video_url' ? { video_url: media.path } : {}),
       ...(mediaType === 'image_url' ? { image_url: media.path } : {}),
@@ -352,13 +413,33 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  async post(
+  // The thread is live, the permalink is only cosmetic: never fail (and risk
+  // re-publishing) a live post over it.
+  private async threadPermalink(
+    threadId: string,
+    accessToken: string,
+    integration: Integration
+  ): Promise<string> {
+    try {
+      const { permalink } = await (
+        await this.fetch(
+          `https://graph.threads.net/v1.0/${threadId}?fields=id,permalink&access_token=${accessToken}`
+        )
+      ).json();
+      return permalink;
+    } catch (err) {
+      return `https://www.threads.net/@${integration.profile}`;
+    }
+  }
+
+  async postPending(
     userId: string,
     accessToken: string,
     postDetails: PostDetails<{
       active_thread_finisher: boolean;
       thread_finisher: string;
-    }>[]
+    }>[],
+    integration: Integration
   ): Promise<PostResponse[]> {
     if (!postDetails.length) {
       return [];
@@ -366,29 +447,229 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     const [firstPost] = postDetails;
 
-    // Create the initial thread
-    const initialContentId = await this.createThreadContent(
-      userId,
-      accessToken,
-      firstPost
-    );
+    // Carousels: only create the child containers here, the carousel container
+    // itself is created by finalizePost once the children are processed.
+    if ((firstPost.media?.length || 0) > 1) {
+      const childIds = [];
+      for (const mediaItem of firstPost.media!) {
+        childIds.push(
+          await this.createSingleMediaContent(
+            userId,
+            accessToken,
+            mediaItem,
+            firstPost.message,
+            true
+          )
+        );
+      }
 
-    // Publish the thread
-    const { threadId, permalink } = await this.publishThread(
-      userId,
-      accessToken,
-      initialContentId
-    );
+      return [
+        {
+          id: firstPost.id,
+          postId: '',
+          releaseURL: '',
+          status: 'pending',
+          pendingData: {
+            step: 'children',
+            childIds,
+            message: firstPost.message,
+          },
+        },
+      ];
+    }
 
-    // Return the main post response
+    // Text / single media: one container, nothing is visible until
+    // threads_publish runs in finalizePost.
+    const containerId =
+      !firstPost.media || firstPost.media.length === 0
+        ? await this.createTextContent(userId, accessToken, firstPost.message)
+        : await this.createSingleMediaContent(
+            userId,
+            accessToken,
+            firstPost.media[0],
+            firstPost.message,
+            false
+          );
+
     return [
       {
         id: firstPost.id,
-        postId: threadId,
-        status: 'success',
-        releaseURL: permalink,
+        postId: '',
+        releaseURL: '',
+        status: 'pending',
+        pendingData: { step: 'container', containerId },
       },
     ];
+  }
+
+  override async checkPostStatus(
+    accessToken: string,
+    pendingData: {
+      step: 'children' | 'container';
+      childIds?: string[];
+      containerId?: string;
+      message?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // waiting for the carousel children to be processed
+    if (pendingData.step === 'children') {
+      for (const childId of pendingData.childIds || []) {
+        const status = await this.checkContainerStatus(childId, accessToken);
+        if (status === 'IN_PROGRESS') {
+          return { status: 'pending', pendingData };
+        }
+      }
+
+      // all children processed, finalizePost creates the carousel container
+      return { status: 'ready', pendingData };
+    }
+
+    const status = await this.checkContainerStatus(
+      pendingData.containerId!,
+      accessToken
+    );
+
+    if (status === 'IN_PROGRESS') {
+      return { status: 'pending', pendingData };
+    }
+
+    // a previous finalizePost published but died before reporting: the post is
+    // live, never publish again
+    if (status === 'PUBLISHED') {
+      return {
+        status: 'completed',
+        postId: pendingData.containerId!,
+        releaseURL: `https://www.threads.net/@${integration.profile}`,
+      };
+    }
+
+    return { status: 'ready', pendingData };
+  }
+
+  override async finalizePost(
+    accessToken: string,
+    pendingData: {
+      step: 'children' | 'container';
+      childIds?: string[];
+      containerId?: string;
+      message?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // the carousel children are processed: create the carousel container and
+    // hand back to the workflow to wait for it (an orphan container from a
+    // crashed run is invisible, so re-running this is safe)
+    if (pendingData.step === 'children') {
+      const params = new URLSearchParams({
+        text: pendingData.message || '',
+        media_type: 'CAROUSEL',
+        children: (pendingData.childIds || []).join(','),
+        access_token: accessToken,
+      });
+
+      const { id: containerId } = await (
+        await this.fetch(
+          `https://graph.threads.net/v1.0/${integration.internalId}/threads?${params.toString()}`,
+          {
+            method: 'POST',
+          }
+        )
+      ).json();
+
+      return {
+        status: 'pending',
+        pendingData: { step: 'container', containerId },
+      };
+    }
+
+    const { id: threadId } = await (
+      await this.fetch(
+        `https://graph.threads.net/v1.0/${integration.internalId}/threads_publish?creation_id=${pendingData.containerId}&access_token=${accessToken}`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    return {
+      status: 'completed',
+      postId: threadId,
+      releaseURL: await this.threadPermalink(threadId, accessToken, integration),
+    };
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that don't
+  // know how to resolve a `pending` response.
+  async post(
+    userId: string,
+    accessToken: string,
+    postDetails: PostDetails<{
+      active_thread_finisher: boolean;
+      thread_finisher: string;
+    }>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    if (!postDetails.length) {
+      return [];
+    }
+
+    const [firstPost] = postDetails;
+    const [response] = await this.postPending(
+      userId,
+      accessToken,
+      postDetails,
+      integration
+    );
+
+    let pendingData = response.pendingData;
+    const started = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here (non-retryable) is safe, timing the
+      // activity out is not - a retried activity would publish again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Threads took too long to process the media, please try again'
+        );
+      }
+
+      const check = await this.checkPostStatus(
+        accessToken,
+        pendingData,
+        integration
+      );
+
+      if (check.status === 'pending') {
+        pendingData = check.pendingData;
+        await timer(2200);
+        continue;
+      }
+
+      const result =
+        check.status === 'ready'
+          ? await this.finalizePost(accessToken, check.pendingData, integration)
+          : check;
+
+      if (result.status === 'completed') {
+        return [
+          {
+            id: firstPost.id,
+            postId: result.postId,
+            status: 'success',
+            releaseURL: result.releaseURL,
+          },
+        ];
+      }
+
+      pendingData = result.pendingData;
+      await timer(2200);
+    }
   }
 
   async comment(
@@ -542,7 +823,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     try {
       // Fetch thread insights from Threads API
       const { data } = await (
-        await this.fetch(
+        await fetch(
           `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`
         )
       ).json();

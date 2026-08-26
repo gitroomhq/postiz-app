@@ -247,20 +247,6 @@ export class SubscriptionService {
     };
   }
 
-  async lifeTime(orgId: string, identifier: string, subscription: any) {
-    return this.createOrUpdateSubscription(
-      false,
-      identifier,
-      identifier,
-      pricing[subscription].channel!,
-      subscription,
-      'YEARLY',
-      null,
-      identifier,
-      orgId
-    );
-  }
-
   async addSubscription(orgId: string, userId: string, subscription: any) {
     await this._subscriptionRepository.setCustomerId(orgId, userId);
     return this.createOrUpdateSubscription(

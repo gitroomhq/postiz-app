@@ -9,6 +9,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Integration } from '@prisma/client';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import FormDataUpload from 'form-data';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Discord has generous rate limits for webhook posting
@@ -42,7 +43,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const { application } = await (
-      await fetch('https://discord.com/api/oauth2/@me', {
+      await this.fetch('https://discord.com/api/oauth2/@me', {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -99,7 +100,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     this.checkScopes(this.scopes, scope.split(' '));
 
     const { application } = await (
-      await fetch('https://discord.com/api/oauth2/@me', {
+      await this.fetch('https://discord.com/api/oauth2/@me', {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -120,7 +121,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
   @Tool({ description: 'Channels', dataSchema: [] })
   async channels(accessToken: string, params: any, id: string) {
     const list = await (
-      await fetch(`https://discord.com/api/guilds/${id}/channels`, {
+      await this.fetch(`https://discord.com/api/guilds/${id}/channels`, {
         headers: {
           Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
         },
@@ -135,6 +136,57 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       }));
   }
 
+  // Builds the multipart message and streams each attachment straight from its
+  // source (size from a HEAD request) so files are never buffered in memory.
+  // runStreamedUpload rebuilds the whole form per attempt (a consumed stream
+  // can't be replayed) and keeps handleErrors classification.
+  private async sendMessageWithMedia(
+    channel: string,
+    message: string,
+    media: PostDetails['media']
+  ) {
+    return this.runStreamedUpload(async () => {
+      const form = new FormDataUpload();
+      form.append(
+        'payload_json',
+        JSON.stringify({
+          content: message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
+            return `<${p1}>`;
+          }),
+          attachments: media?.map((p, index) => ({
+            id: index,
+            description: `Picture ${index}`,
+            filename: p.path.split('/').pop(),
+          })),
+        })
+      );
+
+      let index = 0;
+      for (const item of media || []) {
+        const fileSize = await this.mediaSize(item.path, this.identifier);
+        const stream = await this.mediaStream(item.path, this.identifier);
+        form.append(`files[${index}]`, stream, {
+          filename: item.path.split('/').pop(),
+          knownLength: fileSize,
+        });
+        index++;
+      }
+
+      const { data } = await this.getSsrfSafeAxios().post(
+        `https://discord.com/api/channels/${channel}/messages`,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          },
+        }
+      );
+
+      return data;
+    }, this.identifier);
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -143,42 +195,11 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
     const channel = firstPost.settings.channel;
 
-    const form = new FormData();
-    form.append(
-      'payload_json',
-      JSON.stringify({
-        content: firstPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
-          return `<${p1}>`;
-        }),
-        attachments: firstPost.media?.map((p, index) => ({
-          id: index,
-          description: `Picture ${index}`,
-          filename: p.path.split('/').pop(),
-        })),
-      })
+    const data = await this.sendMessageWithMedia(
+      channel,
+      firstPost.message,
+      firstPost.media
     );
-
-    let index = 0;
-    for (const media of firstPost.media || []) {
-      const loadMedia = await fetch(media.path);
-
-      form.append(
-        `files[${index}]`,
-        await loadMedia.blob(),
-        media.path.split('/').pop()
-      );
-      index++;
-    }
-
-    const data = await (
-      await fetch(`https://discord.com/api/channels/${channel}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
-        },
-        body: form,
-      })
-    ).json();
 
     return [
       {
@@ -208,7 +229,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     // Create thread if this is the first comment
     if (!lastCommentId) {
       const { id: threadId } = await (
-        await fetch(
+        await this.fetch(
           `https://discord.com/api/channels/${channel}/messages/${postId}/threads`,
           {
             method: 'POST',
@@ -224,50 +245,13 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
       threadChannel = threadId;
-    } else {
-      // Extract thread channel from the last comment's URL or use channel directly
-      threadChannel = channel;
     }
 
-    const form = new FormData();
-    form.append(
-      'payload_json',
-      JSON.stringify({
-        content: commentPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
-          return `<${p1}>`;
-        }),
-        attachments: commentPost.media?.map((p, index) => ({
-          id: index,
-          description: `Picture ${index}`,
-          filename: p.path.split('/').pop(),
-        })),
-      })
+    const data = await this.sendMessageWithMedia(
+      threadChannel,
+      commentPost.message,
+      commentPost.media
     );
-
-    let index = 0;
-    for (const media of commentPost.media || []) {
-      const loadMedia = await fetch(media.path);
-
-      form.append(
-        `files[${index}]`,
-        await loadMedia.blob(),
-        media.path.split('/').pop()
-      );
-      index++;
-    }
-
-    const data = await (
-      await fetch(
-        `https://discord.com/api/channels/${threadChannel}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
-          },
-          body: form,
-        }
-      )
-    ).json();
 
     return [
       {
@@ -281,7 +265,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
 
   async changeNickname(id: string, accessToken: string, name: string) {
     await (
-      await fetch(`https://discord.com/api/guilds/${id}/members/@me`, {
+      await this.fetch(`https://discord.com/api/guilds/${id}/members/@me`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
@@ -305,7 +289,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ) {
     const allRoles = await (
-      await fetch(`https://discord.com/api/guilds/${id}/roles`, {
+      await this.fetch(`https://discord.com/api/guilds/${id}/roles`, {
         headers: {
           Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
           'Content-Type': 'application/json',
@@ -320,7 +304,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       .filter((f: any) => f.name !== '@everyone' && f.name !== '@here');
 
     const list = await (
-      await fetch(
+      await this.fetch(
         `https://discord.com/api/guilds/${id}/members/search?query=${data.query}`,
         {
           headers: {
@@ -367,5 +351,48 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       return name;
     }
     return `[[[@${idOrHandle.replace('@', '')}]]]`;
+  }
+
+  override handleErrors(
+    body: string
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.includes('50001')) {
+      return {
+        type: 'bad-body',
+        value: "Bot doesn't have access to this channel",
+      };
+    }
+
+    if (body.includes('50013')) {
+      return {
+        type: 'bad-body',
+        value: 'Bot lacks permission to send messages in this channel',
+      };
+    }
+
+    if (body.includes('10003')) {
+      return {
+        type: 'bad-body',
+        value: 'Channel no longer exists',
+      };
+    }
+
+    if (body.includes('40005')) {
+      return {
+        type: 'bad-body',
+        value: "Attachment exceeds Discord's size limit",
+      };
+    }
+
+    if (body.includes('20028')) {
+      return {
+        type: 'retry',
+        value: 'Rate limited by Discord',
+      };
+    }
+
+    return undefined;
   }
 }

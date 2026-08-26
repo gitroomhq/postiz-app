@@ -55,7 +55,7 @@ checksums:
     login_register_to_add_comments: 8b98241e411b5c47f0e09f885f179a93
     status: 6eddeb13a4e7ccb25e21ec3f665dbcdf
     there_are_not_plugs_matching_your_channels: a99ff920bf2870338410bd1a79bca452
-    you_have_to_add_x_or_linkedin_or_threads: 247a8c61ea1231e4c7b3b48a34af936b
+    you_have_to_add_x_linkedin_page_threads_or_bluesky: afeb117fd39062b0885cc40cf86bbe7d
     go_to_the_calendar_to_add_channels: b08c0b31e38b95e3a67344ba861dd26a
     channels: 5c713eb23708abb6541e0ac88a4e75b6
     activate: cbe3629cad32c63dd160e5250f8a283f
@@ -211,6 +211,7 @@ checksums:
     seconds: 9fe44d788e12e327341ac64b23fdc3e0
     this_feature_available_only_for_photos: 481e4c29e64017a374e37eb0deabae9a
     allow_user_to: e10ba849a3c17daff09d81d0b014f1cc
+    tiktok_video_features: da5d90eeba8f233bd7335da8643c41fe
     your_video_will_be_labeled_promotional: 0ce1af8d546489e29cace603b71b8a60
     this_cannot_be_changed_once_posted: 573c255b14e173e8ad2ed0b95d79a9f4
     turn_on_to_disclose_video_promotes: 6f81f5ae234fbe62256b8f35fea279ec
@@ -241,7 +242,7 @@ checksums:
     update_credentials: 2e508a1fe962cbf32cb4d6fc2d8a5c99
     additional_settings: 20936205a75745fba2c4047375a04db3
     change_bot: aa9e45a6ecd2f36c79609d73129ef37a
-    move_add_to_customer: d7181be0326645ac72d49f46195815cf
+    move_add_to_group: 9f340142483db64cbe373e2efe69607e
     edit_time_slots: a271d356d7c65f47987e297f0828b0b2
     enable_channel: 029be8cc9f406829d05d1cc44ded5162
     disable_channel: a2d862c419b9fff01f72481499431341
@@ -360,7 +361,7 @@ checksums:
     top_title_design_media: fee3bbf1846d9e5f4a1af783b9e3fc90
     top_title_edit_post: 6bb814ad47d3dcd7f6ef51c08cfbbee9
     top_title_create_post: 06549e1cb8bbba2645f5ded68259684d
-    top_title_move__add_to_customer: a7e5cf28a1e5adfc78c98230d2a22ca3
+    top_title_move__add_to_group: 605ae76732794e7a760391b48c492da3
     top_title_add_api_key_for: 100f6b0bac1838e19b5755543746bb05
     top_title_instance_url: 743ab33cd9b20bc08286d188f20bebb0
     top_title_custom_url: f1e4e1c6a386d212abe94b937cf5e812
@@ -404,9 +405,9 @@ checksums:
     label_who_can_see_this_video: 97a543d589797d703bcebfa6ece94f96
     label_content_posting_method: a0d5daae42d5a57980ac3a547a4850f2
     label_auto_add_music: c27a46bded470b3ac85d5e2d26d13879
-    label_duet: c763963722d8a2eb45cbdba353b885a4
-    label_stitch: 59f4d4bf508f4a33cf01cbf64739cb27
-    label_comments: 502237cd1044491c48494aa60967a985
+    label_duet: 3aba52fc7f5771e67c30c7edb109b672
+    label_stitch: 0aa087faf0ad6e8c3fec5ff7a69aeb5e
+    label_comments: af37b5573979c438e0720a3a81229346
     label_disclose_video_content: bb8d25e6abe604a08c2782ff3a7fd22e
     label_your_brand: 3a49f029f7f7a62ca218239d40d399f6
     label_branded_content: 794d5681b2fbd2b7a210bc6e241d0135
@@ -456,7 +457,7 @@ checksums:
     self_only: 20fd775216f2e16a432f4720d6daaae0
     post_content_directly_to_tiktok: 2612250f75c43a3128016b99569c5fff
     upload_content_to_tiktok_without_posting: 6c3943e4d796b720933b90d250bd611c
-    choose_upload_without_posting_description: 223c59be260eeaafe420791b76e2523c
+    choose_upload_without_posting_description: 16c335a4607224a061a9f251ccdecfe0
     faq_am_i_going_to_be_charged_by_postiz: f4aad17d35bcaf45427216a432f23af3
     faq_to_confirm_credit_card_information_postiz_will_hold: ec475e644e3b5db2550c5bc06320b1cd
     faq_can_i_trust_postiz_gitroom: 9ee3c694bc392c339333047484d36003
@@ -507,6 +508,9 @@ checksums:
     label_who_can_reply_to_this_post: 4d8913296a1fc3f197cb0aead34af73d
     delete_integration: ccc879ccfcf7f85bcfe09f2bc3fa0dd3
     start_writing_your_post: 471efc4f2a7e2cf02a065a2de34e7213
+    billing_other_account_subscribed: 6c12b4a726d55ee88b0594bd22ec556c
+    already_subscribed: 3694e02bcb0a41286ea6b79615e6cdbf
+    ok: e2d6579a83aba07c4180c21c5fe9893d
     billing_join_over: 6e1c237241ba00ddbb07fd603344c5c3
     billing_entrepreneurs_count: 1e90206cb8ea01d0a1084d3af1a4cbed
     billing_who_use: 63bdc59ef443e193eca87889e83ea07a
@@ -653,6 +657,7 @@ checksums:
     please_fix_your_settings: 41c970bc73bb775e8b1882dfdbaad569
     shortlink_urls_question: 5308003901830e666ff9915b4855a9c9
     yes_shortlink_it: b784b6f9ce6d5eec451de7f3c7f1e01d
+    no_original_urls: 06cf15a6bf380da85f537f425dd6d236
     added_successfully: 5a1557f26138d3f80b6449d4570d47a9
     updated_successfully: fb4e4de59015fd30331e0f56c63918c5
     create_post_title: 06549e1cb8bbba2645f5ded68259684d
@@ -697,3 +702,43 @@ checksums:
     watch_tutorial_description: 25dd65235d9603f6d65d62f953791722
     back: f541015a827e37cb3b1234e56bc2aa3c
     get_started: 1d5f030c4ec9c869e647ae060518b948
+    kick_select_channel: 13fa95c439addeb6674e571e37c96b79
+    annual: 5d4f1c56f4e9e579ec9967ca68cc64ac
+    apply: 0f03e8e3752eb120bf8ea0b8f8f5d244
+    none: d163ad01ba50118a86047c8b73fbe922
+    no_go_back: f8e980b79b6f711240f4b5e6fcc1f6f3
+    apply_coupon: 9a016a02f2d4aca87f05adc4bc6847ab
+    apply_coupon_subtitle: 05875bab8b513599f15e0cce2c6f0a7b
+    apply_coupon_plan: 34b5f2fb456c10457b3b9bb2cc4e65b5
+    apply_coupon_period: e11ea2f87aed7b3546ecda10d5c44ead
+    apply_coupon_lifetime: 7497bc91074527a9581e72d25ec23f65
+    apply_coupon_applied: ccf9b4f0de47262b510a487084164de0
+    apply_coupon_off: 5506213b43515ef4bbae281d8bd77952
+    apply_coupon_months_total: 4a3cfe6c04a7c1dbb30e0fe2de3fe9fc
+    apply_coupon_months_left: e5b3cd8bd2dd414cdcfc4841f1852319
+    apply_coupon_forever: cab9ed28c6d3735b71c1593e3ec6f5c6
+    apply_coupon_once: 8850cb73dd454e158ec690be76248da0
+    apply_coupon_next_payment: ececc8280a8afceadaae55356fa502a0
+    apply_coupon_type: 05c7b6c0563f7d7652eec29b9e6aa8f8
+    apply_coupon_percentage: a3f8383e2d3a91e6c2eb6527c32224c0
+    apply_coupon_fixed_amount: cbdeaf8ae4ab1c9b14c8cfc50e972ca6
+    apply_coupon_value: 34b0eaa85808b15cbc4be94c64d0146b
+    apply_coupon_months: ea9b90197973d3827ad0803c24ff1704
+    apply_coupon_not_supported: 82a66cd587e53dc94f64a96924e439c4
+    apply_coupon_invalid_percentage: 30cb7721e6a0aa2d9c9d7f7e248b4d33
+    apply_coupon_invalid_amount: ca798a609518dc3b595e8b1d5ba17735
+    apply_coupon_invalid_months: 2588a8e621326f62ad74e2326c230571
+    apply_coupon_failed: ad086216c34702e4d44c86512e2952a2
+    apply_coupon_success: 8ac77166d813092acc04a8bd99f5e6f6
+    cancel_coupon_confirm: 42ec505aeed81903e444cf3c14cec222
+    yes_cancel_coupon: d5cbc873759d9040edceeb4643925a98
+    cancel_coupon_title: 6a02a23e494728ddb694f591be65900d
+    cancel_coupon_failed: 7bbb5c2646ba919b7df0879225eba918
+    cancel_coupon_success: ded654a3b6c5fdfe7bdd23e9b5ad711c
+    what_do_you_want_to_do: c2c352197ed13cee73ed85f9706b35de
+    just_update_post_details: fb0d9cba2fe76d06571fc30dc8db0f13
+    reschedule_post: 103d1943e23d4f71b22439a3b03885dd
+    republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
+    post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
+    republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d

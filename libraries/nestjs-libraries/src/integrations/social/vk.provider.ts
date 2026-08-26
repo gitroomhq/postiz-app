@@ -8,10 +8,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { createHash, randomBytes } from 'crypto';
-import axios from 'axios';
 import FormDataNew from 'form-data';
 import mime from 'mime-types';
 import { Integration } from '@prisma/client';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // VK has moderate API limits
@@ -168,13 +168,13 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       (post?.media || []).map(async (media) => {
         const all = await (
           await this.fetch(
-            media.path.indexOf('mp4') > -1
+            hasExtension(media.path, 'mp4')
               ? `https://api.vk.com/method/video.save?access_token=${accessToken}&v=5.251`
               : `https://api.vk.com/method/photos.getWallUploadServer?owner_id=${userId}&access_token=${accessToken}&v=5.251`
           )
         ).json();
 
-        const { data } = await axios.get(media.path!, {
+        const { data } = await this.getSsrfSafeAxios().get(media.path!, {
           responseType: 'stream',
         });
 
@@ -186,14 +186,18 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
           contentType: mime.lookup(slash!) || '',
         });
         const value = (
-          await axios.post(all.response.upload_url, formData, {
-            headers: {
-              ...formData.getHeaders(),
-            },
-          })
+          await this.getSsrfSafeAxios().post(
+            all.response.upload_url,
+            formData,
+            {
+              headers: {
+                ...formData.getHeaders(),
+              },
+            }
+          )
         ).data;
 
-        if (media.path.indexOf('mp4') > -1) {
+        if (hasExtension(media.path, 'mp4')) {
           return {
             id: all.response.video_id,
             type: 'video',

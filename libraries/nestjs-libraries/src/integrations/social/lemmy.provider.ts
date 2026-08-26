@@ -5,11 +5,15 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { LemmySettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/lemmy.dto';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class LemmyProvider extends SocialAbstract implements SocialProvider {
@@ -23,6 +27,22 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     return 10000;
   }
   dto = LemmySettingsDto;
+
+  override async checkValidity(
+    items: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const [firstItems] = items ?? [];
+    if (
+      firstItems?.length &&
+      (firstItems?.[0]?.path?.indexOf?.('png') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('jpg') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('jpef') ?? -1) === -1 &&
+      (firstItems?.[0]?.path?.indexOf?.('gif') ?? -1) === -1
+    ) {
+      return 'You can set only one picture for a cover';
+    }
+    return true;
+  }
 
   async customFields() {
     return [
@@ -77,6 +97,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
     const load = await fetch(body.service + '/api/v3/user/login', {
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
       body: JSON.stringify({
         username_or_email: body.identifier,
         password: body.password,
@@ -96,6 +118,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     try {
       const user = await (
         await fetch(body.service + `/api/v3/user?username=${body.identifier}`, {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           headers: {
             Authorization: `Bearer ${jwt}`,
           },
@@ -127,6 +151,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
 
     const { jwt } = await (
       await fetch(body.service + '/api/v3/user/login', {
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
         body: JSON.stringify({
           username_or_email: body.identifier,
           password: body.password,
@@ -165,6 +191,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
       });
       const { post_view } = await (
         await fetch(service + '/api/v3/post', {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
             community_id: +lemmy.value.id,
             name: lemmy.value.title,
@@ -226,6 +254,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     for (const singlePostId of postIds) {
       const { comment_view } = await (
         await fetch(service + '/api/v3/comment', {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
             post_id: +singlePostId,
             content: commentPost.message,
@@ -278,6 +308,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
       await fetch(
         service + `/api/v3/search?type_=Communities&sort=Active&q=${data.word}`,
         {
+          // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+          dispatcher: getSsrfSafeDispatcher(),
           headers: {
             Authorization: `Bearer ${jwt}`,
           },

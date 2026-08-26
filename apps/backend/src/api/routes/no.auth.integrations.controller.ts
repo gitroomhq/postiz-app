@@ -23,6 +23,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -183,12 +184,6 @@ export class NoAuthIntegrationsController {
       throw new NotEnoughScopes('Invalid API key');
     }
 
-    if (refresh && String(id) !== String(refresh)) {
-      throw new NotEnoughScopes(
-        'Please refresh the channel that needs to be refreshed'
-      );
-    }
-
     let validName = name;
     if (!validName) {
       if (username) {
@@ -207,6 +202,30 @@ export class NoAuthIntegrationsController {
       ))
     ) {
       throw new HttpException('', 412);
+    }
+
+    if (refresh && String(id) !== String(refresh)) {
+      // A reconnect that returns a different id is either the wrong account or
+      // a channel migrating to another provider (MIGRATE_PROVIDERS) - the two
+      // apps return different app-scoped ids, so the channel is matched by
+      // profile and moved in place. Throws for anything else. Runs after every
+      // check that can reject the connect, so a rejection can never leave a
+      // half-migrated channel behind.
+      await this._integrationService.migrateIntegration(
+        org.id,
+        refresh,
+        integration,
+        { id: String(id), username }
+      );
+    } else if (!refresh) {
+      // A fresh connect of a migration target for an account the org already
+      // has on the source provider adopts that channel instead of creating a
+      // duplicate. No-op for everything else.
+      await this._integrationService.migrateIntegrationOnConnect(
+        org.id,
+        integration,
+        { id: String(id), username }
+      );
     }
 
     const createUpdate =
@@ -233,8 +252,8 @@ export class NoAuthIntegrationsController {
               Buffer.from(body.code, 'base64').toString()
             )
           : integrationProvider.isChromeExtension
-          ? AuthService.signJWT(
-              JSON.parse(Buffer.from(body.code, 'base64').toString())
+          ? AuthService.fixedEncryption(
+              Buffer.from(body.code, 'base64').toString()
             )
           : undefined
       );
@@ -277,6 +296,8 @@ export class NoAuthIntegrationsController {
               apiKey: org.apiKey,
             }),
           }),
+          // @ts-ignore — undici option, not in lib.dom fetch types
+          dispatcher: getSsrfSafeDispatcher(),
         });
       } catch (err) {}
 
@@ -297,8 +318,18 @@ export class NoAuthIntegrationsController {
         })
       : undefined;
 
+    // Never leak stored credentials (signed/encrypted secrets) back to the
+    // caller. These columns hold the integration access token, refresh token
+    // and encrypted custom instance details and must stay server-side.
+    const {
+      token: _token,
+      refreshToken: _refreshToken,
+      customInstanceDetails: _customInstanceDetails,
+      ...safeIntegration
+    } = createUpdate as any;
+
     return {
-      ...createUpdate,
+      ...safeIntegration,
       onboarding: onboarding === 'true',
       pages,
       ...(returnURL ? { returnURL } : {}),

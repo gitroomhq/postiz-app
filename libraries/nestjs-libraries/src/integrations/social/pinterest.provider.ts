@@ -1,22 +1,51 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
-import axios from 'axios';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+
+// Travels through the workflow history between postPending, checkPostStatus
+// and finalizePost - keep it small JSON (the media id and the pin content).
+type PinterestPendingData = {
+  mediaId: string; // empty for image-only pins (no asynchronous processing)
+  message: string;
+  settings: {
+    link?: string;
+    title?: string;
+    dominant_color?: string;
+    board: string;
+  };
+  imagePaths: string[];
+  coverPath?: string;
+  // Arm -> confirm -> publish handshake (same as the Facebook story flow):
+  // finalizePost arms without mutating, checkPostStatus witnesses, and only a
+  // witnessed attempt runs the create - so a create that dies with an unknown
+  // outcome is detected instead of run again (Pinterest has no idempotency
+  // key).
+  attempting?: boolean;
+  confirmed?: boolean;
+};
 
 @Rules(
-  'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one'
+  'Pinterest requires at least one media, if posting a video, you must have two attachment, one for video, one for the cover picture, When posting a video, there can be only one, if posting images, there can be maximum 5'
 )
 export class PinterestProvider
   extends SocialAbstract
@@ -39,14 +68,79 @@ export class PinterestProvider
 
   dto = PinterestSettingsDto;
 
+  override async checkValidity([firstItem]: Array<ValidityMedia[]>): Promise<
+    string | true
+  > {
+    const isMp4 = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
+    );
+    const isPicture = firstItem?.find(
+      (item) => (item?.path?.indexOf?.('mp4') ?? -1) === -1
+    );
+    if ((firstItem?.length ?? 0) === 0) {
+      return 'Requires at least one media';
+    }
+    if ((firstItem?.length ?? 0) > 5) {
+      return 'You can only have up to 5 media items';
+    }
+    if (isMp4 && firstItem?.length !== 2 && !isPicture) {
+      return 'If posting a video you have to also include a cover image as second media';
+    }
+    if (isMp4 && (firstItem?.length ?? 0) > 2) {
+      return 'If posting a video you can only have two media items';
+    }
+
+    if (
+      (firstItem?.length ?? 0) > 1 &&
+      firstItem?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)
+    ) {
+      const loadAll = await Promise.all(
+        firstItem?.map((p) => this.getImageDimensions(p?.path)) ?? []
+      );
+      const checkAllTheSameWidthHeight = loadAll?.every((p, i, arr) => {
+        return p?.width === arr?.[0]?.width && p?.height === arr?.[0]?.height;
+      });
+      if (!checkAllTheSameWidthHeight) {
+        return 'Requires all images to have the same width and height';
+      }
+    }
+    return true;
+  }
+
   editor = 'normal' as const;
 
   public override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
+    if (body.indexOf('constraint: maxItems=5') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'You can upload a maximum of 5 images per post on Pinterest.',
+      };
+    }
+    if (body.indexOf('Unable to reach the URL') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest was unable to reach the URL provided. Please check the link and try again.',
+      };
+    }
+    if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The board ID must be a numeric string. Please check the board ID format.',
+      };
+    }
+    if (body.indexOf('Board not found') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value: 'The specified board was not found. Please check the board ID.',
+      };
+    }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
       return {
         type: 'bad-body' as const,
@@ -175,19 +269,22 @@ export class PinterestProvider
     );
   }
 
-  async post(
+  async postPending(
     id: string,
     accessToken: string,
     postDetails: PostDetails<PinterestSettingsDto>[]
   ): Promise<PostResponse[]> {
     let mediaId = '';
-    const findMp4 = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) > -1
+    const findMp4 = postDetails?.[0]?.media?.find((p) =>
+      hasExtension(p.path, 'mp4')
     );
     const picture = postDetails?.[0]?.media?.find(
-      (p) => (p.path?.indexOf('mp4') || -1) === -1
+      (p) => !hasExtension(p.path, 'mp4')
     );
 
+    // Upload the video now; the processing wait moves to checkPostStatus and
+    // the pin itself is only created by finalizePost, so nothing here is
+    // irreversible - a failure leaves only an orphaned media upload.
     if (findMp4) {
       const { upload_url, media_id, upload_parameters } = await (
         await this.fetch('https://api.pinterest.com/v5/media', {
@@ -202,12 +299,9 @@ export class PinterestProvider
         })
       ).json();
 
-      const { data, status } = await axios.get(
-        postDetails?.[0]?.media?.[0]?.path!,
-        {
-          responseType: 'stream',
-        }
-      );
+      const { data } = await this.getSsrfSafeAxios().get(findMp4.path, {
+        responseType: 'stream',
+      });
 
       const formData = Object.keys(upload_parameters)
         .filter((f) => f)
@@ -217,35 +311,124 @@ export class PinterestProvider
         }, new FormData());
 
       formData.append('file', data);
-      await axios.post(upload_url, formData);
-
-      let statusCode = '';
-      while (statusCode !== 'succeeded') {
-        const mediafile = await (
-          await this.fetch(
-            'https://api.pinterest.com/v5/media/' + media_id,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            },
-            '',
-            0,
-            true
-          )
-        ).json();
-
-        await timer(30000);
-        statusCode = mediafile.status;
-      }
+      await this.getSsrfSafeAxios().post(upload_url, formData);
 
       mediaId = media_id;
     }
 
-    const mapImages = postDetails?.[0]?.media?.map((m) => ({
-      path: m.path,
-    }));
+    return [
+      {
+        id: postDetails?.[0]?.id,
+        releaseURL: '',
+        postId: '',
+        status: 'pending',
+        pendingData: {
+          mediaId,
+          message: postDetails?.[0]?.message,
+          settings: {
+            link: postDetails?.[0]?.settings.link,
+            title: postDetails?.[0]?.settings.title,
+            dominant_color: postDetails?.[0]?.settings.dominant_color,
+            board: postDetails?.[0]?.settings.board,
+          },
+          imagePaths: (postDetails?.[0]?.media || []).map((m) => m.path),
+          coverPath: picture?.path,
+        } as PinterestPendingData,
+      },
+    ];
+  }
+
+  override async checkPostStatus(
+    accessToken: string,
+    pendingData: PinterestPendingData,
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // A confirmed create attempt died without reporting its result: Pinterest
+    // gives no way to ask whether that pin was created, so never run the
+    // create again - stop with an explicit warning instead.
+    if (pendingData.attempting && pendingData.confirmed) {
+      throw new BadBody(
+        'pinterest',
+        JSON.stringify({}),
+        {} as any,
+        'Pinterest may have already published this pin, please check your account before posting again to avoid duplicates'
+      );
+    }
+
+    // witness the armed create so finalizePost knows the attempt is uniquely
+    // accounted for before it mutates anything
+    const witness = (): PendingCheckResponse =>
+      pendingData.attempting && !pendingData.confirmed
+        ? {
+            status: 'ready',
+            pendingData: { ...pendingData, confirmed: true },
+          }
+        : { status: 'ready', pendingData };
+
+    // Image-only pins have no asynchronous processing step.
+    if (!pendingData.mediaId) {
+      return witness();
+    }
+
+    let mediafile: { status?: string };
+    try {
+      mediafile = await (
+        await this.fetch(
+          'https://api.pinterest.com/v5/media/' + pendingData.mediaId,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+          '',
+          0,
+          true
+        )
+      ).json();
+    } catch (err) {
+      if (err instanceof RefreshToken) {
+        throw err;
+      }
+
+      // Transient status-check error: the media may finish processing just
+      // fine, keep polling - if Pinterest stays broken the workflow exhausts
+      // its checks and warns the user properly.
+      return { status: 'pending', pendingData };
+    }
+
+    if (mediafile.status === 'failed') {
+      throw new BadBody(
+        'pinterest',
+        JSON.stringify({}),
+        {} as any,
+        'The file is corrupted and cannot be uploaded'
+      );
+    }
+
+    if (mediafile.status !== 'succeeded') {
+      return { status: 'pending', pendingData };
+    }
+
+    return witness();
+  }
+
+  override async finalizePost(
+    accessToken: string,
+    pendingData: PinterestPendingData,
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    // Create with an arm -> confirm -> publish handshake: the create only runs
+    // after checkPostStatus witnessed the intent, so a run that dies
+    // mid-create is detectable and the pin is never published twice.
+    if (!pendingData.attempting || !pendingData.confirmed) {
+      return {
+        status: 'pending',
+        pendingData: { ...pendingData, attempting: true, confirmed: false },
+      };
+    }
+
+    const mapImages = (pendingData.imagePaths || []).map((path) => ({ path }));
 
     const { id: pId } = await (
       await this.fetch('https://api.pinterest.com/v5/pins', {
@@ -255,22 +438,22 @@ export class PinterestProvider
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...(postDetails?.[0]?.settings.link
-            ? { link: postDetails?.[0]?.settings.link }
+          ...(pendingData.settings.link
+            ? { link: pendingData.settings.link }
             : {}),
-          ...(postDetails?.[0]?.settings.title
-            ? { title: postDetails?.[0]?.settings.title }
+          ...(pendingData.settings.title
+            ? { title: pendingData.settings.title }
             : {}),
-          description: postDetails?.[0]?.message,
-          ...(postDetails?.[0]?.settings.dominant_color
-            ? { dominant_color: postDetails?.[0]?.settings.dominant_color }
+          description: pendingData.message,
+          ...(pendingData.settings.dominant_color
+            ? { dominant_color: pendingData.settings.dominant_color }
             : {}),
-          board_id: postDetails?.[0]?.settings.board,
-          media_source: mediaId
+          board_id: pendingData.settings.board,
+          media_source: pendingData.mediaId
             ? {
                 source_type: 'video_id',
-                media_id: mediaId,
-                cover_image_url: picture?.path,
+                media_id: pendingData.mediaId,
+                cover_image_url: pendingData.coverPath,
               }
             : mapImages?.length === 1
             ? {
@@ -279,20 +462,82 @@ export class PinterestProvider
               }
             : {
                 source_type: 'multiple_image_urls',
-                items: mapImages,
+                items: mapImages.map((m) => ({
+                  url: m.path,
+                })),
               },
         }),
       })
     ).json();
 
-    return [
-      {
-        id: postDetails?.[0]?.id,
-        postId: pId,
-        releaseURL: `https://www.pinterest.com/pin/${pId}`,
-        status: 'success',
-      },
-    ];
+    return {
+      status: 'completed',
+      postId: pId,
+      releaseURL: `https://www.pinterest.com/pin/${pId}`,
+    };
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that still
+  // run and don't know how to resolve a `pending` response - they wait for the
+  // processing and create the pin inside the activity like before.
+  async post(
+    id: string,
+    accessToken: string,
+    postDetails: PostDetails<PinterestSettingsDto>[],
+    integration: Integration
+  ): Promise<PostResponse[]> {
+    const [response] = await this.postPending(id, accessToken, postDetails);
+
+    let pendingData = response.pendingData;
+    const started = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here is safe (the pin is only created once the
+      // media is ready), timing the activity out is not - a retried activity
+      // would upload and publish again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          'pinterest',
+          JSON.stringify({}),
+          {} as any,
+          'The file took too long to process, please try again'
+        );
+      }
+
+      const check = await this.checkPostStatus(
+        accessToken,
+        pendingData,
+        integration
+      );
+
+      if (check.status === 'pending') {
+        pendingData = check.pendingData;
+        await timer(20000);
+        continue;
+      }
+
+      const result =
+        check.status === 'ready'
+          ? await this.finalizePost(accessToken, check.pendingData, integration)
+          : check;
+
+      if (result.status === 'completed') {
+        return [
+          {
+            id: response.id,
+            postId: result.postId,
+            releaseURL: result.releaseURL,
+            status: 'success',
+          },
+        ];
+      }
+
+      // finalize only armed the handshake (nothing to wait for), loop straight
+      // into the witnessing check
+      pendingData = result.pendingData;
+    }
   }
 
   async analytics(
@@ -301,7 +546,10 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const until = dayjs().format('YYYY-MM-DD');
-    const since = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
+    // Pinterest analytics only cover the last 90 days (89 for a UTC safety margin)
+    const since = dayjs()
+      .subtract(Math.min(date, 89), 'day')
+      .format('YYYY-MM-DD');
 
     const {
       all: { daily_metrics },
@@ -366,12 +614,12 @@ export class PinterestProvider
     date: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-    // Use a very long date range (2 years) to capture lifetime metrics for older posts
-    const since = dayjs().subtract(2, 'year').format('YYYY-MM-DD');
+    // Pinterest only serves pin analytics for the last 90 days (89 for a UTC safety margin)
+    const since = dayjs().subtract(89, 'day').format('YYYY-MM-DD');
 
     try {
       // Fetch pin analytics from Pinterest API
-      const response = await this.fetch(
+      const response = await fetch(
         `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
         {
           method: 'GET',
@@ -414,7 +662,9 @@ export class PinterestProvider
           result.push({
             label: 'Outbound Clicks',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today }],
+            data: [
+              { total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today },
+            ],
           });
         }
 

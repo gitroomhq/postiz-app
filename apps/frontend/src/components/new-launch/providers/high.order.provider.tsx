@@ -48,16 +48,6 @@ export const withProvider = function <T extends object>(params: {
     maximumCharacters?: number;
   }>;
   dto?: any;
-  checkValidity?: (
-    value: Array<
-      Array<{
-        path: string;
-        thumbnail?: string;
-      }>
-    >,
-    settings: T,
-    additionalSettings: any
-  ) => Promise<string | true>;
   maximumCharacters?: number | ((settings: any) => number);
 }) {
   const {
@@ -65,7 +55,6 @@ export const withProvider = function <T extends object>(params: {
     SettingsComponent,
     CustomPreviewComponent,
     dto,
-    checkValidity,
     maximumCharacters,
   } = params;
 
@@ -200,15 +189,6 @@ export const withProvider = function <T extends object>(params: {
             integration: selectedIntegration.integration,
             valid: await form.trigger(),
             err: form.formState.errors,
-            errors: checkValidity
-              ? await checkValidity(
-                  value.map((p) => p.media || []),
-                  settings,
-                  JSON.parse(
-                    selectedIntegration.integration.additionalSettings || '[]'
-                  )
-                )
-              : true,
             settings,
             values: value,
             maximumCharacters:
@@ -363,7 +343,6 @@ export const withProvider = function <T extends object>(params: {
     dto,
     postComment,
     maximumCharacters,
-    checkValidity,
   };
 
   return Wrapped;
@@ -378,11 +357,6 @@ export const getProviderSettingsMeta = (component: unknown) => {
         dto?: any;
         postComment: PostComment;
         maximumCharacters?: number | ((settings: any) => number);
-        checkValidity?: (
-          value: Array<Array<{ path: string; thumbnail?: string }>>,
-          settings: any,
-          additionalSettings: any
-        ) => Promise<string | true>;
       }
     | undefined;
 };

@@ -71,10 +71,7 @@ export class StripeService {
         currency: 'usd',
         payment_method: latestMethod.id,
         customer: event.data.object.customer as string,
-        automatic_payment_methods: {
-          allow_redirects: 'never',
-          enabled: true,
-        },
+        off_session: true,
         capture_method: 'manual', // Authorize without capturing
         confirm: true, // Confirm the PaymentIntent
       });
@@ -159,6 +156,42 @@ export class StripeService {
   async deleteSubscription(event: Stripe.CustomerSubscriptionDeletedEvent) {
     await this._subscriptionService.deleteSubscription(
       event.data.object.customer as string
+    );
+  }
+
+  // After a login swap, move each Stripe customer's email to the login that
+  // now owns it. Owner-only so a member's switch can't rewrite a shared org's
+  // billing email, deduped per customer, and skipping admin-granted
+  // subscriptions (their paymentId is a user id, not a `cus_...` customer).
+  async syncCustomerEmailsAfterSwitch(
+    accounts: { id: string; email: string }[]
+  ) {
+    if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+      return;
+    }
+    const emailByCustomer = new Map<string, string>();
+    for (const account of accounts) {
+      const organizations = await this._organizationService.getOrgsByUserId(
+        account.id
+      );
+      for (const org of organizations) {
+        if (
+          org.users?.[0]?.role === 'SUPERADMIN' &&
+          org.paymentId?.startsWith('cus_') &&
+          !emailByCustomer.has(org.paymentId)
+        ) {
+          emailByCustomer.set(org.paymentId, account.email);
+        }
+      }
+    }
+    await Promise.all(
+      [...emailByCustomer].map(([customerId, email]) =>
+        stripe.customers
+          .update(customerId, {
+            email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
+          })
+          .catch(() => {})
+      )
     );
   }
 
@@ -357,6 +390,29 @@ export class StripeService {
     };
   }
 
+  async cancelAllSubscriptions(organizationId: string) {
+    // getOrgById must not filter deletedAt, this can run for an organization
+    // that was already soft deleted by an account deletion
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return;
+    }
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: org.paymentId,
+      status: 'all',
+      limit: 100,
+    });
+
+    for (const subscription of subscriptions.data.filter(
+      (f) => f.status !== 'canceled'
+    )) {
+      await stripe.subscriptions.cancel(subscription.id);
+    }
+
+    await this._subscriptionService.deleteSubscription(org.paymentId);
+  }
+
   async getCustomerByOrganizationId(organizationId: string) {
     const org = (await this._organizationService.getOrgById(organizationId))!;
     return org.paymentId;
@@ -458,7 +514,7 @@ export class StripeService {
       customer,
       return_url:
         process.env['FRONTEND_URL'] +
-        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
+        `/launches?onboarding=true&trialStart=true&check=${uniqueId}${isUtm}`,
       mode: 'subscription',
       subscription_data: {
         ...(allowTrial ? { trial_period_days: 7 } : {}),
@@ -519,7 +575,7 @@ export class StripeService {
       cancel_url: process.env['FRONTEND_URL'] + `/billing?cancel=true${isUtm}`,
       success_url:
         process.env['FRONTEND_URL'] +
-        `/launches?onboarding=true&check=${uniqueId}${isUtm}`,
+        `/launches?onboarding=true&trialStart=true&check=${uniqueId}${isUtm}`,
       mode: 'subscription',
       subscription_data: {
         ...(allowTrial ? { trial_period_days: 7 } : {}),
@@ -940,6 +996,325 @@ export class StripeService {
     await this._subscriptionService.deleteSubscription(customer);
 
     return { cancelled: true };
+  }
+
+  private mapSubscriptionDiscounts(subscription?: Stripe.Subscription) {
+    return (subscription?.discounts || [])
+      .filter(
+        (discount): discount is Stripe.Discount => typeof discount !== 'string'
+      )
+      .map((discount) => {
+        const coupon =
+          typeof discount.source?.coupon === 'string'
+            ? null
+            : discount.source?.coupon;
+        return {
+          type: coupon?.percent_off ? 'percentage' : 'amount',
+          value: coupon?.percent_off || (coupon?.amount_off || 0) / 100,
+          duration: coupon?.duration || 'once',
+          durationInMonths: coupon?.duration_in_months || null,
+          remainingMonths: discount.end
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (discount.end - Date.now() / 1000) / (30 * 24 * 60 * 60)
+                )
+              )
+            : null,
+        };
+      });
+  }
+
+  private async getActiveStripeSubscription(paymentId?: string | null) {
+    if (!paymentId || !paymentId.startsWith('cus_')) {
+      return undefined;
+    }
+
+    return (
+      await stripe.subscriptions.list({
+        customer: paymentId,
+        status: 'all',
+        expand: ['data.discounts.source.coupon'],
+      })
+    ).data.find((f) => f.status === 'active' || f.status === 'trialing');
+  }
+
+  async getCouponInfo(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    const subscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+
+    const stripeSubscription = await this.getActiveStripeSubscription(
+      org?.paymentId
+    );
+
+    const coupons = this.mapSubscriptionDiscounts(stripeSubscription);
+    const priceData = subscription
+      ? pricing[subscription.subscriptionTier]
+      : undefined;
+    const monthlyPrice = priceData?.month_price || 0;
+
+    let nextPayment: number | null = null;
+    if (stripeSubscription) {
+      try {
+        const preview = await stripe.invoices.createPreview({
+          customer: org!.paymentId!,
+          subscription: stripeSubscription.id,
+        });
+        nextPayment = preview.total / 100;
+      } catch (err) {
+        /* no upcoming invoice */
+      }
+    }
+
+    return {
+      tier: subscription?.subscriptionTier || null,
+      period: subscription?.period || null,
+      isLifetime: !!subscription?.isLifetime,
+      monthlyPrice,
+      planPrice:
+        subscription?.period === 'YEARLY'
+          ? priceData?.year_price || 0
+          : monthlyPrice,
+      nextPayment,
+      coupons,
+      supported:
+        !!subscription &&
+        !!stripeSubscription &&
+        subscription.period === 'MONTHLY' &&
+        !subscription.isLifetime &&
+        !coupons.length,
+    };
+  }
+
+  async applyCoupon(
+    organizationId: string,
+    body: { type: string; value: number; months: number }
+  ) {
+    const info = await this.getCouponInfo(organizationId);
+    if (!info.supported) {
+      return {
+        applied: false,
+        reason: 'Applying a coupon is not supported for this user',
+      };
+    }
+
+    if (
+      body.type === 'percentage'
+        ? body.value < 1 || body.value > 100
+        : body.value < 1 || body.value > info.monthlyPrice
+    ) {
+      return { applied: false, reason: 'Invalid coupon value' };
+    }
+
+    const org = await this._organizationService.getOrgById(organizationId);
+    const stripeSubscription = await this.getActiveStripeSubscription(
+      org?.paymentId
+    );
+
+    if (!stripeSubscription) {
+      return {
+        applied: false,
+        reason: 'No active subscription found for this customer',
+      };
+    }
+
+    const coupon = await stripe.coupons.create({
+      name: `Admin coupon for ${org!.name}`,
+      ...(body.type === 'percentage'
+        ? { percent_off: body.value }
+        : { amount_off: Math.round(body.value * 100), currency: 'usd' }),
+      ...(body.months === 1
+        ? { duration: 'once' }
+        : { duration: 'repeating', duration_in_months: body.months }),
+      metadata: { service: 'gitroom', organizationId },
+    });
+
+    await stripe.subscriptions.update(stripeSubscription.id, {
+      discounts: [
+        {
+          coupon: coupon.id,
+        },
+      ],
+    });
+
+    return { applied: true };
+  }
+
+  async cancelCoupon(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    const stripeSubscription = await this.getActiveStripeSubscription(
+      org?.paymentId
+    );
+
+    if (!stripeSubscription) {
+      return {
+        cancelled: false,
+        reason: 'No active subscription found for this customer',
+      };
+    }
+
+    if (!stripeSubscription.discounts.length) {
+      return {
+        cancelled: false,
+        reason: 'No coupon is applied to this subscription',
+      };
+    }
+
+    await stripe.subscriptions.deleteDiscount(stripeSubscription.id);
+
+    return { cancelled: true };
+  }
+
+  async chatbaseRefundPreview(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId) {
+      return {
+        eligible: false as const,
+        reason: 'No payment customer found for this organization',
+      };
+    }
+
+    const customer = org.paymentId;
+
+    const subscriptions = (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+      })
+    ).data.filter((f) => f.status !== 'canceled');
+
+    if (!subscriptions.length) {
+      return {
+        eligible: false as const,
+        reason: 'No active subscription found for this customer',
+      };
+    }
+
+    const charges = (
+      await stripe.charges.list({
+        customer,
+        limit: 100,
+      })
+    ).data.filter((f) => f.status === 'succeeded');
+
+    if (charges.some((f) => f.refunded || f.amount_refunded > 0)) {
+      return {
+        eligible: false as const,
+        reason: 'A refund was already issued for this customer',
+      };
+    }
+
+    // only refund a charge that was created by the active subscription,
+    // never a one-off payment
+    let lastCharge: (typeof charges)[number] | undefined = undefined;
+    let chargeSubscription: (typeof subscriptions)[number] | undefined =
+      undefined;
+
+    for (const charge of charges) {
+      const invoiceId = (charge as any).invoice;
+      if (!invoiceId || typeof invoiceId !== 'string') {
+        continue;
+      }
+
+      try {
+        const invoice = await stripe.invoices.retrieve(invoiceId);
+        const invoiceSubscription =
+          invoice.parent?.subscription_details?.subscription;
+        const subscriptionId =
+          typeof invoiceSubscription === 'string'
+            ? invoiceSubscription
+            : invoiceSubscription?.id;
+
+        chargeSubscription = subscriptions.find(
+          (f) => f.id === subscriptionId
+        );
+
+        if (chargeSubscription) {
+          lastCharge = charge;
+          break;
+        }
+      } catch {
+        // ignore if invoice can't be fetched
+      }
+    }
+
+    if (!lastCharge || !chargeSubscription) {
+      return {
+        eligible: false as const,
+        reason: 'No subscription payment found for this customer',
+      };
+    }
+
+    const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 60 * 60;
+    if (lastCharge.created < sixtyDaysAgo) {
+      return {
+        eligible: false as const,
+        reason: 'The last subscription payment is older than 60 days',
+      };
+    }
+
+    const interval =
+      chargeSubscription.items?.data?.[0]?.price?.recurring?.interval;
+
+    // maximum refund is one month worth of the subscription
+    const amount =
+      interval === 'year'
+        ? Math.floor(lastCharge.amount / 12)
+        : lastCharge.amount;
+
+    const currentSubscription =
+      await this._subscriptionService.getSubscriptionByOrganizationId(
+        organizationId
+      );
+
+    return {
+      eligible: true as const,
+      chargeId: lastCharge.id,
+      amount: amount / 100,
+      currency: lastCharge.currency,
+      tier: currentSubscription?.subscriptionTier || null,
+      period: currentSubscription?.period || null,
+      subscriptionIds: subscriptions.map((f) => f.id),
+    };
+  }
+
+  async chatbaseRefund(organizationId: string) {
+    const preview = await this.chatbaseRefundPreview(organizationId);
+    if (!preview.eligible) {
+      return {
+        refunded: false,
+        reason: preview.reason,
+      };
+    }
+
+    const org = await this._organizationService.getOrgById(organizationId);
+
+    await stripe.refunds.create({
+      charge: preview.chargeId,
+      amount: Math.round(preview.amount * 100),
+      metadata: {
+        reason: 'chatbase_refund',
+        organizationId,
+      },
+    });
+
+    for (const subscriptionId of preview.subscriptionIds) {
+      await stripe.subscriptions.cancel(subscriptionId);
+    }
+
+    if (preview.subscriptionIds.length) {
+      await this._subscriptionService.deleteSubscription(org?.paymentId!);
+    }
+
+    return {
+      refunded: true,
+      amount: preview.amount,
+      currency: preview.currency,
+      subscriptionCancelled: preview.subscriptionIds.length > 0,
+    };
   }
 
   async lifetimeDeal(organizationId: string, code: string) {
