@@ -1,0 +1,224 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Postiz",
+    "subtitle": "Schedule social posts",
+    "description": "Postiz helps users manage social media publishing from ChatGPT. Users can list connected channels and groups, inspect platform requirements, upload or generate media, create drafts or scheduled posts, update provider settings, and review upcoming posts.",
+    "category": "PRODUCTIVITY"
+  },
+  "tools": {
+    "integrationList": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves connected social channels for the organization and optional group filter.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "groupList": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the organization's customer groups.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "integrationSchema": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only returns platform rules, limits, settings schemas, and helper metadata.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "triggerTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving provider details.",
+        "open_world_justification": "Calls connected provider APIs and can update integration auth state for the user's channel.",
+        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
+      }
+    },
+    "integrationSchedulePostTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Creates draft, scheduled, or immediate social posts and starts publishing workflows.",
+        "open_world_justification": "Can publish or schedule content to external social media channels.",
+        "destructive_justification": "Can send public social posts immediately or later through connected platforms."
+      }
+    },
+    "postsListTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves posts scheduled, drafted, published, or errored in a requested date window.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "postSettingsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Merges new provider settings into an existing draft or scheduled post.",
+        "open_world_justification": "Only updates settings stored on an unpublished Postiz post and does not reach any external or publicly visible system.",
+        "destructive_justification": "Does not delete posts, change content, change publish dates, revoke access, or publish content immediately."
+      }
+    },
+    "generateVideoOptions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only lists available video generation types, required parameters, and helper functions.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "videoFunctionTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves helper data needed for video generation, such as available voice IDs.",
+        "open_world_justification": "Does not create public content or change third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "generateVideoTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Generates a video, consumes the user's video generation credit, uploads the result, and saves it to the media library.",
+        "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "generateImageTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Generates an image, consumes the user's image generation credit, uploads the result, and saves it to the media library.",
+        "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "uploadFromUrlTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches a public media URL, uploads the file, and saves it to the media library.",
+        "open_world_justification": "Reads from a public URL and stores the resulting media through external storage.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "List the user's Postiz groups and connected social channels.",
+      "user_prompt": "Show me my Postiz customer groups, then list the connected channels for the Acme group.",
+      "file_attachment_urls": null,
+      "tools_triggered": "groupList, integrationList",
+      "expected_output": "Returns available groups and the connected channels for the selected group with enough detail to choose where to post.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Upload a remote media URL and schedule a social post.",
+      "user_prompt": "Use this public image URL for a LinkedIn post tomorrow at 9:00 UTC: https://example.com/product.png. I confirm the copy and time.",
+      "file_attachment_urls": null,
+      "tools_triggered": "integrationList, integrationSchema, uploadFromUrlTool, integrationSchedulePostTool",
+      "expected_output": "Uploads the media, validates LinkedIn requirements, and creates a scheduled Postiz post or returns clear validation errors.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Resolve provider-specific settings before scheduling.",
+      "user_prompt": "Schedule a Reddit post for next Monday and use the correct subreddit flair for /r/startups. I confirm the post details.",
+      "file_attachment_urls": null,
+      "tools_triggered": "integrationList, integrationSchema, triggerTool, integrationSchedulePostTool",
+      "expected_output": "Retrieves Reddit requirements and flair options, then creates the scheduled post with the selected settings or reports validation errors.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Find an existing scheduled post and update provider settings.",
+      "user_prompt": "Find my scheduled posts for next week and change the selected post's provider setting to the correct Reddit flair.",
+      "file_attachment_urls": null,
+      "tools_triggered": "postsListTool, integrationSchema, triggerTool, postSettingsTool",
+      "expected_output": "Returns matching posts, resolves valid settings, and updates only the requested provider settings on a draft or scheduled post.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Generate media assets for a future social post.",
+      "user_prompt": "Generate an image for a product launch post, then create a vertical image-text-slides video with a suitable voice.",
+      "file_attachment_urls": null,
+      "tools_triggered": "generateImageTool, generateVideoOptions, videoFunctionTool, generateVideoTool",
+      "expected_output": "Creates media assets in the Postiz media library and returns hosted media URLs or actionable generation errors.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for unrelated calendar management.",
+      "user_prompt": "Move my team meeting from tomorrow to Friday afternoon.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because calendar event management is outside Postiz social scheduling workflows.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for unsupported deletion requests.",
+      "user_prompt": "Delete the scheduled post I made yesterday from Postiz.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should explain that deletion is unsupported through these tools and direct the user to delete the post in Postiz.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for private direct-message workflows.",
+      "user_prompt": "Send a private Slack DM to Sarah saying the campaign draft is ready.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because private direct messaging is outside the supported Postiz publishing workflows.",
+      "expected_output_url": null
+    }
+  ]
+}

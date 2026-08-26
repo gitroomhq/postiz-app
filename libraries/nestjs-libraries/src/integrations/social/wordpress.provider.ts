@@ -11,7 +11,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 import slugify from 'slugify';
 // import FormData from 'form-data';
-import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
@@ -194,11 +193,12 @@ export class WordpressProvider
     };
   }
 
-  @Tool({
-    description: 'Get list of post types',
-    dataSchema: [],
-  })
-  async postTypes(token: string) {
+  // Custom provider functions below are invoked from the backend HTTP endpoint
+  // (`/integrations/function`) - which is NOT a Temporal activity - so they must
+  // use a plain `fetch` (with the SSRF guard) rather than `this.fetch`, which
+  // calls `Context.current()` and throws outside an activity. This mirrors how
+  // `authenticate` issues its request.
+  private async wpGet(token: string, path: string) {
     const body = JSON.parse(Buffer.from(token, 'base64').toString()) as {
       domain: string;
       username: string;
@@ -209,13 +209,23 @@ export class WordpressProvider
       'base64'
     );
 
-    const postTypes = await (
-      await this.fetch(`${body.domain}/wp-json/wp/v2/types`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-      })
-    ).json();
+    const response = await fetch(`${body.domain}${path}`, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
+    });
+
+    return response.json();
+  }
+
+  @Tool({
+    description: 'Get list of post types',
+    dataSchema: [],
+  })
+  async postTypes(token: string) {
+    const postTypes = await this.wpGet(token, '/wp-json/wp/v2/types');
 
     return Object.entries<any>(postTypes).reduce((all, [key, value]) => {
       if (
@@ -233,6 +243,37 @@ export class WordpressProvider
 
       return all;
     }, []);
+  }
+
+  @Tool({
+    description: 'Get list of categories',
+    dataSchema: [],
+  })
+  async categoriesList(token: string) {
+    const categories = await this.wpGet(
+      token,
+      '/wp-json/wp/v2/categories?per_page=100'
+    );
+
+    return (Array.isArray(categories) ? categories : []).map(
+      (category: any) => ({
+        id: category.id,
+        name: category.name,
+      })
+    );
+  }
+
+  @Tool({
+    description: 'Get list of tags',
+    dataSchema: [],
+  })
+  async tagsList(token: string) {
+    const tags = await this.wpGet(token, '/wp-json/wp/v2/tags?per_page=100');
+
+    return (Array.isArray(tags) ? tags : []).map((tag: any) => ({
+      id: tag.id,
+      name: tag.name,
+    }));
   }
 
   async post(
@@ -279,6 +320,13 @@ export class WordpressProvider
       mediaId = mediaResponse.id;
     }
 
+    const categories = (postDetails?.[0]?.settings?.categories || [])
+      .map((category) => Number(category))
+      .filter((category) => !isNaN(category));
+    const tags = (postDetails?.[0]?.settings?.tags || [])
+      .map((tag) => Number(tag))
+      .filter((tag) => !isNaN(tag));
+
     const submit = await (
       await this.fetch(
         `${body.domain}/wp-json/wp/v2/${postDetails?.[0]?.settings?.type}`,
@@ -296,7 +344,9 @@ export class WordpressProvider
               strict: true,
               trim: true,
             }),
-            status: 'publish',
+            status: postDetails?.[0]?.settings?.status || 'publish',
+            ...(categories.length ? { categories } : {}),
+            ...(tags.length ? { tags } : {}),
             ...(mediaId ? { featured_media: mediaId } : {}),
           }),
         }

@@ -38,12 +38,17 @@ export class OauthProvider extends AuthProviderAbstract {
     };
   }
 
+
   generateLink(query?: any): string {
     const { authUrl, clientId, frontendUrl, scope } = this.getConfig();
+  generateLink(query?: { state?: string }): string {
+    const { authUrl, clientId, frontendUrl } = this.getConfig();
+
     const params = new URLSearchParams({
       client_id: clientId,
       scope: scope,
       response_type: 'code',
+      state: query?.state || 'login',
       redirect_uri: `${frontendUrl}/settings`,
     });
 

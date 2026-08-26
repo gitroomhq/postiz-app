@@ -1,6 +1,7 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -9,12 +10,14 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
@@ -415,7 +418,7 @@ export class InstagramProvider
     const state = makeId(6);
     return {
       url:
-        'https://www.facebook.com/v20.0/dialog/oauth' +
+        `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
@@ -434,7 +437,7 @@ export class InstagramProvider
   }) {
     const getAccessToken = await (
       await fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
             `${process.env.FRONTEND_URL}/integrations/social/instagram${
@@ -448,7 +451,7 @@ export class InstagramProvider
 
     const { access_token, expires_in, ...all } = await (
       await fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
@@ -458,7 +461,7 @@ export class InstagramProvider
 
     const { data } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/permissions?access_token=${access_token}`
       )
     ).json();
 
@@ -469,7 +472,7 @@ export class InstagramProvider
 
     const { id, name, picture } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
 
@@ -507,7 +510,7 @@ export class InstagramProvider
 
     // Fetch pages the user explicitly shared during the OAuth dialog
     await fetchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/accounts?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
     );
 
     // Also fetch pages via Business Manager API to discover pages
@@ -515,7 +518,7 @@ export class InstagramProvider
     try {
       let bizUrl:
         | string
-        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+        | undefined = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();
@@ -523,7 +526,7 @@ export class InstagramProvider
           for (const business of bizResponse.data) {
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/owned_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -531,7 +534,7 @@ export class InstagramProvider
 
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/client_pages?fields=id,instagram_business_account,username,name,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -552,7 +555,7 @@ export class InstagramProvider
             pageId: p.id,
             ...(await (
               await fetch(
-                `https://graph.facebook.com/v20.0/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${p.instagram_business_account.id}?fields=name,profile_picture_url&access_token=${accessToken}`
               )
             ).json()),
             id: p.instagram_business_account.id,
@@ -575,13 +578,13 @@ export class InstagramProvider
     const [accessToken, userToken] = token.split('___');
     const { access_token, ...all } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
 
     const { id, name, profile_picture_url, username } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
 
@@ -594,16 +597,64 @@ export class InstagramProvider
     };
   }
 
-  async post(
+  // Single, read-only status check of a media container - the polling loops
+  // that used to live inside post() are now driven by the post workflow.
+  private async igContainerStatus(
+    containerId: string,
+    checkToken: string,
+    type: string
+  ): Promise<string> {
+    const { status_code, status } = await (
+      await this.fetch(
+        `https://${type}/${META_GRAPH_API_VERSION}/${containerId}?access_token=${checkToken}&fields=status_code,status`,
+        undefined,
+        '',
+        0,
+        true
+      )
+    ).json();
+
+    if (status_code === 'ERROR' || status_code === 'EXPIRED') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify({ status_code, status }),
+        '{}',
+        status || 'Instagram could not process the media'
+      );
+    }
+
+    return status_code;
+  }
+
+  // The post is live, the permalink is only cosmetic: never fail (and risk
+  // re-publishing) a live post over it.
+  private async igPermalink(
+    mediaId: string,
+    checkToken: string,
+    type: string,
+    integration: Integration
+  ): Promise<string> {
+    try {
+      const { permalink } = await (
+        await this.fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${mediaId}?fields=permalink&access_token=${checkToken}`
+        )
+      ).json();
+      return permalink;
+    } catch (err) {
+      return `https://www.instagram.com/${integration.profile}`;
+    }
+  }
+
+  async postPending(
     id: string,
     token: string,
     postDetails: PostDetails<InstagramDto>[],
     integration: Integration,
     type = 'graph.facebook.com'
   ): Promise<PostResponse[]> {
-    const [accessToken, userToken] = token.split('___');
+    const [accessToken] = token.split('___');
     const [firstPost] = postDetails;
-    console.log('in progress', id);
     const isStory = firstPost.settings.post_type === 'story';
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
@@ -673,102 +724,171 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
           )
         ).json();
-        console.log('in progress2', id);
-
-        let status = 'IN_PROGRESS';
-        while (status === 'IN_PROGRESS') {
-          const { status_code } = await (
-            await this.fetch(
-              `https://${type}/v20.0/${photoId}?access_token=${
-                userToken || accessToken
-              }&fields=status_code`,
-              undefined,
-              '',
-              0,
-              true
-            )
-          ).json();
-          await timer(30000);
-          status = status_code;
-        }
-        console.log('in progress3', id);
 
         return photoId;
       }) || []
     );
 
-    if (isStory && medias.length > 1) {
-      // Stories don't support carousels - publish each media as a separate story
+    // Containers are invisible until media_publish runs: the processing wait
+    // and the publish itself move to checkPostStatus / finalizePost so a
+    // failure there can never re-create (and re-publish) the whole post.
+    return [
+      {
+        id: firstPost.id,
+        postId: '',
+        releaseURL: '',
+        status: 'pending',
+        pendingData: {
+          type,
+          postType:
+            isStory && medias.length > 1
+              ? 'stories'
+              : medias.length === 1
+              ? 'single'
+              : 'carousel',
+          containers: medias,
+          message: firstPost?.message || '',
+        },
+      },
+    ];
+  }
+
+  override async checkPostStatus(
+    token: string,
+    pendingData: {
+      type: string;
+      postType: 'stories' | 'single' | 'carousel';
+      containers: string[];
+      message?: string;
+      carouselId?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    const [accessToken, userToken] = token.split('___');
+    const checkToken = userToken || accessToken;
+
+    // the carousel container was already created: wait for it
+    if (pendingData.carouselId) {
+      const status = await this.igContainerStatus(
+        pendingData.carouselId,
+        checkToken,
+        pendingData.type
+      );
+
+      if (status === 'IN_PROGRESS') {
+        return { status: 'pending', pendingData };
+      }
+
+      // a previous finalizePost published but died before reporting: the post
+      // is live, never publish again
+      if (status === 'PUBLISHED') {
+        return {
+          status: 'completed',
+          postId: pendingData.carouselId,
+          releaseURL: `https://www.instagram.com/${integration.profile}`,
+        };
+      }
+
+      return { status: 'ready', pendingData };
+    }
+
+    for (const containerId of pendingData.containers) {
+      const status = await this.igContainerStatus(
+        containerId,
+        checkToken,
+        pendingData.type
+      );
+
+      if (status === 'IN_PROGRESS') {
+        return { status: 'pending', pendingData };
+      }
+
+      if (status === 'PUBLISHED') {
+        // a previous finalizePost died mid-way: a single post is fully live,
+        // stories are resumed by finalizePost (it skips published containers)
+        if (pendingData.postType === 'single') {
+          return {
+            status: 'completed',
+            postId: containerId,
+            releaseURL: `https://www.instagram.com/${integration.profile}`,
+          };
+        }
+      }
+    }
+
+    return { status: 'ready', pendingData };
+  }
+
+  override async finalizePost(
+    token: string,
+    pendingData: {
+      type: string;
+      postType: 'stories' | 'single' | 'carousel';
+      containers: string[];
+      message?: string;
+      carouselId?: string;
+    },
+    integration: Integration
+  ): Promise<PendingCheckResponse> {
+    const [accessToken, userToken] = token.split('___');
+    const checkToken = userToken || accessToken;
+    const igId = integration.internalId;
+
+    if (pendingData.postType === 'stories') {
+      // Stories don't support carousels - publish each media as a separate
+      // story, skipping containers a previous (crashed) run already published
       let lastMediaId = '';
-      let lastPermalink = '';
-      for (const mediaCreationId of medias) {
+      for (const mediaCreationId of pendingData.containers) {
+        const status = await this.igContainerStatus(
+          mediaCreationId,
+          checkToken,
+          pendingData.type
+        );
+        if (status === 'PUBLISHED') {
+          continue;
+        }
+
         const { id: mediaId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
+            `https://${pendingData.type}/${META_GRAPH_API_VERSION}/${igId}/media_publish?creation_id=${mediaCreationId}&access_token=${accessToken}&field=id`,
             {
               method: 'POST',
             }
           )
         ).json();
         lastMediaId = mediaId;
-
-        const { permalink } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-              userToken || accessToken
-            }`
-          )
-        ).json();
-        lastPermalink = permalink;
       }
 
-      return [
-        {
-          id: firstPost.id,
-          postId: lastMediaId,
-          releaseURL: lastPermalink,
-          status: 'success',
-        },
-      ];
-    } else if (medias.length === 1) {
-      const { id: mediaId } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media_publish?creation_id=${medias[0]}&access_token=${accessToken}&field=id`,
-          {
-            method: 'POST',
-          }
-        )
-      ).json();
+      return {
+        status: 'completed',
+        postId: lastMediaId || pendingData.containers.at(-1)!,
+        releaseURL: !lastMediaId
+          ? `https://www.instagram.com/${integration.profile}`
+          : await this.igPermalink(
+              lastMediaId,
+              checkToken,
+              pendingData.type,
+              integration
+            ),
+      };
+    }
 
-      const { permalink } = await (
+    if (pendingData.postType === 'carousel' && !pendingData.carouselId) {
+      // create the carousel container and hand back to the workflow to wait
+      // for it (an orphan container from a crashed run is invisible, so
+      // re-running this is safe)
+      const { id: containerId } = await (
         await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
-
-      return [
-        {
-          id: firstPost.id,
-          postId: mediaId,
-          releaseURL: permalink,
-          status: 'success',
-        },
-      ];
-    } else {
-      const { id: containerId, ...all3 } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media?caption=${encodeURIComponent(
-            firstPost?.message
+          `https://${pendingData.type}/${META_GRAPH_API_VERSION}/${igId}/media?caption=${encodeURIComponent(
+            pendingData.message || ''
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
-            medias.join(',')
+            pendingData.containers.join(',')
           )}&access_token=${accessToken}`,
           {
             method: 'POST',
@@ -776,48 +896,99 @@ export class InstagramProvider
         )
       ).json();
 
-      let status = 'IN_PROGRESS';
-      while (status === 'IN_PROGRESS') {
-        const { status_code } = await (
-          await this.fetch(
-            `https://${type}/v20.0/${containerId}?fields=status_code&access_token=${
-              userToken || accessToken
-            }`,
-            undefined,
-            '',
-            0,
-            true
-          )
-        ).json();
-        await timer(30000);
-        status = status_code;
+      return {
+        status: 'pending',
+        pendingData: { ...pendingData, carouselId: containerId },
+      };
+    }
+
+    const creationId =
+      pendingData.postType === 'carousel'
+        ? pendingData.carouselId
+        : pendingData.containers[0];
+
+    const { id: mediaId } = await (
+      await this.fetch(
+        `https://${pendingData.type}/${META_GRAPH_API_VERSION}/${igId}/media_publish?creation_id=${creationId}&access_token=${accessToken}&field=id`,
+        {
+          method: 'POST',
+        }
+      )
+    ).json();
+
+    return {
+      status: 'completed',
+      postId: mediaId,
+      releaseURL: await this.igPermalink(
+        mediaId,
+        checkToken,
+        pendingData.type,
+        integration
+      ),
+    };
+  }
+
+  // Old blocking behavior, kept for workflow versions before v1.0.6 that don't
+  // know how to resolve a `pending` response.
+  async post(
+    id: string,
+    token: string,
+    postDetails: PostDetails<InstagramDto>[],
+    integration: Integration,
+    type = 'graph.facebook.com'
+  ): Promise<PostResponse[]> {
+    const [firstPost] = postDetails;
+    const [response] = await this.postPending(
+      id,
+      token,
+      postDetails,
+      integration,
+      type
+    );
+
+    let pendingData = response.pendingData;
+    const started = Date.now();
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // Cap below the 10-minute activity timeout of the old workflows using
+      // this method: failing here (non-retryable) is safe, timing the
+      // activity out is not - a retried activity would publish again.
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Media processing timed out'
+        );
       }
 
-      const { id: mediaId, ...all4 } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${id}/media_publish?creation_id=${containerId}&access_token=${accessToken}&field=id`,
+      const check = await this.checkPostStatus(token, pendingData, integration);
+
+      if (check.status === 'pending') {
+        pendingData = check.pendingData;
+        await timer(30000);
+        continue;
+      }
+
+      const result =
+        check.status === 'ready'
+          ? await this.finalizePost(token, check.pendingData, integration)
+          : check;
+
+      if (result.status === 'completed') {
+        return [
           {
-            method: 'POST',
-          }
-        )
-      ).json();
+            id: firstPost.id,
+            postId: result.postId,
+            releaseURL: result.releaseURL,
+            status: 'success',
+          },
+        ];
+      }
 
-      const { permalink } = await (
-        await this.fetch(
-          `https://${type}/v20.0/${mediaId}?fields=permalink&access_token=${
-            userToken || accessToken
-          }`
-        )
-      ).json();
-
-      return [
-        {
-          id: firstPost.id,
-          postId: mediaId,
-          releaseURL: permalink,
-          status: 'success',
-        },
-      ];
+      pendingData = result.pendingData;
+      await timer(30000);
     }
   }
 
@@ -835,7 +1006,7 @@ export class InstagramProvider
 
     const { id: commentId } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}/comments?message=${encodeURIComponent(
+        `https://${type}/${META_GRAPH_API_VERSION}/${postId}/comments?message=${encodeURIComponent(
           commentPost.message
         )}&access_token=${accessToken}`,
         {
@@ -847,7 +1018,7 @@ export class InstagramProvider
     // Get the permalink from the parent post
     const { permalink } = await (
       await this.fetch(
-        `https://${type}/v20.0/${postId}?fields=permalink&access_token=${
+        `https://${type}/${META_GRAPH_API_VERSION}/${postId}?fields=permalink&access_token=${
           userToken || accessToken
         }`
       )
@@ -917,13 +1088,13 @@ export class InstagramProvider
 
     const { data, ...all } = await (
       await fetch(
-        `https://${type}/v21.0/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
     const { data: data2, ...all2 } = await (
       await fetch(
-        `https://${type}/v21.0/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
     const analytics = [];
@@ -957,7 +1128,7 @@ export class InstagramProvider
 
   music(accessToken: string, data: { q: string }) {
     return this.fetch(
-      `https://graph.facebook.com/v20.0/music/search?q=${encodeURIComponent(
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/music/search?q=${encodeURIComponent(
         data.q
       )}&access_token=${accessToken}`
     );
@@ -992,7 +1163,7 @@ export class InstagramProvider
 
     const { audio } = await (
       await this.fetch(
-        `https://graph.facebook.com/v22.0/ig_audio?audio_type=${audioType}&user_id=${internalId}${
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/ig_audio?audio_type=${audioType}&user_id=${internalId}${
           data?.q ? `&search_query=${encodeURIComponent(data.q)}` : ''
         }&access_token=${userToken || accessToken}`
       )
@@ -1025,8 +1196,8 @@ export class InstagramProvider
     try {
       // Fetch media insights from Instagram Graph API
       const { data } = await (
-        await this.fetch(
-          `https://${type}/v21.0/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
+        await fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
         )
       ).json();
 

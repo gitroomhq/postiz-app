@@ -8,7 +8,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import axios from 'axios';
 
 const MOLTBOOK_API_BASE = 'https://www.moltbook.com/api/v1';
 
@@ -47,7 +46,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async registerAgent(name: string, description: string) {
-    const response = await axios.post(
+    const response = await this.getSsrfSafeAxios().post(
       `${MOLTBOOK_API_BASE}/agents/register`,
       { name, description },
       { headers: { 'Content-Type': 'application/json' } }
@@ -61,17 +60,23 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async checkAgentStatus(apiKey: string) {
-    const response = await axios.get(`${MOLTBOOK_API_BASE}/agents/status`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const response = await this.getSsrfSafeAxios().get(
+      `${MOLTBOOK_API_BASE}/agents/status`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }
+    );
 
     return response.data;
   }
 
   async getAgentProfile(apiKey: string) {
-    const response = await axios.get(`${MOLTBOOK_API_BASE}/agents/me`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const response = await this.getSsrfSafeAxios().get(
+      `${MOLTBOOK_API_BASE}/agents/me`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }
+    );
 
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to get profile');
@@ -120,7 +125,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         content: post.message,
       };
 
-      const response = await axios.post(
+      const response = await this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts`,
         postData,
         {
@@ -166,7 +171,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         commentData.parent_id = lastCommentId;
       }
 
-      const response = await axios.post(
+      const response = await this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts/${postId}/comments`,
         commentData,
         {
