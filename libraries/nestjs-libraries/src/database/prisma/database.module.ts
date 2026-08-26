@@ -17,6 +17,9 @@ import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
+import { PaymentProviderManager } from '@gitroom/nestjs-libraries/services/payment/payment.provider.manager';
+import { RevenueCatProvider } from '@gitroom/nestjs-libraries/services/payment/providers/revenuecat.provider';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
@@ -68,6 +71,9 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
     PostsService,
     PostsRepository,
     StripeService,
+    PaymentService,
+    PaymentProviderManager,
+    RevenueCatProvider,
     SignatureRepository,
     AutopostRepository,
     AutopostService,
