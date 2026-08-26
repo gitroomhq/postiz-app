@@ -7,7 +7,13 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool, nip19 } from 'nostr-tools';
+import {
+  getPublicKey,
+  Relay,
+  finalizeEvent,
+  SimplePool,
+  nip19,
+} from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -28,7 +34,9 @@ const list = [
 // Relays that support NIP-50 (keyword search over kind:0 profile events).
 // Live-probed 2026-08-26: search.nos.today responds ~1s; relay.nostr.band kept
 // as fallback (works in some regions); nos.lol/damus ignore `search`.
-const searchRelays = [...new Set([...list, 'wss://relay.nostr.band', 'wss://search.nos.today'])];
+const searchRelays = [
+  ...new Set([...list, 'wss://relay.nostr.band', 'wss://search.nos.today']),
+];
 
 const pool = new SimplePool();
 
@@ -39,7 +47,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;
-  toolTip = 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to'
+  toolTip =
+    'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to';
 
   maxLength() {
     return 100000;
@@ -168,9 +177,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
 
   private buildContent(post: PostDetails): string {
     const mediaContent = post.media?.map((m) => m.path).join('\n\n') || '';
-    return mediaContent
-      ? `${post.message}\n\n${mediaContent}`
-      : post.message;
+    return mediaContent ? `${post.message}\n\n${mediaContent}` : post.message;
   }
 
   async post(
@@ -248,7 +255,8 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
 
     // 1) NIP-05 direct verification for domain-shaped queries
     const nip05Match = query.match(/^([\w-.]+)@([\w-.]+\.[a-zA-Z]{2,})$/);
-    const domainOnly = !nip05Match && /^[\w-]+\.[\w-]+\.[a-zA-Z]{2,}$/.test(query);
+    const domainOnly =
+      !nip05Match && /^[\w-]+\.[\w-]+\.[a-zA-Z]{2,}$/.test(query);
     if (nip05Match || domainOnly) {
       try {
         const [localPart, domainPart] = nip05Match
