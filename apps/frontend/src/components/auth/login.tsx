@@ -26,6 +26,7 @@ export function Login() {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
+  const [notApproved, setNotApproved] = useState(false);
   const {
     isGeneral,
     neynarClientId,
@@ -47,6 +48,7 @@ export function Login() {
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setLoading(true);
     setNotActivated(false);
+    setNotApproved(false);
     const login = await fetchData('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
@@ -54,6 +56,11 @@ export function Login() {
         provider: 'LOCAL',
       }),
     });
+    if (login.headers.get('pending') === 'true') {
+      setNotApproved(true);
+      setLoading(false);
+      return;
+    }
     if (login.status === 400) {
       const errorMessage = await login.text();
       if (errorMessage === 'User is not activated') {
@@ -131,6 +138,16 @@ export function Login() {
                   >
                     {t('resend_activation_email', 'Resend Activation Email')}
                   </Link>
+                </div>
+              )}
+              {notApproved && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-[10px] p-4 mb-4">
+                  <p className="text-amber-400 text-sm">
+                    {t(
+                      'account_not_approved',
+                      'Your account is waiting for approval. An administrator has to approve it before you can sign in.'
+                    )}
+                  </p>
                 </div>
               )}
               <div className="text-center mt-6">

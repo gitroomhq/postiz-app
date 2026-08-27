@@ -131,6 +131,14 @@ export class UsersService {
     return this._usersRepository.activateUser(id);
   }
 
+  approveUser(id: string) {
+    return this._usersRepository.approveUser(id);
+  }
+
+  rejectUser(id: string) {
+    return this._usersRepository.deleteAccount(id);
+  }
+
   updatePassword(id: string, password: string) {
     return this._usersRepository.updatePassword(id, password);
   }
