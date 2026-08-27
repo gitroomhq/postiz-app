@@ -17,9 +17,9 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
-import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
   organizationId,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 const parser = new Parser();
 
 interface WorkflowChannelsState {
