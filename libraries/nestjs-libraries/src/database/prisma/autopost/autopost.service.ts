@@ -17,6 +17,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
   organizationId,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 const parser = new Parser();
@@ -116,7 +117,15 @@ export class AutopostService {
               },
             ]),
           });
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'autoPostWorkflow',
+          workflow_id: `autopost-${id}`,
+          org_id: orgId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     try {

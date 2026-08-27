@@ -54,6 +54,7 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -716,9 +717,24 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) {
+          logger.warn('workflow_terminate_failed', {
+            workflow_id: executionInfo.workflowId,
+            post_id: postId,
+            org_id: orgId,
+            error_type: errorType(err),
+            error_message: errorMessage(err),
+          });
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('workflow_list_failed', {
+        post_id: postId,
+        org_id: orgId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     if (state === 'DRAFT') {
       return;
@@ -749,7 +765,17 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: postId,
+        org_id: orgId,
+        task_queue: taskQueue,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
   }
 
   /**
@@ -1166,7 +1192,16 @@ export class PostsService {
         orgId,
         state
       );
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: getPostById.id,
+        org_id: orgId,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     return { id, state };
   }
@@ -1210,7 +1245,16 @@ export class PostsService {
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
         );
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'postWorkflowV110',
+          post_id: getPostById.id,
+          org_id: orgId,
+          post_state: getPostById.state,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return newDate;
