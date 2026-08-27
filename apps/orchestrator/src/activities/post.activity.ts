@@ -29,10 +29,10 @@ import {
   withHeartbeat,
 } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
-import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
   BadBody,
   Disconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
