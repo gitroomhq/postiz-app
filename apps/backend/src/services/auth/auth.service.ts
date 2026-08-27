@@ -132,7 +132,7 @@ export class AuthService {
       };
     } catch (err) {
       logger.warn('auth_rejected', {
-        auth_scope: 'jwt_verify',
+        rejected_scope: 'jwt_verify',
         error_type: errorType(err),
         error_message: errorMessage(err),
       });
