@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { redactLogAttributes } from '@gitroom/react/sentry/redact.log.attributes';
+import { redactLogAttributes } from '@gitroom/helpers/utils/redact.log.attributes';
 
 export const initializeSentryBasic = (environment: string, dsn: string, extension: any) => {
   if (!dsn) {
