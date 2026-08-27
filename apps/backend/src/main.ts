@@ -10,17 +10,19 @@ Runtime.install({ shutdownSignals: [] });
 process.env.TZ = 'UTC';
 
 import cookieParser from 'cookie-parser';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
+import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
+    logger: new ConsoleLogger({ forceConsole: true, colors: false }),
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
@@ -55,13 +57,14 @@ async function start() {
     })
   );
 
-  app.use(['/copilot/*', '/posts'], (req: any, res: any, next: any) => {
+  app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
     json({ limit: '50mb' })(req, res, next);
   });
 
   app.use(cookieParser());
   app.use(compression());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
+  app.useGlobalFilters(new PostValidationExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 
   loadSwagger(app);

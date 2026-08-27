@@ -10,6 +10,15 @@ The main documentation site has a [developer guide](https://docs.postiz.com/deve
 
 To submit your contribution, please fill out the [contribution form](https://contribute.postiz.com/p/postiz). This helps us evaluate whether your contribution is a good fit for the project. We will review your submission and get back to you as soon as possible.
 
+## Sign the Contributor License Agreement (CLA)
+
+Before we can merge your contribution, you must agree to our Contributor License Agreement (CLA). This documents the rights you grant us and helps ensure that Postiz can always remain Free and Open Source Software.
+
+- Contributing as an individual? The [Individual Contributor License Agreement (ICLA)](./ICLA.md) applies.
+- Contributing on behalf of a company or other legal entity? The [Entity Contributor License Agreement (CCLA)](./CCLA.md) applies.
+
+You accept the agreement by following the instructions on the [CLA page](https://contribute.postiz.com/p/postiz/cla). You only need to do this once, and it covers your present and future contributions to Postiz.
+
 ## Write code with others
 
 This is an open source project, with an open and welcoming community that is always keen to welcome new contributors. We recommend the two best ways to interact with the community are:
@@ -36,25 +45,31 @@ Contributions can include:
 To ensure the quality and maintainability of the codebase, **we do not accept Pull Requests generated primarily by AI tools** (e.g., ChatGPT, GitHub Copilot, Claude Code, etc.). 
 All contributions must be the original work of the author. We reserve the right to close any PR that appears to be AI-generated without further review.
 
+## Branches
+
+We develop against a `staging` branch. `main` reflects the released state of the project, and `staging` is where accepted changes land first. Please branch off `staging` and open all pull requests against `staging`. Pull requests opened against `main` will be asked to retarget.
+
 ## How to contribute
 
 This project follows a Fork/Feature Branch/Pull Request model. If you're not familiar with this, here's how it works:
 
 1. **Fork the project:** Create a personal copy of the repository on your GitHub account.
 2. **Clone your fork:** Bring a copy of your fork to your local machine.
-   ```bash
+```bash
    git clone https://github.com/YOUR_USERNAME/postiz.git
-   ```
-3. **Create a new branch**: Start a new branch for your changes
-   ```bash
+```
+3. **Create a new branch**: Start a new branch for your changes, based on `staging`
+```bash
+   git checkout staging
+   git pull origin staging
    git checkout -b feature/your-feature-name
-   ```
+```
 4. **Make your changes**: Implement the changes you wish to contribute.
 5. **Push your changes**: Upload your changes to your fork.
-   ```bash
+```bash
    git push -u origin feature/your-feature-name
-   ```
-6. **Create a pull request**: Propose your changes **to the main branch**.
+```
+6. **Create a pull request**: Propose your changes **to the staging branch**.
 
 # Need Help?
 

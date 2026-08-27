@@ -10,6 +10,8 @@ import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
+import { InstagramAudioSelector } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.audio';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { InstagramPreview } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.preview';
 const postType = [
@@ -38,8 +40,11 @@ const InstagramCollaborators: FC<{
 }> = (props) => {
   const t = useT();
   const { watch, register, formState, control } = useSettings();
+  const { integration } = useIntegration();
   const postCurrentType = watch('post_type');
   const isTrialReel = watch('is_trial_reel');
+  // The Audio API is only available with Facebook Login, not Instagram Login
+  const supportsAudio = integration?.identifier === 'instagram';
   return (
     <>
       <Select
@@ -63,6 +68,19 @@ const InstagramCollaborators: FC<{
             value: [],
           })}
         />
+      )}
+
+      {postCurrentType === 'post' && (
+        <div className="mt-[18px]">
+          <InstagramAudioSelector
+            label={t(
+              'instagram_audio_label',
+              'Audio (Reels only - single video)'
+            )}
+            disabled={!supportsAudio}
+            {...register('audio')}
+          />
+        </div>
       )}
 
       {postCurrentType === 'post' && (
@@ -99,46 +117,6 @@ export default withProvider<InstagramDto>({
   SettingsComponent: InstagramCollaborators,
   CustomPreviewComponent: InstagramPreview,
   dto: InstagramDto,
-  checkValidity: async ([firstPost, ...otherPosts] = [], settings) => {
-    if (!firstPost?.length) {
-      return 'Should have at least one media';
-    }
-    if (settings?.is_trial_reel) {
-      if ((firstPost?.length ?? 0) > 1) {
-        return 'Trial Reels can only have one video';
-      }
-      const hasVideo = firstPost?.some(
-        (f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1
-      );
-      if (!hasVideo) {
-        return 'Trial Reels must be a video';
-      }
-    }
-    const checkVideosLength = await Promise.all(
-      firstPost
-        ?.filter((f) => (f?.path?.indexOf?.('mp4') ?? -1) > -1)
-        ?.flatMap((p) => p?.path)
-        ?.map((p) => {
-          return new Promise<number>((res) => {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.src = p;
-            video.addEventListener('loadedmetadata', () => {
-              res(video.duration);
-            });
-          });
-        }) ?? []
-    );
-    for (const video of checkVideosLength) {
-      if (video > 60 && settings?.post_type === 'story') {
-        return 'Stories should be maximum 60 seconds';
-      }
-      if (video > 180 && settings?.post_type === 'post') {
-        return 'Reel should be maximum 180 seconds';
-      }
-    }
-    return true;
-  },
   maximumCharacters: 2200,
   comments: 'no-media'
 });

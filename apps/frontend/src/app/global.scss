@@ -497,6 +497,29 @@ div div .set-font-family {
   padding-right: 5px;
 }
 
+/* MediumTags (YouTube / Medium providers) — let the field grow and wrap
+   instead of overflowing the fixed-height row once there are many tags. */
+.medium-tags .react-tags {
+  height: auto;
+  min-height: 42px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-right: 16px;
+}
+
+.medium-tags .react-tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.medium-tags .react-tags__tag {
+  margin: 0;
+}
+
 .hideCopilot .copilotKitPopup {
   display: none !important;
 }

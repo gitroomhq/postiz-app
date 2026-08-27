@@ -9,6 +9,7 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Integration } from '@prisma/client';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import FormDataUpload from 'form-data';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5; // Discord has generous rate limits for webhook posting
@@ -135,6 +136,57 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       }));
   }
 
+  // Builds the multipart message and streams each attachment straight from its
+  // source (size from a HEAD request) so files are never buffered in memory.
+  // runStreamedUpload rebuilds the whole form per attempt (a consumed stream
+  // can't be replayed) and keeps handleErrors classification.
+  private async sendMessageWithMedia(
+    channel: string,
+    message: string,
+    media: PostDetails['media']
+  ) {
+    return this.runStreamedUpload(async () => {
+      const form = new FormDataUpload();
+      form.append(
+        'payload_json',
+        JSON.stringify({
+          content: message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
+            return `<${p1}>`;
+          }),
+          attachments: media?.map((p, index) => ({
+            id: index,
+            description: `Picture ${index}`,
+            filename: p.path.split('/').pop(),
+          })),
+        })
+      );
+
+      let index = 0;
+      for (const item of media || []) {
+        const fileSize = await this.mediaSize(item.path, this.identifier);
+        const stream = await this.mediaStream(item.path, this.identifier);
+        form.append(`files[${index}]`, stream, {
+          filename: item.path.split('/').pop(),
+          knownLength: fileSize,
+        });
+        index++;
+      }
+
+      const { data } = await this.getSsrfSafeAxios().post(
+        `https://discord.com/api/channels/${channel}/messages`,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          },
+        }
+      );
+
+      return data;
+    }, this.identifier);
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -143,42 +195,11 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
     const channel = firstPost.settings.channel;
 
-    const form = new FormData();
-    form.append(
-      'payload_json',
-      JSON.stringify({
-        content: firstPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
-          return `<${p1}>`;
-        }),
-        attachments: firstPost.media?.map((p, index) => ({
-          id: index,
-          description: `Picture ${index}`,
-          filename: p.path.split('/').pop(),
-        })),
-      })
+    const data = await this.sendMessageWithMedia(
+      channel,
+      firstPost.message,
+      firstPost.media
     );
-
-    let index = 0;
-    for (const media of firstPost.media || []) {
-      const loadMedia = await fetch(media.path);
-
-      form.append(
-        `files[${index}]`,
-        await loadMedia.blob(),
-        media.path.split('/').pop()
-      );
-      index++;
-    }
-
-    const data = await (
-      await this.fetch(`https://discord.com/api/channels/${channel}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
-        },
-        body: form,
-      })
-    ).json();
 
     return [
       {
@@ -226,45 +247,11 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       threadChannel = threadId;
     }
 
-    const form = new FormData();
-    form.append(
-      'payload_json',
-      JSON.stringify({
-        content: commentPost.message.replace(/\[\[\[(@.*?)]]]/g, (match, p1) => {
-            return `<${p1}>`;
-        }),
-        attachments: commentPost.media?.map((p, index) => ({
-          id: index,
-          description: `Picture ${index}`,
-          filename: p.path.split('/').pop(),
-        })),
-      })
+    const data = await this.sendMessageWithMedia(
+      threadChannel,
+      commentPost.message,
+      commentPost.media
     );
-
-    let index = 0;
-    for (const media of commentPost.media || []) {
-      const loadMedia = await fetch(media.path);
-
-      form.append(
-        `files[${index}]`,
-        await loadMedia.blob(),
-        media.path.split('/').pop()
-      );
-      index++;
-    }
-
-    const data = await (
-      await this.fetch(
-        `https://discord.com/api/channels/${threadChannel}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
-          },
-          body: form,
-        }
-      )
-    ).json();
 
     return [
       {

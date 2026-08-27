@@ -2,6 +2,32 @@ import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
 
+export const setSentryUserContext = (params: {
+  userId?: string;
+  email?: string;
+  orgId?: string;
+  paymentId?: string | null;
+}) => {
+  try {
+    if (params.email) {
+      // 'user' itself is a reserved tag key - Sentry discards it if set directly
+      Sentry.setTag('user.email', params.email);
+    }
+    if (params.userId) {
+      Sentry.setTag('user.id', params.userId);
+    }
+    if (params.orgId) {
+      Sentry.setTag('organization', params.orgId);
+      Sentry.setTag('organization.id', params.orgId);
+    }
+    if (params.paymentId?.startsWith('cus_')) {
+      Sentry.setTag('stripe.customer_id', params.paymentId);
+    }
+  } catch (err) {
+    /* never let telemetry break a request */
+  }
+};
+
 export const initializeSentry = (appName: string, allowLogs = false) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
@@ -44,7 +70,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       },
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.45,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
       profileLifecycle: 'trace',
     });
   } catch (err) {

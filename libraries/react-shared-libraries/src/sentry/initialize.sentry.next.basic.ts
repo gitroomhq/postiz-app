@@ -5,6 +5,9 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     return;
   }
 
+  const { integrations: extensionIntegrations = [], ...restExtension } =
+    extension || {};
+
   const ignorePatterns = [
     /^Failed to fetch$/,
     /^Failed to fetch .*/i,
@@ -31,12 +34,14 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       },
       integrations: [
         Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        ...extensionIntegrations,
       ],
       environment: environment || 'development',
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
       dsn,
       sendDefaultPii: true,
-      ...extension,
+      enableLogs: true,
+      ...restExtension,
       debug: environment === 'development',
       tracesSampleRate: 1.0,
 

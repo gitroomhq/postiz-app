@@ -11,6 +11,7 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Input } from '@gitroom/react/form/input';
 import { Checkbox } from '@gitroom/react/form/checkbox';
+import { MediaComponent } from '@gitroom/frontend/components/media/media.component';
 
 const whoCanReply = [
   {
@@ -38,46 +39,96 @@ const whoCanReply = [
 const SettingsComponent = () => {
   const t = useT();
   const { register, watch, setValue } = useSettings();
+  const postType = watch('post_type') || 'post';
 
   return (
     <>
       <Select
-        label={t(
-          'label_who_can_reply_to_this_post',
-          'Who can reply to this post?'
-        )}
+        label={t('label_post_type', 'Post type')}
         className="mb-5"
         hideErrors={true}
-        {...register('who_can_reply_post', {
-          value: 'everyone',
+        {...register('post_type', {
+          value: 'post',
         })}
       >
-        {whoCanReply.map((item) => (
-          <option key={item.value} value={item.value}>
-            {item.label}
-          </option>
-        ))}
+        <option value="post">{t('label_post_type_post', 'Post')}</option>
+        <option value="article">
+          {t('label_post_type_article', 'Article (long-form)')}
+        </option>
       </Select>
 
-      <Input
-        label={
-          'Post to a community, URL (Ex: https://x.com/i/communities/1493446837214187523)'
-        }
-        {...register('community')}
-      />
+      {postType === 'article' ? (
+        <>
+          <Input
+            label={t('label_article_title', 'Article title')}
+            {...register('article_title')}
+          />
+          <Select
+            label={t('label_article_status', 'Article status')}
+            className="mb-5"
+            hideErrors={true}
+            {...register('article_status', {
+              value: 'draft',
+            })}
+          >
+            <option value="draft">
+              {t('label_article_status_draft', 'Save as draft')}
+            </option>
+            <option value="published">
+              {t('label_article_status_published', 'Publish')}
+            </option>
+          </Select>
+          <MediaComponent
+            type="image"
+            label={t('label_article_cover', 'Cover image')}
+            description={t(
+              'description_article_cover',
+              'Cover picture for the article (optional)'
+            )}
+            {...register('article_cover')}
+          />
+        </>
+      ) : (
+        <>
+          <Select
+            label={t(
+              'label_who_can_reply_to_this_post',
+              'Who can reply to this post?'
+            )}
+            className="mb-5"
+            hideErrors={true}
+            {...register('who_can_reply_post', {
+              value: 'everyone',
+            })}
+          >
+            {whoCanReply.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </Select>
 
-      <div className="mt-5 flex flex-col gap-[10px]">
-        <Checkbox
-          label={t('label_made_with_ai', 'Made with AI')}
-          {...register('made_with_ai')}
-        />
-        <Checkbox
-          label={t('label_paid_partnership', 'Paid partnership')}
-          {...register('paid_partnership')}
-        />
-      </div>
+          <Input
+            label={
+              'Post to a community, URL (Ex: https://x.com/i/communities/1493446837214187523)'
+            }
+            {...register('community')}
+          />
 
-      <ThreadFinisher />
+          <div className="mt-5 flex flex-col gap-[10px]">
+            <Checkbox
+              label={t('label_made_with_ai', 'Made with AI')}
+              {...register('made_with_ai')}
+            />
+            <Checkbox
+              label={t('label_paid_partnership', 'Paid partnership')}
+              {...register('paid_partnership')}
+            />
+          </div>
+
+          <ThreadFinisher />
+        </>
+      )}
     </>
   );
 };
@@ -88,23 +139,6 @@ export default withProvider({
   SettingsComponent: SettingsComponent,
   CustomPreviewComponent: undefined,
   dto: XDto,
-  checkValidity: async (posts, settings, additionalSettings: any) => {
-    const premium =
-      additionalSettings?.find((p: any) => p?.title === 'Verified')?.value ||
-      false;
-    // if (posts?.some((p) => (p?.length ?? 0) > 4)) {
-    //   return 'There can be maximum 4 pictures in a post.';
-    // }
-    for (const load of posts?.flatMap((p) => p?.flatMap((a) => a?.path)) ?? []) {
-      if ((load?.indexOf?.('mp4') ?? -1) > -1) {
-        const isValid = await checkVideoDuration(load, premium);
-        if (!isValid) {
-          return 'Video duration must be less than or equal to 140 seconds.';
-        }
-      }
-    }
-    return true;
-  },
   maximumCharacters: (settings) => {
     if (settings?.[0]?.value) {
       return 4000;
@@ -112,25 +146,3 @@ export default withProvider({
     return 280;
   },
 });
-const checkVideoDuration = async (
-  url: string,
-  isPremium = false
-): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.src = url;
-    video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      // Check if the duration is less than or equal to 140 seconds
-      const duration = video.duration;
-      if ((!isPremium && duration <= 140) || isPremium) {
-        resolve(true); // Video duration is acceptable
-      } else {
-        resolve(false); // Video duration exceeds 140 seconds
-      }
-    };
-    video.onerror = () => {
-      reject(new Error('Failed to load video metadata.'));
-    };
-  });
-};

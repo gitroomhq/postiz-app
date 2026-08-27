@@ -8,8 +8,9 @@ import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer } = require('file-type');
+const { fileTypeFromBuffer } = require('file-type');
 
 const ALLOWED_MIME_TYPES = new Set<string>([
   'image/jpeg',
@@ -77,15 +78,22 @@ class CloudflareStorage implements IUploadProvider {
   }
 
   async uploadSimple(path: string) {
-    if (!(await isSafePublicHttpsUrl(path))) {
-      throw new Error('Unsafe URL');
+    const dataUrl = path.startsWith('data:') ? parseDataUrl(path) : null;
+
+    let body: Buffer;
+    if (dataUrl) {
+      body = dataUrl.buffer;
+    } else {
+      if (!(await isSafePublicHttpsUrl(path))) {
+        throw new Error('Unsafe URL');
+      }
+      const loadImage = await fetch(path, {
+        // @ts-ignore — undici option, not in lib.dom fetch types
+        dispatcher: ssrfSafeDispatcher,
+      });
+      body = Buffer.from(await loadImage.arrayBuffer());
     }
-    const loadImage = await fetch(path, {
-      // @ts-ignore — undici option, not in lib.dom fetch types
-      dispatcher: ssrfSafeDispatcher,
-    });
-    const body = Buffer.from(await loadImage.arrayBuffer());
-    const detected = await fromBuffer(body);
+    const detected = await fileTypeFromBuffer(body);
     if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
       throw new Error('Unsupported file type.');
     }
@@ -109,7 +117,7 @@ class CloudflareStorage implements IUploadProvider {
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
     try {
-      const detected = await fromBuffer(file.buffer);
+      const detected = await fileTypeFromBuffer(file.buffer);
       if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
         throw new Error('Unsupported file type.');
       }

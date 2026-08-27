@@ -15,6 +15,7 @@ import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { DubAnalytics } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
+import { GoogleTagManagerComponent } from '@gitroom/frontend/components/layout/gtm.component';
 import { cookies } from 'next/headers';
 import {
   cookieName,
@@ -61,6 +62,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           stripeClient={process.env.STRIPE_PUBLISHABLE_KEY!}
+          isChatBase={!!process.env.CHATBASE_TOKEN}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
@@ -76,11 +78,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
+          appleClientId={process.env.APPLE_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          googleAdsId={process.env.NEXT_PUBLIC_GTM_ID}
+          googleAdsTrialTracking={process.env.NEXT_PUBLIC_TRACKING_TRIAL}
           language={language}
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
@@ -96,6 +101,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <HtmlComponent />
             <DubAnalytics />
             <FacebookComponent />
+            <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
             <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
             >
