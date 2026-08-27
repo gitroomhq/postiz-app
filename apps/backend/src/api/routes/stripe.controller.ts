@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { ApiTags } from '@nestjs/swagger';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @ApiTags('Stripe')
 @Controller('/stripe')
@@ -24,6 +25,11 @@ export class StripeController {
       process.env.STRIPE_SIGNING_KEY
     );
 
+    logger.info('stripe_webhook_received', {
+      stripe_event_type: event.type,
+      stripe_event_id: event.id,
+    });
+
     // Maybe it comes from another stripe webhook
     if (
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -31,6 +37,11 @@ export class StripeController {
       event?.data?.object?.metadata?.service !== 'gitroom' &&
       event.type !== 'invoice.payment_succeeded'
     ) {
+      logger.info('stripe_webhook_ignored', {
+        stripe_event_type: event.type,
+        stripe_event_id: event.id,
+        reason: 'not_addressed_to_this_service',
+      });
       return { ok: true };
     }
 

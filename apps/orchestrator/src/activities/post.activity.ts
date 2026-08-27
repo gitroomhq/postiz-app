@@ -32,6 +32,7 @@ import {
   BadBody,
   Disconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -505,7 +506,7 @@ export class PostActivity {
             // webhook.url is validated at save time, but DNS can change
             // between then and now - pin resolution like every other
             // user-influenced outbound request.
-            await fetch(webhook.url, {
+            const response = await fetch(webhook.url, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -514,13 +515,38 @@ export class PostActivity {
               // @ts-ignore — undici option, not in lib.dom fetch types
               dispatcher: getSsrfSafeDispatcher(),
             });
+
+            if (!response.ok) {
+              logger.warn('webhook_delivery_failed', {
+                webhook_id: webhook.id,
+                org_id: orgId,
+                post_id: postId,
+                integration_id: integrationId,
+                response_status: response.status,
+                outcome: 'non_success_status',
+              });
+            }
           } catch (e) {
-            /**empty**/
+            logger.warn('webhook_delivery_failed', {
+              webhook_id: webhook.id,
+              org_id: orgId,
+              post_id: postId,
+              integration_id: integrationId,
+              outcome: 'request_failed',
+              error_type: errorType(e),
+              error_message: errorMessage(e),
+            });
           }
         })
       );
     } catch (err) {
-      /**empty**/
+      logger.error('webhook_dispatch_failed', {
+        org_id: orgId,
+        post_id: postId,
+        integration_id: integrationId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
     }
   }
   @ActivityMethod()

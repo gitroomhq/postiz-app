@@ -1,4 +1,3 @@
-import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
 
 export const dynamic = 'force-dynamic';
 import '../global.scss';
@@ -96,26 +95,24 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <SentryComponent>
-            {/*<SetTimezone />*/}
-            <HtmlComponent />
-            <DubAnalytics />
-            <FacebookComponent />
-            <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
-            <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+          {/*<SetTimezone />*/}
+          <HtmlComponent />
+          <DubAnalytics />
+          <FacebookComponent />
+          <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
+          <Plausible
+            domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+          >
+            <PHProvider
+              phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+              host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
             >
-              <PHProvider
-                phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-                host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
-              >
-                <LayoutContext>
-                  <UtmSaver />
-                  {children}
-                </LayoutContext>
-              </PHProvider>
-            </Plausible>
-          </SentryComponent>
+              <LayoutContext>
+                <UtmSaver />
+                {children}
+              </LayoutContext>
+            </PHProvider>
+          </Plausible>
         </VariableContextComponent>
       </body>
     </html>

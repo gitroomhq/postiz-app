@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { redactLogAttributes } from '@gitroom/helpers/utils/redact.log.attributes';
 
 export const initializeSentryBasic = (environment: string, dsn: string, extension: any) => {
   if (!dsn) {
@@ -53,7 +54,15 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
             if (exception.value) {
               for (const pattern of ignorePatterns) {
                 if (pattern.test(exception.value)) {
-                  return null; // Ignore the event
+                  Sentry.logger.warn('network_request_failed', {
+                    error_type: exception.type || 'NetworkError',
+                    error_message: exception.value,
+                    page_path:
+                      typeof window !== 'undefined'
+                        ? window.location.pathname
+                        : '',
+                  });
+                  return null;
                 }
               }
             }
@@ -86,7 +95,11 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       },
 
       beforeSendLog: (log: any) => {
-        log.attributes = { ...(log.attributes || {}), service: 'frontend', component: 'nextjs' };
+        log.attributes = redactLogAttributes({
+          ...(log.attributes || {}),
+          service: 'frontend',
+          component: 'nextjs',
+        });
         return log;
       },
 
