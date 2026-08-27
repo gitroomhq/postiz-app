@@ -67,6 +67,13 @@ export class OrganizationService {
     return this._organizationRepository.getOrgsByUserId(userId);
   }
 
+  getUserOrgByOrganization(userId: string, organizationId: string) {
+    return this._organizationRepository.getUserOrgByOrganization(
+      userId,
+      organizationId
+    );
+  }
+
   updateApiKey(orgId: string) {
     return this._organizationRepository.updateApiKey(orgId);
   }
