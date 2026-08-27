@@ -1491,7 +1491,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
       return Object.entries(metrics).map(([key, value]) => ({
         label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
-        percentageChange: 5,
+        percentageChange: 0,
         data: [
           {
             total: String(0),
