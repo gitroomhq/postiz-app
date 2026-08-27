@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
+import { redactLogAttributes } from '@gitroom/nestjs-libraries/sentry/redact.log.attributes';
 
 export const setSentryUserContext = (params: {
   userId?: string;
@@ -28,7 +29,7 @@ export const setSentryUserContext = (params: {
   }
 };
 
-export const initializeSentry = (appName: string, allowLogs = false) => {
+export const initializeSentry = (appName: string) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
   }
@@ -47,8 +48,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         },
       },
       environment: process.env.NODE_ENV || 'development',
+      release: process.env.NEXT_PUBLIC_APP_VERSION || undefined,
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
+      sendDefaultPii: true,
       integrations: [
         // Add our Profiling integration
         nodeProfilingIntegration(),
@@ -61,7 +64,11 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       tracesSampleRate: 1.0,
       enableLogs: true,
       beforeSendLog: (log: any) => {
-        log.attributes = { ...(log.attributes || {}), service: appName, component: 'nestjs' };
+        log.attributes = redactLogAttributes({
+          ...(log.attributes || {}),
+          service: appName,
+          component: 'nestjs',
+        });
         return log;
       },
       beforeSend(event: any) {

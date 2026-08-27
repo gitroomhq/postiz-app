@@ -1,5 +1,5 @@
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-initializeSentry('orchestrator', true);
+initializeSentry('orchestrator');
 import 'source-map-support/register';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -35,7 +35,7 @@ Runtime.install({
   ),
   telemetryOptions: {
     logging: {
-      filter: { core: 'WARN', other: 'ERROR' },
+      filter: { core: 'WARN', other: 'WARN' },
       forward: {},
     },
   },
