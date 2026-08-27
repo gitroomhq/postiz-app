@@ -142,7 +142,9 @@ export class AuthController {
       );
 
       if (pending) {
-        throw new Error('User is not approved');
+        response.header('pending', 'true');
+        response.status(200).json({ pending: true });
+        return;
       }
 
       response.cookie('auth', jwt, {
