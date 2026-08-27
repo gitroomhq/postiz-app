@@ -112,13 +112,13 @@ export class AuthService {
       }
 
       if (!user.approved) {
-        throw new Error('User is not approved');
+        return { addedOrg: false, pending: true, jwt: '' };
       }
 
       return { addedOrg: false, pending: false, jwt: await this.jwt(user) };
     }
 
-    const { user, created } = await this.loginOrRegisterProvider(
+    const user = await this.loginOrRegisterProvider(
       provider,
       body as CreateOrgUserDto,
       ip,
@@ -127,11 +127,7 @@ export class AuthService {
     );
 
     if (!user.approved) {
-      if (!created) {
-        throw new Error('User is not approved');
-      }
-
-      return { addedOrg: false, pending: true, jwt: await this.jwt(user) };
+      return { addedOrg: false, pending: true, jwt: '' };
     }
 
     const addedOrg =
@@ -187,7 +183,7 @@ export class AuthService {
       provider
     );
     if (user) {
-      return { user, created: false };
+      return user;
     }
 
     if (!(await this.canRegister(provider))) {
@@ -222,7 +218,7 @@ export class AuthService {
       // Don't fail registration if postRegistration fails
     }
 
-    return { user: create.users[0].user, created: true };
+    return create.users[0].user;
   }
 
   private async _track(

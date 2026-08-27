@@ -5,7 +5,9 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { User } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
@@ -26,6 +28,12 @@ export class AdminController {
   private assertSuperAdmin(user: User) {
     if (!user?.isSuperAdmin) {
       throw new HttpException('Unauthorized', 400);
+    }
+  }
+
+  private assertJsonRequest(req: Request) {
+    if (!req.headers['content-type']?.includes('application/json')) {
+      throw new HttpException('Invalid request', 400);
     }
   }
 
@@ -75,9 +83,11 @@ export class AdminController {
 
   @Post('/registration/:id/approve')
   async approveRegistration(
+    @Req() req: Request,
     @GetUserFromRequest() user: User,
     @Param('id') id: string
   ) {
+    this.assertJsonRequest(req);
     this.assertSuperAdmin(user);
     await this._usersService.approveUser(id);
     return { approved: true };
@@ -85,9 +95,11 @@ export class AdminController {
 
   @Post('/registration/:id/activate')
   async activateRegistration(
+    @Req() req: Request,
     @GetUserFromRequest() user: User,
     @Param('id') id: string
   ) {
+    this.assertJsonRequest(req);
     this.assertSuperAdmin(user);
     await this._usersService.activateUser(id);
     return { activated: true };
@@ -95,9 +107,11 @@ export class AdminController {
 
   @Post('/registration/:id/reject')
   async rejectRegistration(
+    @Req() req: Request,
     @GetUserFromRequest() user: User,
     @Param('id') id: string
   ) {
+    this.assertJsonRequest(req);
     this.assertSuperAdmin(user);
     await this._usersService.rejectUser(id);
     return { rejected: true };

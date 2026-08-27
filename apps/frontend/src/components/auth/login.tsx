@@ -56,12 +56,15 @@ export function Login() {
         provider: 'LOCAL',
       }),
     });
+    if (login.headers.get('pending') === 'true') {
+      setNotApproved(true);
+      setLoading(false);
+      return;
+    }
     if (login.status === 400) {
       const errorMessage = await login.text();
       if (errorMessage === 'User is not activated') {
         setNotActivated(true);
-      } else if (errorMessage === 'User is not approved') {
-        setNotApproved(true);
       } else {
         form.setError('email', {
           message: errorMessage,
