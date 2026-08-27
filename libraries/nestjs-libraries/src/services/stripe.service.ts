@@ -133,11 +133,20 @@ export class StripeService extends PaymentProviderAbstract {
       await stripe.paymentIntents.cancel(paymentIntent.id as string);
       return true;
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'check_valid_card',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       try {
         await stripe.paymentMethods.detach(paymentMethods.data[0].id);
         await stripe.subscriptions.cancel(event.data.object.id as string);
       } catch (err) {
-        /*dont do anything*/
+        logger.error('stripe_operation_failed', {
+          operation: 'check_valid_card_cleanup',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
       return false;
     }
@@ -156,6 +165,11 @@ export class StripeService extends PaymentProviderAbstract {
         return { ok: false };
       }
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_subscription',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { ok: false };
     }
 
@@ -232,7 +246,14 @@ export class StripeService extends PaymentProviderAbstract {
           .update(customerId, {
             email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.error('stripe_operation_failed', {
+              operation: 'update_customer_email',
+              stripe_customer_id: customerId,
+              error_type: errorType(err),
+              error_message: errorMessage(err),
+            });
+          })
       )
     );
   }
@@ -554,7 +575,13 @@ export class StripeService extends PaymentProviderAbstract {
             }
           : {}),
       });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_embedded_checkout',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     // Check for auto-apply promotion code (only for monthly plans)
     let autoApplyPromoCode: string | null = null;
@@ -933,6 +960,13 @@ export class StripeService extends PaymentProviderAbstract {
 
       return { id };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'subscribe',
+        stripe_customer_id: customer,
+        outcome: 'fallback_billing_portal',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       const { url } = await this.createBillingPortalLink(customer);
       return {
         portal: url,
@@ -1027,6 +1061,12 @@ export class StripeService extends PaymentProviderAbstract {
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
+        logger.error('stripe_operation_failed', {
+          operation: 'refund_charge',
+          stripe_charge_id: chargeId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
         failed.push(chargeId);
       }
     }
@@ -1129,7 +1169,11 @@ export class StripeService extends PaymentProviderAbstract {
         });
         nextPayment = preview.total / 100;
       } catch (err) {
-        /* no upcoming invoice */
+        logger.warn('stripe_operation_failed', {
+          operation: 'preview_upcoming_invoice',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
     }
 
@@ -1421,7 +1465,12 @@ export class StripeService extends PaymentProviderAbstract {
         success: true,
       };
     } catch (err) {
-      console.log(err);
+      logger.error('stripe_operation_failed', {
+        operation: 'modify_subscription',
+        org_id: organizationId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return {
         success: false,
       };
