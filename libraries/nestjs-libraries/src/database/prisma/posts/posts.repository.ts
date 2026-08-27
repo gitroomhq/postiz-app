@@ -160,16 +160,10 @@ export class PostsRepository {
         integration: {
           deletedAt: null,
           organizationId: orgId,
+          ...(query.customer ? { customerId: query.customer } : {}),
         },
         deletedAt: null,
         parentPostId: null,
-        ...(query.customer
-          ? {
-              integration: {
-                customerId: query.customer,
-              },
-            }
-          : {}),
       },
       select: {
         id: true,
@@ -181,6 +175,7 @@ export class PostsRepository {
         intervalInDays: true,
         group: true,
         creationMethod: true,
+        settings: true,
         tags: {
           select: {
             tag: true,

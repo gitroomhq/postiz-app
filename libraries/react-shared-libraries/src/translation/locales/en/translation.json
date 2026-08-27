@@ -576,6 +576,7 @@
   "label_company": "Company",
   "email_already_exists": "Email already exists",
   "google": "Google",
+  "apple": "Apple",
   "farcaster": "Farcaster",
   "edit_autopost": "Edit Autopost",
   "add_autopost_title": "Add Autopost",
@@ -739,5 +740,7 @@
   "republish_the_post": "Republish the post",
   "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
   "republish_at": "at",
+  "past_publish_date_warning": "The publish date is in the past, pick a future date.",
+  "could_not_save_post": "Could not save the post.",
   "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
 }

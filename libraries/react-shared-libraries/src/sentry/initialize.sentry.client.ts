@@ -6,13 +6,17 @@ export const setSentryUser = (
 ) => {
   try {
     if (user?.id) {
-      Sentry.setUser({
-        id: user.id,
-        ...(user.email ? { email: user.email } : {}),
-      });
+      if (user.email) {
+        // 'user' itself is a reserved tag key - Sentry discards it if set directly
+        Sentry.setTag('user.email', user.email);
+      }
+      Sentry.setTag('user.id', user.id);
+      Sentry.setTag('organization', user.orgId);
       Sentry.setTag('organization.id', user.orgId);
     } else {
-      Sentry.setUser(null);
+      Sentry.setTag('user.email', undefined);
+      Sentry.setTag('user.id', undefined);
+      Sentry.setTag('organization', undefined);
       Sentry.setTag('organization.id', undefined);
     }
   } catch (err) {
@@ -28,11 +32,13 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration({
         maskAllText: false,
-        maskAllInputs: true,
+        maskAllInputs: false,
+        blockAllMedia: false,
       }),
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget
         autoInject: false,
+        showEmail: false,
       }),
       Sentry.replayCanvasIntegration(),
     ],

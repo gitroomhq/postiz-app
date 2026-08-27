@@ -6,6 +6,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   BadBody,
   RefreshToken,
@@ -86,6 +87,7 @@ async function startVideoUpload(
 
   // The video is never buffered in memory: the size comes from a HEAD request
   // and the bytes are streamed straight from the source into the upload.
+  setHeartbeatDetails('bluesky: video size');
   const headResponse = await fetch(videoPath, {
     method: 'HEAD',
     // identity encoding so content-length matches the bytes the GET streams
@@ -103,6 +105,7 @@ async function startVideoUpload(
     );
   }
 
+  setHeartbeatDetails('bluesky: read video');
   const videoResponse = await fetch(videoPath, {
     headers: { 'accept-encoding': 'identity' },
     // @ts-ignore - undici-only option; blocks SSRF to internal IPs
@@ -120,6 +123,7 @@ async function startVideoUpload(
   uploadUrl.searchParams.append('did', agent.session!.did);
   uploadUrl.searchParams.append('name', videoPath.split('/').pop()!);
 
+  setHeartbeatDetails('bluesky: upload video');
   const uploadResponse = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
@@ -391,7 +395,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         return {
           width,
           height,
-          buffer: await agent.uploadBlob(new Blob([buffer])),
+          buffer: await (async () => {
+            setHeartbeatDetails('bluesky: upload blob');
+            return agent.uploadBlob(new Blob([buffer]));
+          })(),
         };
       })
     );
@@ -628,6 +635,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     let uri: string;
     try {
+      setHeartbeatDetails('bluesky: create post');
       // @ts-ignore
       const created = await agent.post({
         text: rt.text,
@@ -778,6 +786,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     // @ts-ignore
     const rootCid = parentThread.data.thread.post?.record?.reply?.root?.cid || parentCid;
 
+    setHeartbeatDetails('bluesky: create post');
     // @ts-ignore
     const { cid, uri, commit } = await agent.post({
       text: rt.text,

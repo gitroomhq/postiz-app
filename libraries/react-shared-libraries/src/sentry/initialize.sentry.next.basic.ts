@@ -5,6 +5,9 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     return;
   }
 
+  const { integrations: extensionIntegrations = [], ...restExtension } =
+    extension || {};
+
   const ignorePatterns = [
     /^Failed to fetch$/,
     /^Failed to fetch .*/i,
@@ -31,16 +34,20 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       },
       integrations: [
         Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        ...extensionIntegrations,
       ],
       environment: environment || 'development',
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
       dsn,
       sendDefaultPii: true,
-      ...extension,
+      enableLogs: true,
+      ...restExtension,
       debug: environment === 'development',
       tracesSampleRate: 1.0,
 
-      beforeSend(event, hint) {
+      beforeSend(event: any, hint: any) {
+        event.tags = { ...(event.tags || {}), service: 'frontend', component: 'nextjs' };
+
         if (event.exception && event.exception.values) {
           for (const exception of event.exception.values) {
             if (exception.value) {
@@ -77,6 +84,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
 
         return event; // Send the event to Sentry
       },
+
+      beforeSendLog: (log: any) => {
+        log.attributes = { ...(log.attributes || {}), service: 'frontend', component: 'nextjs' };
+        return log;
+      },
+
     });
   } catch (err) {
     // Log initialization errors

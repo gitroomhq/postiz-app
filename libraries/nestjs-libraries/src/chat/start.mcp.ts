@@ -17,6 +17,14 @@ const fixAcceptHeader = (req: Request) => {
   }
 };
 
+const openAiOAuthClientId = process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
+const enableOidcEmailClaims = Boolean(openAiOAuthClientId);
+const oauthScopes = [
+  ...(enableOidcEmailClaims ? ['openid', 'email'] : []),
+  'mcp:read',
+  'mcp:write',
+];
+
 export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
@@ -35,6 +43,19 @@ export const startMcp = async (app: INestApplication) => {
   const agent = mastra.getAgent('postiz');
   const tools = await agent.listTools();
 
+  // The Claude connector directory does not accept AI media generation tools,
+  // so the directory-facing endpoint hides them. Direct connections
+  // (/mcp, /mcp/:id, /sse/:id) and the ChatGPT app keep the full toolset.
+  const claudeHiddenTools = [
+    'generateImageTool',
+    'generateVideoTool',
+    'generateVideoOptions',
+    'videoFunctionTool',
+  ];
+  const claudeTools = Object.fromEntries(
+    Object.entries(tools).filter(([name]) => !claudeHiddenTools.includes(name))
+  ) as typeof tools;
+
   const serverConfig = {
     name: 'Postiz MCP',
     version: '1.0.0',
@@ -44,11 +65,27 @@ export const startMcp = async (app: INestApplication) => {
 
   const server = new MCPServer(serverConfig);
 
+  // The directory-facing servers don't register the agent - it would be
+  // exposed as an annotation-less catch-all ask_postiz tool, which the
+  // ChatGPT and Claude directory reviews reject
+  const oauthServer = new MCPServer({
+    name: 'Postiz MCP',
+    version: '1.0.0',
+    tools,
+  });
+
+  const claudeOauthServer = new MCPServer({
+    name: 'Postiz MCP',
+    version: '1.0.0',
+    tools: claudeTools,
+  });
+
   const oauthResource = new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
   const oauthMiddleware = createOAuthMiddleware({
     oauth: {
       resource: oauthResource,
       authorizationServers: [oauthResource],
+      scopesSupported: oauthScopes,
       validateToken: async (token: string) => {
         const org = await resolveAuth(token);
         if (!org) {
@@ -60,6 +97,24 @@ export const startMcp = async (app: INestApplication) => {
     mcpPath: '/mcp-oauth',
   });
 
+  // Same authorization server as /mcp-oauth, only the protected resource differs
+  const claudeOauthResource = new URL('/mcp-oauth-claude', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
+  const claudeOauthMiddleware = createOAuthMiddleware({
+    oauth: {
+      resource: claudeOauthResource,
+      authorizationServers: [oauthResource],
+      scopesSupported: oauthScopes,
+      validateToken: async (token: string) => {
+        const org = await resolveAuth(token);
+        if (!org) {
+          return { valid: false, error: 'invalid_token', errorDescription: 'Invalid API Key or OAuth token' };
+        }
+        return { valid: true, subject: token };
+      },
+    },
+    mcpPath: '/mcp-oauth-claude',
+  });
+
   if (process.env.OPENAI_APP_CHALLANGE) {
     app.use('/.well-known/openai-apps-challenge', (req: Request, res: Response) => {
       res.setHeader('Content-Type', 'text/plain');
@@ -68,16 +123,17 @@ export const startMcp = async (app: INestApplication) => {
   }
 
   app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response, next: () => void) => {
-    // Only the /mcp-oauth resource is OAuth-protected. Answering discovery on
-    // any other path (including the root, which clients fall back to) makes
-    // them demand OAuth for /mcp/:id too
-    if (req.path !== '/mcp-oauth') {
+    // Only the /mcp-oauth and /mcp-oauth-claude resources are OAuth-protected.
+    // Answering discovery on any other path (including the root, which clients
+    // fall back to) makes them demand OAuth for /mcp/:id too
+    if (req.path !== '/mcp-oauth' && req.path !== '/mcp-oauth-claude') {
       next();
       return;
     }
 
     const url = new URL('/.well-known/oauth-protected-resource', process.env.NEXT_PUBLIC_BACKEND_URL);
-    await oauthMiddleware(req, res, url);
+    const middleware = req.path === '/mcp-oauth-claude' ? claudeOauthMiddleware : oauthMiddleware;
+    await middleware(req, res, url);
   });
 
   app.use('/.well-known/oauth-authorization-server', async (req: Request, res: Response, next: () => void) => {
@@ -102,10 +158,47 @@ export const startMcp = async (app: INestApplication) => {
       issuer: oauthResource,
       authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
       token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
+      registration_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/register`,
+      ...(enableOidcEmailClaims && {
+        userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
+      }),
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
+      token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
       code_challenge_methods_supported: ['S256'],
-      scopes_supported: ['mcp:read', 'mcp:write'],
+      scopes_supported: oauthScopes,
+    });
+  });
+
+  app.use('/.well-known/openid-configuration', async (req: Request, res: Response, next: () => void) => {
+    if (req.path !== '/mcp-oauth' || !enableOidcEmailClaims) {
+      next();
+      return;
+    }
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'max-age=3600');
+    res.json({
+      issuer: oauthResource,
+      authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
+      token_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/token`,
+      registration_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/register`,
+      userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
+      response_types_supported: ['code'],
+      grant_types_supported: ['authorization_code'],
+      token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+      code_challenge_methods_supported: ['S256'],
+      scopes_supported: oauthScopes,
+      subject_types_supported: ['public'],
+      claims_supported: ['sub', 'email', 'email_verified'],
     });
   });
 
@@ -130,7 +223,41 @@ export const startMcp = async (app: INestApplication) => {
 
     fixAcceptHeader(req);
     await runWithContext({ requestId: token!, auth }, async () => {
-      await server.startHTTP({
+      await oauthServer.startHTTP({
+        url: url,
+        httpPath: url.pathname,
+        options: {
+          serverless: true,
+          enableJsonResponse: true,
+        },
+        req,
+        res,
+      });
+    });
+  });
+
+  app.use('/mcp-oauth-claude', async (req: Request, res: Response, next: () => void) => {
+    // Skip if this is the /mcp/:id route
+    if (req.path !== '/' && req.path !== '') {
+      next();
+      return;
+    }
+
+    const url = new URL('/mcp-oauth-claude', process.env.NEXT_PUBLIC_BACKEND_URL);
+
+    const result = await claudeOauthMiddleware(req, res, url);
+    if (!result.proceed) return;
+
+    const token = result.tokenValidation?.subject;
+    const auth = await resolveAuth(token!);
+    if (!auth) {
+      res.status(401).json({ error: 'invalid_token', error_description: 'Could not resolve organization' });
+      return;
+    }
+
+    fixAcceptHeader(req);
+    await runWithContext({ requestId: token!, auth }, async () => {
+      await claudeOauthServer.startHTTP({
         url: url,
         httpPath: url.pathname,
         options: {

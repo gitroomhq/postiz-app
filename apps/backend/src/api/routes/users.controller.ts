@@ -364,6 +364,48 @@ export class UsersController {
     response.status(200).send();
   }
 
+  @Post('/delete-account')
+  async deleteAccount(
+    @GetUserFromRequest() user: User,
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate) {
+      throw new HttpException(
+        'Account cannot be deleted while impersonating',
+        400
+      );
+    }
+
+    // Cancel billing before scrubbing the account — once the account is
+    // deleted there is no way to retry a failed cancellation
+    const ownedOrgs = await this._userService.getOrgsToDeleteForAccount(
+      user.id
+    );
+
+    if (process.env.STRIPE_PUBLISHABLE_KEY) {
+      for (const org of ownedOrgs) {
+        if (!org.paymentId) {
+          continue;
+        }
+        try {
+          await this._stripeService.cancelAllSubscriptions(org.id);
+        } catch (err) {
+          console.log(err);
+          throw new HttpException(
+            'Could not cancel your subscription, please try again or contact support',
+            400
+          );
+        }
+      }
+    }
+
+    await this._userService.deleteAccount(user.id);
+
+    return this.logout(response);
+  }
+
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.header('logout', 'true');

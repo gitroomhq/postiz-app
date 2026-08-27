@@ -56,6 +56,7 @@ export class OrganizationRepository {
     return this._organization.model.organization.findFirst({
       where: {
         apiKey: api,
+        deletedAt: null,
       },
       include: {
         subscription: {
@@ -84,6 +85,19 @@ export class OrganizationRepository {
       select: {
         id: true,
         disabled: true,
+      },
+    });
+  }
+
+  getSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        user: {
+          isSuperAdmin: true,
+          deletedAt: null,
+        },
       },
     });
   }
@@ -191,6 +205,7 @@ export class OrganizationRepository {
   async getOrgsByUserId(userId: string) {
     return this._organization.model.organization.findMany({
       where: {
+        deletedAt: null,
         users: {
           some: {
             userId,
@@ -401,6 +416,17 @@ export class OrganizationRepository {
             },
           },
         },
+      },
+    });
+  }
+
+  deleteOrganization(orgId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        deletedAt: new Date(),
       },
     });
   }

@@ -59,22 +59,23 @@ export const getTemporalModule = (
                   )
                 : undefined;
 
+              // Workflows only ever run on the `main` queue; the other Workers
+              // are activity-only, so skip the workflow bundle (webpack build,
+              // workflow thread + V8 isolate, sticky cache) on them.
               return {
                 taskQueue,
-                workflowsPath: path!,
+                ...(taskQueue === 'main' ? { workflowsPath: path! } : {}),
                 activityClasses: activityClasses!,
                 autoStart: true,
-                ...(concurrency
-                  ? {
-                      workerOptions: {
-                        maxConcurrentActivityTaskExecutions: concurrency,
-                      },
-                    }
-                  : {
-                      workerOptions: {
-                        maxConcurrentActivityTaskExecutions: 1000000,
-                      },
-                    }),
+                workerOptions: {
+                  maxConcurrentActivityTaskExecutions: concurrency || 1000000,
+                  // By default the SDK throttles heartbeat sends to 60s, so
+                  // against the workflow's heartbeatTimeout one dropped send
+                  // or a minute of event-loop lag eats most of the margin.
+                  // Sending every 15s keeps the recorded heartbeat fresh even
+                  // when individual sends fail or fire late.
+                  maxHeartbeatThrottleInterval: '15s',
+                },
               };
             }),
         }
