@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
-import { redactLogAttributes } from '@gitroom/nestjs-libraries/sentry/redact.log.attributes';
+import { redactLogAttributes } from '@gitroom/helpers/utils/redact.log.attributes';
 
 export const setSentryUserContext = (params: {
   userId?: string;
