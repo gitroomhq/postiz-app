@@ -131,7 +131,7 @@ export class AuthMiddleware implements NestMiddleware {
       });
     } catch (err) {
       logger.warn('auth_rejected', {
-        auth_scope: 'user',
+        rejected_scope: 'user',
         request_path: req.path,
         error_type: errorType(err),
         error_message: errorMessage(err),

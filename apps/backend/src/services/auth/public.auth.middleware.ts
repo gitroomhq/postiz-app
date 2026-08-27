@@ -60,7 +60,7 @@ export class PublicAuthMiddleware implements NestMiddleware {
       }
     } catch (err) {
       logger.warn('auth_rejected', {
-        auth_scope: 'public_api',
+        rejected_scope: 'public_api',
         request_path: req.path,
         error_type: errorType(err),
         error_message: errorMessage(err),
