@@ -321,9 +321,11 @@ export class AutopostService {
       return;
     }
 
-    const integrations = await this._integrationService.getIntegrationsList(
-      getPost.organizationId
-    );
+    const integrations = (
+      await this._integrationService.getIntegrationsList(
+        getPost.organizationId
+      )
+    ).filter((i) => !i.disabled);
 
     const parseIntegrations = JSON.parse(getPost.integrations || '[]') || [];
     const neededIntegrations = integrations.filter((i) =>
