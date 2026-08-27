@@ -22,6 +22,7 @@ import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 const FirstStep: FC = (props) => {
   const { integrations, reloadCalendarView } = useCalendar();
@@ -194,7 +195,7 @@ const FirstStep: FC = (props) => {
                 ...p,
               }))}
               mutate={reloadCalendarView}
-              date={dayjs.utc(load.date).local()}
+              date={fromUtc(load.date)}
               reopenModal={() => ({})}
               onlyValues={messages}
             />

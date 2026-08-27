@@ -631,6 +631,8 @@
   "time_table_slots": "Khung giờ thời gian biểu",
   "channel_id_copied": "Đã sao chép ID kênh vào bộ nhớ tạm",
   "settings_updated": "Đã cập nhật cài đặt",
+  "current_timezone": "Múi giờ hiện tại",
+  "timezone_auto": "Tự động (múi giờ trình duyệt của bạn)",
   "customer_updated": "Đã cập nhật khách hàng",
   "custom_url": "URL tùy chỉnh",
   "picture": "Hình ảnh",

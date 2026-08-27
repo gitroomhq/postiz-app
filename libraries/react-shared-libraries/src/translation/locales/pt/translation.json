@@ -631,6 +631,8 @@
   "time_table_slots": "Horários da Tabela",
   "channel_id_copied": "ID do canal copiado para a área de transferência",
   "settings_updated": "Configurações Atualizadas",
+  "current_timezone": "Fuso horário atual",
+  "timezone_auto": "Automático (fuso horário do seu navegador)",
   "customer_updated": "Cliente Atualizado",
   "custom_url": "URL personalizada",
   "picture": "Imagem",

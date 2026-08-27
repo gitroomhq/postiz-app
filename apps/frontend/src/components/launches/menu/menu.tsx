@@ -31,6 +31,7 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import dayjs from 'dayjs';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import copy from 'copy-to-clipboard';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -235,7 +236,7 @@ export const Menu: FC<{
             integrations={integrations}
             selectedChannels={[integration.id]}
             // focusedChannel={integration.id}
-            date={dayjs.utc(date).local()}
+            date={fromUtc(date)}
           />
         ),
         size: '80%',

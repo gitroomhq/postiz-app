@@ -34,6 +34,7 @@ import {
 } from '@copilotkit/runtime-client-gql';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import dayjs from 'dayjs';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -358,7 +359,7 @@ const OpenModal: FC<{
               }}
             >
               <AddEditModal
-                date={dayjs.utc(integration.date)}
+                date={fromUtc(integration.date)}
                 allIntegrations={properties}
                 integrations={properties.filter(
                   (p) => p.id === integration.integrationId

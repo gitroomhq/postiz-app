@@ -631,6 +631,8 @@
   "time_table_slots": "Créneaux horaires",
   "channel_id_copied": "ID du canal copié dans le presse-papiers",
   "settings_updated": "Paramètres mis à jour",
+  "current_timezone": "Fuseau horaire actuel",
+  "timezone_auto": "Auto (le fuseau horaire de votre navigateur)",
   "customer_updated": "Client mis à jour",
   "custom_url": "URL personnalisée",
   "picture": "Image",

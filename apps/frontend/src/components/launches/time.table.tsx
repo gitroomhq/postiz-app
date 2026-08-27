@@ -15,7 +15,10 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { sortBy } from 'lodash';
 import { usePreventWindowUnload } from '@gitroom/react/helpers/use.prevent.window.unload';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  getTimezone,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import clsx from 'clsx';
 import {
   TrashIcon,
@@ -85,14 +88,10 @@ export const TimeTable: FC<{
   );
 
   const addHour = useCallback(() => {
+    // slots stay stored as UTC minutes; the picked hour is a wall clock in the
+    // user timezone, so it is offset by that timezone rather than the browser's
     const calculateMinutes =
-      newDayjs()
-        .utc()
-        .startOf('day')
-        .add(hour, 'hours')
-        .add(minute, 'minutes')
-        .diff(newDayjs().utc().startOf('day'), 'minutes') -
-      dayjs.tz().utcOffset();
+      hour * 60 + minute - dayjs().tz(getTimezone()).utcOffset();
     setCurrentTimes((prev) => [
       ...prev,
       {
@@ -105,12 +104,9 @@ export const TimeTable: FC<{
     return sortBy(
       currentTimes.map(({ time }) => ({
         value: time,
-        formatted: dayjs
-          .utc()
-          .startOf('day')
-          .add(time, 'minutes')
-          .local()
-          .format('HH:mm'),
+        formatted: fromUtc(
+          dayjs.utc().startOf('day').add(time, 'minutes')
+        ).format('HH:mm'),
       })),
       (p) => p.value
     );

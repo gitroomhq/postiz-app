@@ -631,6 +631,8 @@
   "time_table_slots": "タイムテーブル枠",
   "channel_id_copied": "チャンネルIDがクリップボードにコピーされました",
   "settings_updated": "設定が更新されました",
+  "current_timezone": "現在のタイムゾーン",
+  "timezone_auto": "自動（お使いのブラウザのタイムゾーン）",
   "customer_updated": "顧客情報が更新されました",
   "custom_url": "カスタムURL",
   "picture": "画像",

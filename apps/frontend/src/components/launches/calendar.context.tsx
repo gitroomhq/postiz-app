@@ -20,7 +20,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { newDayjs, toUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 extend(isoWeek);
@@ -187,8 +187,8 @@ export const CalendarWeekProvider: FC<{
     const modifiedParams = new URLSearchParams({
       display: filters.display,
       customer: filters?.customer?.toString() || '',
-      startDate: newDayjs(filters.startDate).startOf('day').utc().format(),
-      endDate: newDayjs(filters.endDate).endOf('day').utc().format(),
+      startDate: toUtc(newDayjs(filters.startDate).startOf('day')).format(),
+      endDate: toUtc(newDayjs(filters.endDate).endOf('day')).format(),
     }).toString();
 
     const data = await (await fetch(`/posts?${modifiedParams}`)).json();
@@ -309,7 +309,7 @@ export const CalendarWeekProvider: FC<{
           if (post.id === id) {
             return {
               ...post,
-              publishDate: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
+              publishDate: toUtc(date).format('YYYY-MM-DDTHH:mm:ss'),
             };
           }
           return post;

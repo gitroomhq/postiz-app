@@ -7,6 +7,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SetSelectionModal } from '@gitroom/frontend/components/launches/calendar';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const NewPost = () => {
   const fetch = useFetch();
@@ -67,7 +68,7 @@ export const NewPost = () => {
           reopenModal={createAPost}
           mutate={reloadCalendarView}
           integrations={integrations}
-          date={dayjs.utc(date).local()}
+          date={fromUtc(date)}
         />
       ),
       size: '80%',

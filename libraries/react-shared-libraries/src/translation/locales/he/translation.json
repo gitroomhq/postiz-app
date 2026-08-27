@@ -631,6 +631,8 @@
   "time_table_slots": "משבצות לוח זמנים",
   "channel_id_copied": "מזהה הערוץ הועתק ללוח",
   "settings_updated": "ההגדרות עודכנו",
+  "current_timezone": "אזור זמן נוכחי",
+  "timezone_auto": "אוטומטי (אזור הזמן של הדפדפן שלך)",
   "customer_updated": "הלקוח עודכן",
   "custom_url": "כתובת URL מותאמת אישית",
   "picture": "תמונה",

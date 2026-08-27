@@ -43,6 +43,7 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { toUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -197,7 +198,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         (type === 'now' || type === 'schedule') &&
         (existingData?.posts?.[0]?.state === 'PUBLISHED' ||
           (existingData?.posts?.[0]?.state === 'QUEUE' &&
-            dayjs().isAfter(date.utc())))
+            dayjs().isAfter(toUtc(date))))
       ) {
         const channels = selectedIntegrations
           .map((p) => p.integration.name)
@@ -441,7 +442,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         ...(repeater ? { inter: repeater } : {}),
         tags,
         shortLink,
-        date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
+        date: toUtc(date).format('YYYY-MM-DDTHH:mm:ss'),
         posts,
       };
 

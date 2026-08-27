@@ -7,7 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
 import { useParams } from 'next/navigation';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { fromUtc, newDayjs, toUtc } from '@gitroom/frontend/components/layout/set.timezone';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
   const params = useParams<{ platform: string }>();
@@ -18,7 +18,7 @@ export const StandaloneModal: FC = () => {
 
   const loadDate = useCallback(async () => {
     if (params.platform === 'all') {
-      return newDayjs().utc().format('YYYY-MM-DDTHH:mm:ss');
+      return toUtc(newDayjs()).format('YYYY-MM-DDTHH:mm:ss');
     }
     return (await (await fetch('/posts/find-slot')).json()).date;
   }, []);
@@ -57,7 +57,7 @@ export const StandaloneModal: FC = () => {
       integrations={integrations}
       reopenModal={() => {}}
       allIntegrations={integrations}
-      date={dayjs.utc(data).local()}
+      date={fromUtc(data)}
     />
   );
 };

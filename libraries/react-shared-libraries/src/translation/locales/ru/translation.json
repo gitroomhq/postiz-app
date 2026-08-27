@@ -631,6 +631,8 @@
   "time_table_slots": "Слоты расписания",
   "channel_id_copied": "ID канала скопирован в буфер обмена",
   "settings_updated": "Настройки обновлены",
+  "current_timezone": "Текущий часовой пояс",
+  "timezone_auto": "Авто (часовой пояс вашего браузера)",
   "customer_updated": "Клиент обновлён",
   "custom_url": "Пользовательский URL",
   "picture": "Изображение",

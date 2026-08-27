@@ -63,9 +63,16 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -79,7 +86,8 @@ export class PublicIntegrationsController {
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Post('/upload')
@@ -195,6 +203,25 @@ export class PublicIntegrationsController {
     @Body() rawBody: any
   ) {
     Sentry.metrics.count('public_api-request', 1);
+
+    // Dates without an explicit offset / Z are interpreted in the API key
+    // owner's timezone (when set); dates with an offset stay absolute.
+    if (
+      typeof rawBody?.date === 'string' &&
+      !/(Z|[+-]\d{2}:?\d{2})$/i.test(rawBody.date)
+    ) {
+      const timezoneName = await this._organizationService.getOrgOwnerTimezone(
+        org.id
+      );
+      if (timezoneName) {
+        const shifted = dayjs.tz(rawBody.date, timezoneName);
+        // an unparsable date is left alone so the DTO reports it as sent
+        if (shifted.isValid()) {
+          rawBody.date = shifted.utc().format('YYYY-MM-DDTHH:mm:ss');
+        }
+      }
+    }
+
     const body = await this._postsService.mapTypeToPost(
       rawBody,
       org.id,

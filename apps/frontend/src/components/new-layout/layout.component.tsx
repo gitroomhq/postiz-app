@@ -43,6 +43,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
+import { setUserTimezone } from '@gitroom/frontend/components/layout/set.timezone';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -61,6 +62,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     return await (await fetch(path)).json();
   }, []);
   const { data: user, mutate } = useSWR('/user/self', load, {
+    // hydrate the display lens before anything renders a datetime
+    onSuccess: (data) => setUserTimezone(data?.timezoneName || null),
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,

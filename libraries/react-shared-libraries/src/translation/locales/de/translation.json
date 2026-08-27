@@ -631,6 +631,8 @@
   "time_table_slots": "Zeitplan-Slots",
   "channel_id_copied": "Kanal-ID in die Zwischenablage kopiert",
   "settings_updated": "Einstellungen aktualisiert",
+  "current_timezone": "Aktuelle Zeitzone",
+  "timezone_auto": "Automatisch (Zeitzone Ihres Browsers)",
   "customer_updated": "Kunde aktualisiert",
   "custom_url": "Benutzerdefinierte URL",
   "picture": "Bild",

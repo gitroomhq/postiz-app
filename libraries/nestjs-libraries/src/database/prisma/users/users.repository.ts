@@ -287,6 +287,17 @@ export class UsersRepository {
     });
   }
 
+  async updateTimezone(userId: string, timezoneName: string | null) {
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        timezoneName,
+      },
+    });
+  }
+
   async updateEmailNotifications(userId: string, body: EmailNotificationsDto) {
     await this._user.model.user.update({
       where: {

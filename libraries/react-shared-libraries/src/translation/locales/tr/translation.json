@@ -631,6 +631,8 @@
   "time_table_slots": "Zaman Tablosu Dilimleri",
   "channel_id_copied": "Kanal kimliği panoya kopyalandı",
   "settings_updated": "Ayarlar Güncellendi",
+  "current_timezone": "Geçerli Saat Dilimi",
+  "timezone_auto": "Otomatik (tarayıcınızın saat dilimi)",
   "customer_updated": "Müşteri Güncellendi",
   "custom_url": "Özel URL",
   "picture": "Resim",

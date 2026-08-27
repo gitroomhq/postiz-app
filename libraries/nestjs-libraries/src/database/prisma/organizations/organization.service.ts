@@ -63,6 +63,10 @@ export class OrganizationService {
     return this._organizationRepository.getUserOrg(id);
   }
 
+  getOrgOwnerTimezone(orgId: string) {
+    return this._organizationRepository.getOrgOwnerTimezone(orgId);
+  }
+
   getOrgsByUserId(userId: string) {
     return this._organizationRepository.getOrgsByUserId(userId);
   }

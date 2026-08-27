@@ -7,11 +7,18 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { Integration } from '@prisma/client';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import {
   ValidUrlExtension,
   ValidUrlPath,
 } from '@gitroom/helpers/utils/valid.url.path';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const validUrlExtension = new ValidUrlExtension();
 const validUrlPath = new ValidUrlPath();
@@ -31,7 +38,8 @@ const attachmentUrl = z
 export class IntegrationSchedulePostTool implements AgentToolInterface {
   constructor(
     private _postsService: PostsService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _organizationService: OrganizationService
   ) {}
   name = 'integrationSchedulePostTool';
 
@@ -74,7 +82,11 @@ If validation fails, the result contains output.errors describing what to fix; t
                 .describe(
                   "If the integration is X, return if it's premium or not"
                 ),
-              date: z.string().describe('The date of the post in UTC time'),
+              date: z
+                .string()
+                .describe(
+                  'The date of the post. Without an explicit offset / Z it is interpreted in the timezone configured in the user Postiz settings (or UTC when none is configured); with an offset it is absolute'
+                ),
               shortLink: z
                 .boolean()
                 .describe(
@@ -137,6 +149,22 @@ If validation fails, the result contains output.errors describing what to fix; t
           (context?.requestContext as any)?.get('organization') as string
         ).id;
         const finalOutput = [];
+
+        // Offset-less dates are interpreted in the user's configured timezone
+        // (when set); dates with an explicit offset / Z stay absolute.
+        const timezoneName =
+          await this._organizationService.getOrgOwnerTimezone(organizationId);
+        if (timezoneName) {
+          for (const platform of inputData.socialPost) {
+            if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(platform.date)) {
+              const shifted = dayjs.tz(platform.date, timezoneName);
+              // an unparsable date is left alone so the error stays recognizable
+              if (shifted.isValid()) {
+                platform.date = shifted.utc().format('YYYY-MM-DDTHH:mm:ss');
+              }
+            }
+          }
+        }
 
         const integrations = {} as Record<string, Integration>;
         for (const platform of inputData.socialPost) {
