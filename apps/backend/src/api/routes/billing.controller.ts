@@ -21,6 +21,7 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
 import dayjs from 'dayjs';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -75,7 +76,14 @@ export class BillingController {
     const provider = await this.provider(org);
     try {
       await provider.finishTrial(org);
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'finish_trial',
+        org_id: org.id,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
     return {
       finish: true,
     };
@@ -187,7 +195,13 @@ export class BillingController {
             process.env.FRONTEND_URL
           }/billing">billing page</a>.`
         );
-      } catch (err) {}
+      } catch (err) {
+        logger.error('cancellation_email_failed', {
+          org_id: org.id,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return result;
