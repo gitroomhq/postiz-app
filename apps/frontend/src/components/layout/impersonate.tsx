@@ -851,6 +851,96 @@ const ImportDebugPost = () => {
   );
 };
 
+const RegistrationApproval: FC<{ onReject: () => void }> = ({ onReject }) => {
+  const fetch = useFetch();
+  const t = useT();
+  const toaster = useToaster();
+  const user = useUser();
+  const [saving, setSaving] = useState(false);
+
+  const runAction = useCallback(
+    async (action: 'approve' | 'activate' | 'reject') => {
+      setSaving(true);
+      const response = await fetch(`/admin/registration/${user?.id}/${action}`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        setSaving(false);
+        toaster.show(
+          t('registration_action_failed', 'The action failed'),
+          'warning'
+        );
+        return false;
+      }
+      return true;
+    },
+    [user?.id]
+  );
+
+  const approve = useCallback(async () => {
+    if (await runAction('approve')) {
+      window.location.reload();
+    }
+  }, [runAction]);
+
+  const activate = useCallback(async () => {
+    if (await runAction('activate')) {
+      window.location.reload();
+    }
+  }, [runAction]);
+
+  const reject = useCallback(async () => {
+    if (
+      !(await deleteDialog(
+        t(
+          'reject_registration_confirm',
+          `This will delete the account of ${user?.email}. The email address will be free to register again.`
+        ),
+        t('yes_reject', 'Yes, reject'),
+        t('reject_registration_title', 'Reject Registration?'),
+        t('no_cancel', 'No, cancel')
+      ))
+    ) {
+      return;
+    }
+    if (await runAction('reject')) {
+      onReject();
+    }
+  }, [runAction, user?.email]);
+
+  return (
+    <div
+      className={`flex items-center gap-[10px] ${
+        saving ? 'pointer-events-none opacity-50' : ''
+      }`}
+    >
+      <div className="px-[10px] rounded-[4px] bg-amber-600 text-white whitespace-nowrap">
+        {t('pending_approval', 'Pending Approval')}
+      </div>
+      <div
+        className="px-[10px] rounded-[4px] bg-green-700 text-white cursor-pointer whitespace-nowrap"
+        onClick={approve}
+      >
+        {t('approve_user', 'Approve')}
+      </div>
+      {!user?.activated && (
+        <div
+          className="px-[10px] rounded-[4px] bg-blue-700 text-white cursor-pointer whitespace-nowrap"
+          onClick={activate}
+        >
+          {t('activate_user', 'Activate')}
+        </div>
+      )}
+      <div
+        className="px-[10px] rounded-[4px] bg-red-700 text-white cursor-pointer whitespace-nowrap"
+        onClick={reject}
+      >
+        {t('reject_user', 'Reject')}
+      </div>
+    </div>
+  );
+};
+
 const SwitchUser = () => {
   const fetch = useFetch();
   const t = useT();
@@ -1064,6 +1154,7 @@ export const Impersonate = () => {
         id: curr?.id,
         name: curr?.user?.name,
         email: curr?.user?.email,
+        approved: curr?.user?.approved,
         orgName: curr?.organization?.name,
         role: curr?.role,
         tier: curr?.organization?.subscription?.subscriptionTier || 'FREE',
@@ -1093,10 +1184,16 @@ export const Impersonate = () => {
                     X
                   </div>
                 </div>
-                {user?.tier?.current === 'FREE' && <Subscription />}
-                {user?.tier?.team_members && <AddTeamMember />}
-                {billingEnabled && <ManageBilling />}
-                <SwitchUser />
+                {!user?.approved ? (
+                  <RegistrationApproval onReject={stopImpersonating} />
+                ) : (
+                  <>
+                    {user?.tier?.current === 'FREE' && <Subscription />}
+                    {user?.tier?.team_members && <AddTeamMember />}
+                    {billingEnabled && <ManageBilling />}
+                    <SwitchUser />
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-[10px]">
@@ -1135,6 +1232,11 @@ export const Impersonate = () => {
                     {t('user_1', 'user:')}
                     {user?.id?.split('-')?.at(-1)} - {user?.name} - {user?.email}{' '}
                     - {user?.orgName} ({user?.role} / {user?.tier})
+                    {user?.approved === false && (
+                      <span className="ms-[6px] px-[6px] rounded-[4px] bg-amber-600 text-white">
+                        {t('pending', 'PENDING')}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -120,6 +120,9 @@ export class OrganizationRepository {
   getImpersonateUser(name: string) {
     return this._userOrg.model.userOrganization.findMany({
       where: {
+        user: {
+          deletedAt: null,
+        },
         OR: [
           {
             organizationId: {
@@ -170,6 +173,8 @@ export class OrganizationRepository {
             id: true,
             name: true,
             email: true,
+            activated: true,
+            approved: true,
           },
         },
       },
@@ -293,7 +298,11 @@ export class OrganizationRepository {
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
     hasEmail: boolean,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    flags: { approved: boolean; isSuperAdmin: boolean } = {
+      approved: true,
+      isSuperAdmin: false,
+    }
   ) {
     return this._organization.model.organization.create({
       data: {
@@ -307,6 +316,8 @@ export class OrganizationRepository {
             user: {
               create: {
                 activated: body.provider !== 'LOCAL' || !hasEmail,
+                approved: flags.approved,
+                isSuperAdmin: flags.isSuperAdmin,
                 email: body.email,
                 password: body.password
                   ? AuthService.hashPassword(body.password)

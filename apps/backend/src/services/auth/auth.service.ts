@@ -11,6 +11,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { getRegistrationMode } from '@gitroom/helpers/utils/registration.mode';
 
 @Injectable()
 export class AuthService {
@@ -23,13 +24,26 @@ export class AuthService {
   ) {}
   async canRegister(provider: string) {
     if (
-      process.env.DISABLE_REGISTRATION !== 'true' ||
+      getRegistrationMode() !== 'disabled' ||
       provider === Provider.GENERIC
     ) {
       return true;
     }
 
     return (await this._organizationService.getCount()) === 0;
+  }
+
+  private async registrationFlags(provider: Provider, isInvited: boolean) {
+    const isFirstUser = (await this._organizationService.getCount()) === 0;
+    const needsApproval =
+      getRegistrationMode() === 'approval' &&
+      !isInvited &&
+      provider !== Provider.GENERIC;
+
+    return {
+      isSuperAdmin: isFirstUser,
+      approved: isFirstUser || !needsApproval,
+    };
   }
 
   async routeAuth(
@@ -56,10 +70,13 @@ export class AuthService {
           throw new Error('Registration is disabled');
         }
 
+        const flags = await this.registrationFlags(provider, !!addToOrg);
+
         const create = await this._organizationService.createOrgAndUser(
           body,
           ip,
-          userAgent
+          userAgent,
+          flags
         );
 
         const addedOrg =
@@ -72,7 +89,11 @@ export class AuthService {
               )
             : false;
 
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        const obj = {
+          addedOrg,
+          pending: !flags.approved,
+          jwt: await this.jwt(create.users[0].user),
+        };
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
@@ -90,15 +111,28 @@ export class AuthService {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      if (!user.approved) {
+        throw new Error('User is not approved');
+      }
+
+      return { addedOrg: false, pending: false, jwt: await this.jwt(user) };
     }
 
-    const user = await this.loginOrRegisterProvider(
+    const { user, created } = await this.loginOrRegisterProvider(
       provider,
       body as CreateOrgUserDto,
       ip,
-      userAgent
+      userAgent,
+      !!addToOrg
     );
+
+    if (!user.approved) {
+      if (!created) {
+        throw new Error('User is not approved');
+      }
+
+      return { addedOrg: false, pending: true, jwt: await this.jwt(user) };
+    }
 
     const addedOrg =
       addToOrg && typeof addToOrg !== 'boolean'
@@ -109,7 +143,7 @@ export class AuthService {
             addToOrg.role
           )
         : false;
-    return { addedOrg, jwt: await this.jwt(user) };
+    return { addedOrg, pending: false, jwt: await this.jwt(user) };
   }
 
   public getOrgFromCookie(cookie?: string) {
@@ -138,7 +172,8 @@ export class AuthService {
     provider: Provider,
     body: CreateOrgUserDto,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    isInvited: boolean
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -152,7 +187,7 @@ export class AuthService {
       provider
     );
     if (user) {
-      return user;
+      return { user, created: false };
     }
 
     if (!(await this.canRegister(provider))) {
@@ -169,7 +204,8 @@ export class AuthService {
         datafast_visitor_id: body.datafast_visitor_id,
       },
       ip,
-      userAgent
+      userAgent,
+      await this.registrationFlags(provider, isInvited)
     );
 
     this._track('register', providerUser.email, body.datafast_visitor_id).catch(
@@ -186,7 +222,7 @@ export class AuthService {
       // Don't fail registration if postRegistration fails
     }
 
-    return create.users[0].user;
+    return { user: create.users[0].user, created: true };
   }
 
   private async _track(
@@ -259,7 +295,12 @@ export class AuthService {
       user.activated = true;
       this._track('register', user.email, tracking).catch((err) => {});
       await NewsletterService.register(user.email);
-      return this.jwt(user as any);
+
+      if (!getUserAgain.approved) {
+        return { pending: true, jwt: '' };
+      }
+
+      return { pending: false, jwt: await this.jwt(user as any) };
     }
 
     return false;
@@ -321,6 +362,10 @@ export class AuthService {
       provider as Provider
     );
     if (checkExists) {
+      if (!checkExists.approved) {
+        return { pending: true };
+      }
+
       return { jwt: await this.jwt(checkExists) };
     }
 

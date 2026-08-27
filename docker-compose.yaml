@@ -14,7 +14,8 @@ services:
       BACKEND_INTERNAL_URL: 'http://localhost:3000'
       TEMPORAL_ADDRESS: 'temporal:7233'
       IS_GENERAL: 'true'
-      DISABLE_REGISTRATION: 'false'
+      # open | approval (superadmin has to approve new users) | disabled
+      REGISTRATION_MODE: 'open'
 
       # === Storage Settings
       STORAGE_PROVIDER: 'local'

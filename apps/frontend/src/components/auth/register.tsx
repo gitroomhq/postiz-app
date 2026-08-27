@@ -41,6 +41,7 @@ type Inputs = {
 export function Register() {
   const getQuery = useSearchParams();
   const fetch = useFetch();
+  const router = useRouter();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
   const [state] = useState(getQuery?.get('state') || '');
@@ -51,7 +52,7 @@ export function Register() {
     }
   }, []);
   const load = useCallback(async () => {
-    const { token } = await (
+    const { token, pending } = await (
       await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
         method: 'POST',
         body: JSON.stringify({
@@ -60,6 +61,10 @@ export function Register() {
         }),
       })
     ).json();
+    if (pending) {
+      router.push('/auth/pending');
+      return;
+    }
     if (token) {
       setCode(token);
       setShow(true);
@@ -134,6 +139,8 @@ export function RegisterAfter({
           return track(TrackEnum.CompleteRegistration).then(() => {
             if (response.headers.get('activate') === 'true') {
               router.push('/auth/activate');
+            } else if (response.headers.get('pending') === 'true') {
+              router.push('/auth/pending');
             } else {
               router.push('/auth/login');
             }

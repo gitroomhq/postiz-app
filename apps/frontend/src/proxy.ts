@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+import { getRegistrationMode } from '@gitroom/helpers/utils/registration.mode';
 import acceptLanguage from 'accept-language';
 import {
   cookieName,
@@ -81,7 +82,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.DISABLE_REGISTRATION === 'true'
+    getRegistrationMode() === 'disabled'
   ) {
     return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }

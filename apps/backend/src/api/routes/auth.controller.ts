@@ -53,7 +53,7 @@ export class AuthController {
         req?.cookies?.org
       );
 
-      const { jwt, addedOrg } = await this._authService.routeAuth(
+      const { jwt, addedOrg, pending } = await this._authService.routeAuth(
         body.provider,
         body,
         ip,
@@ -67,6 +67,12 @@ export class AuthController {
       if (activationRequired) {
         response.header('activate', 'true');
         response.status(200).json({ activate: true });
+        return;
+      }
+
+      if (pending) {
+        response.header('pending', 'true');
+        response.status(200).json({ pending: true });
         return;
       }
 
@@ -127,13 +133,17 @@ export class AuthController {
         req?.cookies?.org
       );
 
-      const { jwt, addedOrg } = await this._authService.routeAuth(
+      const { jwt, addedOrg, pending } = await this._authService.routeAuth(
         body.provider,
         body,
         ip,
         userAgent,
         getOrgFromCookie
       );
+
+      if (pending) {
+        throw new Error('User is not approved');
+      }
 
       response.cookie('auth', jwt, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
@@ -249,7 +259,12 @@ export class AuthController {
       return response.status(200).json({ can: false });
     }
 
-    response.cookie('auth', activate, {
+    if (activate.pending) {
+      response.header('pending', 'true');
+      return response.status(200).json({ can: true, pending: true });
+    }
+
+    response.cookie('auth', activate.jwt, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
         ? {
@@ -262,7 +277,7 @@ export class AuthController {
     });
 
     if (process.env.NOT_SECURED) {
-      response.header('auth', activate);
+      response.header('auth', activate.jwt);
     }
 
     response.header('onboarding', 'true');
@@ -320,13 +335,18 @@ export class AuthController {
       return response.status(400).send('Invalid request');
     }
 
-    const { jwt, token } = await this._authService.checkExists(
+    const { jwt, token, pending } = await this._authService.checkExists(
       provider,
       code,
       redirect_uri,
       state,
       req?.cookies?.oauth_state
     );
+
+    if (pending) {
+      response.header('pending', 'true');
+      return response.status(200).json({ pending: true });
+    }
 
     if (token) {
       return response.json({ token });
