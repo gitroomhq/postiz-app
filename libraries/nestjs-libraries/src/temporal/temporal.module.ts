@@ -34,7 +34,7 @@ export const getTemporalModule = (
       namespace: process.env.TEMPORAL_NAMESPACE || 'default',
     },
     taskQueue: 'main',
-    logLevel: 'error',
+    logLevel: 'warn',
     ...(isWorkers
       ? {
           workers: [
