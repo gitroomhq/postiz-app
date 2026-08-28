@@ -7,7 +7,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { getPublicKey, Relay, finalizeEvent, nip19, SimplePool } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -167,6 +167,134 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       : post.message;
   }
 
+  private decodeMentionPubkey(value: string): string | undefined {
+    const normalized = value.trim().replace(/^@/, '');
+
+    if (/^[0-9a-f]{64}$/i.test(normalized)) {
+      return normalized.toLowerCase();
+    }
+
+    if (!normalized.toLowerCase().startsWith('npub1')) {
+      return undefined;
+    }
+
+    try {
+      const decoded = nip19.decode(normalized);
+
+      if (decoded.type === 'npub' && typeof decoded.data === 'string') {
+        return decoded.data.toLowerCase();
+      }
+    } catch {
+      return undefined;
+    }
+
+    return undefined;
+  }
+
+  private mapProfileEvent(event: {
+    pubkey: string;
+    content?: string;
+    created_at?: number;
+  }) {
+    let metadata: Record<string, unknown> = {};
+
+    try {
+      metadata = JSON.parse(event.content || '{}');
+    } catch {
+      metadata = {};
+    }
+
+    const displayName = String(
+      metadata.display_name ||
+        metadata.displayName ||
+        metadata.name ||
+        nip19.npubEncode(event.pubkey).slice(0, 16)
+    );
+
+    const username = String(metadata.name || metadata.nip05 || displayName);
+    const picture = String(metadata.picture || metadata.image || '');
+
+    return {
+      id: event.pubkey,
+      label:
+        username === displayName
+          ? displayName
+          : `${displayName} (${username})`,
+      image: picture,
+      doNotCache: true,
+      createdAt: event.created_at || 0,
+    };
+  }
+
+  override async mention(
+    token: string,
+    data: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const query = data.query.trim();
+
+    if (query.length < 2) {
+      return [];
+    }
+
+    const directPubkey = this.decodeMentionPubkey(query);
+    let events: {
+      pubkey: string;
+      content?: string;
+      created_at?: number;
+    }[] = [];
+
+    if (directPubkey) {
+      const profile = await pool.get(list, {
+        kinds: [0],
+        authors: [directPubkey],
+        limit: 1,
+      });
+
+      if (profile) {
+        events = [profile];
+      }
+    } else {
+      events = await pool.querySync(list, {
+        kinds: [0],
+        search: query,
+        limit: 40,
+      });
+    }
+
+    const normalizedQuery = query.toLowerCase();
+
+    const profiles = events
+      .map((event) => this.mapProfileEvent(event))
+      .filter((profile) => {
+        const searchable = `${profile.label} ${profile.id}`.toLowerCase();
+        return Boolean(directPubkey) || searchable.includes(normalizedQuery);
+      })
+      .sort((left, right) => right.createdAt - left.createdAt);
+
+    const uniqueProfiles = new Map<string, (typeof profiles)[number]>();
+
+    for (const profile of profiles) {
+      if (!uniqueProfiles.has(profile.id)) {
+        uniqueProfiles.set(profile.id, profile);
+      }
+    }
+
+    return Array.from(uniqueProfiles.values())
+      .slice(0, 20)
+      .map(({ createdAt, ...profile }) => profile);
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    const pubkey = this.decodeMentionPubkey(idOrHandle);
+
+    if (!pubkey) {
+      return `@${name}`;
+    }
+
+    return `nostr:${nip19.npubEncode(pubkey)}`;
+  }
   async post(
     id: string,
     accessToken: string,
