@@ -12,6 +12,19 @@ Please link to related issues when possible, and explain WHY you changed things,
 
 eg: Did you discuss this change with anybody before working on it (not required, but can be a good idea for bigger changes). Any plans for the future, etc?
 
+## QA
+
+<!--
+Write the steps here, replacing this whole comment. Leaving it as is, or writing
+"N/A" / "TBD" / an empty checkbox, counts as no QA at all.
+
+Example of what it should look like:
+
+1. Link a webhook endpoint pointing at http://localhost:9999 (nothing listening)
+2. Approve an application to trigger a delivery
+3. Delivery should show 4 attempts, roughly 1m / 5m / 30m apart, then stop
+-->
+
 # Checklist:
 
 Put a "X" in the boxes below to indicate you have followed the checklist;
@@ -21,3 +34,4 @@ Put a "X" in the boxes below to indicate you have followed the checklist;
 - [ ] I confirm I have not used AI to submit this PR or generate code for it.
 - [ ] I checked that there were no similar issues or PRs already open for this.
 - [ ] This PR fixes just ONE issue
+- [ ] I have filled in the QA section above with real steps to verify this change.
