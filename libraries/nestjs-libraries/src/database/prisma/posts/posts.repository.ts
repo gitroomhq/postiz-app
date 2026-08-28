@@ -127,6 +127,32 @@ export class PostsRepository {
     });
   }
 
+  // Post.error persists the raw serialized workflow failure; only curated
+  // provider messages are surfaced to the calendar and the public API —
+  // bad_body failures whose message came from a provider handleErrors
+  // mapping or a hand-written provider throw (unmapped API responses carry
+  // the 'Unknown Error' placeholder instead). Internal debug strings (e.g.
+  // 'Refresh channel needed') and unmapped failures come out as null.
+  private curatedError(error?: string | null): string | null {
+    if (!error) {
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(error);
+      const [type, message] = parsed?.cause?.failure?.message
+        ? [parsed?.cause?.type, parsed?.cause?.failure?.message]
+        : [
+            parsed?.failure?.cause?.applicationFailureInfo?.type,
+            parsed?.failure?.cause?.message,
+          ];
+      return type === 'bad_body' && message && message !== 'Unknown Error'
+        ? message
+        : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
   async getPosts(orgId: string, query: GetPostsDto) {
     // Use the provided start and end dates directly
     const startDate = dayjs.utc(query.startDate).toDate();
@@ -194,7 +220,9 @@ export class PostsRepository {
       },
     });
 
-    return list.reduce((all, post) => {
+    return list
+      .map((post) => ({ ...post, error: this.curatedError(post.error) }))
+      .reduce((all, post) => {
       if (!post.intervalInDays) {
         return [...all, post];
       }
@@ -413,37 +441,15 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
-    // The calendar tooltip only surfaces curated provider messages: bad_body
-    // failures whose message came from a handleErrors mapping or a
-    // hand-written provider throw (unmapped API responses carry the
-    // 'Unknown Error' placeholder instead). Those are stored as
-    // {"message":"..."} so the frontend can tell them apart from everything
-    // this column held until now (internal strings like 'Refresh channel
-    // needed', serialized failures), which keeps rendering the generic
-    // tooltip. Internal strings are still stored for debugging, and the full
-    // failure is kept in the Errors table below.
-    const failureMessage =
-      err?.cause?.failure?.message || err?.failure?.cause?.message;
-    const errorMessage = !err
-      ? undefined
-      : typeof err === 'string'
-      ? err // stored for debugging, rendered as the generic tooltip
-      : err?.cause?.type === 'bad_body' &&
-        failureMessage &&
-        failureMessage !== 'Unknown Error'
-      ? JSON.stringify({ message: failureMessage })
-      : undefined;
-
     const update = await this._post.model.post.update({
       where: {
         id,
       },
       data: {
         state,
-        // Always overwrite on a new failure - keeping the previous value would
-        // show a stale (and now wrong) message for a post that failed again
-        // for a different reason.
-        ...(err ? { error: errorMessage ?? null } : {}),
+        ...(err
+          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
+          : {}),
       },
       include: {
         integration: {
