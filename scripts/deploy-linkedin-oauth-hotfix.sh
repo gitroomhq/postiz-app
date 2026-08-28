@@ -18,11 +18,14 @@ COMPOSE_DIR="${POSTIZ_COMPOSE_DIR:-/home/ubuntu/a001/git/dappgo-marketing-agent/
 
 SERVICE="postiz"
 BASE_IMAGE="${POSTIZ_BASE_IMAGE:-ghcr.io/gitroomhq/postiz-app@sha256:785f97312f66a347fb96cdccc4ded5a33ced69a672c89a9adc8054e7d6a21dc5}"
-IMAGE_TAG="${POSTIZ_IMAGE_TAG:-dappgo/postiz:ai001-mkt-005-linkedin-oauth-841f4d8b}"
+IMAGE_TAG="${POSTIZ_IMAGE_TAG:-dappgo/postiz:ai001-mkt-005-linkedin-oauth-841f4d8b-v2}"
 
 PROVIDER_RELATIVE="libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js"
+COMMON_PROVIDER_RELATIVE="libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js"
 BACKEND_PROVIDER="$OVERLAY_DIR/apps/backend/dist/$PROVIDER_RELATIVE"
 ORCHESTRATOR_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/$PROVIDER_RELATIVE"
+BACKEND_COMMON_PROVIDER="$OVERLAY_DIR/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
+ORCHESTRATOR_COMMON_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/$COMMON_PROVIDER_RELATIVE"
 
 COMPOSE_BASE="$COMPOSE_DIR/docker-compose.yaml"
 COMPOSE_OVERRIDE="$COMPOSE_DIR/docker-compose.override.yml"
@@ -51,7 +54,7 @@ require_command install
 [[ -f "$COMPOSE_OVERRIDE" ]] || die "Compose override not found: $COMPOSE_OVERRIDE"
 [[ -f "$COMPOSE_ENV" ]] || die "Compose .env not found: $COMPOSE_ENV"
 
-validate_provider() {
+validate_page_provider() {
   local provider="$1"
   [[ -s "$provider" ]] || die "compiled provider not found: $provider"
   grep -Fq 'rest/organizationAcls' "$provider" || die "organizationAcls endpoint missing: $provider"
@@ -64,8 +67,17 @@ validate_provider() {
   fi
 }
 
-validate_provider "$BACKEND_PROVIDER"
-validate_provider "$ORCHESTRATOR_PROVIDER"
+validate_common_provider() {
+  local provider="$1"
+  [[ -s "$provider" ]] || die "compiled shared provider not found: $provider"
+  grep -Fq 'postPending' "$provider" \
+    || die "shared LinkedIn pending provider method missing: $provider"
+}
+
+validate_page_provider "$BACKEND_PROVIDER"
+validate_page_provider "$ORCHESTRATOR_PROVIDER"
+validate_common_provider "$BACKEND_COMMON_PROVIDER"
+validate_common_provider "$ORCHESTRATOR_COMMON_PROVIDER"
 echo "SOURCE_CHECK_OK"
 
 OLD_IMAGE="$(docker inspect "$SERVICE" --format '{{.Config.Image}}')"
@@ -79,7 +91,7 @@ docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' > "$BACKUP_DIR/containe
 WORK_DIR="$(mktemp -d "$RELEASE_DIR/deploy.XXXXXX")"
 NEW_OVERRIDE="$WORK_DIR/docker-compose.linkedin-image.yaml"
 ROLLBACK_OVERRIDE="$WORK_DIR/docker-compose.rollback-image.yaml"
-TEMP_CONTAINER="postiz-linkedin-overlay-841f4d8b"
+TEMP_CONTAINER="postiz-linkedin-overlay-841f4d8b-v2"
 TEMP_CREATED=0
 
 cleanup() {
@@ -111,11 +123,17 @@ install -D -o 0 -g 0 -m 0644 "$BACKEND_PROVIDER" \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
 install -D -o 0 -g 0 -m 0644 "$ORCHESTRATOR_PROVIDER" \
   "$SNAPSHOT_UPPER/app/apps/orchestrator/dist/$PROVIDER_RELATIVE"
+install -D -o 0 -g 0 -m 0644 "$BACKEND_COMMON_PROVIDER" \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
+install -D -o 0 -g 0 -m 0644 "$ORCHESTRATOR_COMMON_PROVIDER" \
+  "$SNAPSHOT_UPPER/app/apps/orchestrator/dist/$COMMON_PROVIDER_RELATIVE"
 
 grep -Fq 'rest/organizationAcls' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
 grep -Fq 'api.linkedin.com/v2/me' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
+grep -Fq 'postPending' \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
 echo "PROVIDER_FILES_COPIED"
 
 docker commit \
@@ -197,13 +215,22 @@ docker exec "$SERVICE" sh -lc '
 set -eu
 for P in \
   /app/apps/backend/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js \
-  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js
+  /app/apps/backend/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js \
+  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js \
+  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js
 do
   test -s "$P"
-  grep -Fq "rest/organizationAcls" "$P"
-  grep -Fq "api.linkedin.com/v2/me" "$P"
-  ! grep -Fq "prompt=none" "$P"
-  ! grep -Fq "api.linkedin.com/v2/userinfo" "$P"
+  case "$P" in
+    *linkedin.page.provider.js)
+    grep -Fq "rest/organizationAcls" "$P"
+    grep -Fq "api.linkedin.com/v2/me" "$P"
+    ! grep -Fq "prompt=none" "$P"
+    ! grep -Fq "api.linkedin.com/v2/userinfo" "$P"
+      ;;
+    *)
+    grep -Fq "postPending" "$P"
+      ;;
+  esac
 done
 echo CONTAINER_CODE_CHECK_OK
 '
