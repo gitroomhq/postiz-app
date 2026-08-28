@@ -13,6 +13,59 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+const LINKEDIN_VERSION = '202601';
+const LINKEDIN_PAGE_SCOPES = [
+  'w_member_social',
+  'r_basicprofile',
+  'rw_organization_admin',
+  'w_organization_social',
+  'r_organization_social',
+];
+const LINKEDIN_ORGANIZATION_ROLES = new Set([
+  'ADMINISTRATOR',
+  'CONTENT_ADMIN',
+  'CONTENT_ADMINISTRATOR',
+]);
+
+const linkedinRestHeaders = (accessToken: string) => ({
+  Authorization: `Bearer ${accessToken}`,
+  'X-Restli-Protocol-Version': '2.0.0',
+  'LinkedIn-Version': LINKEDIN_VERSION,
+});
+
+const linkedinOrganizationId = (urn?: string) =>
+  urn?.match(/^urn:li:organization:(\d+)$/)?.[1];
+
+const linkedinOrganizationPicture = (organization: any) =>
+  organization?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]
+    ?.identifier;
+
+const linkedinOrganizationName = (organization: any) =>
+  organization?.localizedName ||
+  Object.values(organization?.name?.localized || {})[0] ||
+  '';
+
+const linkedinMemberProfile = async (accessToken: string) => {
+  const profile = await (
+    await fetch('https://api.linkedin.com/v2/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+  ).json();
+
+  return {
+    id: profile.id,
+    name: [profile.localizedFirstName, profile.localizedLastName]
+      .filter(Boolean)
+      .join(' '),
+    picture:
+      profile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]
+        ?.identifier || '',
+    username: profile.vanityName,
+  };
+};
+
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
 )
@@ -25,15 +78,9 @@ export class LinkedinPageProvider
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
-  override scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Company Page OAuth uses Community Management API permissions. OIDC is a
+  // mutually exclusive LinkedIn product and is only needed for member login.
+  override scopes = LINKEDIN_PAGE_SCOPES;
 
   override editor = 'normal' as const;
 
@@ -59,34 +106,16 @@ export class LinkedinPageProvider
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const profile = await linkedinMemberProfile(accessToken);
 
     return {
-      id,
+      id: profile.id,
       accessToken,
       refreshToken,
       expiresIn: expires_in,
-      name,
-      picture,
-      username: vanityName,
+      name: profile.name,
+      picture: profile.picture,
+      username: profile.username,
     };
   }
 
@@ -94,7 +123,7 @@ export class LinkedinPageProvider
     integration: Integration,
     originalIntegration: Integration,
     postId: string,
-    information: any,
+    information: any
   ) {
     return super.addComment(
       integration,
@@ -123,7 +152,9 @@ export class LinkedinPageProvider
   override async generateAuthUrl() {
     const state = makeId(6);
     const codeVerifier = makeId(30);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&prompt=none&client_id=${
+    // Do not use prompt=none here: a first authorization has no existing
+    // grant and LinkedIn returns a generic error instead of a consent screen.
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
@@ -136,33 +167,54 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements, ...all } = await (
+    const { elements = [] } = await (
       await fetch(
-        'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&state=APPROVED&projection=(elements*(role,organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
+        'https://api.linkedin.com/rest/organizationAcls?q=roleAssignee&state=APPROVED',
         {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': '202601',
-          },
+          headers: linkedinRestHeaders(accessToken),
         }
       )
     ).json();
 
-    return (elements || [])
-      .filter(
-        (e: any) =>
-          e['organizationalTarget~'] &&
-          ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'].includes(e.role)
+    const organizationIds: string[] = Array.from(
+      new Set(
+        elements
+          .filter((element: any) =>
+            LINKEDIN_ORGANIZATION_ROLES.has(element.role)
+          )
+          .map((element: any) =>
+            linkedinOrganizationId(
+              element.organization || element.organizationTarget
+            )
+          )
+          .filter((id: string | undefined): id is string => Boolean(id))
       )
-      .map((e: any) => ({
-        id: e.organizationalTarget.split(':').pop(),
-        page: e.organizationalTarget.split(':').pop(),
-        username: e['organizationalTarget~'].vanityName,
-        name: e['organizationalTarget~'].localizedName,
-        picture:
-          e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
-            ?.identifiers?.[0]?.identifier,
+    );
+
+    if (!organizationIds.length) {
+      return [];
+    }
+
+    const { results = {} }: { results: Record<string, any> } = await (
+      await fetch(
+        `https://api.linkedin.com/rest/organizations?ids=List(${organizationIds.join(
+          ','
+        )})`,
+        {
+          headers: linkedinRestHeaders(accessToken),
+        }
+      )
+    ).json();
+
+    return organizationIds
+      .map((id) => results[id])
+      .filter(Boolean)
+      .map((organization: any) => ({
+        id: String(organization.id),
+        page: String(organization.id),
+        username: organization.vanityName,
+        name: linkedinOrganizationName(organization),
+        picture: linkedinOrganizationPicture(organization),
       }));
   }
 
@@ -187,22 +239,16 @@ export class LinkedinPageProvider
   async fetchPageInformation(accessToken: string, params: { page: string }) {
     const pageId = params.page;
     const data = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizations/${pageId}?projection=(id,localizedName,vanityName,logoV2(original~:playableStreams))`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
+      await fetch(`https://api.linkedin.com/rest/organizations/${pageId}`, {
+        headers: linkedinRestHeaders(accessToken),
+      })
     ).json();
 
     return {
-      id: data.id,
-      name: data.localizedName,
+      id: data.id || pageId,
+      name: linkedinOrganizationName(data),
       access_token: accessToken,
-      picture:
-        data?.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0].identifier,
+      picture: linkedinOrganizationPicture(data),
       username: data.vanityName,
     };
   }
@@ -239,34 +285,16 @@ export class LinkedinPageProvider
 
     this.checkScopes(this.scopes, scope);
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
-
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const profile = await linkedinMemberProfile(accessToken);
 
     return {
-      id: id,
+      id: profile.id,
       accessToken,
       refreshToken,
       expiresIn,
-      name,
-      picture,
-      username: vanityName,
+      name: profile.name,
+      picture: profile.picture,
+      username: profile.username,
     };
   }
 
@@ -452,7 +480,9 @@ export class LinkedinPageProvider
     // Fetch share statistics for the specific post
     const shareStatsUrl = `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
       `urn:li:organization:${integrationId}`
-    )}&shares=List(${encodeURIComponent(postId)})&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`;
+    )}&shares=List(${encodeURIComponent(
+      postId
+    )})&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`;
 
     const { elements: shareElements }: { elements: PostShareStatElement[] } =
       await (
