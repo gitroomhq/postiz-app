@@ -2,9 +2,10 @@
 
 set -Eeuo pipefail
 
-# Deploy the already-built LinkedIn Page provider overlay to the public
-# Docker Compose Postiz instance. This script deliberately does not read,
-# print, or copy the Compose .env contents.
+# Deploy only the already-built LinkedIn Page provider files to the public
+# Docker Compose Postiz instance. Keeping the rest of the official image
+# intact is important: it preserves the matching Prisma Client/runtime.
+# This script deliberately does not read, print, or copy the Compose .env.
 
 if [[ ${EUID} -ne 0 ]]; then
   echo "Run this script with sudo: sudo $0" >&2
@@ -19,8 +20,9 @@ SERVICE="postiz"
 BASE_IMAGE="${POSTIZ_BASE_IMAGE:-ghcr.io/gitroomhq/postiz-app@sha256:785f97312f66a347fb96cdccc4ded5a33ced69a672c89a9adc8054e7d6a21dc5}"
 IMAGE_TAG="${POSTIZ_IMAGE_TAG:-dappgo/postiz:ai001-mkt-005-linkedin-oauth-841f4d8b}"
 
-BACKEND_PROVIDER="$OVERLAY_DIR/apps/backend/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js"
-ORCHESTRATOR_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js"
+PROVIDER_RELATIVE="libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js"
+BACKEND_PROVIDER="$OVERLAY_DIR/apps/backend/dist/$PROVIDER_RELATIVE"
+ORCHESTRATOR_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/$PROVIDER_RELATIVE"
 
 COMPOSE_BASE="$COMPOSE_DIR/docker-compose.yaml"
 COMPOSE_OVERRIDE="$COMPOSE_DIR/docker-compose.override.yml"
@@ -86,8 +88,8 @@ trap cleanup EXIT
 
 printf '%s\n' \
   "FROM $BASE_IMAGE" \
-  'COPY apps/backend/dist/ /app/apps/backend/dist/' \
-  'COPY apps/orchestrator/dist/ /app/apps/orchestrator/dist/' \
+  "COPY apps/backend/dist/$PROVIDER_RELATIVE /app/apps/backend/dist/$PROVIDER_RELATIVE" \
+  "COPY apps/orchestrator/dist/$PROVIDER_RELATIVE /app/apps/orchestrator/dist/$PROVIDER_RELATIVE" \
   > "$BUILD_DOCKERFILE"
 
 echo "BUILDING_IMAGE=$IMAGE_TAG"
