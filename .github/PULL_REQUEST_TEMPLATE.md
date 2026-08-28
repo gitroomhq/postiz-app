@@ -12,7 +12,7 @@ Please link to related issues when possible, and explain WHY you changed things,
 
 eg: Did you discuss this change with anybody before working on it (not required, but can be a good idea for bigger changes). Any plans for the future, etc?
 
-## QA
+# QA
 
 <!--
 Write the steps here, replacing this whole comment. Leaving it as is, or writing
