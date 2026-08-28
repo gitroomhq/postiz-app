@@ -420,6 +420,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // TikTok sends the post id as a 19-digit number, which JSON.parse rounds off
+  // past Number.MAX_SAFE_INTEGER, so read it out of the raw body as a string.
+  private publicPostId(body: string) {
+    return body.match(
+      /"publicaly_available_post_id"\s*:\s*\[\s*"?(\d+)"?/
+    )?.[1];
+  }
+
   // Single status check for a publish_id, no loops and no timers: `post` returns
   // a `pending` PostResponse right after the upload, and the post workflow polls
   // this method with durable timers, so a stuck/retried check can never re-run
@@ -430,8 +438,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PendingCheckResponse> {
     let post: any;
+    let body: string;
     try {
-      post = await (
+      body = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -448,7 +457,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           0,
           true
         )
-      ).json();
+      ).text();
+      post = JSON.parse(body);
     } catch (err) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
@@ -460,7 +470,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { status: 'pending', pendingData };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
+    const { status } = post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
       return {
@@ -471,16 +481,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (status === 'PUBLISH_COMPLETE') {
-      // an empty array is truthy, so index it once and branch on the value
-      const publicPostId = publicaly_available_post_id?.[0];
+      const publicPostId = this.publicPostId(body);
 
       return {
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
           : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
-        // TikTok returns the id as a number, releaseId in the db is a string
-        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+        postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
 
@@ -1117,8 +1125,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
-    if (postId.indexOf('v_pub_url') > -1) {
-      const post = await (
+    // anything that is not a plain video id is a publish_id (v_pub_file~,
+    // p_pub_url~, v_pub_url~), kept when TikTok published without handing us
+    // the video id - resolve it before querying the video.
+    if (!/^\d+$/.test(postId)) {
+      const body = await (
         await fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -1132,13 +1143,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             }),
           }
         )
-      ).json();
+      ).text();
 
-      if (!post?.data?.publicaly_available_post_id?.[0]) {
+      const publicPostId = this.publicPostId(body);
+      if (!publicPostId) {
         return [];
       }
 
-      postId = post.data.publicaly_available_post_id[0];
+      postId = publicPostId;
     }
 
     try {
