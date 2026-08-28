@@ -118,10 +118,17 @@ grep -Fq 'api.linkedin.com/v2/me' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
 echo "PROVIDER_FILES_COPIED"
 
-docker commit --pause=false "$TEMP_CONTAINER" "$IMAGE_TAG" >/dev/null
+docker commit \
+  --pause=false \
+  --change 'ENTRYPOINT ["docker-entrypoint.sh"]' \
+  --change 'CMD ["sh","-c","nginx && pnpm run pm2"]' \
+  "$TEMP_CONTAINER" "$IMAGE_TAG" >/dev/null
 docker rm "$TEMP_CONTAINER" >/dev/null
 TEMP_CREATED=0
 docker image inspect "$IMAGE_TAG" >/dev/null
+IMAGE_CONFIG="$(docker image inspect "$IMAGE_TAG" --format '{{json .Config.Entrypoint}}|{{json .Config.Cmd}}')"
+[[ "$IMAGE_CONFIG" == '["docker-entrypoint.sh"]|["sh","-c","nginx && pnpm run pm2"]' ]] \
+  || die "official Postiz entrypoint/cmd was not preserved: $IMAGE_CONFIG"
 echo "IMAGE_CREATED=$IMAGE_TAG"
 
 write_image_override() {
