@@ -13,6 +13,8 @@ import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { Integration } from '@prisma/client';
 
+import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
+
 // @ts-ignore
 global.WebSocket = WebSocket;
 
@@ -167,6 +169,64 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       : post.message;
   }
 
+  @PostPlug({
+    identifier: 'nostr-repost-post-users',
+    title: 'Add Re-posters',
+    description: 'Add Nostr accounts to repost your note',
+    pickIntegration: ['nostr'],
+    fields: [],
+  })
+  async repostPostUsers(
+    integration: Integration,
+    originalIntegration: Integration,
+    postId: string,
+    information: any
+  ) {
+    const originalEvent = await pool.get(list, {
+      ids: [postId],
+      limit: 1,
+    });
+
+    if (!originalEvent) {
+      throw new Error(`Unable to find Nostr event ${postId} on configured relays`);
+    }
+
+    const { password } = AuthService.verifyJWT(integration.token) as any;
+
+    const repostEvent = finalizeEvent(
+      {
+        kind: 6,
+        content: JSON.stringify(originalEvent),
+        tags: [
+          ['e', originalEvent.id],
+          ['p', originalEvent.pubkey || originalIntegration.internalId],
+        ],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      password
+    );
+
+    let published = false;
+
+    for (const relay of list) {
+      try {
+        const relayInstance = await Relay.connect(relay);
+
+        try {
+          await relayInstance.publish(repostEvent);
+          published = true;
+        } finally {
+          relayInstance.close();
+        }
+      } catch {
+        // Continue publishing to the remaining configured relays.
+      }
+    }
+
+    if (!published) {
+      throw new Error('Unable to publish Nostr repost to configured relays');
+    }
+  }
   async post(
     id: string,
     accessToken: string,
