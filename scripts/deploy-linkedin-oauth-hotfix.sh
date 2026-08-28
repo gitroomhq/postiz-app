@@ -43,6 +43,7 @@ require_command grep
 require_command awk
 require_command sed
 require_command timeout
+require_command install
 
 [[ -d "$RELEASE_DIR" ]] || die "release directory not found: $RELEASE_DIR"
 [[ -d "$OVERLAY_DIR" ]] || die "overlay directory not found: $OVERLAY_DIR"
@@ -76,24 +77,50 @@ printf 'image=%s\nstate=%s\n' "$OLD_IMAGE" "$OLD_STATE" > "$BACKUP_DIR/postiz-be
 docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' > "$BACKUP_DIR/containers-before.txt"
 
 WORK_DIR="$(mktemp -d "$RELEASE_DIR/deploy.XXXXXX")"
-BUILD_DOCKERFILE="$WORK_DIR/Dockerfile"
 NEW_OVERRIDE="$WORK_DIR/docker-compose.linkedin-image.yaml"
 ROLLBACK_OVERRIDE="$WORK_DIR/docker-compose.rollback-image.yaml"
+TEMP_CONTAINER="postiz-linkedin-overlay-841f4d8b"
+TEMP_CREATED=0
 
 cleanup() {
-  rm -f "$BUILD_DOCKERFILE" "$NEW_OVERRIDE" "$ROLLBACK_OVERRIDE"
+  if (( TEMP_CREATED )); then
+    timeout --foreground 20s docker rm -f "$TEMP_CONTAINER" >/dev/null 2>&1 || true
+  fi
+  rm -f "$NEW_OVERRIDE" "$ROLLBACK_OVERRIDE"
   rmdir "$WORK_DIR" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-printf '%s\n' \
-  "FROM $BASE_IMAGE" \
-  "COPY apps/backend/dist/$PROVIDER_RELATIVE /app/apps/backend/dist/$PROVIDER_RELATIVE" \
-  "COPY apps/orchestrator/dist/$PROVIDER_RELATIVE /app/apps/orchestrator/dist/$PROVIDER_RELATIVE" \
-  > "$BUILD_DOCKERFILE"
+echo "CREATING_PROVIDER_OVERLAY=$IMAGE_TAG"
+docker rm -f "$TEMP_CONTAINER" >/dev/null 2>&1 || true
+docker create --name "$TEMP_CONTAINER" --entrypoint sh "$BASE_IMAGE" -c 'sleep 600' >/dev/null
+TEMP_CREATED=1
+docker start "$TEMP_CONTAINER" >/dev/null
 
-echo "BUILDING_IMAGE=$IMAGE_TAG"
-timeout --foreground 600s docker build --pull=false -f "$BUILD_DOCKERFILE" -t "$IMAGE_TAG" "$OVERLAY_DIR"
+TEMP_PID="$(docker inspect --format '{{.State.Pid}}' "$TEMP_CONTAINER")"
+[[ "$TEMP_PID" =~ ^[0-9]+$ ]] || die "could not resolve temporary container PID"
+SNAPSHOT_UPPER="$(sed -n 's/.*upperdir=\([^,]*\).*/\1/p' "/proc/$TEMP_PID/mountinfo" | head -1)"
+case "$SNAPSHOT_UPPER" in
+  /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/*/fs) ;;
+  *) die "unexpected Docker snapshot path: $SNAPSHOT_UPPER" ;;
+esac
+[[ -d "$SNAPSHOT_UPPER" ]] || die "Docker snapshot directory is not available"
+
+docker stop "$TEMP_CONTAINER" >/dev/null
+install -D -o 0 -g 0 -m 0644 "$BACKEND_PROVIDER" \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
+install -D -o 0 -g 0 -m 0644 "$ORCHESTRATOR_PROVIDER" \
+  "$SNAPSHOT_UPPER/app/apps/orchestrator/dist/$PROVIDER_RELATIVE"
+
+grep -Fq 'rest/organizationAcls' \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
+grep -Fq 'api.linkedin.com/v2/me' \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
+echo "PROVIDER_FILES_COPIED"
+
+docker commit --pause=false "$TEMP_CONTAINER" "$IMAGE_TAG" >/dev/null
+docker rm "$TEMP_CONTAINER" >/dev/null
+TEMP_CREATED=0
 docker image inspect "$IMAGE_TAG" >/dev/null
 echo "IMAGE_CREATED=$IMAGE_TAG"
 
