@@ -1,5 +1,6 @@
 import { Global, Injectable, Module, OnModuleInit } from '@nestjs/common';
 import { TemporalService } from 'nestjs-temporal-core';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @Injectable()
 export class InfiniteWorkflowRegister implements OnModuleInit {
@@ -14,7 +15,14 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
             workflowId: 'missing-post-workflow',
             taskQueue: 'main',
           });
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'missingPostWorkflow',
+          workflow_id: 'missing-post-workflow',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
   }
 }

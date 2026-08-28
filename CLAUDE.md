@@ -59,7 +59,10 @@ const useCommunity = () => {
 
 - Linting of the project can run only from the root.
 - Use only pnpm.
+- Never commit directly to `main` or `staging` without explicit permission.
+- For commits on any branch, use a short title and only the bare minimum description; never include Claude co-author attribution.
 - Never use RAW SQL queries, always use Prisma.
+- Whenever you introduce a new environment variable anywhere in the code, you **must** also add it to `.env.example`, in the section it belongs to, with a short comment explaining what it does and its default. Optional variables stay commented out, variables required to boot stay uncommented. If you rename or remove an environment variable, update `.env.example` in the same change.
 - The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
 - Whenever you generate a PR, PR description, or similar, **always** follow the PR Template (.github/PULL_REQUEST_TEMPLATE.md)
 - Avoid as much as possible creating new files with pure logic of algorithms, it's usually wrong
