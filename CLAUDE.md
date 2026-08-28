@@ -65,6 +65,10 @@ const useCommunity = () => {
 - Whenever you introduce a new environment variable anywhere in the code, you **must** also add it to `.env.example`, in the section it belongs to, with a short comment explaining what it does and its default. Optional variables stay commented out, variables required to boot stay uncommented. If you rename or remove an environment variable, update `.env.example` in the same change.
 - The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
 - Whenever you generate a PR, PR description, or similar, **always** follow the PR Template (.github/PULL_REQUEST_TEMPLATE.md)
+- Every PR description **must** contain a `## QA` section with real, numbered steps a reviewer can follow to verify the change (setup, action, expected result), written so they can be run without asking the author anything. This is not optional and applies to humans and agents alike, including one-line fixes. The section is extracted verbatim and shown on the review board, so:
+  - Use the exact heading `## QA` (`## Testing`, `## Test plan`, `## How to test`, `## How to verify`, `## Verification`, `## Steps to test` and `## Manual testing` are also recognised, but prefer `## QA`). The whole heading must match, so something like `## Testing philosophy` is not picked up.
+  - Never leave the template placeholder in place, and never write `N/A`, `TBD`, `todo`, `none` or an empty checkbox there - those all count as no QA at all and the board will show the PR as missing testing notes.
+  - Steps inside a fenced code block are ignored, so keep them as plain numbered lines.
 - Avoid as much as possible creating new files with pure logic of algorithms, it's usually wrong
 - When you write code, make sure that what you add looks like something similar somewhere else in the code, don't make weird patterns
 - When you finished running, run another agents that matches the new code with the existing system code, to see that it looks similar and is not a weird pattern.
