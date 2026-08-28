@@ -17,7 +17,7 @@ export class PermissionsService {
     private _postsService: PostsService,
     private _integrationService: IntegrationService,
     private _webhooksService: WebhooksService
-  ) {}
+  ) { }
   async getPackageOptions(orgId: string) {
     const subscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
@@ -47,8 +47,30 @@ export class PermissionsService {
       Ability<[AuthorizationActions, Sections]>
     >(Ability as AbilityClass<AppAbility>);
 
+    const ROLE_ONLY_SECTIONS = new Set([
+      Sections.ADMIN,
+      Sections.APPROVE_POST,
+      Sections.PUBLISH_POST,
+    ]);
+
+    const roleSections = requestedPermission.filter(([, section]) => ROLE_ONLY_SECTIONS.has(section));
+    // keep non-roleSections tier sections
+    const tierSections = requestedPermission.filter(([, section]) => !ROLE_ONLY_SECTIONS.has(section));
+
+    for (const [action, section] of roleSections) {
+      if (section === Sections.ADMIN && ['ADMIN', 'SUPERADMIN'].includes(permission)) {
+        can(action, section);
+      }
+      if (section === Sections.APPROVE_POST && action === AuthorizationActions.Approve && permission === 'SUPERADMIN') {
+        can(action, section);
+      }
+      if (section === Sections.PUBLISH_POST && permission === 'SUPERADMIN') {
+        can(action, section);
+      }
+    }
+
     if (
-      requestedPermission.length === 0 ||
+      tierSections.length === 0 ||
       !process.env.STRIPE_PUBLISHABLE_KEY
     ) {
       for (const [action, section] of requestedPermission) {
