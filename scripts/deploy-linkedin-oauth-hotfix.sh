@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-# Deploy only the already-built LinkedIn Page provider files to the public
+# Deploy only the already-built LinkedIn Page provider and targeting files to the public
 # Docker Compose Postiz instance. Keeping the rest of the official image
 # intact is important: it preserves the matching Prisma Client/runtime.
 # This script deliberately does not read, print, or copy the Compose .env.
@@ -12,20 +12,23 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
-RELEASE_DIR="${POSTIZ_RELEASE_DIR:-/home/ubuntu/a001/releases/ai001-mkt-005-linkedin-oauth-20260828T183841Z}"
+RELEASE_DIR="${POSTIZ_RELEASE_DIR:-/home/ubuntu/a001/releases/ai001-mkt-006-provider-aware-targeting-20260828T183841Z}"
 OVERLAY_DIR="${POSTIZ_OVERLAY_DIR:-$RELEASE_DIR/overlay}"
 COMPOSE_DIR="${POSTIZ_COMPOSE_DIR:-/home/ubuntu/a001/git/dappgo-marketing-agent/runtime/postiz-docker-compose}"
 
 SERVICE="postiz"
 BASE_IMAGE="${POSTIZ_BASE_IMAGE:-ghcr.io/gitroomhq/postiz-app@sha256:785f97312f66a347fb96cdccc4ded5a33ced69a672c89a9adc8054e7d6a21dc5}"
-IMAGE_TAG="${POSTIZ_IMAGE_TAG:-dappgo/postiz:ai001-mkt-005-linkedin-oauth-841f4d8b-v2}"
+IMAGE_TAG="${POSTIZ_IMAGE_TAG:-dappgo/postiz:ai001-mkt-006-provider-aware-targeting-2eae3a9a}"
 
 PROVIDER_RELATIVE="libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js"
 COMMON_PROVIDER_RELATIVE="libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js"
+DTO_RELATIVE="libraries/nestjs-libraries/src/dtos/posts/providers-settings/linkedin.dto.js"
 BACKEND_PROVIDER="$OVERLAY_DIR/apps/backend/dist/$PROVIDER_RELATIVE"
 ORCHESTRATOR_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/$PROVIDER_RELATIVE"
 BACKEND_COMMON_PROVIDER="$OVERLAY_DIR/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
 ORCHESTRATOR_COMMON_PROVIDER="$OVERLAY_DIR/apps/orchestrator/dist/$COMMON_PROVIDER_RELATIVE"
+BACKEND_DTO="$OVERLAY_DIR/apps/backend/dist/$DTO_RELATIVE"
+ORCHESTRATOR_DTO="$OVERLAY_DIR/apps/orchestrator/dist/$DTO_RELATIVE"
 
 COMPOSE_BASE="$COMPOSE_DIR/docker-compose.yaml"
 COMPOSE_OVERRIDE="$COMPOSE_DIR/docker-compose.override.yml"
@@ -74,10 +77,19 @@ validate_common_provider() {
     || die "shared LinkedIn pending provider method missing: $provider"
 }
 
+validate_dto() {
+  local dto="$1"
+  [[ -s "$dto" ]] || die "compiled LinkedIn DTO not found: $dto"
+  grep -Fq 'organic_targeting' "$dto" || die "organic_targeting DTO field missing: $dto"
+  grep -Fq 'geoLocations' "$dto" || die "geoLocations DTO field missing: $dto"
+}
+
 validate_page_provider "$BACKEND_PROVIDER"
 validate_page_provider "$ORCHESTRATOR_PROVIDER"
 validate_common_provider "$BACKEND_COMMON_PROVIDER"
 validate_common_provider "$ORCHESTRATOR_COMMON_PROVIDER"
+validate_dto "$BACKEND_DTO"
+validate_dto "$ORCHESTRATOR_DTO"
 echo "SOURCE_CHECK_OK"
 
 OLD_IMAGE="$(docker inspect "$SERVICE" --format '{{.Config.Image}}')"
@@ -127,6 +139,10 @@ install -D -o 0 -g 0 -m 0644 "$BACKEND_COMMON_PROVIDER" \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
 install -D -o 0 -g 0 -m 0644 "$ORCHESTRATOR_COMMON_PROVIDER" \
   "$SNAPSHOT_UPPER/app/apps/orchestrator/dist/$COMMON_PROVIDER_RELATIVE"
+install -D -o 0 -g 0 -m 0644 "$BACKEND_DTO" \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$DTO_RELATIVE"
+install -D -o 0 -g 0 -m 0644 "$ORCHESTRATOR_DTO" \
+  "$SNAPSHOT_UPPER/app/apps/orchestrator/dist/$DTO_RELATIVE"
 
 grep -Fq 'rest/organizationAcls' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
@@ -134,7 +150,9 @@ grep -Fq 'api.linkedin.com/v2/me' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$PROVIDER_RELATIVE"
 grep -Fq 'postPending' \
   "$SNAPSHOT_UPPER/app/apps/backend/dist/$COMMON_PROVIDER_RELATIVE"
-echo "PROVIDER_FILES_COPIED"
+grep -Fq 'organic_targeting' \
+  "$SNAPSHOT_UPPER/app/apps/backend/dist/$DTO_RELATIVE"
+echo "PROVIDER_AND_TARGETING_FILES_COPIED"
 
 docker commit \
   --pause=false \
@@ -216,8 +234,10 @@ set -eu
 for P in \
   /app/apps/backend/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js \
   /app/apps/backend/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js \
+  /app/apps/backend/dist/libraries/nestjs-libraries/src/dtos/posts/providers-settings/linkedin.dto.js \
   /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.page.provider.js \
-  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js
+  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/integrations/social/linkedin.provider.js \
+  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/dtos/posts/providers-settings/linkedin.dto.js
 do
   test -s "$P"
   case "$P" in
@@ -232,6 +252,10 @@ do
       ;;
   esac
 done
+grep -Fq "organic_targeting" \
+  /app/apps/backend/dist/libraries/nestjs-libraries/src/dtos/posts/providers-settings/linkedin.dto.js
+grep -Fq "organic_targeting" \
+  /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/dtos/posts/providers-settings/linkedin.dto.js
 echo CONTAINER_CODE_CHECK_OK
 '
 
