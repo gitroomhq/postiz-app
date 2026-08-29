@@ -118,13 +118,20 @@ export class PinterestProvider
     if (body.indexOf('constraint: maxItems=5') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'You can upload a maximum of 5 images per post on Pinterest.',
+value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
     if (body.indexOf('could not fetch the image') > -1) {
       return {
         type: 'retry' as const,
         value: 'Pinterest could not fetch the image. Please try again.',
+      };
+    }
+    if (body.indexOf('Something went wrong on our end') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest reported a temporary error on their side. Please try posting again.',
       };
     }
     if (body.indexOf('Unable to reach the URL') > -1) {
@@ -139,6 +146,13 @@ export class PinterestProvider
         type: 'bad-body' as const,
         value:
           'The board ID must be a numeric string. Please check the board ID format.',
+      };
+    }
+    if (body.indexOf('block (Pins) we have in place to combat spam') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest temporarily blocked this pin as suspected spam. Please space out your pins and try again later.',
       };
     }
     if (body.indexOf('Board not found') > -1) {

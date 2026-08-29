@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
+import { redactLogAttributes } from '@gitroom/helpers/utils/redact.log.attributes';
 
 export const setSentryUserContext = (params: {
   userId?: string;
@@ -9,12 +10,15 @@ export const setSentryUserContext = (params: {
   paymentId?: string | null;
 }) => {
   try {
-    Sentry.setUser(
-      params.userId
-        ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
-        : null
-    );
+    if (params.email) {
+      // 'user' itself is a reserved tag key - Sentry discards it if set directly
+      Sentry.setTag('user.email', params.email);
+    }
+    if (params.userId) {
+      Sentry.setTag('user.id', params.userId);
+    }
     if (params.orgId) {
+      Sentry.setTag('organization', params.orgId);
       Sentry.setTag('organization.id', params.orgId);
     }
     if (params.paymentId?.startsWith('cus_')) {
@@ -25,7 +29,7 @@ export const setSentryUserContext = (params: {
   }
 };
 
-export const initializeSentry = (appName: string, allowLogs = false) => {
+export const initializeSentry = (appName: string) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
   }
@@ -44,8 +48,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         },
       },
       environment: process.env.NODE_ENV || 'development',
+      release: process.env.NEXT_PUBLIC_APP_VERSION || undefined,
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
+      sendDefaultPii: true,
       integrations: [
         // Add our Profiling integration
         nodeProfilingIntegration(),
@@ -57,9 +63,21 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       ],
       tracesSampleRate: 1.0,
       enableLogs: true,
+      beforeSendLog: (log: any) => {
+        log.attributes = redactLogAttributes({
+          ...(log.attributes || {}),
+          service: appName,
+          component: 'nestjs',
+        });
+        return log;
+      },
+      beforeSend(event: any) {
+        event.tags = { ...(event.tags || {}), service: appName, component: 'nestjs' };
+        return event;
+      },
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.45,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
       profileLifecycle: 'trace',
     });
   } catch (err) {

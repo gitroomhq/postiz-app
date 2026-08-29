@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
@@ -13,6 +14,47 @@ import {
 import sharp from 'sharp';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
+import { logger } from '@gitroom/nestjs-libraries/sentry/logger';
+
+const RATE_LIMIT_HEADERS = {
+  rate_limit_remaining: [
+    'x-rate-limit-remaining',
+    'x-ratelimit-remaining',
+    'ratelimit-remaining',
+  ],
+  rate_limit_limit: ['x-rate-limit-limit', 'x-ratelimit-limit', 'ratelimit-limit'],
+  rate_limit_reset: [
+    'x-rate-limit-reset',
+    'x-ratelimit-reset',
+    'ratelimit-reset',
+    'retry-after',
+  ],
+};
+
+const readRateLimits = (headers: Headers) => {
+  const found: Record<string, string> = {};
+
+  for (const [attribute, names] of Object.entries(RATE_LIMIT_HEADERS)) {
+    for (const name of names) {
+      const value = headers?.get?.(name);
+      if (value) {
+        found[attribute] = value;
+        break;
+      }
+    }
+  }
+
+  return found;
+};
+
+export const stripQuery = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (err) {
+    return url.split('?')[0];
+  }
+};
 
 export type ValidityMedia = {
   path: string;
@@ -219,6 +261,7 @@ export abstract class SocialAbstract {
       path?.indexOf('http') === -1
         ? `${process.env.FRONTEND_URL}/${path}`
         : path;
+    setHeartbeatDetails(`read media ${stripQuery(url)}`);
     const { width = 0, height = 0 } = await sharp(
       await readOrFetch(url)
     ).metadata();
@@ -233,6 +276,7 @@ export abstract class SocialAbstract {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -265,6 +309,9 @@ export abstract class SocialAbstract {
     identifier = ''
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
+      setHeartbeatDetails(
+        `media chunk ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -447,6 +494,12 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
+    // A platform that accepts the connection and then goes silent leaves the
+    // activity with nothing logged until startToCloseTimeout. Record the call
+    // first so the timeout failure names it. Query string is dropped - some
+    // providers carry access_token there and details are stored by Temporal.
+    setHeartbeatDetails(`fetch ${stripQuery(url)}`);
+
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
@@ -464,7 +517,21 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    const base = {
+      provider: this.identifier,
+      integration_identifier: identifier,
+      request_path: stripQuery(url),
+      response_status: request.status,
+      retry_attempt: totalRetries,
+      ...readRateLimits(request.headers),
+    };
+
     if (totalRetries > 2) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'retries_exhausted',
+        reason: message || 'Unknown Error',
+      });
       // Include the platform's actual response body so the failure is
       // diagnosable, instead of an empty '{}'.
       throw new BadBody(identifier, json, options.body || '{}', message);
@@ -478,6 +545,11 @@ export abstract class SocialAbstract {
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
+      logger.warn('provider_rate_limited', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -490,6 +562,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'retry') {
+      logger.warn('provider_request_retried', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -502,6 +579,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'disconnect') {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'disconnect',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new Disconnect(
         identifier,
         json,
@@ -515,6 +597,11 @@ export abstract class SocialAbstract {
         (handleError?.type === 'refresh-token' || !handleError)) ||
       handleError?.type === 'refresh-token'
     ) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'refresh_token',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new RefreshToken(
         identifier,
         json,
@@ -523,6 +610,11 @@ export abstract class SocialAbstract {
       );
     }
 
+    logger.error('provider_request_failed', {
+      ...base,
+      outcome: 'bad_body',
+      reason: handleError?.value || 'Unknown Error',
+    });
     throw new BadBody(
       identifier,
       json,

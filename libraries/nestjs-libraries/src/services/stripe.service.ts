@@ -11,6 +11,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
 
@@ -86,11 +87,20 @@ export class StripeService {
       await stripe.paymentIntents.cancel(paymentIntent.id as string);
       return true;
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'check_valid_card',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       try {
         await stripe.paymentMethods.detach(paymentMethods.data[0].id);
         await stripe.subscriptions.cancel(event.data.object.id as string);
       } catch (err) {
-        /*dont do anything*/
+        logger.error('stripe_operation_failed', {
+          operation: 'check_valid_card_cleanup',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
       return false;
     }
@@ -113,6 +123,11 @@ export class StripeService {
         return { ok: false };
       }
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_subscription',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { ok: false };
     }
 
@@ -190,7 +205,14 @@ export class StripeService {
           .update(customerId, {
             email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.error('stripe_operation_failed', {
+              operation: 'update_customer_email',
+              stripe_customer_id: customerId,
+              error_type: errorType(err),
+              error_message: errorMessage(err),
+            });
+          })
       )
     );
   }
@@ -285,8 +307,6 @@ export class StripeService {
         },
       }));
 
-    const proration_date = Math.floor(Date.now() / 1000);
-
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -301,8 +321,7 @@ export class StripeService {
         customer,
         subscription: currentUserSubscription?.data?.[0]?.id,
         subscription_details: {
-          proration_behavior: 'create_prorations',
-          billing_cycle_anchor: 'now',
+          proration_behavior: 'always_invoice',
           items: [
             {
               id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
@@ -310,7 +329,6 @@ export class StripeService {
               quantity: 1,
             },
           ],
-          proration_date: proration_date,
         },
       });
 
@@ -318,6 +336,11 @@ export class StripeService {
         price: price?.amount_remaining ? price?.amount_remaining / 100 : 0,
       };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'prorate_preview',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { price: 0 };
     }
   }
@@ -500,7 +523,13 @@ export class StripeService {
             }
           : {}),
       });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_embedded_checkout',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     // Check for auto-apply promotion code (only for monthly plans)
     let autoApplyPromoCode: string | null = null;
@@ -872,6 +901,13 @@ export class StripeService {
 
       return { id };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'subscribe',
+        stripe_customer_id: customer,
+        outcome: 'fallback_billing_portal',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       const { url } = await this.createBillingPortalLink(customer);
       return {
         portal: url,
@@ -966,6 +1002,12 @@ export class StripeService {
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
+        logger.error('stripe_operation_failed', {
+          operation: 'refund_charge',
+          stripe_charge_id: chargeId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
         failed.push(chargeId);
       }
     }
@@ -1065,7 +1107,11 @@ export class StripeService {
         });
         nextPayment = preview.total / 100;
       } catch (err) {
-        /* no upcoming invoice */
+        logger.warn('stripe_operation_failed', {
+          operation: 'preview_upcoming_invoice',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
     }
 
@@ -1355,7 +1401,12 @@ export class StripeService {
         success: true,
       };
     } catch (err) {
-      console.log(err);
+      logger.error('stripe_operation_failed', {
+        operation: 'modify_subscription',
+        org_id: organizationId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return {
         success: false,
       };
