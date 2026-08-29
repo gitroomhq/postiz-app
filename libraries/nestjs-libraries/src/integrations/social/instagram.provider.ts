@@ -388,6 +388,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('2207018') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          "One of the collaborators could not be tagged, please check the username is correct, the account is public, and that it allows collaborator invites",
+      };
+    }
+
     if (body.indexOf('param collaborators is not allowed') > -1) {
       return {
         type: 'bad-body' as const,
