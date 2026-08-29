@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
@@ -369,6 +369,10 @@ export class StripeService {
     };
 
     const sub = currentUserSubscription.data[0];
+
+    if (!sub) {
+      throw new BadRequestException('No active subscription found');
+    }
 
     // If the user is toggling back (un-cancelling), just remove the cancel
     if (sub.cancel_at_period_end) {
