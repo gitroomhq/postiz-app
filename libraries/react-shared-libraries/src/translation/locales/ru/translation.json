@@ -737,5 +737,20 @@
   "republish_the_post": "Опубликовать пост повторно",
   "post_already_published_republish_warning": "Этот пост уже был опубликован. Повторная публикация опубликует его снова в",
   "republish_at": "в",
-  "republish_recurring_note": "Это повторяющийся пост: ваши изменения будут применяться ко всем будущим публикациям, начиная с этого момента."
+  "republish_recurring_note": "Это повторяющийся пост: ваши изменения будут применяться ко всем будущим публикациям, начиная с этого момента.",
+  "organizations": "Организации",
+  "organizations_description": "Создавайте организации, чтобы разделять проекты, и переключайтесь между ними",
+  "organization_name": "Название организации",
+  "create_organization": "Создать организацию",
+  "rename_organization": "Переименовать организацию",
+  "manage_organizations": "Управление организациями",
+  "organization_renamed": "Организация переименована",
+  "current_organization": "Текущая",
+  "switch": "Переключить",
+  "rename": "Переименовать",
+  "delete_organization_confirm": "Эта организация, её каналы и публикации будут удалены. Это действие нельзя отменить, вы уверены?",
+  "yes_delete_organization": "Да, удалить эту организацию",
+  "could_not_create_organization": "Не удалось создать организацию",
+  "could_not_rename_organization": "Не удалось переименовать организацию",
+  "could_not_delete_organization": "Не удалось удалить организацию"
 }

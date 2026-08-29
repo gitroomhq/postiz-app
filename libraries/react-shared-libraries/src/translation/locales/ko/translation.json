@@ -737,5 +737,20 @@
   "republish_the_post": "게시물 다시 게시하기",
   "post_already_published_republish_warning": "이 게시물은 이미 게시되었습니다. 다시 게시하면 다음에 다시 게시됩니다:",
   "republish_at": "다음 시간에",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "organizations": "조직",
+  "organizations_description": "프로젝트를 분리하기 위해 조직을 만들고 그 사이를 전환하세요",
+  "organization_name": "조직 이름",
+  "create_organization": "조직 만들기",
+  "rename_organization": "조직 이름 바꾸기",
+  "manage_organizations": "조직 관리",
+  "organization_renamed": "조직 이름이 변경되었습니다",
+  "current_organization": "현재",
+  "switch": "전환",
+  "rename": "이름 바꾸기",
+  "delete_organization_confirm": "이 조직과 해당 채널 및 게시물이 삭제됩니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?",
+  "yes_delete_organization": "예, 이 조직을 삭제합니다",
+  "could_not_create_organization": "조직을 만들 수 없습니다",
+  "could_not_rename_organization": "조직 이름을 바꿀 수 없습니다",
+  "could_not_delete_organization": "조직을 삭제할 수 없습니다"
 }

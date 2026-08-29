@@ -737,5 +737,20 @@
   "republish_the_post": "Gönderiyi tekrar yayımla",
   "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
   "republish_at": "tarihinde/saatinde",
-  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır.",
+  "organizations": "Organizasyonlar",
+  "organizations_description": "Projeleri ayırmak için organizasyonlar oluşturun, ardından aralarında geçiş yapın",
+  "organization_name": "Organizasyon adı",
+  "create_organization": "Organizasyon oluştur",
+  "rename_organization": "Organizasyonu yeniden adlandır",
+  "manage_organizations": "Organizasyonları yönet",
+  "organization_renamed": "Organizasyon yeniden adlandırıldı",
+  "current_organization": "Geçerli",
+  "switch": "Değiştir",
+  "rename": "Yeniden adlandır",
+  "delete_organization_confirm": "Bu organizasyon, kanalları ve gönderileri silinecek. Bu işlem geri alınamaz, emin misiniz?",
+  "yes_delete_organization": "Evet, bu organizasyonu sil",
+  "could_not_create_organization": "Organizasyon oluşturulamadı",
+  "could_not_rename_organization": "Organizasyon yeniden adlandırılamadı",
+  "could_not_delete_organization": "Organizasyon silinemedi"
 }

@@ -504,5 +504,20 @@
     "label_who_can_reply_to_this_post": "ვის შეუძლია პასუხის გაცემა ამ პოსტზე?",
     "delete_integration": "ინტეგრაციის წაშლა",
     "start_writing_your_post": "დაიწყეთ თქვენი პოსტის წერა წინასწარი ხედვისთვის",
-    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?"
+    "faq_can_i_trust_postiz_gitroom": "Შემიძლია ვენდო Postiz-ს?",
+    "organizations": "ორგანიზაციები",
+    "organizations_description": "შექმენით ორგანიზაციები პროექტების გასამიჯნურად, შემდეგ გადართეთ მათ შორის",
+    "organization_name": "ორგანიზაციის სახელი",
+    "create_organization": "ორგანიზაციის შექმნა",
+    "rename_organization": "ორგანიზაციის სახელის გადარქმევა",
+    "manage_organizations": "ორგანიზაციების მართვა",
+    "organization_renamed": "ორგანიზაციას სახელი გადაერქმა",
+    "current_organization": "მიმდინარე",
+    "switch": "გადართვა",
+    "rename": "გადარქმევა",
+    "delete_organization_confirm": "ეს ორგანიზაცია, მისი არხები და პოსტები წაიშლება. ეს მოქმედება შეუქცევადია, დარწმუნებული ხართ?",
+    "yes_delete_organization": "დიახ, ამ ორგანიზაციის წაშლა",
+    "could_not_create_organization": "ორგანიზაციის შექმნა ვერ მოხერხდა",
+    "could_not_rename_organization": "ორგანიზაციის სახელის გადარქმევა ვერ მოხერხდა",
+    "could_not_delete_organization": "ორგანიზაციის წაშლა ვერ მოხერხდა"
 }

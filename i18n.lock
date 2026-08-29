@@ -742,3 +742,18 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    organizations: bd50dd0b17bd74a72b728a8385b5ee28
+    organizations_description: 12498c2a27a01cf0bfbf3ec49fe68668
+    organization_name: e69fb0acbe75358352890a6f04e4b9c0
+    create_organization: e79a6de15033cc09a320a6f9c294d696
+    rename_organization: 40fbc31b7c6669fa1117b8ad50f33492
+    manage_organizations: fea7e7313d1fc8c628870900b031663d
+    organization_renamed: ce9685a3896d45976b57326a187c5c65
+    current_organization: 27f172f76ac28e72cb062f80002b0ad5
+    switch: bab779e32d2519152481e180aea26879
+    rename: 6f9413e4606e8d83a010685008fb2931
+    delete_organization_confirm: 8048bdb3bea0fa4bc8a7dfccfc13f3f8
+    yes_delete_organization: 64e38997a8dd575d9020bdc58eb7c58d
+    could_not_create_organization: 632bfcc6464390bc3e8eae128e54444f
+    could_not_rename_organization: 163ff0fddd1c8800b5d31e1b7a29294b
+    could_not_delete_organization: 82df8baa656deed351e391e96aaaf088

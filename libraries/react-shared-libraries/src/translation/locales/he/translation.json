@@ -737,5 +737,20 @@
   "republish_the_post": "לפרסם מחדש את הפוסט",
   "post_already_published_republish_warning": "הפוסט הזה כבר פורסם. פרסום מחדש יפרסם אותו שוב ב",
   "republish_at": "בשעה",
-  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו."
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו.",
+  "organizations": "ארגונים",
+  "organizations_description": "צרו ארגונים כדי להפריד בין פרויקטים, ואז עברו ביניהם",
+  "organization_name": "שם הארגון",
+  "create_organization": "יצירת ארגון",
+  "rename_organization": "שינוי שם ארגון",
+  "manage_organizations": "ניהול ארגונים",
+  "organization_renamed": "שם הארגון שונה",
+  "current_organization": "נוכחי",
+  "switch": "החלפה",
+  "rename": "שינוי שם",
+  "delete_organization_confirm": "הארגון הזה, הערוצים והפוסטים שלו יימחקו. לא ניתן לבטל פעולה זו, האם אתה בטוח?",
+  "yes_delete_organization": "כן, מחק את הארגון הזה",
+  "could_not_create_organization": "לא ניתן ליצור את הארגון",
+  "could_not_rename_organization": "לא ניתן לשנות את שם הארגון",
+  "could_not_delete_organization": "לא ניתן למחוק את הארגון"
 }

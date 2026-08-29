@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { useUser } from '../layout/user.context';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -10,6 +10,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
+import { useOrganizations } from '@gitroom/frontend/components/settings/organizations.component';
 import clsx from 'clsx';
 
 const mcpClients = [
@@ -730,21 +731,11 @@ const PublicApiContent = () => {
 
 export const PublicComponent = () => {
   const t = useT();
-  const fetch = useFetch();
   const user = useUser();
   const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
-  const loadOrganizations = useCallback(async () => {
-    return await (await fetch('/user/organizations')).json();
-  }, []);
-  const { data: organizations } = useSWR('organizations', loadOrganizations, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    revalidateOnReconnect: false,
-  });
+  const { data: organizations } = useOrganizations();
   const currentOrg = useMemo(() => {
-    return organizations?.find((org: any) => org?.id === user?.orgId);
+    return organizations?.find((org) => org?.id === user?.orgId);
   }, [organizations, user?.orgId]);
 
   return (

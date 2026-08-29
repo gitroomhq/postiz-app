@@ -737,5 +737,20 @@
   "republish_the_post": "重新发布帖子",
   "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
   "republish_at": "于",
-  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "organizations": "组织",
+  "organizations_description": "创建组织以区分不同项目，然后在其间切换",
+  "organization_name": "组织名称",
+  "create_organization": "创建组织",
+  "rename_organization": "重命名组织",
+  "manage_organizations": "管理组织",
+  "organization_renamed": "组织已重命名",
+  "current_organization": "当前",
+  "switch": "切换",
+  "rename": "重命名",
+  "delete_organization_confirm": "该组织及其频道和帖子将被删除。此操作无法撤销，确定要继续吗？",
+  "yes_delete_organization": "是，删除该组织",
+  "could_not_create_organization": "无法创建组织",
+  "could_not_rename_organization": "无法重命名组织",
+  "could_not_delete_organization": "无法删除组织"
 }

@@ -737,5 +737,20 @@
   "republish_the_post": "Republicar a publicação",
   "post_already_published_republish_warning": "Esta publicação já foi publicada. Republicar irá publicá-la novamente em",
   "republish_at": "em",
-  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora."
+  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora.",
+  "organizations": "Organizações",
+  "organizations_description": "Crie organizações para separar projetos e alterne entre elas",
+  "organization_name": "Nome da organização",
+  "create_organization": "Criar organização",
+  "rename_organization": "Renomear organização",
+  "manage_organizations": "Gerenciar organizações",
+  "organization_renamed": "Organização renomeada",
+  "current_organization": "Atual",
+  "switch": "Alternar",
+  "rename": "Renomear",
+  "delete_organization_confirm": "Esta organização, seus canais e publicações serão excluídos. Esta ação não pode ser desfeita, tem certeza?",
+  "yes_delete_organization": "Sim, excluir esta organização",
+  "could_not_create_organization": "Não foi possível criar a organização",
+  "could_not_rename_organization": "Não foi possível renomear a organização",
+  "could_not_delete_organization": "Não foi possível excluir a organização"
 }

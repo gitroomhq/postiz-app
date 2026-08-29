@@ -2,32 +2,36 @@
 
 import React, { FC, useCallback, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import clsx from 'clsx';
+import Link from 'next/link';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
+import {
+  OrganizationNameModal,
+  useOrganizations,
+  UserOrganization,
+} from '@gitroom/frontend/components/settings/organizations.component';
 export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
   asOpenSelect,
 }) => {
   const fetch = useFetch();
   const user = useUser();
-  const load = useCallback(async () => {
-    return await (await fetch('/user/organizations')).json();
-  }, []);
-  const { isLoading, data } = useSWR('organizations', load, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    revalidateOnReconnect: false,
-  });
+  const t = useT();
+  const toast = useToaster();
+  const modals = useModals();
+  const { billingEnabled } = useVariables();
+  const { isLoading, data } = useOrganizations();
   const current = useMemo(() => {
-    return data?.find((d: any) => d.id === user?.orgId);
-  }, [data]);
-  const withoutCurrent = useMemo(() => {
-    return data?.filter((d: any) => d.id !== user?.orgId);
-  }, [current, data]);
+    return data?.find((d) => d.id === user?.orgId);
+  }, [data, user?.orgId]);
   const changeOrg = useCallback(
-    (org: { name: string; id: string }) => async () => {
+    (org: UserOrganization) => async () => {
+      if (org.id === user?.orgId) {
+        return;
+      }
       await fetch('/user/change-org', {
         method: 'POST',
         body: JSON.stringify({
@@ -36,9 +40,51 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
       });
       window.location.reload();
     },
-    []
+    [fetch, user?.orgId]
   );
-  if (isLoading || (!isLoading && data?.length === 1)) {
+  const createOrganization = useCallback(
+    async (name: string) => {
+      const response = await fetch('/user/organizations', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      if (response.status !== 200 && response.status !== 201) {
+        const body = await response.json().catch(() => ({ message: '' }));
+        const message = Array.isArray(body.message)
+          ? body.message[0]
+          : body.message;
+        toast.show(
+          message ||
+            t('could_not_create_organization', 'Could not create organization'),
+          'warning'
+        );
+        return;
+      }
+      window.location.reload();
+    },
+    [fetch, t, toast]
+  );
+  const openCreate = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      modals.openModal({
+        classNames: {
+          modal: 'bg-transparent text-textColor',
+        },
+        title: t('create_organization', 'Create organization'),
+        withCloseButton: true,
+        children: (
+          <OrganizationNameModal
+            button={t('create_organization', 'Create organization')}
+            onSubmit={createOrganization}
+          />
+        ),
+      });
+    },
+    [t, createOrganization, modals]
+  );
+  if (isLoading) {
     return null;
   }
   return (
@@ -68,39 +114,53 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
               )}
             </div>
           )}
-          {data?.length > 1 && (
+          {!!data?.length && (
             <div
               className={clsx(
-                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
+                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max min-w-[220px] max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col z-[400]',
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
-              {withoutCurrent?.map(
-                (org: {
-                  name: string;
-                  id: string;
-                  users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
-                }) => (
+              {data.map((org) => (
                   <div
-                    key={org?.id}
+                    key={org.id}
                     onClick={changeOrg(org)}
-                    className="whitespace-nowrap truncate"
+                    className={clsx(
+                      'whitespace-nowrap truncate',
+                      org.id === user?.orgId && 'text-newTextColor'
+                    )}
                   >
-                    {org?.name}
-                    {!!org?.users?.[0]?.role && (
-                      <span className="text-customColor18">
+                    {org.name}
+                    {!!org.users?.[0]?.role && (
+                      <span className="text-textItemBlur">
                         {' '}
                         (
-                        {org?.users?.[0]?.role === 'SUPERADMIN'
-                          ? 'Super-Admin'
-                          : org?.users?.[0]?.role === 'ADMIN'
-                          ? 'Admin'
-                          : 'User'}
+                        {org.users[0].role === 'SUPERADMIN'
+                          ? t('super_admin', 'Super Admin')
+                          : org.users[0].role === 'ADMIN'
+                          ? t('admin', 'Admin')
+                          : t('user', 'User')}
+                        {org.id === user?.orgId
+                          ? ` · ${t('current_organization', 'Current')}`
+                          : ''}
                         )
                       </span>
                     )}
                   </div>
-                )
+                ))}
+              <div className="h-[1px] bg-tableBorder" />
+              {!user?.impersonate && (
+                <div onClick={openCreate}>
+                  {t('create_organization', 'Create organization')}
+                </div>
+              )}
+              {!(billingEnabled && user?.tier?.current === 'FREE') && (
+                <Link
+                  href="/settings?tab=organizations"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {t('manage_organizations', 'Manage organizations')}
+                </Link>
               )}
             </div>
           )}

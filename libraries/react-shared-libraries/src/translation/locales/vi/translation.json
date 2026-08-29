@@ -737,5 +737,20 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "organizations": "Tổ chức",
+  "organizations_description": "Tạo các tổ chức để tách biệt dự án, sau đó chuyển đổi giữa chúng",
+  "organization_name": "Tên tổ chức",
+  "create_organization": "Tạo tổ chức",
+  "rename_organization": "Đổi tên tổ chức",
+  "manage_organizations": "Quản lý tổ chức",
+  "organization_renamed": "Đã đổi tên tổ chức",
+  "current_organization": "Hiện tại",
+  "switch": "Chuyển",
+  "rename": "Đổi tên",
+  "delete_organization_confirm": "Tổ chức này, các kênh và bài đăng của nó sẽ bị xóa. Hành động này không thể hoàn tác, bạn có chắc chắn không?",
+  "yes_delete_organization": "Có, xóa tổ chức này",
+  "could_not_create_organization": "Không thể tạo tổ chức",
+  "could_not_rename_organization": "Không thể đổi tên tổ chức",
+  "could_not_delete_organization": "Không thể xóa tổ chức"
 }

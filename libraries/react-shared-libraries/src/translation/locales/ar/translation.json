@@ -737,5 +737,20 @@
   "republish_the_post": "إعادة نشر المنشور",
   "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
   "republish_at": "في",
-  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن."
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "organizations": "المؤسسات",
+  "organizations_description": "أنشئ مؤسسات لفصل المشاريع، ثم بدّل بينها",
+  "organization_name": "اسم المؤسسة",
+  "create_organization": "إنشاء مؤسسة",
+  "rename_organization": "إعادة تسمية المؤسسة",
+  "manage_organizations": "إدارة المؤسسات",
+  "organization_renamed": "تمت إعادة تسمية المؤسسة",
+  "current_organization": "الحالية",
+  "switch": "تبديل",
+  "rename": "إعادة تسمية",
+  "delete_organization_confirm": "سيتم حذف هذه المؤسسة وقنواتها ومنشوراتها. لا يمكن التراجع عن هذا الإجراء، هل أنت متأكد؟",
+  "yes_delete_organization": "نعم، احذف هذه المؤسسة",
+  "could_not_create_organization": "تعذّر إنشاء المؤسسة",
+  "could_not_rename_organization": "تعذّرت إعادة تسمية المؤسسة",
+  "could_not_delete_organization": "تعذّر حذف المؤسسة"
 }
