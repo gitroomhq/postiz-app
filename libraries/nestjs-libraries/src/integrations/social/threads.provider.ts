@@ -107,7 +107,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const state = makeId(6);
     return {
       url:
-        'https://www.threads.net/oauth/authorize' +
+        'https://www.threads.com/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
