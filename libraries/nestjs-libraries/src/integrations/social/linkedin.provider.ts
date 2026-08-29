@@ -19,7 +19,10 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
-import { LinkedinDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
+import {
+  LinkedinDto,
+  LinkedinOrganicTargeting,
+} from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/linkedin.dto';
 import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -33,6 +36,7 @@ type LinkedinPendingData = {
   message: string;
   isPdf: boolean;
   pdfTitle?: string;
+  organicTargeting?: LinkedinOrganicTargeting;
   mediaIds: string[];
   // Media whose processing status can be read via GET: videos for every token,
   // images/documents only for organization tokens.
@@ -716,7 +720,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     message: string,
     mediaIds: string[],
     isPdf: boolean,
-    pdfTitle?: string
+    pdfTitle?: string,
+    organicTargeting?: LinkedinOrganicTargeting
   ) {
     const author =
       type === 'personal' ? `urn:li:person:${id}` : `urn:li:organization:${id}`;
@@ -727,7 +732,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       visibility: 'PUBLIC',
       distribution: {
         feedDistribution: 'MAIN_FEED',
-        targetEntities: [] as string[],
+        targetEntities: organicTargeting ? [organicTargeting] : [],
         thirdPartyDistributionChannels: [] as string[],
       },
       ...this.buildPostContent(isPdf, mediaIds, pdfTitle),
@@ -743,7 +748,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     mediaIds: string[],
     type: 'company' | 'personal',
     isPdf: boolean,
-    pdfTitle?: string
+    pdfTitle?: string,
+    organicTargeting?: LinkedinOrganicTargeting
   ): Promise<string> {
     const postPayload = this.createLinkedInPostPayload(
       authorId,
@@ -751,7 +757,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       message,
       mediaIds,
       isPdf,
-      pdfTitle
+      pdfTitle,
+      organicTargeting
     );
 
     const response = await this.fetch(`https://api.linkedin.com/rest/posts`, {
@@ -839,7 +846,19 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     let processedPostDetails = postDetails;
     const [firstPost] = postDetails;
-    const isPdf = this.assetBoolean(firstPost.settings?.post_as_images_carousel);
+    const isPdf = this.assetBoolean(
+      firstPost.settings?.post_as_images_carousel
+    );
+    const organicTargeting = firstPost.settings?.organic_targeting;
+
+    if (organicTargeting && type !== 'company') {
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        '{}',
+        'Organic targeting is only supported for LinkedIn Company Pages'
+      );
+    }
 
     // Check if we should convert images to PDF carousel
     if (isPdf) {
@@ -875,6 +894,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           ...(isPdf
             ? { pdfTitle: firstPost.settings?.carousel_name || 'slides' }
             : {}),
+          ...(organicTargeting ? { organicTargeting } : {}),
           mediaIds: (mediaUploads[processedFirstPost.id] || []).filter(Boolean),
           poll,
           graceChecks,
@@ -1025,7 +1045,8 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       (pendingData.mediaIds || []).filter(Boolean),
       pendingData.postType,
       pendingData.isPdf,
-      pendingData.pdfTitle
+      pendingData.pdfTitle,
+      pendingData.organicTargeting
     );
 
     return {
