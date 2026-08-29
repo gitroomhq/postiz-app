@@ -1182,6 +1182,12 @@ export class PostsService {
       throw new BadRequestException('Post not found');
     }
 
+    // Queueing a past-dated draft would publish it within seconds, the same
+    // trap createPost and changeDate already guard against.
+    if (status === 'schedule') {
+      this.guardAgainstPastSchedule(getPostById.publishDate.toISOString());
+    }
+
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
     await this._postRepository.changeState(id, state);
 
