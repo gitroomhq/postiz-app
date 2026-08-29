@@ -241,6 +241,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('"forbidden"')) {
+      return {
+        type: 'bad-body',
+        value:
+          'YouTube refused the upload for this channel. Make sure the Google account you connected with can upload to this channel, then reconnect it.',
+      };
+    }
+
     if (body.includes('Unauthorized')) {
       return {
         type: 'refresh-token',
