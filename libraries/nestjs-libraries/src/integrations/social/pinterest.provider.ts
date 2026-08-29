@@ -118,7 +118,7 @@ export class PinterestProvider
     if (body.indexOf('constraint: maxItems=5') > -1) {
       return {
         type: 'bad-body' as const,
-value: 'You can upload a maximum of 5 images per post on Pinterest.',
+        value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
     if (body.indexOf('could not fetch the image') > -1) {
