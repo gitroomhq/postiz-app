@@ -1,4 +1,5 @@
-const SENSITIVE_KEY = /(token|secret|password|passwd|authorization|auth|cookie|session|api[-_]?key|apikey|credential|signature|private[-_]?key)/i;
+const SENSITIVE_KEY =
+  /(token|secret|password|passwd|authorization|auth|cookie|session|api[-_]?key|apikey|credential|signature|private[-_]?key|email|phone)/i;
 
 const MAX_VALUE_LENGTH = 2048;
 
