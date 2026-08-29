@@ -187,7 +187,7 @@ export class InstagramProvider
 
     if (body.indexOf('2207052') > -1) {
       return {
-        type: 'bad-body' as const,
+        type: 'retry' as const,
         value: 'Media fetch failed, please try again',
       };
     }
