@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { ApiTags } from '@nestjs/swagger';
-import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import { logger } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @ApiTags('Stripe')
 @Controller('/stripe')
