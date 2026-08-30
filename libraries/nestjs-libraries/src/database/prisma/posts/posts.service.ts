@@ -743,7 +743,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV110', {
+        ?.workflow.start('postWorkflowV111', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -767,7 +767,7 @@ export class PostsService {
         });
     } catch (err) {
       logger.error('workflow_start_failed', {
-        workflow_type: 'postWorkflowV110',
+        workflow_type: 'postWorkflowV111',
         post_id: postId,
         org_id: orgId,
         task_queue: taskQueue,
@@ -1200,7 +1200,7 @@ export class PostsService {
       );
     } catch (err) {
       logger.error('workflow_start_failed', {
-        workflow_type: 'postWorkflowV110',
+        workflow_type: 'postWorkflowV111',
         post_id: getPostById.id,
         org_id: orgId,
         post_state: state,
@@ -1253,7 +1253,7 @@ export class PostsService {
         );
       } catch (err) {
         logger.error('workflow_start_failed', {
-          workflow_type: 'postWorkflowV110',
+          workflow_type: 'postWorkflowV111',
           post_id: getPostById.id,
           org_id: orgId,
           post_state: getPostById.state,
