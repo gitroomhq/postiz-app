@@ -1405,9 +1405,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ...(token ? { pagination_token: token } : {}),
     });
 
+    const list = tweets.data.data || [];
+
     return [
-      ...tweets.data.data,
-      ...(tweets.data.data.length === 100
+      ...list,
+      ...(list.length === 100 && tweets.meta.next_token
         ? await this.loadAllTweets(
             client,
             id,
