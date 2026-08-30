@@ -186,7 +186,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         this.identifier,
         JSON.stringify({ status, error_message }),
         '{}',
-        error_message || 'Threads could not process the media'
+        error_message && error_message !== 'UNKNOWN'
+          ? error_message
+          : 'Threads could not process the media, please check the media format and try again'
       );
     }
 
