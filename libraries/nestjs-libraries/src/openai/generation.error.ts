@@ -11,7 +11,7 @@ const SAFETY_MESSAGE_REGEX =
 
 /**
  * Normalizes errors thrown by AI generation providers (OpenAI image/chat,
- * LangChain DALL-E, Fal, Veo3, HeyGen, ElevenLabs, ...) into a clean
+ * LangChain DALL-E, Fal, Seedance, HeyGen, ElevenLabs, ...) into a clean
  * HttpException so a provider rejection (most notably an OpenAI safety
  * violation) returns a proper response instead of crashing the backend.
  *

@@ -14,7 +14,7 @@ class Image {
   @IsString()
   path: string;
 }
-class Veo3Params {
+class SeedanceParams {
   @IsString()
   prompt: string;
 
@@ -26,21 +26,22 @@ class Veo3Params {
 }
 
 @Video({
-  identifier: 'veo3',
-  title: 'Veo3 (Audio + Video)',
+  identifier: 'seedance',
+  title: 'Seedance 2.0 (Audio + Video)',
   description: 'Generate videos with the most advanced video model.',
   placement: 'text-to-image',
-  dto: Veo3Params,
+  dto: SeedanceParams,
   tools: [],
   trial: false,
   available: !!process.env.EVOLINK_API_KEY,
 })
-export class Veo3 extends VideoAbstract<Veo3Params> {
-  override dto = Veo3Params;
+export class Seedance extends VideoAbstract<SeedanceParams> {
+  override dto = SeedanceParams;
   async process(
     output: 'vertical' | 'horizontal',
-    customParams: Veo3Params
+    customParams: SeedanceParams
   ): Promise<URL> {
+    const imageUrls = customParams?.images?.map((p) => p.path) || [];
     const value = await (
       await fetch('https://api.evolink.ai/v1/videos/generations', {
         headers: {
@@ -50,11 +51,14 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
         method: 'POST',
         signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
-          model: 'veo3.1-fast',
+          model: imageUrls.length
+            ? 'seedance-2.0-fast-reference-to-video'
+            : 'seedance-2.0-fast-text-to-video',
           prompt: customParams.prompt,
-          image_urls: customParams?.images?.map((p) => p.path) || [],
+          ...(imageUrls.length ? { image_urls: imageUrls } : {}),
           aspect_ratio: output === 'horizontal' ? '16:9' : '9:16',
           duration: 8,
+          quality: '720p',
           generate_audio: true,
         }),
       })
@@ -69,7 +73,7 @@ export class Veo3 extends VideoAbstract<Veo3Params> {
       );
     }
 
-    console.log('veo3 taskId', taskId);
+    console.log('seedance taskId', taskId);
     let attempts = 0;
     const maxAttempts = 180; // ~30 minutes at 10s interval
     while (true) {
