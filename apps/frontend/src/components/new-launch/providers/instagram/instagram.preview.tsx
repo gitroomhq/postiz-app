@@ -82,6 +82,7 @@ export const InstagramPreview: FC<{
         />
       )}
       <div
+        dir="auto"
         className="text-[14px] font-[400] whitespace-pre-line"
         dangerouslySetInnerHTML={{
           __html: renderContent?.[0]?.text,
@@ -181,6 +182,7 @@ export const InstagramPreview: FC<{
                 <div className="flex flex-col gap-[6px] flex-1">
                   <div className="flex gap-[4px] py-[8px]">
                     <div
+                      dir="auto"
                       className="whitespace-pre-line text-[14px] font-[400] flex-1"
                       dangerouslySetInnerHTML={{
                         __html: value.text,
