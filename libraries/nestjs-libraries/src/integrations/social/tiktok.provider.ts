@@ -565,6 +565,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',
               }
             : {}),
+          ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp
+            ? {
+                video_cover_timestamp_ms:
+                  firstPost?.media?.[0]?.thumbnailTimestamp,
+              }
+            : {}),
         },
       };
     }
