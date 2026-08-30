@@ -51,7 +51,7 @@ export function useUppyUploader(props: {
   const fetch = useFetch();
   const { data: mediaSettings } = useMediaSettings();
   const skipMediaRescale = !!mediaSettings?.skipMediaRescale;
-  return useMemo(() => {
+  const uppy = useMemo(() => {
     const useTransloadit = transloadit.length > 0 && !skipMediaRescale;
     // Track file order to maintain original sequence after upload
     let fileOrderIndex = 0;
@@ -285,4 +285,8 @@ export function useUppyUploader(props: {
     });
     return uppy2;
   }, [skipMediaRescale]);
+
+  useEffect(() => () => uppy.destroy(), [uppy]);
+
+  return uppy;
 }
