@@ -34,6 +34,7 @@ export const InstagramPreview: FC<{
 
     const finalValue =
       `<strong class="text-[15px] font-[600]">${integration?.name} </strong>` +
+      `<span dir="auto">` +
       newContent
         .slice(start, end)
         .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
@@ -43,7 +44,7 @@ export const InstagramPreview: FC<{
       newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
         return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
       }) +
-      `</mark>`;
+      `</mark></span>`;
 
     return { text: finalValue, images: p.image };
   });
