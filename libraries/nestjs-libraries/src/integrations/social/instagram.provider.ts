@@ -383,6 +383,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('2207085') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram could not process the video, please check the video format, duration and resolution and try again',
+      };
+    }
+
     if (body.indexOf('2207077') > -1) {
       return {
         type: 'bad-body' as const,
