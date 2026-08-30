@@ -217,7 +217,7 @@ export const stripHtmlValidation = (
       .replace(/&lt;/gi, '<');
   }
 
-  if (value.indexOf('<p>') === -1 && !none) {
+  if (value.indexOf('<p') === -1 && !none) {
     return value;
   }
 
