@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Changement de tendance GitHub prédit",
   "duplicate_post": "Publication en double",
   "preview_post": "Aperçu de la publication",
+  "open_post": "Ouvrir le post",
   "post_statistics": "Statistiques de la publication",
   "draft": "Brouillon",
   "week_number": "Semaine {{number}}",

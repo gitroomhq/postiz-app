@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "GitHubトレンド予測の変化",
   "duplicate_post": "重複した投稿",
   "preview_post": "投稿をプレビュー",
+  "open_post": "投稿を開く",
   "post_statistics": "投稿の統計",
   "draft": "下書き",
   "week_number": "第{{number}}週",

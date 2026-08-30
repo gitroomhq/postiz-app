@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Mudança prevista no Trending do GitHub",
   "duplicate_post": "Post duplicado",
   "preview_post": "Visualizar post",
+  "open_post": "Abrir postagem",
   "post_statistics": "Estatísticas do post",
   "draft": "Rascunho",
   "week_number": "Semana {{number}}",

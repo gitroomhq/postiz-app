@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Прогнозируемое изменение трендов GitHub",
   "duplicate_post": "Дублировать пост",
   "preview_post": "Предпросмотр поста",
+  "open_post": "Открыть пост",
   "post_statistics": "Статистика поста",
   "draft": "Черновик",
   "week_number": "Неделя {{number}}",
