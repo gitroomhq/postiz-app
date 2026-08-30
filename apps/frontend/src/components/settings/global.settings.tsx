@@ -5,6 +5,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import dynamic from 'next/dynamic';
 import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
 import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
+import MediaSettingsComponent from '@gitroom/frontend/components/settings/media-settings.component';
 import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 
 const MetricComponent = dynamic(
@@ -22,6 +23,7 @@ export const GlobalSettings = () => {
       <MetricComponent />
       <EmailNotificationsComponent />
       <ShortlinkPreferenceComponent />
+      <MediaSettingsComponent />
       <DeleteAccountComponent />
     </div>
   );
