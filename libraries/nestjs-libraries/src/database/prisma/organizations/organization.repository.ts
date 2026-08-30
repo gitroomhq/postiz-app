@@ -127,6 +127,38 @@ export class OrganizationRepository {
             },
           },
           {
+            organization: {
+              OR: [
+                {
+                  paymentId: {
+                    equals: name,
+                  },
+                },
+                {
+                  subscription: {
+                    identifier: {
+                      equals: name,
+                    },
+                  },
+                },
+                {
+                  Integration: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+                {
+                  post: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          {
             user: {
               OR: [
                 {
@@ -154,13 +186,20 @@ export class OrganizationRepository {
       select: {
         id: true,
         role: true,
+        disabled: true,
         organization: {
           select: {
             id: true,
             name: true,
+            paymentId: true,
+            deletedAt: true,
             subscription: {
               select: {
                 subscriptionTier: true,
+                identifier: true,
+                isLifetime: true,
+                period: true,
+                cancelAt: true,
               },
             },
           },
@@ -170,6 +209,9 @@ export class OrganizationRepository {
             id: true,
             name: true,
             email: true,
+            activated: true,
+            providerName: true,
+            deletedAt: true,
           },
         },
       },

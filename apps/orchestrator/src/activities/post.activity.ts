@@ -24,7 +24,10 @@ import {
   postId as postIdSearchParam,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { withHeartbeat } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
+import {
+  setHeartbeatDetails,
+  withHeartbeat,
+} from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   BadBody,
   Disconnect,
@@ -114,7 +117,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV109', {
+        .workflow.signalWithStart('postWorkflowV110', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -323,6 +326,11 @@ export class PostActivity {
     posts: Post[],
     allowPending: boolean
   ) {
+    // Stage markers: whatever ran last is what a timed-out activity reports.
+    // Providers that go through this.fetch overwrite these with the exact URL;
+    // the ones on their own HTTP client (x, youtube, bluesky) are still
+    // narrowed down to the step they hung on.
+    setHeartbeatDetails('subscription lookup');
     if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         integration.organizationId
@@ -337,11 +345,13 @@ export class PostActivity {
       integration.providerIdentifier
     );
 
+    setHeartbeatDetails('update tags');
     const newPosts = await this._postService.updateTags(
       integration.organizationId,
       posts
     );
 
+    setHeartbeatDetails('resolve media');
     const mappedPosts = await Promise.all(
       (newPosts || []).map(async (p) => ({
         id: p.id,
@@ -362,6 +372,7 @@ export class PostActivity {
       }))
     );
 
+    setHeartbeatDetails(`${integration.providerIdentifier}: publish`);
     const postNow =
       allowPending && getIntegration.postPending
         ? await getIntegration.postPending(
@@ -379,6 +390,7 @@ export class PostActivity {
 
     // The post is already published at this point: the streak is best-effort,
     // failing the activity here would retry it and publish again.
+    setHeartbeatDetails(`${integration.providerIdentifier}: published, streak`);
     try {
       await this._temporalService.client
         .getRawClient()
