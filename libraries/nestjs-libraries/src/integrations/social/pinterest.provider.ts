@@ -659,40 +659,43 @@ export class PinterestProvider
       const result: AnalyticsData[] = [];
       const metrics = data.all;
 
-      if (metrics.lifetime_metrics) {
-        const lifetimeMetrics = metrics.lifetime_metrics;
+      // The requested metric types are period metrics: Pinterest returns them
+      // in summary_metrics, never in lifetime_metrics (that only ever carries
+      // TOTAL_COMMENTS / TOTAL_REACTIONS).
+      if (metrics.summary_metrics) {
+        const summaryMetrics = metrics.summary_metrics;
 
-        if (lifetimeMetrics.IMPRESSION !== undefined) {
+        if (summaryMetrics.IMPRESSION !== undefined) {
           result.push({
             label: 'Impressions',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.IMPRESSION), date: today }],
+            data: [{ total: String(summaryMetrics.IMPRESSION), date: today }],
           });
         }
 
-        if (lifetimeMetrics.PIN_CLICK !== undefined) {
+        if (summaryMetrics.PIN_CLICK !== undefined) {
           result.push({
             label: 'Pin Clicks',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.PIN_CLICK), date: today }],
+            data: [{ total: String(summaryMetrics.PIN_CLICK), date: today }],
           });
         }
 
-        if (lifetimeMetrics.OUTBOUND_CLICK !== undefined) {
+        if (summaryMetrics.OUTBOUND_CLICK !== undefined) {
           result.push({
             label: 'Outbound Clicks',
             percentageChange: 0,
             data: [
-              { total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today },
+              { total: String(summaryMetrics.OUTBOUND_CLICK), date: today },
             ],
           });
         }
 
-        if (lifetimeMetrics.SAVE !== undefined) {
+        if (summaryMetrics.SAVE !== undefined) {
           result.push({
             label: 'Saves',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.SAVE), date: today }],
+            data: [{ total: String(summaryMetrics.SAVE), date: today }],
           });
         }
       }
