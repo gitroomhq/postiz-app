@@ -61,6 +61,12 @@ export class AuthController {
         getOrgFromCookie
       );
 
+      this._authService.consumeOrgInviteCookie(
+        req?.cookies?.org,
+        getOrgFromCookie,
+        response
+      );
+
       const activationRequired =
         body.provider === 'LOCAL' && this._emailService.hasProvider();
 
@@ -133,6 +139,12 @@ export class AuthController {
         ip,
         userAgent,
         getOrgFromCookie
+      );
+
+      this._authService.consumeOrgInviteCookie(
+        req?.cookies?.org,
+        getOrgFromCookie,
+        response
       );
 
       response.cookie('auth', jwt, {
@@ -331,6 +343,17 @@ export class AuthController {
     if (token) {
       return response.json({ token });
     }
+
+    // Existing-user OAuth login: this path doesn't run routeAuth, so handle the
+    // org invite cookie here too. See register/login for the same logic.
+    const getOrgFromCookie = this._authService.getOrgFromCookie(
+      req?.cookies?.org
+    );
+    this._authService.consumeOrgInviteCookie(
+      req?.cookies?.org,
+      getOrgFromCookie,
+      response
+    );
 
     response.cookie('auth', jwt, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
