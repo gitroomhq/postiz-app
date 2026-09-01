@@ -113,11 +113,16 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div
                         id="left-menu"
                         className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
+                          // start-[20px] centers the fixed 64px rail inside its
+                          // 80px-wide parent (12px page padding + (80-64)/2 = 20),
+                          // since `fixed` positioning can't inherit the parent's
+                          // own offset. Verified via computed layout: 8px on
+                          // both sides.
+                          'fixed h-full w-[64px] start-[20px] flex flex-1 top-0',
                           user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
                         )}
                       >
-                        <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
+                        <div className="flex flex-col h-full min-w-0 gap-[32px] flex-1 py-[12px]">
                           <Logo />
                           <TopMenu />
                         </div>

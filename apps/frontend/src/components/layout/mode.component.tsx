@@ -8,7 +8,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
 import {
   dropdownPanelClass,
-  dropdownRowClass,
+  DropdownRow,
 } from '@gitroom/frontend/components/layout/dropdown.styles';
 
 export const modeEmitter = new EventEmitter();
@@ -167,13 +167,13 @@ const ModeComponent = () => {
       </div>
       <div className={dropdownPanelClass(open, 'min-w-[140px]')}>
         {options.map((option) => (
-          <div
+          <DropdownRow
             key={option.value}
+            selected={preference === option.value}
             onClick={select(option.value)}
-            className={dropdownRowClass(preference === option.value)}
           >
             {option.label}
-          </div>
+          </DropdownRow>
         ))}
       </div>
     </div>

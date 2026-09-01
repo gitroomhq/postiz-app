@@ -17,7 +17,7 @@ import { useClickOutside } from '@mantine/hooks';
 import { DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
 import {
   dropdownPanelClass,
-  dropdownRowClass,
+  DropdownRow,
 } from '@gitroom/frontend/components/layout/dropdown.styles';
 
 export const useOrganizations = () => {
@@ -123,9 +123,11 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
   const current = useMemo(() => {
     return data?.find((d: any) => d.id === user?.orgId);
   }, [data, user?.orgId]);
-  const withoutCurrent = useMemo(() => {
-    return data?.filter((d: any) => d.id !== user?.orgId);
-  }, [current, data]);
+  const sorted = useMemo(() => {
+    return [...(data || [])].sort((a: any, b: any) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [data]);
   const changeOrg = useCallback(
     (org: { name: string; id: string }) => async () => {
       await fetch('/user/change-org', {
@@ -179,35 +181,39 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
               )
             )}
           >
-            {!!current?.name && (
-              <div className={dropdownRowClass(true, 'truncate cursor-default')}>
-                {current.name}
-              </div>
-            )}
-            {withoutCurrent?.map(
+            {sorted?.map(
               (org: {
                 name: string;
                 id: string;
                 users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
-              }) => (
-                <div
-                  key={org?.id}
-                  onClick={changeOrg(org)}
-                  className={dropdownRowClass(false, 'truncate')}
-                >
-                  {org?.name}
-                </div>
-              )
+              }) =>
+                org.id === user?.orgId ? (
+                  <DropdownRow
+                    key={org.id}
+                    selected
+                    className="truncate cursor-default"
+                  >
+                    {org.name}
+                  </DropdownRow>
+                ) : (
+                  <DropdownRow
+                    key={org.id}
+                    onClick={changeOrg(org)}
+                    className="truncate"
+                  >
+                    {org.name}
+                  </DropdownRow>
+                )
             )}
             {!user?.impersonate && (
               <>
                 <div className="border-t border-newTextColor/10 my-[8px]" />
-                <div
+                <DropdownRow
                   onClick={createOrganization}
-                  className={dropdownRowClass(false, 'truncate text-customColor18')}
+                  className="truncate text-customColor18"
                 >
                   + {t('create_organization', 'Create organization')}
-                </div>
+                </DropdownRow>
               </>
             )}
           </div>

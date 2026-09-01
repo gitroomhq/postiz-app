@@ -163,7 +163,7 @@ export const useMenuItem = () => {
       name: t('UGC', 'UGC'),
       icon: (
         <svg
-          fill="#c52e2e"
+          fill="currentColor"
           height="30"
           width="20"
           version="1.1"
@@ -317,7 +317,7 @@ export const TopMenu: FC = () => {
   const { isGeneral, billingEnabled } = useVariables();
   return (
     <>
-      <div className="flex flex-1 flex-col minCustom:gap-[16px] blurMe">
+      <div className="flex flex-1 flex-col minCustom:gap-[6px] blurMe">
         {
           // @ts-ignore
           user?.orgId &&
@@ -350,7 +350,7 @@ export const TopMenu: FC = () => {
               ))
         }
       </div>
-      <div className="flex flex-col minCustom:gap-[20px] custom:gap-[8px] blurMe">
+      <div className="flex flex-col minCustom:gap-[6px] custom:gap-[4px] blurMe">
         {secondMenu
           .filter((f) => {
             if (f.hide) {

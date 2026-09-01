@@ -8,7 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import useCookie from 'react-use-cookie';
 import ReactCountryFlag from 'react-country-flag';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import countries from 'i18n-iso-countries';
 
 // Register required locales
@@ -16,7 +16,7 @@ import countriesEn from 'i18n-iso-countries/langs/en.json';
 import { useClickOutside } from '@mantine/hooks';
 import {
   dropdownPanelClass,
-  dropdownRowClass,
+  DropdownRow,
 } from '@gitroom/frontend/components/layout/dropdown.styles';
 
 countries.registerLocale(countriesEn);
@@ -87,6 +87,14 @@ export const LanguageComponent = () => {
 
   const toggleOpen = useCallback(() => setOpen((prev) => !prev), []);
 
+  const sortedLanguages = useMemo(
+    () =>
+      [...languages].sort((a, b) =>
+        (getLanguageName(a) || a).localeCompare(getLanguageName(b) || b)
+      ),
+    []
+  );
+
   const handleLanguageChange = useCallback(
     (language: string) => {
       setLanguageCookie(language);
@@ -126,11 +134,11 @@ export const LanguageComponent = () => {
           'min-w-[200px] max-h-[320px] overflow-y-auto'
         )}
       >
-        {languages.map((language) => (
-          <div
+        {sortedLanguages.map((language) => (
+          <DropdownRow
             key={language}
+            selected={language === currentLanguage}
             onClick={() => handleLanguageChange(language)}
-            className={dropdownRowClass(language === currentLanguage)}
           >
             <ReactCountryFlag
               countryCode={getCountryCodeForFlag(language)}
@@ -142,7 +150,7 @@ export const LanguageComponent = () => {
               title={language}
             />
             <span>{getLanguageName(language)}</span>
-          </div>
+          </DropdownRow>
         ))}
       </div>
     </div>
