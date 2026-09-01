@@ -1,15 +1,15 @@
 'use client';
 import 'reflect-metadata';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { EditIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -32,8 +32,8 @@ const SaveSetModal: FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div>
+    <form onSubmit={handleSubmit}>
+      <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
         <Input
           label="Set Name"
           translationKey="label_set_name"
@@ -44,14 +44,14 @@ const SaveSetModal: FC<{
           placeholder={t('enter_a_name_for_this_set', 'Enter a name for this set')}
           autoFocus
         />
-      </div>
-      <div className="flex gap-2 justify-end">
-        <Button type="button" secondary onClick={onCancel}>
-          {t('cancel', 'Cancel')}
-        </Button>
-        <Button type="submit" disabled={!name.trim()}>
-          {t('save', 'Save')}
-        </Button>
+        <div className="flex gap-[10px] justify-end mt-[18px]">
+          <Button type="button" secondary onClick={onCancel}>
+            {t('cancel', 'Cancel')}
+          </Button>
+          <Button type="submit" disabled={!name.trim()}>
+            {t('save', 'Save')}
+          </Button>
+        </div>
       </div>
     </form>
   );
@@ -183,38 +183,40 @@ export const Sets: FC = () => {
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[2fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('name', 'Name')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
+          <div className="flex items-center justify-between mb-[16px]">
+            <div className="mt-[4px]">{t('sets', 'Sets')}</div>
+            <Button onClick={addSet()}>{t('add_a_set', 'Add a set')}</Button>
+          </div>
+          {!data?.length ? (
+            <div className="text-customColor18 text-center py-[24px]">
+              {t('no_sets_yet', 'No sets yet.')}
+            </div>
+          ) : (
+            <div className="flex flex-col">
               {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addSet(p)}>{t('edit', 'Edit')}</Button>
+                <div
+                  key={p.id}
+                  className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0"
+                >
+                  <div className="flex-1">{p.name}</div>
+                  <div className="flex gap-[12px] justify-end w-[64px]">
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={addSet(p)}
+                    >
+                      <EditIcon size={16} />
+                    </div>
+                    <div
+                      className="cursor-pointer text-red-400 hover:text-red-500"
+                      onClick={deleteSet(p)}
+                    >
+                      <TrashIcon size={16} />
                     </div>
                   </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteSet(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
+                </div>
               ))}
             </div>
           )}
-          <div>
-            <Button
-              onClick={addSet()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              {t('add_a_set', 'Add a set')}
-            </Button>
-          </div>
         </div>
       </div>
     </div>

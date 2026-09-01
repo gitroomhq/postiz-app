@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
+import { EditIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Autopost: FC = () => {
   const fetch = useFetch();
@@ -79,50 +80,52 @@ export const Autopost: FC = () => {
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('title', 'Title')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              <div>{t('active', 'Active')}</div>
+          <div className="flex items-center justify-between mb-[16px]">
+            <div className="mt-[4px]">{t('autopost', 'Autopost')}</div>
+            <Button onClick={addWebhook()}>
+              {t('add_an_autopost', 'Add an autopost')}
+            </Button>
+          </div>
+          {!data?.length ? (
+            <div className="text-customColor18 text-center py-[24px]">
+              {t('no_autopost_yet', 'No autopost yet.')}
+            </div>
+          ) : (
+            <div className="flex flex-col">
               {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
+                <div
+                  key={p.id}
+                  className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0"
+                >
+                  <div className="flex-1">{p.title}</div>
+                  <div className="w-[220px] truncate text-customColor18 text-[13px]">
+                    {p.url}
                   </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
+                  <div className="w-[90px]">
                     <Slider
                       value={p.active ? 'on' : 'off'}
                       onChange={changeActive(p)}
                       fill={true}
                     />
                   </div>
-                </Fragment>
+                  <div className="flex gap-[12px] justify-end w-[64px]">
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={addWebhook(p)}
+                    >
+                      <EditIcon size={16} />
+                    </div>
+                    <div
+                      className="cursor-pointer text-red-400 hover:text-red-500"
+                      onClick={deleteHook(p)}
+                    >
+                      <TrashIcon size={16} />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              {t('add_an_autopost', 'Add an autopost')}
-            </Button>
-          </div>
         </div>
       </div>
     </div>
@@ -296,7 +299,7 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 pt-0">
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
           <div>
             <Input
               label="Title"

@@ -1,13 +1,13 @@
 'use client';
 
-import React, { FC, Fragment, useCallback } from 'react';
+import React, { FC, useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
-import { array, boolean, object, string } from 'yup';
+import { EditIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
+import { boolean, object, string } from 'yup';
 import { FormProvider, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
@@ -70,66 +70,57 @@ export const SignaturesComponent: FC<{
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div
-              className={`grid ${
-                !!appendSignature
-                  ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]'
-                  : 'grid-cols-[1fr,1fr,1fr,1fr]'
-              } w-full gap-y-[10px]`}
-            >
-              <div>{t('content', 'Content')}</div>
-              <div className="text-center">{t('auto_add', 'Auto Add?')}</div>
-              {!!appendSignature && (
-                <div className="text-center">{t('actions', 'Actions')}</div>
-              )}
-              <div className="text-center">{t('edit', 'Edit')}</div>
-              <div className="text-center">{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="relative flex-1 me-[20px] overflow-x-hidden">
-                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
-                      {p.content.slice(0, 15) + '...'}
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center relative me-[20px]">
-                    <div className="text-center w-full absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%]">
-                      {p.autoAdd ? t('yes', 'Yes') : t('no', 'No')}
-                    </div>
-                  </div>
-                  {!!appendSignature && (
-                    <div className="flex justify-center">
-                      <Button onClick={() => appendSignature(p.content)}>
-                        {t('use_signature', 'Use Signature')}
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={addSignature(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={deleteSignature(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addSignature()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
+          <div className="flex items-center justify-between mb-[16px]">
+            <div className="mt-[4px]">{t('signatures', 'Signatures')}</div>
+            <Button onClick={addSignature()}>
               {t('add_a_signature', 'Add a signature')}
             </Button>
           </div>
+          {!data?.length ? (
+            <div className="text-customColor18 text-center py-[24px]">
+              {t('no_signatures_yet', 'No signatures yet.')}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {data?.map((p: any) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0"
+                >
+                  <div className="flex-1 truncate">
+                    {p.content.slice(0, 60) +
+                      (p.content.length > 60 ? '...' : '')}
+                  </div>
+                  <div className="w-[150px] shrink-0 whitespace-nowrap text-customColor18 text-[13px]">
+                    {t('auto_add', 'Auto Add?')}:{' '}
+                    {p.autoAdd ? t('yes', 'Yes') : t('no', 'No')}
+                  </div>
+                  {!!appendSignature && (
+                    <Button
+                      secondary={true}
+                      onClick={() => appendSignature(p.content)}
+                    >
+                      {t('use_signature', 'Use Signature')}
+                    </Button>
+                  )}
+                  <div className="flex gap-[12px] justify-end w-[64px]">
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={addSignature(p)}
+                    >
+                      <EditIcon size={16} />
+                    </div>
+                    <div
+                      className="cursor-pointer text-red-400 hover:text-red-500"
+                      onClick={deleteSignature(p)}
+                    >
+                      <TrashIcon size={16} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -178,28 +169,7 @@ const AddOrRemoveSignature: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
-          <button
-            className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
-            type="button"
-            onClick={() => modal.closeCurrent()}
-          >
-            <svg
-              viewBox="0 0 15 15"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-                fill="currentColor"
-                fillRule="evenodd"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
           <div className="relative bg-customColor2">
             <CopilotTextarea
               disableBranding={true}
@@ -233,7 +203,7 @@ const AddOrRemoveSignature: FC<{
             </option>
           </Select>
 
-          <Button type="submit">{t('save', 'Save')}</Button>
+          <Button type="submit" className="mt-[18px]">{t('save', 'Save')}</Button>
         </div>
       </form>
     </FormProvider>

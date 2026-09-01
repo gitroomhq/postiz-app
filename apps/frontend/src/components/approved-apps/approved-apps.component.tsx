@@ -72,9 +72,10 @@ export const ApprovedAppsComponent: FC = () => {
         </div>
       </div>
 
-      <div className="bg-sixth border-fifth border rounded-[4px] p-[24px]">
+      <div className="bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
+        <div className="mt-[4px]">{t('approved_apps', 'Approved Apps')}</div>
         {!apps?.length ? (
-          <div className="text-customColor18">
+          <div className="text-customColor18 text-center py-[24px]">
             {t('no_approved_apps', 'No approved apps yet.')}
           </div>
         ) : (

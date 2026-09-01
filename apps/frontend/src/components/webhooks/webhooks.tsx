@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -13,8 +13,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { EditIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const Webhooks: FC = () => {
@@ -71,47 +71,58 @@ export const Webhooks: FC = () => {
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
         <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('name', 'Name')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
+          <div className="flex items-center justify-between mb-[16px]">
+            <div className="mt-[4px]">{t('webhooks', 'Webhooks')}</div>
+            <Button onClick={addWebhook()}>
               {t('add_a_webhook', 'Add a webhook')}
             </Button>
           </div>
+          {!data?.length ? (
+            <div className="text-customColor18 text-center py-[24px]">
+              {t('no_webhooks_yet', 'No webhooks yet.')}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {data?.map((p: any) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0"
+                >
+                  <div className="flex-1">{p.name}</div>
+                  <div className="w-[220px] truncate text-customColor18 text-[13px]">
+                    {p.url}
+                  </div>
+                  <div className="w-[170px] shrink-0 whitespace-nowrap text-customColor18 text-[13px]">
+                    {p.integrations?.length
+                      ? t('n_integrations', `${p.integrations.length} specific`, {
+                          count: p.integrations.length,
+                        })
+                      : t('all_integrations', 'All integrations')}
+                  </div>
+                  <div className="flex gap-[12px] justify-end w-[64px]">
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={addWebhook(p)}
+                    >
+                      <EditIcon size={16} />
+                    </div>
+                    <div
+                      className="cursor-pointer text-red-400 hover:text-red-500"
+                      onClick={deleteHook(p)}
+                    >
+                      <TrashIcon size={16} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
 const details = object().shape({
   name: string().required(),
   url: string().url().required(),
@@ -244,7 +255,7 @@ export const AddOrEditWebhook: FC<{
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(callBack)}>
-        <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
           <div>
             <Input
               label="Name"
