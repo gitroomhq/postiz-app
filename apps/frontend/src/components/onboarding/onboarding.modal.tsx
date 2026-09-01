@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
 interface OnboardingModalProps {
@@ -18,6 +19,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const modals = useModals();
   const t = useT();
+  const { isGeneral } = useVariables();
 
   return (
     <div className="w-full min-h-full flex-1 p-[40px] flex relative">
@@ -245,6 +247,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
   onFinish,
 }) => {
   const t = useT();
+  const { isGeneral } = useVariables();
 
   return (
     <div className="flex flex-col gap-[24px] flex-1">
@@ -266,7 +269,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onFinish: () => void }> = ({
           <iframe
             className="h-full aspect-video"
             src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-            title="Postiz Tutorial"
+            title={`${isGeneral ? 'Postiz' : 'Gitroom'} ${t('tutorial', 'Tutorial')}`}
             allow="autoplay"
             allowFullScreen
           />
