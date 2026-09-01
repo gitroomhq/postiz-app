@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -123,7 +124,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         )}
                       >
                         <div className="flex flex-col h-full min-w-0 gap-[32px] flex-1 py-[12px]">
-                          <Logo />
+                          <Link href="/launches" className="cursor-pointer">
+                            <Logo />
+                          </Link>
                           <TopMenu />
                         </div>
                       </div>
