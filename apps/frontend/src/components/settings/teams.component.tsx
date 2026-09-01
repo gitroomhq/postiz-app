@@ -189,7 +189,7 @@ export const TeamsComponent = () => {
               {+myLevel > +getLevel(p.role) ? (
                 <div className="flex-1 flex justify-end">
                   <Button
-                    className={`!bg-customColor3 !h-[24px] border border-customColor21 rounded-[4px] text-[12px]`}
+                    className={`!bg-customColor3 !h-[24px] border border-customColor21 !rounded-[4px] text-[12px]`}
                     onClick={remove(p)}
                     secondary={true}
                   >

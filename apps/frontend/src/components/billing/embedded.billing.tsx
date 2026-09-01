@@ -633,7 +633,7 @@ const SubmitBar: FC<{ loading: boolean }> = ({ loading }) => {
         ) : null}
         <div>
           <Button
-            className="h-[42px] rounded-[10px] mobile:w-full"
+            className="h-[42px] !rounded-[10px] mobile:w-full"
             type="submit"
             loading={loading}
           >

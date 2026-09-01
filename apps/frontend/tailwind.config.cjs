@@ -114,6 +114,9 @@ module.exports = {
         youtubeBgAction: 'var(--youtube-action-color)',
         youtubeSvg: 'var(--youtube-svg-border)',
       },
+      borderRadius: {
+        DEFAULT: '8px',
+      },
       gridTemplateColumns: {
         13: 'repeat(13, minmax(0, 1fr));',
       },

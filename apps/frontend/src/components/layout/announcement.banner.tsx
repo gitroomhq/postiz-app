@@ -81,7 +81,7 @@ const AnnouncementDetailModal: FC<{
           <Button
             onClick={handleDelete}
             loading={deleting}
-            className="!bg-red-700 rounded-[4px]"
+            className="!bg-red-700 !rounded-[4px]"
           >
             {t('delete_announcement', 'Delete Announcement')}
           </Button>

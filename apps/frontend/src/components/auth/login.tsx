@@ -137,7 +137,7 @@ export function Login() {
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 rounded-[10px] !h-[52px]"
+                    className="flex-1 !rounded-[10px] !h-[52px]"
                     loading={loading}
                   >
                     {t('sign_in_1', 'Sign in')}

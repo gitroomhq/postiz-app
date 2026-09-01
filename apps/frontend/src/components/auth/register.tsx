@@ -267,7 +267,7 @@ export function RegisterAfter({
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 rounded-[10px] !h-[52px]"
+                    className="flex-1 !rounded-[10px] !h-[52px]"
                     loading={loading}
                   >
                     {t('create_account', 'Create Account')}

@@ -101,7 +101,7 @@ export function Activate() {
             ) : (
               <Button
                 onClick={resetToForm}
-                className="rounded-[10px] !h-[52px]"
+                className="!rounded-[10px] !h-[52px]"
               >
                 {t('send_again', 'Send Again')}
               </Button>
@@ -116,7 +116,7 @@ export function Activate() {
               )}
             </div>
             <Link href="/auth/login">
-              <Button className="rounded-[10px] !h-[52px] w-full">
+              <Button className="!rounded-[10px] !h-[52px] w-full">
                 {t('go_to_login', 'Go to Login')}
               </Button>
             </Link>
@@ -133,7 +133,7 @@ export function Activate() {
               />
               <Button
                 type="submit"
-                className="rounded-[10px] !h-[52px]"
+                className="!rounded-[10px] !h-[52px]"
                 loading={loading}
                 disabled={cooldown > 0}
               >

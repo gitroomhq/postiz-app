@@ -247,7 +247,7 @@ const ApplyCouponModal: FC<{ close: () => void }> = ({ close }) => {
                 <Button
                   onClick={handleCancelCoupon}
                   loading={cancelling}
-                  className="!bg-red-700 rounded-[4px] !h-[24px] !px-[10px] text-[12px]"
+                  className="!bg-red-700 !rounded-[4px] !h-[24px] !px-[10px] text-[12px]"
                 >
                   {t('cancel', 'Cancel')}
                 </Button>
@@ -304,14 +304,14 @@ const ApplyCouponModal: FC<{ close: () => void }> = ({ close }) => {
           )}
           {!!error && <div className="text-red-400 text-[12px]">{error}</div>}
           <div className="flex gap-[12px] justify-end">
-            <Button onClick={close} className="rounded-[4px]">
+            <Button onClick={close} className="!rounded-[4px]">
               {t('close', 'Close')}
             </Button>
             {info.supported && (
               <Button
                 onClick={handleApply}
                 loading={applying}
-                className="!bg-blue-700 rounded-[4px]"
+                className="!bg-blue-700 !rounded-[4px]"
               >
                 {t('apply', 'Apply')}
               </Button>
@@ -359,7 +359,8 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
       !(await deleteDialog(
         t(
           'refund_selected_confirm',
-          `Are you sure you want to refund ${selected.size} charge(s)? This cannot be undone.`
+          `Are you sure you want to refund ${selected.size} charge(s)? This cannot be undone.`,
+          { count: selected.size }
         ),
         t('yes_refund', 'Yes, refund'),
         t('confirm_refund', 'Confirm Refund'),
@@ -514,7 +515,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
       <div className="flex gap-[12px] justify-end">
         <Button
           onClick={handleApplyCoupon}
-          className="!bg-blue-700 rounded-[4px]"
+          className="!bg-blue-700 !rounded-[4px]"
         >
           {t('apply_coupon', 'Apply Coupon')}
         </Button>
@@ -522,7 +523,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
           onClick={handleRefund}
           loading={refunding}
           disabled={!selected.size}
-          className="rounded-[4px]"
+          className="!rounded-[4px]"
         >
           {t('refund_selected', 'Refund Selected')}
           {selected.size > 0 && ` (${selected.size})`}
@@ -530,7 +531,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
         <Button
           onClick={handleCancel}
           loading={cancelling}
-          className="!bg-red-700 rounded-[4px]"
+          className="!bg-red-700 !rounded-[4px]"
         >
           {t('cancel_subscription', 'Cancel Subscription')}
         </Button>
@@ -683,7 +684,7 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
           onClick={handleSubmit}
           loading={saving}
           disabled={!title.trim() || !description.trim()}
-          className="rounded-[4px]"
+          className="!rounded-[4px]"
         >
           {t('create_announcement', 'Create Announcement')}
         </Button>
@@ -769,7 +770,7 @@ const AddTeamMemberModal: FC<{ close: () => void }> = ({ close }) => {
             <option value="USER">{t('user', 'User')}</option>
             <option value="ADMIN">{t('admin', 'Admin')}</option>
           </Select>
-          <Button type="submit" loading={saving} className="rounded-[4px]">
+          <Button type="submit" loading={saving} className="!rounded-[4px]">
             {t('add_team_member', 'Add Team Member')}
           </Button>
         </div>
@@ -925,7 +926,8 @@ const SwitchUser = () => {
       !(await deleteDialog(
         t(
           'switch_user_confirm',
-          `This will replace the current account's login with ${selected.email}. All data and the subscription stay with the account — only the login changes, and the new login gains its full access. Switch back to revert.`
+          `This will replace the current account's login with ${selected.email}. All data and the subscription stay with the account — only the login changes, and the new login gains its full access. Switch back to revert.`,
+          { email: selected.email }
         ),
         t('yes_switch', 'Yes, switch'),
         t('switch_user_title', 'Switch User?'),
@@ -979,7 +981,7 @@ const SwitchUser = () => {
         onClick={doSwitch}
         loading={switching}
         disabled={!selected}
-        className="rounded-[4px] whitespace-nowrap"
+        className="!rounded-[4px] whitespace-nowrap"
       >
         {t('switch_user', 'Switch User')}
       </Button>
@@ -1103,7 +1105,7 @@ export const Impersonate = () => {
                 <div className="flex-1">
                   <Input
                     autoComplete="off"
-                    placeholder="Write the user details"
+                    placeholder={t('write_the_user_details', 'Write the user details')}
                     name="impersonate"
                     disableForm={true}
                     label=""
