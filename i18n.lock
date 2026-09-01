@@ -636,6 +636,10 @@ checksums:
     channel_id_copied: 58bf6a74adf570a5daf233ce496149de
     settings_updated: 260e10a61200b581616d766f3af5ae52
     customer_updated: ab17bcd115b14b72bb2e89f2b48883a4
+    edit_group_name: 64654e2647a83d0c51e357c9ba30a962
+    group_name: 9368b5a047572b6051f334af5aa76819
+    group_updated: db3365d95da2a925566eb65a1a416883
+    could_not_save_group: 31c544cf61f16ce4f6930268a26e7192
     custom_url: f1e4e1c6a386d212abe94b937cf5e812
     picture: 14818ef364a0ecc8b738bdb23c46b3c3
     upgrade_required: 460dbea5061a1aba2080ffdecdf9544c

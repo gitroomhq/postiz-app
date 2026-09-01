@@ -20,6 +20,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
+import { CustomerNameDto } from '@gitroom/nestjs-libraries/dtos/integrations/customer.name.dto';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import {
   Disconnect,
@@ -64,6 +65,15 @@ export class IntegrationsController {
   @Get('/customers')
   getCustomers(@GetOrgFromRequest() org: Organization) {
     return this._integrationService.customers(org.id);
+  }
+
+  @Put('/customers/:id')
+  async updateCustomerName(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: CustomerNameDto
+  ) {
+    return this._integrationService.updateCustomerName(org.id, id, body.name);
   }
 
   @Put('/:id/group')
