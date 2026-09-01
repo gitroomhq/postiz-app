@@ -1,24 +1,24 @@
 'use client';
 
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
   cookieName,
   fallbackLng,
   languages,
 } from '@gitroom/react/translation/i18n.config';
-import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import useCookie from 'react-use-cookie';
 import ReactCountryFlag from 'react-country-flag';
-import { List, Box, Group, Text } from '@mantine/core';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import countries from 'i18n-iso-countries';
 
 // Register required locales
 import countriesEn from 'i18n-iso-countries/langs/en.json';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ModalWrapperComponent } from '../new-launch/modal.wrapper.component';
+import { useClickOutside } from '@mantine/hooks';
+import {
+  dropdownPanelClass,
+  dropdownRowClass,
+} from '@gitroom/frontend/components/layout/dropdown.styles';
 
-import clsx from 'clsx';
 countries.registerLocale(countriesEn);
 
 const getCountryCodeForFlag = (languageCode: string) => {
@@ -61,96 +61,90 @@ const getCountryCodeForFlag = (languageCode: string) => {
   return languageCode.toUpperCase();
 };
 
-export const ChangeLanguageComponent = () => {
-  const currentLanguage = i18next.resolvedLanguage || fallbackLng;
-  const availableLanguages = languages;
-  const [_, setCookie] = useCookie(cookieName, currentLanguage || fallbackLng);
-  const modals = useModals();
-  const t = useT();
+// Function to get language name in its native script
+const getLanguageName = (code: string) => {
+  try {
+    // Use browser's Intl API to get language name in native script
+    const displayNames = new Intl.DisplayNames([code], {
+      type: 'language',
+    });
+    return displayNames.of(code);
+  } catch (error) {
+    // Fallback to language code if the API isn't supported or language is not found
+    return code;
+  }
+};
 
-  const handleLanguageChange = (language: string) => {
-    setCookie(language);
-    i18next.changeLanguage(language);
-    modals.closeCurrent();
-    const rtlLanguages = ['he', 'ar'];
-    const dir = rtlLanguages.includes(language) ? 'rtl' : 'ltr';
-    document.documentElement.setAttribute('dir', dir);
-  };
+export const LanguageComponent = () => {
+  const [open, setOpen] = useState(false);
+  const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
+  const { i18n } = useTranslation();
+  const currentLanguage = i18n.resolvedLanguage || fallbackLng;
+  const [, setLanguageCookie] = useCookie(
+    cookieName,
+    currentLanguage || fallbackLng
+  );
 
-  // Function to get language name in its native script
-  const getLanguageName = useCallback((code: string) => {
-    try {
-      // Use browser's Intl API to get language name in native script
-      const displayNames = new Intl.DisplayNames([code], {
-        type: 'language',
-      });
-      return displayNames.of(code);
-    } catch (error) {
-      // Fallback to language code if the API isn't supported or language is not found
-      return code;
-    }
-  }, []);
+  const toggleOpen = useCallback(() => setOpen((prev) => !prev), []);
+
+  const handleLanguageChange = useCallback(
+    (language: string) => {
+      setLanguageCookie(language);
+      i18n.changeLanguage(language);
+      setOpen(false);
+      const rtlLanguages = ['he', 'ar'];
+      const dir = rtlLanguages.includes(language) ? 'rtl' : 'ltr';
+      document.documentElement.setAttribute('dir', dir);
+    },
+    [setLanguageCookie, i18n]
+  );
 
   return (
-    <div className="relative">
-      <div className="grid grid-cols-4 gap-2">
-        {availableLanguages.map((language) => (
+    <div className="relative select-none" ref={ref}>
+      <div
+        onClick={toggleOpen}
+        className="rounded-full overflow-hidden h-[22px] w-[22px] relative cursor-pointer"
+      >
+        <ReactCountryFlag
+          countryCode={getCountryCodeForFlag(currentLanguage)}
+          svg
+          style={{
+            width: '22px',
+            height: '22px',
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            objectFit: 'cover',
+          }}
+          title={currentLanguage}
+        />
+      </div>
+      <div
+        className={dropdownPanelClass(
+          open,
+          'min-w-[200px] max-h-[320px] overflow-y-auto'
+        )}
+      >
+        {languages.map((language) => (
           <div
-            className={clsx(
-              'flex items-center flex-col bg-newTableHeader hover:bg-newTableBorder p-[20px] cursor-pointer gap-2',
-              language === currentLanguage ? 'border border-textColor' : ''
-            )}
             key={language}
             onClick={() => handleLanguageChange(language)}
+            className={dropdownRowClass(language === currentLanguage)}
           >
             <ReactCountryFlag
               countryCode={getCountryCodeForFlag(language)}
               svg
               style={{
-                width: '1.5em',
-                height: '1.5em',
+                width: '1.2em',
+                height: '1.2em',
               }}
               title={language}
             />
-            <Text weight={language === currentLanguage ? 'bold' : 'normal'}>
-              {getLanguageName(language)}
-            </Text>
+            <span>{getLanguageName(language)}</span>
           </div>
         ))}
       </div>
-    </div>
-  );
-};
-export const LanguageComponent = () => {
-  const modal = useModals();
-  const currentLanguage = i18next.resolvedLanguage || fallbackLng;
-  const t = useT();
-  const openModal = () => {
-    modal.openModal({
-      title: t('change_language', 'Change Language'),
-      withCloseButton: true,
-      children: <ChangeLanguageComponent />,
-    });
-  };
-  return (
-    <div
-      onClick={openModal}
-      className="rounded-full overflow-hidden h-[22px] w-[22px] relative cursor-pointer"
-    >
-      <ReactCountryFlag
-        countryCode={getCountryCodeForFlag(currentLanguage)}
-        svg
-        style={{
-          width: '22px',
-          height: '22px',
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          objectFit: 'cover',
-        }}
-        title={currentLanguage}
-      />
     </div>
   );
 };

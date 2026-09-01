@@ -5,9 +5,10 @@ import useSWR from 'swr';
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useClickAway } from '@uidotdev/usehooks';
+import { useClickOutside } from '@mantine/hooks';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { dropdownPanelClass } from '@gitroom/frontend/components/layout/dropdown.styles';
 function replaceLinks(text: string) {
   const urlRegex =
     /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
@@ -63,7 +64,7 @@ export const NotificationOpenComponent = () => {
   return (
     <div
       id="notification-popup"
-      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] end-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[600]"
+      className={dropdownPanelClass(true, 'w-[420px] min-h-[200px]')}
     >
       <div
         className={`p-[16px] border-b border-tableBorder font-bold`}
@@ -121,7 +122,7 @@ const NotificationComponent = () => {
     );
     setShow(!show);
   }, [show, data]);
-  const ref = useClickAway<HTMLDivElement>(() => setShow(false));
+  const ref = useClickOutside<HTMLDivElement>(() => setShow(false));
   return (
     <div className="relative cursor-pointer select-none" ref={ref}>
       <div onClick={changeShow}>
