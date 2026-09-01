@@ -56,23 +56,33 @@ export class AuthService {
           throw new Error('Registration is disabled');
         }
 
-        const create = await this._organizationService.createOrgAndUser(
-          body,
-          ip,
-          userAgent
-        );
+        const invite =
+          addToOrg && typeof addToOrg !== 'boolean' ? addToOrg : undefined;
 
-        const addedOrg =
-          addToOrg && typeof addToOrg !== 'boolean'
-            ? await this._organizationService.addUserToOrg(
-                create.users[0].user.id,
-                addToOrg.id,
-                addToOrg.orgId,
-                addToOrg.role
+        // Registering through an invite link joins that organization instead
+        // of also creating a throwaway one from the (in that case ignored)
+        // company field - otherwise every invited signup left a duplicate org
+        // behind.
+        const newUser = invite
+          ? await this._userService.createUser(body, ip, userAgent)
+          : (
+              await this._organizationService.createOrgAndUser(
+                body,
+                ip,
+                userAgent
               )
-            : false;
+            ).users[0].user;
 
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
+        const addedOrg = invite
+          ? await this._organizationService.addUserToOrg(
+              newUser.id,
+              invite.id,
+              invite.orgId,
+              invite.role
+            )
+          : false;
+
+        const obj = { addedOrg, jwt: await this.jwt(newUser) };
         await this._emailService.sendEmail(
           body.email,
           'Activate your account',
@@ -93,22 +103,25 @@ export class AuthService {
       return { addedOrg: false, jwt: await this.jwt(user) };
     }
 
+    const invite =
+      addToOrg && typeof addToOrg !== 'boolean' ? addToOrg : undefined;
+
     const user = await this.loginOrRegisterProvider(
       provider,
       body as CreateOrgUserDto,
       ip,
-      userAgent
+      userAgent,
+      invite
     );
 
-    const addedOrg =
-      addToOrg && typeof addToOrg !== 'boolean'
-        ? await this._organizationService.addUserToOrg(
-            user.id,
-            addToOrg.id,
-            addToOrg.orgId,
-            addToOrg.role
-          )
-        : false;
+    const addedOrg = invite
+      ? await this._organizationService.addUserToOrg(
+          user.id,
+          invite.id,
+          invite.orgId,
+          invite.role
+        )
+      : false;
     return { addedOrg, jwt: await this.jwt(user) };
   }
 
@@ -138,7 +151,8 @@ export class AuthService {
     provider: Provider,
     body: CreateOrgUserDto,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    invite?: { orgId: string; role: 'USER' | 'ADMIN'; id: string }
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -159,18 +173,39 @@ export class AuthService {
       throw new Error('Registration is disabled');
     }
 
-    const create = await this._organizationService.createOrgAndUser(
-      {
-        company: body.company,
-        email: providerUser.email,
-        password: '',
-        provider,
-        providerId: providerUser.id,
-        datafast_visitor_id: body.datafast_visitor_id,
-      },
-      ip,
-      userAgent
-    );
+    // Same reasoning as the LOCAL branch: an invited OAuth signup joins that
+    // organization instead of also getting one of its own.
+    let finalUser: User;
+    let orgIdForPostRegistration: string;
+
+    if (invite) {
+      finalUser = await this._userService.createUser(
+        {
+          email: providerUser.email,
+          password: '',
+          provider,
+          providerId: providerUser.id,
+        },
+        ip,
+        userAgent
+      );
+      orgIdForPostRegistration = invite.orgId;
+    } else {
+      const create = await this._organizationService.createOrgAndUser(
+        {
+          company: body.company,
+          email: providerUser.email,
+          password: '',
+          provider,
+          providerId: providerUser.id,
+          datafast_visitor_id: body.datafast_visitor_id,
+        },
+        ip,
+        userAgent
+      );
+      finalUser = create.users[0].user;
+      orgIdForPostRegistration = create.id;
+    }
 
     this._track('register', providerUser.email, body.datafast_visitor_id).catch(
       (err) => {}
@@ -180,13 +215,16 @@ export class AuthService {
 
     try {
       if (providerInstance?.postRegistration) {
-        await providerInstance.postRegistration(body.providerToken, create.id);
+        await providerInstance.postRegistration(
+          body.providerToken,
+          orgIdForPostRegistration
+        );
       }
     } catch (err) {
       // Don't fail registration if postRegistration fails
     }
 
-    return create.users[0].user;
+    return finalUser;
   }
 
   private async _track(

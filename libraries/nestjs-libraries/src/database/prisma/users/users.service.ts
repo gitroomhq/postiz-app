@@ -22,6 +22,24 @@ export class UsersService {
     return this._usersRepository.getUserByEmail(email);
   }
 
+  createUser(
+    body: {
+      email: string;
+      password?: string;
+      provider: Provider;
+      providerId?: string;
+    },
+    ip: string,
+    userAgent: string
+  ) {
+    return this._usersRepository.createUser(
+      body,
+      this._notificationService.hasEmailProvider(),
+      ip,
+      userAgent
+    );
+  }
+
   getUserById(id: string) {
     return this._usersRepository.getUserById(id);
   }

@@ -104,6 +104,11 @@ export function RegisterAfter({
   const fireEvents = useFireEvents();
   const track = useTrack();
   const [datafast_visitor_id] = useCookie('datafast_visitor_id');
+  // Set by the proxy when this signup came from an invite link (see
+  // proxy.ts) - the actual invite is a separate httpOnly cookie the backend
+  // reads directly, this is only a non-sensitive UI flag.
+  const [invited] = useCookie('invited', '');
+  const isInvited = invited === 'true';
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
   }, [token, provider]);
@@ -115,6 +120,10 @@ export function RegisterAfter({
     defaultValues: {
       providerToken: token,
       provider: provider,
+      // The backend ignores company for an invited signup and joins the
+      // inviter's organization instead, so this just satisfies validation
+      // for a field the user never sees.
+      company: isInvited ? 'invited' : undefined,
     },
   });
   const fetchData = useFetch();
@@ -212,14 +221,23 @@ export function RegisterAfter({
                     />
                   </>
                 )}
-                <Input
-                  label="Company"
-                  translationKey="label_company"
-                  {...form.register('company')}
-                  autoComplete="off"
-                  type="text"
-                  placeholder={t('label_company', 'Company')}
-                />
+                {isInvited ? (
+                  <div className="text-[12px] text-customColor18">
+                    {t(
+                      'invited_you_will_join_an_existing_team',
+                      "You've been invited to join a team - your account will be added to it automatically."
+                    )}
+                  </div>
+                ) : (
+                  <Input
+                    label="Company"
+                    translationKey="label_company"
+                    {...form.register('company')}
+                    autoComplete="off"
+                    type="text"
+                    placeholder={t('label_company', 'Company')}
+                  />
+                )}
               </div>
               <div className={clsx('text-[12px]')}>
                 {t(

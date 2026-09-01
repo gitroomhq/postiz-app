@@ -299,4 +299,33 @@ export class UsersRepository {
       },
     });
   }
+
+  // Same fields as the nested user create inside
+  // OrganizationRepository.createOrgAndUser, minus the organization - used
+  // when a signup is joining an existing org through an invite instead of
+  // getting one of its own.
+  createUser(
+    body: {
+      email: string;
+      password?: string;
+      provider: Provider;
+      providerId?: string;
+    },
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
+  ) {
+    return this._user.model.user.create({
+      data: {
+        activated: body.provider !== 'LOCAL' || !hasEmail,
+        email: body.email,
+        password: body.password ? AuthService.hashPassword(body.password) : '',
+        providerName: body.provider,
+        providerId: body.providerId || '',
+        timezone: 0,
+        ip,
+        agent: userAgent,
+      },
+    });
+  }
 }
