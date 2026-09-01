@@ -269,6 +269,24 @@ export class OrganizationRepository {
     });
   }
 
+  getOrgByIdWithSubscription(id: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
   getUsersByEmail(email: string) {
     return this._user.model.user.findMany({
       where: {
