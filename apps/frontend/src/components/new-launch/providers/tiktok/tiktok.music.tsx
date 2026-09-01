@@ -194,6 +194,7 @@ export const TikTokMusicSelector: FC<{
               <img
                 src={value.image}
                 className="w-[42px] h-[42px] rounded-[8px] object-cover"
+                alt={value.title}
               />
             )}
             <div className="flex-1 flex flex-col">
@@ -297,6 +298,7 @@ export const TikTokMusicSelector: FC<{
                     <img
                       src={track.image}
                       className="w-[36px] h-[36px] rounded-[8px] object-cover"
+                      alt={track.title}
                     />
                   )}
                   <div className="flex-1 flex flex-col">

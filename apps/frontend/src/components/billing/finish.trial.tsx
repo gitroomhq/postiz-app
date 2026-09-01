@@ -4,8 +4,10 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Button } from '@gitroom/react/form/button';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const FinishTrial: FC<{ close: () => void }> = (props) => {
+  const t = useT();
   const [finished, setFinished] = useState(false);
   const fetch = useFetch();
 
@@ -36,7 +38,7 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
         <div className="flex gap-[10px] flex-col w-[500px] h-auto bg-sixth border-tableBorder border-2 rounded-xl pb-[20px] px-[20px] relative">
           <div className="flex">
             <div className="flex-1">
-              <TopTitle title={'Finishing Trial'} />
+              <TopTitle title={t('finishing_trial', 'Finishing Trial')} />
             </div>
             <button
               onClick={props.close}
@@ -66,11 +68,18 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
                 {finished && (
                   <div className="flex flex-col">
                     <div>
-                      You trial has been successfully finished and you have been charged.
+                      {t(
+                        'trial_finished_and_charged',
+                        'You trial has been successfully finished and you have been charged.'
+                      )}
                     </div>
                     <div className="flex gap-[10px] mt-[20px]">
-                      <Button className="flex-1" onClick={() => window.close()}>Close window</Button>
-                      <Button className="flex-1" onClick={() => props.close()}>Close dialog</Button>
+                      <Button className="flex-1" onClick={() => window.close()}>
+                        {t('close_window', 'Close window')}
+                      </Button>
+                      <Button className="flex-1" onClick={() => props.close()}>
+                        {t('close_dialog', 'Close dialog')}
+                      </Button>
                     </div>
                   </div>
                 )}

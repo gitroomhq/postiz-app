@@ -64,6 +64,7 @@ const RenderRedditComponent: FC<{
                 <img
                   className="w-full h-full object-cover"
                   src={showMedia.set(image.path)}
+                  alt={t('media_alt', 'media')}
                 />
               </a>
             ))}
@@ -84,8 +85,16 @@ const RedditPreview: FC = (props) => {
       return text.slice(0, 280);
     },
   });
+  const t = useT();
   if (!settings || !settings.length) {
-    return <>Please add at least one Subreddit from the settings</>;
+    return (
+      <>
+        {t(
+          'please_add_at_least_one_subreddit_from_the_settings',
+          'Please add at least one Subreddit from the settings'
+        )}
+      </>
+    );
   }
   return (
     <div className="flex flex-col gap-[40px] w-full">

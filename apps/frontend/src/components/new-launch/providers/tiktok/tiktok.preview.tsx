@@ -6,6 +6,7 @@ import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC, ReactNode } from 'react';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const TikTokItem: FC<{ icon: ReactNode; num: string }> = ({ icon, num }) => {
   return (
@@ -20,6 +21,7 @@ const TikTokItem: FC<{ icon: ReactNode; num: string }> = ({ icon, num }) => {
 export const TiktokPreview: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  const t = useT();
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
@@ -83,7 +85,7 @@ export const TiktokPreview: FC<{
         <div className="relative">
           <img
             src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
+            alt={t('social_icon_alt', 'social')}
             className="rounded-full z-[2] w-[29px] h-[29px]"
           />
           <div className="absolute left-[50%] -translate-x-[50%] bottom-0 translate-y-[50%] z-[1]">
@@ -173,7 +175,7 @@ export const TiktokPreview: FC<{
         <div>
           <img
             src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
+            alt={t('social_icon_alt', 'social')}
             className="rounded-full relative z-[2] w-[29px] h-[29px]"
           />
         </div>

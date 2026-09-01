@@ -49,7 +49,7 @@ export const ApiModal: FC<{
       });
 
       if (add.ok) {
-        toaster.show('Integration added successfully', 'success');
+        toaster.show(t('integration_added_successfully', 'Integration added successfully'), 'success');
         if (closePopup) {
           closePopup();
         } else {
@@ -81,7 +81,7 @@ export const ApiModal: FC<{
           onSubmit={methods.handleSubmit(submit)}
         >
           <div className="pt-[10px]">
-            <Input label="API Key" name="api" />
+            <Input label={t('api_key', 'API Key')} name="api" />
           </div>
           <div>
             <Button loading={loading} type="submit">
@@ -95,6 +95,7 @@ export const ApiModal: FC<{
 };
 
 export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
+  const t = useT();
   const fetch = useFetch();
   const modals = useModals();
   const { reload } = props;
@@ -115,7 +116,9 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
   const addApiKey = useCallback(
     (title: string, identifier: string) => () => {
       modals.openModal({
-        title: `Add API key for ${title}`,
+        title: t('top_title_add_api_key_for', `Add API key for ${title}`, {
+          name: title,
+        }),
         withCloseButton: false,
         children: (
           <ApiModal identifier={identifier} title={title} update={reload} />
@@ -137,12 +140,13 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
             <img
               className="w-[32px] h-[32px]"
               src={`/icons/third-party/${p.identifier}.png`}
+              alt={p.title}
             />
           </div>
           <div className="whitespace-pre-wrap text-left text-lg">{p.title}</div>
           <div className="whitespace-pre-wrap text-left">{p.description}</div>
           <div className="w-full flex">
-            <Button className="w-full">Add</Button>
+            <Button className="w-full">{t('add', 'Add')}</Button>
           </div>
         </div>
       ))}

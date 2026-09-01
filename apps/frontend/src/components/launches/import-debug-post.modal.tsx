@@ -205,7 +205,8 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
               <div className="text-[13px] text-red-400">
                 {t(
                   'no_matching_integrations',
-                  `No ${parsed._debug.providerIdentifier} integrations found. Add one first.`
+                  `No ${parsed._debug.providerIdentifier} integrations found. Add one first.`,
+                  { provider: parsed._debug.providerIdentifier }
                 )}
               </div>
             ) : (

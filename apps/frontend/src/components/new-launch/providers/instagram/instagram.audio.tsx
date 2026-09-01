@@ -200,6 +200,7 @@ export const InstagramAudioSelector: FC<{
               <img
                 src={value.image}
                 className="w-[42px] h-[42px] rounded-[8px] object-cover"
+                alt={value.title}
               />
             )}
             <div className="flex-1 flex flex-col">
@@ -316,6 +317,7 @@ export const InstagramAudioSelector: FC<{
                     <img
                       src={audio.image}
                       className="w-[36px] h-[36px] rounded-[8px] object-cover"
+                      alt={audio.title}
                     />
                   )}
                   <div className="flex-1 flex flex-col">

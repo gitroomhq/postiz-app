@@ -108,6 +108,7 @@ export const ThirdPartyPopup: FC<{
                 <img
                   className="w-[32px] h-[32px]"
                   src={`/icons/third-party/${p.identifier}.png`}
+                  alt={p.title}
                 />
               </div>
               <div className="whitespace-pre-wrap text-left text-lg">

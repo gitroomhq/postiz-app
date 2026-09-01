@@ -10,59 +10,28 @@ import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.v
 import { Input } from '@gitroom/react/form/input';
 import { Select } from '@gitroom/react/form/select';
 import { useWatch } from 'react-hook-form';
-
-const topicTypes = [
-  {
-    label: 'Standard Update',
-    value: 'STANDARD',
-  },
-  {
-    label: 'Event',
-    value: 'EVENT',
-  },
-  {
-    label: 'Offer',
-    value: 'OFFER',
-  },
-];
-
-const callToActionTypes = [
-  {
-    label: 'None',
-    value: 'NONE',
-  },
-  {
-    label: 'Book',
-    value: 'BOOK',
-  },
-  {
-    label: 'Order Online',
-    value: 'ORDER',
-  },
-  {
-    label: 'Shop',
-    value: 'SHOP',
-  },
-  {
-    label: 'Learn More',
-    value: 'LEARN_MORE',
-  },
-  {
-    label: 'Sign Up',
-    value: 'SIGN_UP',
-  },
-  {
-    label: 'Get Offer',
-    value: 'GET_OFFER',
-  },
-  {
-    label: 'Call',
-    value: 'CALL',
-  },
-];
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const GmbSettings: FC = () => {
+  const t = useT();
   const { register, control } = useSettings();
+
+  const topicTypes = [
+    { label: t('standard_update', 'Standard Update'), value: 'STANDARD' },
+    { label: t('event', 'Event'), value: 'EVENT' },
+    { label: t('offer', 'Offer'), value: 'OFFER' },
+  ];
+
+  const callToActionTypes = [
+    { label: t('none', 'None'), value: 'NONE' },
+    { label: t('book', 'Book'), value: 'BOOK' },
+    { label: t('order_online', 'Order Online'), value: 'ORDER' },
+    { label: t('shop', 'Shop'), value: 'SHOP' },
+    { label: t('learn_more', 'Learn More'), value: 'LEARN_MORE' },
+    { label: t('sign_up', 'Sign Up'), value: 'SIGN_UP' },
+    { label: t('get_offer', 'Get Offer'), value: 'GET_OFFER' },
+    { label: t('call', 'Call'), value: 'CALL' },
+  ];
   const topicType = useWatch({ control, name: 'topicType' });
   const callToActionType = useWatch({ control, name: 'callToActionType' });
 
@@ -106,10 +75,10 @@ const GmbSettings: FC = () => {
 
       {topicType === 'EVENT' && (
         <div className="flex flex-col gap-[10px] mt-[10px] p-[15px] border border-input rounded-[8px]">
-          <div className="text-[14px] font-medium mb-[5px]">Event Details</div>
+          <div className="text-[14px] font-medium mb-[5px]">{t('event_details', 'Event Details')}</div>
           <Input
             label="Event Title"
-            placeholder="Event name"
+            placeholder={t('event_name', 'Event name')}
             {...register('eventTitle')}
           />
           <div className="grid grid-cols-2 gap-[10px]">
@@ -137,7 +106,7 @@ const GmbSettings: FC = () => {
 
       {topicType === 'OFFER' && (
         <div className="flex flex-col gap-[10px] mt-[10px] p-[15px] border border-input rounded-[8px]">
-          <div className="text-[14px] font-medium mb-[5px]">Offer Details</div>
+          <div className="text-[14px] font-medium mb-[5px]">{t('offer_details', 'Offer Details')}</div>
           <Input
             label="Coupon Code (optional)"
             placeholder="SAVE20"
@@ -150,7 +119,7 @@ const GmbSettings: FC = () => {
           />
           <Input
             label="Terms & Conditions (optional)"
-            placeholder="Valid until..."
+            placeholder={t('valid_until', 'Valid until...')}
             {...register('offerTerms')}
           />
         </div>

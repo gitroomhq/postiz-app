@@ -2,11 +2,15 @@ export const dynamic = 'force-dynamic';
 import { AdminStatsComponent } from '@gitroom/frontend/components/admin/admin-stats.component';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 
-export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Admin Stats`,
-  description: '',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} ${t('admin_stats', 'Admin Stats')}`,
+    description: t('admin_stats_description', 'View system usage statistics'),
+  };
+}
 
 export default async function Page() {
   return (

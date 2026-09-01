@@ -23,7 +23,7 @@ export const WalletUiProvider: FC = () => {
           fill="#0E0E0E"
         />
       </svg>
-      <div className="block xs:hidden">Wallet</div>
+      <div className="block xs:hidden">{t('wallet', 'Wallet')}</div>
     </div>
   );
 };

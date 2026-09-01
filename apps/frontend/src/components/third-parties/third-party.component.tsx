@@ -29,7 +29,12 @@ export const ThirdPartyMenuComponent: FC<{
   const deleteChannel = (id: string) => async () => {
     setShow(false);
     if (
-      !(await deleteDialog('Are you sure you want to delete this integration?'))
+      !(await deleteDialog(
+        t(
+          'are_you_sure_you_want_to_delete_this_integration',
+          'Are you sure you want to delete this integration?'
+        )
+      ))
     ) {
       return;
     }
@@ -39,7 +44,7 @@ export const ThirdPartyMenuComponent: FC<{
     });
 
     if (res.ok) {
-      toaster.show('Integration deleted successfully', 'success');
+      toaster.show(t('integration_deleted_successfully', 'Integration deleted successfully'), 'success');
       reload();
     } else {
       const error = await res.json();
@@ -154,7 +159,7 @@ export const ThirdPartyComponent = () => {
                 )}
               >
                 {!isLoading && !data?.length ? (
-                  <div>No Integrations Yet</div>
+                  <div>{t('no_integrations_yet', 'No Integrations Yet')}</div>
                 ) : (
                   data?.map((p: any) => (
                     <div

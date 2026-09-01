@@ -15,7 +15,9 @@ import {
 } from '@neynar/react';
 import { INeynarAuthenticatedUser } from '@neynar/react/dist/types/common';
 import { ButtonCaster } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
+  const t = useT();
   const [_, state] = props.nonce.split('||');
   const modal = useModals();
   const [hide, setHide] = useState(false);
@@ -34,7 +36,12 @@ export const WrapcasterProvider: FC<Web3ProviderInterface> = (props) => {
         </div>
       ) : (
         <div className="justify-center items-center py-[20px] flex-col w-[500px]">
-          <div>Click on the bottom below to start the process</div>
+          <div>
+            {t(
+              'click_on_the_bottom_below_to_start_the_process',
+              'Click on the bottom below to start the process'
+            )}
+          </div>
           <ButtonCaster login={auth} />
         </div>
       )}

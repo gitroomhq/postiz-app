@@ -3,8 +3,10 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const AttachToFeedbackIcon: FC = () => {
+  const t = useT();
   const { sentryDsn } = useVariables();
   const [feedback, setFeedback] = useState<any>();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -33,7 +35,7 @@ export const AttachToFeedbackIcon: FC = () => {
     <button
       ref={buttonRef}
       type="button"
-      aria-label="Feedback"
+      aria-label={t('feedback', 'Feedback')}
       className="hover:text-newTextColor"
     >
       <svg

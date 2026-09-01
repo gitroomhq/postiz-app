@@ -294,7 +294,7 @@ export const MainBillingComponent: FC<{
             cancelAt: cancel_at,
           }));
 
-          toast.show('Subscription reactivated successfully');
+          toast.show(t('subscription_reactivated_successfully', 'Subscription reactivated successfully'));
           setLoading(false);
           return;
         }
@@ -305,17 +305,23 @@ export const MainBillingComponent: FC<{
           pricing[subscription?.subscriptionTier!]?.team_members
         ) {
           messages.push(
-            `Your team members will be removed from your organization`
+            t(
+              'team_members_will_be_removed',
+              'Your team members will be removed from your organization'
+            )
           );
         }
         if (billing === 'FREE') {
           if (
             subscription?.cancelAt ||
             (await deleteDialog(
-              `Are you sure you want to cancel your subscription?
-              ${messages.join(', ')}`,
-              'Yes, cancel',
-              'Cancel Subscription'
+              t(
+                'are_you_sure_you_want_to_cancel_your_subscription',
+                `Are you sure you want to cancel your subscription?\n              ${messages.join(', ')}`,
+                { messages: messages.join(', ') }
+              ),
+              t('yes_cancel', 'Yes, cancel'),
+              t('cancel_subscription', 'Cancel Subscription')
             ))
           ) {
             const checkDiscount = await (
@@ -324,7 +330,7 @@ export const MainBillingComponent: FC<{
             if (checkDiscount.offerCoupon) {
               const info = await new Promise((res) => {
                 modal.openModal({
-                  title: 'Before you cancel',
+                  title: t('before_you_cancel', 'Before you cancel'),
                   withCloseButton: true,
                   classNames: {
                     modal: 'bg-transparent text-textColor',
@@ -371,7 +377,7 @@ export const MainBillingComponent: FC<{
               cancelAt: cancel_at,
             }));
             if (cancel_at)
-              toast.show('Subscription set to canceled successfully');
+              toast.show(t('subscription_set_to_canceled_successfully', 'Subscription set to canceled successfully'));
             setLoading(false);
           }
           return;
@@ -443,7 +449,7 @@ export const MainBillingComponent: FC<{
               revalidate: false,
             }
           );
-          toast.show('Subscription updated successfully');
+          toast.show(t('subscription_updated_successfully', 'Subscription updated successfully'));
         }
         setLoading(false);
       },

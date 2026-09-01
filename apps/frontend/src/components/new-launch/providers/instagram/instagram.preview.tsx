@@ -6,10 +6,12 @@ import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const InstagramPreview: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  const t = useT();
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
@@ -53,7 +55,7 @@ export const InstagramPreview: FC<{
         <div className="w-[36px] h-[36px]">
           <img
             src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
+            alt={t('social_icon_alt', 'social')}
             className="rounded-full relative z-[2] w-[36px] h-[36px]"
           />
         </div>
@@ -174,7 +176,7 @@ export const InstagramPreview: FC<{
                 <div className="h-[34px]">
                   <img
                     src={integration?.picture || '/no-picture.jpg'}
-                    alt="social"
+                    alt={t('social_icon_alt', 'social')}
                     className="rounded-full relative z-[2] h-[34px] w-[34px]"
                   />
                 </div>
@@ -208,7 +210,7 @@ export const InstagramPreview: FC<{
                     <div className="flex gap-[16px] flex-1">
                       <div className="font-[700]">30m</div>
                       <div className="font-[700]">8 Likes</div>
-                      <div className="font-[700]">Reply</div>
+                      <div className="font-[700]">{t('reply', 'Reply')}</div>
                     </div>
                   </div>
                 </div>

@@ -8,10 +8,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
 }) => {
+  const t = useT();
   const exising = useExistingData();
 
   const {
@@ -83,6 +85,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"
+                        alt={t('youtube', 'YouTube')}
                         className="absolute z-10 bottom-0 -end-[5px] min-w-[16px]"
                         width={16}
                       />

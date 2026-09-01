@@ -6,6 +6,7 @@ import { Input } from '@gitroom/react/form/input';
 import { useDebouncedCallback } from 'use-debounce';
 import { useWatch } from 'react-hook-form';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const Subreddit: FC<{
   onChange: (event: {
     target: {
@@ -23,6 +24,7 @@ export const Subreddit: FC<{
   }) => void;
   name: string;
 }> = (props) => {
+  const t = useT();
   const { onChange, name } = props;
   const state = useSettings();
   const split = name.split('.');
@@ -129,7 +131,7 @@ export const Subreddit: FC<{
       ) : (
         <div className="relative">
           <Input
-            placeholder="Community"
+            placeholder={t('community', 'Community')}
             name="search"
             label="Search Community"
             readOnly={loading}

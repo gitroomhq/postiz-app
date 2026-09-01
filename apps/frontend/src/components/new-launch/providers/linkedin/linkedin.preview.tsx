@@ -5,6 +5,7 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const Icons = () => {
   return (
@@ -247,6 +248,7 @@ const LinkedinIconSmall = () => {
 export const LinkedinPreview: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  const t = useT();
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
@@ -289,14 +291,14 @@ export const LinkedinPreview: FC<{
         <div className="w-[48px] h-[48px]">
           <img
             src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
+            alt={t('social_icon_alt', 'social')}
             className="rounded-full relative z-[2] w-[48px] h-[48px]"
           />
         </div>
         <div className="flex flex-col leading-[16px]">
           <div className="text-[14px] font-[500]">{integration?.name}</div>
           <div className="text-[12px] font-[400] text-[#A3A3A3]">
-            2,871 followers
+            {t('n_followers_example', '2,871 followers')}
           </div>
           <div className="text-[12px] font-[400] text-[#A3A3A3] flex gap-[4px] items-center">
             <span>30m •</span>
@@ -343,11 +345,11 @@ export const LinkedinPreview: FC<{
           <div className="">88</div>
         </div>
         <div className="gap-[9px] items-center flex">
-          <div>4 Comments</div>
+          <div>{t('four_comments_example', '4 Comments')}</div>
           <div>
             <div className="w-[3px] h-[3px] bg-[#565C65] rounded-full" />
           </div>
-          <div>8 Reposts</div>
+          <div>{t('eight_reposts_example', '8 Reposts')}</div>
         </div>
       </div>
       <div className="pt-[8px] flex text-[14px] font-[700] px-[32px] justify-between border-t border-borderLinkedin text-textLinkedin">
@@ -364,7 +366,7 @@ export const LinkedinPreview: FC<{
               fill="currentColor"
             />
           </svg>
-          <div>Like</div>
+          <div>{t('like', 'Like')}</div>
         </div>
         <div className="flex gap-[4px] items-center">
           <svg
@@ -380,7 +382,7 @@ export const LinkedinPreview: FC<{
               strokeWidth="2"
             />
           </svg>
-          <div>Comments</div>
+          <div>{t('comments', 'Comments')}</div>
         </div>
         <div className="flex gap-[4px] items-center">
           <svg
@@ -406,7 +408,7 @@ export const LinkedinPreview: FC<{
               </clipPath>
             </defs>
           </svg>
-          <div>Repost</div>
+          <div>{t('repost', 'Repost')}</div>
         </div>
         <div className="flex gap-[4px] items-center">
           <svg
@@ -421,7 +423,7 @@ export const LinkedinPreview: FC<{
               fill="currentColor"
             />
           </svg>
-          <div>Send</div>
+          <div>{t('send', 'Send')}</div>
         </div>
       </div>
       {renderContent.length > 1 && (
@@ -432,7 +434,7 @@ export const LinkedinPreview: FC<{
                 <div className="h-[34px]">
                   <img
                     src={integration?.picture || '/no-picture.jpg'}
-                    alt="social"
+                    alt={t('social_icon_alt', 'social')}
                     className="rounded-full relative z-[2] h-[34px] w-[34px]"
                   />
                 </div>
@@ -448,7 +450,7 @@ export const LinkedinPreview: FC<{
                       <div className="text-[12px] font-[400]">• 1st</div>
                     </div>
                     <div className="text-[12px] font-[400] text-textLinkedin">
-                      Founder
+                      {t('founder_example', 'Founder')}
                     </div>
                   </div>
                   <div
@@ -458,7 +460,7 @@ export const LinkedinPreview: FC<{
                     }}
                   />
                   <div className="flex gap-[6px] font-[400] text-[12px] text-textLinkedin items-center">
-                    <div className="font-[700]">Like</div>
+                    <div className="font-[700]">{t('like', 'Like')}</div>
                     <div>•</div>
                     <div>
                       <svg
@@ -498,9 +500,9 @@ export const LinkedinPreview: FC<{
                     </div>
                     <div>19</div>
                     <div>|</div>
-                    <div className="font-[700]">Reply</div>
+                    <div className="font-[700]">{t('reply', 'Reply')}</div>
                     <div>•</div>
-                    <div>1 reply</div>
+                    <div>{t('one_reply_example', '1 reply')}</div>
                   </div>
                 </div>
               </div>

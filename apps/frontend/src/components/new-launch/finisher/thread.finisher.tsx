@@ -31,7 +31,9 @@ export const ThreadFinisher = () => {
   return (
     <div className="flex flex-col gap-[10px] border-tableBorder border p-[15px] rounded-lg mb-5">
       <div className="flex items-center">
-        <div className="flex-1">Add a thread finisher</div>
+        <div className="flex-1">
+          {t('add_a_thread_finisher', 'Add a thread finisher')}
+        </div>
         <div>
           <Slider
             value={slider ? 'on' : 'off'}

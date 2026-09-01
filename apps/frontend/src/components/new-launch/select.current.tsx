@@ -51,6 +51,7 @@ export function useHasScroll(ref: RefObject<HTMLElement | null>): boolean {
 }
 
 export const SelectCurrent: FC = () => {
+  const t = useT();
   const modals = useDecisionModal();
   const {
     selectedIntegrations,
@@ -78,9 +79,11 @@ export const SelectCurrent: FC = () => {
       e.stopPropagation();
       e.preventDefault();
       const open = await modals.open({
-        title: 'Remove Social Account',
-        description:
-          'Are you sure you want to remove this social from scheduling?',
+        title: t('remove_social_account', 'Remove Social Account'),
+        description: t(
+          'are_you_sure_you_want_to_remove_this_social',
+          'Are you sure you want to remove this social from scheduling?'
+        ),
       });
 
       if (!open) {
@@ -162,6 +165,7 @@ export const SelectCurrent: FC = () => {
                 {integration.identifier === 'youtube' ? (
                   <img
                     src="/icons/platforms/youtube.svg"
+                            alt={t('youtube', 'YouTube')}
                     className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
                     width={12}
                   />

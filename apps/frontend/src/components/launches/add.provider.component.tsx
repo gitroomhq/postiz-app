@@ -22,12 +22,13 @@ import { capitalize } from 'lodash';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
+  const t = useT();
   const modal = useModals();
   const fetch = useFetch();
   return useCallback(async () => {
     const data = await (await fetch('/integrations')).json();
     modal.openModal({
-      title: 'Add Channel',
+      title: t('add_channel', 'Add Channel'),
       withCloseButton: true,
       children: (
         <AddProviderComponent invite={!!invite} update={update} {...data} />
@@ -110,18 +111,17 @@ export const UrlModal: FC<{
   gotoUrl(url: string): void;
 }> = (props) => {
   const { gotoUrl } = props;
+  const t = useT();
   const methods = useForm({
     mode: 'onChange',
   });
-
-  const t = useT();
 
   const submit = useCallback(async (data: FieldValues) => {
     gotoUrl(data.url);
   }, []);
   return (
     <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
-      <TopTitle title={`Instance URL`} />
+      <TopTitle title={t('instance_url', 'Instance URL')} />
       <button
         onClick={close}
         className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
@@ -343,11 +343,16 @@ const ChromeExtensionWarning: FC<{
           )}
         </li>
         <li>
-          We will store your cookies securely to facilitate the connection.
+          {t(
+            'chrome_extension_warning_cookies',
+            'We will store your cookies securely to facilitate the connection.'
+          )}
         </li>
         <li>
-          Postiz does not take responsibility for any issues arising or account
-          termination due to the use of this method.
+          {t(
+            'chrome_extension_warning_liability',
+            'Postiz does not take responsibility for any issues arising or account termination due to the use of this method.'
+          )}
         </li>
       </ul>
       <div className="flex gap-[10px] mt-[8px]">
@@ -441,7 +446,9 @@ export const AddProviderComponent: FC<{
             )
           ).json();
           modal.openModal({
-            title: `Add ${capitalize(identifier)}`,
+            title: t('add_provider_name', `Add ${capitalize(identifier)}`, {
+              name: capitalize(identifier),
+            }),
             withCloseButton: true,
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
@@ -496,7 +503,10 @@ export const AddProviderComponent: FC<{
 
           if (invite) {
             toaster.show(
-              'Invite link copied to clipboard, link will be available for 1 hour',
+              t(
+                'invite_link_copied_to_clipboard',
+                'Invite link copied to clipboard, link will be available for 1 hour'
+              ),
               'success'
             );
             modal.closeAll();
@@ -629,7 +639,7 @@ export const AddProviderComponent: FC<{
         }
         if (isExternal) {
           modal.openModal({
-            title: 'URL',
+            title: t('url', 'URL'),
             withCloseButton: true,
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
@@ -719,7 +729,7 @@ export const AddProviderComponent: FC<{
               >
                 <div>
                   {item.identifier === 'youtube' ? (
-                    <img src={`/icons/platforms/youtube.svg`} />
+                    <img src={`/icons/platforms/youtube.svg`} alt={t('youtube', 'YouTube')} />
                   ) : (
                     <img
                       className={clsx(
@@ -728,6 +738,7 @@ export const AddProviderComponent: FC<{
                           'rounded-full'
                       )}
                       src={`/icons/platforms/${item.identifier}.png`}
+                      alt={item.name}
                     />
                   )}
                 </div>

@@ -45,13 +45,13 @@ export const InstagramContinue = withContinueProvider<
   getSelectionValue: (item) => ({ id: item.id, pageId: item.pageId }),
   transformSaveData: (selection) => selection,
   isSelected: (item, selection) => selection?.id === item.id,
-  renderItem: (item) => (
+  renderItem: (item, isSelected, t) => (
     <>
       <div>
         <img
           className="w-full max-w-[156px]"
           src={item.picture.data.url}
-          alt="profile"
+          alt={t('profile_picture_alt', 'profile')}
         />
       </div>
       <div>{item.name}</div>

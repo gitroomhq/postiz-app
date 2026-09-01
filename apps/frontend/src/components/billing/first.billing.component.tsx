@@ -47,7 +47,7 @@ const EmbeddedBilling = dynamic(
 );
 
 export const FirstBillingComponent = () => {
-  const { stripeClient } = useVariables();
+  const { stripeClient, isGeneral } = useVariables();
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
@@ -81,12 +81,16 @@ export const FirstBillingComponent = () => {
 
   const showYouTube = () => {
     modals.openModal({
-      title: 'Grow Fast With Postiz (Play the video)',
+      title: t(
+        'grow_fast_with_app_play_the_video',
+        `Grow Fast With ${isGeneral ? 'Postiz' : 'Gitroom'} (Play the video)`,
+        { app: isGeneral ? 'Postiz' : 'Gitroom' }
+      ),
       children: (
         <iframe
           className="h-full aspect-video min-w-[800px]"
           src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-          title="Postiz Tutorial"
+          title={`${isGeneral ? 'Postiz' : 'Gitroom'} ${t('tutorial', 'Tutorial')}`}
           allow="autoplay"
           allowFullScreen
         />
@@ -137,7 +141,13 @@ export const FirstBillingComponent = () => {
                 alt="YouTube"
               />
             </div>
-            <div>See the power of Postiz (click here)</div>
+            <div>
+              {t(
+                'see_the_power_of_app_click_here',
+                `See the power of ${isGeneral ? 'Postiz' : 'Gitroom'} (click here)`,
+                { app: isGeneral ? 'Postiz' : 'Gitroom' }
+              )}
+            </div>
           </div>
         </div>
 

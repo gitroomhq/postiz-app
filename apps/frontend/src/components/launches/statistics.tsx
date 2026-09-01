@@ -118,7 +118,7 @@ export const StatisticsModal: FC<{
                           <div className="flex items-center gap-[10px]">
                             <div
                               className={`w-[8px] h-[8px] rounded-full ${
-                                color === 'purple' ? 'bg-[#612bd3]' : ''
+                                color === 'purple' ? 'bg-btnPrimary' : ''
                               } ${color === 'green' ? 'bg-[#32d583]' : ''} ${
                                 color === 'blue' ? 'bg-[#1d9bf0]' : ''
                               }`}

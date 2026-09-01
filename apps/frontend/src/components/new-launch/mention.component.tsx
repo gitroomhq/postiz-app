@@ -3,6 +3,7 @@
 import React, { FC, useEffect, useImperativeHandle, useState } from 'react';
 import { computePosition, flip, shift } from '@floating-ui/dom';
 import { posToDOMRect, ReactRenderer } from '@tiptap/react';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 // Debounce utility for TipTap
 const debounce = <T extends any[]>(
@@ -27,6 +28,7 @@ const debounce = <T extends any[]>(
 };
 
 const MentionList: FC = (props: any) => {
+  const t = useT();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -90,7 +92,7 @@ const MentionList: FC = (props: any) => {
         </div>
       ) : props?.items ? (
         props.items.length === 0 ? (
-          <div className="p-2 text-gray-500 text-center">No results found</div>
+          <div className="p-2 text-gray-500 text-center">{t('no_results_found', 'No results found')}</div>
         ) : (
           props?.items?.map((item: any, index: any) => (
             <button

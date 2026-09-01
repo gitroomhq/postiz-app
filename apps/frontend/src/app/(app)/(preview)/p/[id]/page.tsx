@@ -15,10 +15,13 @@ import { RenderPreviewDateClient } from '@gitroom/frontend/components/preview/re
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 
 dayjs.extend(utc);
-export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
-  description: '',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} ${t('preview', 'Preview')}`,
+    description: t('preview_description', 'Preview your scheduled post'),
+  };
+}
 export default async function Auth(
   props: {
     params: Promise<{

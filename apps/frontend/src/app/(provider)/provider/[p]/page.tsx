@@ -56,6 +56,20 @@
  * a server wrapper that forwards the `:p` route param.
  */
 import { InBridge } from '@gitroom/frontend/app/(provider)/provider/[p]/in-bridge';
+import { Metadata } from 'next';
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
+import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: isGeneralServerSide() ? 'Postiz' : 'Gitroom',
+    description: t(
+      'provider_settings_bridge_description',
+      'Configure your integration settings'
+    ),
+  };
+}
 
 export default async function Page({
   params,

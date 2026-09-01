@@ -7,6 +7,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const PickPlatforms: FC<{
   integrations: Integrations[];
   selectedIntegrations: Integrations[];
@@ -16,6 +17,7 @@ export const PickPlatforms: FC<{
   isMain: boolean;
   toolTip?: boolean;
 }> = (props) => {
+  const t = useT();
   const { hide, isMain, integrations, selectedIntegrations, onChange } = props;
   const ref = useRef<HTMLDivElement>(null);
   const [isLeft, setIsLeft] = useState(false);
@@ -254,6 +256,7 @@ export const PickPlatforms: FC<{
                         {integration.identifier === 'youtube' ? (
                           <img
                             src="/icons/platforms/youtube.svg"
+                            alt={t('youtube', 'YouTube')}
                             className="absolute z-10 bottom-0 -end-[5px]"
                             width={20}
                           />

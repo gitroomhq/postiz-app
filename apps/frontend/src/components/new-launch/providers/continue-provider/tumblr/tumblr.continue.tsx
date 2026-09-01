@@ -45,7 +45,7 @@ export const TumblrContinue = withContinueProvider<
   getSelectionValue: (item) => ({ id: item.id }),
   transformSaveData: (selection) => selection,
   isSelected: (item, selection) => selection?.id === item.id,
-  renderItem: (item) => (
+  renderItem: (item, isSelected, t) => (
     <>
       <div className="flex justify-center">
         {item.picture?.data?.url ? (
@@ -66,10 +66,12 @@ export const TumblrContinue = withContinueProvider<
       )}
       {!!item.followers && (
         <div className="text-xs text-gray-400">
-          {item.followers.toLocaleString()} followers
+          {item.followers.toLocaleString()} {t('followers', 'followers')}
         </div>
       )}
-      {item.primary && <div className="text-xs text-gray-400">Primary</div>}
+      {item.primary && (
+        <div className="text-xs text-gray-400">{t('primary', 'Primary')}</div>
+      )}
     </>
   ),
 });

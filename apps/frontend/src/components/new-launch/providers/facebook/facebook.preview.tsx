@@ -8,6 +8,7 @@ import { getPresetBackground } from '@gitroom/frontend/components/new-launch/pro
 import { FC } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 const Icons = () => {
   return (
@@ -65,6 +66,7 @@ const Icons = () => {
 export const FacebookPreview: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  const t = useT();
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
@@ -126,7 +128,7 @@ export const FacebookPreview: FC<{
         <div className="w-[36px] h-[36px]">
           <img
             src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
+            alt={t('social_icon_alt', 'social')}
             className="rounded-full relative z-[2] w-[36px] h-[36px]"
           />
         </div>
@@ -184,10 +186,10 @@ export const FacebookPreview: FC<{
       <div className="flex text-textLinkedin text-[12px] font-[400] items-center">
         <div className="flex flex-1 gap-[10px] items-center">
           <Icons />
-          <div className="">You & 12 other</div>
+          <div className="">{t('you_and_12_other', 'You & 12 other')}</div>
         </div>
         <div className="gap-[9px] items-center flex">
-          <div>20 Comments</div>
+          <div>{t('twenty_comments', '20 Comments')}</div>
         </div>
       </div>
       <div className="pt-[8px] flex text-[14px] font-[700] px-[32px] justify-between border-t border-borderLinkedin text-textLinkedin">
@@ -204,7 +206,7 @@ export const FacebookPreview: FC<{
               fill="currentColor"
             />
           </svg>
-          <div>Like</div>
+          <div>{t('like', 'Like')}</div>
         </div>
         <div className="flex gap-[4px] items-center">
           <svg
@@ -238,7 +240,7 @@ export const FacebookPreview: FC<{
               />
             </g>
           </svg>
-          <div>Comments</div>
+          <div>{t('comments', 'Comments')}</div>
         </div>
         <div className="flex gap-[4px] items-center">
           <svg
@@ -253,13 +255,15 @@ export const FacebookPreview: FC<{
               fill="currentColor"
             />
           </svg>
-          <div>Share</div>
+          <div>{t('share', 'Share')}</div>
         </div>
       </div>
       {renderContent.length > 1 && (
         <>
           <div className="flex items-center">
-            <div className="text-[14px] font-[700]">Most relevant</div>
+            <div className="text-[14px] font-[700]">
+              {t('most_relevant', 'Most relevant')}
+            </div>
             <div>
               <svg
                 width="20"
@@ -281,7 +285,7 @@ export const FacebookPreview: FC<{
                 <div className="h-[34px]">
                   <img
                     src={integration?.picture || '/no-picture.jpg'}
-                    alt="social"
+                    alt={t('social_icon_alt', 'social')}
                     className="rounded-full relative z-[2] h-[34px] w-[34px]"
                   />
                 </div>
@@ -321,8 +325,8 @@ export const FacebookPreview: FC<{
                   <div className="flex font-[400] text-[12px] text-textLinkedin items-center">
                     <div className="flex gap-[16px] flex-1">
                       <div className="font-[700]">9h</div>
-                      <div className="font-[700]">Like</div>
-                      <div className="font-[700]">Reply</div>
+                      <div className="font-[700]">{t('like', 'Like')}</div>
+                      <div className="font-[700]">{t('reply', 'Reply')}</div>
                     </div>
                     <div className="flex gap-[4px]">
                       <div>2</div>

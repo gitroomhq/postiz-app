@@ -5,10 +5,12 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const YoutubePreview: FC<{
   maximumCharacters?: number;
 }> = (props) => {
+  const t = useT();
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
@@ -66,7 +68,7 @@ export const YoutubePreview: FC<{
           <div>
             <img
               src={integration?.picture || '/no-picture.jpg'}
-              alt="social"
+              alt={t('social_icon_alt', 'social')}
               className="rounded-full z-[2] w-[40px] h-[40px]"
             />
           </div>

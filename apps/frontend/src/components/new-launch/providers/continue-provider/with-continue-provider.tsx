@@ -37,7 +37,11 @@ export interface ContinueProviderConfig<TItem, TSelection> {
   emptyStateMessages: EmptyStateMessage[];
   getSelectionValue: (item: TItem) => TSelection;
   transformSaveData: (selection: TSelection) => any;
-  renderItem: (item: TItem, isSelected: boolean) => ReactNode;
+  renderItem: (
+    item: TItem,
+    isSelected: boolean,
+    t: (key: string, def: string) => string
+  ) => ReactNode;
   isSelected: (item: TItem, selection: TSelection | null) => boolean;
   getItemId: (item: TItem) => string;
 }
@@ -136,7 +140,7 @@ export function withContinueProvider<TItem, TSelection>(
               )}
               onClick={handleSelect(item)}
             >
-              {renderItem(item, isSelected(item, selection))}
+              {renderItem(item, isSelected(item, selection), t)}
             </div>
           ))}
         </div>

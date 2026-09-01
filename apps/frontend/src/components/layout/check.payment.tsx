@@ -5,6 +5,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 import { useRouter } from 'next/navigation';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const CheckPayment: FC<{
   check: string;
   mutate: () => void;
@@ -21,6 +22,7 @@ export const CheckPaymentInner: FC<{
   mutate: () => void;
   children: ReactNode;
 }> = (props) => {
+  const t = useT();
   const [showLoader, setShowLoader] = useState(true);
   const fetch = useFetch();
   const toaster = useToaster();
@@ -51,11 +53,13 @@ export const CheckPaymentInner: FC<{
     }
     if (status === 1) {
       modal.open({
-        title: 'Invalid Payment',
+        title: t('invalid_payment', 'Invalid Payment'),
         onlyApprove: true,
-        approveLabel: 'OK',
-        description:
-          'We could not validate your payment method, please try again',
+        approveLabel: t('ok', 'OK'),
+        description: t(
+          'we_could_not_validate_your_payment_method',
+          'We could not validate your payment method, please try again'
+        ),
       });
       setShowLoader(false);
     }

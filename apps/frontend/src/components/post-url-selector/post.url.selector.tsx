@@ -177,6 +177,7 @@ export const PostSelector: FC<{
                             <img
                               src={p.integration.picture}
                               className="w-[32px] h-[32px] rounded-full"
+                              alt={p.integration.name}
                             />
                             <img
                               className="w-[20px] h-[20px] rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
@@ -185,6 +186,7 @@ export const PostSelector: FC<{
                                 p?.integration?.providerIdentifier +
                                 '.png'
                               }
+                              alt={p?.integration?.providerIdentifier}
                             />
                           </div>
                           <div>{p.integration.name}</div>

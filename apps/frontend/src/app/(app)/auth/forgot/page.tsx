@@ -2,10 +2,14 @@ export const dynamic = 'force-dynamic';
 import { Forgot } from '@gitroom/frontend/components/auth/forgot';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
-export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Forgot Password`,
-  description: '',
-};
+import { getT } from '@gitroom/react/translation/get.translation.service.backend';
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} ${t('forgot_password', 'Forgot Password')}`,
+    description: t('forgot_password_description', 'Reset your Postiz password'),
+  };
+}
 export default async function Auth() {
   return <Forgot />;
 }

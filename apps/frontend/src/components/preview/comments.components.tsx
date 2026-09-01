@@ -55,7 +55,7 @@ export const RenderComponents: FC<{
               required: true,
             })}
             className="flex w-full px-3 py-2 h-[98px] text-sm ring-offset-background placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] resize-none text-white bg-third border border-tableBorder placeholder-gray-500 focus:ring-0"
-            placeholder="Add a comment..."
+            placeholder={t('add_a_comment', 'Add a comment...')}
             defaultValue={''}
           />
           <div className="flex justify-end">
