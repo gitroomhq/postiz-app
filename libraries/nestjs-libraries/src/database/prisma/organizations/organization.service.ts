@@ -8,14 +8,16 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Organization, ShortLinkPreference, User } from '@prisma/client';
+import { Organization, Role, ShortLinkPreference, User } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 
 @Injectable()
 export class OrganizationService {
   constructor(
     private _organizationRepository: OrganizationRepository,
-    private _notificationsService: NotificationService
+    private _notificationsService: NotificationService,
+    private _integrationRepository: IntegrationRepository
   ) {}
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
@@ -198,5 +200,83 @@ export class OrganizationService {
       orgId,
       shortlink
     );
+  }
+
+  async createOrgForUser(userId: string, name: string) {
+    const cap = process.env.MAX_ORGS_PER_USER
+      ? Number(process.env.MAX_ORGS_PER_USER)
+      : 10;
+
+    const existing = await this._organizationRepository.getOrgsByUserId(
+      userId
+    );
+    if (existing.length >= cap) {
+      throw new HttpException(
+        `You can create up to ${cap} organizations`,
+        400
+      );
+    }
+
+    return this._organizationRepository.createOrgForUser(userId, name);
+  }
+
+  async renameOrganization(userId: string, orgId: string, name: string) {
+    const orgs = await this._organizationRepository.getOrgsByUserId(userId);
+    const target = orgs.find((org) => org.id === orgId);
+
+    // Same "ADMIN or SUPERADMIN" bar as every other org-management action
+    // (Sections.ADMIN), just resolved against the target org instead of the
+    // currently selected one, since @CheckPolicies only sees the latter.
+    // @ts-ignore
+    if (!target || target.users[0].role === Role.USER) {
+      throw new HttpException(
+        'You do not have permission to rename this organization',
+        403
+      );
+    }
+
+    return this._organizationRepository.renameOrganization(orgId, name);
+  }
+
+  // Split in three so the controller can cancel Stripe billing (via
+  // PaymentService) between the atomic guard and the destructive cleanup -
+  // PaymentService can't be injected here directly, it depends on
+  // SubscriptionService which already depends back on OrganizationService.
+  async assertCanDeleteOrganization(userId: string, orgId: string) {
+    const orgs = await this._organizationRepository.getOrgsByUserId(userId);
+    const target = orgs.find((org) => org.id === orgId);
+
+    // @ts-ignore
+    if (!target || target.users[0].role === Role.USER) {
+      throw new HttpException(
+        'You do not have permission to delete this organization',
+        403
+      );
+    }
+
+    const team = await this._organizationRepository.getTeam(orgId);
+    if (team?.users?.some((member) => member.user.id !== userId)) {
+      throw new HttpException(
+        'Please remove your team members before deleting this organization',
+        400
+      );
+    }
+  }
+
+  // Atomically confirms this isn't the user's last organization and marks it
+  // deleted before any destructive cleanup runs.
+  softDeleteOrganizationIfNotLast(userId: string, orgId: string) {
+    return this._organizationRepository.deleteOrganizationIfNotLast(
+      userId,
+      orgId
+    );
+  }
+
+  restoreOrganization(orgId: string) {
+    return this._organizationRepository.restoreOrganization(orgId);
+  }
+
+  finalizeOrganizationDeletion(orgId: string) {
+    return this._integrationRepository.deleteIntegrationsForAccount(orgId);
   }
 }

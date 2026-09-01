@@ -4,6 +4,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
+import { useRouter } from 'next/navigation';
 export const CheckPayment: FC<{
   check: string;
   mutate: () => void;
@@ -24,6 +25,7 @@ export const CheckPaymentInner: FC<{
   const fetch = useFetch();
   const toaster = useToaster();
   const modal = useDecisionModal();
+  const router = useRouter();
 
   useEffect(() => {
     if (showLoader) {
@@ -60,6 +62,12 @@ export const CheckPaymentInner: FC<{
     if (status === 2) {
       setShowLoader(false);
       props.mutate();
+
+      // Drop `check` from the URL so a later reload/org switch doesn't
+      // re-poll the same payment id against whatever org is then selected
+      const url = new URL(window.location.href);
+      url.searchParams.delete('check');
+      router.push(url.toString());
     }
   }, []);
   useEffect(() => {

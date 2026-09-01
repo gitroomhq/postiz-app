@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
+  Param,
   Post,
   Query,
   Req,
@@ -31,6 +33,7 @@ import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { OrganizationNameDto } from '@gitroom/nestjs-libraries/dtos/organizations/organization.name.dto';
 import {
   AuthorizationActions,
   Sections,
@@ -301,6 +304,107 @@ export class UsersController {
     return (await this._orgService.getOrgsByUserId(user.id)).filter(
       (f) => !f.users[0].disabled
     );
+  }
+
+  @Post('/organizations')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async createOrganization(
+    @GetUserFromRequest() user: User,
+    @Req() req: Request,
+    @Body() body: OrganizationNameDto
+  ) {
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate) {
+      throw new HttpException(
+        'Organizations cannot be changed while impersonating',
+        400
+      );
+    }
+
+    return this._orgService.createOrgForUser(user.id, body.name);
+  }
+
+  @Post('/organizations/:id')
+  async renameOrganization(
+    @GetUserFromRequest() user: User,
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() body: OrganizationNameDto
+  ) {
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate) {
+      throw new HttpException(
+        'Organizations cannot be changed while impersonating',
+        400
+      );
+    }
+
+    return this._orgService.renameOrganization(user.id, id, body.name);
+  }
+
+  @Delete('/organizations/:id')
+  async deleteOrganization(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() organization: Organization,
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate) {
+      throw new HttpException(
+        'Organizations cannot be changed while impersonating',
+        400
+      );
+    }
+
+    await this._orgService.assertCanDeleteOrganization(user.id, id);
+
+    // Atomic guard + soft-delete first (cheap, reversible), then cancel
+    // billing, then the destructive cleanup - same ordering as
+    // /delete-account, just scoped to one organization.
+    await this._orgService.softDeleteOrganizationIfNotLast(user.id, id);
+
+    try {
+      await this._paymentService.cancelAllSubscriptions(id);
+    } catch (err) {
+      await this._orgService.restoreOrganization(id);
+      throw new HttpException(
+        'Could not cancel the subscription, please try again or contact support',
+        400
+      );
+    }
+
+    await this._orgService.finalizeOrganizationDeletion(id);
+    const deleted = { id };
+
+    // The deleted org was the one selected in the cookie, so fall back to
+    // another organization the user still belongs to.
+    if (organization?.id === id) {
+      const remaining = (
+        await this._orgService.getOrgsByUserId(user.id)
+      ).filter((org) => !org.users[0].disabled);
+
+      if (remaining[0]) {
+        response.cookie('showorg', remaining[0].id, {
+          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+          ...(!process.env.NOT_SECURED
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+              }
+            : {}),
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+        });
+
+        if (process.env.NOT_SECURED) {
+          response.header('showorg', remaining[0].id);
+        }
+      }
+    }
+
+    return deleted;
   }
 
   @Post('/change-org')

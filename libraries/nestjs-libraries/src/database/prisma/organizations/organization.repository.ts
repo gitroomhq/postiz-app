@@ -1,6 +1,9 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import {
+  PrismaRepository,
+  PrismaTransaction,
+} from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -10,7 +13,8 @@ export class OrganizationRepository {
   constructor(
     private _organization: PrismaRepository<'organization'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
-    private _user: PrismaRepository<'user'>
+    private _user: PrismaRepository<'user'>,
+    private _transaction: PrismaTransaction
   ) {}
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
@@ -521,5 +525,81 @@ export class OrganizationRepository {
         shortlink,
       },
     });
+  }
+
+  createOrgForUser(userId: string, name: string) {
+    return this._organization.model.organization.create({
+      data: {
+        name,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: false,
+        isTrailing: false,
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            userId,
+          },
+        },
+      },
+    });
+  }
+
+  renameOrganization(orgId: string, name: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        name,
+      },
+    });
+  }
+
+  restoreOrganization(orgId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        deletedAt: null,
+      },
+    });
+  }
+
+  // Re-counts the user's enabled organizations and marks this one deleted in
+  // the same serializable transaction, so two concurrent deletes on a user's
+  // last two organizations can't both pass the count check and leave them
+  // with zero. Runs before any destructive cleanup (Stripe, integrations).
+  deleteOrganizationIfNotLast(userId: string, orgId: string) {
+    return this._transaction.model.$transaction(
+      async (tx) => {
+        const enabledCount = await tx.userOrganization.count({
+          where: {
+            userId,
+            disabled: false,
+            organization: {
+              deletedAt: null,
+            },
+          },
+        });
+
+        if (enabledCount <= 1) {
+          throw new HttpException(
+            'You cannot delete your only organization. Delete your account instead',
+            400
+          );
+        }
+
+        return tx.organization.update({
+          where: {
+            id: orgId,
+          },
+          data: {
+            deletedAt: new Date(),
+          },
+        });
+      },
+      { isolationLevel: 'Serializable' }
+    );
   }
 }
