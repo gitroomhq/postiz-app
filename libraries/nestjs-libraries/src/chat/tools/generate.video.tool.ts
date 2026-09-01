@@ -1,7 +1,7 @@
 import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import {
   IntegrationManager,
   socialIntegrationList,
@@ -78,10 +78,16 @@ export class GenerateVideoTool implements AgentToolInterface {
             url: value.path,
           };
         } catch (err) {
+          // SubscriptionException (402) carries { section, action } and its
+          // message is just "Subscription Exception", so translate it
+          const message =
+            err instanceof HttpException && err.getStatus() === 402
+              ? 'No AI video credits are available on this account.'
+              : err instanceof Error
+              ? err.message
+              : String(err);
           return {
-            error: `Video generation failed: ${
-              err instanceof Error ? err.message : String(err)
-            }. The user's video credit was not used.`,
+            error: `Video generation failed: ${message}. The user's video credit was not used.`,
           };
         }
       },
