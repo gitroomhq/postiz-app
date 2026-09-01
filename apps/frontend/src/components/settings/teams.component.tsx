@@ -3,7 +3,7 @@
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import React, { useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { capitalize } from 'lodash';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -13,25 +13,37 @@ import { Select } from '@gitroom/react/form/select';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
+import { UpdateTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/update.team.member.dto';
+import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { EditIcon, MailIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
-const roles = [
-  {
-    name: 'User',
-    value: 'USER',
-  },
-  {
-    name: 'Admin',
-    value: 'ADMIN',
-  },
+type TeamRow = {
+  role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    activated: boolean;
+  };
+};
+
+const roleOptions = (t: ReturnType<typeof useT>) => [
+  { value: 'USER', label: t('user', 'User') },
+  { value: 'ADMIN', label: t('admin', 'Admin') },
 ];
+
+const displayName = (p: TeamRow) =>
+  p.user.name || capitalize(p.user.email.split('@')[0]).split('.')[0];
+
 export const AddMember = () => {
   const modals = useModals();
   const fetch = useFetch();
   const toast = useToaster();
+  const t = useT();
   const resolver = useMemo(() => {
     return classValidatorResolver(AddTeamMemberDto);
   }, []);
@@ -68,8 +80,6 @@ export const AddMember = () => {
     []
   );
 
-  const t = useT();
-
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
@@ -83,9 +93,9 @@ export const AddMember = () => {
           )}
           <Select label="Role" name="role">
             <option value="">{t('select_role', 'Select Role')}</option>
-            {roles.map((role) => (
+            {roleOptions(t).map((role) => (
               <option key={role.value} value={role.value}>
-                {role.name}
+                {role.label}
               </option>
             ))}
           </Select>
@@ -98,13 +108,158 @@ export const AddMember = () => {
             </div>
           </div>
           <Button type="submit" className="mt-[18px]">
-            {sendEmail ? t('send_invitation_link', 'Send Invitation Link') : t('copy_link', 'Copy Link')}
+            {sendEmail
+              ? t('send_invitation_link', 'Send Invitation Link')
+              : t('copy_link', 'Copy Link')}
           </Button>
         </div>
       </form>
     </FormProvider>
   );
 };
+
+// Editing my own row: only the name is editable, and it goes through the
+// existing self-scoped personal-details endpoint (never through the
+// team-member endpoint, which explicitly refuses to target the caller).
+const EditSelfForm: FC<{
+  member: TeamRow;
+  onSaved: () => void;
+}> = ({ member, onSaved }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [loading, setLoading] = useState(false);
+  const resolver = useMemo(() => classValidatorResolver(UserDetailDto), []);
+  const form = useForm({
+    resolver,
+    values: { fullname: member.user.name || '' },
+  });
+
+  const submit = useCallback(async (values: { fullname: string }) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/user/personal', {
+        method: 'POST',
+        body: JSON.stringify({ fullname: values.fullname }),
+      });
+
+      if (response.status !== 200 && response.status !== 201) {
+        const { message } = await response.json().catch(() => ({
+          message: '',
+        }));
+        toaster.show(
+          message ||
+            t('could_not_update_profile', 'Could not update your profile'),
+          'warning'
+        );
+        return;
+      }
+
+      toaster.show(t('profile_updated', 'Profile updated'), 'success');
+      onSaved();
+    } finally {
+      setLoading(false);
+    }
+  }, [onSaved]);
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(submit)}>
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
+          <Input label={t('name', 'Name')} name="fullname" />
+          <Button type="submit" loading={loading} className="mt-[18px]">
+            {t('save', 'Save')}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
+  );
+};
+
+// Editing another member I'm allowed to manage: name always, role only
+// when I'm a super admin (the server enforces this independently of what
+// this form sends).
+const EditTeamMemberForm: FC<{
+  member: TeamRow;
+  canChangeRole: boolean;
+  onSaved: () => void;
+}> = ({ member, canChangeRole, onSaved }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [loading, setLoading] = useState(false);
+  const resolver = useMemo(() => classValidatorResolver(UpdateTeamMemberDto), []);
+  const form = useForm({
+    resolver,
+    values: {
+      name: member.user.name || '',
+      role: member.role === 'SUPERADMIN' ? 'ADMIN' : member.role,
+    },
+  });
+
+  const submit = useCallback(
+    async (values: { name: string; role: string }) => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/settings/team/${member.user.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(
+            canChangeRole
+              ? { name: values.name, role: values.role }
+              : { name: values.name }
+          ),
+        });
+
+        if (response.status !== 200 && response.status !== 201) {
+          const { message } = await response.json().catch(() => ({
+            message: '',
+          }));
+          toaster.show(
+            message ||
+              t(
+                'could_not_update_team_member',
+                'Could not update team member'
+              ),
+            'warning'
+          );
+          return;
+        }
+
+        toaster.show(
+          t('team_member_updated', 'Team member updated'),
+          'success'
+        );
+        onSaved();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [member.user.id, canChangeRole, onSaved]
+  );
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(submit)}>
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
+          <Input label={t('name', 'Name')} name="name" />
+          {canChangeRole && (
+            <Select label={t('role', 'Role')} name="role">
+              {roleOptions(t).map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </Select>
+          )}
+          <Button type="submit" loading={loading} className="mt-[18px]">
+            {t('save', 'Save')}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
+  );
+};
+
 export const TeamsComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -117,14 +272,7 @@ export const TeamsComponent = () => {
     []
   );
   const loadTeam = useCallback(async () => {
-    return (await (await fetch('/settings/team')).json()).users as Array<{
-      id: string;
-      role: 'SUPERADMIN' | 'ADMIN' | 'USER';
-      user: {
-        email: string;
-        id: string;
-      };
-    }>;
+    return (await (await fetch('/settings/team')).json()).users as TeamRow[];
   }, []);
   const addMember = useCallback(() => {
     modals.openModal({
@@ -141,26 +289,90 @@ export const TeamsComponent = () => {
     revalidateOnReconnect: false,
     revalidateIfStale: false,
   });
+  const toaster = useToaster();
+  const sortedData = useMemo(
+    () =>
+      [...(data || [])].sort((a, b) =>
+        displayName(a).localeCompare(displayName(b))
+      ),
+    [data]
+  );
+  const resetPassword = useCallback(
+    (member: TeamRow) => async () => {
+      if (
+        !(await deleteDialog(
+          t(
+            'send_password_reset_email_confirm',
+            'A password reset email will be sent to {{email}}. Continue?',
+            { email: member.user.email }
+          ),
+          t('yes_send_it', 'Yes, send it'),
+          t('send_password_reset_email', 'Send password reset email')
+        ))
+      ) {
+        return;
+      }
+      await fetch('/auth/forgot', {
+        method: 'POST',
+        body: JSON.stringify({ email: member.user.email, provider: 'LOCAL' }),
+      });
+      toaster.show(
+        t(
+          'password_reset_email_sent',
+          'If an account exists for this email, a reset link was sent'
+        ),
+        'success'
+      );
+    },
+    [t, toaster]
+  );
   const remove = useCallback(
-    (toRemove: {
-        user: {
-          id: string;
-        };
-      }) =>
-      async () => {
-        if (
-          !(await deleteDialog(
-            t('are_you_sure_remove_team_member', 'Are you sure you want to remove this team member?')
-          ))
-        ) {
-          return;
-        }
-        await fetch(`/settings/team/${toRemove.user.id}`, {
-          method: 'DELETE',
-        });
-        await mutate();
-      },
-    [t]
+    (toRemove: TeamRow) => async () => {
+      if (
+        !(await deleteDialog(
+          t(
+            'are_you_sure_remove_team_member',
+            'Are you sure you want to remove this team member?'
+          )
+        ))
+      ) {
+        return;
+      }
+      await fetch(`/settings/team/${toRemove.user.id}`, {
+        method: 'DELETE',
+      });
+      await mutate();
+    },
+    [t, mutate]
+  );
+
+  const editMember = useCallback(
+    (member: TeamRow) => {
+      const isSelf = member.user.id === user?.id;
+      modals.openModal({
+        title: t('edit_team_member', 'Edit team member'),
+        withCloseButton: true,
+        children: isSelf ? (
+          <EditSelfForm
+            member={member}
+            onSaved={async () => {
+              modals.closeAll();
+              await mutate();
+            }}
+          />
+        ) : (
+          <EditTeamMemberForm
+            member={member}
+            canChangeRole={myLevel === 2}
+            onSaved={async () => {
+              modals.closeAll();
+              await mutate();
+            }}
+          />
+        ),
+      });
+    },
+    [modals, t, mutate, user?.id, myLevel]
   );
 
   return (
@@ -173,55 +385,76 @@ export const TeamsComponent = () => {
         )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-        <div className="flex flex-col gap-[16px]">
-          {(data || []).map((p) => (
-            <div key={p.user.id} className="flex items-center">
-              <div className="flex-1">
-                {capitalize(p.user.email.split('@')[0]).split('.')[0]}
-              </div>
-              <div className="flex-1">
-                {p.role === 'USER'
-                  ? t('user', 'User')
-                  : p.role === 'ADMIN'
-                  ? t('admin', 'Admin')
-                  : t('super_admin', 'Super Admin')}
-              </div>
-              {+myLevel > +getLevel(p.role) ? (
-                <div className="flex-1 flex justify-end">
-                  <Button
-                    className={`!bg-customColor3 !h-[24px] border border-customColor21 !rounded-[4px] text-[12px]`}
-                    onClick={remove(p)}
-                    secondary={true}
-                  >
-                    <div className="flex justify-center items-center gap-[4px]">
-                      <div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="15"
-                          viewBox="0 0 14 15"
-                          fill="none"
-                        >
-                          <path
-                            d="M11.8125 3.125H9.625V2.6875C9.625 2.3394 9.48672 2.00556 9.24058 1.75942C8.99444 1.51328 8.6606 1.375 8.3125 1.375H5.6875C5.3394 1.375 5.00556 1.51328 4.75942 1.75942C4.51328 2.00556 4.375 2.3394 4.375 2.6875V3.125H2.1875C2.07147 3.125 1.96019 3.17109 1.87814 3.25314C1.79609 3.33519 1.75 3.44647 1.75 3.5625C1.75 3.67853 1.79609 3.78981 1.87814 3.87186C1.96019 3.95391 2.07147 4 2.1875 4H2.625V11.875C2.625 12.1071 2.71719 12.3296 2.88128 12.4937C3.04538 12.6578 3.26794 12.75 3.5 12.75H10.5C10.7321 12.75 10.9546 12.6578 11.1187 12.4937C11.2828 12.3296 11.375 12.1071 11.375 11.875V4H11.8125C11.9285 4 12.0398 3.95391 12.1219 3.87186C12.2039 3.78981 12.25 3.67853 12.25 3.5625C12.25 3.44647 12.2039 3.33519 12.1219 3.25314C12.0398 3.17109 11.9285 3.125 11.8125 3.125ZM5.25 2.6875C5.25 2.57147 5.29609 2.46019 5.37814 2.37814C5.46019 2.29609 5.57147 2.25 5.6875 2.25H8.3125C8.42853 2.25 8.53981 2.29609 8.62186 2.37814C8.70391 2.46019 8.75 2.57147 8.75 2.6875V3.125H5.25V2.6875ZM10.5 11.875H3.5V4H10.5V11.875ZM6.125 6.1875V9.6875C6.125 9.80353 6.07891 9.91481 5.99686 9.99686C5.91481 10.0789 5.80353 10.125 5.6875 10.125C5.57147 10.125 5.46019 10.0789 5.37814 9.99686C5.29609 9.91481 5.25 9.80353 5.25 9.6875V6.1875C5.25 6.07147 5.29609 5.96019 5.37814 5.87814C5.46019 5.79609 5.57147 5.75 5.6875 5.75C5.80353 5.75 5.91481 5.79609 5.99686 5.87814C6.07891 5.96019 6.125 6.07147 6.125 6.1875ZM8.75 6.1875V9.6875C8.75 9.80353 8.70391 9.91481 8.62186 9.99686C8.53981 10.0789 8.42853 10.125 8.3125 10.125C8.19647 10.125 8.08519 10.0789 8.00314 9.99686C7.92109 9.91481 7.875 9.80353 7.875 9.6875V6.1875C7.875 6.07147 7.92109 5.96019 8.00314 5.87814C8.08519 5.79609 8.19647 5.75 8.3125 5.75C8.42853 5.75 8.53981 5.79609 8.62186 5.87814C8.70391 5.96019 8.75 6.07147 8.75 6.1875Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </div>
-                      <div>{t('remove', 'Remove')}</div>
-                    </div>
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex-1" />
-              )}
-            </div>
-          ))}
-        </div>
-        <div>
+        <div className="flex items-center justify-between">
+          <div className="mt-[4px]">{t('team_members', 'Team Members')}</div>
           <Button onClick={addMember}>
             {t('add_another_member', 'Add another member')}
           </Button>
+        </div>
+        <div className="flex flex-col">
+          {sortedData.map((p) => {
+            const isSelf = p.user.id === user?.id;
+            const canManage = +myLevel > +getLevel(p.role);
+            return (
+              <div
+                key={p.user.id}
+                className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0"
+              >
+                <div className="flex-1 flex items-center gap-[8px]">
+                  {displayName(p)}
+                  {isSelf && (
+                    <span className="text-[11px] font-[600] px-[8px] py-[2px] rounded-full bg-boxFocused text-textItemFocused">
+                      {t('you', 'You')}
+                    </span>
+                  )}
+                  {!p.user.activated && (
+                    <span className="text-[11px] font-[600] px-[8px] py-[2px] rounded-full bg-red-500/10 text-red-400">
+                      {t('not_verified', 'Not verified')}
+                    </span>
+                  )}
+                </div>
+                <div className="w-[110px]">
+                  {p.role === 'USER'
+                    ? t('user', 'User')
+                    : p.role === 'ADMIN'
+                    ? t('admin', 'Admin')
+                    : t('super_admin', 'Super Admin')}
+                </div>
+                <div
+                  className="w-[220px] truncate text-customColor18"
+                  title={p.user.email}
+                >
+                  {p.user.email}
+                </div>
+                <div className="flex gap-[12px] justify-end w-[96px]">
+                  {(isSelf || canManage) && (
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={() => editMember(p)}
+                    >
+                      <EditIcon size={16} />
+                    </div>
+                  )}
+                  {canManage && !isSelf && p.user.activated && (
+                    <div
+                      className="cursor-pointer text-customColor18 hover:text-newTextColor"
+                      onClick={resetPassword(p)}
+                    >
+                      <MailIcon size={16} />
+                    </div>
+                  )}
+                  {canManage && !isSelf && (
+                    <div
+                      className="cursor-pointer text-red-400 hover:text-red-500"
+                      onClick={remove(p)}
+                    >
+                      <TrashIcon size={16} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -261,6 +261,15 @@ export class OrganizationRepository {
             createdAt: true,
           },
         },
+        _count: {
+          select: {
+            users: {
+              where: {
+                disabled: false,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -430,12 +439,17 @@ export class OrganizationRepository {
       },
       select: {
         users: {
+          where: {
+            disabled: false,
+          },
           select: {
             role: true,
             user: {
               select: {
                 email: true,
                 id: true,
+                name: true,
+                activated: true,
                 sendSuccessEmails: true,
                 sendFailureEmails: true,
                 sendStreakEmails: true,
@@ -488,6 +502,31 @@ export class OrganizationRepository {
           organizationId: orgId,
         },
       },
+    });
+  }
+
+  async updateTeamMember(
+    orgId: string,
+    userId: string,
+    body: { name: string; role?: Role }
+  ) {
+    return this._transaction.model.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { name: body.name },
+      });
+
+      if (body.role) {
+        await tx.userOrganization.update({
+          where: {
+            userId_organizationId: {
+              userId,
+              organizationId: orgId,
+            },
+          },
+          data: { role: body.role },
+        });
+      }
     });
   }
 

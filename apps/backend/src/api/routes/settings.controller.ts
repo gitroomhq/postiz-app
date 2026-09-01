@@ -6,6 +6,7 @@ import {
   HttpException,
   Param,
   Post,
+  Put,
 } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
@@ -14,6 +15,7 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { UpdateTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/update.team.member.dto';
 import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -70,6 +72,25 @@ export class SettingsController {
     @Param('id') id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
+  }
+
+  @Put('/team/:id')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  updateTeamMember(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id') id: string,
+    @Body() body: UpdateTeamMemberDto
+  ) {
+    return this._organizationService.updateTeamMember(
+      org,
+      user.id,
+      id,
+      body
+    );
   }
 
   @Get('/shortlink')

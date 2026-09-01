@@ -12,7 +12,7 @@ import { OrganizationNameDto } from '@gitroom/nestjs-libraries/dtos/organization
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { TrashIcon } from '@gitroom/frontend/components/ui/icons';
+import { EditIcon, TrashIcon } from '@gitroom/frontend/components/ui/icons';
 import {
   openCreateOrganizationModal,
   useOrganizations,
@@ -22,6 +22,7 @@ type OrganizationListItem = {
   id: string;
   name: string;
   users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
+  _count?: { users: number };
 };
 
 const roleLabel = (
@@ -34,6 +35,70 @@ const roleLabel = (
     ? t('admin', 'Admin')
     : t('user', 'User');
 
+const EditOrganizationForm: FC<{
+  org: OrganizationListItem;
+  onSaved: () => void;
+}> = ({ org, onSaved }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [loading, setLoading] = useState(false);
+  const resolver = useMemo(() => classValidatorResolver(OrganizationNameDto), []);
+  const form = useForm({ resolver, values: { name: org.name } });
+
+  const submit = useCallback(
+    async (values: { name: string }) => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/user/organizations/${org.id}`, {
+          method: 'POST',
+          body: JSON.stringify(values),
+        });
+
+        if (response.status !== 200 && response.status !== 201) {
+          const { message } = await response.json().catch(() => ({
+            message: '',
+          }));
+          toaster.show(
+            message ||
+              t(
+                'could_not_rename_organization',
+                'Could not rename the organization'
+              ),
+            'warning'
+          );
+          return;
+        }
+
+        toaster.show(
+          t('organization_renamed', 'Organization renamed'),
+          'success'
+        );
+        onSaved();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [org.id, onSaved]
+  );
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(submit)}>
+        <div className="relative flex gap-[10px] flex-col flex-1 p-[16px] pt-0">
+          <Input
+            label={t('organization_name', 'Organization name')}
+            name="name"
+          />
+          <Button type="submit" loading={loading} className="mt-[18px]">
+            {t('save', 'Save')}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
+  );
+};
+
 const OrganizationRow: FC<{
   org: OrganizationListItem;
   isCurrent: boolean;
@@ -42,43 +107,26 @@ const OrganizationRow: FC<{
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
-  const [loading, setLoading] = useState(false);
-  const isSuperAdmin = org.users[0]?.role === 'SUPERADMIN';
-  const resolver = useMemo(() => classValidatorResolver(OrganizationNameDto), []);
-  const form = useForm({ resolver, values: { name: org.name } });
+  const modals = useModals();
+  const role = org.users[0]?.role;
+  const canManage = role === 'ADMIN' || role === 'SUPERADMIN';
+  const membersCount = org._count?.users ?? 1;
 
-  const rename = useCallback(async (values: { name: string }) => {
-    if (values.name === org.name) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(`/user/organizations/${org.id}`, {
-        method: 'POST',
-        body: JSON.stringify(values),
-      });
-
-      if (response.status !== 200 && response.status !== 201) {
-        const { message } = await response.json().catch(() => ({
-          message: '',
-        }));
-        toaster.show(
-          message ||
-            t(
-              'could_not_rename_organization',
-              'Could not rename the organization'
-            ),
-          'warning'
-        );
-        return;
-      }
-
-      await mutate();
-      toaster.show(t('organization_renamed', 'Organization renamed'), 'success');
-    } finally {
-      setLoading(false);
-    }
-  }, [org.id, org.name, mutate]);
+  const edit = useCallback(() => {
+    modals.openModal({
+      title: t('edit_organization', 'Edit organization'),
+      withCloseButton: true,
+      children: (
+        <EditOrganizationForm
+          org={org}
+          onSaved={async () => {
+            modals.closeAll();
+            await mutate();
+          }}
+        />
+      ),
+    });
+  }, [modals, org, mutate, t]);
 
   const remove = useCallback(async () => {
     if (
@@ -119,33 +167,31 @@ const OrganizationRow: FC<{
   }, [org.id, isCurrent, mutate]);
 
   return (
-    <div className="flex items-center gap-[16px]">
-      <div className="flex-1">
-        {isSuperAdmin ? (
-          // Not a <form> - this list already sits inside the settings
-          // popup's own <form>, and nested forms are invalid HTML.
-          <FormProvider {...form}>
-            <div onBlur={() => form.handleSubmit(rename)()}>
-              <Input
-                label=""
-                removeError={true}
-                disabled={loading}
-                name="name"
-              />
-            </div>
-          </FormProvider>
-        ) : (
-          <div className="h-[42px] flex items-center">{org.name}</div>
-        )}
-      </div>
-      <div className="w-[110px]">{roleLabel(t, org.users[0]?.role)}</div>
-      <div className="w-[80px]">
+    <div className="flex items-center gap-[16px] py-[12px] border-b border-newTableBorder last:border-b-0">
+      <div className="flex-1 flex items-center gap-[8px]">
+        {org.name}
         {isCurrent && (
-          <span className="text-customColor18">{t('current', 'Current')}</span>
+          <span className="text-[11px] font-[600] px-[8px] py-[2px] rounded-full bg-boxFocused text-textItemFocused">
+            {t('current', 'Current')}
+          </span>
         )}
       </div>
-      <div className="w-[40px] flex justify-end">
-        {isSuperAdmin && (
+      <div className="w-[110px]">{roleLabel(t, role)}</div>
+      <div className="w-[140px] text-customColor18">
+        {t('members_count', `${membersCount} members`, {
+          count: membersCount,
+        })}
+      </div>
+      <div className="flex gap-[12px] justify-end w-[64px]">
+        {canManage && (
+          <div
+            className="cursor-pointer text-customColor18 hover:text-newTextColor"
+            onClick={edit}
+          >
+            <EditIcon size={16} />
+          </div>
+        )}
+        {canManage && (
           <div
             className="cursor-pointer text-red-400 hover:text-red-500"
             onClick={remove}
@@ -171,6 +217,11 @@ export const OrganizationsComponent = () => {
     });
   }, [modals, t, mutate]);
 
+  const sortedData = useMemo(
+    () => [...(data || [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [data]
+  );
+
   return (
     <div className="flex flex-col">
       <h3 className="text-[20px]">{t('organizations', 'Organizations')}</h3>
@@ -180,22 +231,25 @@ export const OrganizationsComponent = () => {
           'Create, rename or delete the organizations you own'
         )}
       </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[16px]">
-        {(data || []).map((org: OrganizationListItem) => (
-          <OrganizationRow
-            key={org.id}
-            org={org}
-            isCurrent={org.id === user?.orgId}
-            mutate={mutate}
-          />
-        ))}
-        {!user?.impersonate && (
-          <div>
+      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
+        <div className="flex items-center justify-between">
+          <div className="mt-[4px]">{t('organizations', 'Organizations')}</div>
+          {!user?.impersonate && (
             <Button onClick={createOrganization}>
               {t('create_organization', 'Create organization')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
+        <div className="flex flex-col">
+          {sortedData.map((org: OrganizationListItem) => (
+            <OrganizationRow
+              key={org.id}
+              org={org}
+              isCurrent={org.id === user?.orgId}
+              mutate={mutate}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
