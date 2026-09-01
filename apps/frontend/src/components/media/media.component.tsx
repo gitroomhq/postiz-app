@@ -35,6 +35,7 @@ import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpe
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { ThirdPartyMediaLibrary } from '@gitroom/frontend/components/third-parties/third-party.media-library';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state.component';
 import { Dashboard } from '@uppy/react';
 import {
   ChevronLeftIcon,
@@ -123,7 +124,7 @@ export const Pagination: FC<{
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
           className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
-          aria-label="Go to previous page"
+          aria-label={t('go_to_previous_page', 'Go to previous page')}
           onClick={() => setPage(current - 1)}
         >
           <ChevronLeftIcon className="lucide lucide-chevron-left h-4 w-4" />
@@ -159,7 +160,7 @@ export const Pagination: FC<{
       >
         <a
           className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth"
-          aria-label="Go to next page"
+          aria-label={t('go_to_next_page', 'Go to next page')}
           onClick={() => setPage(current + 1)}
         >
           <span>{t('next', 'Next')}</span>
@@ -363,7 +364,7 @@ export const MediaBox: FC<{
                 height="100%"
                 className="w-full h-full max-h-[100%] max-w-[100%] object-cover"
                 src={mediaDirectory.set(media.path)}
-                alt="media"
+                alt={t('media_alt', 'media')}
               />
             )}
           </div>
@@ -431,7 +432,7 @@ export const MediaBox: FC<{
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('search_media_by_name', 'Search by file name')}
-              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
+              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-btnPrimary"
             />
           </div>
           <input
@@ -467,6 +468,7 @@ export const MediaBox: FC<{
             'flex-1 relative',
             !isLoading &&
               !data?.results?.length &&
+              !standalone &&
               'bg-newTextColor/[0.02] rounded-[12px]'
           )}
         >
@@ -479,10 +481,10 @@ export const MediaBox: FC<{
             )}
           >
             {!isLoading && !data?.results?.length && (
-              <>
-                <NoMediaIcon />
-                <div className="text-[20px] font-[600]">
-                  {debouncedSearch
+              <EmptyState
+                icon={<NoMediaIcon />}
+                title={
+                  debouncedSearch
                     ? t(
                         'no_media_match_search',
                         'No media matches your search'
@@ -490,24 +492,28 @@ export const MediaBox: FC<{
                     : t(
                         'you_dont_have_any_media_yet',
                         "You don't have any media yet"
-                      )}
-                </div>
-                <div className="whitespace-pre-line text-newTextColor/[0.6] text-center">
-                  {t(
-                    'select_or_upload_pictures_max_1gb',
-                    'Select or upload pictures (maximum 1 GB per upload).'
-                  )}{' '}
-                  {'\n'}
-                  {t(
-                    'you_can_drag_drop_pictures',
-                    'You can also drag & drop pictures.'
-                  )}
-                </div>
-                <div className="forceChange flex gap-[8px]">
-                  {btn}
-                  <ThirdPartyMediaLibrary onImported={() => mutate()} />
-                </div>
-              </>
+                      )
+                }
+                description={
+                  <>
+                    {t(
+                      'select_or_upload_pictures_max_1gb',
+                      'Select or upload pictures (maximum 1 GB per upload).'
+                    )}{' '}
+                    {'\n'}
+                    {t(
+                      'you_can_drag_drop_pictures',
+                      'You can also drag & drop pictures.'
+                    )}
+                  </>
+                }
+                action={
+                  <div className="forceChange flex gap-[8px]">
+                    {btn}
+                    <ThirdPartyMediaLibrary onImported={() => mutate()} />
+                  </div>
+                }
+              />
             )}
             {isLoading && (
               <>
@@ -544,13 +550,13 @@ export const MediaBox: FC<{
                     className={clsx(
                       'w-full h-full rounded-[6px] border-[4px] relative',
                       !!selected.find((p) => p.id === media.id)
-                        ? 'border-[#612BD3]'
+                        ? 'border-btnPrimary'
                         : 'border-transparent'
                     )}
                     onClick={addRemoveSelected(media)}
                   >
                     {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-btnPrimary absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (
@@ -588,7 +594,7 @@ export const MediaBox: FC<{
                           height="100%"
                           className="w-full h-full object-cover"
                           src={mediaDirectory.set(media.path)}
-                          alt="media"
+                          alt={t('media_alt', 'media')}
                         />
                       )}
                     </div>
@@ -616,7 +622,7 @@ export const MediaBox: FC<{
               <button
                 onClick={standalone ? () => {} : addMedia}
                 disabled={selected.length === 0}
-                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px]"
+                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-btnPrimary flex rounded-[10px]"
               >
                 {t('add_selected_media', 'Add selected media')}
               </button>
@@ -810,6 +816,7 @@ export const MultiMediaComponent: FC<{
                         <img
                           className="w-full h-full object-cover rounded-[4px]"
                           src={mediaDirectory.set(media?.path)}
+                          alt={t('media_alt', 'media')}
                         />
                       )}
                     </div>
@@ -979,6 +986,7 @@ export const MediaComponent: FC<{
           <img
             className="w-full h-full object-cover"
             src={currentMedia.path}
+            alt={t('media_alt', 'media')}
             onClick={() => window.open(mediaDirectory.set(currentMedia.path))}
           />
         </div>

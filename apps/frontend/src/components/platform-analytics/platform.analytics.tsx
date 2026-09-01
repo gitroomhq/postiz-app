@@ -17,6 +17,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state.component';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -149,27 +150,38 @@ export const PlatformAnalytics = () => {
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
-        </div>
-        <div className="text-[48px]">
-          {t('can_t_show_analytics_yet', "Can't show analytics yet")}
-          <br />
-          {t(
-            'you_have_to_add_social_media_channels',
-            'You have to add Social Media channels'
-          )}
-        </div>
-        <div className="text-[20px]">
-          {t('supported', 'Supported:')}
-          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
-        </div>
-        <Button onClick={() => router.push('/launches')}>
-          {t(
-            'go_to_the_calendar_to_add_channels',
-            'Go to the calendar to add channels'
-          )}
-        </Button>
+        <EmptyState
+          icon={
+            <img
+              src="/peoplemarketplace.svg"
+              alt=""
+              className="w-[200px] h-auto"
+            />
+          }
+          title={t('can_t_show_analytics_yet', "Can't show analytics yet")}
+          description={
+            <>
+              <div>
+                {t(
+                  'you_have_to_add_social_media_channels',
+                  'You have to add Social Media channels'
+                )}
+              </div>
+              <div className="mt-[8px]">
+                {t('supported', 'Supported:')}{' '}
+                {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+              </div>
+            </>
+          }
+          action={
+            <Button onClick={() => router.push('/launches')}>
+              {t(
+                'go_to_the_calendar_to_add_channels',
+                'Go to the calendar to add channels'
+              )}
+            </Button>
+          }
+        />
       </div>
     );
   }

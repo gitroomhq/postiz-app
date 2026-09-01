@@ -17,6 +17,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { EmptyState } from '@gitroom/frontend/components/ui/empty-state.component';
 export const Plugs = () => {
   const fetch = useFetch();
   const router = useRouter();
@@ -95,26 +96,31 @@ export const Plugs = () => {
   if (!sortedIntegrations.length && !isLoading) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
-        </div>
-        <div className="text-[48px]">
-          {t(
+        <EmptyState
+          icon={
+            <img
+              src="/peoplemarketplace.svg"
+              alt=""
+              className="w-[200px] h-auto"
+            />
+          }
+          title={t(
             'there_are_not_plugs_matching_your_channels',
             'There are not plugs matching your channels'
           )}
-          <br />
-          {t(
+          description={t(
             'you_have_to_add_x_linkedin_page_threads_or_bluesky',
             'You have to add: X, LinkedIn Page, Threads or Bluesky'
           )}
-        </div>
-        <Button onClick={() => router.push('/launches')}>
-          {t(
-            'go_to_the_calendar_to_add_channels',
-            'Go to the calendar to add channels'
-          )}
-        </Button>
+          action={
+            <Button onClick={() => router.push('/launches')}>
+              {t(
+                'go_to_the_calendar_to_add_channels',
+                'Go to the calendar to add channels'
+              )}
+            </Button>
+          }
+        />
       </div>
     );
   }

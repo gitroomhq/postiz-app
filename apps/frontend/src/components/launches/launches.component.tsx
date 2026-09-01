@@ -299,6 +299,7 @@ export const MenuComponent: FC<
         {integration.identifier === 'youtube' ? (
           <img
             src="/icons/platforms/youtube.svg"
+            alt={t('youtube', 'YouTube')}
             className="absolute z-10 bottom-[5px] -end-[5px]"
             width={20}
           />
@@ -547,23 +548,21 @@ export const LaunchesComponent = () => {
             <div className="gap-[32px] flex flex-col select-none flex-1">
               {sortedIntegrations.length === 0 && collapseMenu === '0' && (
                 <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
-                    <img
-                      src={
-                        mode === 'dark'
-                          ? '/no-channels.svg'
-                          : '/no-channels-colors.svg'
-                      }
-                      alt="No channels"
-                      className="mx-auto min-w-[100%]"
-                    />
-                    <div className="font-[600] text-[20px]">
-                      {t('no_channels', 'No channels yet')}
-                    </div>
-                    <div className="text-[14px]">
-                      {t('connect_your_accounts')}
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={
+                      <img
+                        src={
+                          mode === 'dark'
+                            ? '/no-channels.svg'
+                            : '/no-channels-colors.svg'
+                        }
+                        alt={t('no_channels_alt', 'No channels')}
+                        className="mx-auto w-[200px]"
+                      />
+                    }
+                    title={t('no_channels', 'No channels yet')}
+                    description={t('connect_your_accounts')}
+                  />
                 </div>
               )}
               {menuIntegrations.map((menu) => (
