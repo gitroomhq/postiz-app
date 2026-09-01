@@ -110,8 +110,9 @@ export const startMcp = async (app: INestApplication) => {
     '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth'), mcpServer: oauthServer },
     // Claude connector directory submission
     '/mcp-oauth-claude': { middleware: createResourceMiddleware('/mcp-oauth-claude'), mcpServer: claudeOauthServer },
-    // Clients that register themselves through DCR (/oauth/register)
-    '/mcp-oauth-dynamic': { middleware: createResourceMiddleware('/mcp-oauth-dynamic'), mcpServer: claudeOauthServer },
+    // Clients that register themselves through DCR (/oauth/register) - not
+    // directory-reviewed, so they get the full toolset (media generation included)
+    '/mcp-oauth-dynamic': { middleware: createResourceMiddleware('/mcp-oauth-dynamic'), mcpServer: oauthServer },
   };
 
   if (process.env.OPENAI_APP_CHALLANGE) {
