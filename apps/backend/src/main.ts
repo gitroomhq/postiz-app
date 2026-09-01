@@ -31,6 +31,7 @@ async function start() {
         'auth',
         'showorg',
         'impersonate',
+        'org',
         'x-copilotkit-runtime-client-gql-version',
       ],
       exposedHeaders: [

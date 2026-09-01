@@ -49,8 +49,11 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
+      // In NOT_SECURED mode cookies aren't sent cross-origin (no
+      // credentials: 'include'), so the invite JWT also travels as a
+      // plain `org` header - same fallback already used for auth/showorg.
       const getOrgFromCookie = this._authService.getOrgFromCookie(
-        req?.cookies?.org
+        req?.cookies?.org || (req?.headers?.org as string)
       );
 
       const { jwt, addedOrg } = await this._authService.routeAuth(
@@ -123,8 +126,11 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
+      // In NOT_SECURED mode cookies aren't sent cross-origin (no
+      // credentials: 'include'), so the invite JWT also travels as a
+      // plain `org` header - same fallback already used for auth/showorg.
       const getOrgFromCookie = this._authService.getOrgFromCookie(
-        req?.cookies?.org
+        req?.cookies?.org || (req?.headers?.org as string)
       );
 
       const { jwt, addedOrg } = await this._authService.routeAuth(

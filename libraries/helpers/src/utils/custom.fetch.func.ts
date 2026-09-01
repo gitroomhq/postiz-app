@@ -43,6 +43,18 @@ export const customFetch = (
             .find((p) => p.includes('impersonate='))
             ?.split('=')[1];
 
+    // The invite-flow JWT cookie. Note: must match on a trimmed
+    // startsWith('org='), not includes('org=') like the cookies above -
+    // "showorg=..." also contains the substring "org=" and would collide.
+    const authNonSecuredInviteOrg =
+      typeof document === 'undefined'
+        ? null
+        : document.cookie
+            .split(';')
+            .map((p) => p.trim())
+            .find((p) => p.startsWith('org='))
+            ?.split('=')[1];
+
     const fetchRequest = await fetch(params.baseUrl + url, {
       ...(secured ? { credentials: 'include' } : {}),
       ...(newRequestObject || options),
@@ -66,6 +78,7 @@ export const customFetch = (
         ...(authNonSecuredImpersonate
           ? { impersonate: authNonSecuredImpersonate }
           : {}),
+        ...(authNonSecuredInviteOrg ? { org: authNonSecuredInviteOrg } : {}),
       },
       // @ts-ignore
       ...(!options.next && options.cache !== 'force-cache'
