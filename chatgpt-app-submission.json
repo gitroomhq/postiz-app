@@ -123,9 +123,21 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Generates a video, consumes the user's video generation credit, uploads the result, and saves it to the media library.",
+        "read_only_justification": "Starts a background video generation job that consumes the user's video generation credit, uploads the result, and saves it to the media library.",
         "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
         "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "videoStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the status of a video generation job the user started and returns the hosted video URL once it is done.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
       }
     },
     "generateImageTool": {

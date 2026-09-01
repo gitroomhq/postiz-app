@@ -49,6 +49,7 @@ export const startMcp = async (app: INestApplication) => {
   const claudeHiddenTools = [
     'generateImageTool',
     'generateVideoTool',
+    'videoStatusTool',
     'generateVideoOptions',
     'videoFunctionTool',
   ];
