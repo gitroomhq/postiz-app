@@ -191,7 +191,7 @@ export class BillingController {
   ) {
     const result = await (await this.provider(org)).setToCancel(org.id);
 
-    if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs(), 'day')) {
+    if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs())) {
       try {
         await this._notificationService.sendEmail(
           user.email,
