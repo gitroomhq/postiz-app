@@ -19,6 +19,12 @@ export const GlobalSettings = () => {
   return (
     <div className="flex flex-col">
       <h3 className="text-[20px]">{t('global_settings', 'Global Settings')}</h3>
+      <div className="text-customColor18 mt-[4px]">
+        {t(
+          'manage_your_notification_timezone_and_shortlink_preferences',
+          'Manage your notification, timezone and shortlink preferences'
+        )}
+      </div>
       <MetricComponent />
       <EmailNotificationsComponent />
       <ShortlinkPreferenceComponent />

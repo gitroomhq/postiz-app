@@ -4,16 +4,18 @@ import { Select } from '@gitroom/react/form/select';
 import React, { useState } from 'react';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import timezones from 'timezones-list';
-const dateMetrics = [
-  { label: 'AM:PM', value: 'US' },
-  { label: '24 hours', value: 'GLOBAL' },
-];
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(timezone);
 
 const MetricComponent = () => {
+  const t = useT();
+  const dateMetrics = [
+    { label: t('am_pm', 'AM:PM'), value: 'US' },
+    { label: t('twenty_four_hours', '24 hours'), value: 'GLOBAL' },
+  ];
   const [currentMetric, setCurrentMetric] = useState(isUSCitizen());
   const [timezone, setTimezone] = useState(
     localStorage.getItem('timezone') || dayjs.tz.guess()
@@ -33,17 +35,37 @@ const MetricComponent = () => {
   };
   return (
     <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">Date Metrics</div>
-      <Select name="metric" disableForm={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
-        {dateMetrics.map((metric) => (
-          <option
-            key={metric.value}
-            value={metric.value}
+      <div className="mt-[4px]">{t('date_metrics', 'Date Metrics')}</div>
+      <div className="flex items-center justify-between gap-[24px]">
+        <div className="flex flex-col flex-1">
+          <div className="text-[14px]">{t('time_format', 'Time Format')}</div>
+          <div className="text-[12px] text-customColor18">
+            {t(
+              'time_format_description',
+              'Choose how times are displayed across the app'
+            )}
+          </div>
+        </div>
+        <div className="w-[200px]">
+          <Select
+            name="metric"
+            disableForm={true}
+            label=""
+            hideErrors={true}
+            onChange={changeMetric}
+            value={currentMetric ? 'US' : 'GLOBAL'}
           >
-            {metric.label}
-          </option>
-        ))}
-      </Select>
+            {dateMetrics.map((metric) => (
+              <option
+                key={metric.value}
+                value={metric.value}
+              >
+                {metric.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
 
       {/*<div className="mt-[4px]">Current Timezone</div>*/}
       {/*<Select*/}
