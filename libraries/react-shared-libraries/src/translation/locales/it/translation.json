@@ -477,6 +477,8 @@
   "faq_what_is_ai_auto_complete": "Cos'è il completamento automatico AI?",
   "faq_we_automate_chatgpt_to_help_you_write": "Automatizziamo ChatGPT per aiutarti a scrivere post social e articoli.",
   "enter_email": "Inserisci email",
+  "name_optional": "Nome (facoltativo)",
+  "enter_name": "Inserisci nome",
   "are_you_sure": "Sei sicuro?",
   "no_cancel": "No, annulla!",
   "are_you_sure_you_want_to_delete": "Sei sicuro di voler eliminare {{name}}?",

@@ -28,6 +28,7 @@ export class UsersService {
       password?: string;
       provider: Provider;
       providerId?: string;
+      name?: string;
     },
     ip: string,
     userAgent: string

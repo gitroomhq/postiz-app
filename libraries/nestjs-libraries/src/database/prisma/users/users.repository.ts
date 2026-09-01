@@ -310,6 +310,7 @@ export class UsersRepository {
       password?: string;
       provider: Provider;
       providerId?: string;
+      name?: string;
     },
     hasEmail: boolean,
     ip: string,
@@ -322,6 +323,7 @@ export class UsersRepository {
         password: body.password ? AuthService.hashPassword(body.password) : '',
         providerName: body.provider,
         providerId: body.providerId || '',
+        name: body.name,
         timezone: 0,
         ip,
         agent: userAgent,

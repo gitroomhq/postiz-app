@@ -37,7 +37,9 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?:
+      | boolean
+      | { orgId: string; role: 'USER' | 'ADMIN'; id: string; name?: string }
   ) {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
@@ -64,7 +66,11 @@ export class AuthService {
         // company field - otherwise every invited signup left a duplicate org
         // behind.
         const newUser = invite
-          ? await this._userService.createUser(body, ip, userAgent)
+          ? await this._userService.createUser(
+              { ...body, name: invite.name },
+              ip,
+              userAgent
+            )
           : (
               await this._organizationService.createOrgAndUser(
                 body,
@@ -141,6 +147,7 @@ export class AuthService {
         role: 'USER' | 'ADMIN';
         orgId: string;
         id: string;
+        name?: string;
       };
     } catch (err) {
       return false;
@@ -152,7 +159,7 @@ export class AuthService {
     body: CreateOrgUserDto,
     ip: string,
     userAgent: string,
-    invite?: { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    invite?: { orgId: string; role: 'USER' | 'ADMIN'; id: string; name?: string }
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -185,6 +192,7 @@ export class AuthService {
           password: '',
           provider,
           providerId: providerUser.id,
+          name: invite.name,
         },
         ip,
         userAgent
