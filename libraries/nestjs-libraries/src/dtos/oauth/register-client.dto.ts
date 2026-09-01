@@ -4,16 +4,14 @@ import {
   IsDefined,
   IsOptional,
   IsString,
-  IsUrl,
 } from 'class-validator';
 
 export class RegisterClientDto {
+  // https, http loopback or a private-use scheme (cursor://...),
+  // validated in OAuthService.registerDynamicClient
   @IsArray()
   @ArrayNotEmpty()
-  @IsUrl(
-    { require_tld: false, require_protocol: true, protocols: ['http', 'https'] },
-    { each: true }
-  )
+  @IsString({ each: true })
   @IsDefined()
   redirect_uris: string[];
 
