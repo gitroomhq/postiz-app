@@ -740,5 +740,21 @@
   "republish_the_post": "Republish the post",
   "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
   "republish_at": "at",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "organizations": "Organizations",
+  "organizations_description": "Create, rename or delete the organizations you own",
+  "create_organization": "Create organization",
+  "organization_name": "Organization name",
+  "enter_organization_name": "Enter organization name",
+  "current": "Current",
+  "organization_renamed": "Organization renamed",
+  "could_not_create_organization": "Could not create the organization",
+  "could_not_rename_organization": "Could not rename the organization",
+  "could_not_delete_organization": "Could not delete the organization",
+  "delete_organization_confirm": "This organization, its channels and posts will be deleted permanently. This action cannot be undone, are you sure?",
+  "yes_delete_organization": "Yes, delete this organization",
+  "invited_you_will_join_an_existing_team": "You've been invited to join a team - your account will be added to it automatically.",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "theme_system": "System"
 }
