@@ -68,7 +68,6 @@ jobs:
             - If a conflict is ambiguous enough that you would be guessing at
               the correct resolution, stop without committing and explain why.
           claude_args: |
-            --max-turns 50
             --model claude-sonnet-5
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),Bash(git add:*),Bash(git commit:*)"
 
