@@ -71,15 +71,24 @@ jobs:
             git diff --name-only --diff-filter=U
           fi
 
-      # Refuse to let Claude touch its own workflow or any other CI definition.
-      - name: Guard CI paths
+      # CI definitions always come from main, so conflicts under .github/ are
+      # settled here by taking main's side. This keeps Claude away from them
+      # and stops this workflow from deadlocking on edits to itself: it was
+      # added independently on both branches, so git sees add/add and every
+      # change to it on main conflicts no matter how staging's copy looks.
+      - name: Take main's CI definitions
         if: steps.probe.outputs.conflicted == 'true'
         run: |
-          if git diff --name-only --diff-filter=U | grep -q '^\.github/'; then
-            echo "::error::conflict under .github/, resolve this one by hand"
-            git merge --abort
-            exit 1
+          git diff --name-only -z --diff-filter=U -- .github/ > /tmp/ci_paths
+          if [ ! -s /tmp/ci_paths ]; then
+            echo "no conflicts under .github/"
+            exit 0
           fi
+
+          echo "taking main's copy of:"
+          tr '\0' '\n' < /tmp/ci_paths
+          xargs -0 git checkout --theirs -- < /tmp/ci_paths
+          xargs -0 git add -- < /tmp/ci_paths
 
       - name: Resolve with Claude
         if: steps.probe.outputs.conflicted == 'true'
@@ -102,8 +111,9 @@ jobs:
             - Change nothing beyond what the conflict resolution requires.
             - Do not push, switch branches, create branches, or amend history.
             - Do not post comments, open issues, or touch any pull request.
-            - Never modify anything under `.github/`. If a conflict is there,
-              stop immediately without committing.
+            - Never modify anything under `.github/`. Conflicts there are
+              already resolved and staged for you; leave them exactly as they
+              are and resolve only the remaining paths.
             - If a conflict is ambiguous enough that you would be guessing at
               the correct resolution, stop without committing and explain why.
           claude_args: |
@@ -140,10 +150,16 @@ jobs:
             exit 1
           fi
 
-          if git diff --name-only origin/staging..HEAD | grep -q '^\.github/'; then
-            echo "::error::resolution modified .github/, refusing"
-            exit 1
-          fi
+          # Every .github/ path the merge touched must be either untouched by
+          # the merge or byte-identical to main's copy, so a resolution can
+          # never smuggle in a CI change of its own.
+          for path in $(git diff --name-only origin/staging..HEAD -- .github/); do
+            if ! git diff --quiet origin/main HEAD -- "$path"; then
+              echo "::error::$path differs from main's copy, refusing"
+              git diff origin/main HEAD -- "$path"
+              exit 1
+            fi
+          done
 
           echo "Resolution commit:"
           git log -1 --stat
