@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { getMaxSize } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import {
+  getMaxSize,
+  isCompleteMp4,
+  INCOMPLETE_MP4_ERROR,
+} from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Readable } from 'stream';
@@ -100,6 +104,10 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
             return {
               error: `File is too large: ${buffer.length} bytes (max ${maxSize} bytes).`,
             };
+          }
+
+          if (detected.mime === 'video/mp4' && !isCompleteMp4(buffer)) {
+            return { error: INCOMPLETE_MP4_ERROR };
           }
 
           const getFile = await this.storage.uploadFile({
