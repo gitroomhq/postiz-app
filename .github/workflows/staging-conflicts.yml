@@ -1,10 +1,8 @@
 name: Resolve staging conflicts
 
 on:
-  push:
-    branches:
-      - main
-      - staging
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -17,6 +15,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.head_branch == 'main'
 
     steps:
       - name: Checkout staging
@@ -49,6 +50,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_bots: "github-actions[bot]"
           prompt: |
             The repository is checked out on `staging`, part-way through
             `git merge --no-ff origin/main`, and the merge has conflicts.
