@@ -1,5 +1,15 @@
 name: Resolve staging conflicts
 
+# Reproduces a staging <- main merge inside the runner. If it conflicts, Claude
+# resolves the conflicts and creates the merge commit. Nothing is commented,
+# nothing is pushed unless the resolution passes every verification below.
+#
+# claude-code-action rejects `push` events, so detection runs on a schedule.
+#
+# Required secrets:
+#   STAGING_MERGE_KEY         private half of a write-enabled deploy key
+#   CLAUDE_CODE_OAUTH_TOKEN   Claude API key, despite the secret name
+
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -15,9 +25,6 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    if: >-
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.head_branch == 'main'
 
     steps:
       - name: Checkout staging
@@ -27,6 +34,26 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.STAGING_MERGE_KEY }}
           persist-credentials: true
+
+      # Runs before anything billable. If the deploy key cannot push, the job
+      # dies here at zero cost instead of after a paid resolution.
+      - name: Configure push credentials
+        env:
+          SSH_KEY: ${{ secrets.STAGING_MERGE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/staging_merge
+          chmod 600 ~/.ssh/staging_merge
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/staging_merge -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+
+      # `git push --dry-run` exercises the exact path the real push takes.
+      # A bare `ssh -T` does not, since GIT_SSH_COMMAND applies only to git.
+      - name: Preflight push
+        run: |
+          git remote set-url origin "git@github.com:${{ github.repository }}.git"
+          git push --dry-run origin HEAD:staging
+          echo "push path verified"
 
       - name: Probe merge
         id: probe
@@ -42,6 +69,16 @@ jobs:
             echo "conflicted=true" >> "$GITHUB_OUTPUT"
             echo "Conflicted paths:"
             git diff --name-only --diff-filter=U
+          fi
+
+      # Refuse to let Claude touch its own workflow or any other CI definition.
+      - name: Guard CI paths
+        if: steps.probe.outputs.conflicted == 'true'
+        run: |
+          if git diff --name-only --diff-filter=U | grep -q '^\.github/'; then
+            echo "::error::conflict under .github/, resolve this one by hand"
+            git merge --abort
+            exit 1
           fi
 
       - name: Resolve with Claude
@@ -65,10 +102,12 @@ jobs:
             - Change nothing beyond what the conflict resolution requires.
             - Do not push, switch branches, create branches, or amend history.
             - Do not post comments, open issues, or touch any pull request.
+            - Never modify anything under `.github/`. If a conflict is there,
+              stop immediately without committing.
             - If a conflict is ambiguous enough that you would be guessing at
               the correct resolution, stop without committing and explain why.
           claude_args: |
-            --max-turns 25
+            --max-turns 12
             --model claude-sonnet-5
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),Bash(git add:*),Bash(git commit:*)"
 
@@ -102,9 +141,32 @@ jobs:
             exit 1
           fi
 
+          if git diff --name-only origin/staging..HEAD | grep -q '^\.github/'; then
+            echo "::error::resolution modified .github/, refusing"
+            exit 1
+          fi
+
           echo "Resolution commit:"
           git log -1 --stat
 
+      # Saved before the push, so a push failure never costs a second run.
+      # Recover with: git fetch ./resolved.bundle HEAD
+      #               git push origin FETCH_HEAD:staging
+      - name: Archive resolution
+        if: steps.probe.outputs.conflicted == 'true'
+        run: git bundle create /tmp/resolved.bundle HEAD ^origin/staging ^origin/main
+
+      - uses: actions/upload-artifact@v4
+        if: steps.probe.outputs.conflicted == 'true'
+        with:
+          name: staging-resolution-${{ github.run_id }}
+          path: /tmp/resolved.bundle
+          retention-days: 14
+
+      # The action rewrites `origin` to an HTTPS URL during its own git setup,
+      # so the SSH remote is reasserted here.
       - name: Push staging
         if: steps.probe.outputs.conflicted == 'true'
-        run: git push origin HEAD:staging
+        run: |
+          git remote set-url origin "git@github.com:${{ github.repository }}.git"
+          git push origin HEAD:staging
