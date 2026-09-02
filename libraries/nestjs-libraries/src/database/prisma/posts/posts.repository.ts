@@ -127,6 +127,32 @@ export class PostsRepository {
     });
   }
 
+  // Post.error persists the raw serialized workflow failure; only curated
+  // provider messages are surfaced to the calendar and the public API —
+  // bad_body failures whose message came from a provider handleErrors
+  // mapping or a hand-written provider throw (unmapped API responses carry
+  // the 'Unknown Error' placeholder instead). Internal debug strings (e.g.
+  // 'Refresh channel needed') and unmapped failures come out as null.
+  private curatedError(error?: string | null): string | null {
+    if (!error) {
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(error);
+      const [type, message] = parsed?.cause?.failure?.message
+        ? [parsed?.cause?.type, parsed?.cause?.failure?.message]
+        : [
+            parsed?.failure?.cause?.applicationFailureInfo?.type,
+            parsed?.failure?.cause?.message,
+          ];
+      return type === 'bad_body' && message && message !== 'Unknown Error'
+        ? message
+        : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
   async getPosts(orgId: string, query: GetPostsDto) {
     // Use the provided start and end dates directly
     const startDate = dayjs.utc(query.startDate).toDate();
@@ -173,6 +199,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,
@@ -193,7 +220,9 @@ export class PostsRepository {
       },
     });
 
-    return list.reduce((all, post) => {
+    return list
+      .map((post) => ({ ...post, error: this.curatedError(post.error) }))
+      .reduce((all, post) => {
       if (!post.intervalInDays) {
         return [...all, post];
       }
