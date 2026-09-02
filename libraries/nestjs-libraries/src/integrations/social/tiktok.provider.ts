@@ -1120,13 +1120,13 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   // Posts published before moderation finished keep their publish_id
-  // (v_pub_url~... / v_pub_file~...) as releaseId - resolve it to the video id
+  // (v_pub_file~... / p_pub_url~...) as releaseId - resolve it to the post id
   async resolveReleaseId(
     accessToken: string,
     releaseId: string,
     integration: Integration
   ) {
-    if (releaseId.indexOf('v_pub_') === -1) {
+    if (releaseId.indexOf('_pub_') === -1) {
       return undefined;
     }
 
