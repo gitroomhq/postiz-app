@@ -47,12 +47,11 @@ jobs:
           ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
           echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/staging_merge -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
 
+      # `git push --dry-run` exercises the exact path the real push takes.
+      # A bare `ssh -T` does not, since GIT_SSH_COMMAND applies only to git.
       - name: Preflight push
         run: |
           git remote set-url origin "git@github.com:${{ github.repository }}.git"
-          ssh -T git@github.com 2>&1 | tee /tmp/ssh.log || true
-          grep -q "successfully authenticated" /tmp/ssh.log || {
-            echo "::error::deploy key did not authenticate"; exit 1; }
           git push --dry-run origin HEAD:staging
           echo "push path verified"
 
