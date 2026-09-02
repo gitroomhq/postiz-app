@@ -20,6 +20,17 @@ const oauthScope = (clientId: string) =>
     'mcp:write',
   ].join(' ');
 
+// Schemes a browser would execute instead of navigating away from the
+// consent screen, so they can never be a redirect_uri
+const browserSchemes = [
+  'javascript:',
+  'data:',
+  'blob:',
+  'file:',
+  'vbscript:',
+  'about:',
+];
+
 @Injectable()
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
@@ -99,6 +110,7 @@ export class OAuthService {
 
   async registerDynamicClient(dto: RegisterClientDto) {
     const redirectUris = dto.redirect_uris.map((uri) => uri.trim());
+    const verifiedDomains = this.verifiedDomainList();
     for (const uri of redirectUris) {
       let parsed: URL;
       try {
@@ -109,31 +121,48 @@ export class OAuthService {
           HttpStatus.BAD_REQUEST
         );
       }
-      const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
-      if (parsed.protocol !== 'https:' && !isLoopback) {
+
+      // The consent screen navigates to the redirect_uri, so schemes the
+      // browser would execute in our origin can never be a callback
+      if (browserSchemes.includes(parsed.protocol)) {
         throw new HttpException(
-          { error: 'invalid_redirect_uri', error_description: 'redirect_uris must use https (http is allowed for loopback only)' },
+          { error: 'invalid_redirect_uri', error_description: `redirect_uri scheme "${parsed.protocol}" is not allowed` },
           HttpStatus.BAD_REQUEST
         );
       }
-    }
 
-    const verifiedDomains = this.verifiedDomainList();
-    if (verifiedDomains.length) {
-      for (const uri of redirectUris) {
-        const host = new URL(uri).hostname.toLowerCase();
-        const isVerified = verifiedDomains.some(
-          (domain) => host === domain || host.endsWith('.' + domain)
+      const isLoopback =
+        parsed.protocol === 'http:' &&
+        ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+      // Private-use schemes (RFC 8252 §7.1), e.g.
+      // cursor://anysphere.cursor-mcp/oauth/callback
+      const isPrivateScheme = !['http:', 'https:'].includes(parsed.protocol);
+      if (parsed.protocol === 'http:' && !isLoopback) {
+        throw new HttpException(
+          { error: 'invalid_redirect_uri', error_description: 'redirect_uris must use https or a private-use scheme (http is allowed for loopback only)' },
+          HttpStatus.BAD_REQUEST
         );
-        if (!isVerified) {
-          throw new HttpException(
-            {
-              error: 'invalid_redirect_uri',
-              error_description: `redirect_uri host "${host}" is not a verified domain`,
-            },
-            HttpStatus.BAD_REQUEST
-          );
-        }
+      }
+
+      // Loopback and private-use callbacks never leave the user's machine
+      // (native clients like Cursor, Grok and Claude Code), so only web
+      // callbacks are held to the verified domain list
+      if (isLoopback || isPrivateScheme || !verifiedDomains.length) {
+        continue;
+      }
+
+      const host = parsed.hostname.toLowerCase();
+      const isVerified = verifiedDomains.some(
+        (domain) => host === domain || host.endsWith('.' + domain)
+      );
+      if (!isVerified) {
+        throw new HttpException(
+          {
+            error: 'invalid_redirect_uri',
+            error_description: `redirect_uri host "${host}" is not a verified domain`,
+          },
+          HttpStatus.BAD_REQUEST
+        );
       }
     }
 

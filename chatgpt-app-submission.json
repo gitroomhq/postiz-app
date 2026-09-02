@@ -123,9 +123,21 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Generates a video, consumes the user's video generation credit, uploads the result, and saves it to the media library.",
+        "read_only_justification": "Starts a background video generation job that consumes the user's video generation credit, uploads the result, and saves it to the media library.",
         "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
         "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "videoStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the status of a video generation job the user started and returns the hosted video URL once it is done.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
       }
     },
     "generateImageTool": {
@@ -155,43 +167,43 @@
   },
   "test_cases": [
     {
-      "description": "List the user's Postiz groups and connected social channels.",
-      "user_prompt": "Show me my Postiz customer groups, then list the connected channels for the Acme group.",
+      "description": "List the user's connected Postiz channels.",
+      "user_prompt": "Which social channels do I have connected in Postiz? Show the platform and channel name for each one.",
       "file_attachment_urls": null,
-      "tools_triggered": "groupList, integrationList",
-      "expected_output": "Returns available groups and the connected channels for the selected group with enough detail to choose where to post.",
+      "tools_triggered": "integrationList",
+      "expected_output": "Calls integrationList and lists every connected channel with its platform (for example LinkedIn, X) and channel name, so the user can pick where to post. No post is created.",
       "expected_output_url": null
     },
     {
-      "description": "Upload a remote media URL and schedule a social post.",
-      "user_prompt": "Use this public image URL for a LinkedIn post tomorrow at 9:00 UTC: https://example.com/product.png. I confirm the copy and time.",
+      "description": "Upload two remote images and create a LinkedIn draft (nothing is published).",
+      "user_prompt": "Create a LinkedIn draft in Postiz for next Monday at 10:00 UTC with the text \"Testing the Postiz ChatGPT app\" and attach these two images: https://platform.postiz.com/auth/bg-login.png and https://platform.postiz.com/auth/login-box.png. Keep it as a draft, do not schedule or publish it.",
       "file_attachment_urls": null,
-      "tools_triggered": "integrationList, integrationSchema, uploadFromUrlTool, integrationSchedulePostTool",
-      "expected_output": "Uploads the media, validates LinkedIn requirements, and creates a scheduled Postiz post or returns clear validation errors.",
+      "tools_triggered": "integrationList, uploadFromUrlTool, integrationSchedulePostTool",
+      "expected_output": "Finds the LinkedIn channel, calls uploadFromUrlTool once per image (each returns a hosted media path), then calls integrationSchedulePostTool with type \"draft\" and both hosted attachments. Returns the new post id and confirms it was saved as a draft. Nothing is published to LinkedIn. Running the case again creates another draft and succeeds the same way.",
       "expected_output_url": null
     },
     {
-      "description": "Resolve provider-specific settings before scheduling.",
-      "user_prompt": "Schedule a Reddit post for next Monday and use the correct subreddit flair for /r/startups. I confirm the post details.",
+      "description": "Explain platform rules and available settings for a channel.",
+      "user_prompt": "What are the posting rules and the available settings for my LinkedIn channel in Postiz?",
       "file_attachment_urls": null,
-      "tools_triggered": "integrationList, integrationSchema, triggerTool, integrationSchedulePostTool",
-      "expected_output": "Retrieves Reddit requirements and flair options, then creates the scheduled post with the selected settings or reports validation errors.",
+      "tools_triggered": "integrationList, integrationSchema",
+      "expected_output": "Resolves the LinkedIn channel id, calls integrationSchema and summarises the platform rules (character limit, attachment rules such as carousels needing at least two images) and the settings keys (post_as_images_carousel, carousel_name). Read-only, no post is created or changed.",
       "expected_output_url": null
     },
     {
-      "description": "Find an existing scheduled post and update provider settings.",
-      "user_prompt": "Find my scheduled posts for next week and change the selected post's provider setting to the correct Reddit flair.",
+      "description": "Find an existing draft and update only its provider settings.",
+      "user_prompt": "Find my Postiz LinkedIn draft with the text \"Testing the Postiz ChatGPT app\" and turn it into an image carousel named \"Product launch\". Don't change the text or the date.",
       "file_attachment_urls": null,
-      "tools_triggered": "postsListTool, integrationSchema, triggerTool, postSettingsTool",
-      "expected_output": "Returns matching posts, resolves valid settings, and updates only the requested provider settings on a draft or scheduled post.",
+      "tools_triggered": "postsListTool, integrationSchema, postSettingsTool",
+      "expected_output": "Calls postsListTool for the coming weeks, picks the matching LinkedIn draft (created by the previous test case), then calls postSettingsTool with post_as_images_carousel = true and carousel_name = \"Product launch\". Returns the post id and confirms the settings were updated while the content and date stayed the same. If no matching draft exists, it says so and does not create one.",
       "expected_output_url": null
     },
     {
-      "description": "Generate media assets for a future social post.",
-      "user_prompt": "Generate an image for a product launch post, then create a vertical image-text-slides video with a suitable voice.",
+      "description": "Generate an image and save it to the media library.",
+      "user_prompt": "Generate an image of a sunrise over mountains for a product launch post and save it to my Postiz media library. Don't create a post.",
       "file_attachment_urls": null,
-      "tools_triggered": "generateImageTool, generateVideoOptions, videoFunctionTool, generateVideoTool",
-      "expected_output": "Creates media assets in the Postiz media library and returns hosted media URLs or actionable generation errors.",
+      "tools_triggered": "generateImageTool",
+      "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
       "expected_output_url": null
     }
   ],
@@ -201,23 +213,23 @@
       "user_prompt": "Move my team meeting from tomorrow to Friday afternoon.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not be invoked because calendar event management is outside Postiz social scheduling workflows.",
+      "expected_output": "No Postiz tool is called. ChatGPT answers directly, because calendar events are not social media posts.",
       "expected_output_url": null
     },
     {
-      "description": "Do not trigger for unsupported deletion requests.",
-      "user_prompt": "Delete the scheduled post I made yesterday from Postiz.",
+      "description": "Do not trigger when the user only wants copy written, not posted.",
+      "user_prompt": "Write me three short tweet ideas about productivity. Just write them here, don't post or schedule anything.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should explain that deletion is unsupported through these tools and direct the user to delete the post in Postiz.",
+      "expected_output": "No Postiz tool is called. ChatGPT writes the three ideas in the conversation, because the user explicitly asked not to post or schedule.",
       "expected_output_url": null
     },
     {
-      "description": "Do not trigger for private direct-message workflows.",
-      "user_prompt": "Send a private Slack DM to Sarah saying the campaign draft is ready.",
+      "description": "Do not trigger for email.",
+      "user_prompt": "Send an email to my team letting them know the campaign launch moved to next week.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not be invoked because private direct messaging is outside the supported Postiz publishing workflows.",
+      "expected_output": "No Postiz tool is called. ChatGPT answers directly (or uses an email app if one is available), because email is not a social media channel Postiz publishes to.",
       "expected_output_url": null
     }
   ]
