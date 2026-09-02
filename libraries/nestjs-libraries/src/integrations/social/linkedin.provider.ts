@@ -58,6 +58,7 @@ type LinkedinPendingData = {
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
   name = 'LinkedIn';
+  dto = LinkedinDto;
   oneTimeToken = true;
 
   isBetweenSteps = false;
