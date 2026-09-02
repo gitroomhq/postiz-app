@@ -370,6 +370,10 @@ export class LinkedinPageProvider
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {
+        if (!current?.timeRange?.start) {
+          return all;
+        }
+
         if (
           typeof current?.totalPageStatistics?.views?.allPageViews
             ?.pageViews !== 'undefined'
@@ -487,7 +491,10 @@ export class LinkedinPageProvider
     // Process share statistics into time series data
     const analytics = (shareElements || []).reduce(
       (all, current) => {
-        if (typeof current?.totalShareStatistics !== 'undefined') {
+        if (
+          typeof current?.totalShareStatistics !== 'undefined' &&
+          current?.timeRange?.start
+        ) {
           const dateStr = dayjs(current.timeRange.start).format('YYYY-MM-DD');
 
           all['Impressions'].push({

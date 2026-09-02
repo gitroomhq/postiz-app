@@ -514,8 +514,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
   }
 
@@ -552,8 +552,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
 
     return list;
@@ -1201,6 +1201,12 @@ export class PostsService {
     const getPostById = await this._postRepository.getPostById(id, orgId);
     if (!getPostById) {
       throw new BadRequestException('Post not found');
+    }
+
+    // Queueing a past-dated draft would publish it within seconds, the same
+    // trap createPost and changeDate already guard against.
+    if (status === 'schedule') {
+      this.guardAgainstPastSchedule(getPostById.publishDate.toISOString());
     }
 
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
