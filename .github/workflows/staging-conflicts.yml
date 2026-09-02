@@ -1,0 +1,108 @@
+name: Resolve staging conflicts
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: staging-conflict-resolve
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v6
+        with:
+          ref: staging
+          fetch-depth: 0
+          ssh-key: ${{ secrets.STAGING_MERGE_KEY }}
+          persist-credentials: true
+
+      - name: Probe merge
+        id: probe
+        run: |
+          git config user.name "postiz-merge-bot"
+          git config user.email "bot@postiz.com"
+
+          if git merge --no-commit --no-ff origin/main; then
+            git merge --abort 2>/dev/null || git reset --hard HEAD
+            echo "conflicted=false" >> "$GITHUB_OUTPUT"
+            echo "staging merges cleanly into main, nothing to do"
+          else
+            echo "conflicted=true" >> "$GITHUB_OUTPUT"
+            echo "Conflicted paths:"
+            git diff --name-only --diff-filter=U
+          fi
+
+      - name: Resolve with Claude
+        if: steps.probe.outputs.conflicted == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            The repository is checked out on `staging`, part-way through
+            `git merge --no-ff origin/main`, and the merge has conflicts.
+
+            Resolve every conflicted file so the result preserves the intent of
+            both sides. Then `git add` the resolved paths and create the merge
+            commit with:
+
+              git commit --no-edit --trailer "Resolved-by: claude-code-action"
+
+            Constraints:
+            - Change nothing beyond what the conflict resolution requires.
+            - Do not push, switch branches, create branches, or amend history.
+            - Do not post comments, open issues, or touch any pull request.
+            - If a conflict is ambiguous enough that you would be guessing at
+              the correct resolution, stop without committing and explain why.
+          claude_args: |
+            --max-turns 25
+            --model claude-sonnet-5
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),Bash(git add:*),Bash(git commit:*)"
+
+      - name: Verify resolution
+        if: steps.probe.outputs.conflicted == 'true'
+        run: |
+          if git ls-files -u | grep -q .; then
+            echo "::error::Unmerged paths remain in the index"
+            git ls-files -u
+            exit 1
+          fi
+
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            echo "::error::Merge was never committed"
+            exit 1
+          fi
+
+          if git grep -nI -e '^<<<<<<< ' -e '^=======$' -e '^>>>>>>> ' HEAD; then
+            echo "::error::Conflict markers present in the committed tree"
+            exit 1
+          fi
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Working tree is dirty after the commit"
+            git status --porcelain
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "::error::HEAD does not contain origin/main, wrong commit shape"
+            exit 1
+          fi
+
+          echo "Resolution commit:"
+          git log -1 --stat
+
+      - name: Push staging
+        if: steps.probe.outputs.conflicted == 'true'
+        run: git push origin HEAD:staging
