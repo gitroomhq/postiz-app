@@ -423,6 +423,94 @@ const icons: Record<string, FC<{ size: number }>> = {
       <line x1="12" y1="14.5" x2="5" y2="21.5" />
     </svg>
   ),
+  // Raster mark, served from /public like the other third-party icons
+  NanoClaw: ({ size }) => (
+    <img
+      src="/icons/third-party/nanoclaw.png"
+      width={size}
+      height={size}
+      alt="NanoClaw"
+    />
+  ),
+  Hermes: ({ size }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="12" y1="3" x2="12" y2="21" />
+      <path d="M8 7c0-2 8-2 8 0s-8 2-8 4 8 2 8 4-8 2-8 4" />
+    </svg>
+  ),
+  OpenClaw: ({ size }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 120 120"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient
+          id="mcp-openclaw-gradient"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
+          <stop offset="0%" stopColor="#ff4d4d" />
+          <stop offset="100%" stopColor="#991b1b" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z"
+        fill="url(#mcp-openclaw-gradient)"
+      />
+      <path
+        d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z"
+        fill="url(#mcp-openclaw-gradient)"
+      />
+      <path
+        d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z"
+        fill="url(#mcp-openclaw-gradient)"
+      />
+      <path
+        d="M45 15 Q35 5 30 8"
+        stroke="#ff4d4d"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M75 15 Q85 5 90 8"
+        stroke="#ff4d4d"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <circle cx="45" cy="35" r="6" fill="#050810" />
+      <circle cx="75" cy="35" r="6" fill="#050810" />
+      <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+      <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
+    </svg>
+  ),
+  // Not a client: the onboarding "Other agents" tab
+  'Other agents': ({ size }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="5" r="2" />
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="19" cy="5" r="2" />
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+      <circle cx="5" cy="19" r="2" />
+      <circle cx="12" cy="19" r="2" />
+      <circle cx="19" cy="19" r="2" />
+    </svg>
+  ),
   // Not a client: the onboarding "API" tab
   API: ({ size }) => (
     <svg

@@ -29,12 +29,15 @@ export const chatOnlyMcpClients = {
 } as const;
 
 export const mcpClients = [
+  'OpenClaw',
+  'Hermes',
+  'NanoClaw',
   'Claude Code',
   'Cursor',
+  'Codex',
   'VS Code / Copilot',
   'Windsurf',
   'Amp',
-  'Codex',
   'Gemini CLI',
   'Warp',
 ] as const;
@@ -130,6 +133,21 @@ export const getMcpConfig = (
           config: json({ postiz: { url: oauthUrl } }),
           hint: 'Settings > MCP Servers > + Add, then paste this config.',
         };
+      case 'Hermes':
+        return {
+          config: `# ~/.hermes/config.yaml\n\nmcp_servers:\n  postiz:\n    url: "${oauthUrl}"\n    auth: oauth`,
+          hint: 'Add to ~/.hermes/config.yaml, then run /reload-mcp in the chat.',
+        };
+      case 'OpenClaw':
+        return {
+          config: `openclaw mcp add postiz --url ${oauthUrl} --transport streamable-http --auth oauth && openclaw mcp login postiz`,
+          hint: 'Run this command in your terminal.',
+        };
+      case 'NanoClaw':
+        return {
+          config: `ncl groups config add-mcp-server --id <group-id> --name postiz --url ${oauthUrl}`,
+          hint: 'Run this in your terminal, replace <group-id> with the agent group that should get Postiz.',
+        };
     }
   }
 
@@ -202,6 +220,32 @@ export const getMcpConfig = (
           postiz: { url: urlBase, headers: { Authorization: bearer } },
         }),
         hint: 'Settings > MCP Servers > + Add, then paste this config.',
+      };
+    case 'Hermes':
+      return {
+        config: `# ~/.hermes/config.yaml\n\nmcp_servers:\n  postiz:\n    url: "${urlBase}"\n    headers:\n      Authorization: "${bearer}"`,
+        hint: 'Add to ~/.hermes/config.yaml, then run /reload-mcp in the chat.',
+      };
+    case 'OpenClaw':
+      return {
+        config: json({
+          mcp: {
+            servers: {
+              postiz: {
+                url: urlBase,
+                transport: 'streamable-http',
+                headers: { Authorization: bearer },
+              },
+            },
+          },
+        }),
+        hint: 'Add to ~/.openclaw/openclaw.json',
+      };
+    case 'NanoClaw':
+      // No headers flag, the key travels inside the URL like remote clients
+      return {
+        config: `ncl groups config add-mcp-server --id <group-id> --name postiz --url ${mcpBase}/mcp/${apiKey}`,
+        hint: 'Run this in your terminal, replace <group-id> with the agent group that should get Postiz.',
       };
   }
 };

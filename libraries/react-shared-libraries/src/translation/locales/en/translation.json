@@ -704,6 +704,7 @@
   "oauth_sign_in_hint": "Your agent will open a browser window to sign in to Postiz.",
   "add_to_cursor": "Add to Cursor",
   "cli": "CLI",
+  "other_agents": "Other agents",
   "documentation": "Documentation",
   "read_the_api_docs": "Read the API docs",
   "api_key_onboarding_description": "Send it as the Authorization header on every request",
