@@ -671,6 +671,7 @@
   "two_weeks": "2週間",
   "repeat_post_every_label": "投稿を繰り返す間隔",
   "add_new_tag": "新しいタグを追加",
+  "edit_tag": "タグを編集",
   "tag_name": "名前",
   "post_is_too_long": "投稿が長すぎます。修正してください",
   "your_post_should_have_at_least_one_character_or_one_image": "投稿には少なくとも1文字または1枚の画像が必要です。",

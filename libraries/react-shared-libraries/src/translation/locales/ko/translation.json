@@ -671,6 +671,7 @@
   "two_weeks": "2주",
   "repeat_post_every_label": "게시 반복 주기",
   "add_new_tag": "새 태그 추가",
+  "edit_tag": "태그 편집",
   "tag_name": "이름",
   "post_is_too_long": "게시글이 너무 깁니다. 수정해 주세요.",
   "your_post_should_have_at_least_one_character_or_one_image": "게시물에는 최소한 한 글자 또는 한 이미지를 포함해야 합니다.",

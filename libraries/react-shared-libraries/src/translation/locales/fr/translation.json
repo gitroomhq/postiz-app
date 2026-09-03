@@ -671,6 +671,7 @@
   "two_weeks": "Deux semaines",
   "repeat_post_every_label": "Répéter la publication tous les",
   "add_new_tag": "Ajouter un nouveau tag",
+  "edit_tag": "Modifier le tag",
   "tag_name": "Nom",
   "post_is_too_long": "le message est trop long, veuillez le corriger",
   "your_post_should_have_at_least_one_character_or_one_image": "Votre publication doit contenir au moins un caractère ou une image.",
