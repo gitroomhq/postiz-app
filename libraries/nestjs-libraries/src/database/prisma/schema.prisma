@@ -288,6 +288,7 @@ model Subscription {
   id               String           @id @default(cuid())
   organizationId   String           @unique
   subscriptionTier SubscriptionTier
+  provider         String           @default("stripe")
   identifier       String?
   cancelAt         DateTime?
   period           Period

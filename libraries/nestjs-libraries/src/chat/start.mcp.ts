@@ -49,6 +49,7 @@ export const startMcp = async (app: INestApplication) => {
   const claudeHiddenTools = [
     'generateImageTool',
     'generateVideoTool',
+    'videoStatusTool',
     'generateVideoOptions',
     'videoFunctionTool',
   ];
@@ -81,39 +82,39 @@ export const startMcp = async (app: INestApplication) => {
   });
 
   const oauthResource = new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
-  const oauthMiddleware = createOAuthMiddleware({
-    oauth: {
-      resource: oauthResource,
-      authorizationServers: [oauthResource],
-      scopesSupported: oauthScopes,
-      validateToken: async (token: string) => {
-        const org = await resolveAuth(token);
-        if (!org) {
-          return { valid: false, error: 'invalid_token', errorDescription: 'Invalid API Key or OAuth token' };
-        }
-        return { valid: true, subject: token };
-      },
-    },
-    mcpPath: '/mcp-oauth',
-  });
 
-  // Same authorization server as /mcp-oauth, only the protected resource differs
-  const claudeOauthResource = new URL('/mcp-oauth-claude', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
-  const claudeOauthMiddleware = createOAuthMiddleware({
-    oauth: {
-      resource: claudeOauthResource,
-      authorizationServers: [oauthResource],
-      scopesSupported: oauthScopes,
-      validateToken: async (token: string) => {
-        const org = await resolveAuth(token);
-        if (!org) {
-          return { valid: false, error: 'invalid_token', errorDescription: 'Invalid API Key or OAuth token' };
-        }
-        return { valid: true, subject: token };
+  // Every OAuth-protected MCP path is its own RFC 9728 protected resource, but
+  // they all share the /mcp-oauth authorization server (the token endpoint
+  // ignores the RFC 8707 resource param, so one AS covers all of them)
+  const createResourceMiddleware = (mcpPath: string) =>
+    createOAuthMiddleware({
+      oauth: {
+        resource: new URL(mcpPath, process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+        authorizationServers: [oauthResource],
+        scopesSupported: oauthScopes,
+        validateToken: async (token: string) => {
+          const org = await resolveAuth(token);
+          if (!org) {
+            return { valid: false, error: 'invalid_token', errorDescription: 'Invalid API Key or OAuth token' };
+          }
+          return { valid: true, subject: token };
+        },
       },
-    },
-    mcpPath: '/mcp-oauth-claude',
-  });
+      mcpPath,
+    });
+
+  const oauthResources: Record<
+    string,
+    { middleware: ReturnType<typeof createOAuthMiddleware>; mcpServer: MCPServer }
+  > = {
+    // ChatGPT app submission
+    '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth'), mcpServer: oauthServer },
+    // Claude connector directory submission
+    '/mcp-oauth-claude': { middleware: createResourceMiddleware('/mcp-oauth-claude'), mcpServer: claudeOauthServer },
+    // Clients that register themselves through DCR (/oauth/register) - not
+    // directory-reviewed, so they get the full toolset (media generation included)
+    '/mcp-oauth-dynamic': { middleware: createResourceMiddleware('/mcp-oauth-dynamic'), mcpServer: oauthServer },
+  };
 
   if (process.env.OPENAI_APP_CHALLANGE) {
     app.use('/.well-known/openai-apps-challenge', (req: Request, res: Response) => {
@@ -123,17 +124,17 @@ export const startMcp = async (app: INestApplication) => {
   }
 
   app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response, next: () => void) => {
-    // Only the /mcp-oauth and /mcp-oauth-claude resources are OAuth-protected.
+    // Only the paths in oauthResources are OAuth-protected.
     // Answering discovery on any other path (including the root, which clients
     // fall back to) makes them demand OAuth for /mcp/:id too
-    if (req.path !== '/mcp-oauth' && req.path !== '/mcp-oauth-claude') {
+    const resource = oauthResources[req.path];
+    if (!resource) {
       next();
       return;
     }
 
     const url = new URL('/.well-known/oauth-protected-resource', process.env.NEXT_PUBLIC_BACKEND_URL);
-    const middleware = req.path === '/mcp-oauth-claude' ? claudeOauthMiddleware : oauthMiddleware;
-    await middleware(req, res, url);
+    await resource.middleware(req, res, url);
   });
 
   app.use('/.well-known/oauth-authorization-server', async (req: Request, res: Response, next: () => void) => {
@@ -202,16 +203,18 @@ export const startMcp = async (app: INestApplication) => {
     });
   });
 
-  app.use('/mcp-oauth', async (req: Request, res: Response, next: () => void) => {
+  app.use(Object.keys(oauthResources), async (req: Request, res: Response, next: () => void) => {
     // Skip if this is the /mcp/:id route
     if (req.path !== '/' && req.path !== '') {
       next();
       return;
     }
 
-    const url = new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL);
+    // baseUrl is the mount path that matched, e.g. /mcp-oauth-claude
+    const { middleware, mcpServer } = oauthResources[req.baseUrl];
+    const url = new URL(req.baseUrl, process.env.NEXT_PUBLIC_BACKEND_URL);
 
-    const result = await oauthMiddleware(req, res, url);
+    const result = await middleware(req, res, url);
     if (!result.proceed) return;
 
     const token = result.tokenValidation?.subject;
@@ -223,41 +226,7 @@ export const startMcp = async (app: INestApplication) => {
 
     fixAcceptHeader(req);
     await runWithContext({ requestId: token!, auth }, async () => {
-      await oauthServer.startHTTP({
-        url: url,
-        httpPath: url.pathname,
-        options: {
-          serverless: true,
-          enableJsonResponse: true,
-        },
-        req,
-        res,
-      });
-    });
-  });
-
-  app.use('/mcp-oauth-claude', async (req: Request, res: Response, next: () => void) => {
-    // Skip if this is the /mcp/:id route
-    if (req.path !== '/' && req.path !== '') {
-      next();
-      return;
-    }
-
-    const url = new URL('/mcp-oauth-claude', process.env.NEXT_PUBLIC_BACKEND_URL);
-
-    const result = await claudeOauthMiddleware(req, res, url);
-    if (!result.proceed) return;
-
-    const token = result.tokenValidation?.subject;
-    const auth = await resolveAuth(token!);
-    if (!auth) {
-      res.status(401).json({ error: 'invalid_token', error_description: 'Could not resolve organization' });
-      return;
-    }
-
-    fixAcceptHeader(req);
-    await runWithContext({ requestId: token!, auth }, async () => {
-      await claudeOauthServer.startHTTP({
+      await mcpServer.startHTTP({
         url: url,
         httpPath: url.pathname,
         options: {

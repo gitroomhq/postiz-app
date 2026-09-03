@@ -13,8 +13,17 @@ import { Integration } from '@prisma/client';
 import { capitalize, sortBy } from 'lodash';
 import { PostResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { TimeoutFailure, TypedSearchAttributes } from '@temporalio/common';
+import {
+  TimeoutFailure,
+  TimeoutType,
+  TypedSearchAttributes,
+} from '@temporalio/common';
 import { postId as postIdSearchParam } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+
+// The publishing activities heartbeat every 15s from their first line, so a
+// heartbeat timeout can only mean the worker never ran the activity at all.
+// Shared by the proxies and the error classifier so the two never drift.
+const HEARTBEAT_TIMEOUT = 3 * 60 * 1000;
 
 const proxyTaskQueue = (taskQueue: string) => {
   return proxyActivities<PostActivity>({
@@ -29,18 +38,20 @@ const proxyTaskQueue = (taskQueue: string) => {
 };
 
 // postComment publishes through providers that can legitimately run long
-// (media conversion + upload), so it gets a large time budget. No
-// heartbeatTimeout: heartbeat reporting proved unreliable in production and
-// false heartbeat timeouts retried the activity, which can duplicate a
-// comment. A dead worker is detected by startToCloseTimeout instead.
+// (media conversion + upload), so it gets a large time budget. The
+// heartbeatTimeout exists to detect an activity that was never started: the
+// activity heartbeats from its first line, so no heartbeat at all means the
+// worker never ran it and nothing was published. No SDK retries: an
+// automatic retry of a heartbeat timeout would run again even when the first
+// attempt did publish, duplicating the comment. The workflow decides whether
+// a failure is safe to retry (see handleActivityError).
 const proxyCommentTaskQueue = (taskQueue: string) => {
   return proxyActivities<PostActivity>({
     startToCloseTimeout: '30 minute',
+    heartbeatTimeout: HEARTBEAT_TIMEOUT,
     taskQueue,
     retry: {
-      maximumAttempts: 3,
-      backoffCoefficient: 1,
-      initialInterval: '2 minutes',
+      maximumAttempts: 1,
     },
   });
 };
@@ -63,13 +74,15 @@ const proxyCheckTaskQueue = (taskQueue: string) => {
 // automatic retries - a retried activity whose previous (timed-out) attempt
 // still completed in the background would publish twice. The workflow retries
 // deliberately, and treats timeouts as "outcome unknown".
-// No heartbeatTimeout: heartbeat reporting proved unreliable in production and
-// a false timeout marks a possibly-live post as unconfirmed, which is far
-// worse than a slow failure. A dead worker is detected by startToCloseTimeout
-// instead.
+// The heartbeatTimeout exists to detect an activity that was never started:
+// both activities heartbeat from their first line, so no heartbeat at all
+// means the worker never ran them and nothing was published. The workflow
+// decides whether that is safe to retry (see handleActivityError); every
+// other timeout still marks the post as unconfirmed.
 const proxyMutationTaskQueue = (taskQueue: string) => {
   return proxyActivities<PostActivity>({
     startToCloseTimeout: '30 minute',
+    heartbeatTimeout: HEARTBEAT_TIMEOUT,
     taskQueue,
     retry: {
       maximumAttempts: 1,
@@ -227,14 +240,16 @@ export async function postWorkflowV111({
   // Every catch block below used to repeat the same failure classification, so
   // it is centralized here: detect the failure type, refresh the token when
   // needed, and tell the caller what to do.
-  // 'retry' - the token was refreshed, run the action again
+  // 'retry' - the token was refreshed, or the activity never started (heartbeat
+  //           timeout with no heartbeat), run the action again
   // 'stop' - the token could not be refreshed
   // 'bad-body' - the platform rejected the action
   // 'timeout' - the activity timed out, its outcome is unknown
   // 'unknown' - anything else (transient errors)
   const handleActivityError = async (
     err: unknown,
-    getIntegration?: () => Promise<any>
+    getIntegration?: () => Promise<any>,
+    startedAt?: number
   ): Promise<{
     type: 'retry' | 'stop' | 'bad-body' | 'timeout' | 'unknown';
     message: string;
@@ -243,6 +258,19 @@ export async function postWorkflowV111({
       err instanceof ActivityFailure &&
       err.cause instanceof TimeoutFailure
     ) {
+      // A heartbeat timeout that fires right at the heartbeat window after we
+      // invoked the activity, with the activity heartbeating every 15s from
+      // its first line, means the worker never ran it at all: nothing was
+      // published, so it is safe to run again. One that fires later means the
+      // activity did run for a while and its outcome is unknown. Only the
+      // callers that heartbeat pass startedAt.
+      if (
+        startedAt !== undefined &&
+        err.cause.timeoutType === TimeoutType.HEARTBEAT &&
+        Date.now() - startedAt <= HEARTBEAT_TIMEOUT + 10_000
+      ) {
+        return { type: 'retry', message: '' };
+      }
       return { type: 'timeout', message: '' };
     }
 
@@ -304,8 +332,12 @@ export async function postWorkflowV111({
   ): Promise<PostResponse | false> => {
     let pendingData = pending.pendingData;
     let errorAttempts = 0;
+    let startedAt: number | undefined;
 
     for (let check = 0; check < maxPendingChecks; check++) {
+      // only finalizePost heartbeats, so a checkPostStatus failure must never
+      // carry a stale timestamp
+      startedAt = undefined;
       try {
         let result = await checkPostStatus(post.integration, pendingData);
 
@@ -319,6 +351,7 @@ export async function postWorkflowV111({
 
         // polling is done, run the remaining provider mutations
         if (result.status === 'ready') {
+          startedAt = Date.now();
           result = await finalizePost(post.integration, result.pendingData);
         }
 
@@ -338,9 +371,9 @@ export async function postWorkflowV111({
         // a long upload
         errorAttempts = 0;
       } catch (err) {
-        const handle = await handleActivityError(err);
+        const handle = await handleActivityError(err, undefined, startedAt);
 
-        // token refreshed, check again right away
+        // token refreshed, or finalize never started, check again right away
         if (handle.type === 'retry') {
           continue;
         }
@@ -394,9 +427,13 @@ export async function postWorkflowV111({
     let updated = false;
     // this is a small trick to repeat an action in case of token refresh
     for (const _ of iterate) {
+      // captured right before each publish call so a heartbeat timeout can be
+      // measured against this attempt, not a previous one
+      let startedAt: number | undefined;
       try {
         // first post the main post
         if (i === 0) {
+          startedAt = Date.now();
           postsResults.push(
             ...(await postSocialPending(post.integration as Integration, [
               postsList[i],
@@ -409,6 +446,7 @@ export async function postWorkflowV111({
             await sleep(60000 * Math.max(0, Number(postsList[i].delay ?? 0)));
           }
 
+          startedAt = Date.now();
           postsResults.push(
             ...(await postComment(
               postsResults[0].postId,
@@ -492,9 +530,9 @@ export async function postWorkflowV111({
           break;
         }
 
-        const handle = await handleActivityError(err);
+        const handle = await handleActivityError(err, undefined, startedAt);
 
-        // token refreshed, repeat the action
+        // token refreshed, or the publish never started, repeat the action
         if (handle.type === 'retry') {
           continue;
         }
@@ -537,14 +575,22 @@ export async function postWorkflowV111({
     }
 
     if (postsResults.length === before) {
-      // all retries exhausted without success
+      // all retries exhausted without success: record it, otherwise the post
+      // stays in QUEUE with no error and the missing-posts sweep re-publishes
+      // it. A retried publish may have run without reporting, so treat the
+      // outcome as unknown.
+      try {
+        await markUnconfirmed('Could not publish after several attempts');
+      } catch (e) {
+        /**empty**/
+      }
       return false;
     }
   }
 
   // send webhooks for the post
   await sendWebhooks(
-    postsList[0].id,
+    postsResults[0].postId,
     post.organizationId,
     post.integration.id
   );

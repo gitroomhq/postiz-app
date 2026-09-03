@@ -1407,7 +1407,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     return [
       ...tweets.tweets,
-      ...(tweets.tweets.length === 100
+      ...(tweets.tweets.length === 100 && tweets.meta.next_token
         ? await this.loadAllTweets(
             client,
             id,

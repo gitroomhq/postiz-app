@@ -4,6 +4,7 @@ import { IntegrationSchedulePostTool } from './integration.schedule.post';
 import { GenerateVideoOptionsTool } from '@gitroom/nestjs-libraries/chat/tools/generate.video.options.tool';
 import { VideoFunctionTool } from '@gitroom/nestjs-libraries/chat/tools/video.function.tool';
 import { GenerateVideoTool } from '@gitroom/nestjs-libraries/chat/tools/generate.video.tool';
+import { VideoStatusTool } from '@gitroom/nestjs-libraries/chat/tools/video.status.tool';
 import { GenerateImageTool } from '@gitroom/nestjs-libraries/chat/tools/generate.image.tool';
 import { IntegrationListTool } from '@gitroom/nestjs-libraries/chat/tools/integration.list.tool';
 import { GroupListTool } from '@gitroom/nestjs-libraries/chat/tools/group.list.tool';
@@ -22,6 +23,7 @@ export const toolList = [
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,
+  VideoStatusTool,
   GenerateImageTool,
   UploadFromUrlTool,
 ];

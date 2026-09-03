@@ -1,6 +1,13 @@
-import { Body, Controller, Get, HttpException, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
@@ -13,16 +20,24 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import dayjs from 'dayjs';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
+import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
 
 @ApiTags('Billing')
 @Controller('/billing')
 export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
-    private _stripeService: StripeService,
     private _notificationService: NotificationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _paymentService: PaymentService
   ) {}
+
+  // Billing routes are the web platform; the org's own provider (or the web
+  // default when it has none) handles the action.
+  private provider(org: Organization) {
+    return this._paymentService.getProviderForOrganization(org.id, 'web');
+  }
 
   private async assertNoOtherSubscribedAccount(user: User) {
     const other = await this._usersService.getUserWithActiveSubscriptionByEmail(
@@ -38,14 +53,14 @@ export class BillingController {
     @Param('id') body: string
   ) {
     return {
-      status: await this._stripeService.checkSubscription(org.id, body),
+      status: await (await this.provider(org)).checkSubscription(org.id, body),
     };
   }
 
   @Get('/check-discount')
   async checkDiscount(@GetOrgFromRequest() org: Organization) {
     return {
-      offerCoupon: !(await this._stripeService.checkDiscount(org.paymentId))
+      offerCoupon: !(await (await this.provider(org)).checkDiscount(org))
         ? false
         : AuthService.signJWT({ discount: true }),
     };
@@ -53,13 +68,14 @@ export class BillingController {
 
   @Post('/apply-discount')
   async applyDiscount(@GetOrgFromRequest() org: Organization) {
-    await this._stripeService.applyDiscount(org.paymentId);
+    await (await this.provider(org)).applyDiscount(org);
   }
 
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
+    const provider = await this.provider(org);
     try {
-      await this._stripeService.finishTrial(org.paymentId);
+      await provider.finishTrial(org);
     } catch (err) {
       logger.error('stripe_operation_failed', {
         operation: 'finish_trial',
@@ -92,7 +108,7 @@ export class BillingController {
     }
 
     const uniqueId = req?.cookies?.track;
-    return this._stripeService.embedded(
+    return (await this.provider(org)).embedded(
       uniqueId,
       org.id,
       user.id,
@@ -113,7 +129,7 @@ export class BillingController {
     }
 
     const uniqueId = req?.cookies?.track;
-    return this._stripeService.subscribe(
+    return (await this.provider(org)).subscribe(
       uniqueId,
       org.id,
       user.id,
@@ -122,12 +138,30 @@ export class BillingController {
     );
   }
 
+  @Post('/sync')
+  async sync(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Body() body: BillingSyncDto
+  ) {
+    if (await this.assertNoOtherSubscribedAccount(user)) {
+      return { blocked: true };
+    }
+    await this._paymentService.assertCanUseProvider(org.id, body.provider);
+
+    try {
+      return await this._paymentService.syncSubscription(body.provider, org.id);
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      throw new HttpException((e as Error)?.message || 'Sync failed', 400);
+    }
+  }
+
   @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
-    const customer = await this._stripeService.getCustomerByOrganizationId(
-      org.id
-    );
-    const { url } = await this._stripeService.createBillingPortalLink(customer);
+    const { url } = await (await this.provider(org)).portalLink(org.id);
     return {
       portal: url,
     };
@@ -135,7 +169,7 @@ export class BillingController {
 
   @Get('/')
   getCurrentBilling(@GetOrgFromRequest() org: Organization) {
-    return this._subscriptionService.getSubscriptionByOrganizationId(org.id);
+    return this._paymentService.getSubscription(org.id);
   }
 
   @Post('/cancel')
@@ -143,7 +177,7 @@ export class BillingController {
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User
   ) {
-    const result = await this._stripeService.setToCancel(org.id);
+    const result = await (await this.provider(org)).setToCancel(org.id);
 
     if (result.cancel_at) {
       const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
@@ -174,11 +208,11 @@ export class BillingController {
   }
 
   @Post('/prorate')
-  prorate(
+  async prorate(
     @GetOrgFromRequest() org: Organization,
     @Body() body: BillingSubscribeDto
   ) {
-    return this._stripeService.prorate(org.id, body);
+    return (await this.provider(org)).prorate(org.id, body);
   }
 
   @Get('/charges')
@@ -190,7 +224,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.getCharges(org.id);
+    return (await this.provider(org)).getCharges(org.id);
   }
 
   @Post('/refund-charges')
@@ -203,7 +237,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.refundCharges(org.id, body.chargeIds);
+    return (await this.provider(org)).refundCharges(org.id, body.chargeIds);
   }
 
   @Post('/cancel-subscription')
@@ -215,7 +249,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.cancelSubscription(org.id);
+    return (await this.provider(org)).cancelSubscription(org.id);
   }
 
   @Get('/coupon-info')
@@ -227,7 +261,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.getCouponInfo(org.id);
+    return (await this.provider(org)).getCouponInfo(org.id);
   }
 
   @Post('/apply-coupon')
@@ -240,7 +274,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.applyCoupon(org.id, body);
+    return (await this.provider(org)).applyCoupon(org.id, body);
   }
 
   @Post('/cancel-coupon')
@@ -252,12 +286,12 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.cancelCoupon(org.id);
+    return (await this.provider(org)).cancelCoupon(org.id);
   }
 
   @Get('/chatbase-refund/preview')
-  chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
-    return this._stripeService.chatbaseRefundPreview(org.id);
+  async chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
+    return (await this.provider(org)).chatbaseRefundPreview(org.id);
   }
 
   @Post('/chatbase-refund')
@@ -265,7 +299,7 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization
   ) {
-    const refund = await this._stripeService.chatbaseRefund(org.id);
+    const refund = await (await this.provider(org)).chatbaseRefund(org.id);
 
     if (refund.refunded) {
       await this._notificationService.sendEmail(
@@ -292,8 +326,8 @@ export class BillingController {
     await this._subscriptionService.addSubscription(
       org.id,
       user.id,
-      body.subscription
+      body.subscription,
+      this._paymentService.getDefaultProviderName('web')
     );
   }
-
 }

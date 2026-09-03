@@ -450,13 +450,12 @@ export class LinkedinPageProvider
     postId: string,
     date: number
   ): Promise<AnalyticsData[]> {
-    const endDate = dayjs().unix() * 1000;
-    const startDate = dayjs().subtract(date, 'days').unix() * 1000;
-
-    // Fetch share statistics for the specific post
+    // Fetch lifetime share statistics for the specific post.
+    // LinkedIn does not support time-bound statistics for specific share queries,
+    // so no timeIntervals is sent and elements come back without a timeRange.
     const shareStatsUrl = `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
       `urn:li:organization:${integrationId}`
-    )}&shares=List(${encodeURIComponent(postId)})&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`;
+    )}&shares=List(${encodeURIComponent(postId)})`;
 
     const { elements: shareElements }: { elements: PostShareStatElement[] } =
       await (
@@ -934,7 +933,7 @@ export interface PostShareStatElement {
     impressionCount: number;
     commentCount: number;
   };
-  timeRange: TimeRange;
+  timeRange?: TimeRange;
 }
 
 export interface SocialActionsResponse {
