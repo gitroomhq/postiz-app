@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "Bài đăng phải có ít nhất 6 ký tự",
   "are_you_sure_you_want_to_delete_post": "Bạn có chắc chắn muốn xóa bài viết này không?",
   "post_deleted_successfully": "Xóa bài viết thành công",
+  "post_no_longer_exists": "Bài viết này không còn tồn tại nữa",
   "delete_post": "Xóa bài đăng",
   "save_as_draft": "Lưu dưới dạng bản nháp",
   "post_now": "Đăng ngay",

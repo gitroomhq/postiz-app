@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "Gönderi en az 6 karakter uzunluğunda olmalıdır",
   "are_you_sure_you_want_to_delete_post": "Bu gönderiyi silmek istediğinizden emin misiniz?",
   "post_deleted_successfully": "Gönderi başarıyla silindi",
+  "post_no_longer_exists": "Bu gönderi artık mevcut değil",
   "delete_post": "Gönderiyi sil",
   "save_as_draft": "Taslak olarak kaydet",
   "post_now": "Şimdi paylaş",
