@@ -461,18 +461,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         setLoading(false);
       }
 
-      if (!dummy) {
-        if (addEditSets) {
-          addEditSets(data);
-        } else {
-          const response = await fetch('/posts', {
+      const response = !dummy
+        ? addEditSets
+          ? addEditSets(data)
+          : await fetch('/posts', {
             method: 'POST',
             body: JSON.stringify(data),
-          });
-
-          // A rejected save (e.g. past-date or republish guard) must not
-          // report success and close the modal - surface it and stay open
-          if (!response.ok) {
+          })
+        : undefined;
+      
+      if (!response.ok) {
             const { message } = await response.json().catch(() => ({} as any));
             toaster.show(
               (Array.isArray(message) ? message[0] : message) ||
@@ -481,13 +479,23 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             );
             setLoading(false);
             return;
-          }
-        }
+      }
 
-        if (!addEditSets) {
-          mutate();
-          toaster.show(
-            !existingData.integration
+      if (!addEditSets && response) {
+        if (response.status === 403) {
+          toaster.show(t('no_permission_create', "You don't have permission to create posts"), 'warning');
+          setLoading(false);
+          return;
+        }
+        const result = await response.json();
+        mutate();
+
+        const wasSubmittedForReview = result?.[0]?.approvalStatus === 'PENDING_APPROVAL';
+
+        toaster.show(
+          wasSubmittedForReview
+            ? t('submitted_for_approval', 'Submitted for Super Admin approval')
+            : !existingData.integration
               ? t('added_successfully', 'Added successfully')
               : t('updated_successfully', 'Updated successfully')
           );
@@ -501,8 +509,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (!addEditSets) {
           modal.closeAll();
         }
-      }
-    },
+      },
     [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
   );
 
