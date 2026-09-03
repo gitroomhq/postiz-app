@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "Der Beitrag sollte mindestens 6 Zeichen lang sein",
   "are_you_sure_you_want_to_delete_post": "Bist du sicher, dass du diesen Beitrag löschen möchtest?",
   "post_deleted_successfully": "Beitrag erfolgreich gelöscht",
+  "post_no_longer_exists": "Dieser Beitrag existiert nicht mehr",
   "delete_post": "Beitrag löschen",
   "save_as_draft": "Als Entwurf speichern",
   "post_now": "Jetzt posten",
