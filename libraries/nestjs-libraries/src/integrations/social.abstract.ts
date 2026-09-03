@@ -88,6 +88,21 @@ export class Disconnect extends ApplicationFailure {
   }
 }
 
+// The status a media read actually answered with, for the failure details that
+// get persisted with the post - without it the stored error is an empty '{}'
+// and there is no way to tell a store that ignored Range from one that was down.
+export function rangeReadFailure(response: {
+  status: number;
+  statusText: string;
+  ok: boolean;
+}) {
+  return JSON.stringify({
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+  });
+}
+
 export class BadBody extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
     super(truncateForTemporal(message, MAX_FAILURE_MESSAGE), 'bad_body', true, [
@@ -274,7 +289,8 @@ export abstract class SocialAbstract {
     path: string,
     start: number,
     end: number,
-    identifier = ''
+    identifier = '',
+    totalRetries = 0
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
       setHeartbeatDetails(
@@ -289,11 +305,22 @@ export abstract class SocialAbstract {
       } as any);
       // Anything but 206 means the server ignored the Range header: buffering
       // response.body here would silently load the whole file into memory and
-      // upload corrupted chunks.
+      // upload corrupted chunks. The store answers the same range correctly
+      // seconds later, so retry the read before giving up on the post.
       if (response.status !== 206) {
+        // release the socket before moving on: the abandoned body can be the
+        // whole object, and undici keeps the connection checked out until it
+        // is consumed or cancelled.
+        await response.body?.cancel().catch(() => {});
+
+        if (totalRetries <= 2) {
+          await timer(5000);
+          return this.mediaChunk(path, start, end, identifier, totalRetries + 1);
+        }
+
         throw new BadBody(
           identifier,
-          '{}',
+          rangeReadFailure(response),
           Buffer.from('{}'),
           `Media server did not honor the range request (status ${response.status})`
         );
