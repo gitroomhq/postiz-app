@@ -16,6 +16,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -430,6 +431,13 @@ export class PostsRepository {
       },
     });
 
+    logger[state === 'ERROR' ? 'error' : 'info']('post_state_changed', {
+      post_id: update.id,
+      org_id: update.organizationId,
+      provider: update.integration.providerIdentifier,
+      post_state: state,
+    });
+
     if (state === 'ERROR' && err && body) {
       try {
         await this._errors.model.errors.create({
@@ -441,7 +449,15 @@ export class PostsRepository {
             body: typeof body === 'string' ? body : JSON.stringify(body),
           },
         });
-      } catch (err) {}
+      } catch (err) {
+        logger.error('post_error_record_failed', {
+          post_id: update.id,
+          org_id: update.organizationId,
+          provider: update.integration.providerIdentifier,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return update;

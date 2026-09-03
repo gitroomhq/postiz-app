@@ -18,7 +18,6 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
@@ -170,48 +169,6 @@ const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
     </div>
   );
 };
-const Info: FC<{
-  proceed: (feedback: string) => void;
-}> = (props) => {
-  const [feedback, setFeedback] = useState('');
-  const modal = useModals();
-  const events = useFireEvents();
-  const cancel = useCallback(() => {
-    props.proceed(feedback);
-    events('cancel_subscription');
-    modal.closeAll();
-  }, [modal, feedback]);
-
-  const t = useT();
-
-  return (
-    <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px]">
-      <div>
-        {t(
-          'would_you_mind_shortly_tell_us_what_we_could_have_done_better',
-          'Would you mind shortly tell us what we could have done better?'
-        )}
-      </div>
-      <div>
-        <Textarea
-          className="bg-newBgColorInner"
-          label={'Feedback'}
-          name="feedback"
-          disableForm={true}
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-        />
-      </div>
-      <div>
-        <Button disabled={feedback.length < 20} onClick={cancel}>
-          {feedback.length < 20
-            ? t('please_add_at_least', 'Please add at least 20 chars')
-            : t('cancel_subscription', 'Cancel Subscription')}
-        </Button>
-      </div>
-    </div>
-  );
-};
 export const MainBillingComponent: FC<{
   sub?: SubscriptionWithPlatform;
 }> = (props) => {
@@ -222,6 +179,7 @@ export const MainBillingComponent: FC<{
   const toast = useToaster();
   const user = useUser();
   const dub = useDubClickId();
+  const events = useFireEvents();
   const modal = useModals();
   const router = useRouter();
   const utm = useUtmUrl();
@@ -281,12 +239,6 @@ export const MainBillingComponent: FC<{
           const { cancel_at } = await (
             await fetch('/billing/cancel', {
               method: 'POST',
-              body: JSON.stringify({
-                feedback: '',
-              }),
-              headers: {
-                'Content-Type': 'application/json',
-              },
             })
           ).json();
           setSubscription((subs) => ({
@@ -340,30 +292,11 @@ export const MainBillingComponent: FC<{
               }
             }
 
-            const info = await new Promise((res) => {
-              modal.openModal({
-                title: t(
-                  'we_are_sorry_to_see_you_go',
-                  'We are sorry to see you go :('
-                ),
-                withCloseButton: true,
-                classNames: {
-                  modal: 'bg-transparent text-textColor',
-                },
-                children: <Info proceed={(e) => res(e)} />,
-              });
-            });
-
+            events('cancel_subscription');
             setLoading(true);
             const { cancel_at } = await (
               await fetch('/billing/cancel', {
                 method: 'POST',
-                body: JSON.stringify({
-                  feedback: info,
-                }),
-                headers: {
-                  'Content-Type': 'application/json',
-                },
               })
             ).json();
             setSubscription((subs) => ({
