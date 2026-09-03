@@ -13,6 +13,7 @@ import {
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  rangeReadFailure,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -691,7 +692,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
-  private async tiktokChunkStream(path: string, start: number, end: number) {
+  private async tiktokChunkStream(
+    path: string,
+    start: number,
+    end: number,
+    totalRetries = 0
+  ) {
     if (path.indexOf('http') === 0) {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range, matching every other media read
@@ -704,11 +710,20 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       } as any);
 
       // A store that ignores Range (200 with the full file) or answers with an
-      // error page would corrupt the upload at this offset.
+      // error page would corrupt the upload at this offset, so the body is
+      // never used - but the same store answers the identical range correctly
+      // seconds later, so retry the read first. Once the retries are spent the
+      // BadBody stands: the caller rethrows it rather than waiting on TikTok
+      // for a verdict on bytes that never arrived.
       if (response.status !== 206) {
+        if (totalRetries <= 2) {
+          await timer(5000);
+          return this.tiktokChunkStream(path, start, end, totalRetries + 1);
+        }
+
         throw new BadBody(
           'tiktok-error-upload',
-          '{}',
+          rangeReadFailure(response),
           '{}',
           'The media storage did not return the requested byte range, please try again'
         );
