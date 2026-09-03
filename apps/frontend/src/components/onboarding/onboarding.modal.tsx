@@ -12,12 +12,15 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import {
+  AnyMcpClient,
   CopyButton,
   getMcpConfig,
   getMcpOauthUrl,
   isChatOnlyMcpClient,
   localCliSteps,
   McpAuth,
+  McpClient,
+  mcpClients,
 } from '@gitroom/frontend/components/public-api/public.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 
@@ -261,9 +264,15 @@ const onboardingAgents = [
 
 type OnboardingAgent = (typeof onboardingAgents)[number];
 
+// Every other MCP client, grouped under one tab with its own picker
+const otherTab = 'Other agents' as const;
+const otherAgents = mcpClients.filter(
+  (client) => !(onboardingAgents as readonly string[]).includes(client)
+);
+
 // Not an agent, a tab showing the raw API key for people integrating by hand
 const apiTab = 'API' as const;
-type OnboardingTab = OnboardingAgent | typeof apiTab;
+type OnboardingTab = OnboardingAgent | typeof otherTab | typeof apiTab;
 
 const cliCommands = localCliSteps.map((step) => step.code);
 
@@ -292,7 +301,11 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   const t = useT();
   const user = useUser();
   const { backendUrl, mcpUrl, billingEnabled } = useVariables();
-  const [agent, setAgent] = useState<OnboardingTab>('Claude');
+  const [tab, setTab] = useState<OnboardingTab>('Claude');
+  const [otherAgent, setOtherAgent] = useState<McpClient>(otherAgents[0]);
+  // The client the cards describe: the tab itself, or the pick inside "Other agents"
+  const agent: AnyMcpClient | typeof apiTab =
+    tab === otherTab ? otherAgent : tab;
   const [auth, setAuth] = useState<McpAuth>('oauth');
   const [revealed, setRevealed] = useState(false);
   const mcpBase = mcpUrl || backendUrl;
@@ -554,25 +567,45 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
       {available ? (
         <div className="flex flex-col gap-[16px] w-full max-w-[1100px] mx-auto">
           <div className="flex flex-wrap justify-center gap-[6px]">
-            {[...onboardingAgents, apiTab].map((item) => (
+            {[...onboardingAgents, otherTab, apiTab].map((item) => (
               <button
                 key={item}
                 type="button"
                 className={clsx(
                   'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors flex items-center gap-[8px]',
-                  agent === item
+                  tab === item
                     ? 'bg-[#612BD3] text-white'
                     : item === apiTab
                     ? 'bg-btnSimple text-[#a78bfa] hover:bg-boxHover hover:text-[#c4b5fd]'
                     : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
                 )}
-                onClick={() => setAgent(item)}
+                onClick={() => setTab(item)}
               >
                 <McpClientIcon client={item} />
                 {item}
               </button>
             ))}
           </div>
+          {tab === otherTab && (
+            <div className="flex flex-wrap justify-center gap-[6px]">
+              {otherAgents.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={clsx(
+                    'cursor-pointer px-[12px] h-[32px] text-[12px] font-[500] rounded-[8px] transition-colors flex items-center gap-[6px]',
+                    otherAgent === item
+                      ? 'bg-[#612BD3] text-white'
+                      : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                  )}
+                  onClick={() => setOtherAgent(item)}
+                >
+                  <McpClientIcon client={item} size={14} />
+                  {item}
+                </button>
+              ))}
+            </div>
+          )}
 
           {agent === apiTab ? (
             apiSection
