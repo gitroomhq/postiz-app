@@ -16,8 +16,22 @@ const VoicePrompt = z.object({
   voice: z.string(),
 });
 
+const MediaAnalysis = z.object({
+  title: z.string(), description: z.string(), alt: z.string(),
+  people: z.array(z.string()), products: z.array(z.string()), keywords: z.array(z.string()),
+});
+
 @Injectable()
 export class OpenaiService {
+  async analyzeMedia(buffer: Buffer, mimeType: string) {
+    return (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1-mini',
+        messages: [{ role: 'system', content: 'Analyze this media for a reusable social-media library. Return factual, concise metadata. Do not invent identities, brands, or copyrighted ownership.' }, { role: 'user', content: [{ type: 'text', text: 'Suggest title, description, accessible alt text, visible people descriptors, visible products, and searchable keywords.' }, { type: 'image_url', image_url: { url: `data:${mimeType};base64,${buffer.toString('base64')}` } }] }],
+        response_format: zodResponseFormat(MediaAnalysis, 'mediaAnalysis'),
+      })
+    ).choices[0].message.parsed || { title: '', description: '', alt: '', people: [], products: [], keywords: [] };
+  }
   async generateImage(prompt: string, isVertical = false) {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.

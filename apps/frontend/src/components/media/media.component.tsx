@@ -208,22 +208,40 @@ export const MediaBox: FC<{
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState(type || '');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [licenseFilter, setLicenseFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const [debouncedSearch] = useDebounce(search, 300);
   const fetch = useFetch();
   const modals = useModals();
   const toaster = useToaster();
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, statusFilter, typeFilter, categoryFilter, licenseFilter, tagFilter]);
+  const loadCategories = useCallback(async () => {
+    return (await fetch('/media/categories/list')).json();
+  }, [fetch]);
+  const loadTags = useCallback(async () => {
+    return (await fetch('/posts/tags')).json();
+  }, [fetch]);
+  const { data: categories } = useSWR('media-box-categories', loadCategories);
+  const { data: tagsData } = useSWR('media-box-tags', loadTags);
   const loadMedia = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1) });
     if (debouncedSearch.trim()) {
       params.set('search', debouncedSearch.trim());
     }
+    if (statusFilter) params.set('status', statusFilter);
+    if (typeFilter) params.set('type', typeFilter);
+    if (categoryFilter) params.set('categoryId', categoryFilter);
+    if (licenseFilter) params.set('licenseType', licenseFilter);
+    if (tagFilter) params.set('tagIds', tagFilter);
     return (await fetch(`/media?${params.toString()}`)).json();
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, statusFilter, typeFilter, categoryFilter, licenseFilter, tagFilter, fetch]);
   const { data, mutate, isLoading } = useSWR(
-    `get-media-${page}-${debouncedSearch}`,
+    `get-media-${page}-${debouncedSearch}-${statusFilter}-${typeFilter}-${categoryFilter}-${licenseFilter}-${tagFilter}`,
     loadMedia
   );
   const [selected, setSelected] = useState([]);
@@ -394,6 +412,27 @@ export const MediaBox: FC<{
     [mutate]
   );
 
+  const editMedia = useCallback(
+    (media: any) => (e: any) => {
+      e.stopPropagation();
+      modals.openModal({
+        title: t('media_settings', 'Media Settings'),
+        size: '80%',
+        children: (close) => (
+          <MediaComponentInner
+            media={media}
+            onClose={close}
+            onSelect={() => {
+              mutate();
+              close();
+            }}
+          />
+        ),
+      });
+    },
+    [modals, mutate, t]
+  );
+
   const btn = useMemo(() => {
     return (
       <button
@@ -445,6 +484,78 @@ export const MediaBox: FC<{
             {btn}
             <ThirdPartyMediaLibrary onImported={() => mutate()} />
           </div>
+        </div>
+        <div
+          className={clsx(
+            'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[8px] mt-[10px]',
+            !isLoading &&
+              !data?.results?.length &&
+              !debouncedSearch &&
+              !statusFilter &&
+              !typeFilter &&
+              !categoryFilter &&
+              !licenseFilter &&
+              !tagFilter &&
+              'hidden'
+          )}
+        >
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-[40px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
+          >
+            <option value="">{t('all_statuses', 'All statuses')}</option>
+            <option value="draft">Draft</option>
+            <option value="ready">Ready</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="h-[40px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
+          >
+            <option value="">{t('all_types', 'All types')}</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="h-[40px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
+          >
+            <option value="">{t('all_categories', 'All categories')}</option>
+            {(categories || []).map((category: any) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="h-[40px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
+          >
+            <option value="">{t('all_tags', 'All tags')}</option>
+            {(tagsData?.tags || []).map((tag: any) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={licenseFilter}
+            onChange={(e) => setLicenseFilter(e.target.value)}
+            className="h-[40px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
+          >
+            <option value="">{t('all_licenses', 'All licenses')}</option>
+            {['unknown', 'owned', 'licensed', 'creative_commons', 'third_party', 'public_domain'].map(
+              (value) => (
+                <option key={value} value={value}>
+                  {value.replace('_', ' ')}
+                </option>
+              )
+            )}
+          </select>
         </div>
         <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
@@ -542,7 +653,7 @@ export const MediaBox: FC<{
                 >
                   <div
                     className={clsx(
-                      'w-full h-full rounded-[6px] border-[4px] relative',
+                      'w-full h-full rounded-[6px] border-[4px] relative overflow-hidden',
                       !!selected.find((p) => p.id === media.id)
                         ? 'border-[#612BD3]'
                         : 'border-transparent'
@@ -554,12 +665,57 @@ export const MediaBox: FC<{
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
                     ) : (
-                      <DeleteCircleIcon
-                        className="cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]"
-                        onClick={deleteImage(media)}
-                      />
+                      <>
+                        <MediaSettingsIcon
+                          className="cursor-pointer z-[100] block absolute top-[8px] start-[8px] bg-black/55 rounded p-[2px]"
+                          onClick={editMedia(media)}
+                        />
+                        <DeleteCircleIcon
+                          className="cursor-pointer hidden z-[100] group-hover:block absolute top-[8px] end-[8px]"
+                          onClick={deleteImage(media)}
+                        />
+                      </>
                     )}
-                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
+                    <div className="absolute bottom-[28px] end-[8px] z-[100] text-xs max-w-[70%] truncate text-white drop-shadow">
+                      {media.title || media.originalName}
+                    </div>
+                    <div className="absolute bottom-[8px] start-[8px] end-[8px] z-[100] flex items-center gap-[4px] rounded bg-black/55 px-1 py-[2px] text-[10px] text-white">
+                      <span className="shrink-0">
+                        {media.width && media.height
+                          ? `${media.width}×${media.height}`
+                          : media.type || ''}
+                        {media.durationMs
+                          ? ` · ${Math.round(media.durationMs / 1000)}s`
+                          : ''}
+                      </span>
+                      {(media.tags || []).slice(0, 2).map((entry: any) => (
+                        <span
+                          key={entry.tagId || entry.tag?.id || entry.tag?.name}
+                          className="max-w-[64px] truncate rounded px-1"
+                          style={{ backgroundColor: entry.tag?.color || '#612BD3' }}
+                        >
+                          {entry.tag?.name}
+                        </span>
+                      ))}
+                    </div>
+                    {media.status && media.status !== 'ready' && (
+                      <div className="absolute top-[36px] start-[8px] z-[100] rounded bg-amber-600 px-1 text-[10px] text-white">
+                        {media.status}
+                      </div>
+                    )}
+                    {media.category?.name && (
+                      <div className="absolute top-[8px] start-[40px] z-[100] max-w-[45%] truncate rounded bg-black/60 px-1 text-[10px] text-white">
+                        {media.category.name}
+                      </div>
+                    )}
+                    {(media.licenseType === 'unknown' ||
+                      !media.alt ||
+                      (media.expiresAt &&
+                        new Date(media.expiresAt) < new Date())) && (
+                      <div className="absolute top-[36px] end-[8px] z-[100] rounded bg-red-600 px-1 text-[10px] text-white">
+                        !
+                      </div>
+                    )}
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div

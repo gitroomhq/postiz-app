@@ -2,6 +2,8 @@
 
 import { EventEmitter } from 'events';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -297,16 +299,7 @@ export const MediaComponentInner: FC<{
     thumbnail: string;
     alt: string;
   }) => void;
-  media:
-    | {
-        id: string;
-        name: string;
-        path: string;
-        thumbnail: string;
-        alt: string;
-        thumbnailTimestamp?: number;
-      }
-    | undefined;
+  media: any;
 }> = (props) => {
   const { onClose, onSelect, media } = props;
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
@@ -321,6 +314,35 @@ export const MediaComponentInner: FC<{
   const [thumbnailTimestamp, setThumbnailTimestamp] = useState<number | null>(
     props.media?.thumbnailTimestamp || null
   );
+  const [title, setTitle] = useState(media?.title || media?.originalName || '');
+  const [description, setDescription] = useState(media?.description || '');
+  const [status, setStatus] = useState(media?.status || 'draft');
+  const [categoryId, setCategoryId] = useState(media?.categoryId || media?.category?.id || '');
+  const [selectedTags, setSelectedTags] = useState<any[]>(
+    (media?.tags || [])
+      .map((entry: any) => entry.tag || entry)
+      .filter((tag: any) => tag?.name)
+      .map((tag: any) => ({ label: tag.name, value: tag.name, id: tag.id, color: tag.color }))
+  );
+  const [people, setPeople] = useState((media?.people || []).join(', '));
+  const [products, setProducts] = useState((media?.products || []).join(', '));
+  const [keywords, setKeywords] = useState((media?.keywords || []).join(', '));
+  const [platforms, setPlatforms] = useState((media?.recommendedPlatforms || []).join(', '));
+  const [languages, setLanguages] = useState((media?.languages || []).join(', '));
+  const [source, setSource] = useState(media?.source || '');
+  const [sourceUrl, setSourceUrl] = useState(media?.sourceUrl || '');
+  const [attribution, setAttribution] = useState(media?.attribution || '');
+  const [copyrightOwner, setCopyrightOwner] = useState(media?.copyrightOwner || '');
+  const [licenseType, setLicenseType] = useState(media?.licenseType || 'unknown');
+  const [licenseUrl, setLicenseUrl] = useState(media?.licenseUrl || '');
+  const [expiresAt, setExpiresAt] = useState(media?.expiresAt ? String(media.expiresAt).slice(0, 10) : '');
+  const [focusX, setFocusX] = useState(media?.focusX ?? '');
+  const [focusY, setFocusY] = useState(media?.focusY ?? '');
+  const split = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
+  const loadCategories = useCallback(async () => (await newFetch('/media/categories/list')).json(), [newFetch]);
+  const loadTags = useCallback(async () => (await newFetch('/posts/tags')).json(), [newFetch]);
+  const { data: categories, mutate: mutateCategories } = useSWR('media-categories', loadCategories);
+  const { data: tags } = useSWR('post-tags', loadTags);
 
   useEffect(() => {
     setActivateExitButton(false);
@@ -354,16 +376,240 @@ export const MediaComponentInner: FC<{
           alt: altText,
           thumbnail: path,
           thumbnailTimestamp: thumbnailTimestamp,
+          title, description, status,
+          categoryId: categoryId || null,
+          tagIds: (tags?.tags || [])
+            .filter((tag: any) => selectedTags.some((item: any) => item.value === tag.name || item.id === tag.id))
+            .map((tag: any) => tag.id),
+          people: split(people), products: split(products), keywords: split(keywords),
+          recommendedPlatforms: split(platforms), languages: split(languages),
+          source, sourceUrl: sourceUrl || undefined, attribution, copyrightOwner,
+          licenseType, licenseUrl: licenseUrl || undefined, expiresAt: expiresAt || null,
+          focusX: focusX === '' ? null : Number(focusX), focusY: focusY === '' ? null : Number(focusY),
         }),
       })
     ).json();
 
     onSelect(media);
     onClose();
-  }, [altText, newThumbnail, thumbnail, thumbnailTimestamp]);
+  }, [altText, newThumbnail, thumbnail, thumbnailTimestamp, title, description, status, categoryId, selectedTags, tags, people, products, keywords, platforms, languages, source, sourceUrl, attribution, copyrightOwner, licenseType, licenseUrl, expiresAt, focusX, focusY]);
+
+  const analyze = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await (await newFetch(`/media/${media.id}/ai-suggestions`, { method: 'POST' })).json();
+      setTitle(result.title || title); setDescription(result.description || description); setAltText(result.alt || altText);
+      setPeople((result.people || []).join(', ')); setProducts((result.products || []).join(', ')); setKeywords((result.keywords || []).join(', '));
+    } finally { setLoading(false); }
+  }, [media?.id, title, description, altText]);
+
+  const reanalyze = useCallback(async () => {
+    setLoading(true);
+    try { await newFetch(`/media/${media.id}/analyze`, { method: 'POST' }); } finally { setLoading(false); }
+  }, [media?.id]);
+
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [categoryDraftName, setCategoryDraftName] = useState('');
+  const [categoryDraftColor, setCategoryDraftColor] = useState('#612BD3');
+  const [categoryBusy, setCategoryBusy] = useState(false);
+
+  const refreshCategories = useCallback(async () => {
+    await mutateCategories();
+    await globalMutate('media-box-categories');
+  }, [mutateCategories]);
+
+  const openCreateCategory = useCallback(() => {
+    setCategoryDraftName('');
+    setCategoryDraftColor('#612BD3');
+    setShowCategoryManager(true);
+  }, []);
+
+  const openEditCategory = useCallback(() => {
+    const current = (categories || []).find((item: any) => item.id === categoryId);
+    if (!current) {
+      openCreateCategory();
+      return;
+    }
+    setCategoryDraftName(current.name || '');
+    setCategoryDraftColor(current.color || '#612BD3');
+    setShowCategoryManager(true);
+  }, [categories, categoryId, openCreateCategory]);
+
+  const createCategory = useCallback(async () => {
+    if (!categoryDraftName.trim() || categoryBusy) return;
+    setCategoryBusy(true);
+    try {
+      const created = await (
+        await newFetch('/media/categories', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: categoryDraftName.trim(),
+            color: categoryDraftColor,
+          }),
+        })
+      ).json();
+      await refreshCategories();
+      setCategoryId(created.id);
+      setShowCategoryManager(false);
+      setCategoryDraftName('');
+    } finally {
+      setCategoryBusy(false);
+    }
+  }, [categoryDraftName, categoryDraftColor, categoryBusy, newFetch, refreshCategories]);
+
+  const renameCategory = useCallback(async () => {
+    if (!categoryId || !categoryDraftName.trim() || categoryBusy) return;
+    setCategoryBusy(true);
+    try {
+      await newFetch(`/media/categories/${categoryId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: categoryDraftName.trim(),
+          color: categoryDraftColor,
+        }),
+      });
+      await refreshCategories();
+      setShowCategoryManager(false);
+    } finally {
+      setCategoryBusy(false);
+    }
+  }, [categoryId, categoryDraftName, categoryDraftColor, categoryBusy, newFetch, refreshCategories]);
+
+  const archiveCategory = useCallback(async () => {
+    if (!categoryId || categoryBusy) return;
+    if (!window.confirm('Archive this category? Media keeps working; the category is only hidden from the list.')) {
+      return;
+    }
+    setCategoryBusy(true);
+    try {
+      await newFetch(`/media/categories/${categoryId}`, { method: 'DELETE' });
+      await refreshCategories();
+      setCategoryId('');
+      setShowCategoryManager(false);
+      setCategoryDraftName('');
+    } finally {
+      setCategoryBusy(false);
+    }
+  }, [categoryId, categoryBusy, newFetch, refreshCategories]);
 
   return (
     <div className="mt-[10px] flex flex-col gap-[20px]">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-[12px]">
+        <Field label="Title"><input value={title} onChange={(e) => setTitle(e.target.value)} className="field" /></Field>
+        <Field label="Status"><select value={status} onChange={(e) => setStatus(e.target.value)} className="field"><option value="draft">Draft</option><option value="ready">Ready</option><option value="archived">Archived</option></select></Field>
+        <div className="md:col-span-2">
+          <Field label="Category">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="field"
+                >
+                  <option value="">No category</option>
+                  {(categories || []).map((category: any) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={openCreateCategory}
+                  className="px-3 rounded bg-third shrink-0"
+                  title="Add category"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={openEditCategory}
+                  className="px-3 rounded bg-third shrink-0"
+                  title="Manage category"
+                >
+                  Manage
+                </button>
+              </div>
+              {showCategoryManager && (
+                <div className="rounded-[8px] border border-tableBorder bg-newBgColorInner p-3 flex flex-col gap-2">
+                  <div className="text-[13px] font-[600]">
+                    {categoryId ? 'Edit category' : 'Create category'}
+                  </div>
+                  <input
+                    autoFocus
+                    value={categoryDraftName}
+                    onChange={(e) => setCategoryDraftName(e.target.value)}
+                    placeholder="Category name"
+                    className="field"
+                  />
+                  <div className="flex items-center gap-2">
+                    <label className="text-[12px] text-newTextColor/70">Color</label>
+                    <input
+                      type="color"
+                      value={categoryDraftColor}
+                      onChange={(e) => setCategoryDraftColor(e.target.value)}
+                      className="h-[36px] w-[48px] rounded border border-tableBorder bg-transparent"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={categoryBusy || !categoryDraftName.trim()}
+                      onClick={createCategory}
+                      className="px-3 py-2 rounded bg-[#612BD3] text-white disabled:opacity-50"
+                    >
+                      Create new
+                    </button>
+                    {categoryId ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={categoryBusy || !categoryDraftName.trim()}
+                          onClick={renameCategory}
+                          className="px-3 py-2 rounded bg-third disabled:opacity-50"
+                        >
+                          Save rename
+                        </button>
+                        <button
+                          type="button"
+                          disabled={categoryBusy}
+                          onClick={archiveCategory}
+                          className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-50"
+                        >
+                          Archive
+                        </button>
+                      </>
+                    ) : null}
+                    <button
+                      type="button"
+                      disabled={categoryBusy}
+                      onClick={() => setShowCategoryManager(false)}
+                      className="px-3 py-2 rounded border border-tableBorder"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <p className="text-[12px] text-newTextColor/60">
+                    Categories are organization-wide. Archive hides them from the picker; existing media stays available.
+                  </p>
+                </div>
+              )}
+            </div>
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Tags">
+            <TagsComponent
+              name="tags"
+              label="Tags"
+              initial={selectedTags}
+              onChange={(e) => setSelectedTags(e.target.value || [])}
+            />
+          </Field>
+          <p className="text-[12px] text-newTextColor/60 mt-1">Same organization tags as posts — open the picker to select or create.</p>
+        </div>
+      </section>
+      <Field label="Description"><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="field min-h-[80px]" /></Field>
       <div className="flex flex-col space-y-2">
         <label className="text-sm text-textColor font-medium">
           Alt Text (for accessibility)
@@ -376,6 +622,24 @@ export const MediaComponentInner: FC<{
           className="w-full px-3 py-2 bg-fifth border border-tableBorder rounded-lg text-textColor placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forth focus:border-transparent"
         />
       </div>
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-[12px]">
+        <Field label="People (comma separated)"><input value={people} onChange={(e) => setPeople(e.target.value)} className="field" /></Field>
+        <Field label="Products (comma separated)"><input value={products} onChange={(e) => setProducts(e.target.value)} className="field" /></Field>
+        <Field label="Keywords (comma separated)"><input value={keywords} onChange={(e) => setKeywords(e.target.value)} className="field" /></Field>
+        <Field label="Recommended platforms (comma separated)"><input value={platforms} onChange={(e) => setPlatforms(e.target.value)} className="field" placeholder="instagram, facebook" /></Field>
+        <Field label="Content languages (BCP-47, comma separated)"><input value={languages} onChange={(e) => setLanguages(e.target.value)} className="field" placeholder="en, fr-FR" /></Field>
+        <Field label="Crop focus X / Y"><div className="flex gap-2"><input type="number" min="0" max="1" step="0.01" value={focusX} onChange={(e) => setFocusX(e.target.value)} className="field" /><input type="number" min="0" max="1" step="0.01" value={focusY} onChange={(e) => setFocusY(e.target.value)} className="field" /></div></Field>
+      </section>
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-[12px] border-t border-tableBorder pt-4">
+        <Field label="Source"><input value={source} onChange={(e) => setSource(e.target.value)} className="field" /></Field>
+        <Field label="Source URL"><input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} className="field" /></Field>
+        <Field label="Author / attribution"><input value={attribution} onChange={(e) => setAttribution(e.target.value)} className="field" /></Field>
+        <Field label="Copyright owner"><input value={copyrightOwner} onChange={(e) => setCopyrightOwner(e.target.value)} className="field" /></Field>
+        <Field label="License"><select value={licenseType} onChange={(e) => setLicenseType(e.target.value)} className="field">{['unknown','owned','licensed','creative_commons','third_party','public_domain'].map((value) => <option key={value} value={value}>{value.replace('_', ' ')}</option>)}</select></Field>
+        <Field label="License URL"><input value={licenseUrl} onChange={(e) => setLicenseUrl(e.target.value)} className="field" /></Field>
+        <Field label="Expires at"><input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="field" /></Field>
+      </section>
+      <div className="flex gap-2"><button type="button" disabled={loading} onClick={reanalyze} className="px-4 py-2 rounded bg-third">Analyze technical metadata</button><button type="button" disabled={loading} onClick={analyze} className="px-4 py-2 rounded bg-third">AI suggestions</button></div>
       {hasExtension(media?.path, 'mp4') && (
         <>
           {/* Alt Text Input */}
@@ -492,3 +756,5 @@ export const MediaComponentInner: FC<{
     </div>
   );
 };
+
+const Field: FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => <label className="flex flex-col gap-1 text-sm text-textColor"><span>{label}</span>{children}<style jsx>{`.field { width: 100%; padding: 0.5rem 0.75rem; background: var(--newBgColorInner, #171717); border: 1px solid var(--tableBorder, #444); border-radius: .5rem; color: inherit; }`}</style></label>;
