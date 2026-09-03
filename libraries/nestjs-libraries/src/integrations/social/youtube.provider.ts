@@ -494,6 +494,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // seconds later, so retry the read instead of failing the whole upload
       // on one bad answer.
       if (response.status !== 206) {
+        // release the socket before moving on: the abandoned body can be the
+        // whole object, and undici keeps the connection checked out until it
+        // is consumed or cancelled.
+        await response.body?.cancel().catch(() => {});
+
         if (totalRetries <= 2) {
           await timer(5000);
           return this.youtubeChunkStream(path, start, end, totalRetries + 1);
