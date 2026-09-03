@@ -29,6 +29,7 @@ model Organization {
   github              GitHub[]
   Integration         Integration[]
   media               Media[]
+  mediaCategories     MediaCategory[]
   buyerOrganization   MessagesGroup[]
   notifications       Notifications[]
   plugs               Plugs[]
@@ -61,9 +62,36 @@ model Tags {
   updatedAt    DateTime     @updatedAt
   organization Organization @relation(fields: [orgId], references: [id])
   posts        TagsPosts[]
+  media        TagsMedia[]
 
   @@index([orgId])
   @@index([deletedAt])
+}
+
+model TagsMedia {
+  mediaId   String
+  tagId     String
+  createdAt DateTime @default(now())
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  tag       Tags     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, tagId])
+  @@index([tagId])
+}
+
+model MediaCategory {
+  id        String   @id @default(uuid())
+  name      String
+  color     String   @default("#612BD3")
+  orgId     String
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [orgId], references: [id])
+  media     Media[]
+
+  @@unique([orgId, name])
+  @@index([orgId, deletedAt])
 }
 
 model TagsPosts {
@@ -224,6 +252,31 @@ model Media {
   thumbnail          String?
   alt                String?
   thumbnailTimestamp Int?
+  title              String?
+  description        String?
+  mimeType           String?
+  width              Int?
+  height             Int?
+  durationMs         Int?
+  dominantColor      String?
+  people             String[] @default([])
+  products           String[] @default([])
+  keywords           String[] @default([])
+  status             String   @default("draft")
+  focusX             Float?
+  focusY             Float?
+  recommendedPlatforms String[] @default([])
+  languages          String[] @default([])
+  source             String?
+  sourceUrl          String?
+  attribution        String?
+  copyrightOwner     String?
+  licenseType        String   @default("unknown")
+  licenseUrl         String?
+  expiresAt          DateTime?
+  categoryId         String?
+  category           MediaCategory? @relation(fields: [categoryId], references: [id])
+  tags               TagsMedia[]
   organization       Organization        @relation(fields: [organizationId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]
@@ -232,6 +285,9 @@ model Media {
   @@index([name])
   @@index([organizationId])
   @@index([type])
+  @@index([organizationId, status])
+  @@index([organizationId, expiresAt])
+  @@index([categoryId])
 }
 
 model SocialMediaAgency {

@@ -182,10 +182,32 @@ export class MediaController {
   getMedia(
     @GetOrgFromRequest() org: Organization,
     @Query('page') page: number,
-    @Query('search') search?: string
+    @Query('search') search?: string,
+    @Query() query?: Record<string, string | string[] | undefined>
   ) {
-    return this._mediaService.getMedia(org.id, page, search);
+    return this._mediaService.getMedia(org.id, page, search, query);
   }
+
+  @Get('/item/:id')
+  getMediaById(@GetOrgFromRequest() org: Organization, @Param('id') id: string) { return this._mediaService.getMediaById(id, org.id); }
+
+  @Post('/:id/analyze')
+  analyzeMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) { return this._mediaService.analyzeTechnicalMetadata(org.id, id); }
+
+  @Post('/:id/ai-suggestions')
+  suggestMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) { return this._mediaService.suggestMetadata(org.id, id); }
+
+  @Get('/categories/list')
+  categories(@GetOrgFromRequest() org: Organization) { return this._mediaService.getCategories(org.id); }
+
+  @Post('/categories')
+  createCategory(@GetOrgFromRequest() org: Organization, @Body('name') name: string, @Body('color') color?: string) { return this._mediaService.createCategory(org.id, name, color); }
+
+  @Post('/categories/:id')
+  updateCategory(@GetOrgFromRequest() org: Organization, @Param('id') id: string, @Body('name') name: string, @Body('color') color?: string) { return this._mediaService.updateCategory(org.id, id, name, color); }
+
+  @Delete('/categories/:id')
+  deleteCategory(@GetOrgFromRequest() org: Organization, @Param('id') id: string) { return this._mediaService.deleteCategory(org.id, id); }
 
   @Get('/video-options')
   getVideos() {

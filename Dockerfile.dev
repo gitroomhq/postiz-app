@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     python3-pip \
     bash \
+    ffmpeg \
     nginx \
 && rm -rf /var/lib/apt/lists/*
 
@@ -22,7 +23,10 @@ WORKDIR /app
 COPY . /app
 COPY var/docker/nginx.conf /etc/nginx/nginx.conf
 
-RUN pnpm install
+# bcrypt's GitHub-hosted prebuilt binary is unreliable in restricted/self-hosted
+# build environments.  The image already contains the native build toolchain, so
+# compile native dependencies locally instead of waiting on node-pre-gyp downloads.
+RUN npm_config_build_from_source=true pnpm install --frozen-lockfile
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
 CMD ["sh", "-c", "nginx && pnpm run pm2"]

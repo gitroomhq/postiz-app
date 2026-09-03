@@ -17,6 +17,15 @@ import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import sharp from 'sharp';
+import { mkdtemp, readFile, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class MediaService {
@@ -34,8 +43,8 @@ export class MediaService {
     return this._mediaRepository.deleteMedia(org, id);
   }
 
-  getMediaById(id: string) {
-    return this._mediaRepository.getMediaById(id);
+  getMediaById(id: string, org?: string) {
+    return this._mediaRepository.getMediaById(id, org);
   }
 
   async generateImage(
@@ -62,16 +71,78 @@ export class MediaService {
     }
   }
 
-  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
-    return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
+  async saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
+    const media = await this._mediaRepository.saveFile(org, fileName, filePath, originalName);
+    void this.analyzeTechnicalMetadata(org, media.id).catch(() => undefined);
+    return media;
   }
 
-  getMedia(org: string, page: number, search?: string) {
-    return this._mediaRepository.getMedia(org, page, search);
+  getMedia(org: string, page: number, search?: string, filters?: Record<string, string | string[] | undefined>) {
+    return this._mediaRepository.getMedia(org, page, search, filters);
   }
 
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {
     return this._mediaRepository.saveMediaInformation(org, data);
+  }
+
+  getCategories(org: string) { return this._mediaRepository.getCategories(org); }
+  createCategory(org: string, name: string, color?: string) { return this._mediaRepository.createCategory(org, name, color); }
+  updateCategory(org: string, id: string, name: string, color?: string) { return this._mediaRepository.updateCategory(org, id, name, color); }
+  deleteCategory(org: string, id: string) { return this._mediaRepository.deleteCategory(org, id); }
+
+  private async loadMediaBuffer(path: string) {
+    // Uploaded files are often stored as absolute public URLs like
+    // http://127.0.0.1:4007/uploads/... which are unreachable from inside
+    // the container on the published host port. Prefer the local disk path.
+    const uploadsIndex = path.indexOf('/uploads/');
+    if (uploadsIndex >= 0) {
+      try {
+        return await readFile(path.slice(uploadsIndex));
+      } catch {
+        // Fall through to HTTP fetch for remote/object-storage paths.
+      }
+    }
+    if (path.startsWith('/') && !path.startsWith('//')) {
+      try {
+        return await readFile(path);
+      } catch {
+        // Fall through.
+      }
+    }
+    const url = path.startsWith('http')
+      ? path
+      : `${process.env.MAIN_URL || 'http://127.0.0.1:5000'}${path}`;
+    return Buffer.from(await readOrFetch(url));
+  }
+
+  async analyzeTechnicalMetadata(org: string, id: string) {
+    const media = await this._mediaRepository.getMediaById(id, org);
+    if (!media) throw new HttpException('Media not found', 404);
+    const buffer = await this.loadMediaBuffer(media.path);
+    const extension = (media.originalName || media.name).split('.').pop()?.toLowerCase();
+    const isVideo = ['mp4', 'mov', 'webm', 'mkv'].includes(extension || '');
+    const base = { fileSize: buffer.length, type: isVideo ? 'video' : 'image', mimeType: isVideo ? `video/${extension === 'mov' ? 'quicktime' : extension || 'mp4'}` : undefined };
+    if (!isVideo) {
+      const image = sharp(buffer);
+      const [metadata, stats] = await Promise.all([image.metadata(), image.stats()]);
+      const color = stats.dominant ? `#${[stats.dominant.r, stats.dominant.g, stats.dominant.b].map((v) => v.toString(16).padStart(2, '0')).join('')}` : undefined;
+      return this._mediaRepository.updateTechnicalMetadata(org, id, { ...base, width: metadata.width || null, height: metadata.height || null, dominantColor: color || null, mimeType: metadata.format ? `image/${metadata.format}` : null });
+    }
+    const dir = await mkdtemp(join(tmpdir(), 'postiz-media-'));
+    const file = join(dir, `source.${extension || 'mp4'}`);
+    try {
+      await writeFile(file, buffer);
+      const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height,duration', '-of', 'json', file]);
+      const stream = JSON.parse(stdout).streams?.[0] || {};
+      return this._mediaRepository.updateTechnicalMetadata(org, id, { ...base, width: Number(stream.width) || null, height: Number(stream.height) || null, durationMs: stream.duration ? Math.round(Number(stream.duration) * 1000) : null });
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+
+  async suggestMetadata(org: string, id: string) {
+    if (!process.env.OPENAI_API_KEY) throw new HttpException('AI analysis is not configured', 503);
+    const media = await this._mediaRepository.getMediaById(id, org);
+    if (!media) throw new HttpException('Media not found', 404);
+    return this._openAi.analyzeMedia(await this.loadMediaBuffer(media.path), media.mimeType || 'image/jpeg');
   }
 
   getVideoOptions() {
