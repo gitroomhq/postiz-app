@@ -94,11 +94,13 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
+    const originalName = file.originalname;
     const getFile = await this.storage.uploadFile(file);
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
-      getFile.path
+      getFile.path,
+      originalName
     );
   }
 
@@ -162,7 +164,8 @@ export class PublicIntegrationsController {
     return this._mediaService.saveFile(
       org.id,
       getFile.originalname,
-      getFile.path
+      getFile.path,
+      new URL(body.url).pathname.split('/').pop() || undefined
     );
   }
 

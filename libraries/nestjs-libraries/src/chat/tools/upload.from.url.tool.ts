@@ -118,7 +118,8 @@ so the attachment passes the upload-domain validation. Returns the hosted media 
           return await this._mediaService.saveFile(
             org.id,
             getFile.originalname,
-            getFile.path
+            getFile.path,
+            new URL(inputData.url).pathname.split('/').pop() || undefined
           );
         } catch (err) {
           // undici's fetch rejects with a generic TypeError('fetch failed')
