@@ -29,6 +29,7 @@ model Organization {
   github              GitHub[]
   Integration         Integration[]
   media               Media[]
+  mediaFolders        MediaFolder[]
   buyerOrganization   MessagesGroup[]
   notifications       Notifications[]
   plugs               Plugs[]
@@ -216,6 +217,7 @@ model Media {
   originalName       String?
   path               String
   organizationId     String
+  folderId           String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?
@@ -225,6 +227,7 @@ model Media {
   alt                String?
   thumbnailTimestamp Int?
   organization       Organization        @relation(fields: [organizationId], references: [id])
+  folder             MediaFolder?        @relation(fields: [folderId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]
   oauthApps          OAuthApp[]
@@ -232,6 +235,25 @@ model Media {
   @@index([name])
   @@index([organizationId])
   @@index([type])
+  @@index([folderId])
+}
+
+model MediaFolder {
+  id             String       @id @default(uuid())
+  name           String
+  organizationId String
+  parentId       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  parent         MediaFolder? @relation("MediaFolderToMediaFolder", fields: [parentId], references: [id])
+  children       MediaFolder[] @relation("MediaFolderToMediaFolder")
+  media          Media[]
+
+  @@index([organizationId])
+  @@index([parentId])
+  @@index([deletedAt])
 }
 
 model SocialMediaAgency {

@@ -25,6 +25,9 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { CreateMediaFolderDto } from '@gitroom/nestjs-libraries/dtos/media/create.media.folder.dto';
+import { RenameMediaFolderDto } from '@gitroom/nestjs-libraries/dtos/media/rename.media.folder.dto';
+import { MoveMediaDto } from '@gitroom/nestjs-libraries/dtos/media/move.media.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -32,7 +35,7 @@ export class MediaController {
   private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
   ) {}
 
   @Delete('/:id')
@@ -43,7 +46,7 @@ export class MediaController {
   @Post('/generate-video')
   generateVideo(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: VideoDto
+    @Body() body: VideoDto,
   ) {
     console.log('hello');
     return this._mediaService.generateVideo(org, body);
@@ -54,7 +57,7 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Body('prompt') prompt: string,
-    isPicturePrompt = false
+    isPicturePrompt = false,
   ) {
     const total = await this._subscriptionService.checkCredits(org);
     if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
@@ -72,7 +75,7 @@ export class MediaController {
   async generateImageFromText(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
-    @Body('prompt') prompt: string
+    @Body('prompt') prompt: string,
   ) {
     const image = await this.generateImage(org, req, prompt, true);
     if (!image) {
@@ -89,7 +92,7 @@ export class MediaController {
   @UsePipes(new CustomFileValidationPipe())
   async uploadServer(
     @GetOrgFromRequest() org: Organization,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const originalName = file?.originalname || '';
     const uploadedFile = await this.storage.uploadFile(file);
@@ -97,7 +100,7 @@ export class MediaController {
       org.id,
       uploadedFile.originalname,
       uploadedFile.path,
-      originalName
+      originalName,
     );
   }
 
@@ -106,7 +109,7 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Body('name') name: string,
-    @Body('originalName') originalName: string
+    @Body('originalName') originalName: string,
   ) {
     if (!name) {
       return false;
@@ -115,14 +118,14 @@ export class MediaController {
       org.id,
       name,
       process.env.CLOUDFLARE_BUCKET_URL + '/' + name,
-      originalName || undefined
+      originalName || undefined,
     );
   }
 
   @Post('/information')
   saveMediaInformation(
     @GetOrgFromRequest() org: Organization,
-    @Body() body: SaveMediaInformationDto
+    @Body() body: SaveMediaInformationDto,
   ) {
     return this._mediaService.saveMediaInformation(org.id, body);
   }
@@ -133,7 +136,7 @@ export class MediaController {
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File,
-    @Body('preventSave') preventSave: string = 'false'
+    @Body('preventSave') preventSave: string = 'false',
   ) {
     const originalName = file.originalname;
     const getFile = await this.storage.uploadFile(file);
@@ -147,8 +150,46 @@ export class MediaController {
       org.id,
       getFile.originalname,
       getFile.path,
-      originalName
+      originalName,
     );
+  }
+
+  @Get('/folders')
+  getFolders(@GetOrgFromRequest() org: Organization) {
+    return this._mediaService.getFolders(org.id);
+  }
+
+  @Post('/folders')
+  createFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateMediaFolderDto,
+  ) {
+    return this._mediaService.createFolder(org.id, body);
+  }
+
+  @Post('/folders/:id')
+  renameFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: RenameMediaFolderDto,
+  ) {
+    return this._mediaService.renameFolder(org.id, id, body);
+  }
+
+  @Delete('/folders/:id')
+  deleteFolder(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+  ) {
+    return this._mediaService.deleteFolder(org.id, id);
+  }
+
+  @Post('/move')
+  moveMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: MoveMediaDto,
+  ) {
+    return this._mediaService.moveMedia(org.id, body.id, body.folderId);
   }
 
   @Post('/:endpoint')
@@ -156,7 +197,7 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Res() res: Response,
-    @Param('endpoint') endpoint: string
+    @Param('endpoint') endpoint: string,
   ) {
     const upload = await handleR2Upload(endpoint, req, res);
     if (endpoint !== 'complete-multipart-upload') {
@@ -172,7 +213,7 @@ export class MediaController {
       name,
       // @ts-ignore
       upload.Location,
-      originalName || undefined
+      originalName || undefined,
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
@@ -182,9 +223,10 @@ export class MediaController {
   getMedia(
     @GetOrgFromRequest() org: Organization,
     @Query('page') page: number,
-    @Query('search') search?: string
+    @Query('search') search?: string,
+    @Query('folderId') folderId?: string,
   ) {
-    return this._mediaService.getMedia(org.id, page, search);
+    return this._mediaService.getMedia(org.id, page, search, folderId);
   }
 
   @Get('/video-options')
@@ -193,16 +235,18 @@ export class MediaController {
   }
 
   @Post('/video/function')
-  videoFunction(
-    @Body() body: VideoFunctionDto
-  ) {
-    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
+  videoFunction(@Body() body: VideoFunctionDto) {
+    return this._mediaService.videoFunction(
+      body.identifier,
+      body.functionName,
+      body.params,
+    );
   }
 
   @Get('/generate-video/:type/allowed')
   generateVideoAllowed(
     @GetOrgFromRequest() org: Organization,
-    @Param('type') type: string
+    @Param('type') type: string,
   ) {
     return this._mediaService.generateVideoAllowed(org, type);
   }
