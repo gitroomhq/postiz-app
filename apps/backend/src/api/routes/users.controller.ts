@@ -344,6 +344,13 @@ export class UsersController {
       return;
     }
 
+    const organizations = (
+      await this._orgService.getOrgsByUserId(user.id)
+    ).filter((f) => !f.users[0].disabled);
+    if (organizations.some((org) => org.id === id)) {
+      await this._userService.updateLastSelectedOrg(user.id, id);
+    }
+
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
