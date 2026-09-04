@@ -420,6 +420,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // publicaly_available_post_id is an int64 that exceeds Number.MAX_SAFE_INTEGER,
+  // so it must be read from the raw body instead of the parsed JSON
+  private publicPostId(body: string) {
+    return body.match(
+      /"publicaly_available_post_id"\s*:\s*\[\s*"?(\d+)"?/
+    )?.[1];
+  }
+
   // Single status check for a publish_id, no loops and no timers: `post` returns
   // a `pending` PostResponse right after the upload, and the post workflow polls
   // this method with durable timers, so a stuck/retried check can never re-run
@@ -429,9 +437,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     pendingData: { publishId: string },
     integration: Integration
   ): Promise<PendingCheckResponse> {
+    let body: string;
     let post: any;
     try {
-      post = await (
+      body = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -448,7 +457,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           0,
           true
         )
-      ).json();
+      ).text();
+      post = JSON.parse(body);
     } catch (err) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
@@ -460,7 +470,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { status: 'pending', pendingData };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
+    const { status } = post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
       return {
@@ -471,16 +481,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (status === 'PUBLISH_COMPLETE') {
-      // an empty array is truthy, so index it once and branch on the value
-      const publicPostId = publicaly_available_post_id?.[0];
+      // the id only shows up once moderation approves the post - fall back to
+      // the profile URL and keep the publish_id (resolveReleaseId fixes it later)
+      const publicPostId = this.publicPostId(body);
 
       return {
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
           : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
-        // TikTok returns the id as a number, releaseId in the db is a string
-        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+        postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
 
@@ -1109,6 +1119,44 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  // Posts published before moderation finished keep their publish_id
+  // (v_pub_file~... / p_pub_url~...) as releaseId - resolve it to the post id
+  async resolveReleaseId(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration
+  ) {
+    if (releaseId.indexOf('_pub_') === -1) {
+      return undefined;
+    }
+
+    const body = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            publish_id: releaseId,
+          }),
+        }
+      )
+    ).text();
+
+    const publicPostId = this.publicPostId(body);
+    if (!publicPostId) {
+      return undefined;
+    }
+
+    return {
+      postId: publicPostId,
+      releaseURL: `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
+    };
+  }
+
   async postAnalytics(
     integrationId: string,
     accessToken: string,
@@ -1116,30 +1164,6 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     fromDate: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-
-    if (postId.indexOf('v_pub_url') > -1) {
-      const post = await (
-        await fetch(
-          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=UTF-8',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              publish_id: postId,
-            }),
-          }
-        )
-      ).json();
-
-      if (!post?.data?.publicaly_available_post_id?.[0]) {
-        return [];
-      }
-
-      postId = post.data.publicaly_available_post_id[0];
-    }
 
     try {
       // Query video details using the video ID
