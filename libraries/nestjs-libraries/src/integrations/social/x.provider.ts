@@ -1456,12 +1456,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         return [];
       }
 
-      const data = await client.v2.tweets(
-        tweets.map((p) => p.id),
-        {
+      // X's GET /2/tweets accepts at most 100 ids per request — batch them.
+      const allIds = tweets.map((p) => p.id);
+      const data = { data: [] as TweetV2[] };
+      for (let i = 0; i < allIds.length; i += 100) {
+        const page = await client.v2.tweets(allIds.slice(i, i + 100), {
           'tweet.fields': ['public_metrics'],
+        });
+        if (page?.data) {
+          data.data.push(...page.data);
         }
-      );
+      }
 
       const metrics = data.data.reduce(
         (all, current) => {
