@@ -115,6 +115,7 @@ model User {
   sendSuccessEmails     Boolean              @default(true)
   sendFailureEmails     Boolean              @default(true)
   sendStreakEmails      Boolean              @default(true)
+  skipMediaRescale      Boolean              @default(false)
   oauthAuthorizations   OAuthAuthorization[]
 
   @@unique([email, providerName])

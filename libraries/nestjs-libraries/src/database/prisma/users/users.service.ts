@@ -3,6 +3,7 @@ import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users
 import { Provider, Role } from '@prisma/client';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { MediaSettingsDto } from '@gitroom/nestjs-libraries/dtos/users/media-settings.dto';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
@@ -149,5 +150,13 @@ export class UsersService {
 
   updateEmailNotifications(userId: string, body: EmailNotificationsDto) {
     return this._usersRepository.updateEmailNotifications(userId, body);
+  }
+
+  getMediaSettings(userId: string) {
+    return this._usersRepository.getMediaSettings(userId);
+  }
+
+  updateMediaSettings(userId: string, body: MediaSettingsDto) {
+    return this._usersRepository.updateMediaSettings(userId, body);
   }
 }
