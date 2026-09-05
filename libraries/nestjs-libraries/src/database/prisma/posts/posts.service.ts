@@ -841,15 +841,20 @@ export class PostsService {
         }
 
         // Provider-specific media validation (the old client `checkValidity`).
-        let errors: string | true = true;
-        try {
-          errors = await provider.checkValidity(
-            media,
-            settings,
-            additionalSettings
-          );
-        } catch (err: any) {
-          errors = err?.message || 'Invalid media';
+        let errors: string | true = await this.checkMissingAttachments(
+          orgId,
+          media.flat().map((m) => m.path)
+        );
+        if (errors === true) {
+          try {
+            errors = await provider.checkValidity(
+              media,
+              settings,
+              additionalSettings
+            );
+          } catch (err: any) {
+            errors = err?.message || 'Invalid media';
+          }
         }
 
         const maximumCharacters = provider.maxLength(additionalSettings, settings);
@@ -882,6 +887,38 @@ export class PostsService {
         };
       })
     );
+  }
+
+  // Attachments on the upload domain must exist in the org's media library:
+  // agents sometimes guess the upload path instead of using the returned one.
+  private async checkMissingAttachments(
+    orgId: string,
+    paths: string[]
+  ): Promise<string | true> {
+    const restrict = process.env.RESTRICT_UPLOAD_DOMAINS;
+    const uploaded = paths.filter(
+      (p) => restrict && p?.indexOf(restrict) > -1
+    );
+    if (!uploaded.length) {
+      return true;
+    }
+
+    const existing = await this._mediaService.getExistingMediaPaths(
+      orgId,
+      uploaded
+    );
+    const missing = uploaded.find(
+      (p) =>
+        !existing.some(
+          (m) =>
+            m.path === p || m.name === p.split('?')[0].split('/').pop()
+        )
+    );
+    if (!missing) {
+      return true;
+    }
+
+    return `Attachment ${missing} was not found in your media library. Upload it first (MCP: uploadFromUrlTool / generateImageTool, API: /public/v1/upload) and use the returned path exactly; file names are random and cannot be predicted.`;
   }
 
   /** Returns the first class-validator message (incl. nested children), or ''. */
