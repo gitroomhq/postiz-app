@@ -179,21 +179,18 @@ export class BillingController {
   ) {
     const result = await (await this.provider(org)).setToCancel(org.id);
 
-    if (result.cancel_at) {
-      const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
+    if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs())) {
       try {
         await this._notificationService.sendEmail(
           user.email,
-          'Your subscription has been cancelled',
-          `${
-            isFutureCancel
-              ? `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
-                  result.cancel_at
-                ).format('MMMM D, YYYY')}.`
-              : 'Your subscription has been cancelled and access to paid features has ended.'
-          }<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+          'Your Postiz subscription is set to cancel',
+          `Your subscription is pending cancellation and will end on ${dayjs(
+            result.cancel_at
+          ).format(
+            'D MMM, YYYY'
+          )}, the end of your current billing cycle. Until then you can keep using Postiz as usual. Changed your mind? You can reactivate at any time from the <a href="${
             process.env.FRONTEND_URL
-          }/billing">billing page</a>.`
+          }/billing">Billing page</a>.`
         );
       } catch (err) {
         logger.error('cancellation_email_failed', {
