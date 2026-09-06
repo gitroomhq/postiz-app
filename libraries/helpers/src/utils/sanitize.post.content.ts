@@ -12,6 +12,12 @@ const ALLOWED_TAGS = [
   'h2',
   'h3',
   'span',
+  'em', 
+  'i', 
+  's', 
+  'code', 
+  'pre', 
+  'blockquote',
 ];
 
 const ALLOWED_ATTR = [
