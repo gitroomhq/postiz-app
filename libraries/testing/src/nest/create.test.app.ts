@@ -15,6 +15,7 @@ import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/perm
 import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
+import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { TemporalService } from 'nestjs-temporal-core';
 
 /**
@@ -73,9 +74,11 @@ export async function createTestApp(options: TestAppOptions): Promise<{
     controllers: options.controllers ?? [],
     providers: [
       ...(options.providers ?? []),
+      // PermissionsService lives outside DatabaseModule but is what the guard
+      // resolves against, so the two are registered together.
       ...(options.policies === false
         ? []
-        : [{ provide: APP_GUARD, useClass: PoliciesGuard }]),
+        : [PermissionsService, { provide: APP_GUARD, useClass: PoliciesGuard }]),
     ],
   });
 

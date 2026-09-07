@@ -63,6 +63,16 @@ jobs:
       - id: start
         run: echo "launch_id=$(node tools/reportportal/launch.mjs start)" >> "$GITHUB_OUTPUT"
 
+  typecheck:
+    name: Typecheck (tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # Nothing else type-checks the test tree: the app build configs exclude
+      # *.spec.ts, so these files would otherwise only fail in an editor.
+      - run: pnpm run typecheck:tests
+
   unit:
     name: Unit
     runs-on: ubuntu-latest

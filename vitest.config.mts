@@ -136,6 +136,10 @@ export default defineConfig(async () => ({
           pool: 'forks',
           poolOptions: { forks: { singleFork: true } },
           isolate: true,
+          // Not just singleFork: without this, files still interleave, and one
+          // file's resetDatabase() truncates mid-way through another file's
+          // factory call - which surfaces as a foreign-key violation.
+          fileParallelism: false,
           sequence: { concurrent: false, shuffle: false },
           testTimeout: 30_000,
           hookTimeout: 60_000,
