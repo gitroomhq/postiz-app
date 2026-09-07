@@ -70,7 +70,7 @@ export async function proxy(request: NextRequest) {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: false,
+            sameSite: 'none',
           }
         : {}),
       maxAge: -1,
@@ -110,7 +110,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
   if (nextUrl.pathname.startsWith('/auth') && !authCookie) {
-    if (org) {
+    if (org && !request.cookies.get('org')) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
         ...(!process.env.NOT_SECURED
@@ -118,7 +118,7 @@ export async function proxy(request: NextRequest) {
               path: '/',
               secure: true,
               httpOnly: true,
-              sameSite: false,
+              sameSite: 'none',
               domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
             }
           : {}),
@@ -148,7 +148,7 @@ export async function proxy(request: NextRequest) {
                 path: '/',
                 secure: true,
                 httpOnly: true,
-                sameSite: false,
+                sameSite: 'none',
                 domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
               }
             : {}),

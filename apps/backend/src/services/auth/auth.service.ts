@@ -52,7 +52,8 @@ export class AuthService {
           throw new Error('Email already exists');
         }
 
-        if (!(await this.canRegister(provider))) {
+        const hasInvite = addToOrg && typeof addToOrg !== 'boolean';
+        if (!(await this.canRegister(provider)) && !hasInvite) {
           throw new Error('Registration is disabled');
         }
 
