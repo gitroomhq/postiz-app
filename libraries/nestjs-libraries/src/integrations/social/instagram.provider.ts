@@ -206,14 +206,6 @@ export class InstagramProvider
       };
     }
 
-    if (body.indexOf('2207082') > -1) {
-      return {
-        type: 'bad-body' as const,
-        value:
-          'Instagram could not process this video. If you attached audio to a video that has no sound track, set the original video volume to 0 and try again',
-      };
-    }
-
     if (body.indexOf('2207023') > -1) {
       return {
         type: 'bad-body' as const,
@@ -371,8 +363,9 @@ export class InstagramProvider
     if (body.indexOf('2207082') > -1) {
       return {
         type: 'retry' as const,
-        value: 'Could not upload your media',
-      }
+        value:
+          'Instagram could not process this video. If you attached audio to a video that has no sound track, set the original video volume to 0 and try again',
+      };
     }
 
     if (body.indexOf('2207077') > -1) {
