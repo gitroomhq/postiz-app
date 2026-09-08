@@ -3,6 +3,16 @@ import { HttpException } from '@nestjs/common';
 import { SubscriptionException } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { MediaService } from './media.service';
 
+const { uploadSimple } = vi.hoisted(() => ({
+  uploadSimple: vi.fn(async (_path: string) => 'https://cdn/out/a.mp4'),
+}));
+
+// MediaService resolves its storage at construction, so the factory is the
+// only seam that can stand in for a real bucket.
+vi.mock('@gitroom/nestjs-libraries/upload/upload.factory', () => ({
+  UploadFactory: { createStorage: () => ({ uploadSimple }) },
+}));
+
 type Mocks = ReturnType<typeof mocks>;
 
 const videoInstance = (over: Record<string, unknown> = {}) => ({
@@ -55,34 +65,29 @@ const build = (over: Partial<Mocks> = {}) => {
     m.videoManager as never,
     m.temporalService as never
   );
-  const storage = { uploadSimple: vi.fn(async () => 'https://cdn/out/a.mp4') };
-  (service as any).storage = storage;
-
-  return { service, storage, ...m };
+  return { service, storage: { uploadSimple }, ...m };
 };
 
 const org = (over: Record<string, unknown> = {}) =>
   ({ id: 'org-1', isTrailing: false, ...over } as never);
 
 describe('MediaService repository delegation', () => {
-  it('forwards media reads and writes to the repository', async () => {
-    const { service, mediaRepository } = build();
+  it.each([
+    ['deleteMedia', ['org-1', 'm1']],
+    ['getMediaById', ['m1']],
+    ['saveFile', ['org-1', 'a.png', '/path/a.png', 'original.png']],
+    ['getMedia', ['org-1', 2, 'cats']],
+    ['saveMediaInformation', ['org-1', { id: 'm1' }]],
+  ] as [string, unknown[]][])(
+    'forwards %s to the repository',
+    async (method, args) => {
+      const { service, mediaRepository } = build();
 
-    await service.deleteMedia('org-1', 'm1');
-    await service.getMediaById('m1');
-    await service.saveFile('org-1', 'a.png', '/path/a.png', 'original.png');
-    await service.getMedia('org-1', 2, 'cats');
-    await service.saveMediaInformation('org-1', { id: 'm1' } as never);
+      await (service as any)[method](...args);
 
-    expect(mediaRepository.deleteMedia).toHaveBeenCalledWith('org-1', 'm1');
-    expect(mediaRepository.saveFile).toHaveBeenCalledWith(
-      'org-1',
-      'a.png',
-      '/path/a.png',
-      'original.png'
-    );
-    expect(mediaRepository.getMedia).toHaveBeenCalledWith('org-1', 2, 'cats');
-  });
+      expect((mediaRepository as any)[method]).toHaveBeenCalledWith(...args);
+    }
+  );
 
   it('lists the available video generators', () => {
     const { service, videoManager } = build();

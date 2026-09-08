@@ -2,9 +2,11 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 import { Empty } from '@gitroom/nestjs-libraries/short-linking/providers/empty';
 import { ShortLinkService } from './short.link.service';
 
+// The provider is chosen from env once at import, so env stubbing cannot
+// reach it; swapping the static and restoring it afterwards is the only seam.
 const original = ShortLinkService.provider;
 
-const fakeProvider = (over: Partial<ShortLinking> = {}): ShortLinking => ({
+const provider = (over: Partial<ShortLinking> = {}): ShortLinking => ({
   shortLinkDomain: 'sho.rt',
   linksStatistics: vi.fn(async () => []),
   convertLinkToShortLink: vi.fn(async (id: string, link: string) =>
@@ -15,9 +17,10 @@ const fakeProvider = (over: Partial<ShortLinking> = {}): ShortLinking => ({
   ...over,
 });
 
-const use = (provider: ShortLinking) => {
-  ShortLinkService.provider = provider;
-  return new ShortLinkService();
+const build = (over: ShortLinking = provider()) => {
+  ShortLinkService.provider = over;
+
+  return { service: new ShortLinkService(), provider: over };
 };
 
 afterEach(() => {
@@ -26,7 +29,7 @@ afterEach(() => {
 
 describe('ShortLinkService without a configured provider', () => {
   it('never asks to shorten, and returns every input untouched', async () => {
-    const service = use(new Empty());
+    const { service } = build(new Empty());
     const messages = ['visit https://example.com/a today'];
 
     expect(service.askShortLinkedin(messages)).toBe(false);
@@ -43,19 +46,19 @@ describe('ShortLinkService without a configured provider', () => {
 
 describe('ShortLinkService.askShortLinkedin', () => {
   it('asks when a message carries a link that is not shortened yet', () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     expect(service.askShortLinkedin(['see https://example.com/a'])).toBe(true);
   });
 
   it('does not ask when there is no link at all', () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     expect(service.askShortLinkedin(['no links here'])).toBe(false);
   });
 
   it('does not ask when every link is already on the short domain', () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     expect(
       service.askShortLinkedin(['https://sho.rt/a', 'https://sho.rt/b'])
@@ -63,7 +66,7 @@ describe('ShortLinkService.askShortLinkedin', () => {
   });
 
   it('looks across all messages, not just the first', () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     expect(
       service.askShortLinkedin(['https://sho.rt/a', 'https://example.com/b'])
@@ -73,7 +76,7 @@ describe('ShortLinkService.askShortLinkedin', () => {
 
 describe('ShortLinkService.convertTextToShortLinks', () => {
   it('replaces a plain link with the shortened one', async () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', ['go to https://example.com/a now'])
@@ -81,8 +84,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('decodes the html entities the editor leaves in a url', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', [
@@ -97,8 +99,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('leaves a link that is already shortened alone', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', ['already https://sho.rt/a'])
@@ -107,8 +108,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('shortens a repeated link only once', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', [
@@ -119,8 +119,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('passes the post id through so links stay attributable', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await service.convertTextToShortLinks('post-42', ['https://example.com/a']);
 
@@ -131,7 +130,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('returns text with no links unchanged', async () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', ['nothing to shorten'])
@@ -139,7 +138,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
   });
 
   it('handles every message in the list', async () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     await expect(
       service.convertTextToShortLinks('p1', [
@@ -152,7 +151,7 @@ describe('ShortLinkService.convertTextToShortLinks', () => {
 
 describe('ShortLinkService.convertShortLinksToLinks', () => {
   it('expands a shortened link back to its original', async () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     await expect(
       service.convertShortLinksToLinks(['click https://sho.rt/a'])
@@ -160,8 +159,7 @@ describe('ShortLinkService.convertShortLinksToLinks', () => {
   });
 
   it('leaves links from other domains as they are', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await expect(
       service.convertShortLinksToLinks(['https://example.com/a'])
@@ -170,7 +168,7 @@ describe('ShortLinkService.convertShortLinksToLinks', () => {
   });
 
   it('returns text with no links unchanged', async () => {
-    const service = use(fakeProvider());
+    const { service } = build();
 
     await expect(service.convertShortLinksToLinks(['plain text'])).resolves.toEqual(
       ['plain text']
@@ -180,27 +178,31 @@ describe('ShortLinkService.convertShortLinksToLinks', () => {
 
 describe('ShortLinkService.getStatistics', () => {
   it('collects the short links across messages and asks the provider', async () => {
-    const provider = fakeProvider({
-      linksStatistics: vi.fn(async () => [
-        { short: 'https://sho.rt/a', original: 'https://example.com/a', clicks: '3' },
-      ]),
-    });
-    const service = use(provider);
+    const { service, provider: stats } = build(
+      provider({
+        linksStatistics: vi.fn(async () => [
+          {
+            short: 'https://sho.rt/a',
+            original: 'https://example.com/a',
+            clicks: '3',
+          },
+        ]),
+      })
+    );
 
     await expect(
       service.getStatistics(['first https://sho.rt/a', 'second https://sho.rt/b'])
     ).resolves.toEqual([
       { short: 'https://sho.rt/a', original: 'https://example.com/a', clicks: '3' },
     ]);
-    expect(provider.linksStatistics).toHaveBeenCalledWith([
+    expect(stats.linksStatistics).toHaveBeenCalledWith([
       'https://sho.rt/a',
       'https://sho.rt/b',
     ]);
   });
 
   it('strips html before matching so markup is not read as part of the url', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await service.getStatistics(['<p><a href="x">https://sho.rt/a</a></p>']);
 
@@ -208,8 +210,7 @@ describe('ShortLinkService.getStatistics', () => {
   });
 
   it('returns nothing when no short link is present', async () => {
-    const provider = fakeProvider();
-    const service = use(provider);
+    const { service, provider } = build();
 
     await expect(
       service.getStatistics(['https://example.com/a'])
@@ -220,16 +221,21 @@ describe('ShortLinkService.getStatistics', () => {
 
 describe('ShortLinkService.getAllLinks', () => {
   it('asks the provider for the first page of the post links', async () => {
-    const provider = fakeProvider({
-      getAllLinksStatistics: vi.fn(async () => [
-        { short: 'https://sho.rt/a', original: 'https://example.com/a', clicks: '1' },
-      ]),
-    });
-    const service = use(provider);
+    const { service, provider: all } = build(
+      provider({
+        getAllLinksStatistics: vi.fn(async () => [
+          {
+            short: 'https://sho.rt/a',
+            original: 'https://example.com/a',
+            clicks: '1',
+          },
+        ]),
+      })
+    );
 
     await expect(service.getAllLinks('post-1')).resolves.toEqual([
       { short: 'https://sho.rt/a', original: 'https://example.com/a', clicks: '1' },
     ]);
-    expect(provider.getAllLinksStatistics).toHaveBeenCalledWith('post-1', 1);
+    expect(all.getAllLinksStatistics).toHaveBeenCalledWith('post-1', 1);
   });
 });

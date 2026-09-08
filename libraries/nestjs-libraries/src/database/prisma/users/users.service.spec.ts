@@ -79,25 +79,23 @@ describe('UsersService repository delegation', () => {
     ).toHaveBeenCalledWith('a@b.c', 'u1');
   });
 
-  it('passes personal details, password and notification changes straight through', async () => {
-    const { service, usersRepository } = build();
+  it.each([
+    ['activateUser', ['u1']],
+    ['updatePassword', ['u1', 'hashed']],
+    ['getPersonal', ['u1']],
+    ['changePersonal', ['u1', { fullname: 'A' }]],
+    ['getEmailNotifications', ['u1']],
+    ['updateEmailNotifications', ['u1', { weekly: true }]],
+  ] as [string, unknown[]][])(
+    'passes %s straight through to the repository',
+    async (method, args) => {
+      const { service, usersRepository } = build();
 
-    await service.activateUser('u1');
-    await service.updatePassword('u1', 'hashed');
-    await service.getPersonal('u1');
-    await service.changePersonal('u1', { fullname: 'A' } as never);
-    await service.getEmailNotifications('u1');
-    await service.updateEmailNotifications('u1', { weekly: true } as never);
+      await (service as any)[method](...args);
 
-    expect(usersRepository.activateUser).toHaveBeenCalledWith('u1');
-    expect(usersRepository.updatePassword).toHaveBeenCalledWith('u1', 'hashed');
-    expect(usersRepository.changePersonal).toHaveBeenCalledWith('u1', {
-      fullname: 'A',
-    });
-    expect(usersRepository.updateEmailNotifications).toHaveBeenCalledWith('u1', {
-      weekly: true,
-    });
-  });
+      expect((usersRepository as any)[method]).toHaveBeenCalledWith(...args);
+    }
+  );
 
   it('resolves an impersonation target through the organization repository', async () => {
     const { service, organizationRepository } = build();

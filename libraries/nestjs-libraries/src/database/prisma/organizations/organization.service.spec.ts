@@ -67,47 +67,28 @@ describe('OrganizationService repository delegation', () => {
     );
   });
 
-  it('forwards lookups, streaks and shortlink preferences unchanged', async () => {
+  it.each([
+    ['getCount', []],
+    ['createMaxUser', ['id', 'name', 'saas', 'a@b.c']],
+    ['addUserToOrg', ['u1', 'inv', 'org', 'ADMIN']],
+    ['getOrgById', ['org']],
+    ['getOrgByIdWithSubscription', ['org']],
+    ['getOrgByApiKey', ['key']],
+    ['getUserOrg', ['u1']],
+    ['getUserOrgByOrganization', ['u1', 'org']],
+    ['updateApiKey', ['org']],
+    ['getTeam', ['org']],
+    ['setStreak', ['org', 'start']],
+    ['getOrgByCustomerId', ['cus_1']],
+    ['disableOrEnableNonSuperAdminUsers', ['org', true]],
+    ['getShortlinkPreference', ['org']],
+    ['updateShortlinkPreference', ['org', 'DUB']],
+  ] as [string, unknown[]][])('forwards %s to the repository', async (method, args) => {
     const { service, organizationRepository } = build();
 
-    await service.getCount();
-    await service.createMaxUser('id', 'name', 'saas', 'a@b.c');
-    await service.addUserToOrg('u1', 'inv', 'org', 'ADMIN');
-    await service.getOrgById('org');
-    await service.getOrgByIdWithSubscription('org');
-    await service.getOrgByApiKey('key');
-    await service.getUserOrg('u1');
-    await service.getUserOrgByOrganization('u1', 'org');
-    await service.updateApiKey('org');
-    await service.getTeam('org');
-    await service.setStreak('org', 'start');
-    await service.getOrgByCustomerId('cus_1');
-    await service.disableOrEnableNonSuperAdminUsers('org', true);
-    await service.getShortlinkPreference('org');
-    await service.updateShortlinkPreference('org', 'DUB' as never);
+    await (service as any)[method](...args);
 
-    expect(organizationRepository.createMaxUser).toHaveBeenCalledWith(
-      'id',
-      'name',
-      'saas',
-      'a@b.c'
-    );
-    expect(organizationRepository.addUserToOrg).toHaveBeenCalledWith(
-      'u1',
-      'inv',
-      'org',
-      'ADMIN'
-    );
-    expect(organizationRepository.setStreak).toHaveBeenCalledWith(
-      'org',
-      'start'
-    );
-    expect(
-      organizationRepository.disableOrEnableNonSuperAdminUsers
-    ).toHaveBeenCalledWith('org', true);
-    expect(
-      organizationRepository.updateShortlinkPreference
-    ).toHaveBeenCalledWith('org', 'DUB');
+    expect((organizationRepository as any)[method]).toHaveBeenCalledWith(...args);
   });
 
   it('reduces the super admin lookup to a boolean', async () => {
