@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
@@ -47,6 +48,10 @@ export const workflowBundlerOptions = {
   }),
 };
 
+// The test-server binary defaults to the system temp directory, which CI
+// cannot cache. Pinning it inside the repo makes the cache step meaningful.
+export const testServerDownloadDir = resolve(root, '.cache/temporal-test-server');
+
 export const workflowsPath = resolve(
   root,
   'apps/orchestrator/src/workflows/post-workflows/post.workflow.v1.1.2.ts'
@@ -58,7 +63,12 @@ let environment: TestWorkflowEnvironment | undefined;
 let bundle: Awaited<ReturnType<typeof bundleWorkflowCode>> | undefined;
 
 export async function startTestEnvironment() {
-  environment ??= await TestWorkflowEnvironment.createTimeSkipping();
+  // The server refuses to start if the download directory does not exist.
+  mkdirSync(testServerDownloadDir, { recursive: true });
+
+  environment ??= await TestWorkflowEnvironment.createTimeSkipping({
+    server: { executable: { type: 'cached-download', downloadDir: testServerDownloadDir } },
+  });
   // Bundled once per run rather than once per Worker.create: webpack is by far
   // the slowest part of this tier.
   bundle ??= await bundleWorkflowCode({

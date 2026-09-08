@@ -132,13 +132,11 @@ export default defineConfig(async () => ({
           setupFiles: ['./vitest/setup/integration.setup.ts'],
           // Every test shares one Postgres database whose schema is applied
           // with `prisma db push` (the project has no migrations), so running
-          // files in parallel would mean cross-test data races.
+          // files in parallel means cross-test data races: one file's
+          // resetDatabase() truncates mid-way through another file's factory
+          // call and fails with a foreign-key violation.
           pool: 'forks',
-          poolOptions: { forks: { singleFork: true } },
           isolate: true,
-          // Not just singleFork: without this, files still interleave, and one
-          // file's resetDatabase() truncates mid-way through another file's
-          // factory call - which surfaces as a foreign-key violation.
           fileParallelism: false,
           sequence: { concurrent: false, shuffle: false },
           testTimeout: 30_000,
@@ -155,10 +153,10 @@ export default defineConfig(async () => ({
           globals: true,
           include: ['tests/workflows/**/*.spec.ts'],
           setupFiles: ['./vitest/setup/workflows.setup.ts'],
-          // TestWorkflowEnvironment spawns a native test-server binary and
-          // webpack-bundles the workflow code. Both are slow and singleton-ish.
+          // A single shared TestWorkflowEnvironment and one webpack bundle are
+          // reused across the file, so files must not run in parallel.
           pool: 'forks',
-          poolOptions: { forks: { singleFork: true } },
+          fileParallelism: false,
           testTimeout: 120_000,
           hookTimeout: 180_000,
           teardownTimeout: 30_000,

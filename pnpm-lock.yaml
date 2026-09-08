@@ -678,9 +678,6 @@ importers:
       '@reportportal/agent-js-vitest':
         specifier: 5.3.0
         version: 5.3.0
-      '@reportportal/client-javascript':
-        specifier: 5.6.0
-        version: 5.6.0
       '@svgr/webpack':
         specifier: ^8.0.1
         version: 8.1.0(typescript@5.5.4)
@@ -6729,10 +6726,6 @@ packages:
   '@reportportal/client-javascript@5.5.12':
     resolution: {integrity: sha512-Snl8aOtKSRRy6oCWB5Wc4zS1PxNnFsFRnnDD9xZkUzPqOuF+mv/H/FVcGBmdXsnNUMkLJXLqgl+AY8BF9yV5oQ==}
     engines: {node: '>=14.17.0'}
-
-  '@reportportal/client-javascript@5.6.0':
-    resolution: {integrity: sha512-BLW3Vcti+PItXZbY23Tycu4FE91v5ZVOj5qEJRarNd2yCgXMjhbKjE7VYLKvZDi3PZmcW4eddLwKJD9J2FT6TA==}
-    engines: {node: '>=16.0.0'}
 
   '@rolldown/binding-android-arm64@1.2.4':
     resolution: {integrity: sha512-jHC2cnyKz5xU2fhECtFl8OZ83cYNt13GZQD+0uMJ/X3o+ijmd56okHhTUwxVSHPx1IRVIJEZ1/1pPzeLCU6XKA==}
@@ -25306,19 +25299,6 @@ snapshots:
       - supports-color
 
   '@reportportal/client-javascript@5.5.12':
-    dependencies:
-      axios: 1.19.0(debug@4.4.3)
-      axios-retry: 4.5.0(axios@1.19.0)
-      glob: 13.0.6
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
-      ini: 2.0.0
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-
-  '@reportportal/client-javascript@5.6.0':
     dependencies:
       axios: 1.19.0(debug@4.4.3)
       axios-retry: 4.5.0(axios@1.19.0)

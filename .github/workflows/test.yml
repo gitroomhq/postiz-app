@@ -52,14 +52,11 @@ jobs:
       launch_id: ${{ steps.start.outputs.launch_id }}
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      # Only the ReportPortal client is needed here, not the whole workspace.
-      - run: pnpm install --frozen-lockfile --filter . --prod=false --ignore-scripts
+      # launch.mjs uses plain fetch, so no dependency install is needed - which
+      # also keeps the rest of the matrix from queueing behind one small script.
       - id: start
         run: echo "launch_id=$(node tools/reportportal/launch.mjs start)" >> "$GITHUB_OUTPUT"
 
@@ -301,5 +298,7 @@ jobs:
       RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
       - run: node tools/reportportal/launch.mjs finish

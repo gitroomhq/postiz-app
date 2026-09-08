@@ -274,7 +274,6 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@reportportal/agent-js-playwright": "5.4.2",
     "@reportportal/agent-js-vitest": "5.3.0",
-    "@reportportal/client-javascript": "5.6.0",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "1.9.2",
     "@swc/cli": "0.3.14",
