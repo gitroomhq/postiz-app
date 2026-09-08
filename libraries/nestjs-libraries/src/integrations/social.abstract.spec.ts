@@ -306,3 +306,315 @@ describe('SocialAbstract.fetch error classification', () => {
     expect(error.message).toBe('Unknown Error');
   });
 });
+
+describe('SocialAbstract defaults', () => {
+  class Bare extends SocialAbstract {
+    identifier = 'bare';
+  }
+  const provider = new Bare();
+
+  it('classifies nothing, so a provider that overrides nothing falls through', () => {
+    expect(provider.handleErrors('anything', 500)).toBeUndefined();
+  });
+
+  it('accepts any media, so validation is opt-in per provider', async () => {
+    await expect(provider.checkValidity([[{ path: '/a.jpg' }]], {}, [])).resolves.toBe(true);
+  });
+
+  it('reports no mention support', async () => {
+    await expect(
+      provider.mention('token', { query: 'x' }, 'id', {} as never)
+    ).resolves.toEqual({ none: true });
+  });
+
+  it.each([
+    ['checkPostStatus'],
+    ['finalizePost'],
+  ])('fails loudly when %s is reached without an override', async (method) => {
+    // A provider that returns `pending` without implementing these would
+    // otherwise complete with a bogus releaseURL on the first real post.
+    await expect(
+      (provider as any)[method]('token', {}, {} as never)
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+
+  it.each([
+    ['true', true],
+    ['TRUE', true],
+    ['false', false],
+    ['anything else', false],
+  ])('reads the string %j from a settings form as %s', (value, expected) => {
+    // Settings arrive from a form as strings; treating "false" as truthy is
+    // how a disabled option ends up enabled on the platform.
+    expect((provider as any).assetBoolean(value)).toBe(expected);
+  });
+
+  it('passes a real boolean through', () => {
+    expect((provider as any).assetBoolean(true)).toBe(true);
+    expect((provider as any).assetBoolean(false)).toBe(false);
+  });
+
+  it('treats a missing value as false', () => {
+    expect((provider as any).assetBoolean(undefined as never)).toBe(false);
+  });
+});
+
+describe('SocialAbstract.mediaSize', () => {
+  class Bare extends SocialAbstract {
+    identifier = 'bare';
+  }
+  const provider = new Bare();
+
+  const head = (init: ResponseInit & { length?: string } = {}) => {
+    const { length, ...rest } = init;
+    return new Response(null, {
+      ...rest,
+      headers: length === undefined ? {} : { 'content-length': length },
+    });
+  };
+
+  it('reads the length from a HEAD request for a remote file', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => head({ status: 200, length: '2048' })));
+
+    await expect((provider as any).mediaSize('https://media.test/a.mp4')).resolves.toBe(2048);
+  });
+
+  it('asks for identity encoding so the size matches the bytes a GET streams', async () => {
+    const fetchMock = vi.fn(async (..._args: any[]) => head({ status: 200, length: '10' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await (provider as any).mediaSize('https://media.test/a.mp4');
+
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      method: 'HEAD',
+      headers: { 'accept-encoding': 'identity' },
+    });
+  });
+
+  it('refuses a content-length that came with a failed HEAD', async () => {
+    // A 404 page has a length too; using it would poison every chunk offset.
+    vi.stubGlobal('fetch', vi.fn(async () => head({ status: 404, length: '57' })));
+
+    await expect(
+      (provider as any).mediaSize('https://media.test/a.mp4')
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+
+  it.each([
+    ['a missing length', undefined],
+    ['a zero length', '0'],
+    ['a non-numeric length', 'lots'],
+  ])('refuses %s', async (_label, length) => {
+    vi.stubGlobal('fetch', vi.fn(async () => head({ status: 200, length })));
+
+    await expect(
+      (provider as any).mediaSize('https://media.test/a.mp4')
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+});
+
+describe('SocialAbstract.mediaChunk', () => {
+  class Bare extends SocialAbstract {
+    identifier = 'bare';
+  }
+  const provider = new Bare();
+
+  it('returns the requested byte range', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('abcdefgh', { status: 206 }))
+    );
+
+    const chunk = await (provider as any).mediaChunk('https://media.test/a.mp4', 0, 7);
+
+    expect(chunk.toString()).toBe('abcdefgh');
+  });
+
+  it('refuses a server that ignored the range header', async () => {
+    // Buffering the body here would load the whole file and upload corrupt
+    // chunks at every offset but the first.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('the whole file', { status: 200 }))
+    );
+
+    const error = await (provider as any)
+      .mediaChunk('https://media.test/a.mp4', 10, 20)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(BadBody);
+    expect(error.message).toContain('range request');
+  });
+});
+
+describe('SocialAbstract.mediaStream', () => {
+  class Bare extends SocialAbstract {
+    identifier = 'bare';
+  }
+  const provider = new Bare();
+
+  it('streams a remote file with identity encoding', async () => {
+    const fetchMock = vi.fn(async (..._args: any[]) => new Response('bytes', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const stream = await (provider as any).mediaStream('https://media.test/a.mp4');
+
+    expect(typeof stream.pipe).toBe('function');
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      headers: { 'accept-encoding': 'identity' },
+    });
+  });
+
+  it('refuses a media url that does not answer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 500 })));
+
+    await expect(
+      (provider as any).mediaStream('https://media.test/a.mp4')
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+});
+
+describe('SocialAbstract.runStreamedUpload', () => {
+  class Classifying extends SocialAbstract {
+    identifier = 'classifying';
+    override handleErrors(body: string) {
+      if (body.includes('slow down')) return { type: 'retry' as const, value: 'Slow down' };
+      if (body.includes('capped')) return { type: 'disconnect' as const, value: 'Capped' };
+      if (body.includes('expired')) return { type: 'refresh-token' as const, value: 'Expired' };
+      return undefined;
+    }
+  }
+  const provider = new Classifying();
+
+  const responseError = (status: number, data: unknown) =>
+    Object.assign(new Error('request failed'), { response: { status, data } });
+
+  it('returns the value of a successful upload', async () => {
+    await expect(
+      (provider as any).runStreamedUpload(async () => 'uploaded')
+    ).resolves.toBe('uploaded');
+  });
+
+  it('rethrows an error that carries no response, untouched', async () => {
+    const original = new Error('socket hang up');
+
+    // Temporal's own retry policy should keep handling these.
+    await expect((provider as any).runStreamedUpload(async () => { throw original; }))
+      .rejects.toBe(original);
+  });
+
+  it('rebuilds the request on a retry rather than replaying a spent stream', async () => {
+    let attempt = 0;
+    const func = vi.fn(async () => {
+      if (attempt++ === 0) throw responseError(429, 'too many');
+      return 'uploaded';
+    });
+
+    await expect((provider as any).runStreamedUpload(func)).resolves.toBe('uploaded');
+    expect(func).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries an unclassified 500', async () => {
+    const func = vi.fn(async () => {
+      throw responseError(500, 'boom');
+    });
+
+    await expect((provider as any).runStreamedUpload(func)).rejects.toBeInstanceOf(BadBody);
+    expect(func).toHaveBeenCalledTimes(4);
+  });
+
+  it('retries a body the provider marks retryable', async () => {
+    const func = vi.fn(async () => {
+      throw responseError(400, 'slow down');
+    });
+
+    await expect((provider as any).runStreamedUpload(func)).rejects.toBeInstanceOf(BadBody);
+    expect(func).toHaveBeenCalledTimes(4);
+  });
+
+  it('disconnects the channel when the provider says so', async () => {
+    await expect(
+      (provider as any).runStreamedUpload(async () => {
+        throw responseError(400, 'capped');
+      })
+    ).rejects.toBeInstanceOf(Disconnect);
+  });
+
+  it('asks for a reconnect on a classified token failure', async () => {
+    await expect(
+      (provider as any).runStreamedUpload(async () => {
+        throw responseError(400, 'expired');
+      })
+    ).rejects.toBeInstanceOf(RefreshToken);
+  });
+
+  it('treats an unclassified 401 as a token failure', async () => {
+    await expect(
+      (provider as any).runStreamedUpload(async () => {
+        throw responseError(401, 'nope');
+      })
+    ).rejects.toBeInstanceOf(RefreshToken);
+  });
+
+  it('reports anything else as a terminal failure', async () => {
+    await expect(
+      (provider as any).runStreamedUpload(async () => {
+        throw responseError(422, { message: 'unprocessable' });
+      })
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+});
+
+describe('SocialAbstract.runInConcurrent', () => {
+  class Classifying extends SocialAbstract {
+    identifier = 'classifying';
+    override handleErrors(body: string) {
+      if (body.includes('expired')) return { type: 'refresh-token' as const, value: 'Expired' };
+      if (body.includes('capped')) return { type: 'disconnect' as const, value: 'Capped' };
+      return undefined;
+    }
+  }
+  const provider = new Classifying();
+
+  it('returns the value when nothing went wrong', async () => {
+    await expect(provider.runInConcurrent(async () => ({ ok: true }))).resolves.toEqual({
+      ok: true,
+    });
+  });
+
+  it('turns a classified token failure into a RefreshToken', async () => {
+    await expect(
+      provider.runInConcurrent(async () => {
+        throw { message: 'expired' };
+      })
+    ).rejects.toBeInstanceOf(RefreshToken);
+  });
+
+  it('turns a classified cap into a Disconnect', async () => {
+    await expect(
+      provider.runInConcurrent(async () => {
+        throw { message: 'capped' };
+      })
+    ).rejects.toBeInstanceOf(Disconnect);
+  });
+
+  it('cannot classify a thrown Error, because JSON.stringify empties it', async () => {
+    // Characterisation. runInConcurrent classifies on safeStringify(err), and
+    // an Error serialises to "{}" - so a provider that throws `new Error(...)`
+    // here always lands on BadBody, never on refresh-token or disconnect,
+    // however specific its message is.
+    await expect(
+      provider.runInConcurrent(async () => {
+        throw new Error('expired');
+      })
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+
+  it('reports an unclassified failure as a terminal one', async () => {
+    await expect(
+      provider.runInConcurrent(async () => {
+        throw new Error('something new');
+      })
+    ).rejects.toBeInstanceOf(BadBody);
+  });
+});

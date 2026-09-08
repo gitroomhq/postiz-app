@@ -2,10 +2,16 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
+import axios from 'axios';
+import sharp from 'sharp';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import { IsDefined, IsString } from 'class-validator';
+
 import { PostsService } from './posts.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 dayjs.extend(utc);
+dayjs.extend(isoWeek);
 
 // this.getMissingContent / checkPostAnalytics sleep 10s after a token refresh
 // when the provider asks for it; never let real time into a unit test.
@@ -36,6 +42,7 @@ const mocks = () => ({
     changeDate: vi.fn(),
     updateImages: vi.fn(),
     deletePost: vi.fn(),
+    getPostsCountsByDates: vi.fn(async () => []),
   },
   integrationManager: {
     getSocialIntegration: vi.fn(() => provider()),
@@ -45,6 +52,8 @@ const mocks = () => ({
     getIntegrationById: vi.fn(),
     disconnectChannel: vi.fn(),
     getPlugs: vi.fn(async () => []),
+    getIntegrationsList: vi.fn(async () => []),
+    findFreeDateTime: vi.fn(async () => []),
   },
   mediaService: { getMediaById: vi.fn() },
   shortLinkService: {
@@ -1235,5 +1244,337 @@ describe('PostsService thin repository delegates', () => {
     postRepository.getPost.mockResolvedValue(null);
 
     await expect(service.getPostsRecursively('root')).resolves.toEqual([]);
+  });
+});
+
+describe('PostsService.getPostGroupDebugExport', () => {
+  const groupRows = () => [
+    {
+      id: 'root',
+      parentPostId: null,
+      group: 'g-1',
+      state: 'ERROR',
+      error: 'boom',
+      content: 'the main post',
+      image: '[{"path":"/a.jpg"}]',
+      delay: 0,
+      settings: '{"spoilerText":"heads up"}',
+      publishDate: new Date('2024-05-01T09:00:00.000Z'),
+      tags: [{ tag: { id: 't1', name: 'Launch' } }],
+      integration: { providerIdentifier: 'mastodon', name: 'My channel' },
+    },
+    {
+      id: 'c1',
+      parentPostId: 'root',
+      content: 'the comment',
+      image: '[]',
+      delay: 60,
+      integration: { providerIdentifier: 'mastodon' },
+    },
+  ];
+
+  it('exports the group as a body that can be replayed on another instance', async () => {
+    const { service, postRepository } = build();
+    postRepository.getPostsByGroup.mockResolvedValue(groupRows() as never);
+
+    const exported = await service.getPostGroupDebugExport('org', 'g-1');
+
+    expect(exported).toMatchObject({
+      type: 'draft',
+      shortLink: false,
+      date: '2024-05-01T09:00:00.000Z',
+      tags: [{ value: 't1', label: 'Launch' }],
+    });
+    // The local integration id is meaningless elsewhere, so it is deliberately
+    // a placeholder rather than a real id.
+    expect(exported.posts[0].integration).toEqual({
+      id: 'REPLACE_WITH_LOCAL_INTEGRATION_ID',
+    });
+    expect(exported.posts[0].value).toEqual([
+      { content: 'the main post', image: [{ path: '/a.jpg' }], delay: 0 },
+      { content: 'the comment', image: [], delay: 60 },
+    ]);
+  });
+
+  it('carries the failure detail that makes the export worth having', async () => {
+    const { service, postRepository } = build();
+    postRepository.getPostsByGroup.mockResolvedValue(groupRows() as never);
+    postRepository.getErrorsByPostIds.mockResolvedValue([
+      {
+        message: 'rejected',
+        platform: 'mastodon',
+        body: '{}',
+        createdAt: new Date('2024-05-01T09:00:05.000Z'),
+      },
+    ] as never);
+
+    const exported = await service.getPostGroupDebugExport('org', 'g-1');
+
+    expect(exported._debug).toMatchObject({
+      providerIdentifier: 'mastodon',
+      state: 'ERROR',
+      error: 'boom',
+      originalGroup: 'g-1',
+      errors: [{ message: 'rejected', platform: 'mastodon' }],
+    });
+  });
+
+  it('exports an untagged post with an empty tag list', async () => {
+    const { service, postRepository } = build();
+    const [root, comment] = groupRows();
+    postRepository.getPostsByGroup.mockResolvedValue([
+      { ...root, tags: undefined },
+      comment,
+    ] as never);
+
+    await expect(service.getPostGroupDebugExport('org', 'g-1')).resolves.toMatchObject({
+      tags: [],
+    });
+  });
+});
+
+describe('PostsService.getPostsByGroup', () => {
+  it('returns the whole thread with its settings and channel', async () => {
+    const { service, postRepository } = build();
+    postRepository.getPostsByGroup.mockResolvedValue([
+      {
+        id: 'root',
+        parentPostId: null,
+        group: 'g-1',
+        image: '[]',
+        settings: '{"spoilerText":"x"}',
+        integrationId: 'i1',
+        integration: { picture: 'https://pic.test' },
+      },
+      { id: 'c1', parentPostId: 'root', image: '[]' },
+    ] as never);
+
+    await expect(service.getPostsByGroup('org', 'g-1')).resolves.toMatchObject({
+      group: 'g-1',
+      integration: 'i1',
+      integrationPicture: 'https://pic.test',
+      settings: { spoilerText: 'x' },
+      posts: [{ id: 'root' }, { id: 'c1' }],
+    });
+  });
+});
+
+describe('PostsService.getPost', () => {
+  it('walks the thread and resolves each entry’s media', async () => {
+    const { service, postRepository } = build();
+    postRepository.getPost
+      .mockResolvedValueOnce({
+        id: 'root',
+        image: '[]',
+        settings: '{}',
+        integrationId: 'i1',
+        integration: { picture: 'https://pic.test' },
+        group: 'g-1',
+        childrenPost: [{ id: 'c1' }],
+      } as never)
+      .mockResolvedValueOnce({ id: 'c1', image: '[]', childrenPost: [] } as never);
+
+    await expect(service.getPost('org', 'root')).resolves.toMatchObject({
+      group: 'g-1',
+      integration: 'i1',
+      posts: [{ id: 'root' }, { id: 'c1' }],
+    });
+  });
+});
+
+describe('PostsService.getStatistics', () => {
+  it('reports the click tracking of every message in the thread', async () => {
+    const { service, postRepository, shortLinkService } = build();
+    postRepository.getPost
+      .mockResolvedValueOnce({ id: 'root', content: 'a', childrenPost: [{ id: 'c1' }] } as never)
+      .mockResolvedValueOnce({ id: 'c1', content: 'b', childrenPost: [] } as never);
+    shortLinkService.getStatistics.mockResolvedValue([{ short: 'x', clicks: 3 }] as never);
+
+    await expect(service.getStatistics('org', 'root')).resolves.toEqual({
+      clicks: [{ short: 'x', clicks: 3 }],
+    });
+    expect(shortLinkService.getStatistics).toHaveBeenCalledWith(['a', 'b']);
+  });
+});
+
+describe('PostsService.findFreeDateTime', () => {
+  it('returns the earliest free slot of the first day that has one', async () => {
+    const { service, integrationService, postRepository } = build();
+    integrationService.findFreeDateTime.mockResolvedValue([540, 720] as never);
+    postRepository.getPostsCountsByDates.mockResolvedValue([720, 540] as never);
+
+    const slot = await service.findFreeDateTime('org');
+
+    // 540 minutes past midnight is 09:00 - the smallest free slot wins.
+    expect(slot).toMatch(/T09:00:00$/);
+  });
+
+  it('moves to the next day when the whole day is taken', async () => {
+    const { service, integrationService, postRepository } = build();
+    integrationService.findFreeDateTime.mockResolvedValue([540] as never);
+    const counts = postRepository.getPostsCountsByDates;
+    counts.mockResolvedValueOnce([] as never).mockResolvedValueOnce([600] as never);
+
+    await expect(service.findFreeDateTime('org')).resolves.toMatch(/T10:00:00$/);
+    expect(counts).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('PostsService.generatePostsDraft', () => {
+  it('drafts one post per enabled channel, skipping reddit', async () => {
+    const { service, integrationService, postRepository, temporalService } = build();
+    integrationService.getIntegrationsList.mockResolvedValue([
+      { id: 'i1', providerIdentifier: 'mastodon', disabled: false },
+      { id: 'i2', providerIdentifier: 'reddit', disabled: false },
+      { id: 'i3', providerIdentifier: 'x', disabled: true },
+    ] as never);
+    postRepository.createOrUpdatePost.mockResolvedValue({ posts: [{ id: 'p', state: 'DRAFT' }] });
+    temporalService.client.getRawClient.mockReturnValue(temporalClient().raw);
+
+    await service.generatePostsDraft('org', {
+      week: dayjs.utc().isoWeek(),
+      year: dayjs.utc().add(1, 'year').year(),
+      posts: [{ list: [{ post: 'first' }, { post: 'second' }] }],
+      url: 'https://example.test/story',
+    } as never);
+
+    // Reddit needs a subreddit chosen by hand, and a disabled channel must not
+    // be drafted to at all.
+    expect(postRepository.createOrUpdatePost).toHaveBeenCalledOnce();
+    const [type, , , post] = postRepository.createOrUpdatePost.mock.calls[0];
+    expect(type).toBe('draft');
+    expect(post.settings.__type).toBe('mastodon');
+    expect(post.value.map((v: { content: string }) => v.content)).toEqual([
+      'first',
+      'second',
+      'Check out the full story here:\nhttps://example.test/story',
+    ]);
+  });
+});
+
+describe('PostsService.updateMedia image conversion', () => {
+  it('converts a png to jpeg and writes the new path back', async () => {
+    const { service, postRepository } = build();
+    vi.stubEnv('FRONTEND_URL', 'https://app.test');
+    vi.stubEnv('NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY', 'uploads');
+    vi.stubEnv('UPLOAD_DIRECTORY', '/srv/uploads');
+
+    const png = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: '#ff0000' },
+    })
+      .png()
+      .toBuffer();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(png, { status: 200 }))
+    );
+    vi.spyOn(axios, 'get').mockResolvedValue({ data: png } as never);
+    const uploadFile = vi.fn(async () => ({ path: '/converted.jpg', originalname: 'converted.jpg' }));
+    (service as never as { storage: unknown }).storage = { uploadFile };
+
+    const [image] = await service.updateMedia('p1', [{ path: '/a.png' }], true);
+
+    // Instagram and a few others reject png outright, so the conversion has to
+    // happen before the post is built.
+    expect(uploadFile).toHaveBeenCalledOnce();
+    expect(image).toMatchObject({
+      url: 'https://app.test/uploads/converted.jpg',
+      path: '/srv/uploads/converted.jpg',
+      name: 'converted.jpg',
+    });
+    expect(postRepository.updateImages).toHaveBeenCalled();
+  });
+
+  it('leaves a jpeg alone even when conversion is requested', async () => {
+    const { service, postRepository } = build();
+    const get = vi.spyOn(axios, 'get');
+
+    const [image] = await service.updateMedia('p1', [{ path: '/a.jpg' }], true);
+
+    expect(get).not.toHaveBeenCalled();
+    expect(image).toMatchObject({ path: expect.stringContaining('/a.jpg') });
+    expect(postRepository.updateImages).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostsService.validatePosts settings validation', () => {
+  class RequiredTitleDto {
+    @IsDefined({ message: 'Title is required' })
+    @IsString()
+    title!: string;
+  }
+
+  const integration = {
+    id: 'i1',
+    name: 'My channel',
+    providerIdentifier: 'mastodon',
+    deletedAt: null,
+    additionalSettings: '[]',
+  };
+
+  it('reports the first message from the provider settings DTO', async () => {
+    const { service, integrationService, integrationManager } = build();
+    integrationService.getIntegrationById.mockResolvedValue(integration);
+    integrationManager.getSocialIntegration.mockReturnValue(
+      provider({ dto: RequiredTitleDto }) as never
+    );
+
+    const [result] = await service.validatePosts('org', [
+      { integration: { id: 'i1' }, settings: {}, value: [{ content: 'hi' }] },
+    ]);
+
+    expect(result.valid).toBe(false);
+    expect(result.settingsError).toBe('Title is required');
+  });
+
+  it('accepts settings the provider DTO is happy with', async () => {
+    const { service, integrationService, integrationManager } = build();
+    integrationService.getIntegrationById.mockResolvedValue(integration);
+    integrationManager.getSocialIntegration.mockReturnValue(
+      provider({ dto: RequiredTitleDto }) as never
+    );
+
+    const [result] = await service.validatePosts('org', [
+      { integration: { id: 'i1' }, settings: { title: 'A title' }, value: [{ content: 'hi' }] },
+    ]);
+
+    expect(result).toMatchObject({ valid: true, settingsError: '' });
+  });
+});
+
+describe('PostsService thin repository delegates', () => {
+  it.each([
+    ['searchForMissingThreeHoursPosts', [], 'searchForMissingThreeHoursPosts'],
+    ['countPostsFromDay', ['org', new Date()], 'countPostsFromDay'],
+    ['getPostByForWebhookId', ['p1'], 'getPostByForWebhookId'],
+    ['findAllExistingCategories', [], 'findAllExistingCategories'],
+    ['findAllExistingTopicsOfCategory', ['cat'], 'findAllExistingTopicsOfCategory'],
+    ['findPopularPosts', ['cat', 'topic'], 'findPopularPosts'],
+    ['createPopularPosts', [{ category: 'c' }], 'createPopularPosts'],
+    ['getComments', ['p1'], 'getComments'],
+    ['getTags', ['org'], 'getTags'],
+    ['createTag', ['org', { name: 'x' }], 'createTag'],
+    ['editTag', ['t1', 'org', { name: 'x' }], 'editTag'],
+    ['deleteTag', ['t1', 'org'], 'deleteTag'],
+    ['createComment', ['org', 'u1', 'p1', 'hi'], 'createComment'],
+    ['getPostById', ['p1', 'org'], 'getPostById'],
+    ['updateReleaseId', ['org', 'p1', 'r1'], 'updateReleaseId'],
+    ['updatePost', ['p1', 'ext', 'https://x'], 'updatePost'],
+    ['getOldPosts', ['org', '2024-01-01'], 'getOldPosts'],
+    ['changeState', ['p1', 'PUBLISHED'], 'changeState'],
+    ['getPosts', ['org', {}], 'getPosts'],
+  ])('%s reaches the repository', async (method, args, repoMethod) => {
+    const { service, postRepository } = build();
+    (postRepository as Record<string, unknown>)[repoMethod] = vi.fn(async () => 'ok');
+
+    await expect((service as any)[method](...args)).resolves.toBe('ok');
+  });
+
+  it('asks openai to split a long post', async () => {
+    const { service, openaiService } = build();
+    openaiService.separatePosts.mockResolvedValue(['a', 'b'] as never);
+
+    await expect(service.separatePosts('a long post', 280)).resolves.toEqual(['a', 'b']);
+    expect(openaiService.separatePosts).toHaveBeenCalledWith('a long post', 280);
   });
 });

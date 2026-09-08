@@ -1,5 +1,8 @@
 import { IntegrationService } from './integration.service';
-import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  NotEnoughScopes,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 const mocks = () => ({
   integrationRepository: {
@@ -13,6 +16,12 @@ const mocks = () => ({
     refreshNeeded: vi.fn(),
     enableChannel: vi.fn(async () => ({ id: 'i1' })),
     getPlug: vi.fn(),
+    updateIntegration: vi.fn(async (..._args: any[]) => ({})),
+    checkForDeletedOnceAndUpdate: vi.fn(),
+    getPostingTimes: vi.fn(async () => []),
+    loadExisingData: vi.fn(async () => []),
+    createOrUpdatePlug: vi.fn(async () => ({ activated: true })),
+    changePlugActivation: vi.fn(async () => ({ id: 'plug-1' })),
   },
   autopostsRepository: { getAutoposts: vi.fn(async () => []) },
   integrationManager: {
@@ -538,5 +547,338 @@ describe('IntegrationService.processPlugs', () => {
     await expect(
       service.processPlugs({ plugId: 'x', postId: 'p1', delay: 0, totalRuns: 1, currentRun: 1 })
     ).resolves.toBe(true);
+  });
+});
+
+describe('IntegrationService.saveProviderPage', () => {
+  const inBetween = {
+    id: 'i1',
+    providerIdentifier: 'facebook',
+    inBetweenSteps: true,
+    token: 'user-token',
+  };
+
+  it('refuses a channel that does not exist', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(null);
+
+    await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow(
+      'Integration not found'
+    );
+  });
+
+  it('refuses a channel that is not waiting on a page choice', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...inBetween,
+      inBetweenSteps: false,
+    } as never);
+
+    await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow('Invalid request');
+  });
+
+  it('refuses a provider that has no page selection', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(inBetween as never);
+    integrationManager.getSocialIntegration.mockReturnValue({} as never);
+
+    await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow(
+      'Provider does not support page selection'
+    );
+  });
+
+  it('swaps the channel over to the chosen page and its own token', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(inBetween as never);
+    integrationRepository.updateIntegration.mockResolvedValue({} as never);
+    integrationRepository.checkForDeletedOnceAndUpdate = vi.fn() as never;
+    integrationManager.getSocialIntegration.mockReturnValue({
+      fetchPageInformation: async () => ({
+        id: 'page-1',
+        name: 'The Page',
+        picture: 'https://pic.test',
+        access_token: 'page-token',
+        username: 'thepage',
+      }),
+    } as never);
+
+    await expect(service.saveProviderPage('org', 'i1', { page: 'page-1' })).resolves.toEqual({
+      success: true,
+    });
+
+    // Keeping the user token here is what makes every later publish fail with
+    // a permissions error the user cannot act on.
+    expect(integrationRepository.updateIntegration).toHaveBeenCalledWith('i1', {
+      picture: 'https://pic.test',
+      internalId: 'page-1',
+      organizationId: 'org',
+      name: 'The Page',
+      inBetweenSteps: false,
+      token: 'page-token',
+      profile: 'thepage',
+    });
+  });
+});
+
+describe('IntegrationService.checkAnalytics', () => {
+  const org = { id: 'org' } as never;
+  const social = {
+    id: 'i1',
+    type: 'social',
+    internalId: 'ext-1',
+    token: 'token',
+    providerIdentifier: 'mastodon',
+    tokenExpiration: new Date(Date.now() + 86_400_000),
+  };
+
+  it('refuses an unknown channel', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(null);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).rejects.toThrow('Invalid integration');
+  });
+
+  it('returns nothing for a non-social channel', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...social,
+      type: 'article',
+    } as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toEqual([]);
+  });
+
+  it('returns nothing for a provider with no analytics', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(social as never);
+    integrationManager.getSocialIntegration.mockReturnValue({} as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toEqual([]);
+  });
+
+  it('asks the provider and caches the answer', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(social as never);
+    const analytics = vi.fn(async () => [{ label: 'Followers', percentageChange: 0, data: [] }]);
+    integrationManager.getSocialIntegration.mockReturnValue({ analytics } as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toHaveLength(1);
+    expect(analytics).toHaveBeenCalledWith('ext-1', 'token', 7);
+
+    // The second read is served from the cache, so the rate-limited provider
+    // is not asked again for the same window.
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toHaveLength(1);
+    expect(analytics).toHaveBeenCalledOnce();
+  });
+
+  it('refreshes an expired token before asking', async () => {
+    const { service, integrationRepository, integrationManager, refreshIntegrationService } =
+      build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...social,
+      tokenExpiration: new Date(Date.now() - 1000),
+    } as never);
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: 'fresh' } as never);
+    const analytics = vi.fn(async () => []);
+    integrationManager.getSocialIntegration.mockReturnValue({ analytics } as never);
+
+    await service.checkAnalytics(org, 'i1', '30');
+
+    expect(analytics).toHaveBeenCalledWith('ext-1', 'fresh', 30);
+  });
+
+  it('returns nothing when the refresh itself fails', async () => {
+    const { service, integrationRepository, integrationManager, refreshIntegrationService } =
+      build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...social,
+      tokenExpiration: new Date(Date.now() - 1000),
+    } as never);
+    refreshIntegrationService.refresh.mockResolvedValue(false as never);
+    integrationManager.getSocialIntegration.mockReturnValue({ analytics: vi.fn() } as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toEqual([]);
+  });
+
+  it('disconnects the channel when the refresh returns no token', async () => {
+    const { service, integrationRepository, integrationManager, refreshIntegrationService } =
+      build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...social,
+      tokenExpiration: new Date(Date.now() - 1000),
+    } as never);
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: '' } as never);
+    integrationManager.getSocialIntegration.mockReturnValue({ analytics: vi.fn() } as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '7')).resolves.toEqual([]);
+    expect(integrationRepository.disconnectChannel).toHaveBeenCalledOnce();
+  });
+
+  it('retries once with a forced refresh when the provider says the token expired', async () => {
+    const { service, integrationRepository, integrationManager, refreshIntegrationService } =
+      build();
+    integrationRepository.getIntegrationById.mockResolvedValue(social as never);
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: 'fresh' } as never);
+    const analytics = vi
+      .fn()
+      .mockRejectedValueOnce(new RefreshToken('mastodon', 'expired', '{}'))
+      .mockResolvedValueOnce([{ label: 'Followers', percentageChange: 0, data: [] }]);
+    integrationManager.getSocialIntegration.mockReturnValue({ analytics } as never);
+
+    await expect(service.checkAnalytics(org, 'i1', '90')).resolves.toHaveLength(1);
+    expect(analytics).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('IntegrationService.processPlugs', () => {
+  const plug = (over: Record<string, unknown> = {}) => ({
+    id: 'plug-1',
+    plugFunction: 'repostPost',
+    data: '[{"name":"delay","value":60}]',
+    integration: { id: 'i1', providerIdentifier: 'mastodon' },
+    ...over,
+  });
+
+  it('flattens the stored plug fields into the arguments the provider expects', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getPlug.mockResolvedValue(plug() as never);
+    const repostPost = vi.fn(async () => true);
+    integrationManager.getSocialIntegration.mockReturnValue({ repostPost } as never);
+
+    await service.processPlugs({
+      plugId: 'plug-1',
+      postId: 'p1',
+      delay: 0,
+      totalRuns: 3,
+      currentRun: 1,
+    });
+
+    expect(repostPost).toHaveBeenCalledWith(plug().integration, 'p1', { delay: 60 });
+  });
+
+  it('reports done when the provider says the plug finished', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getPlug.mockResolvedValue(plug() as never);
+    integrationManager.getSocialIntegration.mockReturnValue({
+      repostPost: async () => true,
+    } as never);
+
+    await expect(
+      service.processPlugs({ plugId: 'plug-1', postId: 'p1', delay: 0, totalRuns: 3, currentRun: 1 })
+    ).resolves.toBe(true);
+  });
+
+  it('asks to be run again while runs remain', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getPlug.mockResolvedValue(plug() as never);
+    integrationManager.getSocialIntegration.mockReturnValue({
+      repostPost: async () => false,
+    } as never);
+
+    await expect(
+      service.processPlugs({ plugId: 'plug-1', postId: 'p1', delay: 0, totalRuns: 3, currentRun: 1 })
+    ).resolves.toBe(false);
+  });
+
+  it('stops on the last run even if the provider did not finish', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getPlug.mockResolvedValue(plug() as never);
+    integrationManager.getSocialIntegration.mockReturnValue({
+      repostPost: async () => false,
+    } as never);
+
+    await expect(
+      service.processPlugs({ plugId: 'plug-1', postId: 'p1', delay: 0, totalRuns: 3, currentRun: 3 })
+    ).resolves.toBe(true);
+  });
+});
+
+describe('IntegrationService.findFreeDateTime', () => {
+  it('merges the posting times of every channel, without duplicates', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getPostingTimes.mockResolvedValue([
+      { postingTimes: '[{"time":540},{"time":720}]' },
+      { postingTimes: '[{"time":720},{"time":1080}]' },
+    ] as never);
+
+    await expect(service.findFreeDateTime('org')).resolves.toEqual([540, 720, 1080]);
+  });
+
+  it('returns nothing when no channel has posting times', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.getPostingTimes.mockResolvedValue([] as never);
+
+    await expect(service.findFreeDateTime('org')).resolves.toEqual([]);
+  });
+});
+
+describe('IntegrationService.loadExisingData', () => {
+  it('returns only the ids that were not stored before', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.loadExisingData.mockResolvedValue([
+      { value: 'a' },
+      { value: 'c' },
+    ] as never);
+
+    // Re-running a plug over an id it already handled is how a follower gets
+    // messaged twice.
+    await expect(
+      service.loadExisingData('repostPost', 'i1', ['a', 'b', 'c', 'd'])
+    ).resolves.toEqual(['b', 'd']);
+  });
+});
+
+describe('IntegrationService plug management', () => {
+  it('reports the activation state back to the caller', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.createOrUpdatePlug.mockResolvedValue({ activated: true } as never);
+
+    await expect(
+      service.createOrUpdatePlug('org', 'i1', { func: 'repostPost', fields: [] } as never)
+    ).resolves.toEqual({ activated: true });
+  });
+
+  it('returns the plug id after an activation change', async () => {
+    const { service, integrationRepository } = build();
+    integrationRepository.changePlugActivation.mockResolvedValue({
+      id: 'plug-1',
+      integrationId: 'i1',
+      plugFunction: 'repostPost',
+    } as never);
+
+    await expect(service.changePlugActivation('org', 'plug-1', false)).resolves.toEqual({
+      id: 'plug-1',
+    });
+  });
+});
+
+describe('IntegrationService thin repository delegates', () => {
+  it.each([
+    ['getMentions', ['mastodon', 'q'], 'getMentions'],
+    ['insertMentions', ['mastodon', []], 'insertMentions'],
+    ['setTimes', ['org', 'i1', {}], 'setTimes'],
+    ['updateProviderSettings', ['org', 'i1', '[]'], 'updateProviderSettings'],
+    ['checkPreviousConnections', ['org', 'i1'], 'checkPreviousConnections'],
+    ['updateIntegrationGroup', ['org', 'i1', 'g'], 'updateIntegrationGroup'],
+    ['updateOnCustomerName', ['org', 'i1', 'name'], 'updateOnCustomerName'],
+    ['getIntegrationsList', ['org'], 'getIntegrationsList'],
+    ['getIntegrationForOrder', ['i1', 'o1', 'u1', 'org'], 'getIntegrationForOrder'],
+    ['updateNameAndUrl', ['i1', 'n', 'u'], 'updateNameAndUrl'],
+    ['getIntegrationById', ['org', 'i1'], 'getIntegrationById'],
+    ['refreshNeeded', ['org', 'i1'], 'refreshNeeded'],
+    ['setBetweenRefreshSteps', ['i1'], 'setBetweenRefreshSteps'],
+    ['disableChannel', ['org', 'i1'], 'disableChannel'],
+    ['getPostsForChannel', ['org', 'i1'], 'getPostsForChannel'],
+    ['deleteChannel', ['org', 'i1'], 'deleteChannel'],
+    ['disableIntegrations', ['org', 2], 'disableIntegrations'],
+    ['checkForDeletedOnceAndUpdate', ['org', 'p'], 'checkForDeletedOnceAndUpdate'],
+    ['customers', ['org'], 'customers'],
+    ['getPlugsByIntegrationId', ['org', 'i1'], 'getPlugsByIntegrationId'],
+    ['getPlugs', ['org', 'i1'], 'getPlugs'],
+  ])('%s reaches the repository', async (method, args, repoMethod) => {
+    const { service, integrationRepository } = build();
+    (integrationRepository as Record<string, unknown>)[repoMethod] = vi.fn(async () => 'ok');
+
+    await expect((service as any)[method](...args)).resolves.toBe('ok');
   });
 });

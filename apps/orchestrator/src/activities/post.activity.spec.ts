@@ -44,7 +44,7 @@ const mocks = () => ({
     processPlugs: vi.fn(),
     processInternalPlug: vi.fn(),
   },
-  refreshIntegrationService: { refresh: vi.fn() },
+  refreshIntegrationService: { refresh: vi.fn(), setBetweenSteps: vi.fn() },
   webhookService: { getWebhooks: vi.fn(async () => []) },
   temporalService: {
     client: {
@@ -502,5 +502,188 @@ describe('PostActivity thin delegates', () => {
     await activity.changeState('p1', State.ERROR, 'failed', '{}');
 
     expect(postService.changeState).toHaveBeenCalledWith('p1', State.ERROR, 'failed', '{}');
+  });
+});
+
+describe('PostActivity.postComment', () => {
+  const comments = [{ id: 'c1', content: 'a comment', settings: '{}', image: '[]' }] as never;
+
+  it('threads the comment onto the previous one', async () => {
+    const { activity, integrationManager, postService } = build();
+    const comment = vi.fn(async () => [{ id: 'c1', postId: 'x', status: 'success' }]);
+    integrationManager.getSocialIntegration.mockReturnValue(socialProvider({ comment }));
+    postService.updateMedia.mockResolvedValue([] as never);
+
+    await activity.postComment('p1', 'previous-comment', integration, comments);
+
+    expect(comment).toHaveBeenCalledWith(
+      'ext-1',
+      'p1',
+      'previous-comment',
+      'token',
+      [expect.objectContaining({ id: 'c1', message: 'a comment' })],
+      integration
+    );
+  });
+
+  it('resolves post references in a comment before sending it', async () => {
+    const { activity, integrationManager, postService } = build();
+    integrationManager.getSocialIntegration.mockReturnValue(
+      socialProvider({ comment: vi.fn(async () => []) })
+    );
+
+    await activity.postComment('p1', undefined, integration, comments);
+
+    expect(postService.updateTags).toHaveBeenCalledWith('org', comments);
+  });
+
+  it('applies the disconnect handling to a comment too', async () => {
+    const { activity, integrationManager, integrationService } = build();
+    integrationManager.getSocialIntegration.mockReturnValue(
+      socialProvider({
+        comment: async () => {
+          throw new Disconnect('tiktok', '{}', '{}', 'capped');
+        },
+      })
+    );
+
+    await expect(
+      activity.postComment('p1', undefined, integration, comments)
+    ).rejects.toBeInstanceOf(BadBody);
+    expect(integrationService.disconnectChannel).toHaveBeenCalledOnce();
+  });
+});
+
+describe('PostActivity token refresh', () => {
+  it('returns the refreshed credentials', async () => {
+    const { activity, refreshIntegrationService } = build();
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: 'fresh' } as never);
+
+    await expect(activity.refreshToken(integration)).resolves.toMatchObject({
+      accessToken: 'fresh',
+    });
+  });
+
+  it('reports failure when the refresh could not be done', async () => {
+    const { activity, refreshIntegrationService } = build();
+    refreshIntegrationService.refresh.mockResolvedValue(false as never);
+
+    await expect(activity.refreshToken(integration)).resolves.toBe(false);
+  });
+
+  it('waits for providers whose new token is not usable immediately', async () => {
+    const { activity, integrationManager, refreshIntegrationService } = build();
+    const { timer } = await import('@gitroom/helpers/utils/timer');
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: 'fresh' } as never);
+    integrationManager.getSocialIntegration.mockReturnValue(
+      socialProvider({ refreshWait: true })
+    );
+
+    await activity.refreshToken(integration);
+
+    // Publishing with a token the platform has not propagated yet fails the
+    // post for a reason nothing in the logs explains.
+    expect(timer).toHaveBeenCalledWith(10000);
+  });
+
+  it('parks the channel between steps when the refresh throws', async () => {
+    const { activity, refreshIntegrationService } = build();
+    refreshIntegrationService.refresh.mockRejectedValue(new Error('provider down'));
+
+    await expect(activity.refreshToken(integration)).resolves.toBe(false);
+    expect(refreshIntegrationService.setBetweenSteps).toHaveBeenCalledWith(integration);
+  });
+
+  it('passes the cause through so the user is told why', async () => {
+    const { activity, refreshIntegrationService } = build();
+    refreshIntegrationService.refresh.mockResolvedValue({ accessToken: 'fresh' } as never);
+
+    await activity.refreshTokenWithCause(integration, 'publish failed');
+
+    expect(refreshIntegrationService.refresh).toHaveBeenCalledWith(
+      integration,
+      'publish failed'
+    );
+  });
+
+  it('parks the channel with the cause when a caused refresh throws', async () => {
+    const { activity, refreshIntegrationService } = build();
+    refreshIntegrationService.refresh.mockRejectedValue(new Error('provider down'));
+
+    await expect(
+      activity.refreshTokenWithCause(integration, 'publish failed')
+    ).resolves.toBe(false);
+    expect(refreshIntegrationService.setBetweenSteps).toHaveBeenCalledWith(
+      integration,
+      'publish failed'
+    );
+  });
+});
+
+describe('PostActivity plug dispatch', () => {
+  it('hands a global plug run to the integration service', async () => {
+    const { activity, integrationService } = build();
+    integrationService.processPlugs.mockResolvedValue(true as never);
+    const data = { plugId: 'x', postId: 'p1', delay: 0, totalRuns: 3, currentRun: 1 };
+
+    await expect(activity.processPlug(data)).resolves.toBe(true);
+    expect(integrationService.processPlugs).toHaveBeenCalledWith(data);
+  });
+
+  it('hands an internal plug run to the integration service', async () => {
+    const { activity, integrationService } = build();
+    const data = {
+      post: 'p1',
+      originalIntegration: 'i1',
+      integration: 'i2',
+      plugName: 'repost',
+      orgId: 'org',
+      delay: 0,
+      information: {},
+    };
+
+    await activity.processInternalPlug(data);
+
+    expect(integrationService.processInternalPlug).toHaveBeenCalledWith(data);
+  });
+});
+
+describe('PostActivity.inAppNotification', () => {
+  it('forwards every argument the workflow passes', async () => {
+    const { activity, notificationService } = build();
+
+    await activity.inAppNotification('org', 'Subject', 'Body', true, false, 'fail');
+
+    expect(notificationService.inAppNotification).toHaveBeenCalledWith(
+      'org',
+      'Subject',
+      'Body',
+      true,
+      false,
+      'fail'
+    );
+  });
+});
+
+describe('PostActivity.getIntegrationById', () => {
+  it('reads the channel back through the integration service', async () => {
+    const { activity, integrationService } = build();
+    integrationService.getIntegrationById.mockResolvedValue({ id: 'i1' } as never);
+
+    await expect(activity.getIntegrationById('org', 'i1')).resolves.toEqual({ id: 'i1' });
+  });
+});
+
+describe('PostActivity.updatePost', () => {
+  it('records the released id and url against the post', async () => {
+    const { activity, postService } = build();
+
+    await activity.updatePost('p1', 'released-1', 'https://mastodon.test/@me/1');
+
+    expect(postService.updatePost).toHaveBeenCalledWith(
+      'p1',
+      'released-1',
+      'https://mastodon.test/@me/1'
+    );
   });
 });
