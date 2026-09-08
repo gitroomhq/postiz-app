@@ -15,6 +15,12 @@ const reportPortal =
   process.env.RP_PROJECT &&
   process.env.RP_API_KEY;
 
+// The ReportPortal client otherwise POSTs a telemetry event to
+// google-analytics.com when the launch starts. Mirrors the vitest reporters.
+if (reportPortal) {
+  process.env.REPORTPORTAL_CLIENT_JS_NO_ANALYTICS = '1';
+}
+
 export default defineConfig({
   testDir: './e2e/specs',
   outputDir: './test-results',

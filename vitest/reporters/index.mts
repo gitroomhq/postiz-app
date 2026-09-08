@@ -47,6 +47,38 @@ export function reportPortalConfig(tier: string) {
 }
 
 /**
+ * The ReportPortal client POSTs a telemetry event to google-analytics.com when
+ * a launch starts, and does not await it. That request keeps the event loop
+ * alive well past the last test, so vitest reports "something prevents the main
+ * process from exiting" and then waits out its full close timeout - ten seconds
+ * per tier, on top of a CI runner calling Google on every test run.
+ */
+export function disableClientAnalytics(): void {
+  process.env.REPORTPORTAL_CLIENT_JS_NO_ANALYTICS = '1';
+}
+
+type ReporterClass = new (config: ReturnType<typeof reportPortalConfig>) => object;
+
+/**
+ * Pick the reporter class out of an imported module.
+ *
+ * The agent is published as CommonJS, so Node's ESM interop exposes the whole
+ * `module.exports` object as `default` *and* spreads the named exports
+ * alongside it. Reading `default` first therefore yields a namespace object
+ * rather than the class, and `new` on it throws "RPReporter is not a
+ * constructor" - which, being caught below, silently reported nothing at all.
+ * Probing for the first callable candidate works under either module system.
+ */
+export function resolveReporterClass(mod: unknown): ReporterClass | undefined {
+  const ns = mod as Record<string, unknown> | undefined;
+  const fallback = ns?.default as Record<string, unknown> | undefined;
+
+  return [ns?.RPReporter, fallback?.RPReporter, ns?.default].find(
+    (candidate): candidate is ReporterClass => typeof candidate === 'function'
+  );
+}
+
+/**
  * `default` + `junit` always run. The JUnit file is uploaded as a GitHub
  * artifact regardless of whether ReportPortal is reachable, so results survive
  * even when RP does not.
@@ -59,8 +91,17 @@ export async function buildReporters(tier: string): Promise<unknown[]> {
   }
 
   try {
-    const mod = await import('@reportportal/agent-js-vitest');
-    const RPReporter = (mod as any).default ?? (mod as any).RPReporter;
+    disableClientAnalytics();
+
+    const RPReporter = resolveReporterClass(
+      await import('@reportportal/agent-js-vitest')
+    );
+
+    if (!RPReporter) {
+      console.warn('[reportportal] agent exports no reporter class, skipping');
+      return reporters;
+    }
+
     reporters.push(failSoft(new RPReporter(reportPortalConfig(tier))));
   } catch (error) {
     console.warn('[reportportal] agent could not be loaded, skipping:', error);

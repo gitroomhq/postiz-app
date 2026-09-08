@@ -6,13 +6,13 @@ runs:
   steps:
     # Must come before setup-node, whose `cache: pnpm` needs pnpm on PATH.
     # No `version:` input: pnpm reads it from packageManager in package.json.
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@v6
       with:
         run_install: false
 
     # `cache: pnpm` already caches the pnpm store keyed on the lockfile, so no
     # manual actions/cache step is needed.
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         node-version-file: .nvmrc
         cache: pnpm

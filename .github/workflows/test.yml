@@ -51,10 +51,13 @@ jobs:
     outputs:
       launch_id: ${{ steps.start.outputs.launch_id }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          # This job never installs dependencies and has no pnpm on PATH, so
+          # the automatic packageManager-driven cache has nothing to cache.
+          package-manager-cache: false
       # launch.mjs uses plain fetch, so no dependency install is needed - which
       # also keeps the rest of the matrix from queueing behind one small script.
       - id: start
@@ -64,7 +67,7 @@ jobs:
     name: Typecheck (tests)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       # Nothing else type-checks the test tree: the app build configs exclude
       # *.spec.ts, so these files would otherwise only fail in an editor.
@@ -78,16 +81,16 @@ jobs:
     env:
       RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm run test:unit:coverage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: junit-unit
           path: reports/junit-*.xml
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage-unit
@@ -102,15 +105,15 @@ jobs:
     env:
       RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       # createTimeSkipping() downloads a native test-server binary on first use.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .cache/temporal-test-server
           key: ${{ runner.os }}-temporal-test-server-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm run test:workflows
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: junit-workflows
@@ -143,14 +146,14 @@ jobs:
       FRONTEND_URL: http://localhost:4200
       NOT_SECURED: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - name: Apply the schema
         run: >-
           pnpm exec prisma db push --accept-data-loss --skip-generate
           --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma
       - run: pnpm run test:integration
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: junit-integration
@@ -197,7 +200,7 @@ jobs:
       # seeded org, the second makes PostActivity demand a subscription.
       # e2e/global.setup.ts asserts all three of these conditions.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Started first so its startup overlaps install and build. A `services:`
       # block cannot be used here: service containers are created before
@@ -214,14 +217,14 @@ jobs:
       - run: mkdir -p /tmp/postiz-uploads
 
       - name: Cache the Next build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/frontend/.next/cache
           key: ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
@@ -272,13 +275,13 @@ jobs:
         if: failure()
         run: docker compose -f docker-compose.dev.yaml logs --tail=400
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: junit-e2e
           path: reports/junit-*.xml
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
@@ -297,8 +300,11 @@ jobs:
     env:
       RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          # This job never installs dependencies and has no pnpm on PATH, so
+          # the automatic packageManager-driven cache has nothing to cache.
+          package-manager-cache: false
       - run: node tools/reportportal/launch.mjs finish

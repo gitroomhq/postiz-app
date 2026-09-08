@@ -98,6 +98,9 @@ export default defineConfig(async () => ({
             'libraries/testing/src/**/*.spec.ts',
             'apps/backend/src/**/*.spec.ts',
             'apps/orchestrator/src/**/*.spec.ts',
+            // The harness itself: a broken reporter fails silently by design,
+            // so nothing else would notice it had stopped reporting.
+            'vitest/**/*.spec.mts',
           ],
           setupFiles: ['./vitest/setup/node.setup.ts'],
           testTimeout: 10_000,
