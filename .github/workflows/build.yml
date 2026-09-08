@@ -1,25 +1,38 @@
----
 name: Build
-
 on:
   push:
   merge_group:
   pull_request:
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: ['22.12.0']
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # Node comes from .nvmrc, pnpm is pinned to the packageManager version,
-      # and the store cache is keyed on the lockfile alone. The previous inline
-      # cache block was commented out, and its key also hashed every source
-      # file, so it could never have produced a hit.
-      - uses: ./.github/actions/setup
-
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - name: Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: apps/frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+      - name: Install dependencies
+        run: pnpm install
       - name: Build
         run: pnpm run build

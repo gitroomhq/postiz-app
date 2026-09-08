@@ -579,6 +579,7 @@ checksums:
     email_address: 0ee22bbbe989a0c61a18023407d12dc2
     email_already_exists: ad25f0ca7a16c0d37e566a9c090a0fd2
     google: 6cc462fb53d90d404f48d5a6695c1de1
+    apple: 4e2ced07ca66bd1cf0562882d019aff2
     farcaster: b09af25fcb497663e8594b9fc514b969
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9
@@ -741,4 +742,6 @@ checksums:
     republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    past_publish_date_warning: 555e0b351f5a510a4be8017bd4b35731
+    could_not_save_post: 43cf68b06ecbdb256c8bda72bd7c732c
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d

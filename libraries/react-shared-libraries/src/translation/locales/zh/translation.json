@@ -575,6 +575,7 @@
   "email_address": "电子邮件地址",
   "email_already_exists": "电子邮件已存在",
   "google": "Google",
+  "apple": "苹果",
   "farcaster": "Farcaster",
   "edit_autopost": "编辑自动发布",
   "add_autopost_title": "添加自动发布",
@@ -737,5 +738,7 @@
   "republish_the_post": "重新发布帖子",
   "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
   "republish_at": "于",
+  "past_publish_date_warning": "发布日期已过，请选择一个将来的日期。",
+  "could_not_save_post": "无法保存帖子。",
   "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
 }

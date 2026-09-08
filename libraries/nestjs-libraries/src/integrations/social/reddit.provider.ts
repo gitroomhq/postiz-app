@@ -519,13 +519,25 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     // Reddit rejects submissions with a 200 and an errors array: surface the
     // real reason instead of failing later with an unknown outcome.
     if (all?.json?.errors?.length) {
+      const message = `Reddit rejected the post to r/${
+        postData.sr
+      }: ${all.json.errors
+        .map((e: any[]) => e?.[1] || e?.[0] || '')
+        .join(', ')}`;
+
+      // Reddit answers SUBREDDIT_NOEXIST for subreddits that do exist and
+      // accept the very same submission minutes later, so it can't be treated
+      // as a permanent rejection - let the workflow submit it again (the armed
+      // handshake still guards against a double post).
+      if (all.json.errors.some((e: any[]) => e?.[0] === 'SUBREDDIT_NOEXIST')) {
+        throw new Error(message);
+      }
+
       throw new BadBody(
         this.identifier,
         JSON.stringify(all),
         Buffer.from('{}'),
-        `Reddit rejected the post to r/${postData.sr}: ${all.json.errors
-          .map((e: any[]) => e?.[1] || e?.[0] || '')
-          .join(', ')}`
+        message
       );
     }
 
