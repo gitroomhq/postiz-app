@@ -91,7 +91,15 @@ export async function createTestApp(options: TestAppOptions): Promise<{
 
   // Mirrors apps/backend/src/main.ts, in the same order.
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  app.use(['/copilot/{*splat}', '/posts'], json({ limit: '50mb' }));
+  // The wrapper is not cosmetic, and main.ts has it for the same reason:
+  // express.json() returns a function literally named `jsonParser`, and Nest
+  // skips registering its own global body parser when a middleware of that
+  // name is already on the stack. Passing json() directly here therefore left
+  // every route outside /posts with an unparsed body - which reads as
+  // "All posts must have an integration id" on /public/v1/posts.
+  app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
+    json({ limit: '50mb' })(req, res, next);
+  });
   app.use(cookieParser());
   app.use(compression());
 
