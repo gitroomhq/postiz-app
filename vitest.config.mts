@@ -44,6 +44,10 @@ export default defineConfig(async () => ({
     passWithNoTests: true,
     clearMocks: true,
     restoreMocks: true,
+    // Without these, a vi.stubEnv/vi.stubGlobal leaks into every later test in
+    // the file - which reads as an unrelated test failing for no reason.
+    unstubEnvs: true,
+    unstubGlobals: true,
 
     // Reporters and coverage are root-only options; they cannot be set per
     // project, which is why TEST_TIER exists.
