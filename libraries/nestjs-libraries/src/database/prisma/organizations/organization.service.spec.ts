@@ -30,7 +30,9 @@ const mocks = () => ({
   },
   notificationsService: {
     hasEmailProvider: vi.fn(() => true),
-    sendEmail: vi.fn(async () => undefined),
+    sendEmail: vi.fn(
+      async (_to: string, _subject: string, _html: string) => undefined
+    ),
   },
 });
 
