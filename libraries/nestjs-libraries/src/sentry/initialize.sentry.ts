@@ -70,6 +70,9 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           path.includes('/public/v1/analytics/') ? 0.01 : 0.1
         );
       },
+      // body-parser rejects oversized bodies with a 413 before any controller
+      // runs; Nest already answers it, so it is not an application error.
+      ignoreErrors: [/^request entity too large$/],
       enableLogs: true,
 
       // Profiling
