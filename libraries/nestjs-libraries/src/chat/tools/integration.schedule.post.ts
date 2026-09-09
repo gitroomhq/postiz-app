@@ -146,6 +146,17 @@ If validation fails, the result contains output.errors describing what to fix; t
               platform.integrationId
             );
 
+          if (
+            !integrations[platform.integrationId] ||
+            integrations[platform.integrationId].deletedAt
+          ) {
+            throw new Error('Integration not found');
+          }
+
+          if (integrations[platform.integrationId].disabled) {
+            throw new Error('Integration is disabled');
+          }
+
           // Same server-side validation as the dashboard / public API
           // (settings DTO + media checkValidity + empty / too-long content).
           const settings = platform.settings.reduce(
@@ -211,10 +222,6 @@ If validation fails, the result contains output.errors describing what to fix; t
 
         for (const post of inputData.socialPost) {
           const integration = integrations[post.integrationId];
-
-          if (!integration || integration.deletedAt) {
-            throw new Error('Integration not found');
-          }
 
           const output = await this._postsService.createPost(organizationId, {
             date: post.date,
