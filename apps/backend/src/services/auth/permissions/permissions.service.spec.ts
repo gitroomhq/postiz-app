@@ -83,6 +83,35 @@ describe('PermissionsService.check', () => {
       );
       expect(integrationService.getIntegrationsList).not.toHaveBeenCalled();
     });
+
+    // Characterisation, not an endorsement. The early return exists to skip
+    // *billing* limits when nothing is being sold, but it runs before any rule
+    // is evaluated, so Sections.ADMIN - a role check, not a billing limit - is
+    // granted along with everything else. On a self-hosted instance this means
+    // a plain USER passes the ADMIN policy on routes such as
+    // POST /settings/team, which mints an organization invite.
+    it('also grants ADMIN to a plain USER when Stripe is not configured', async () => {
+      delete process.env.STRIPE_PUBLISHABLE_KEY;
+
+      const ability = await service.check('org-1', CREATED_AT, 'USER', [
+        [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+        [AuthorizationActions.Create, Sections.ADMIN],
+      ]);
+
+      expect(ability.can(AuthorizationActions.Create, Sections.ADMIN)).toBe(true);
+    });
+
+    it('withholds ADMIN from the same USER once Stripe is configured', async () => {
+      subscriptionService.getSubscriptionByOrganizationId.mockResolvedValue({
+        subscriptionTier: 'STANDARD',
+      } as never);
+
+      const ability = await service.check('org-1', CREATED_AT, 'USER', [
+        [AuthorizationActions.Create, Sections.ADMIN],
+      ]);
+
+      expect(ability.can(AuthorizationActions.Create, Sections.ADMIN)).toBe(false);
+    });
   });
 
   describe('getPackageOptions', () => {
