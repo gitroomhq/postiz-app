@@ -40,7 +40,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
@@ -69,6 +69,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Postiz first",
+      };
+    }
+    if (body.includes('4279009')) {
+      return {
+        type: 'retry',
+        value:
+          'Threads could not find the media container yet, please try again in a few seconds',
       };
     }
     if (body.includes('text must be at most 500 characters')) {
