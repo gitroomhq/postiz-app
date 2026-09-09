@@ -141,11 +141,11 @@ export class PinterestProvider
           'Pinterest was unable to reach the URL provided. Please check the link and try again.',
       };
     }
-    if (body.indexOf("does not match '^") > -1 && body.indexOf("d+$'") > -1) {
+    if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
       return {
         type: 'bad-body' as const,
         value:
-          'The board value is a board name, not a board ID. Please use the numeric board ID from the boards list.',
+          'The board ID must be a numeric string. Please check the board ID format.',
       };
     }
     if (body.indexOf('block (Pins) we have in place to combat spam') > -1) {
