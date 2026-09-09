@@ -649,6 +649,12 @@ export class PostsService {
   }
 
   async deletePost(orgId: string, group: string) {
+    // Take the published copies down on the platform BEFORE the local rows are
+    // soft-deleted, otherwise the integration and release id needed to reach
+    // them are no longer selectable and the post is stranded: gone from the
+    // calendar, still live on the channel.
+    const platform = await this.deleteFromPlatform(orgId, group);
+
     const post = await this._postRepository.deletePost(orgId, group);
 
     if (post?.id) {
@@ -676,7 +682,63 @@ export class PostsService {
       } catch (err) {}
     }
 
-    return { error: true };
+    return { ...platform };
+  }
+
+  /**
+   * Remove already-published posts in this group from their platforms.
+   *
+   * Providers implement `deletePost` only where the platform actually allows
+   * it, so an unsupported channel is reported rather than silently ignored —
+   * the caller can then tell someone the post is still live instead of
+   * showing a delete that only cleared the calendar.
+   */
+  private async deleteFromPlatform(orgId: string, group: string) {
+    const deleted: string[] = [];
+    const stillLive: { integration: string; reason: string }[] = [];
+
+    let posts: any[] = [];
+    try {
+      posts = await this._postRepository.getPostsByGroup(orgId, group);
+    } catch (err) {
+      return { error: false, deleted, stillLive };
+    }
+
+    for (const post of posts) {
+      // Nothing was published yet: cancelling the workflow is the whole job.
+      if (post.state !== 'PUBLISHED' || !post.releaseId || !post.integration) {
+        continue;
+      }
+
+      const provider = this._integrationManager.getSocialIntegration(
+        post.integration.providerIdentifier
+      );
+
+      if (!provider?.deletePost) {
+        stillLive.push({
+          integration: post.integration.providerIdentifier,
+          reason: 'platform does not support deleting a published post',
+        });
+        continue;
+      }
+
+      try {
+        await provider.deletePost(
+          post.integration.internalId,
+          post.releaseId,
+          post.integration.token,
+          post.integration
+        );
+        deleted.push(post.integration.providerIdentifier);
+      } catch (err) {
+        stillLive.push({
+          integration: post.integration.providerIdentifier,
+          reason: err?.message || 'delete rejected by the platform',
+        });
+      }
+    }
+
+    return { error: false, deleted, stillLive };
   }
 
   async countPostsFromDay(orgId: string, date: Date) {

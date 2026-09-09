@@ -604,6 +604,43 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ];
   }
 
+  /**
+   * Delete a published Page post.
+   *
+   * The post id must carry the page id prefix that the Graph API itself
+   * returns. The id embedded in a permalink can use a different page
+   * identifier, and deleting with that one fails with a misleading
+   * "(#200) New Pages experience not supported", which reads as though the
+   * operation were unavailable rather than as a wrong id. Resolve the
+   * canonical id first so the caller is not left guessing.
+   *
+   * A page access token is required; a user or system-user token returns
+   * "(#200) Page token is required to delete posts on page".
+   */
+  async deletePost(id: string, postId: string, accessToken: string) {
+    const canonicalId = await (async () => {
+      try {
+        const { id: resolved } = await (
+          await this.fetch(
+            `https://graph.facebook.com/v20.0/${postId}?fields=id&access_token=${accessToken}`,
+            {},
+            'resolve post id'
+          )
+        ).json();
+
+        return resolved || postId;
+      } catch (err) {
+        return postId;
+      }
+    })();
+
+    await this.fetch(
+      `https://graph.facebook.com/v20.0/${canonicalId}?access_token=${accessToken}`,
+      { method: 'DELETE' },
+      'delete post'
+    );
+  }
+
   async comment(
     id: string,
     postId: string,

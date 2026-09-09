@@ -97,6 +97,16 @@ export interface ISocialMediaIntegration {
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]>; // Schedules a new post
+
+  // Removes an already-published post from the platform. Optional: most
+  // platforms either forbid it or never exposed an endpoint, and the caller
+  // treats a missing implementation as "local delete only".
+  deletePost?(
+    id: string,
+    postId: string,
+    accessToken: string,
+    integration: Integration
+  ): Promise<void>;
 }
 
 export type PostResponse = {

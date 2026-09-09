@@ -798,6 +798,25 @@ export class InstagramProvider
     return '';
   }
 
+  /**
+   * Delete published media.
+   *
+   * Supported for images, videos and reels that are not ads. A carousel has
+   * to be deleted whole by passing the album's container id; individual
+   * children cannot be removed.
+   */
+  async deletePost(id: string, postId: string, accessToken: string) {
+    const type = this.identifier === 'instagram-standalone'
+      ? 'graph.instagram.com'
+      : 'graph.facebook.com';
+
+    await this.fetch(
+      `https://${type}/v20.0/${postId}?access_token=${accessToken}`,
+      { method: 'DELETE' },
+      'delete post'
+    );
+  }
+
   async analytics(
     id: string,
     accessToken: string,
