@@ -68,6 +68,9 @@ export const initializeSentry = (appName: string) => {
         }),
       ],
       tracesSampleRate: 1.0,
+      // body-parser rejects oversized bodies with a 413 before any controller
+      // runs; Nest already answers it, so it is not an application error.
+      ignoreErrors: [/^request entity too large$/],
       enableLogs: true,
       beforeSendLog: (log: any) => {
         log.attributes = redactLogAttributes({
