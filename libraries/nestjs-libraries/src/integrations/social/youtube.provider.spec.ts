@@ -1,3 +1,4 @@
+vi.mock('@gitroom/helpers/utils/timer', () => ({ timer: vi.fn(async () => {}) }));
 vi.mock('@gitroom/nestjs-libraries/temporal/temporal.heartbeat', () => ({
   setHeartbeatDetails: vi.fn(),
   withHeartbeat: (fn: unknown) => fn,
@@ -540,14 +541,15 @@ describe('YoutubeProvider.checkPostStatus', () => {
 });
 
 describe('YoutubeProvider.finalizePost', () => {
-  const chunkRoutes = (upload: (call: { init: RequestInit }) => unknown) => [
+  const chunkRoutes = (
+    upload: (call: { init: RequestInit }) => unknown
+  ): Parameters<typeof stubFetch>[0] => [
     [MEDIA, () => new Response('x'.repeat(1000), { status: 206 })],
     [
       UPLOAD_URI,
-      (call: { init: RequestInit }) =>
-        isProbe(call.init) ? resumeAt(null) : upload(call),
+      (call) => (isProbe(call.init) ? resumeAt(null) : upload(call)),
     ],
-  ] as never;
+  ];
 
   it('streams the remaining bytes and completes on the final chunk', async () => {
     const http = stubFetch(chunkRoutes(() => Response.json({ id: 'vid-1' })));
@@ -683,9 +685,9 @@ describe('YoutubeProvider.finalizePost', () => {
     let calls = 0;
     // the second loop pass is past the batch budget, so the provider should
     // hand the remaining bytes back rather than run past the activity timeout
-    vi.spyOn(Date, 'now').mockImplementation(() =>
-      calls++ < 2 ? start : start + 5 * 60 * 1000
-    );
+    const now = vi
+      .spyOn(Date, 'now')
+      .mockImplementation(() => (calls++ < 2 ? start : start + 5 * 60 * 1000));
 
     await expect(
       provider.finalizePost('at', pending() as never, integration)
@@ -694,7 +696,7 @@ describe('YoutubeProvider.finalizePost', () => {
       pendingData: { uploadedBytes: 500 },
     });
 
-    vi.mocked(Date.now).mockRestore();
+    now.mockRestore();
   });
 });
 
@@ -738,15 +740,15 @@ describe('YoutubeProvider.post', () => {
     ]);
     const start = Date.now();
     let calls = 0;
-    vi.spyOn(Date, 'now').mockImplementation(() =>
-      calls++ < 2 ? start : start + 20 * 60 * 1000
-    );
+    const now = vi
+      .spyOn(Date, 'now')
+      .mockImplementation(() => (calls++ < 2 ? start : start + 20 * 60 * 1000));
 
     await expect(
       provider.post('id', 'at', [post() as never], integration)
     ).rejects.toThrow(/took too long/);
 
-    vi.mocked(Date.now).mockRestore();
+    now.mockRestore();
   });
 });
 

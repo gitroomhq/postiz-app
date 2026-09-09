@@ -96,7 +96,7 @@ describe('InstagramStandaloneProvider authentication', () => {
           profile_picture_url: 'https://pic',
         }),
       ],
-    ] as never);
+    ]);
 
     const result = await provider.refreshToken('old-token');
 
@@ -115,7 +115,7 @@ describe('InstagramStandaloneProvider authentication', () => {
     stubFetch([
       ['refresh_access_token', () => ({ access_token: 'renewed' })],
       ['me?fields=user_id', () => ({ user_id: 'u1', name: 'Dana', username: 'dana' })],
-    ] as never);
+    ]);
 
     await expect(provider.refreshToken('old-token')).resolves.toMatchObject({
       picture: '',
@@ -168,7 +168,7 @@ describe('InstagramStandaloneProvider authentication', () => {
           profile_picture_url: 'https://pic',
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' })
@@ -192,7 +192,7 @@ describe('InstagramStandaloneProvider authentication', () => {
         () => ({ access_token: 'short', permissions: ['instagram_business_basic'] }),
       ],
       ['grant_type=ig_exchange_token', () => ({ access_token: 'long' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' })
@@ -202,7 +202,7 @@ describe('InstagramStandaloneProvider authentication', () => {
 
 describe('InstagramStandaloneProvider delegation to the graph domain', () => {
   it('creates containers against graph.instagram.com', async () => {
-    const http = stubFetch([['/media?', () => ({ id: 'c1' })]] as never);
+    const http = stubFetch([['/media?', () => ({ id: 'c1' })]]);
 
     const [response] = await provider.postPending(
       'ig-1',
@@ -221,7 +221,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
   it('checks a container status through the shared implementation', async () => {
     stubFetch([
       ['fields=status_code,status', () => ({ status_code: 'FINISHED' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.checkPostStatus('token', pending(), integration)
@@ -232,7 +232,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
     const http = stubFetch([
       ['media_publish', () => ({ id: 'm1' })],
       ['fields=permalink', () => ({ permalink: 'https://instagram.test/p/m1' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.finalizePost('token', pending(), integration)
@@ -250,7 +250,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
       ['fields=status_code,status', () => ({ status_code: 'FINISHED' })],
       ['media_publish', () => ({ id: 'm1' })],
       ['fields=permalink', () => ({ permalink: 'https://instagram.test/p/m1' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.post('ig-1', 'token', [post()] as never, integration)
@@ -268,7 +268,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
     const http = stubFetch([
       ['/comments?', () => ({ id: 'cm-1' })],
       ['fields=permalink', () => ({ permalink: 'https://instagram.test/p/m1' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.comment(
@@ -297,7 +297,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
         }),
       ],
       ['metric_type=total_value', () => ({ data: [] })],
-    ] as never);
+    ]);
 
     await expect(provider.analytics('ig1', 'token', 7)).resolves.toMatchObject([
       { label: 'Reach' },
@@ -311,7 +311,7 @@ describe('InstagramStandaloneProvider delegation to the graph domain', () => {
         '/insights?metric=views,reach',
         () => ({ data: [{ name: 'likes', values: [{ value: 3 }] }] }),
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.postAnalytics('ig-1', 'token', 'm1', 7)

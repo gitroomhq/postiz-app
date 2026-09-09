@@ -167,7 +167,7 @@ describe('StripeService webhook routing', () => {
     expect(subscriptionService.createOrUpdateSubscription).not.toHaveBeenCalled();
   });
 
-  it('always accepts a payment succeeded event, whoever sent it', async () => {
+  it('always handles a payment succeeded event, whoever sent it', async () => {
     const { service } = build();
     s.subscriptions.retrieve.mockResolvedValue(subscription());
 
@@ -175,9 +175,19 @@ describe('StripeService webhook routing', () => {
       service.processWebhook({
         type: 'invoice.payment_succeeded',
         id: 'evt_1',
-        data: { object: { metadata: {}, amount_paid: 3900, parent: null } },
+        data: {
+          object: {
+            metadata: {},
+            amount_paid: 3900,
+            parent: { subscription_details: { subscription: 'sub_1' } },
+          },
+        },
       } as never)
     ).resolves.toEqual({ ok: true });
+
+    // reaching the subscription lookup is what proves it was not dropped by
+    // the "addressed to another service" guard, which also answers { ok: true }
+    expect(s.subscriptions.retrieve).toHaveBeenCalledWith('sub_1');
   });
 
   it('routes a created subscription to the subscription service', async () => {
@@ -233,7 +243,7 @@ describe('StripeService webhook routing', () => {
   });
 
   it('acknowledges an event type it does not act on', async () => {
-    const { service } = build();
+    const { service, subscriptionService } = build();
 
     await expect(
       service.processWebhook({
@@ -242,6 +252,10 @@ describe('StripeService webhook routing', () => {
         data: { object: { metadata: { service: 'gitroom' } } },
       } as never)
     ).resolves.toEqual({ ok: true });
+
+    expect(subscriptionService.createOrUpdateSubscription).not.toHaveBeenCalled();
+    expect(subscriptionService.deleteSubscription).not.toHaveBeenCalled();
+    expect(s.subscriptions.retrieve).not.toHaveBeenCalled();
   });
 });
 

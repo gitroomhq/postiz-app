@@ -5,7 +5,7 @@ vi.mock('@gitroom/nestjs-libraries/temporal/temporal.heartbeat', () => ({
 }));
 
 import { stubFetch } from '@gitroom/testing/http/fetch.stub';
-import { BadBody } from '../social.abstract';
+import { BadBody, NotEnoughScopes } from '../social.abstract';
 import { InstagramProvider } from './instagram.provider';
 
 const provider = new InstagramProvider();
@@ -111,6 +111,74 @@ describe('InstagramProvider.handleErrors', () => {
     ['Session has been invalidated'],
   ])('asks for a reconnect on %j', (body) => {
     expect(provider.handleErrors(body, 400)?.type).toBe('refresh-token');
+  });
+
+  it.each([
+    ['2207032', 'Failed to create media, please try again'],
+    ['2207053', 'Unknown upload error, please try again'],
+    ['2207057', 'Invalid thumbnail offset for video'],
+    ['2207026', 'Unsupported video format'],
+    ['2207023', 'Unknown media type'],
+    ['2207006', 'Media not found, please upload again'],
+    ['2207008', 'Media builder expired, please try again'],
+    ['2207028', 'Carousel validation failed'],
+    ['2207010', 'Caption is too long'],
+    ['2207035', 'Product tag positions not supported for videos'],
+    ['2207036', 'Product tag positions required for photos'],
+    ['2207037', 'Product tag validation failed'],
+    ['2207040', 'Too many product tags'],
+    ['2207004', 'Image is too large'],
+    ['2207005', 'Unsupported image format'],
+    ['2207009', 'Aspect ratio not supported, must be between 4:5 to 1.91:1'],
+    ['36003', 'Aspect ratio not supported, must be between 4:5 to 1.91:1'],
+    ['36001', 'Invalid Instagram image resolution max: 1920x1080px'],
+    ['2207051', 'Instagram blocked your request'],
+    ['2207077', 'Instagram Video download failed'],
+    ['2207027', 'Unknown error, please try again later or contact support'],
+    [
+      '2207042',
+      'You have reached the maximum of 25 posts per day, allowed for your account',
+    ],
+    ['Page request limit reached', 'Page posting for today is limited, please try again tomorrow'],
+    ['Not enough permissions to post', 'Not enough permissions to post'],
+    [
+      '190,',
+      'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
+    ],
+    [
+      '2207001',
+      'Instagram detected that your post is spam, please try again with different content',
+    ],
+    [
+      'too little or too many attachments',
+      'Instagram carousel should have between 2 and 10 media attachments',
+    ],
+    ['param collaborators is not allowed', 'Collaborators are not allowed for carousel'],
+  ] as [string, string][])('reports %s as a terminal bad body', (body, value) => {
+    expect(provider.handleErrors(body, 400)).toEqual({ type: 'bad-body', value });
+  });
+
+  it.each([
+    ['2207052', 'Media fetch failed, please try again'],
+    ['2207082', 'Could not upload your media'],
+  ] as [string, string][])('asks for a retry on %s', (body, value) => {
+    expect(provider.handleErrors(body, 400)).toEqual({ type: 'retry', value });
+  });
+
+  it('explains a missing publishing permission in full', () => {
+    expect(
+      provider.handleErrors('Requires instagram_content_publish permission', 400)
+    ).toMatchObject({
+      type: 'bad-body',
+      value: expect.stringMatching(/was not granted publishing permission/),
+    });
+  });
+
+  it('explains a collaborator that could not be tagged', () => {
+    expect(provider.handleErrors('2207018', 400)).toMatchObject({
+      type: 'bad-body',
+      value: expect.stringMatching(/could not be tagged/),
+    });
   });
 
   it('leaves an unrecognised body unclassified', () => {
@@ -436,76 +504,6 @@ describe('InstagramProvider.refreshToken', () => {
   });
 });
 
-describe('InstagramProvider.handleErrors media and content codes', () => {
-  it.each([
-    ['2207032', 'Failed to create media, please try again'],
-    ['2207053', 'Unknown upload error, please try again'],
-    ['2207057', 'Invalid thumbnail offset for video'],
-    ['2207026', 'Unsupported video format'],
-    ['2207023', 'Unknown media type'],
-    ['2207006', 'Media not found, please upload again'],
-    ['2207008', 'Media builder expired, please try again'],
-    ['2207028', 'Carousel validation failed'],
-    ['2207010', 'Caption is too long'],
-    ['2207035', 'Product tag positions not supported for videos'],
-    ['2207036', 'Product tag positions required for photos'],
-    ['2207037', 'Product tag validation failed'],
-    ['2207040', 'Too many product tags'],
-    ['2207004', 'Image is too large'],
-    ['2207005', 'Unsupported image format'],
-    ['2207009', 'Aspect ratio not supported, must be between 4:5 to 1.91:1'],
-    ['36003', 'Aspect ratio not supported, must be between 4:5 to 1.91:1'],
-    ['36001', 'Invalid Instagram image resolution max: 1920x1080px'],
-    ['2207051', 'Instagram blocked your request'],
-    ['2207077', 'Instagram Video download failed'],
-    ['2207027', 'Unknown error, please try again later or contact support'],
-    [
-      '2207042',
-      'You have reached the maximum of 25 posts per day, allowed for your account',
-    ],
-    ['Page request limit reached', 'Page posting for today is limited, please try again tomorrow'],
-    ['Not enough permissions to post', 'Not enough permissions to post'],
-    [
-      '190,',
-      'The account is missing some permissions to perform this action, please re-add the account and allow all permissions',
-    ],
-    [
-      '2207001',
-      'Instagram detected that your post is spam, please try again with different content',
-    ],
-    [
-      'too little or too many attachments',
-      'Instagram carousel should have between 2 and 10 media attachments',
-    ],
-    ['param collaborators is not allowed', 'Collaborators are not allowed for carousel'],
-  ] as [string, string][])('reports %s as a terminal bad body', (body, value) => {
-    expect(provider.handleErrors(body, 400)).toEqual({ type: 'bad-body', value });
-  });
-
-  it.each([
-    ['2207052', 'Media fetch failed, please try again'],
-    ['2207082', 'Could not upload your media'],
-  ] as [string, string][])('asks for a retry on %s', (body, value) => {
-    expect(provider.handleErrors(body, 400)).toEqual({ type: 'retry', value });
-  });
-
-  it('explains a missing publishing permission in full', () => {
-    expect(
-      provider.handleErrors('Requires instagram_content_publish permission', 400)
-    ).toMatchObject({
-      type: 'bad-body',
-      value: expect.stringMatching(/was not granted publishing permission/),
-    });
-  });
-
-  it('explains a collaborator that could not be tagged', () => {
-    expect(provider.handleErrors('2207018', 400)).toMatchObject({
-      type: 'bad-body',
-      value: expect.stringMatching(/could not be tagged/),
-    });
-  });
-});
-
 describe('InstagramProvider.generateAuthUrl', () => {
   it('asks facebook for every scope the provider needs', async () => {
     vi.stubEnv('FACEBOOK_APP_ID', 'app-1');
@@ -531,7 +529,9 @@ describe('InstagramProvider.authenticate', () => {
     })),
   });
 
-  const routes = (permissions: unknown) => [
+  const routes = (
+    permissions: unknown
+  ): Parameters<typeof stubFetch>[0] => [
     ['grant_type=fb_exchange_token', () => ({ access_token: 'long-lived' })],
     ['/oauth/access_token', () => ({ access_token: 'short-lived' })],
     ['me/permissions', () => permissions],
@@ -539,7 +539,7 @@ describe('InstagramProvider.authenticate', () => {
       'me?fields=id,name,picture',
       () => ({ id: 'u1', name: 'Dana', picture: { data: { url: 'https://pic' } } }),
     ],
-  ] as never;
+  ];
 
   it('exchanges the code for a long lived token and reads the profile', async () => {
     const http = stubFetch(routes(granted()));
@@ -587,7 +587,7 @@ describe('InstagramProvider.authenticate', () => {
 
     await expect(
       provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' })
-    ).rejects.toBeTruthy();
+    ).rejects.toBeInstanceOf(NotEnoughScopes);
   });
 
   it('ignores a permission the user declined', async () => {
@@ -614,7 +614,7 @@ describe('InstagramProvider.authenticate', () => {
       ['/oauth/access_token', () => ({ access_token: 'short-lived' })],
       ['me/permissions', () => granted()],
       ['me?fields=id,name,picture', () => ({ id: 'u1', name: 'Dana' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' })
@@ -647,7 +647,7 @@ describe('InstagramProvider.pages', () => {
           profile_picture_url: 'https://pic',
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.pages('token')).resolves.toEqual([
       { pageId: 'p1', id: 'ig1', name: 'First', picture: { data: { url: 'https://pic' } } },
@@ -665,7 +665,7 @@ describe('InstagramProvider.pages', () => {
         'fields=name,profile_picture_url',
         () => ({ name: 'A page', profile_picture_url: 'https://pic' }),
       ],
-    ] as never);
+    ]);
 
     const pages = await provider.pages('token');
 
@@ -685,7 +685,7 @@ describe('InstagramProvider.pages', () => {
         'fields=name,profile_picture_url',
         () => ({ name: 'A page', profile_picture_url: 'https://pic' }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.pages('token')).resolves.toMatchObject([{ id: 'ig1' }]);
   });
@@ -705,7 +705,7 @@ describe('InstagramProvider.pages', () => {
         'fields=name,profile_picture_url',
         () => ({ name: 'A page', profile_picture_url: 'https://pic' }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.pages('token')).resolves.toHaveLength(2);
   });
@@ -714,7 +714,7 @@ describe('InstagramProvider.pages', () => {
     const http = stubFetch([
       ['me/accounts', () => ({ data: [] })],
       ['me/businesses', () => ({ data: [] })],
-    ] as never);
+    ]);
 
     await provider.pages('page-token___user-token');
 
@@ -736,7 +736,7 @@ describe('InstagramProvider.fetchPageInformation', () => {
           username: 'the_account',
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.fetchPageInformation('user-token', { pageId: 'p1', id: 'ig1' })
@@ -774,7 +774,7 @@ describe('InstagramProvider.reConnect', () => {
           username: 'the_account',
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.reConnect('id', 'ig1', 'token')).resolves.toEqual({
       id: 'ig1',
@@ -793,7 +793,7 @@ describe('InstagramProvider.post', () => {
       ['fields=status_code,status', () => ({ status_code: 'FINISHED' })],
       ['media_publish', () => ({ id: 'm1' })],
       ['fields=permalink', () => ({ permalink: 'https://instagram.test/p/m1' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.post('ig-1', 'token', [post()] as never, integration)
@@ -810,7 +810,7 @@ describe('InstagramProvider.post', () => {
   it('gives up rather than let the old activity time out and republish', async () => {
     const base = Date.now();
     let elapsed = 0;
-    vi.spyOn(Date, 'now').mockImplementation(() => base + elapsed);
+    const now = vi.spyOn(Date, 'now').mockImplementation(() => base + elapsed);
 
     stubFetch([
       ['/media?', () => ({ id: 'c1' })],
@@ -821,13 +821,13 @@ describe('InstagramProvider.post', () => {
           return { status_code: 'IN_PROGRESS' };
         },
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.post('ig-1', 'token', [post()] as never, integration)
     ).rejects.toThrow(/Media processing timed out/);
 
-    vi.mocked(Date.now).mockRestore();
+    now.mockRestore();
   });
 });
 
@@ -836,7 +836,7 @@ describe('InstagramProvider.comment', () => {
     const http = stubFetch([
       ['/comments?', () => ({ id: 'cm-1' })],
       ['fields=permalink', () => ({ permalink: 'https://instagram.test/p/m1' })],
-    ] as never);
+    ]);
 
     await expect(
       provider.comment(
@@ -893,7 +893,7 @@ describe('InstagramProvider.analytics', () => {
           ],
         }),
       ],
-    ] as never);
+    ]);
 
     const result = await provider.analytics('ig1', 'token', 7);
 
@@ -917,7 +917,7 @@ describe('InstagramProvider.analytics', () => {
         'metric_type=total_value',
         () => ({ data: [{ name: 'brand_new', total_value: { value: 1 } }] }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.analytics('ig1', 'token', 7)).resolves.toMatchObject([
       { label: '' },
@@ -928,7 +928,7 @@ describe('InstagramProvider.analytics', () => {
     stubFetch([
       ['metric=follower_count,reach', () => ({})],
       ['metric_type=total_value', () => ({ data: [] })],
-    ] as never);
+    ]);
 
     await expect(provider.analytics('ig1', 'token', 7)).resolves.toEqual([]);
   });
@@ -936,7 +936,7 @@ describe('InstagramProvider.analytics', () => {
 
 describe('InstagramProvider audio', () => {
   it('searches the music catalogue', async () => {
-    const http = stubFetch([['music/search', () => ({ data: [] })]] as never);
+    const http = stubFetch([['music/search', () => ({ data: [] })]]);
 
     await provider.music('token', { q: 'lofi beats' });
 
@@ -960,7 +960,7 @@ describe('InstagramProvider audio', () => {
           ],
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.audioSearch('token', { q: 'lofi' }, 'ig-1')
@@ -984,7 +984,7 @@ describe('InstagramProvider audio', () => {
           audio: [{ audio_id: 'a1', ig_username: 'creator', profile_picture_url: 'https://pfp' }],
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(provider.audioSearch('token', {}, 'ig-1')).resolves.toEqual([
       {
@@ -999,7 +999,7 @@ describe('InstagramProvider audio', () => {
   });
 
   it('defaults to music and omits the query when searching trending audio', async () => {
-    const http = stubFetch([['ig_audio', () => ({ audio: [] })]] as never);
+    const http = stubFetch([['ig_audio', () => ({ audio: [] })]]);
 
     await provider.audioSearch('token', {}, 'ig-1');
 
@@ -1008,7 +1008,7 @@ describe('InstagramProvider audio', () => {
   });
 
   it('supports original sounds and prefers the user token', async () => {
-    const http = stubFetch([['ig_audio', () => ({ audio: [] })]] as never);
+    const http = stubFetch([['ig_audio', () => ({ audio: [] })]]);
 
     await provider.audioSearch(
       'page-token___user-token',
@@ -1021,7 +1021,7 @@ describe('InstagramProvider audio', () => {
   });
 
   it('returns nothing when the account has no audio available', async () => {
-    stubFetch([['ig_audio', () => ({})]] as never);
+    stubFetch([['ig_audio', () => ({})]]);
 
     await expect(provider.audioSearch('token', {}, 'ig-1')).resolves.toEqual([]);
   });
@@ -1043,7 +1043,7 @@ describe('InstagramProvider.postAnalytics', () => {
           ],
         }),
       ],
-    ] as never);
+    ]);
 
     const result = await provider.postAnalytics('ig-1', 'token', 'm1', 7);
 
@@ -1070,7 +1070,7 @@ describe('InstagramProvider.postAnalytics', () => {
           ],
         }),
       ],
-    ] as never);
+    ]);
 
     await expect(
       provider.postAnalytics('ig-1', 'token', 'm1', 7)
@@ -1080,7 +1080,7 @@ describe('InstagramProvider.postAnalytics', () => {
   });
 
   it('returns nothing when instagram reports no insights', async () => {
-    stubFetch([['/insights?metric=views,reach', () => ({ data: [] })]] as never);
+    stubFetch([['/insights?metric=views,reach', () => ({ data: [] })]]);
 
     await expect(provider.postAnalytics('ig-1', 'token', 'm1', 7)).resolves.toEqual(
       []
@@ -1095,7 +1095,7 @@ describe('InstagramProvider.postAnalytics', () => {
           throw new Error('insights unavailable');
         },
       ],
-    ] as never);
+    ]);
 
     await expect(provider.postAnalytics('ig-1', 'token', 'm1', 7)).resolves.toEqual(
       []
