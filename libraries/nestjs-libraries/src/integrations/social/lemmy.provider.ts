@@ -6,6 +6,8 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
+  BadBody,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -27,6 +29,65 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     return 10000;
   }
   dto = LemmySettingsDto;
+
+  override handleErrors(
+    body: string,
+    status: number
+  ):
+    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | undefined {
+    if (body.includes('rate_limit_error')) {
+      return {
+        type: 'retry',
+        value: 'Lemmy rate limit reached, please try again later',
+      };
+    }
+
+    if (body.includes('not_logged_in') || body.includes('incorrect_login')) {
+      return {
+        type: 'refresh-token',
+        value: 'Lemmy session is no longer valid, please reconnect the channel',
+      };
+    }
+
+    if (body.includes('site_ban') || body.includes('"error":"banned"')) {
+      return {
+        type: 'bad-body',
+        value: 'This account is banned on the Lemmy instance',
+      };
+    }
+
+    if (body.includes('couldnt_find_community')) {
+      return {
+        type: 'bad-body',
+        value:
+          'The selected Lemmy community no longer exists, please pick another one',
+      };
+    }
+
+    if (body.includes('blocked_url')) {
+      return {
+        type: 'bad-body',
+        value: 'The Lemmy instance blocks the URL in this post',
+      };
+    }
+
+    if (body.includes('"error":"deleted"')) {
+      return {
+        type: 'bad-body',
+        value: 'The selected Lemmy community or post was deleted',
+      };
+    }
+
+    if (body.includes('"error":"locked"')) {
+      return {
+        type: 'bad-body',
+        value: 'This Lemmy post is locked, comments cannot be added',
+      };
+    }
+
+    return undefined;
+  }
 
   override async checkValidity(
     items: Array<ValidityMedia[]>
@@ -149,20 +210,46 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
       AuthService.fixedDecryption(integration.customInstanceDetails!)
     );
 
-    const { jwt } = await (
-      await fetch(body.service + '/api/v3/user/login', {
-        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
-        dispatcher: getSsrfSafeDispatcher(),
-        body: JSON.stringify({
-          username_or_email: body.identifier,
-          password: body.password,
-        }),
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    ).json();
+    const options = {
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
+      body: JSON.stringify({
+        username_or_email: body.identifier,
+        password: body.password,
+      }),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    let login: Response;
+    try {
+      login = await this.fetch(body.service + '/api/v3/user/login', options);
+    } catch (err) {
+      // The request body holds the stored password, so the failure is rebuilt
+      // without it before it reaches the Temporal history and the Errors table.
+      const json = (err as any).details?.[0]?.json || '{}';
+      if (err instanceof BadBody) {
+        throw new BadBody(
+          this.identifier,
+          json,
+          {} as BodyInit,
+          err.message || 'Unknown Error'
+        );
+      }
+      if (err instanceof RefreshToken) {
+        throw new RefreshToken(
+          this.identifier,
+          json,
+          {} as BodyInit,
+          err.message || 'Unknown Error'
+        );
+      }
+      throw err;
+    }
+
+    const { jwt } = await login.json();
 
     return { jwt, service: body.service };
   }
@@ -179,18 +266,8 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     const valueArray: PostResponse[] = [];
 
     for (const lemmy of firstPost.settings.subreddit) {
-      console.log({
-        community_id: +lemmy.value.id,
-        name: lemmy.value.title,
-        body: firstPost.message,
-        ...(lemmy.value.url ? { url: lemmy.value.url } : {}),
-        ...(firstPost.media?.length
-          ? { custom_thumbnail: firstPost.media[0].path }
-          : {}),
-        nsfw: false,
-      });
       const { post_view } = await (
-        await fetch(service + '/api/v3/post', {
+        await this.fetch(service + '/api/v3/post', {
           // @ts-ignore - undici-only option; blocks SSRF to internal IPs
           dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
@@ -253,7 +330,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
 
     for (const singlePostId of postIds) {
       const { comment_view } = await (
-        await fetch(service + '/api/v3/comment', {
+        await this.fetch(service + '/api/v3/comment', {
           // @ts-ignore - undici-only option; blocks SSRF to internal IPs
           dispatcher: getSsrfSafeDispatcher(),
           body: JSON.stringify({
