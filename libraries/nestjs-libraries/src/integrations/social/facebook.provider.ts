@@ -207,14 +207,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         value: 'Facebook return: No permission to publish the video',
       };
     }
-    if (body.indexOf('"error_subcode":459') > -1) {
+    if (/"error_subcode":459\b/.test(body)) {
       return {
         type: 'bad-body' as const,
         value:
           'Facebook is asking you to resolve a security check. Log in at facebook.com, complete it, then try again',
       };
     }
-    if (body.indexOf('"error_subcode":492') > -1) {
+    if (/"error_subcode":492\b/.test(body)) {
       return {
         type: 'bad-body' as const,
         value:
@@ -229,7 +229,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
     if (
-      body.indexOf('"error_subcode":33') > -1 &&
+      /"error_subcode":33\b/.test(body) &&
       body.indexOf('does not exist') > -1
     ) {
       return {
