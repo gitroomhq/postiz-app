@@ -1,6 +1,28 @@
-import * as Sentry from '@sentry/nestjs';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
+
+type SentryModule = typeof import('@sentry/nestjs');
+
+let cachedSentry: SentryModule | null = null;
+
+// Loading @sentry/nestjs and @sentry/profiling-node together deadlocks the module
+// loader on roughly 2% of process starts: the instrumentation hook @sentry/nestjs
+// installs on require races the dlopen @sentry/profiling-node performs for its
+// native addon. The process keeps a live Node runtime but never reaches Nest, so
+// there is no crash, no log line, and — in the orchestrator — no Temporal worker.
+//
+// Because these were top-level imports, that risk was paid on every start, even
+// with Sentry entirely unconfigured. Loading them behind the DSN check removes it
+// for every deployment that does not use Sentry.
+const loadSentry = (): SentryModule | null => {
+  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    return null;
+  }
+  if (!cachedSentry) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    cachedSentry = require('@sentry/nestjs');
+  }
+  return cachedSentry;
+};
 
 export const setSentryUserContext = (params: {
   userId?: string;
@@ -9,6 +31,10 @@ export const setSentryUserContext = (params: {
   paymentId?: string | null;
 }) => {
   try {
+    const Sentry = loadSentry();
+    if (!Sentry) {
+      return;
+    }
     Sentry.setUser(
       params.userId
         ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
@@ -26,11 +52,15 @@ export const setSentryUserContext = (params: {
 };
 
 export const initializeSentry = (appName: string, allowLogs = false) => {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  const Sentry = loadSentry();
+  if (!Sentry) {
     return null;
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { nodeProfilingIntegration } = require('@sentry/profiling-node');
+
     Sentry.init({
       initialScope: {
         tags: {
