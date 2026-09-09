@@ -355,7 +355,9 @@ export class IntegrationService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        undefined,
+        integration.inBetweenSteps
       );
     }
   }

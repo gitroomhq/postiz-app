@@ -10,6 +10,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
   BadBody,
+  Disconnect,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -80,12 +81,33 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     return true;
   }
 
+  // A channel that never finished the location step still carries the Google
+  // user id as its id; v4/<userId>/localPosts is not a resource Google knows.
+  private checkLocationId(id: string) {
+    if (!id.startsWith('accounts/')) {
+      throw new Disconnect(
+        this.identifier,
+        JSON.stringify({ id }),
+        '{}',
+        'This channel is not linked to a business location. Please reconnect it and choose a business location.'
+      );
+    }
+  }
+
   override handleErrors(body: string):
     | {
         type: 'refresh-token' | 'bad-body';
         value: string;
       }
     | undefined {
+    if (body.includes('Error 404 (Not Found)')) {
+      return {
+        type: 'bad-body',
+        value:
+          'The business location for this channel could not be found. Please reconnect the channel and choose a business location.',
+      };
+    }
+
     if (body.includes('UNAUTHENTICATED') || body.includes('invalid_grant')) {
       return {
         type: 'refresh-token',
@@ -414,6 +436,8 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     const [firstPost] = postDetails;
     const { settings } = firstPost;
 
+    this.checkLocationId(id);
+
     // Build the local post request body
     const postBody: any = {
       languageCode: 'en',
@@ -555,6 +579,8 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     date: number
   ): Promise<AnalyticsData[]> {
+    this.checkLocationId(id);
+
     try {
       const endDate = dayjs().format('YYYY-MM-DD');
       const startDate = dayjs().subtract(date, 'day').format('YYYY-MM-DD');
