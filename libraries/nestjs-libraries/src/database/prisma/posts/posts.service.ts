@@ -148,6 +148,13 @@ export class PostsService {
   }
 
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    if (post.releaseId !== 'missing') {
+      throw new BadRequestException('Post already has a release id');
+    }
     return this._postRepository.updateReleaseId(postId, orgId, releaseId);
   }
 

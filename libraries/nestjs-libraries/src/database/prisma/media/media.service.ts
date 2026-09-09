@@ -70,7 +70,11 @@ export class MediaService {
     return this._mediaRepository.getMedia(org, page, search);
   }
 
-  saveMediaInformation(org: string, data: SaveMediaInformationDto) {
+  async saveMediaInformation(org: string, data: SaveMediaInformationDto) {
+    const media = await this._mediaRepository.getMediaById(data.id);
+    if (!media || media.organizationId !== org) {
+      throw new HttpException('Media not found', 404);
+    }
     return this._mediaRepository.saveMediaInformation(org, data);
   }
 
