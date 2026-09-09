@@ -232,6 +232,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
       };
     }
+    if (body.includes('"title":"Unauthorized"')) {
+      return {
+        type: 'refresh-token',
+        value: 'X rejected the connected account, please reconnect your account',
+      };
+    }
     return undefined;
   }
 
