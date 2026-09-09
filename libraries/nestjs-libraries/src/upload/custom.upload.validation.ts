@@ -4,7 +4,7 @@ import {
   PipeTransform,
 } from '@nestjs/common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer } = require('file-type');
+const { fileTypeFromBuffer } = require('file-type');
 
 const ALLOWED_MIME_TYPES = new Set<string>([
   'image/jpeg',
@@ -33,7 +33,7 @@ export class CustomFileValidationPipe implements PipeTransform {
       throw new BadRequestException('Invalid file upload.');
     }
 
-    const detected = await fromBuffer(value.buffer);
+    const detected = await fileTypeFromBuffer(value.buffer);
     if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
       throw new BadRequestException('Unsupported file type.');
     }

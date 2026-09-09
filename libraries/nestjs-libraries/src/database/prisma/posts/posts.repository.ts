@@ -16,6 +16,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -160,16 +161,10 @@ export class PostsRepository {
         integration: {
           deletedAt: null,
           organizationId: orgId,
+          ...(query.customer ? { customerId: query.customer } : {}),
         },
         deletedAt: null,
         parentPostId: null,
-        ...(query.customer
-          ? {
-              integration: {
-                customerId: query.customer,
-              },
-            }
-          : {}),
       },
       select: {
         id: true,
@@ -181,6 +176,7 @@ export class PostsRepository {
         intervalInDays: true,
         group: true,
         creationMethod: true,
+        settings: true,
         tags: {
           select: {
             tag: true,
@@ -435,6 +431,13 @@ export class PostsRepository {
       },
     });
 
+    logger[state === 'ERROR' ? 'error' : 'info']('post_state_changed', {
+      post_id: update.id,
+      org_id: update.organizationId,
+      provider: update.integration.providerIdentifier,
+      post_state: state,
+    });
+
     if (state === 'ERROR' && err && body) {
       try {
         await this._errors.model.errors.create({
@@ -446,7 +449,15 @@ export class PostsRepository {
             body: typeof body === 'string' ? body : JSON.stringify(body),
           },
         });
-      } catch (err) {}
+      } catch (err) {
+        logger.error('post_error_record_failed', {
+          post_id: update.id,
+          org_id: update.organizationId,
+          provider: update.integration.providerIdentifier,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return update;
@@ -517,10 +528,15 @@ export class PostsRepository {
     body: PostBody,
     tags: { value: string; label: string }[],
     creationMethod: CreationMethod,
-    inter?: number
+    inter?: number,
+    // Keep the existing group instead of rotating it, so open clients
+    // (calendar) holding the group stay valid. Used by out-of-band updates
+    // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
+    keepGroup = false
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
+    const group = keepGroup && body.group ? body.group : uuid;
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -548,7 +564,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         delay: value.delay || 0,
-        group: uuid,
+        group,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
@@ -639,11 +655,29 @@ export class PostsRepository {
         )?.id!
       : undefined;
 
-    if (body.group) {
+    if (body.group && !keepGroup) {
       await this._post.model.post.updateMany({
         where: {
           group: body.group,
           deletedAt: null,
+        },
+        data: {
+          parentPostId: null,
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    // keepGroup: the updated rows still carry the old group, so sweep only the
+    // rows dropped from it (removed comments) by id instead of by group.
+    if (body.group && keepGroup) {
+      await this._post.model.post.updateMany({
+        where: {
+          group: body.group,
+          deletedAt: null,
+          id: {
+            notIn: posts.map((p) => p.id),
+          },
         },
         data: {
           parentPostId: null,

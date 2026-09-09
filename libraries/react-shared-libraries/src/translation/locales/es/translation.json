@@ -575,6 +575,7 @@
   "email_address": "Dirección de correo electrónico",
   "email_already_exists": "El correo electrónico ya existe",
   "google": "Google",
+  "apple": "Manzana",
   "farcaster": "Farcaster",
   "edit_autopost": "Editar autopublicación",
   "add_autopost_title": "Agregar autopublicación",
@@ -730,5 +731,14 @@
   "yes_cancel_coupon": "Sí, cancelar cupón",
   "cancel_coupon_title": "¿Cancelar cupón?",
   "cancel_coupon_failed": "No se pudo cancelar el cupón",
-  "cancel_coupon_success": "Cupón cancelado"
+  "cancel_coupon_success": "Cupón cancelado",
+  "what_do_you_want_to_do": "¿Qué quieres hacer?",
+  "just_update_post_details": "Solo actualizar los detalles de la publicación",
+  "reschedule_post": "Reprogramar la publicación",
+  "republish_the_post": "Volver a publicar la publicación",
+  "post_already_published_republish_warning": "Esta publicación ya fue publicada. Volver a publicarla la publicará nuevamente en",
+  "republish_at": "a las",
+  "past_publish_date_warning": "La fecha de publicación está en el pasado, elige una fecha futura.",
+  "could_not_save_post": "No se pudo guardar la publicación.",
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
 }

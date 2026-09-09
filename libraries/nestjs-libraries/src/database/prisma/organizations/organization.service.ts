@@ -51,8 +51,16 @@ export class OrganizationService {
     return this._organizationRepository.getOrgById(id);
   }
 
+  getOrgByIdWithSubscription(id: string) {
+    return this._organizationRepository.getOrgByIdWithSubscription(id);
+  }
+
   getOrgByApiKey(api: string) {
     return this._organizationRepository.getOrgByApiKey(api);
+  }
+
+  async hasSuperAdminUser(orgId: string) {
+    return !!(await this._organizationRepository.getSuperAdminUser(orgId));
   }
 
   getUserOrg(id: string) {
@@ -61,6 +69,13 @@ export class OrganizationService {
 
   getOrgsByUserId(userId: string) {
     return this._organizationRepository.getOrgsByUserId(userId);
+  }
+
+  getUserOrgByOrganization(userId: string, organizationId: string) {
+    return this._organizationRepository.getUserOrgByOrganization(
+      userId,
+      organizationId
+    );
   }
 
   updateApiKey(orgId: string) {

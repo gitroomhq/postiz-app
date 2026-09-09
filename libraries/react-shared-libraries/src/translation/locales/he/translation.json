@@ -575,6 +575,7 @@
   "email_address": "כתובת אימייל",
   "email_already_exists": "האימייל כבר קיים",
   "google": "גוגל",
+  "apple": "תפוח",
   "farcaster": "Farcaster",
   "edit_autopost": "ערוך פרסום אוטומטי",
   "add_autopost_title": "הוסף פרסום אוטומטי",
@@ -730,5 +731,14 @@
   "yes_cancel_coupon": "כן, בטל קופון",
   "cancel_coupon_title": "לבטל קופון?",
   "cancel_coupon_failed": "לא ניתן היה לבטל את הקופון",
-  "cancel_coupon_success": "הקופון בוטל"
+  "cancel_coupon_success": "הקופון בוטל",
+  "what_do_you_want_to_do": "מה ברצונך לעשות?",
+  "just_update_post_details": "רק לעדכן את פרטי הפוסט",
+  "reschedule_post": "לתזמן מחדש את הפוסט",
+  "republish_the_post": "לפרסם מחדש את הפוסט",
+  "post_already_published_republish_warning": "הפוסט הזה כבר פורסם. פרסום מחדש יפרסם אותו שוב ב",
+  "republish_at": "בשעה",
+  "past_publish_date_warning": "תאריך הפרסום הוא בעבר, יש לבחור תאריך עתידי.",
+  "could_not_save_post": "לא ניתן היה לשמור את הפוסט.",
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו."
 }

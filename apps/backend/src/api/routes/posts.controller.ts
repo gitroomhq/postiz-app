@@ -273,9 +273,12 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
     @Body('date') date: string,
-    @Body('action') action: 'schedule' | 'update' = 'schedule'
+    // 'update' is the safe default: clients that don't send an action must
+    // never requeue (and thereby republish) a post by accident
+    @Body('action') action: 'schedule' | 'update' = 'update',
+    @Body('republish') republish = false
   ) {
-    return this._postsService.changeDate(org.id, id, date, action);
+    return this._postsService.changeDate(org.id, id, date, action, republish);
   }
 
   @Post('/separate-posts')

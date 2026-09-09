@@ -17,13 +17,19 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { Input } from '@gitroom/react/form/input';
 import { TiktokPreview } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.preview';
+import { TikTokMusicSelector } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.music';
+import { TikTokLocationSelector } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.location';
 
 const TikTokSettings: FC<{
   values?: any;
 }> = (props) => {
   const { watch, register } = useSettings();
-  const { value } = useIntegration();
+  const { value, integration } = useIntegration();
   const t = useT();
+
+  // Music and location come from the Business API (v1.3) - the legacy Content
+  // Posting API used by the "tiktok" identifier has no such fields.
+  const isBusiness = integration?.identifier === 'tiktok-business';
 
   const isTitle = useMemo(() => {
     return value?.[0]?.image?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1);
@@ -33,6 +39,7 @@ const TikTokSettings: FC<{
   const isVideo = hasMedia && !isTitle;
 
   const disclose = watch('disclose');
+  const autoAddMusic = watch('autoAddMusic');
   const brand_organic_toggle = watch('brand_organic_toggle');
   const brand_content_toggle = watch('brand_content_toggle');
   const content_posting_method = watch('content_posting_method');
@@ -165,7 +172,11 @@ const TikTokSettings: FC<{
       {isUploadMode && <div className="-mt-[23px] mb-[23px] text-red-600">After posting you fill find a notification inside your Inbox about your post (not content studio)</div>}
       <div className={clsx('flex flex-col', directPostOnly)}>
         <Select
-          label={t('label_auto_add_music', 'Auto add music')}
+          label={
+            isBusiness
+              ? t('label_add_random_music', 'Add random music')
+              : t('label_auto_add_music', 'Auto add music')
+          }
           disabled={isUploadMode}
           {...register('autoAddMusic', {
             value: 'no',
@@ -179,11 +190,39 @@ const TikTokSettings: FC<{
           ))}
         </Select>
         <div className="text-[14px] mt-[10px] mb-[24px] text-balance">
-          {t(
-            'this_feature_available_only_for_photos',
-            'This feature available only for photos, it will add a default music that\n        you can change later.'
-          )}
+          {isBusiness
+            ? t(
+                'tiktok_random_music_only_for_photos',
+                'This feature is available only for photos, it adds a random trending track from TikTok\'s commercial music library.'
+              )
+            : t(
+                'this_feature_available_only_for_photos',
+                'This feature available only for photos, it will add a default music that\n        you can change later.'
+              )}
         </div>
+        {isBusiness && (
+          <div className="flex flex-col gap-[18px] mb-[24px]">
+            {/* Random music replaces a manual choice for photos, so the
+                selector is hidden (but stays registered) while it's on. */}
+            <div
+              className={clsx(
+                !isVideo &&
+                  autoAddMusic === 'yes' &&
+                  'invisible h-0 overflow-hidden'
+              )}
+            >
+              <TikTokMusicSelector
+                label={t('tiktok_music_label', 'Music')}
+                showVolumes={isVideo}
+                {...register('music')}
+              />
+            </div>
+            <TikTokLocationSelector
+              label={t('tiktok_location_label', 'Location')}
+              {...register('location')}
+            />
+          </div>
+        )}
         <hr className="mb-[15px] border-tableBorder" />
         <div className="text-[14px] mb-[10px]">
           {t('tiktok_video_features', 'Video features')}

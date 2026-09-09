@@ -9,6 +9,7 @@ import {
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -16,7 +17,7 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { createReadStream, statSync } from 'fs';
+import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
@@ -72,7 +73,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'disconnect';
         value: string;
       }
     | undefined {
@@ -197,10 +198,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // TikTok limits how many users of this app can post per day: refreshing
+    // the token cannot help, the channel must be re-connected (and can be
+    // migrated to another app via MIGRATE_PROVIDERS).
     if (body.indexOf('reached_active_user_cap') > -1) {
       return {
-        type: 'bad-body' as const,
-        value: 'Daily active user quota reached, please try again later',
+        type: 'disconnect' as const,
+        value:
+          'TikTok daily user limit reached, please re-connect your account',
       };
     }
 
@@ -445,7 +450,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
     } catch (err) {
-      if (err instanceof RefreshToken) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
 
@@ -683,38 +688,18 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  // Resolves the total byte size of the media without loading it into memory:
-  // a HEAD request for remote URLs, statSync for local files.
-  private async tiktokMediaSize(path: string): Promise<number> {
-    if (path.indexOf('http') === 0) {
-      // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request
-      const head = await fetch(path, {
-        method: 'HEAD',
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      const length = head.headers.get('content-length');
-      if (!length) {
-        throw new BadBody(
-          'tiktok-error-upload',
-          '{}',
-          Buffer.from('{}'),
-          'Could not determine the video size for TikTok upload'
-        );
-      }
-      return Number(length);
-    }
-
-    return statSync(path).size;
-  }
-
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
   private async tiktokChunkStream(path: string, start: number, end: number) {
     if (path.indexOf('http') === 0) {
+      // identity encoding so the store keeps content-length and can answer
+      // with the requested range, matching every other media read
       const response = await fetch(path, {
-        headers: { Range: `bytes=${start}-${end}` },
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
 
@@ -833,7 +818,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     // loaded into memory.
     const videoSize = isPhoto
       ? undefined
-      : await this.tiktokMediaSize(videoPath);
+      : await this.mediaSize(videoPath, 'tiktok-error-upload');
 
     const {
       data: { publish_id, upload_url },

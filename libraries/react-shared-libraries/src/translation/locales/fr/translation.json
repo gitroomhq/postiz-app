@@ -575,6 +575,7 @@
   "email_address": "Adresse e-mail",
   "email_already_exists": "L'adresse e-mail existe déjà",
   "google": "Google",
+  "apple": "Pomme",
   "farcaster": "Farcaster",
   "edit_autopost": "Modifier l'autopost",
   "add_autopost_title": "Ajouter un autopost",
@@ -730,5 +731,14 @@
   "yes_cancel_coupon": "Oui, annuler le coupon",
   "cancel_coupon_title": "Annuler le coupon ?",
   "cancel_coupon_failed": "Impossible d'annuler le coupon",
-  "cancel_coupon_success": "Coupon annulé"
+  "cancel_coupon_success": "Coupon annulé",
+  "what_do_you_want_to_do": "Que voulez-vous faire ?",
+  "just_update_post_details": "Mettre à jour uniquement les détails de la publication",
+  "reschedule_post": "Reprogrammer la publication",
+  "republish_the_post": "Republier la publication",
+  "post_already_published_republish_warning": "Cette publication a déjà été publiée. La republier la publiera à nouveau sur",
+  "republish_at": "à",
+  "past_publish_date_warning": "La date de publication est dans le passé, choisissez une date future.",
+  "could_not_save_post": "Impossible d’enregistrer la publication.",
+  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant."
 }

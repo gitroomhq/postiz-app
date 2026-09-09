@@ -168,7 +168,7 @@ export interface SocialProvider
   stripLinks?: () => boolean;
   refreshCron?: boolean;
   dto?: any;
-  maxLength: (additionalSettings?: any) => number;
+  maxLength: (additionalSettings?: any, settings?: any) => number;
   checkValidity(
     posts: Array<{ path: string; thumbnail?: string }[]>,
     settings: any,
@@ -179,6 +179,10 @@ export interface SocialProvider
     pendingData: any,
     integration: Integration
   ): Promise<PendingCheckResponse>;
+  migrationMatch(
+    auth: Pick<AuthTokenDetails, 'id' | 'username'>,
+    integration: Integration
+  ): boolean;
   finalizePost(
     accessToken: string,
     pendingData: any,

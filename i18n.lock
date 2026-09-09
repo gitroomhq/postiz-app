@@ -579,6 +579,7 @@ checksums:
     email_address: 0ee22bbbe989a0c61a18023407d12dc2
     email_already_exists: ad25f0ca7a16c0d37e566a9c090a0fd2
     google: 6cc462fb53d90d404f48d5a6695c1de1
+    apple: 4e2ced07ca66bd1cf0562882d019aff2
     farcaster: b09af25fcb497663e8594b9fc514b969
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9
@@ -735,3 +736,12 @@ checksums:
     cancel_coupon_title: 6a02a23e494728ddb694f591be65900d
     cancel_coupon_failed: 7bbb5c2646ba919b7df0879225eba918
     cancel_coupon_success: ded654a3b6c5fdfe7bdd23e9b5ad711c
+    what_do_you_want_to_do: c2c352197ed13cee73ed85f9706b35de
+    just_update_post_details: fb0d9cba2fe76d06571fc30dc8db0f13
+    reschedule_post: 103d1943e23d4f71b22439a3b03885dd
+    republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
+    post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
+    republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    past_publish_date_warning: 555e0b351f5a510a4be8017bd4b35731
+    could_not_save_post: 43cf68b06ecbdb256c8bda72bd7c732c
+    republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
