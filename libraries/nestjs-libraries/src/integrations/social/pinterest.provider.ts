@@ -141,7 +141,10 @@ export class PinterestProvider
           'Pinterest was unable to reach the URL provided. Please check the link and try again.',
       };
     }
-    if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
+    if (
+      body.indexOf("does not match '^") > -1 &&
+      body.indexOf("d+$'") > -1
+    ) {
       return {
         type: 'bad-body' as const,
         value:
