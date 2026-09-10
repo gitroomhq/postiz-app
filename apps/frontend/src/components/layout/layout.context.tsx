@@ -122,7 +122,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
         if (
           await deleteDialog(
             (
-              await response.json()
+              await response.clone().json()
             ).message,
             'Move to billing',
             'Payment Required'
