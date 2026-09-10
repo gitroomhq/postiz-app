@@ -1112,7 +1112,15 @@ const CalendarItem: FC<{
                 'hidden group-hover:block hover:underline cursor-pointer',
                 post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
               )}
-              onClick={() => window.open(post.releaseURL, '_blank')}
+              onClick={() =>
+                window.open(
+                  // multi-target posts (several subreddits / communities /
+                  // channels) join their URLs with commas: open the first one
+                  post.releaseURL.split(',')[0],
+                  '_blank',
+                  'noopener,noreferrer'
+                )
+              }
             >
               <OpenPost />
             </div>
