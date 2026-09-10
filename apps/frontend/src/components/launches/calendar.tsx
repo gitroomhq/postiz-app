@@ -1104,7 +1104,7 @@ const CalendarItem: FC<{
         >
           <Preview />
         </div>{' '}
-        {state === 'PUBLISHED' &&
+        {(state === 'PUBLISHED' || state === 'ERROR') &&
           !post.intervalInDays &&
           post.releaseURL?.startsWith('http') && (
             <div
