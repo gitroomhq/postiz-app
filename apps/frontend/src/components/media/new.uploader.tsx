@@ -224,7 +224,13 @@ export function useUppyUploader(props: {
 
       if (transloadit.length > 0) {
         // @ts-ignore
-        const allRes = result.transloadit[0].results;
+        const allRes = result.transloadit?.[0]?.results;
+        if (!allRes) {
+          setLocked(false);
+          fileOrderIndex = 0;
+          toast.show('Upload failed, please try again', 'warning');
+          return;
+        }
         const toSave = uniqBy<{ name: string; originalName: string; order: number }>(
           // @ts-ignore
           Object.values(allRes).flatMap((p: any[]) => {
