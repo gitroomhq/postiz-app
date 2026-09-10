@@ -162,7 +162,7 @@ export class StripeService extends PaymentProviderAbstract {
     );
     if (isDuplicate) {
       await stripe.subscriptions.cancel(event.data.object.id);
-      logger.info('stripe_duplicate_subscription_cancelled', {
+      console.log('stripe_duplicate_subscription_cancelled', {
         stripe_event_type: event.type,
         stripe_event_id: event.id,
         stripe_subscription_id: event.data.object.id,
@@ -230,7 +230,7 @@ export class StripeService extends PaymentProviderAbstract {
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };
-    logger.info('stripe_subscription_deleted_survivor_kept', {
+    console.log('stripe_subscription_deleted_survivor_kept', {
       stripe_event_type: event.type,
       stripe_event_id: event.id,
       stripe_subscription_id: event.data.object.id,
