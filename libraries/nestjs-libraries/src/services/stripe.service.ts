@@ -150,6 +150,26 @@ export class StripeService extends PaymentProviderAbstract {
       uniqueId: string;
     };
 
+    const liveSubscriptions = await this.getLiveSubscriptions(
+      event.data.object.customer as string
+    );
+    const isDuplicate = liveSubscriptions.some(
+      (f) =>
+        f.id !== event.data.object.id &&
+        (f.created < event.data.object.created ||
+          (f.created === event.data.object.created &&
+            f.id < event.data.object.id))
+    );
+    if (isDuplicate) {
+      await stripe.subscriptions.cancel(event.data.object.id);
+      logger.info('stripe_duplicate_subscription_cancelled', {
+        stripe_event_type: event.type,
+        stripe_event_id: event.id,
+        stripe_subscription_id: event.data.object.id,
+      });
+      return { ok: true };
+    }
+
     try {
       const check = await this.checkValidCard(event);
       if (!check) {
@@ -195,9 +215,41 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async deleteSubscription(event: Stripe.CustomerSubscriptionDeletedEvent) {
-    await this._subscriptionService.deleteSubscription(
-      event.data.object.customer as string,
-      STRIPE_PROVIDER
+    const customer = event.data.object.customer as string;
+    const [survivor] = await this.getLiveSubscriptions(customer);
+    if (!survivor) {
+      await this._subscriptionService.deleteSubscription(
+        customer,
+        STRIPE_PROVIDER
+      );
+      return;
+    }
+
+    const { uniqueId, billing, period } = survivor.metadata as {
+      billing: 'STANDARD' | 'PRO';
+      period: 'MONTHLY' | 'YEARLY';
+      uniqueId: string;
+    };
+    logger.info('stripe_subscription_deleted_survivor_kept', {
+      stripe_event_type: event.type,
+      stripe_event_id: event.id,
+      stripe_subscription_id: event.data.object.id,
+      stripe_survivor_id: survivor.id,
+      outcome: pricing[billing] && period ? 'resynced' : 'metadata_missing',
+    });
+    if (!pricing[billing] || !period) {
+      return;
+    }
+
+    return this._subscriptionService.createOrUpdateSubscription(
+      STRIPE_PROVIDER,
+      survivor.status !== 'active',
+      uniqueId,
+      customer,
+      pricing[billing].channel!,
+      billing,
+      period,
+      survivor.cancel_at
     );
   }
 
@@ -373,28 +425,38 @@ export class StripeService extends PaymentProviderAbstract {
     });
   }
 
+  private async getLiveSubscriptions(customer?: string | null) {
+    if (!customer || !customer.startsWith('cus_')) {
+      return [];
+    }
+
+    return (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+        expand: ['data.latest_invoice'],
+      })
+    ).data.filter((f) => f.status !== 'canceled');
+  }
+
   async setToCancel(organizationId: string) {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
-    const currentUserSubscription = {
-      data: (
-        await stripe.subscriptions.list({
-          customer,
-          status: 'all',
-          expand: ['data.latest_invoice'],
-        })
-      ).data.filter((f) => f.status !== 'canceled'),
-    };
+    const subscriptions = await this.getLiveSubscriptions(customer);
 
-    const sub = currentUserSubscription.data[0];
+    const sub = subscriptions[0];
 
     // If the user is toggling back (un-cancelling), just remove the cancel
     if (sub.cancel_at_period_end) {
-      const { cancel_at } = await stripe.subscriptions.update(sub.id, {
-        cancel_at_period_end: false,
-        metadata: { service: 'gitroom', id },
-      });
+      let cancel_at: number | null = null;
+      for (const s of subscriptions) {
+        const updated = await stripe.subscriptions.update(s.id, {
+          cancel_at_period_end: false,
+          metadata: { service: 'gitroom', id },
+        });
+        cancel_at = cancel_at || updated.cancel_at;
+      }
 
       return {
         id,
@@ -411,7 +473,9 @@ export class StripeService extends PaymentProviderAbstract {
 
     if (hasFailedPayment) {
       // Payment already failed — cancel immediately and delete subscription
-      await stripe.subscriptions.cancel(sub.id);
+      for (const s of subscriptions) {
+        await stripe.subscriptions.cancel(s.id);
+      }
       await this._subscriptionService.deleteSubscription(
         customer,
         STRIPE_PROVIDER
@@ -424,10 +488,16 @@ export class StripeService extends PaymentProviderAbstract {
     }
 
     // Payment succeeded — cancel at end of billing period
-    const { cancel_at } = await stripe.subscriptions.update(sub.id, {
-      cancel_at_period_end: true,
-      metadata: { service: 'gitroom', id },
-    });
+    let cancel_at: number | null = null;
+    for (const s of subscriptions) {
+      const updated = await stripe.subscriptions.update(s.id, {
+        cancel_at_period_end: true,
+        metadata: { service: 'gitroom', id },
+      });
+      if (updated.cancel_at && (!cancel_at || updated.cancel_at < cancel_at)) {
+        cancel_at = updated.cancel_at;
+      }
+    }
 
     return {
       id,
@@ -777,6 +847,9 @@ export class StripeService extends PaymentProviderAbstract {
     const priceData = pricing[body.billing];
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
+    if ((await this.getLiveSubscriptions(customer)).length) {
+      return { blocked: true };
+    }
     const allProducts = await stripe.products.list({
       active: true,
       expand: ['data.prices'],
@@ -1042,18 +1115,15 @@ export class StripeService extends PaymentProviderAbstract {
 
     const customer = org.paymentId;
 
-    const subscriptions = (
-      await stripe.subscriptions.list({
-        customer,
-        status: 'all',
-      })
-    ).data.filter((f) => f.status !== 'canceled');
+    const subscriptions = await this.getLiveSubscriptions(customer);
 
     if (!subscriptions.length) {
       throw new Error('No active subscription found');
     }
 
-    await stripe.subscriptions.cancel(subscriptions[0].id);
+    for (const subscription of subscriptions) {
+      await stripe.subscriptions.cancel(subscription.id);
+    }
     await this._subscriptionService.deleteSubscription(
       customer,
       STRIPE_PROVIDER
