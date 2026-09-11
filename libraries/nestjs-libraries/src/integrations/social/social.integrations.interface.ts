@@ -234,6 +234,7 @@ export interface SocialProvider
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   pageRequiredToPost?: boolean;
+  pageIdMayEqualRootId?: boolean;
   scopes: string[];
   externalUrl?: (
     url: string
