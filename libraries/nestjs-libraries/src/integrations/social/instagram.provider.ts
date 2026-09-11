@@ -600,11 +600,17 @@ export class InstagramProvider
           // "undefined___..." token); pages without the CREATE_CONTENT
           // task can't be published to by this user. Both are shown as
           // disabled in the picker.
-          const { access_token } = await (
+          const { access_token, error } = await (
             await fetch(
               `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${p.id}?fields=access_token&access_token=${accessToken}`
             )
           ).json();
+
+          // A Graph error body (rate limit, expired token) has no
+          // access_token either - don't mislabel the page as not granted
+          if (error) {
+            throw new Error(error.message);
+          }
 
           return {
             pageId: p.id,
