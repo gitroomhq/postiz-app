@@ -128,6 +128,7 @@ export class CopilotController {
         threadId,
       });
     } catch (err) {
+      Logger.warn(`Could not recall messages for thread ${threadId}: ${err}`);
       return { messages: [] };
     }
   }

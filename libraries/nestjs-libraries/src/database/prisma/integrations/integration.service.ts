@@ -16,7 +16,10 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  NotEnoughScopes,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
@@ -113,7 +116,10 @@ export class IntegrationService {
     const uploadedPicture = picture
       ? picture?.indexOf('imagedelivery.net') > -1
         ? picture
-        : await this.storage.uploadSimple(picture)
+        : await this.storage.uploadSimple(picture).catch((err) => {
+            console.log('Failed to upload profile picture:', picture, err);
+            return undefined;
+          })
       : undefined;
 
     return this._integrationRepository.createOrUpdateIntegration(
@@ -180,9 +186,116 @@ export class IntegrationService {
     }
   }
 
-  async disconnectChannel(orgId: string, integration: Integration) {
+  async disconnectChannel(orgId: string, integration: Integration, err = '') {
     await this._integrationRepository.disconnectChannel(orgId, integration.id);
-    await this.informAboutRefreshError(orgId, integration);
+    await this.informAboutRefreshError(orgId, integration, err);
+  }
+
+  // A reconnect that came back from a different provider (MIGRATE_PROVIDERS):
+  // match the disconnected channel by profile and move it to the new provider
+  // in place, so scheduled posts, settings and customers survive. Throws the
+  // same error as a mismatched reconnect when the migration is not configured
+  // or the user connected a different account.
+  async migrateIntegration(
+    org: string,
+    oldInternalId: string,
+    newProvider: string,
+    auth: { id: string; username: string }
+  ) {
+    const existing = await this._integrationRepository.getIntegrationByInternalId(
+      org,
+      oldInternalId
+    );
+
+    if (
+      !existing ||
+      this._integrationManager.getMigrationTarget(
+        existing.providerIdentifier
+      ) !== newProvider
+    ) {
+      throw new NotEnoughScopes(
+        'Please refresh the channel that needs to be refreshed'
+      );
+    }
+
+    const oldProvider = this._integrationManager.getSocialIntegration(
+      existing.providerIdentifier
+    );
+
+    if (!oldProvider.migrationMatch(auth, existing)) {
+      throw new NotEnoughScopes(
+        `Please connect the same account (@${existing.profile}) that needs to be refreshed`
+      );
+    }
+
+    if (
+      await this._integrationRepository.getIntegrationByInternalId(org, auth.id)
+    ) {
+      throw new NotEnoughScopes(
+        'This account is already connected as another channel, please delete one of them first'
+      );
+    }
+
+    return this._integrationRepository.migrateIntegration(
+      org,
+      existing.id,
+      auth.id,
+      newProvider,
+      existing.rootInternalId === existing.internalId
+        ? auth.id
+        : existing.rootInternalId
+    );
+  }
+
+  // A fresh connect of a migration target (MIGRATE_PROVIDERS) for an account
+  // the org already has on the source provider: adopt that channel instead of
+  // creating a confusing duplicate - the channel is migrated in place exactly
+  // like a reconnect, and the follow-up upsert stores the fresh tokens. A no-op
+  // when nothing matches, so a genuinely new account still creates a channel.
+  async migrateIntegrationOnConnect(
+    org: string,
+    newProvider: string,
+    auth: { id: string; username: string }
+  ) {
+    const sources = this._integrationManager.getMigrationSources(newProvider);
+    if (
+      !sources.length ||
+      this._integrationManager.getSocialIntegration(newProvider).isBetweenSteps
+    ) {
+      return;
+    }
+
+    // the account already exists on the new provider: the normal upsert
+    // updates it, nothing to adopt
+    if (
+      await this._integrationRepository.getIntegrationByInternalId(org, auth.id)
+    ) {
+      return;
+    }
+
+    const existing = (
+      await this._integrationRepository.getIntegrationsList(org)
+    ).find(
+      (p) =>
+        sources.includes(p.providerIdentifier) &&
+        this._integrationManager
+          .getSocialIntegration(p.providerIdentifier)
+          .migrationMatch(auth, p)
+    );
+
+    if (!existing) {
+      return;
+    }
+
+    return this._integrationRepository.migrateIntegration(
+      org,
+      existing.id,
+      auth.id,
+      newProvider,
+      existing.rootInternalId === existing.internalId
+        ? auth.id
+        : existing.rootInternalId
+    );
   }
 
   async informAboutRefreshError(

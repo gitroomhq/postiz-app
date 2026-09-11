@@ -88,12 +88,22 @@ export class SubscriptionRepository {
     });
   }
 
-  deleteSubscriptionByCustomerId(customerId: string) {
+  deleteSubscriptionByCustomerId(customerId: string, provider: string) {
     return this._subscription.model.subscription.deleteMany({
       where: {
+        provider,
         organization: {
           paymentId: customerId,
         },
+      },
+    });
+  }
+
+  deleteSubscriptionByOrgId(organizationId: string, provider: string) {
+    return this._subscription.model.subscription.deleteMany({
+      where: {
+        organizationId,
+        provider,
       },
     });
   }
@@ -136,6 +146,7 @@ export class SubscriptionRepository {
   }
 
   async createOrUpdateSubscription(
+    provider: string,
     isTrailing: boolean,
     identifier: string,
     customerId: string,
@@ -156,7 +167,7 @@ export class SubscriptionRepository {
     await this._subscription.model.subscription.upsert({
       where: {
         organizationId: findOrg.id,
-        ...(!code
+        ...(!code && customerId
           ? {
               organization: {
                 paymentId: customerId,
@@ -166,6 +177,7 @@ export class SubscriptionRepository {
       },
       update: {
         subscriptionTier: billing,
+        provider,
         totalChannels,
         period,
         identifier,
@@ -176,6 +188,7 @@ export class SubscriptionRepository {
       create: {
         organizationId: findOrg.id,
         subscriptionTier: billing,
+        provider,
         isLifetime: !!code,
         totalChannels,
         period,

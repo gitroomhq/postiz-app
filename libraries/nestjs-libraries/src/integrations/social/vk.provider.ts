@@ -8,7 +8,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { createHash, randomBytes } from 'crypto';
-import axios from 'axios';
 import FormDataNew from 'form-data';
 import mime from 'mime-types';
 import { Integration } from '@prisma/client';
@@ -175,7 +174,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
           )
         ).json();
 
-        const { data } = await axios.get(media.path!, {
+        const { data } = await this.getSsrfSafeAxios().get(media.path!, {
           responseType: 'stream',
         });
 
@@ -187,11 +186,15 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
           contentType: mime.lookup(slash!) || '',
         });
         const value = (
-          await axios.post(all.response.upload_url, formData, {
-            headers: {
-              ...formData.getHeaders(),
-            },
-          })
+          await this.getSsrfSafeAxios().post(
+            all.response.upload_url,
+            formData,
+            {
+              headers: {
+                ...formData.getHeaders(),
+              },
+            }
+          )
         ).data;
 
         if (hasExtension(media.path, 'mp4')) {

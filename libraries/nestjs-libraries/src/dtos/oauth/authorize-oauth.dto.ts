@@ -13,6 +13,24 @@ export class AuthorizeOAuthQueryDto {
   @IsString()
   @IsOptional()
   state?: string;
+
+  @IsString()
+  @IsOptional()
+  redirect_uri?: string;
+
+  @IsString()
+  @IsOptional()
+  code_challenge?: string;
+
+  // Not validated with IsIn: static clients may send arbitrary values that
+  // were always ignored; only dynamic clients get S256 enforced (in the service)
+  @IsString()
+  @IsOptional()
+  code_challenge_method?: string;
+
+  @IsString()
+  @IsOptional()
+  scope?: string;
 }
 
 export class ApproveOAuthDto {
@@ -28,4 +46,18 @@ export class ApproveOAuthDto {
   @IsDefined()
   @IsIn(['approve', 'deny'])
   action: 'approve' | 'deny';
+
+  @IsString()
+  @IsOptional()
+  redirect_uri?: string;
+
+  @IsString()
+  @IsOptional()
+  code_challenge?: string;
+
+  // Not validated with IsIn: static clients may send arbitrary values that
+  // were always ignored; only dynamic clients get S256 enforced (in the service)
+  @IsString()
+  @IsOptional()
+  code_challenge_method?: string;
 }

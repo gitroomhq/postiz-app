@@ -3,6 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @Injectable()
 export class PublicAuthMiddleware implements NestMiddleware {
@@ -57,8 +59,21 @@ export class PublicAuthMiddleware implements NestMiddleware {
         req.org = { ...org, users: [{ users: { role: 'SUPERADMIN' } }] };
       }
     } catch (err) {
+      logger.warn('auth_rejected', {
+        rejected_scope: 'public_api',
+        request_path: req.path,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       throw new HttpForbiddenException();
     }
+
+    setSentryUserContext({
+      // @ts-ignore
+      orgId: req.org.id,
+      // @ts-ignore
+      paymentId: req.org.paymentId,
+    });
     next();
   }
 }

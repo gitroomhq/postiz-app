@@ -13,6 +13,10 @@ import {
   Sections,
   SubscriptionException,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { TemporalService } from 'nestjs-temporal-core';
+import { TypedSearchAttributes } from '@temporalio/common';
+import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
 export class MediaService {
@@ -22,7 +26,8 @@ export class MediaService {
     private _mediaRepository: MediaRepository,
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
-    private _videoManager: VideoManager
+    private _videoManager: VideoManager,
+    private _temporalService: TemporalService
   ) {}
 
   async deleteMedia(org: string, id: string) {
@@ -86,35 +91,35 @@ export class MediaService {
     return true;
   }
 
+  private async validateVideoRequest(org: Organization, body: VideoDto) {
+    const totalCredits = await this._subscriptionService.checkCredits(
+      org,
+      'ai_videos'
+    );
+
+    if (totalCredits.credits <= 0) {
+      throw new SubscriptionException({
+        action: AuthorizationActions.Create,
+        section: Sections.VIDEOS_PER_MONTH,
+      });
+    }
+
+    const video = this._videoManager.getVideoByName(body.type);
+    if (!video) {
+      throw new Error(`Video type ${body.type} not found`);
+    }
+
+    if (!video.trial && org.isTrailing) {
+      throw new HttpException('This video is not available in trial mode', 406);
+    }
+
+    await video.instance.processAndValidate(body.customParams);
+    return video;
+  }
+
   async generateVideo(org: Organization, body: VideoDto) {
     try {
-      const totalCredits = await this._subscriptionService.checkCredits(
-        org,
-        'ai_videos'
-      );
-
-      if (totalCredits.credits <= 0) {
-        throw new SubscriptionException({
-          action: AuthorizationActions.Create,
-          section: Sections.VIDEOS_PER_MONTH,
-        });
-      }
-
-      const video = this._videoManager.getVideoByName(body.type);
-      if (!video) {
-        throw new Error(`Video type ${body.type} not found`);
-      }
-
-      if (!video.trial && org.isTrailing) {
-        throw new HttpException(
-          'This video is not available in trial mode',
-          406
-        );
-      }
-
-      console.log(body.customParams);
-      await video.instance.processAndValidate(body.customParams);
-      console.log('no err');
+      const video = await this.validateVideoRequest(org, body);
 
       return await this._subscriptionService.useCredit(
         org,
@@ -131,6 +136,86 @@ export class MediaService {
       );
     } catch (err) {
       throw generationError(err);
+    }
+  }
+
+  // Generating a video takes minutes, longer than an MCP request can stay open,
+  // so the generation runs in a workflow and the caller polls its status by job id
+  async startGenerateVideo(org: Organization, body: VideoDto) {
+    // validated here as well as in the workflow so bad input fails before a job exists
+    try {
+      await this.validateVideoRequest(org, body);
+    } catch (err) {
+      throw generationError(err);
+    }
+
+    const client = this._temporalService.client.getRawClient();
+    if (!client) {
+      throw new HttpException('Video generation is not available', 503);
+    }
+
+    const jobId = `video_${org.id}_${makeId(10)}`;
+    await client.workflow.start('generateVideoWorkflow', {
+      workflowId: jobId,
+      taskQueue: 'main',
+      args: [
+        {
+          organizationId: org.id,
+          body,
+        },
+      ],
+      typedSearchAttributes: new TypedSearchAttributes([
+        {
+          key: organizationId,
+          value: org.id,
+        },
+      ]),
+    });
+
+    return { jobId };
+  }
+
+  async getGenerateVideoStatus(
+    org: Organization,
+    jobId: string
+  ): Promise<{
+    status: 'pending' | 'completed' | 'failed';
+    id?: string;
+    path?: string;
+    error?: string;
+  }> {
+    // the job id carries the organization, so one org can't poll another's job
+    if (!jobId.startsWith(`video_${org.id}_`)) {
+      throw new HttpException('Video job not found', 404);
+    }
+
+    const handle = await this._temporalService.client.getWorkflowHandle(jobId);
+    let status: string;
+    try {
+      status = (await handle.describe()).status.name;
+    } catch (err) {
+      throw new HttpException('Video job not found', 404);
+    }
+
+    if (status === 'RUNNING') {
+      return { status: 'pending' };
+    }
+
+    try {
+      const media = (await handle.result()) as Awaited<
+        ReturnType<MediaService['saveFile']>
+      >;
+      return { status: 'completed', id: media.id, path: media.path };
+    } catch (err) {
+      // the workflow failure wraps the activity failure which wraps the actual error
+      let cause: any = err;
+      while (cause?.cause && cause.cause !== cause) {
+        cause = cause.cause;
+      }
+      return {
+        status: 'failed',
+        error: cause?.message || String(err),
+      };
     }
   }
 

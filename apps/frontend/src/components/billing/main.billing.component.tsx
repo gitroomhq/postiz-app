@@ -18,7 +18,6 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { Textarea } from '@gitroom/react/form/textarea';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useUtmUrl } from '@gitroom/helpers/utils/utm.saver';
 import { useTrack } from '@gitroom/react/helpers/use.track';
@@ -28,6 +27,10 @@ import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+
+type SubscriptionWithPlatform = Subscription & {
+  platform?: 'web' | 'mobile';
+};
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -166,50 +169,8 @@ const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
     </div>
   );
 };
-const Info: FC<{
-  proceed: (feedback: string) => void;
-}> = (props) => {
-  const [feedback, setFeedback] = useState('');
-  const modal = useModals();
-  const events = useFireEvents();
-  const cancel = useCallback(() => {
-    props.proceed(feedback);
-    events('cancel_subscription');
-    modal.closeAll();
-  }, [modal, feedback]);
-
-  const t = useT();
-
-  return (
-    <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px]">
-      <div>
-        {t(
-          'would_you_mind_shortly_tell_us_what_we_could_have_done_better',
-          'Would you mind shortly tell us what we could have done better?'
-        )}
-      </div>
-      <div>
-        <Textarea
-          className="bg-newBgColorInner"
-          label={'Feedback'}
-          name="feedback"
-          disableForm={true}
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-        />
-      </div>
-      <div>
-        <Button disabled={feedback.length < 20} onClick={cancel}>
-          {feedback.length < 20
-            ? t('please_add_at_least', 'Please add at least 20 chars')
-            : t('cancel_subscription', 'Cancel Subscription')}
-        </Button>
-      </div>
-    </div>
-  );
-};
 export const MainBillingComponent: FC<{
-  sub?: Subscription;
+  sub?: SubscriptionWithPlatform;
 }> = (props) => {
   const { sub } = props;
   const { isGeneral } = useVariables();
@@ -218,6 +179,7 @@ export const MainBillingComponent: FC<{
   const toast = useToaster();
   const user = useUser();
   const dub = useDubClickId();
+  const events = useFireEvents();
   const modal = useModals();
   const router = useRouter();
   const utm = useUtmUrl();
@@ -228,7 +190,7 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
-  const [subscription, setSubscription] = useState<Subscription | undefined>(
+  const [subscription, setSubscription] = useState<SubscriptionWithPlatform | undefined>(
     sub
   );
   const [loading, setLoading] = useState<boolean>(false);
@@ -277,12 +239,6 @@ export const MainBillingComponent: FC<{
           const { cancel_at } = await (
             await fetch('/billing/cancel', {
               method: 'POST',
-              body: JSON.stringify({
-                feedback: '',
-              }),
-              headers: {
-                'Content-Type': 'application/json',
-              },
             })
           ).json();
           setSubscription((subs) => ({
@@ -336,30 +292,11 @@ export const MainBillingComponent: FC<{
               }
             }
 
-            const info = await new Promise((res) => {
-              modal.openModal({
-                title: t(
-                  'we_are_sorry_to_see_you_go',
-                  'We are sorry to see you go :('
-                ),
-                withCloseButton: true,
-                classNames: {
-                  modal: 'bg-transparent text-textColor',
-                },
-                children: <Info proceed={(e) => res(e)} />,
-              });
-            });
-
+            events('cancel_subscription');
             setLoading(true);
             const { cancel_at } = await (
               await fetch('/billing/cancel', {
                 method: 'POST',
-                body: JSON.stringify({
-                  feedback: info,
-                }),
-                headers: {
-                  'Content-Type': 'application/json',
-                },
               })
             ).json();
             setSubscription((subs) => ({
@@ -379,7 +316,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal } = await (
+        const { url, portal, blocked } = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -390,6 +327,18 @@ export const MainBillingComponent: FC<{
             }),
           })
         ).json();
+        if (blocked) {
+          setLoading(false);
+          await deleteDialog(
+            t(
+              'billing_other_account_subscribed',
+              'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
+            ),
+            t('ok', 'OK'),
+            t('already_subscribed', 'Already subscribed')
+          );
+          return;
+        }
         if (url) {
           await track(TrackEnum.InitiateCheckout, {
             value:
@@ -436,6 +385,30 @@ export const MainBillingComponent: FC<{
   if (user?.isLifetime) {
     router.replace('/');
     return null;
+  }
+  if (subscription?.platform && subscription.platform !== 'web') {
+    return (
+      <div className="flex flex-col gap-[16px]">
+        <div className="text-[20px]">{t('plans', 'Plans')}</div>
+        <div className="flex flex-col items-center gap-[8px] rounded-[8px] bg-newBgColorInner p-[24px] text-center">
+          <div className="text-[18px]">
+            {t('subscription_managed_by', 'Your subscription is managed by')}{' '}
+            <span className="capitalize">{subscription.provider}</span>
+          </div>
+          <div className="text-[14px] opacity-70">
+            {t(
+              'subscription_manage_on_platform',
+              'Please go to {{platform}} to manage it',
+              { platform: subscription.platform }
+            )}
+          </div>
+        </div>
+        <FAQComponent />
+        <div className="flex justify-center mt-[20px]">
+          <LogoutComponent />
+        </div>
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-[16px]">

@@ -6,7 +6,6 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import axios from 'axios';
 import FormData from 'form-data';
 import {
   SocialAbstract,
@@ -29,9 +28,9 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   }
   dto = DribbbleDto;
 
-  override async checkValidity(
-    [firstItem]: Array<ValidityMedia[]>
-  ): Promise<string | true> {
+  override async checkValidity([firstItem]: Array<ValidityMedia[]>): Promise<
+    string | true
+  > {
     const isMp4 = firstItem?.find(
       (item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1
     );
@@ -163,7 +162,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     accessToken: string,
     postDetails: PostDetails<DribbbleDto>[]
   ): Promise<PostResponse[]> {
-    const { data, status } = await axios.get(
+    const { data, status } = await this.getSsrfSafeAxios().get(
       postDetails?.[0]?.media?.[0]?.path!,
       {
         responseType: 'stream',
@@ -181,7 +180,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     formData.append('title', postDetails[0].settings.title);
     formData.append('description', postDetails[0].message);
 
-    const data2 = await axios.post(
+    const data2 = await this.getSsrfSafeAxios().post(
       'https://api.dribbble.com/v2/shots',
       formData,
       {
