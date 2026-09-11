@@ -741,5 +741,9 @@
   "republish_at": "lúc",
   "past_publish_date_warning": "Ngày xuất bản đã qua, hãy chọn một ngày trong tương lai.",
   "could_not_save_post": "Không thể lưu bài viết.",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "not_selectable_page_not_granted_to_postiz": "Không thể chọn: Trang chưa cấp quyền cho Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "Bạn chưa cấp quyền truy cập Trang này cho Postiz trong cửa sổ Facebook. \nKết nối lại kênh và chọn Trang này khi Facebook hỏi trang nào được chia sẻ.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Không thể chọn: tài khoản của bạn không thể đăng lên Trang này",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Tài khoản Facebook của bạn chưa có quyền đăng nội dung lên Trang này.\nHãy yêu cầu admin Trang cấp quyền đầy đủ (hoặc quyền nội dung/đăng bài) cho bạn tại Cài đặt Trang > Quyền truy cập Trang (hoặc trong Business Portfolio), sau đó kết nối lại kênh."
 }

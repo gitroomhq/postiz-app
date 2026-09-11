@@ -741,5 +741,9 @@
   "republish_at": "于",
   "past_publish_date_warning": "发布日期已过，请选择一个将来的日期。",
   "could_not_save_post": "无法保存帖子。",
-  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "not_selectable_page_not_granted_to_postiz": "不可选择：页面未授权给 Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "你在 Facebook 对话框中未授权 Postiz 访问此页面。\n请重新连接频道，并在 Facebook 询问分享哪些页面时勾选此页面。",
+  "not_selectable_your_account_cant_publish_to_this_page": "不可选择：你的账号无法在此页面发布内容",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "你的 Facebook 账号没有此页面的内容权限。\n请让页面管理员在页面设置 > 页面访问权限（或在商业资产管理中）授予你完全（或内容/发布）权限，之后重新连接频道。"
 }

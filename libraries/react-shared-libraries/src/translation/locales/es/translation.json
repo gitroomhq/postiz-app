@@ -741,5 +741,9 @@
   "republish_at": "a las",
   "past_publish_date_warning": "La fecha de publicación está en el pasado, elige una fecha futura.",
   "could_not_save_post": "No se pudo guardar la publicación.",
-  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora.",
+  "not_selectable_page_not_granted_to_postiz": "No seleccionable: la página no ha sido concedida a Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "No concediste acceso de Postiz a esta página en el cuadro de diálogo de Facebook.\nVuelve a conectar el canal y marca esta página cuando Facebook te pregunte qué páginas compartir.",
+  "not_selectable_your_account_cant_publish_to_this_page": "No seleccionable: tu cuenta no puede publicar en esta página",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Tu cuenta de Facebook no tiene permisos de contenido en esta página.\nPide a un administrador de la página que te dé acceso completo (o de contenido/publicación) en Configuración de la página > Acceso a la página (o en el Portafolio empresarial), luego vuelve a conectar el canal."
 }

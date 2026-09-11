@@ -741,5 +741,9 @@
   "republish_at": "다음 시간에",
   "past_publish_date_warning": "게시 날짜가 과거입니다. 미래 날짜를 선택하세요.",
   "could_not_save_post": "게시물을 저장할 수 없습니다.",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "not_selectable_page_not_granted_to_postiz": "선택 불가: 페이지가 Postiz에 할당되지 않았습니다.",
+  "you_did_not_grant_postiz_access_to_this_page": "Facebook 대화상자에서 이 페이지에 대한 Postiz 액세스를 부여하지 않았습니다.\n채널을 다시 연결한 뒤, Facebook이 공유할 페이지를 선택할 때 이 페이지를 꼭 선택하세요.",
+  "not_selectable_your_account_cant_publish_to_this_page": "선택 불가: 내 계정은 이 페이지에 게시할 수 없습니다.",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Facebook 계정에 이 페이지의 콘텐츠 권한이 없습니다.\n페이지 설정 > 페이지 접근(또는 비즈니스 포트폴리오)에서 관리자에게 전체(또는 콘텐츠/게시) 액세스 권한을 받아야 하고, 이후 채널을 다시 연결하세요."
 }

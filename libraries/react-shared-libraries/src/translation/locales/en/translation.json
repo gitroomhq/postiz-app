@@ -764,5 +764,9 @@
   "republish_at": "at",
   "past_publish_date_warning": "The publish date is in the past, pick a future date.",
   "could_not_save_post": "Could not save the post.",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "not_selectable_page_not_granted_to_postiz": "Not selectable: page not granted to Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "You did not grant Postiz access to this Page in the Facebook dialog.\nReconnect the channel and tick this Page when Facebook asks which Pages to share.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Not selectable: your account can't publish to this Page",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Your Facebook account does not have content permissions on this Page.\nAsk a Page admin to give you full (or content/publishing) access under Page settings > Page access (or in the Business Portfolio), then reconnect the channel."
 }
