@@ -64,7 +64,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     status: number
   ):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
@@ -90,9 +90,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // code 368 "Temporarily blocked for policies violations" (subcode
+    // 1390008): Meta documents it as temporary, "wait and retry the operation"
     if (body.indexOf('1390008') > -1) {
       return {
-        type: 'bad-body' as const,
+        type: 'retry' as const,
         value: 'You are posting too fast, please slow down',
       };
     }
