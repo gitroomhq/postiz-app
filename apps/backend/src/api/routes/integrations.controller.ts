@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import {
   Body,
   Controller,
@@ -107,7 +108,10 @@ export class IntegrationsController {
             stripLinks: !!findIntegration?.stripLinks?.(),
             picture: p.picture || '/no-picture.jpg',
             identifier: p.providerIdentifier,
-            inBetweenSteps: p.inBetweenSteps,
+            inBetweenSteps: this._integrationService.needsPageSelection(
+              p,
+              findIntegration
+            ),
             refreshNeeded: p.refreshNeeded,
             isCustomFields: !!findIntegration.customFields,
             ...(findIntegration.customFields
@@ -347,6 +351,22 @@ export class IntegrationsController {
     );
     if (!integrationProvider) {
       throw new Error('Invalid provider');
+    }
+
+    if (dayjs(getIntegration.tokenExpiration).isBefore(dayjs())) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+
+      if (!data) {
+        return false;
+      }
+
+      getIntegration.token = data.accessToken;
+
+      if (integrationProvider.refreshWait) {
+        await timer(10000);
+      }
     }
 
     // @ts-ignore
