@@ -25,15 +25,22 @@ describe('useStateCallback', () => {
     expect(result.current[0]).toBe(42);
   });
 
-  it('does not invoke anything on the initial render', () => {
-    const cb = vi.fn();
-    const { result, rerender } = renderHook(() => useStateCallback('a'));
+  it('never fires a no-op set\'s callback later, with a value it never asked for', () => {
+    // After a bailed-out set the ref still holds the callback, so the worry is
+    // that a later update fires it with the wrong value. It cannot: every set
+    // reassigns cbRef first, clearing it when no callback is passed and
+    // replacing it when one is.
+    const stale = vi.fn();
+    const fresh = vi.fn();
+    const { result } = renderHook(() => useStateCallback('same'));
 
-    rerender();
-    expect(cb).not.toHaveBeenCalled();
+    act(() => result.current[1]('same', stale));
+    act(() => result.current[1]('different'));
+    expect(stale).not.toHaveBeenCalled();
 
-    act(() => result.current[1]('b', cb));
-    expect(cb).toHaveBeenCalledTimes(1);
+    act(() => result.current[1]('another', fresh));
+    expect(stale).not.toHaveBeenCalled();
+    expect(fresh).toHaveBeenCalledWith('another');
   });
 
   it('treats a function initial value as React lazy state, not as data', () => {

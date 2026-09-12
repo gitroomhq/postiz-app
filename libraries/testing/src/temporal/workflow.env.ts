@@ -106,7 +106,7 @@ export async function stopTestEnvironment() {
  * the server's past partway through the file, which shows up as a workflow
  * taking an "already expired" branch for no visible reason.
  */
-export function testEnvironmentNow(): Promise<number> {
+export async function testEnvironmentNow(): Promise<number> {
   if (!environment) {
     throw new Error('startTestEnvironment() must run before testEnvironmentNow()');
   }
@@ -117,8 +117,8 @@ export function testEnvironmentNow(): Promise<number> {
 /**
  * Run any workflow against stubbed activities on the time-skipping server.
  *
- * Each call gets its own task queue, so specs cannot pick up each other's
- * activity stubs. `args` is passed to the workflow verbatim; a workflow that
+ * By default each call gets its own task queue, so specs cannot pick up each
+ * other's activity stubs. `args` is passed to the workflow verbatim; a workflow that
  * proxies activities onto a queue taken from its own arguments (as the post
  * workflow does) must be given the queue this returns - see runPostWorkflow.
  *

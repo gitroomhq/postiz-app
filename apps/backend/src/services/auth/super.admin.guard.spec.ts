@@ -49,12 +49,12 @@ describe('SuperAdminGuard', () => {
     ).rejects.toMatchObject({ response: { msg: 'Unauthorized' } });
   });
 
-  it('throws rather than returning false, so Nest cannot fall through', async () => {
-    // Returning false would produce a 403 too, but the explicit throw is what
-    // pins the response body; this guards against a refactor to `return false`.
+  it('throws rather than returning false, so the body is the one above', async () => {
+    // A `return false` refactor would still yield 403, but with Nest's default
+    // "Forbidden resource" body instead of this one.
     await expect(
       guard().canActivate(context({ org: { id: 'org-1' } }))
-    ).rejects.toBeTruthy();
+    ).rejects.toMatchObject({ status: 403, response: { msg: 'Unauthorized' } });
   });
 
   it('denies when the lookup itself fails, rather than admitting', async () => {

@@ -40,14 +40,16 @@ describe('useFormatting mentions', () => {
   });
 
   it.each([
-    ['a bare @', 'email me @ work'],
-    ['an email address', 'hi a@b.com'],
-  ])('leaves %s partly alone', (_label, input) => {
+    ['a bare @ is left alone', 'email me @ work', 'email me @ work'],
+    [
+      'an email address is half-bolded',
+      'hi a@b.com',
+      'hi a<strong>@b</strong>.com',
+    ],
+  ])('%s', (_label, input, expected) => {
     // The pattern is deliberately loose - it is a preview affordance, not a
-    // parser - so this pins what it actually does rather than what it ought to.
-    expect(first([content(input)]).text).toBe(
-      input.replace(/@\w{1,15}/g, (m) => `<strong>${m}</strong>`)
-    );
+    // parser - so these pin what it actually does rather than what it ought to.
+    expect(first([content(input)]).text).toBe(expected);
   });
 
   it('passes plain text through unchanged', () => {
@@ -66,13 +68,13 @@ describe('useFormatting saveBreaklines', () => {
     expect(first([content('a\nb')], { saveBreaklines: true }).text).toBe('a\nb');
   });
 
-  it('only protects the first newline, not every one', () => {
-    // The guard uses String.replace with a string needle and no /g, so the
-    // second newline onwards never round-trips through the sentinel. It
-    // survives here only because the mention pattern does not touch newlines -
-    // pinned so a change to that pattern surfaces as a failure here.
-    expect(first([content('a\nb\nc')], { saveBreaklines: true }).text).toBe(
-      'a\nb\nc'
+  it('leaves every newline in place, however many there are', () => {
+    // The sentinel guard only round-trips the FIRST newline (String.replace
+    // with a string needle, no /g), but the later ones survive anyway because
+    // the mention pattern never touches newlines. Both facts together are why
+    // this passes; widening that pattern would break it here first.
+    expect(first([content('a\nb\nc\nd')], { saveBreaklines: true }).text).toBe(
+      'a\nb\nc\nd'
     );
   });
 
@@ -100,17 +102,20 @@ describe('useFormatting count', () => {
     expect(first([content('a\nb')], { saveBreaklines: true }).count).toBe(3);
   });
 
-  it('counts newlines as spaces only when both flags are set', () => {
-    // removeMarkdown alone does nothing to the count; it is the pair that
-    // switches to the "newline is a space" rule.
-    const both = first([content('a\nb')], {
+  it('counts the same either way, because the two branches cannot differ', () => {
+    // The removeMarkdown && saveBreaklines branch counts
+    // newText.replace(/\n/g, ' ').length, and swapping a newline for a space
+    // cannot change a length - so the branch is inert. Pinned as equality
+    // rather than dressed up as a rule, so removing the dead branch does not
+    // look like a regression.
+    const both = first([content('a\nb\nc')], {
       saveBreaklines: true,
       removeMarkdown: true,
     });
-    const onlyRemove = first([content('a\nb')], { removeMarkdown: true });
+    const neither = first([content('a\nb\nc')], {});
 
-    expect(both.count).toBe(3);
-    expect(onlyRemove.count).toBe(3);
+    expect(both.count).toBe(neither.count);
+    expect(both.count).toBe(5);
   });
 });
 

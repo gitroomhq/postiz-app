@@ -8,6 +8,7 @@ vi.mock('@gitroom/nestjs-libraries/sentry/logger', () => ({
   errorMessage: (err: unknown) => (err as Error)?.message ?? '',
 }));
 
+import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { NotificationService } from './notification.service';
 
 const notifications = {
@@ -134,9 +135,12 @@ describe('NotificationService digest routing', () => {
   it('tags the workflow with the organization so it can be found later', async () => {
     await service().inAppNotification('org-1', 'Subject', 'msg', true, true);
 
-    expect(
-      signalWithStart.mock.calls[0][1].typedSearchAttributes
-    ).toBeTruthy();
+    // A truthiness check would pass with the wrong org, or an empty list.
+    const attributes =
+      signalWithStart.mock.calls[0][1].typedSearchAttributes.getAll();
+    expect(attributes).toHaveLength(1);
+    expect(attributes[0].value).toBe('org-1');
+    expect(attributes[0].key.name).toBe(organizationId.name);
   });
 
   it('does not fall back to a direct email when the digest fails', async () => {

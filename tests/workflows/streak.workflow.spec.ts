@@ -3,6 +3,7 @@ import {
   runWorkflow,
   startTestEnvironment,
   stopTestEnvironment,
+  testEnvironmentNow,
   workflowPath,
 } from '@gitroom/testing/temporal/workflow.env';
 
@@ -138,14 +139,16 @@ describe('streakWorkflow', () => {
     expect(setStreak).toHaveBeenCalledTimes(2);
   });
 
-  it('spans a full day of sleeps without taking one', async () => {
-    // 22 hours then 2: the assertion that matters is that the workflow really
-    // does complete, which it only can because the server skips the time.
-    const before = Date.now();
+  it('advances the server clock by the full 24 hours it sleeps', async () => {
+    // 22 hours then 2. Asserting wall-clock instead would pass whether the
+    // sleeps were 24 hours, zero, or deleted outright - it is the SERVER's
+    // clock that records them.
+    const before = await testEnvironmentNow();
     const { result } = run([user()]);
 
     await result;
 
-    expect(Date.now() - before).toBeLessThan(60_000);
+    const elapsed = (await testEnvironmentNow()) - before;
+    expect(elapsed).toBeGreaterThanOrEqual(79200000 + 7200000);
   });
 });

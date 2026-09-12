@@ -99,10 +99,15 @@ describe('PaymentService.webhook', () => {
     expect(revenuecat.processWebhook).toHaveBeenCalled();
   });
 
-  it('refuses a webhook for a provider that is not built in', async () => {
+  it('does not swallow an unknown provider, it lets the lookup throw', async () => {
+    // The "not found" message itself belongs to PaymentProviderManager; what
+    // is asserted here is only that PaymentService propagates rather than
+    // silently returning undefined and reporting the webhook handled.
     await expect(
       service().webhook('paddle', Buffer.from('x'), {})
-    ).rejects.toThrow('Payment provider paddle not found');
+    ).rejects.toBeInstanceOf(HttpException);
+    expect(stripe.processWebhook).not.toHaveBeenCalled();
+    expect(revenuecat.processWebhook).not.toHaveBeenCalled();
   });
 });
 
@@ -177,12 +182,14 @@ describe('PaymentService.getProviderForOrganization', () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 
-  it('surfaces "no provider for this platform" as a plain error', async () => {
+  it('propagates rather than returning a web provider for a mobile request', async () => {
+    // The message is the manager's; the property under test is that
+    // PaymentService does not fall back to "any provider will do".
     registered = [{ name: 'stripe', provider: stripe }];
 
     await expect(
       service().getProviderForOrganization('org-1', 'mobile')
-    ).rejects.toThrow('No payment provider registered for mobile');
+    ).rejects.toThrow();
   });
 });
 
@@ -258,17 +265,11 @@ describe('PaymentService.cancelAllSubscriptions', () => {
 });
 
 describe('PaymentService defaults and pass-throughs', () => {
-  it('exposes the default provider and its name per platform', () => {
+  it('asks the manager for the default of the requested platform', () => {
     expect(service().getDefaultProvider('web')).toBe(stripe);
     expect(service().getDefaultProviderName('web')).toBe('stripe');
     expect(service().getDefaultProvider('mobile')).toBe(revenuecat);
     expect(service().getDefaultProviderName('mobile')).toBe('revenuecat');
-  });
-
-  it('treats the first registered provider of a platform as the default', () => {
-    registered.unshift({ name: 'paddle', provider: fakeProvider('web') });
-
-    expect(service().getDefaultProviderName('web')).toBe('paddle');
   });
 
   it('syncs a subscription through the named provider', async () => {

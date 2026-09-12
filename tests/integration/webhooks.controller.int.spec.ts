@@ -217,6 +217,9 @@ describe('WebhookController (integration)', () => {
         },
       });
 
+      // Pinned rather than endorsed: Prisma's P2025 reaches the exception
+      // filter unclassified, so this surfaces as a 500 where a 404 would be
+      // right. Mirrors the note in integrations.controller.int.spec.ts.
       await api().delete(`/webhooks/${theirs.id}`).expect(500);
 
       const stored = await testPrisma().webhooks.findUnique({
@@ -303,6 +306,9 @@ describe('WebhookController (integration)', () => {
         .expect(201)
         .expect({ send: true });
 
+      // Without this the test would also pass if validation had rejected the
+      // url before any request was attempted.
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
       fetchSpy.mockRestore();
     });
 

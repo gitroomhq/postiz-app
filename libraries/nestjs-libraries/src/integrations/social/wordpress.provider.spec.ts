@@ -243,8 +243,8 @@ describe('WordpressProvider taxonomy tools', () => {
   });
 
   it.each([
-    ['an error object', { code: 'rest_no_route' }],
-    ['null', null],
+    ['a REST error object', { code: 'rest_no_route' }],
+    ['an empty object', {}],
   ])('returns an empty list when categories answers %s', async (_label, body) => {
     // WordPress answers a REST error as an object, and mapping over it would
     // throw where an empty list is the honest answer.
