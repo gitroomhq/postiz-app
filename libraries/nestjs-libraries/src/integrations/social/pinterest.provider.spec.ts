@@ -317,3 +317,240 @@ describe('PinterestProvider.generateAuthUrl', () => {
     expect(url).toContain(`state=${state}`);
   });
 });
+
+describe('PinterestProvider.authenticate', () => {
+  const authRoutes = (scope = provider.scopes.join(',')) =>
+    stubFetch([
+      [
+        '/v5/oauth/token',
+        () => ({
+          access_token: 'access-1',
+          refresh_token: 'refresh-1',
+          expires_in: 2592000,
+          scope,
+        }),
+      ],
+      [
+        '/v5/user_account',
+        () => ({ id: 'acct-1', username: 'apinner', profile_image: 'https://cdn.test/me.png' }),
+      ],
+    ]);
+
+  beforeEach(() => {
+    process.env.PINTEREST_CLIENT_ID = 'client-1';
+    process.env.PINTEREST_CLIENT_SECRET = 'secret-1';
+    process.env.FRONTEND_URL = 'https://app.postiz.test';
+  });
+
+  it('exchanges the code and describes the account', async () => {
+    const fetchStub = authRoutes();
+
+    await expect(
+      provider.authenticate({ code: 'the-code', codeVerifier: 'v', refresh: '' })
+    ).resolves.toEqual({
+      id: 'acct-1',
+      name: 'apinner',
+      username: 'apinner',
+      accessToken: 'access-1',
+      refreshToken: 'refresh-1',
+      expiresIn: 2592000,
+      picture: 'https://cdn.test/me.png',
+    });
+
+    const body = new URLSearchParams(String(fetchStub.calls[0].init.body));
+    expect(Object.fromEntries(body)).toMatchObject({
+      grant_type: 'authorization_code',
+      code: 'the-code',
+      redirect_uri: 'https://app.postiz.test/integrations/social/pinterest',
+    });
+  });
+
+  it('authenticates the exchange with basic client credentials', async () => {
+    // Pinterest takes the client id and secret as HTTP basic, not in the body.
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' });
+
+    expect(fetchStub.calls[0].init.headers).toMatchObject({
+      Authorization: `Basic ${Buffer.from('client-1:secret-1').toString('base64')}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    });
+  });
+
+  it('refuses a grant missing a scope it needs', async () => {
+    authRoutes('boards:read,pins:read');
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' })
+    ).rejects.toBeTruthy();
+  });
+
+  it('reads the account with the freshly issued token', async () => {
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: '' });
+
+    expect(fetchStub.calls[1].init.headers).toMatchObject({
+      Authorization: 'Bearer access-1',
+    });
+  });
+});
+
+describe('PinterestProvider.boards', () => {
+  it('reduces the board list to id and name', async () => {
+    const fetchStub = stubFetch([
+      [
+        '/v5/boards',
+        () => ({ items: [{ id: 'b1', name: 'Inspiration', privacy: 'PUBLIC' }] }),
+      ],
+    ]);
+
+    await expect(provider.boards('token')).resolves.toEqual([
+      { id: 'b1', name: 'Inspiration' },
+    ]);
+    // One page large enough that most accounts never need a second request.
+    expect(fetchStub.urls()[0]).toContain('page_size=250');
+  });
+
+  it('returns an empty list when the account has no boards', async () => {
+    stubFetch([['/v5/boards', () => ({})]]);
+
+    await expect(provider.boards('token')).resolves.toEqual([]);
+  });
+});
+
+describe('PinterestProvider.analytics', () => {
+  const daily = (date: string, over: Record<string, number> = {}) => ({
+    date,
+    metrics: {
+      PIN_CLICK_RATE: 0.5,
+      IMPRESSION: 100,
+      PIN_CLICK: 10,
+      ENGAGEMENT: 20,
+      SAVE: 5,
+      ...over,
+    },
+  });
+
+  it('splits the daily metrics into one series per label', async () => {
+    stubFetch([
+      [
+        '/v5/user_account/analytics',
+        () => ({ all: { daily_metrics: [daily('2026-01-01'), daily('2026-01-02')] } }),
+      ],
+    ]);
+
+    const result = await provider.analytics('id', 'token', 7);
+
+    expect(result.map((r) => r.label)).toEqual([
+      'Pin click rate',
+      'Impressions',
+      'Pin Clicks',
+      'Engagement',
+      'Saves',
+    ]);
+    expect(result[1].data).toEqual([
+      { date: '2026-01-01', total: 100 },
+      { date: '2026-01-02', total: 100 },
+    ]);
+  });
+
+  it('skips a day that carries no metrics at all', async () => {
+    // Pinterest returns placeholder days with an empty metrics object.
+    stubFetch([
+      [
+        '/v5/user_account/analytics',
+        () => ({ all: { daily_metrics: [{ date: '2026-01-01', metrics: {} }, daily('2026-01-02')] } }),
+      ],
+    ]);
+
+    const result = await provider.analytics('id', 'token', 7);
+
+    expect(result[0].data).toEqual([{ date: '2026-01-02', total: 0.5 }]);
+  });
+
+  it('still returns the five empty series when there is no data', async () => {
+    stubFetch([['/v5/user_account/analytics', () => ({ all: { daily_metrics: [] } })]]);
+
+    const result = await provider.analytics('id', 'token', 7);
+
+    expect(result).toHaveLength(5);
+    expect(result.every((r) => r.data.length === 0)).toBe(true);
+  });
+
+  it('clamps the window to the 89 days Pinterest will serve', async () => {
+    // Asking for more returns a 400, so a "last year" request has to be cut.
+    const fetchStub = stubFetch([
+      ['/v5/user_account/analytics', () => ({ all: { daily_metrics: [] } })],
+    ]);
+
+    await provider.analytics('id', 'token', 365);
+
+    const params = new URL(fetchStub.urls()[0]).searchParams;
+    const days =
+      (Date.parse(params.get('end_date')!) - Date.parse(params.get('start_date')!)) /
+      86400000;
+    expect(days).toBe(89);
+  });
+});
+
+describe('PinterestProvider.postAnalytics', () => {
+  it('reports each lifetime metric it understands', async () => {
+    stubFetch([
+      [
+        '/analytics',
+        () => ({
+          all: {
+            lifetime_metrics: {
+              IMPRESSION: 500,
+              PIN_CLICK: 40,
+              OUTBOUND_CLICK: 12,
+              SAVE: 7,
+            },
+          },
+        }),
+      ],
+    ]);
+
+    const result = await provider.postAnalytics('id', 'token', 'pin-1', 7);
+
+    expect(result.map((r) => r.label)).toEqual([
+      'Impressions',
+      'Pin Clicks',
+      'Outbound Clicks',
+      'Saves',
+    ]);
+    expect(result[0].data[0].total).toBe('500');
+  });
+
+  it('skips a metric Pinterest did not return', async () => {
+    stubFetch([
+      ['/analytics', () => ({ all: { lifetime_metrics: { IMPRESSION: 1 } } })],
+    ]);
+
+    const result = await provider.postAnalytics('id', 'token', 'pin-1', 7);
+
+    expect(result.map((r) => r.label)).toEqual(['Impressions']);
+  });
+
+  it('reports a zero metric rather than dropping it', async () => {
+    stubFetch([
+      ['/analytics', () => ({ all: { lifetime_metrics: { IMPRESSION: 0 } } })],
+    ]);
+
+    const result = await provider.postAnalytics('id', 'token', 'pin-1', 7);
+
+    expect(result[0].data[0].total).toBe('0');
+  });
+
+  it.each([
+    ['there is no data at all', {}],
+    ['there are no lifetime metrics', { all: {} }],
+  ])('returns nothing when %s', async (_label, body) => {
+    stubFetch([['/analytics', () => body]]);
+
+    await expect(
+      provider.postAnalytics('id', 'token', 'pin-1', 7)
+    ).resolves.toEqual([]);
+  });
+});
