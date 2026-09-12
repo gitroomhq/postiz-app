@@ -14,7 +14,7 @@
 - Install dependencies: `pnpm install`
 - Build all apps: `pnpm run build`
 - Run all apps in dev mode: `pnpm run dev`
-- Test: `pnpm test` (Jest, coverage enabled)
+- Test: `pnpm test` (Vitest). Tiers: `test:unit`, `test:integration`, `test:workflows`, `test:e2e`
 - Individual app scripts are in each app's `package.json` (e.g., `pnpm --filter ./apps/backend run dev`).
 - Prisma DB commands: `pnpm run prisma-generate`, `pnpm run prisma-db-push`, `pnpm run prisma-reset`.
 - Docker: `docker compose -f ./docker-compose.dev.yaml up -d`
@@ -37,7 +37,7 @@
 - `libraries/` — Shared code and modules
 - `docker-compose.dev.yaml` — Local development Docker setup
 - `.env` — Environment configuration
-- `jest.config.ts` — Test configuration
+- `vitest.config.mts` — Test configuration (unit, integration, workflow projects)
 - `pnpm-workspace.yaml` — Workspace package management
 - `README.md` — General project overview
 - `libraries/nestjs-libraries/src/database/prisma/schema.prisma` — Database schema
