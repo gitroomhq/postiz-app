@@ -12,10 +12,17 @@ import { DribbbleProvider } from './dribbble.provider';
 
 const provider = new DribbbleProvider();
 
+// getImageDimensions downloads the file and probes it; the size rules are the
+// only part of checkValidity worth exercising here.
 const dimensions = (width: number, height: number) =>
   vi
-    .spyOn(provider as never as { getImageDimensions: unknown }, 'getImageDimensions' as never)
-    .mockResolvedValue({ width, height } as never);
+    .spyOn(
+      provider as unknown as {
+        getImageDimensions: (path: string) => Promise<{ width: number; height: number }>;
+      },
+      'getImageDimensions'
+    )
+    .mockResolvedValue({ width, height });
 
 beforeEach(() => {
   process.env.DRIBBBLE_CLIENT_ID = 'client-1';
