@@ -3,7 +3,7 @@ import { test as base, expect, type APIRequestContext } from '@playwright/test';
 /**
  * The deployment under test. Unlike e2e/fixtures/index.ts this talks to a real
  * Postiz over HTTP only - there is no database handle, no seeded org and no
- * mock provider, because none of those exist on the far side of a Railway URL.
+ * mock provider, because none of those exist on the far side of a deployed URL.
  */
 export type Gate = {
   url: string;
@@ -42,8 +42,8 @@ export type RemotePost = {
   integration: { id: string; providerIdentifier: string; name: string };
 };
 
-/** The window every read is scoped to. Wide enough to survive clock skew. */
-const window = () => ({
+/** The range every read is scoped to. Wide enough to survive clock skew. */
+const readRange = () => ({
   startDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
   endDate: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
 });
@@ -69,7 +69,7 @@ export class PostizClient {
   async posts(): Promise<RemotePost[]> {
     const response = await this.request.get(`${gate.url}/public/v1/posts`, {
       headers: this.headers,
-      params: window(),
+      params: readRange(),
     });
     expect(
       response.ok(),
@@ -83,22 +83,32 @@ export class PostizClient {
     return (await this.posts()).find((p) => p.id === id);
   }
 
-  async create(body: Record<string, unknown>) {
+  /**
+   * The raw result, for callers that treat a 400 as information rather than a
+   * failure - the settings DTO of whichever provider a channel belongs to runs
+   * on every create, drafts included, so "this channel needs more settings" is
+   * a normal answer.
+   */
+  async attemptCreate(body: Record<string, unknown>) {
     const response = await this.request.post(`${gate.url}/public/v1/posts`, {
       headers: this.headers,
       data: body,
     });
     const text = await response.text();
-    expect(
-      response.ok(),
-      `POST /public/v1/posts failed: ${response.status()} ${text}`
-    ).toBeTruthy();
+    return { ok: response.ok(), status: response.status(), text };
+  }
+
+  async create(body: Record<string, unknown>) {
+    const { ok, status, text } = await this.attemptCreate(body);
+    expect(ok, `POST /public/v1/posts failed: ${status} ${text}`).toBeTruthy();
     return JSON.parse(text) as Array<{ postId: string; integration: string }>;
   }
 
   /**
-   * Best effort on purpose: a failed cleanup must not turn a green deploy gate
-   * red, and the post it could not remove is named in the report either way.
+   * Reports whether the call was accepted rather than asserting, so a caller
+   * cleaning up inside a `finally` cannot mask the failure it is unwinding
+   * from. Note the endpoint answers 200 regardless, so the real proof a post
+   * is gone is reading it back.
    */
   async remove(id: string): Promise<boolean> {
     try {

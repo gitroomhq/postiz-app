@@ -104,67 +104,88 @@ test.describe('tier 2: the API key works and posts round-trip', () => {
   });
 
   test('a draft is created, listed and deleted', async ({ postiz }) => {
-    // The strongest assertion available without an external side effect: this
-    // exercises auth, the DTO pipeline, provider settings mapping, validation
-    // and the database write, and a draft never reaches a workflow.
+    // The strongest assertion available without an external side effect: auth,
+    // the DTO pipeline, the provider settings discriminator and the database
+    // write all run, and a draft never reaches a workflow.
+    //
+    // Channels are tried in turn rather than taking the first one, because the
+    // public API runs each provider's settings DTO even for a draft - see
+    // mapTypeToPost, which stamps type:"schedule" on every post - so a channel
+    // whose provider demands extra settings (a subreddit, a video title)
+    // rightly rejects an empty settings object.
     const channels = await postiz.channels();
-    const channel = channels.find((c) => !c.disabled) ?? channels[0];
-    const content = `postiz deploy gate draft ${RUN_ID} - not published`;
+    const preferred = gate.publishChannels;
+    const candidates = [...channels].sort((a, b) => {
+      const rank = (c: typeof a) =>
+        (preferred.includes(c.id) ? 0 : 2) + (c.disabled ? 1 : 0);
+      return rank(a) - rank(b);
+    });
 
-    const [created] = await postiz.create({
+    const content = `postiz deploy gate draft ${RUN_ID} - not published`;
+    const body = (id: string) => ({
       type: 'draft',
       shortLink: false,
       tags: [],
       date: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      posts: [
-        {
-          integration: { id: channel.id },
-          value: [{ content, image: [] }],
-          settings: {},
-        },
-      ],
+      posts: [{ integration: { id }, value: [{ content, image: [] }], settings: {} }],
     });
 
-    expect(created?.postId, 'the API returned no post id').toBeTruthy();
+    const rejected: string[] = [];
+    let created: { postId: string } | undefined;
+
+    for (const channel of candidates) {
+      const attempt = await postiz.attemptCreate(body(channel.id));
+      if (attempt.ok) {
+        [created] = JSON.parse(attempt.text);
+        break;
+      }
+      rejected.push(`${channel.name} (${channel.identifier}): ${attempt.status} ${attempt.text}`);
+    }
+
+    expect(
+      created?.postId,
+      `no channel on this deployment accepted a minimal draft. Set POSTIZ_SMOKE_PUBLISH_CHANNELS to a channel whose provider needs no extra settings. Tried:\n${rejected.join(
+        '\n'
+      )}`
+    ).toBeTruthy();
 
     try {
-      const found = await postiz.post(created.postId);
+      const found = await postiz.post(created!.postId);
 
       expect(found, 'the created draft was not listed back').toBeTruthy();
       expect(found!.state).toBe('DRAFT');
       expect(found!.content).toContain(RUN_ID);
       expect(found!.releaseURL).toBeFalsy();
     } finally {
-      expect(
-        await postiz.remove(created.postId),
-        `could not delete draft ${created.postId} - remove it by hand`
-      ).toBeTruthy();
+      await postiz.remove(created!.postId);
     }
 
-    expect(await postiz.post(created.postId)).toBeFalsy();
+    expect(
+      await postiz.post(created!.postId),
+      `draft ${created!.postId} survived deletion - remove it by hand`
+    ).toBeFalsy();
   });
 
-  test('a post for an unknown channel is refused', async ({ postiz, request }) => {
-    const response = await request.post(`${gate.url}/public/v1/posts`, {
-      headers: { Authorization: gate.apiKey, 'Content-Type': 'application/json' },
-      data: {
-        type: 'draft',
-        shortLink: false,
-        tags: [],
-        date: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        posts: [
-          {
-            integration: { id: `no-such-integration-${RUN_ID}` },
-            value: [{ content: 'should never be created', image: [] }],
-            settings: {},
-          },
-        ],
-      },
+  test('a post for an unknown channel is refused', async ({ postiz }) => {
+    const content = `should never be created ${RUN_ID}`;
+
+    const attempt = await postiz.attemptCreate({
+      type: 'draft',
+      shortLink: false,
+      tags: [],
+      date: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      posts: [
+        {
+          integration: { id: `no-such-integration-${RUN_ID}` },
+          value: [{ content, image: [] }],
+          settings: {},
+        },
+      ],
     });
 
-    expect(response.status()).toBe(400);
+    expect(attempt.status).toBe(400);
     expect(
-      (await postiz.posts()).some((p) => p.content.includes('should never be created'))
+      (await postiz.posts()).some((p) => p.content.includes(content))
     ).toBeFalsy();
   });
 });
