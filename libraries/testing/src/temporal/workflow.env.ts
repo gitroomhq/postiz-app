@@ -57,24 +57,36 @@ export const workflowsPath = resolve(
   'apps/orchestrator/src/workflows/post-workflows/post.workflow.v1.1.2.ts'
 );
 
+export const workflowPath = (relative: string) =>
+  resolve(root, 'apps/orchestrator/src/workflows', relative);
+
 export type ActivityStubs = Record<string, (...args: any[]) => unknown>;
 
 let environment: TestWorkflowEnvironment | undefined;
-let bundle: Awaited<ReturnType<typeof bundleWorkflowCode>> | undefined;
 
-export async function startTestEnvironment() {
+// Keyed by entrypoint: webpack is by far the slowest part of this tier, so each
+// workflow file is bundled once per run however many specs reach for it.
+const bundles = new Map<string, Awaited<ReturnType<typeof bundleWorkflowCode>>>();
+
+async function bundleFor(path: string) {
+  if (!bundles.has(path)) {
+    bundles.set(
+      path,
+      await bundleWorkflowCode({ workflowsPath: path, ...workflowBundlerOptions })
+    );
+  }
+
+  return bundles.get(path)!;
+}
+
+export async function startTestEnvironment(path: string = workflowsPath) {
   // The server refuses to start if the download directory does not exist.
   mkdirSync(testServerDownloadDir, { recursive: true });
 
   environment ??= await TestWorkflowEnvironment.createTimeSkipping({
     server: { executable: { type: 'cached-download', downloadDir: testServerDownloadDir } },
   });
-  // Bundled once per run rather than once per Worker.create: webpack is by far
-  // the slowest part of this tier.
-  bundle ??= await bundleWorkflowCode({
-    workflowsPath,
-    ...workflowBundlerOptions,
-  });
+  await bundleFor(path);
 
   return environment;
 }
@@ -82,7 +94,58 @@ export async function startTestEnvironment() {
 export async function stopTestEnvironment() {
   await environment?.teardown();
   environment = undefined;
-  bundle = undefined;
+  bundles.clear();
+}
+
+/**
+ * The time-skipping server's clock, which is NOT the host's.
+ *
+ * The environment is shared across a spec file, and every sleep a workflow
+ * performs advances this clock for every test that follows. A spec that builds
+ * a future timestamp from Date.now() therefore starts producing timestamps in
+ * the server's past partway through the file, which shows up as a workflow
+ * taking an "already expired" branch for no visible reason.
+ */
+export function testEnvironmentNow(): Promise<number> {
+  if (!environment) {
+    throw new Error('startTestEnvironment() must run before testEnvironmentNow()');
+  }
+
+  return environment.currentTimeMs();
+}
+
+/**
+ * Run any workflow against stubbed activities on the time-skipping server.
+ *
+ * Each call gets its own task queue, so specs cannot pick up each other's
+ * activity stubs. `args` is passed to the workflow verbatim; a workflow that
+ * proxies activities onto a queue taken from its own arguments (as the post
+ * workflow does) must be given the queue this returns - see runPostWorkflow.
+ */
+export async function runWorkflow<T = unknown>(options: {
+  path: string;
+  type: string;
+  activities: ActivityStubs;
+  args?: unknown[];
+  buildArgs?: (taskQueue: string) => unknown[];
+}): Promise<T> {
+  const env = await startTestEnvironment(options.path);
+  const taskQueue = `test-${randomUUID()}`;
+
+  const worker = await Worker.create({
+    connection: env.nativeConnection,
+    taskQueue,
+    workflowBundle: await bundleFor(options.path),
+    activities: options.activities,
+  });
+
+  return worker.runUntil(
+    env.client.workflow.execute(options.type, {
+      workflowId: `test-${randomUUID()}`,
+      taskQueue,
+      args: options.buildArgs?.(taskQueue) ?? options.args ?? [],
+    })
+  ) as Promise<T>;
 }
 
 /**
@@ -99,28 +162,17 @@ export async function runPostWorkflow(options: {
   activities: ActivityStubs;
   args?: Record<string, unknown>;
 }) {
-  const env = await startTestEnvironment();
-  const taskQueue = `test-${randomUUID()}`;
-
-  const worker = await Worker.create({
-    connection: env.nativeConnection,
-    taskQueue,
-    workflowBundle: bundle,
+  return runWorkflow({
+    path: workflowsPath,
+    type: 'postWorkflowV112',
     activities: options.activities,
+    buildArgs: (taskQueue) => [
+      {
+        taskQueue, // must equal the worker's queue - see above
+        postId: 'post-1',
+        organizationId: 'org-1',
+        ...options.args,
+      },
+    ],
   });
-
-  return worker.runUntil(
-    env.client.workflow.execute('postWorkflowV112', {
-      workflowId: `test-${randomUUID()}`,
-      taskQueue,
-      args: [
-        {
-          taskQueue, // must equal the worker's queue - see above
-          postId: 'post-1',
-          organizationId: 'org-1',
-          ...options.args,
-        },
-      ],
-    })
-  );
 }
