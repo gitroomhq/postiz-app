@@ -602,6 +602,7 @@ export const CalendarColumn: FC<{
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
+  const toaster = useToaster();
 
   // Use shared post actions hook
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
@@ -732,10 +733,7 @@ export const CalendarColumn: FC<{
         action = whatToDo;
       }
 
-      if (!item.interval) {
-        changeDate(item.id, getDate);
-      }
-      const { status } = await fetch(`/posts/${item.id}/date`, {
+      const response = await fetch(`/posts/${item.id}/date`, {
         method: 'PUT',
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
@@ -745,12 +743,23 @@ export const CalendarColumn: FC<{
           ...(action === 'schedule' ? { republish: true } : {}),
         }),
       });
-      if (status !== 500) {
-        if (item.interval || action === 'schedule') {
-          reloadCalendarView();
-          return;
-        }
+
+      // A rejected move (e.g. past-date guard): leave the item where it was
+      if (!response.ok) {
+        const { message } = await response.json().catch(() => ({} as any));
+        toaster.show(
+          (Array.isArray(message) ? message[0] : message) ||
+            t('could_not_save_post', 'Could not save the post.'),
+          'warning'
+        );
         return;
+      }
+
+      if (!item.interval) {
+        changeDate(item.id, getDate);
+      }
+      if (item.interval || action === 'schedule') {
+        reloadCalendarView();
       }
     },
     collect: (monitor) => ({

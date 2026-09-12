@@ -575,6 +575,7 @@
   "email_address": "メールアドレス",
   "email_already_exists": "メールアドレスは既に存在します",
   "google": "Google",
+  "apple": "りんご",
   "farcaster": "Farcaster",
   "edit_autopost": "自動投稿を編集",
   "add_autopost_title": "自動投稿を追加",
@@ -737,5 +738,7 @@
   "republish_the_post": "投稿を再公開する",
   "post_already_published_republish_warning": "この投稿は既に公開されています。再公開すると、もう一度投稿されます：",
   "republish_at": "公開日時：",
+  "past_publish_date_warning": "公開日は過去の日付です。未来の日付を選択してください。",
+  "could_not_save_post": "投稿を保存できませんでした。",
   "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。"
 }

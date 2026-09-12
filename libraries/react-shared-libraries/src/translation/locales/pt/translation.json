@@ -575,6 +575,7 @@
   "email_address": "Endereço de e-mail",
   "email_already_exists": "O e-mail já existe",
   "google": "Google",
+  "apple": "Maçã",
   "farcaster": "Farcaster",
   "edit_autopost": "Editar autopost",
   "add_autopost_title": "Adicionar autopost",
@@ -737,5 +738,7 @@
   "republish_the_post": "Republicar a publicação",
   "post_already_published_republish_warning": "Esta publicação já foi publicada. Republicar irá publicá-la novamente em",
   "republish_at": "em",
+  "past_publish_date_warning": "A data de publicação está no passado, escolha uma data futura.",
+  "could_not_save_post": "Não foi possível salvar a publicação.",
   "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora."
 }
