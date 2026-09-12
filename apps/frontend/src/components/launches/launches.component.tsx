@@ -538,10 +538,8 @@ export const LaunchesComponent = () => {
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
               <div className="flex gap-[8px] group-[.sidebar]:flex-col">
-                {sortedIntegrations?.length > 0 && <NewPost />}
-                {sortedIntegrations?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
+                {sortedIntegrations?.length > 0 && user?.role !== 'USER' && <NewPost />}
+                {sortedIntegrations?.length > 0 && user?.role !== 'USER' && user?.tier?.ai && billingEnabled && <GeneratorComponent />}
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">
