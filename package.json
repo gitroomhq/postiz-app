@@ -46,6 +46,7 @@
     "test:integration": "cross-env TEST_TIER=integration vitest run --project integration",
     "test:workflows": "cross-env TEST_TIER=workflows vitest run --project workflows",
     "test:e2e": "cross-env TEST_TIER=e2e playwright test",
+    "test:e2e:prod": "cross-env TEST_TIER=e2e-prod playwright test --config playwright.prod.config.ts",
     "test:e2e:install": "playwright install --with-deps chromium",
     "test:coverage": "vitest run --coverage",
     "test:unit:coverage": "cross-env TEST_TIER=unit vitest run --project unit-node --project unit-jsdom --coverage",
