@@ -36,11 +36,11 @@ export const InstagramPreview: FC<{
       `<strong class="text-[15px] font-[600]">${integration?.name} </strong>` +
       newContent
         .slice(start, end)
-        .replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+        .replace(/\[\[\[([.\s\S]*?)]]]/g, (match, match1) => {
           return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
         }) +
       `<mark class="bg-red-500" data-tooltip-id="tooltip" data-tooltip-content="This text will be cropped">` +
-      newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/, (match, match1) => {
+      newContent.slice(end).replace(/\[\[\[([.\s\S]*?)]]]/g, (match, match1) => {
         return `<span class="font-bold font-[arial]" style="color: #ae8afc">${match1}</span>`;
       }) +
       `</mark>`;
