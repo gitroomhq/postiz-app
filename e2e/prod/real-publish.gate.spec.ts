@@ -60,16 +60,13 @@ test.describe('tier 3: a real post reaches a real social network', () => {
     };
 
     try {
-      let settled: RemotePost[] = [];
-
       await expect
         .poll(
           async () => {
             const all = await postiz.posts();
-            settled = ids
+            return ids
               .map((id) => all.find((p) => p.id === id))
-              .filter((p): p is RemotePost => !!p);
-            return settled.filter((p) => p.state !== 'QUEUE').length;
+              .filter((p): p is RemotePost => !!p && p.state !== 'QUEUE').length;
           },
           {
             timeout: 10 * 60_000,
@@ -78,6 +75,11 @@ test.describe('tier 3: a real post reaches a real social network', () => {
           }
         )
         .toBe(ids.length);
+
+      const all = await postiz.posts();
+      const settled = ids
+        .map((id) => all.find((p) => p.id === id))
+        .filter((p): p is RemotePost => !!p);
 
       const failed = settled.filter((p) => p.state !== 'PUBLISHED');
       expect(
@@ -140,24 +142,16 @@ test.describe('tier 3: a real post reaches a real social network', () => {
       ],
     });
 
-    let releaseURL: string | null = null;
-
     try {
       await expect
-        .poll(
-          async () => {
-            const post = await postiz.post(created.postId);
-            releaseURL = post?.releaseURL ?? null;
-            return post?.state;
-          },
-          {
-            timeout: 10 * 60_000,
-            intervals: [5_000],
-            message: `waiting for ${channel!.name} to publish`,
-          }
-        )
+        .poll(async () => (await postiz.post(created.postId))?.state, {
+          timeout: 10 * 60_000,
+          intervals: [5_000],
+          message: `waiting for ${channel!.name} to publish`,
+        })
         .toBe('PUBLISHED');
 
+      const releaseURL = (await postiz.post(created.postId))?.releaseURL;
       expect(releaseURL, 'no release URL to check').toBeTruthy();
 
       const response = await request.get(releaseURL!, {

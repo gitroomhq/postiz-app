@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const env = vi.hoisted(() => {
+// telegram.provider.ts reads all three at module load, so they must be set
+// before the import below rather than in a beforeEach.
+vi.hoisted(() => {
   process.env.TELEGRAM_TOKEN = 'test-bot-token';
   process.env.FRONTEND_URL = 'http://localhost:5000';
   process.env.STORAGE_PROVIDER = 'local';
@@ -21,8 +23,10 @@ const bot = vi.hoisted(() => ({
 }));
 
 vi.mock('node-telegram-bot-api', () => ({
-  default: function TelegramBot(this: Record<string, unknown>) {
-    return bot;
+  default: class TelegramBot {
+    constructor() {
+      return bot;
+    }
   },
 }));
 
@@ -219,8 +223,9 @@ describe('TelegramProvider.post media routing', () => {
 
     const captions = bot.sendMediaGroup.mock.calls
       .flatMap(([, group]) => group as Array<{ caption?: string }>)
-      .filter((m) => m.caption !== undefined);
-    expect(captions).toEqual([{ ...captions[0], caption: 'hello' }]);
+      .map((m) => m.caption);
+    expect(captions.filter((c) => c !== undefined)).toEqual(['hello']);
+    expect(captions[0]).toBe('hello');
 
     expect(result.postId).toBe('15');
   });

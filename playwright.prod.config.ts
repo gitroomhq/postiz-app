@@ -51,6 +51,10 @@ export default defineConfig({
     ignoreHTTPSErrors: false,
   },
 
+  // Named so the junit and ReportPortal output says which suite produced a
+  // result, the way the local config's api/chromium projects do.
+  projects: [{ name: 'gate' }],
+
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: 'playwright-report-prod' }],
