@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Seçilen sayfalara bağlı herhangi bir işletme bulamadık.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Tüm sayfaları ve tüm işletmeleri bağlamanızı öneririz.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Lütfen bu pencereyi kapatın, entegrasyonunuzu silin ve tekrar yeni bir kanal ekleyin.",
+  "back_to_postiz": "Postiz'e geri dön",
   "select_instagram_account": "Instagram Hesabı Seç:",
   "select_page": "Sayfa Seç:",
   "generate_image_with_ai": "Yapay Zeka ile görsel oluştur",
@@ -740,5 +741,9 @@
   "republish_at": "tarihinde/saatinde",
   "past_publish_date_warning": "Yayın tarihi geçmişte, lütfen gelecekte bir tarih seçin.",
   "could_not_save_post": "Gönderi kaydedilemedi.",
-  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır.",
+  "not_selectable_page_not_granted_to_postiz": "Seçilemez: sayfa Postiz’e verilmedi",
+  "you_did_not_grant_postiz_access_to_this_page": "Bu Sayfa için Postiz’e erişim vermedin.\nKanalı tekrar bağla ve Facebook hangi Sayfaların paylaşılacağını sorduğunda bu Sayfayı işaretle.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Seçilemez: hesabın bu Sayfaya gönderi yayınlayamıyor",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Facebook hesabının bu Sayfada içerik izni yok.\nBir Sayfa yöneticisinden Sayfa ayarları > Sayfa erişimi (veya Business Portfolio) kısmından tam (veya içerik/yayınlama) erişimi vermesini iste, sonra kanalı yeniden bağla."
 }

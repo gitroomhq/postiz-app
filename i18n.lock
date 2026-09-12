@@ -235,6 +235,7 @@ checksums:
     we_couldn_t_find_any_business_connected_to_the_selected_pages: ffda82a65610034945a2dce2c4af137c
     we_recommend_you_to_connect_all_the_pages_and_all_the_businesses: 09bf11d24684698ee8fdc1d14170250b
     please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again: 4313f771dfe82f4a4d95f599a556e4bb
+    back_to_postiz: 2c345531696b5e9868c6598c769b275b
     select_instagram_account: 56a1c68e863aa36b8409a582ccc5eb80
     select_page: 554df6bd2c903c10064f3a227467c249
     generate_image_with_ai: 2bf3e43a2c21c2f7819fa32a3c853a68
@@ -745,3 +746,7 @@ checksums:
     past_publish_date_warning: 555e0b351f5a510a4be8017bd4b35731
     could_not_save_post: 43cf68b06ecbdb256c8bda72bd7c732c
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    not_selectable_page_not_granted_to_postiz: b316de8fbb94acdaae87f8d5f2f78a13
+    you_did_not_grant_postiz_access_to_this_page: c85726f97015f81436f4075fdd861004
+    not_selectable_your_account_cant_publish_to_this_page: 7b840f65e50dc0125a5c8d5e221bd97d
+    your_facebook_account_does_not_have_content_permissions_on_this_page: 741b79f765ebf813c35de7c9f8ee5ed9

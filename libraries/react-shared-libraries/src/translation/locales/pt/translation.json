@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Não conseguimos encontrar nenhum negócio conectado às páginas selecionadas.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Recomendamos que você conecte todas as páginas e todos os negócios.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Por favor, feche este diálogo, exclua sua integração e adicione um novo canal novamente.",
+  "back_to_postiz": "Voltar ao Postiz",
   "select_instagram_account": "Selecione a Conta do Instagram:",
   "select_page": "Selecione a Página:",
   "generate_image_with_ai": "Gerar imagem com IA",
@@ -740,5 +741,9 @@
   "republish_at": "em",
   "past_publish_date_warning": "A data de publicação está no passado, escolha uma data futura.",
   "could_not_save_post": "Não foi possível salvar a publicação.",
-  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora."
+  "republish_recurring_note": "Esta é uma publicação recorrente: suas alterações se aplicam a todas as futuras recorrências a partir de agora.",
+  "not_selectable_page_not_granted_to_postiz": "Não selecionável: página não concedida ao Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "Você não concedeu acesso do Postiz a esta Página na janela do Facebook.\nReconecte o canal e marque esta Página quando o Facebook perguntar quais Páginas compartilhar.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Não selecionável: sua conta não pode publicar nesta Página",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Sua conta do Facebook não tem permissões de conteúdo nesta Página.\nPeça a um administrador da Página para lhe dar acesso total (ou de conteúdo/publicação) em configurações da Página > Acesso à página (ou no Portfólio de Negócios), depois reconecte o canal."
 }

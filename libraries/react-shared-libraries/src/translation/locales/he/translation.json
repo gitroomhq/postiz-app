@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "לא הצלחנו למצוא עסק שמחובר לעמודים שנבחרו.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "אנו ממליצים לחבר את כל העמודים וכל העסקים.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "אנא סגור את החלון הזה, מחק את האינטגרציה שלך והוסף ערוץ חדש שוב.",
+  "back_to_postiz": "חזרה ל-Postiz",
   "select_instagram_account": "בחר חשבון אינסטגרם:",
   "select_page": "בחר עמוד:",
   "generate_image_with_ai": "צור תמונה עם בינה מלאכותית",
@@ -740,5 +741,9 @@
   "republish_at": "בשעה",
   "past_publish_date_warning": "תאריך הפרסום הוא בעבר, יש לבחור תאריך עתידי.",
   "could_not_save_post": "לא ניתן היה לשמור את הפוסט.",
-  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו."
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו.",
+  "not_selectable_page_not_granted_to_postiz": "לא ניתן לבחור: הדף לא הוקצה ל-Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "לא הענקת ל-Postiz גישה לדף הזה בחלון של פייסבוק.\nחבר מחדש את הערוץ וסמן דף זה כאשר פייסבוק מבקשת אילו דפים לשתף.",
+  "not_selectable_your_account_cant_publish_to_this_page": "לא ניתן לבחור: החשבון שלך אינו יכול לפרסם בדף זה",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "לחשבון הפייסבוק שלך אין הרשאות תוכן לדף זה.\nבקש ממנהל הדף לתת לך גישה מלאה (או גישת תוכן/פרסום) תחת הגדרות הדף > גישת הדף (או בפורטפוליו העסקי), ולאחר מכן חבר מחדש את הערוץ."
 }

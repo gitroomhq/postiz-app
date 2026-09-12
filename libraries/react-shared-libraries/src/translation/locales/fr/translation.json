@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Nous n'avons trouvé aucune entreprise liée aux pages sélectionnées.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Nous vous recommandons de connecter toutes les pages et toutes les entreprises.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Veuillez fermer cette fenêtre, supprimer votre intégration et ajouter à nouveau un nouveau canal.",
+  "back_to_postiz": "Retour à Postiz",
   "select_instagram_account": "Sélectionnez le compte Instagram :",
   "select_page": "Sélectionnez la page :",
   "generate_image_with_ai": "Générer une image avec l'IA",
@@ -740,5 +741,9 @@
   "republish_at": "à",
   "past_publish_date_warning": "La date de publication est dans le passé, choisissez une date future.",
   "could_not_save_post": "Impossible d’enregistrer la publication.",
-  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant."
+  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant.",
+  "not_selectable_page_not_granted_to_postiz": "Non sélectionnable : page non attribuée à Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "Vous n’avez pas accordé l’accès de Postiz à cette page dans la fenêtre Facebook.\nReconnectez le canal et cochez cette page lorsque Facebook demande quelles pages partager.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Non sélectionnable : votre compte ne peut pas publier sur cette page",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Votre compte Facebook n’a pas les autorisations de contenu sur cette page.\nDemandez à un administrateur de la page de vous donner un accès complet (ou de contenu/publication) dans les paramètres de la page > Accès à la page (ou dans le portefeuille entreprise), puis reconnectez le canal."
 }

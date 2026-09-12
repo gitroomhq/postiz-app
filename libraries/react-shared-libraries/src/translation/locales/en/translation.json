@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "We couldn't find any business connected to the selected pages.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "We recommend you to connect all the pages and all the businesses.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Please close this dialog, delete your integration and add a new channel\n        again.",
+  "back_to_postiz": "Back to Postiz",
   "select_instagram_account": "Select Instagram Account:",
   "select_page": "Select Page:",
   "generate_image_with_ai": "Generate image with AI",
@@ -763,5 +764,9 @@
   "republish_at": "at",
   "past_publish_date_warning": "The publish date is in the past, pick a future date.",
   "could_not_save_post": "Could not save the post.",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "not_selectable_page_not_granted_to_postiz": "Not selectable: page not granted to Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "You did not grant Postiz access to this Page in the Facebook dialog.\nReconnect the channel and tick this Page when Facebook asks which Pages to share.",
+  "not_selectable_your_account_cant_publish_to_this_page": "Not selectable: your account can't publish to this Page",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "Your Facebook account does not have content permissions on this Page.\nAsk a Page admin to give you full (or content/publishing) access under Page settings > Page access (or in the Business Portfolio), then reconnect the channel."
 }

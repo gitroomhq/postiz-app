@@ -231,6 +231,7 @@
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "選択したページに接続されているビジネスが見つかりませんでした。",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "すべてのページとすべてのビジネスを接続することをおすすめします。",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "このダイアログを閉じて、連携を削除し、再度新しいチャンネルを追加してください。",
+  "back_to_postiz": "Postizに戻る",
   "select_instagram_account": "Instagramアカウントを選択：",
   "select_page": "ページを選択：",
   "generate_image_with_ai": "AIで画像を生成",
@@ -740,5 +741,9 @@
   "republish_at": "公開日時：",
   "past_publish_date_warning": "公開日は過去の日付です。未来の日付を選択してください。",
   "could_not_save_post": "投稿を保存できませんでした。",
-  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。"
+  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。",
+  "not_selectable_page_not_granted_to_postiz": "選択不可：このページはPostizに許可されていません",
+  "you_did_not_grant_postiz_access_to_this_page": "Facebookダイアログで当該ページへのPostizアクセスを許可していません。\nチャンネルを再接続し、Facebookがどのページを共有するか尋ねてきた際にこのページにチェックを入れてください。",
+  "not_selectable_your_account_cant_publish_to_this_page": "選択不可：あなたのアカウントではこのページに投稿できません",
+  "your_facebook_account_does_not_have_content_permissions_on_this_page": "あなたのFacebookアカウントにはこのページのコンテンツ権限がありません。\nページ設定 > ページアクセス（またはビジネスポートフォリオ内）で、ページ管理者に完全（またはコンテンツ/投稿）権限を付与してもらい、チャンネルを再接続してください。"
 }
