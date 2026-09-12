@@ -38,10 +38,13 @@ export class MastodonCustomProvider extends MastodonProvider {
       client_secret,
     };
   }
-  override async generateAuthUrl(
-    refresh?: string,
-    external?: ClientInformation
-  ) {
+  // Signature must match IAuthenticator: the controller passes the client
+  // information as the only argument. A leading `refresh` parameter used to sit
+  // in front of it, which silently bound the client information to the wrong
+  // name and produced "undefined/oauth/authorize?client_id=undefined". The
+  // refresh marker is the controller's business, stored in Redis against the
+  // state - it was never part of this URL.
+  override async generateAuthUrl(external?: ClientInformation) {
     const state = makeId(6);
     const url = this.generateUrlDynamic(
       external?.instanceUrl!,

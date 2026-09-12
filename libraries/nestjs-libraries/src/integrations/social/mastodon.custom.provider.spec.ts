@@ -45,7 +45,7 @@ describe('MastodonCustomProvider identity', () => {
     expect(provider.name).toBe('M. Instance');
   });
 
-  it('uses the plain editor rather than inheriting the parent one', () => {
+  it('edits as plain text', () => {
     expect(provider.editor).toBe('normal');
   });
 });
@@ -97,8 +97,28 @@ describe('MastodonCustomProvider.externalUrl', () => {
 });
 
 describe('MastodonCustomProvider.generateAuthUrl', () => {
+  it('never emits an undefined host or client id', async () => {
+    // The regression this guards: the signature used to take `refresh` first,
+    // so the controller's single ClientInformation argument bound to the wrong
+    // parameter and every custom-instance connect produced
+    // "undefined/oauth/authorize?client_id=undefined".
+    const { url } = await provider.generateAuthUrl({
+      instanceUrl: INSTANCE,
+      client_id: 'client-1',
+    } as never);
+
+    expect(url).not.toContain('undefined');
+    expect(url.startsWith(`${INSTANCE}/oauth/authorize?client_id=client-1&`)).toBe(true);
+  });
+
+  it('is called the way the controller calls it, with one argument', async () => {
+    // integrations.controller.ts passes only getExternalUrl. Calling with two
+    // arguments here would let the old broken signature pass this suite.
+    expect(provider.generateAuthUrl.length).toBe(1);
+  });
+
   it('points at the caller instance, not the default one', async () => {
-    const { url, state } = await provider.generateAuthUrl(undefined, {
+    const { url, state } = await provider.generateAuthUrl({
       instanceUrl: INSTANCE,
       client_id: 'client-1',
     } as never);
@@ -114,7 +134,7 @@ describe('MastodonCustomProvider.generateAuthUrl', () => {
   });
 
   it('asks for its declared scopes', async () => {
-    const { url } = await provider.generateAuthUrl(undefined, {
+    const { url } = await provider.generateAuthUrl({
       instanceUrl: INSTANCE,
       client_id: 'client-1',
     } as never);
@@ -127,8 +147,8 @@ describe('MastodonCustomProvider.generateAuthUrl', () => {
   it('issues a fresh state each time', async () => {
     const external = { instanceUrl: INSTANCE, client_id: 'c' } as never;
 
-    const first = await provider.generateAuthUrl(undefined, external);
-    const second = await provider.generateAuthUrl(undefined, external);
+    const first = await provider.generateAuthUrl(external);
+    const second = await provider.generateAuthUrl(external);
 
     expect(first.state).not.toBe(second.state);
     expect(first.state).toHaveLength(6);
@@ -201,17 +221,13 @@ describe('MastodonCustomProvider instance resolution', () => {
   });
 
   it.each([
-    ['undecryptable bytes', { customInstanceDetails: 'not-encrypted-at-all' }],
-    ['valid json with no instanceUrl', undefined],
-  ])('falls back rather than throwing on %s', async (label) => {
-    const integration =
-      label === 'undecryptable bytes'
-        ? ({ customInstanceDetails: 'not-encrypted-at-all' } as never)
-        : ({
-            customInstanceDetails: AuthService.fixedEncryption(
-              JSON.stringify({ somethingElse: true })
-            ),
-          } as never);
+    ['undecryptable bytes', 'not-encrypted-at-all'],
+    [
+      'valid json with no instanceUrl',
+      AuthService.fixedEncryption(JSON.stringify({ somethingElse: true })),
+    ],
+  ])('falls back rather than throwing on %s', async (_label, customInstanceDetails) => {
+    const integration = { customInstanceDetails } as never;
     const fetchStub = stubFetch([
       ['mastodon.social/api/v1/statuses', () => ({ id: '1', url: 'u' })],
     ]);
@@ -252,6 +268,6 @@ describe('MastodonCustomProvider instance resolution', () => {
       integrationFor(INSTANCE)
     );
 
-    expect(JSON.stringify(result.pendingData ?? {})).toContain(INSTANCE);
+    expect(result.pendingData).toMatchObject({ url: INSTANCE });
   });
 });
