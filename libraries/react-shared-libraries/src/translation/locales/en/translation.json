@@ -496,6 +496,8 @@
   "30_days": "30 Days",
   "90_days": "90 Days",
   "start_7_days_free_trial": "Start 7 days free trial",
+  "video_paid_plans_only": "Paid plans only, not available during the trial",
+  "ai_videos_paid_only_note": "Some AI video generators are available after the trial ends",
   "change_language": "Change Language",
   "that_a_wrap": "That's a wrap!\n\nIf you enjoyed this thread:\n\n1. Follow me @{{username}} for more of these\n2. RT the tweet below to share this thread with your audience\n",
   "post_as_images_carousel": "Post as images carousel",
