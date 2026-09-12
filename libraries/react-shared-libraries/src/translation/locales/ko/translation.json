@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "예상 GitHub 트렌드 변화",
   "duplicate_post": "중복 게시물",
   "preview_post": "게시물 미리보기",
+  "open_post": "게시물 열기",
   "post_statistics": "게시물 통계",
   "draft": "임시 저장",
   "week_number": "{{number}}주차",
