@@ -265,3 +265,279 @@ describe('ThreadsProvider.generateAuthUrl', () => {
     expect(url).not.toContain('redirectmeto');
   });
 });
+
+const userInfo = () => ({
+  id: 'user-1',
+  username: 'me',
+  threads_profile_picture_url: 'https://cdn.test/me.png',
+});
+
+describe('ThreadsProvider.authenticate', () => {
+  const authRoutes = () =>
+    stubFetch([
+      ['grant_type=th_exchange_token', () => ({ access_token: 'long-lived' })],
+      ['/oauth/access_token', () => ({ access_token: 'short-lived' })],
+      ['/v1.0/me?fields=', () => userInfo()],
+    ]);
+
+  beforeEach(() => {
+    process.env.THREADS_APP_ID = 'app-1';
+    process.env.THREADS_APP_SECRET = 'secret-1';
+    process.env.FRONTEND_URL = 'https://app.postiz.test';
+  });
+
+  it('exchanges the code, then trades it for a long-lived token', async () => {
+    const fetchStub = authRoutes();
+
+    await expect(
+      provider.authenticate({ code: 'the-code', codeVerifier: 'v' })
+    ).resolves.toMatchObject({
+      id: 'user-1',
+      name: 'me',
+      username: 'me',
+      accessToken: 'long-lived',
+      refreshToken: 'long-lived',
+      picture: 'https://cdn.test/me.png',
+    });
+
+    expect(fetchStub.urls()[0]).toContain('code=the-code');
+    expect(fetchStub.urls()[1]).toContain('access_token=short-lived');
+  });
+
+  it('issues a token just under the 60 day limit', async () => {
+    authRoutes();
+
+    const result = await provider.authenticate({ code: 'c', codeVerifier: 'v' });
+
+    const days = (result as { expiresIn: number }).expiresIn / 86400;
+    expect(days).toBeGreaterThan(57);
+    expect(days).toBeLessThan(59);
+  });
+
+  it('falls back to an empty picture when the profile has none', async () => {
+    stubFetch([
+      ['grant_type=th_exchange_token', () => ({ access_token: 'long' })],
+      ['/oauth/access_token', () => ({ access_token: 'short' })],
+      ['/v1.0/me?fields=', () => ({ id: 'u', username: 'n' })],
+    ]);
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).resolves.toMatchObject({ picture: '' });
+  });
+});
+
+describe('ThreadsProvider.refreshToken', () => {
+  it('trades the old token for a new one and re-reads the profile', async () => {
+    const fetchStub = stubFetch([
+      ['/refresh_access_token', () => ({ access_token: 'refreshed' })],
+      ['/v1.0/me?fields=', () => userInfo()],
+    ]);
+
+    await expect(provider.refreshToken('old-token')).resolves.toMatchObject({
+      id: 'user-1',
+      accessToken: 'refreshed',
+      refreshToken: 'refreshed',
+      picture: 'https://cdn.test/me.png',
+    });
+    expect(fetchStub.urls()[0]).toContain('grant_type=th_refresh_token');
+    expect(fetchStub.urls()[0]).toContain('access_token=old-token');
+  });
+});
+
+describe('ThreadsProvider.generateAuthUrl redirect', () => {
+  it('routes a plain-http frontend through redirectmeto', async () => {
+    // Threads refuses to register an http:// redirect, so local development
+    // bounces through redirectmeto.com.
+    process.env.FRONTEND_URL = 'http://localhost:4200';
+
+    const { url } = await provider.generateAuthUrl();
+
+    expect(decodeURIComponent(new URL(url).searchParams.get('redirect_uri')!)).toBe(
+      'https://redirectmeto.com/http://localhost:4200/integrations/social/threads'
+    );
+  });
+
+  it('sends an https frontend straight back to itself', async () => {
+    process.env.FRONTEND_URL = 'https://app.postiz.test';
+
+    const { url } = await provider.generateAuthUrl();
+
+    expect(new URL(url).searchParams.get('redirect_uri')).toBe(
+      'https://app.postiz.test/integrations/social/threads'
+    );
+  });
+
+  it('asks for every scope it declares', async () => {
+    const { url } = await provider.generateAuthUrl();
+
+    expect(new URL(url).searchParams.get('scope')!.split(',')).toEqual(
+      provider.scopes
+    );
+  });
+});
+
+describe('ThreadsProvider.analytics', () => {
+  it('reads a total_value metric as a single point for today', async () => {
+    stubFetch([
+      [
+        '/threads_insights',
+        () => ({ data: [{ name: 'views', total_value: { value: 1234 } }] }),
+      ],
+    ]);
+
+    const [metric] = await provider.analytics('user-1', 'token', 7);
+
+    expect(metric.label).toBe('Views');
+    expect(metric.data).toHaveLength(1);
+    expect(metric.data[0].total).toBe(1234);
+  });
+
+  it('expands a time series metric into one point per day', async () => {
+    stubFetch([
+      [
+        '/threads_insights',
+        () => ({
+          data: [
+            {
+              name: 'likes',
+              values: [
+                { value: 3, end_time: '2026-01-01T00:00:00+0000' },
+                { value: 5, end_time: '2026-01-02T00:00:00+0000' },
+              ],
+            },
+          ],
+        }),
+      ],
+    ]);
+
+    const [metric] = await provider.analytics('user-1', 'token', 7);
+
+    expect(metric.label).toBe('Likes');
+    expect(metric.data.map((d) => d.total)).toEqual([3, 5]);
+  });
+
+  it('returns nothing when the account has no insights', async () => {
+    stubFetch([['/threads_insights', () => ({})]]);
+
+    await expect(provider.analytics('user-1', 'token', 7)).resolves.toEqual([]);
+  });
+
+  it('asks for the window the caller requested', async () => {
+    const fetchStub = stubFetch([['/threads_insights', () => ({ data: [] })]]);
+
+    await provider.analytics('user-1', 'token', 30);
+
+    const url = fetchStub.urls()[0];
+    const since = Number(new URL(url).searchParams.get('since'));
+    const until = Number(new URL(url).searchParams.get('until'));
+    expect((until - since) / 86400).toBeGreaterThan(29);
+  });
+});
+
+describe('ThreadsProvider.postAnalytics', () => {
+  it('labels each metric it understands', async () => {
+    stubFetch([
+      [
+        '/insights?metric=views',
+        () => ({
+          data: [
+            { name: 'views', values: [{ value: 10 }] },
+            { name: 'likes', values: [{ value: 2 }] },
+            { name: 'replies', total_value: { value: 1 } },
+            { name: 'reposts', values: [{ value: 4 }] },
+            { name: 'quotes', values: [{ value: 5 }] },
+          ],
+        }),
+      ],
+    ]);
+
+    const result = await provider.postAnalytics('user-1', 'token', 'post-1', 7);
+
+    expect(result.map((r) => r.label)).toEqual([
+      'Views',
+      'Likes',
+      'Replies',
+      'Reposts',
+      'Quotes',
+    ]);
+  });
+
+  it('skips a metric that carries no value at all', async () => {
+    stubFetch([
+      [
+        '/insights?metric=views',
+        () => ({ data: [{ name: 'views', values: [{ value: 10 }] }, { name: 'likes' }] }),
+      ],
+    ]);
+
+    const result = await provider.postAnalytics('user-1', 'token', 'post-1', 7);
+
+    expect(result.map((r) => r.label)).toEqual(['Views']);
+  });
+
+  it('returns nothing when there are no insights', async () => {
+    stubFetch([['/insights?metric=views', () => ({ data: [] })]]);
+
+    await expect(
+      provider.postAnalytics('user-1', 'token', 'post-1', 7)
+    ).resolves.toEqual([]);
+  });
+});
+
+describe('ThreadsProvider.autoPlugPost', () => {
+  const plugIntegration = { internalId: 'user-1', token: 'token-1' } as never;
+
+  const likes = (value: number) => ({
+    data: [{ name: 'likes', values: [{ value }] }],
+  });
+
+  it('replies and publishes once the like threshold is reached', async () => {
+    const fetchStub = stubFetch([
+      ['/insights?metric=likes', () => likes(50)],
+      ['/me/threads', () => ({ id: 'container-1' })],
+      ['/threads_publish', () => ({ id: 'published-1' })],
+    ]);
+
+    await expect(
+      provider.autoPlugPost(plugIntegration, 'post-1', {
+        likesAmount: '10',
+        post: '<p>Check out my course</p>',
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchStub.countTo('/threads_publish')).toBe(1);
+    expect(fetchStub.urls().at(-1)).toContain('creation_id=container-1');
+  });
+
+  it('strips the html from the plug before sending it', async () => {
+    const fetchStub = stubFetch([
+      ['/insights?metric=likes', () => likes(50)],
+      ['/me/threads', () => ({ id: 'c' })],
+      ['/threads_publish', () => ({ id: 'p' })],
+    ]);
+
+    await provider.autoPlugPost(plugIntegration, 'post-1', {
+      likesAmount: '10',
+      post: '<p>Plain please</p>',
+    });
+
+    const form = fetchStub.calls.find((c) => c.url.includes('/me/threads'))!
+      .init.body as FormData;
+    expect(form.get('text')).not.toContain('<p>');
+    expect(form.get('media_type')).toBe('TEXT');
+    expect(form.get('reply_to_id')).toBe('post-1');
+  });
+
+  it('does nothing below the threshold', async () => {
+    const fetchStub = stubFetch([['/insights?metric=likes', () => likes(2)]]);
+
+    await expect(
+      provider.autoPlugPost(plugIntegration, 'post-1', {
+        likesAmount: '10',
+        post: 'hello',
+      })
+    ).resolves.toBe(false);
+    expect(fetchStub.countTo('/me/threads')).toBe(0);
+  });
+});
