@@ -121,6 +121,12 @@ export function testEnvironmentNow(): Promise<number> {
  * activity stubs. `args` is passed to the workflow verbatim; a workflow that
  * proxies activities onto a queue taken from its own arguments (as the post
  * workflow does) must be given the queue this returns - see runPostWorkflow.
+ *
+ * Pass `taskQueue` for a workflow whose proxyActivities hardcodes one (the
+ * streak and email workflows pin "main"): the single worker then polls that
+ * queue for both workflow and activity tasks, exactly as production does. The
+ * queue is no longer unique per run, which is safe only because this tier runs
+ * serially - see the workflows project in vitest.config.mts.
  */
 export async function runWorkflow<T = unknown>(options: {
   path: string;
@@ -128,9 +134,10 @@ export async function runWorkflow<T = unknown>(options: {
   activities: ActivityStubs;
   args?: unknown[];
   buildArgs?: (taskQueue: string) => unknown[];
+  taskQueue?: string;
 }): Promise<T> {
   const env = await startTestEnvironment(options.path);
-  const taskQueue = `test-${randomUUID()}`;
+  const taskQueue = options.taskQueue ?? `test-${randomUUID()}`;
 
   const worker = await Worker.create({
     connection: env.nativeConnection,
