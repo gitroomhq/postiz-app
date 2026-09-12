@@ -65,5 +65,7 @@ apps/frontend/public/g.js
 # test artifacts
 /reports
 /test-results
+/test-results-prod
 /playwright-report
+/playwright-report-prod
 /.cache
