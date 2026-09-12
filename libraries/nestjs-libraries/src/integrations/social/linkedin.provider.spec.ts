@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@gitroom/helpers/utils/timer', () => ({ timer: vi.fn(async () => {}) }));
 vi.mock('@gitroom/nestjs-libraries/temporal/temporal.heartbeat', () => ({
@@ -408,5 +408,299 @@ describe('LinkedinProvider text escaping', () => {
     );
 
     expect(fetch.body('/rest/posts').commentary).toContain('@[Postiz](urn:li:organization:1)');
+  });
+});
+
+describe('LinkedinProvider.generateAuthUrl', () => {
+  const provider = new LinkedinProvider();
+
+  it('asks for every scope it declares, space separated', async () => {
+    process.env.LINKEDIN_CLIENT_ID = 'client-1';
+    process.env.FRONTEND_URL = 'https://app.postiz.test';
+
+    const { url, state, codeVerifier } = await provider.generateAuthUrl();
+    const params = new URL(url).searchParams;
+
+    expect(params.get('scope')!.split(' ')).toEqual(provider.scopes);
+    expect(params.get('client_id')).toBe('client-1');
+    expect(params.get('state')).toBe(state);
+    expect(params.get('response_type')).toBe('code');
+    expect(params.get('redirect_uri')).toBe(
+      'https://app.postiz.test/integrations/social/linkedin'
+    );
+    expect(codeVerifier).toHaveLength(30);
+  });
+
+  it('suppresses the consent screen on a reconnect', async () => {
+    const { url } = await provider.generateAuthUrl();
+
+    expect(new URL(url).searchParams.get('prompt')).toBe('none');
+  });
+});
+
+describe('LinkedinProvider.authenticate', () => {
+  const provider = new LinkedinProvider();
+
+  const authRoutes = (scope = provider.scopes.join(',')) =>
+    stubFetch([
+      [
+        '/oauth/v2/accessToken',
+        () => ({
+          access_token: 'access-1',
+          refresh_token: 'refresh-1',
+          expires_in: 5184000,
+          scope,
+        }),
+      ],
+      [
+        '/v2/userinfo',
+        () => ({ sub: 'member-1', name: 'A Member', picture: 'https://cdn.test/p.png' }),
+      ],
+      ['/v2/me', () => ({ vanityName: 'a-member' })],
+    ]);
+
+  beforeEach(() => {
+    process.env.LINKEDIN_CLIENT_ID = 'client-1';
+    process.env.LINKEDIN_CLIENT_SECRET = 'secret-1';
+    process.env.FRONTEND_URL = 'https://app.postiz.test';
+  });
+
+  it('exchanges the code and describes the member', async () => {
+    authRoutes();
+
+    await expect(
+      provider.authenticate({ code: 'the-code', codeVerifier: 'v' })
+    ).resolves.toEqual({
+      id: 'member-1',
+      name: 'A Member',
+      accessToken: 'access-1',
+      refreshToken: 'refresh-1',
+      expiresIn: 5184000,
+      picture: 'https://cdn.test/p.png',
+      username: 'a-member',
+    });
+  });
+
+  it('posts the exchange as form data, not json', async () => {
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'the-code', codeVerifier: 'v' });
+
+    const body = new URLSearchParams(String(fetchStub.calls[0].init.body));
+    expect(Object.fromEntries(body)).toMatchObject({
+      grant_type: 'authorization_code',
+      code: 'the-code',
+      client_id: 'client-1',
+      client_secret: 'secret-1',
+      redirect_uri: 'https://app.postiz.test/integrations/social/linkedin',
+    });
+  });
+
+  it('appends the refresh marker to the redirect when reconnecting', async () => {
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: 'int-9' });
+
+    const body = new URLSearchParams(String(fetchStub.calls[0].init.body));
+    expect(body.get('redirect_uri')).toBe(
+      'https://app.postiz.test/integrations/social/linkedin?refresh=int-9'
+    );
+  });
+
+  it('refuses a grant missing a scope it needs', async () => {
+    authRoutes('openid,profile');
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).rejects.toBeTruthy();
+  });
+
+  it('accepts a space separated scope list too', async () => {
+    // LinkedIn has answered with both separators; checkScopes handles either.
+    authRoutes(provider.scopes.join(' '));
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).resolves.toMatchObject({ id: 'member-1' });
+  });
+
+  it('authorizes the profile reads with the freshly issued token', async () => {
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'c', codeVerifier: 'v' });
+
+    expect(fetchStub.calls[1].init.headers).toMatchObject({
+      Authorization: 'Bearer access-1',
+    });
+    expect(fetchStub.calls[2].init.headers).toMatchObject({
+      Authorization: 'Bearer access-1',
+    });
+  });
+});
+
+describe('LinkedinProvider.company', () => {
+  const provider = new LinkedinProvider();
+
+  it('resolves a company url to a mention token', async () => {
+    const fetchStub = stubFetch([
+      [
+        '/v2/organizations',
+        () => ({ elements: [{ id: 42, localizedName: 'Acme Inc' }] }),
+      ],
+    ]);
+
+    await expect(
+      provider.company('token', { url: 'https://www.linkedin.com/company/acme' })
+    ).resolves.toEqual({
+      options: {
+        label: 'Acme Inc',
+        value: '@[Acme Inc](urn:li:organization:42)',
+      },
+    });
+    expect(fetchStub.urls()[0]).toContain('vanityName=acme');
+  });
+
+  it.each([
+    ['without www', 'https://linkedin.com/company/acme'],
+    ['with a trailing slash', 'https://www.linkedin.com/company/acme/'],
+    ['over plain http', 'http://linkedin.com/company/acme'],
+  ])('accepts a url %s', async (_label, url) => {
+    const fetchStub = stubFetch([
+      ['/v2/organizations', () => ({ elements: [{ id: 1, localizedName: 'Acme' }] })],
+    ]);
+
+    await provider.company('token', { url });
+
+    expect(fetchStub.urls()[0]).toContain('vanityName=acme');
+  });
+
+  it.each([
+    ['a personal profile', 'https://www.linkedin.com/in/someone'],
+    ['a bare domain', 'https://www.linkedin.com'],
+    ['a nested company path', 'https://www.linkedin.com/company/acme/about'],
+    ['not a url at all', 'acme'],
+  ])('rejects %s before calling LinkedIn', async (_label, url) => {
+    const fetchStub = stubFetch([]);
+
+    await expect(provider.company('token', { url })).rejects.toThrow(
+      'Invalid LinkedIn company URL'
+    );
+    expect(fetchStub.calls).toHaveLength(0);
+  });
+
+  it('sends the versioned Restli headers LinkedIn requires', async () => {
+    const fetchStub = stubFetch([
+      ['/v2/organizations', () => ({ elements: [{ id: 1, localizedName: 'A' }] })],
+    ]);
+
+    await provider.company('token', { url: 'https://www.linkedin.com/company/acme' });
+
+    expect(fetchStub.calls[0].init.headers).toMatchObject({
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': '202601',
+      Authorization: 'Bearer token',
+    });
+  });
+
+  it('reports nothing found as an undefined option rather than throwing', async () => {
+    stubFetch([['/v2/organizations', () => ({ elements: [] })]]);
+
+    await expect(
+      provider.company('token', { url: 'https://www.linkedin.com/company/nope' })
+    ).resolves.toEqual({ options: undefined });
+  });
+});
+
+describe('LinkedinProvider.mention', () => {
+  const provider = new LinkedinProvider();
+
+  it('reshapes an organization search for the mention picker', async () => {
+    stubFetch([
+      [
+        '/v2/organizations',
+        () => ({
+          elements: [
+            {
+              id: 42,
+              localizedName: 'Acme Inc',
+              logoV2: {
+                'original~': {
+                  elements: [{ identifiers: [{ identifier: 'https://cdn.test/logo.png' }] }],
+                },
+              },
+            },
+          ],
+        }),
+      ],
+    ]);
+
+    await expect(provider.mention('token', { query: 'acme' })).resolves.toEqual([
+      { id: '42', label: 'Acme Inc', image: 'https://cdn.test/logo.png' },
+    ]);
+  });
+
+  it('falls back to an empty image when there is no logo', async () => {
+    stubFetch([
+      ['/v2/organizations', () => ({ elements: [{ id: 1, localizedName: 'A' }] })],
+    ]);
+
+    await expect(provider.mention('token', { query: 'a' })).resolves.toEqual([
+      { id: '1', label: 'A', image: '' },
+    ]);
+  });
+
+  it('url-encodes the query', async () => {
+    const fetchStub = stubFetch([['/v2/organizations', () => ({ elements: [] })]]);
+
+    await provider.mention('token', { query: 'a company & co' });
+
+    expect(fetchStub.urls()[0]).toContain('vanityName=a%20company%20%26%20co');
+  });
+
+  it('formats a mention as the urn LinkedIn expects', () => {
+    expect(provider.mentionFormat('42', 'Acme Inc')).toBe(
+      '@[Acme Inc](urn:li:organization:42)'
+    );
+  });
+
+  it('strips a leading @ so the name is not doubled up', () => {
+    expect(provider.mentionFormat('42', '@Acme')).toBe(
+      '@[Acme](urn:li:organization:42)'
+    );
+  });
+});
+
+describe('LinkedinProvider.repostPostUsers', () => {
+  const provider = new LinkedinProvider();
+
+  const integration = { internalId: 'member-1', token: 'token-1' } as never;
+
+  it('reshares as a person for a personal channel', async () => {
+    const fetchStub = stubFetch([['/rest/posts', () => ({ id: 'urn:li:share:1' })]]);
+
+    await provider.repostPostUsers(integration, integration, 'urn:li:share:99', {});
+
+    expect(fetchStub.body('/rest/posts')).toMatchObject({
+      author: 'urn:li:person:member-1',
+      lifecycleState: 'PUBLISHED',
+      visibility: 'PUBLIC',
+      reshareContext: { parent: 'urn:li:share:99' },
+    });
+  });
+
+  it('reshares as an organization for a page channel', async () => {
+    const fetchStub = stubFetch([['/rest/posts', () => ({ id: 'urn:li:share:1' })]]);
+
+    await provider.repostPostUsers(integration, integration, 'urn:li:share:99', {}, false);
+
+    expect(fetchStub.body('/rest/posts').author).toBe('urn:li:organization:member-1');
+  });
+
+  it('sends an empty commentary, because a reshare adds no text of its own', async () => {
+    const fetchStub = stubFetch([['/rest/posts', () => ({})]]);
+
+    await provider.repostPostUsers(integration, integration, 'urn:li:share:99', {});
+
+    expect(fetchStub.body('/rest/posts').commentary).toBe('');
   });
 });

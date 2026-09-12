@@ -451,3 +451,317 @@ describe('FacebookProvider.refreshToken', () => {
     });
   });
 });
+
+const GRAPH = 'https://graph.facebook.com/v25.0';
+
+const granted = (scopes: string[]) =>
+  scopes.map((permission) => ({ permission, status: 'granted' }));
+
+const page = (over: Record<string, unknown> = {}) => ({
+  id: 'page-1',
+  name: 'My Page',
+  username: 'mypage',
+  access_token: 'page-token',
+  picture: { data: { url: 'https://cdn.test/pic.png' } },
+  ...over,
+});
+
+describe('FacebookProvider.authenticate', () => {
+  const authRoutes = (over: { permissions?: string[] } = {}) =>
+    stubFetch([
+      ['grant_type=fb_exchange_token', () => ({ access_token: 'long-lived' })],
+      ['/oauth/access_token', () => ({ access_token: 'short-lived' })],
+      [
+        '/me/permissions',
+        () => ({ data: granted(over.permissions ?? provider.scopes) }),
+      ],
+      [
+        '/me?fields=id,name,picture',
+        () => ({
+          id: 'user-1',
+          name: 'A User',
+          picture: { data: { url: 'https://cdn.test/me.png' } },
+        }),
+      ],
+    ]);
+
+  it('exchanges the code, then trades it for a long-lived token', async () => {
+    // The short-lived token expires in about an hour; only the exchanged one
+    // is worth storing on the channel.
+    const fetchStub = authRoutes();
+
+    await expect(
+      provider.authenticate({ code: 'the-code', codeVerifier: 'v' })
+    ).resolves.toMatchObject({
+      id: 'user-1',
+      name: 'A User',
+      accessToken: 'long-lived',
+      refreshToken: 'long-lived',
+      picture: 'https://cdn.test/me.png',
+    });
+
+    expect(fetchStub.urls()[0]).toContain('code=the-code');
+    expect(fetchStub.urls()[1]).toContain('fb_exchange_token=short-lived');
+  });
+
+  it('appends the refresh marker to the redirect when reconnecting', async () => {
+    const fetchStub = authRoutes();
+
+    await provider.authenticate({ code: 'c', codeVerifier: 'v', refresh: 'int-9' });
+
+    expect(decodeURIComponent(fetchStub.urls()[0])).toContain(
+      '/integrations/social/facebook?refresh=int-9'
+    );
+  });
+
+  it('refuses a grant that is missing a permission it needs', async () => {
+    // Facebook lets the user untick individual permissions in the dialog, and
+    // the failure would otherwise surface much later as a publish error.
+    authRoutes({ permissions: ['pages_show_list', 'pages_manage_posts'] });
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).rejects.toBeTruthy();
+  });
+
+  it('ignores a permission that was declined rather than granted', async () => {
+    stubFetch([
+      ['grant_type=fb_exchange_token', () => ({ access_token: 'long-lived' })],
+      ['/oauth/access_token', () => ({ access_token: 'short' })],
+      [
+        '/me/permissions',
+        () => ({
+          data: [
+            ...granted(provider.scopes.filter((s) => s !== 'read_insights')),
+            { permission: 'read_insights', status: 'declined' },
+          ],
+        }),
+      ],
+      ['/me?fields=', () => ({ id: 'u', name: 'n' })],
+    ]);
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).rejects.toBeTruthy();
+  });
+
+  it('falls back to an empty picture when the account has none', async () => {
+    stubFetch([
+      ['grant_type=fb_exchange_token', () => ({ access_token: 'long-lived' })],
+      ['/oauth/access_token', () => ({ access_token: 'short' })],
+      ['/me/permissions', () => ({ data: granted(provider.scopes) })],
+      ['/me?fields=', () => ({ id: 'u', name: 'n' })],
+    ]);
+
+    await expect(
+      provider.authenticate({ code: 'c', codeVerifier: 'v' })
+    ).resolves.toMatchObject({ picture: '', username: '' });
+  });
+
+  it('issues a token just under Facebook\'s 60 day limit', async () => {
+    authRoutes();
+
+    const result = await provider.authenticate({ code: 'c', codeVerifier: 'v' });
+
+    const days = (result as { expiresIn: number }).expiresIn / 86400;
+    expect(days).toBeGreaterThan(58);
+    expect(days).toBeLessThan(60);
+  });
+});
+
+describe('FacebookProvider.pages', () => {
+  it('lists the pages shared during the OAuth dialog', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page(), page({ id: 'page-2' })] })],
+      ['/me/businesses', () => ({ data: [] })],
+    ]);
+
+    await expect(provider.pages('token')).resolves.toHaveLength(2);
+  });
+
+  it('follows pagination until there is no next link', async () => {
+    let call = 0;
+    stubFetch([
+      [
+        '/me/accounts',
+        () =>
+          call++ === 0
+            ? { data: [page()], paging: { next: `${GRAPH}/me/accounts?after=2` } }
+            : { data: [page({ id: 'page-2' })] },
+      ],
+      ['/me/businesses', () => ({ data: [] })],
+    ]);
+
+    await expect(provider.pages('token')).resolves.toHaveLength(2);
+  });
+
+  it('also discovers pages owned through Business Manager', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [] })],
+      ['/me/businesses', () => ({ data: [{ id: 'biz-1' }] })],
+      ['/owned_pages', () => ({ data: [page({ id: 'owned-1' })] })],
+      ['/client_pages', () => ({ data: [page({ id: 'client-1' })] })],
+    ]);
+
+    const result = await provider.pages('token');
+
+    expect(result.map((p: any) => p.id)).toEqual(['owned-1', 'client-1']);
+  });
+
+  it('returns a page once even when several sources list it', async () => {
+    // A page reachable via both /me/accounts and Business Manager would
+    // otherwise appear two or three times in the connect dialog.
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page()] })],
+      ['/me/businesses', () => ({ data: [{ id: 'biz-1' }] })],
+      ['/owned_pages', () => ({ data: [page()] })],
+      ['/client_pages', () => ({ data: [page()] })],
+    ]);
+
+    await expect(provider.pages('token')).resolves.toHaveLength(1);
+  });
+
+  it('still returns the OAuth pages when Business Manager is unavailable', async () => {
+    // Most personal accounts have no Business Manager at all.
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page()] })],
+      ['/me/businesses', () => new Response('nope', { status: 403 })],
+    ]);
+
+    await expect(provider.pages('token')).resolves.toHaveLength(1);
+  });
+
+  it('carries on with other businesses when one of them fails', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [] })],
+      ['/me/businesses', () => ({ data: [{ id: 'biz-1' }, { id: 'biz-2' }] })],
+      [
+        /biz-1\/owned_pages/,
+        () => {
+          throw new Error('no access');
+        },
+      ],
+      [/biz-2\/owned_pages/, () => ({ data: [page({ id: 'owned-2' })] })],
+      ['/client_pages', () => ({ data: [] })],
+    ]);
+
+    const result = await provider.pages('token');
+
+    expect(result.map((p: any) => p.id)).toEqual(['owned-2']);
+  });
+
+  it('returns an empty list when the account has no pages', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [] })],
+      ['/me/businesses', () => ({ data: [] })],
+    ]);
+
+    await expect(provider.pages('token')).resolves.toEqual([]);
+  });
+});
+
+describe('FacebookProvider.fetchPageInformation', () => {
+  it('finds the page in the OAuth accounts and reshapes it', async () => {
+    const fetchStub = stubFetch([['/me/accounts', () => ({ data: [page()] })]]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).resolves.toEqual({
+      id: 'page-1',
+      name: 'My Page',
+      access_token: 'page-token',
+      picture: 'https://cdn.test/pic.png',
+      username: 'mypage',
+    });
+    // Found immediately, so Business Manager is never consulted.
+    expect(fetchStub.countTo('/me/businesses')).toBe(0);
+  });
+
+  it('compares ids as strings, because the graph api mixes the two', async () => {
+    stubFetch([['/me/accounts', () => ({ data: [page({ id: 12345 })] })]]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: '12345' })
+    ).resolves.toMatchObject({ id: 12345 });
+  });
+
+  it('pages through the accounts list looking for it', async () => {
+    let call = 0;
+    stubFetch([
+      [
+        '/me/accounts',
+        () =>
+          call++ === 0
+            ? { data: [page({ id: 'other' })], paging: { next: `${GRAPH}/me/accounts?after=2` } }
+            : { data: [page()] },
+      ],
+    ]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).resolves.toMatchObject({ id: 'page-1' });
+  });
+
+  it('falls through to Business Manager owned pages', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [] })],
+      ['/me/businesses', () => ({ data: [{ id: 'biz-1' }] })],
+      ['/owned_pages', () => ({ data: [page()] })],
+    ]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).resolves.toMatchObject({ id: 'page-1', access_token: 'page-token' });
+  });
+
+  it('falls through again to client pages', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [] })],
+      ['/me/businesses', () => ({ data: [{ id: 'biz-1' }] })],
+      ['/owned_pages', () => ({ data: [] })],
+      ['/client_pages', () => ({ data: [page()] })],
+    ]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).resolves.toMatchObject({ id: 'page-1' });
+  });
+
+  it('says so plainly when the page is nowhere to be found', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page({ id: 'other' })] })],
+      ['/me/businesses', () => ({ data: [] })],
+    ]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).rejects.toThrow('Page not found in your accounts');
+  });
+
+  it('defaults a missing picture to an empty string', async () => {
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page({ picture: undefined })] })],
+    ]);
+
+    await expect(
+      provider.fetchPageInformation('token', { page: 'page-1' })
+    ).resolves.toMatchObject({ picture: '' });
+  });
+});
+
+describe('FacebookProvider.reConnect', () => {
+  it('re-reads the page and swaps in its current page token', async () => {
+    // Page access tokens rotate; reconnecting has to pick up the new one.
+    stubFetch([
+      ['/me/accounts', () => ({ data: [page({ access_token: 'rotated-token' })] })],
+    ]);
+
+    await expect(provider.reConnect('old', 'page-1', 'token')).resolves.toEqual({
+      id: 'page-1',
+      name: 'My Page',
+      accessToken: 'rotated-token',
+      picture: 'https://cdn.test/pic.png',
+      username: 'mypage',
+    });
+  });
+});
