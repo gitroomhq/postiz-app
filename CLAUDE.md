@@ -88,6 +88,7 @@ Four tiers, all run from the root. Vitest projects are defined in `vitest.config
 | integration | `pnpm test:integration` | Nest controllers and middleware over supertest against a real Postgres. |
 | workflows | `pnpm test:workflows` | Orchestrator workflows on a Temporal time-skipping server with stubbed activities. No Docker needed. |
 | e2e | `pnpm test:e2e` | Playwright against the full stack: Postgres, Redis, Temporal, backend, orchestrator and frontend. |
+| deploy gate | `pnpm test:e2e:prod` | Playwright against an already-deployed Postiz, to decide whether it may go to production. Starts nothing. Not run by CI. |
 
 Conventions:
 
@@ -100,3 +101,4 @@ Conventions:
 - Adding a provider deep-suite or a workflow test is preferred over widening the contract suite with provider-specific assertions.
 - Coverage is collected and reported but not enforced. There is no threshold to satisfy yet.
 - ReportPortal reporting is opt-in via `RP_ENABLE`/`RP_ENDPOINT`/`RP_PROJECT` (repo variables) and `RP_API_KEY` (secret). It always fails soft: an unreachable ReportPortal never fails a build, and JUnit XML is written regardless.
+- The deploy gate (`e2e/prod`, `playwright.prod.config.ts`) is the only suite that talks to a real deployment, and it is tiered by environment so that an invocation with nothing set skips everything and passes: `POSTIZ_SMOKE_URL` alone checks reachability and public-API auth rejection; adding `POSTIZ_SMOKE_API_KEY` adds read-only checks and a draft create/list/delete round-trip; adding `POSTIZ_SMOKE_PUBLISH_CHANNELS` **really publishes to the real social accounts** behind those channel ids. Postiz can delete its own record but cannot retract a published post, so only name throwaway accounts. It has no retries, for the same reason.
