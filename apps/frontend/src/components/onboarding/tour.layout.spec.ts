@@ -62,6 +62,33 @@ describe('tour overlay geometry', () => {
     onScreen(pos, vw, vh);
   });
 
+  it('clips a tall Add a channel stack on a phone the same way', () => {
+    const vw = 390;
+    const vh = 844;
+    const raw = { t: 56, l: 12, w: 366, h: 1600 };
+    const clipped = clipSpotlight(raw, 'platform-grid', vw, vh);
+    assert.ok(clipped.h <= vh * 0.42 + 0.5);
+    assert.ok(!tourIsHuge(clipped, 'platform-grid', false, vw, vh));
+    const pos = placeTourCard(clipped, false, 'platform-grid', vw, vh, false);
+    onScreen(pos, vw, vh);
+  });
+
+  it('rings the visible Add a channel pane on desktop, not a 42vh slice', () => {
+    const vw = 1440;
+    const vh = 900;
+    const raw = { t: 72, l: 276, w: 1100, h: 2200 };
+    const clipped = clipSpotlight(raw, 'platform-grid', vw, vh);
+    assert.ok(
+      clipped.h > vh * 0.42 + 1,
+      `desktop must not cap Add a channel to the phone slice (got ${clipped.h})`
+    );
+    assert.ok(clipped.t + clipped.h <= vh - 7);
+    assert.ok(clipped.h >= vh - clipped.t - 16);
+    assert.ok(!tourIsHuge(clipped, 'platform-grid', false, vw, vh));
+    const pos = placeTourCard(clipped, false, 'platform-grid', vw, vh, false);
+    onScreen(pos, vw, vh);
+  });
+
   it('docks the API key card to the bottom so the strip at the top stays visible', () => {
     const vw = 390;
     const vh = 844;
