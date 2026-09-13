@@ -1231,6 +1231,10 @@ so the shared confirm/grid/list CSS can actually size them.
 
 **i18n +9 net.** Grok chat uses grok.com/connectors. Grok Bot is the cloud agent: tell it in chat to add the MCP server. grok.com/connectors does not install the Bot. Dropped `conn_grok_step_bot` / `conn_grok_step_bot_detail`. Added `conn_grok_bot_*` plus `conn_docs_grok_bot` / `conn_docs_grok_bot_guide`.
 
+## Connect: readable card copy, no dashes
+
+**i18n 0.** Same keys. Hub card shorts are one line (30 to 40 characters), no em/en dash, no ` - `. OpenClaw is a hosted chat bot (WhatsApp, Telegram, Slack, Discord), not a terminal agent. Cards put the name on one row and the full description underneath so the line is not clipped. Catalog and hub blurbs dropped punctuation dashes.
+
 ## Connect: All hub is grouped, not one dump
 
 **i18n 0 net.** Dropped `connect_all_connectors`. Added `connect_view_all`. The All page no longer lists every leftover card in one mixed grid. After Featured it uses the same groups as the left rail (Assistants, Agents, Chat, Automation, Build), compact name+method cards, and a View control into that nav. Featured still shows the four full cards.

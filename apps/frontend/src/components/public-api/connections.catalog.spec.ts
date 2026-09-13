@@ -205,13 +205,22 @@ describe('Connect marketplace catalog', () => {
     assert.equal(muse.cred, 'none');
   });
 
-  it('keeps shorts to two lines of marketplace copy', () => {
+  it('keeps shorts one readable line, with no dashes', () => {
     for (const item of all) {
       assert.ok(
-        item.short.length <= 72,
+        item.short.length >= 30 && item.short.length <= 40,
         `${item.id} short is ${item.short.length}: ${item.short}`
       );
+      assert.doesNotMatch(
+        item.short,
+        /[—–]| - /,
+        `${item.id} short has a dash: ${item.short}`
+      );
     }
+    assert.match(byId('openclaw').short, /bot you host/i);
+    assert.doesNotMatch(byId('openclaw').short, /terminal/i);
+    assert.doesNotMatch(byId('openclaw').intro, /from your terminal/i);
+    assert.match(byId('openclaw').intro, /WhatsApp/);
   });
 
   it('maps nav filters to the job groups', () => {

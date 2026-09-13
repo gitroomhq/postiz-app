@@ -320,7 +320,7 @@ const SkillInstallCallout: FC<{
         <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
           {t(
             'conn_step_skill_install_detail',
-            'One command, once per machine. It installs the skill playbook — not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
+            'One command, once per machine. It installs the skill playbook, not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
           )}
         </div>
       </div>
@@ -374,7 +374,7 @@ const CliSetupCallout: FC<{
 }> = ({ apiKey, keyRevealed, apiUrl }) => {
   const t = useT();
   const keyCode = `export POSTQUEEN_API_KEY="${apiKey}"`;
-  // See SkillInstallCallout — masking an absent key would prepend the stars.
+  // See SkillInstallCallout, masking an absent key would prepend the stars.
   const maskedKey =
     keyRevealed || !apiKey
       ? keyCode
@@ -411,7 +411,7 @@ const CliSetupCallout: FC<{
         <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
           {t(
             'conn_cli_step_login_detail',
-            'Settings → API Keys → Reveal, then export. Self-hosted OAuth device flow (`auth:login`) is advanced — see Authentication docs.'
+            'Settings → API Keys → Reveal, then export. Self-hosted OAuth device flow (`auth:login`) is advanced, see Authentication docs.'
           )}
         </div>
         <CodeBlock code={maskedKey} rawCode={keyCode} label="API key" />
@@ -441,7 +441,7 @@ const CliSetupCallout: FC<{
         <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
           {t(
             'conn_cli_step_try_detail',
-            'First command that reaches the API — lists your connected channels as JSON.'
+            'First command that reaches the API, lists your connected channels as JSON.'
           )}
         </div>
         <CodeBlock code="postqueen integrations:list" label="Try it" />
@@ -683,7 +683,7 @@ export const ConnectPanel: FC<{
         title: t('connect_hub_agents', 'Agents'),
         blurb: t(
           'connect_hub_agents_blurb',
-          'OpenClaw, Hermes, Claude Code, Codex and Muse Code. Skills or MCP — not a separate product.'
+          'OpenClaw is a chat bot you host. Claude Code and Codex run in a coding session.'
         ),
       },
       chat: {
@@ -697,14 +697,14 @@ export const ConnectPanel: FC<{
         title: t('connect_hub_automation', 'Automation'),
         blurb: t(
           'connect_hub_automation_blurb',
-          'n8n is live. Zapier and Make official apps are coming soon — HTTP still works today.'
+          'n8n is live. Zapier and Make official apps are coming soon, HTTP still works today.'
         ),
       },
       build: {
         title: t('connect_hub_build', 'Build'),
         blurb: t(
           'connect_hub_build_blurb',
-          'CLI, Public API, Node SDK and OAuth apps — the same surface every other connection rides.'
+          'CLI, Public API, Node SDK and OAuth apps, the same surface every other connection rides.'
         ),
       },
     }),
@@ -800,7 +800,7 @@ export const ConnectPanel: FC<{
         {showApi && (
           <div>
             <div className="text-[12px] font-[600] text-pqMuted">
-              {t('conn_copy_api_header', 'Public API header — no Bearer')}
+              {t('conn_copy_api_header', 'Public API header, no Bearer')}
             </div>
             <CodeBlock
               code={maskCode(apiHeader)}
@@ -1046,7 +1046,7 @@ export const ConnectPanel: FC<{
     const meta = hubTitles[nav];
     if (!meta) return null;
 
-    const hubCard = (item: Connection, i: number, compact = false) => (
+    const hubCard = (item: Connection, i: number, featured = false) => (
       <button
         key={item.id}
         type="button"
@@ -1057,37 +1057,31 @@ export const ConnectPanel: FC<{
         }
         onClick={() => selectItem(item.id)}
         className={clsx(
-          'flex text-start rounded-pqLg bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
-          compact
-            ? 'min-h-[64px] items-center gap-[10px] p-[12px_14px]'
-            : 'min-h-[108px] items-start gap-[12px] p-[16px]'
+          'flex flex-col gap-[8px] rounded-pqLg bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
+          featured ? 'p-[16px]' : 'p-[13px_14px]'
         )}
       >
-        <ConnIcon item={item} size={compact ? 'xs' : 'sm'} />
-        <span className="flex min-w-0 flex-1 flex-col gap-[4px] pt-[1px]">
-          <span className="flex min-w-0 items-center gap-[7px]">
-            <span className="truncate text-[15px] font-[600] text-pqText -tracking-[0.01em]">
-              {item.name}
-            </span>
-            {methodChip(item)}
-            {item.soon && (
-              <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
-                {t('conn_soon_short', 'SOON')}
-              </span>
-            )}
+        <span className="flex min-w-0 items-center gap-[10px]">
+          <ConnIcon item={item} size={featured ? 'sm' : 'xs'} />
+          <span className="min-w-0 flex-1 truncate text-[14px] font-[600] leading-[1.2] text-pqText">
+            {item.name}
           </span>
-          {!compact && (
-            <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-pqMuted">
-              {item.short}
+          {methodChip(item)}
+          {item.soon && (
+            <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
+              {t('conn_soon_short', 'SOON')}
             </span>
           )}
+        </span>
+        <span className="text-[12.5px] leading-[1.4] text-pqMuted">
+          {item.short}
         </span>
       </button>
     );
 
     const hubGrid = (
       items: Connection[],
-      opts: { featured?: boolean; compact?: boolean } = {}
+      opts: { featured?: boolean } = {}
     ) => (
       <div
         className={clsx(
@@ -1100,12 +1094,10 @@ export const ConnectPanel: FC<{
               }
             : mobile
               ? 'grid-cols-1'
-              : opts.compact
-                ? '[grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]'
-                : '[grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]'
+              : '[grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]'
         )}
       >
-        {items.map((item, i) => hubCard(item, i, opts.compact))}
+        {items.map((item, i) => hubCard(item, i, opts.featured))}
       </div>
     );
 
@@ -1170,7 +1162,7 @@ export const ConnectPanel: FC<{
                     {t('connect_view_all', 'View')}
                   </button>
                 </div>
-                {hubGrid(group.items, { compact: true })}
+                {hubGrid(group.items)}
               </div>
             ))}
           </div>
@@ -1206,7 +1198,7 @@ export const ConnectPanel: FC<{
           : 'flex-1 flex-col gap-[16px] p-[0_8px_14px]'
       )}
     >
-      {/* —— Connectors —— */}
+      {/* Connectors */}
       {visibleConnectors.length > 0 && (
       <div
         className={clsx(
@@ -1255,7 +1247,7 @@ export const ConnectPanel: FC<{
       </div>
       )}
 
-      {/* —— Account —— */}
+      {/* Account */}
       {visibleAccount.length > 0 && (
       <div
         className={clsx(
@@ -1319,7 +1311,7 @@ export const ConnectPanel: FC<{
           : 'h-full w-full rounded-[16px]'
       )}
     >
-      {/* Left nav / mobile chips — Settings chrome: search above, then groups */}
+      {/* Left nav / mobile chips, Settings chrome: search above, then groups */}
       <div
         className={clsx(
           'flex min-h-0 flex-col bg-pqSettings',
@@ -1429,12 +1421,12 @@ export const ConnectPanel: FC<{
 };
 
 /**
- * /connections route — Settings-style scrim + Connect panel.
+ * /connections route, Settings-style scrim + Connect panel.
  *
  * Open to everyone. The gate this used to carry (`public_api && isGeneral &&
  * org admin`) was inherited from the page this replaced, and two thirds of it
  * were wrong here: `public_api` is false on FREE, which is every unsubscribed
- * account, and `isGeneral` is the hosted-SaaS flag — false on every self-host,
+ * account, and `isGeneral` is the hosted-SaaS flag, false on every self-host,
  * which is the audience most likely to want MCP in the first place. Between
  * them they hid the catalog from the people the product tour walks to it, and
  * a connections page nobody can open is not a connections page.
@@ -1442,11 +1434,11 @@ export const ConnectPanel: FC<{
  * What is genuinely admin-only is the credential, and the server already says
  * so: `/user/self` returns an empty `publicApi` to members and
  * `POST /api-key/rotate` is policy-guarded. So members get the catalog and the
- * install steps, and a line telling them where the key comes from — see
+ * install steps, and a line telling them where the key comes from, see
  * `ConnectPanel`.
  *
- * `mode=intercept` — soft-open via `@modal/(.)connections`.
- * `mode=page` — hard URL; scrim portals to body (covers header).
+ * `mode=intercept`, soft-open via `@modal/(.)connections`.
+ * `mode=page`, hard URL; scrim portals to body (covers header).
  */
 export const ConnectPage: FC<{ mode?: RouteOverlayMode }> = ({
   mode = 'page',
@@ -1468,7 +1460,7 @@ export const ConnectPage: FC<{ mode?: RouteOverlayMode }> = ({
   }, [router]);
 
   useEffect(() => {
-    // Hooks still run while the overlay is hidden — an unguarded listener would
+    // Hooks still run while the overlay is hidden, an unguarded listener would
     // navigate back from whatever page stranded it. During the tour the key
     // belongs to the tour, which has its own Escape and its own way of leaving;
     // both firing ends the tour *and* walks back a page.
