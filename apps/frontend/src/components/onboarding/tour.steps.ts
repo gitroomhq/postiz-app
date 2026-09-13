@@ -43,10 +43,11 @@ export const STEPS: StepMeta[] = [
   { key: 'posts-panel', path: CALENDAR_STEP_PATH, needs: 'posts-panel' },
   // Spotlight is the rail Connect button (still visible on /connections).
   { key: 'connect-pq', path: '/connections?nav=all' },
-  // Desktop Connect fills the viewport, so a ring on the whole panel trips
-  // `covers` and dims Featured. Spotlight the Featured row instead.
-  { key: 'connect-featured', path: '/connections?nav=all' },
+  // Key strip sits above Featured in the hub. Walk it first so the phone
+  // scroll matches the desktop reading order (and so a 1-column Featured
+  // stack is not the first thing the overlay tries to ring).
   { key: 'connect-creds', path: '/connections?nav=all' },
+  { key: 'connect-featured', path: '/connections?nav=all' },
   // Spotlight is the rail Channels row; open Add Channel so the right pane
   // matches what the step describes (owner: not calendar behind the tip).
   { key: 'nav-channels', path: '/channels', needs: 'channel-add' },
@@ -70,7 +71,7 @@ export const TOUR_COPY: Record<string, { title: string; text: string }> = {
   },
   'connect-featured': {
     title: 'Pick the client you already use',
-    text: 'Featured is the short list. Assistants, Agents, Chat, Automation and Build sit in the left rail. Open one card and follow its steps.',
+    text: 'Featured is the short list. Assistants, Agents, Chat, Automation and Build are grouped under it. Open one card and follow its steps.',
   },
   'connect-creds': {
     title: 'One API key for every client',

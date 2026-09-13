@@ -26,6 +26,15 @@ import {
   TOUR_COPY,
   type StepMeta,
 } from './tour.steps';
+import {
+  TOUR_CARD_H,
+  clipSpotlight,
+  placeByBand,
+  placeTourCard,
+  tourCardWidth,
+  tourIsHuge,
+  type TourRect,
+} from './tour.layout';
 
 export { STEPS, TOUR_COPY, type StepMeta } from './tour.steps';
 
@@ -41,15 +50,6 @@ export { STEPS, TOUR_COPY, type StepMeta } from './tour.steps';
  * preference, so nothing it does outlives the tour.
  */
 
-const CARD_W = 320;
-/**
- * Height the card is *assumed* to be while working out where to put it. It is
- * auto-height in reality, so this is the worst case — two lines of heading over
- * three of body — and it has to stay at least that, or `place()` clamps the top
- * edge against a viewport the bottom edge then runs past.
- */
-const CARD_H = 196;
-const MARGIN = 16;
 const RING_PAD = 8;
 
 /** Dismissal is per-browser. It is a UI preference, not account data. */
@@ -640,94 +640,7 @@ export const useTourDemo = (ready = true): TourDemoPost[] => {
   }, [showDemo, revealed, dropped, flying, t]);
 };
 
-interface Rect {
-  /** The target's own corner radius, so the ring can trace it. */
-  radius?: number;
-  t: number;
-  l: number;
-  w: number;
-  h: number;
-}
-
-/**
- * Where the card goes relative to the target. Ported from the prototype — the
- * order of the branches is what stops the card covering the thing it explains.
- * Horizontal placement mirrors when `dir=rtl` so the card stays beside the
- * ring instead of sitting on the wrong side of the viewport.
- */
-const place = (r: Rect, huge: boolean, key: string) => {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const rtl =
-    typeof document !== 'undefined' &&
-    document.documentElement.getAttribute('dir') === 'rtl';
-  let l: number;
-  let t: number;
-
-  if (huge) {
-    l = r.l + r.w / 2 - CARD_W / 2;
-    t = r.t + r.h / 2 - CARD_H / 2;
-  } else if (r.w > 340 && r.h > 240) {
-    if (key === 'cal-grid') {
-      // Fallback only — `placeByBand` handles this step once the demo's own
-      // block has been measured. A far corner of a mostly-empty grid is a long
-      // way from the posts being described (owner), so this is the corner
-      // nearest them: below the first hours, beside the first days.
-      const inset = 16;
-      l = rtl ? r.l + r.w - CARD_W - inset : r.l + inset;
-      t = r.t + r.h - CARD_H - inset;
-    } else if (key === 'connect-featured') {
-      // Under Featured, not on the cards. The old connections-page target was
-      // the whole overlay, which now fills the viewport and trips `covers`.
-      const inset = 16;
-      l = rtl ? r.l + inset : r.l + r.w - CARD_W - inset;
-      t = Math.min(r.t + r.h + 14, vh - CARD_H - MARGIN);
-    } else if (key === 'platform-grid') {
-      // Upper-mid of the Add Channel grid — not flush under the page title
-      // (owner: finish card sat too high and covered the heading / first row).
-      const inset = Math.min(48, r.w * 0.08);
-      l = rtl ? r.l + r.w - CARD_W - inset : r.l + inset;
-      t = r.t + Math.min(Math.max(r.h * 0.26, 140), r.h * 0.4) - CARD_H / 4;
-    } else if (
-      rtl
-        ? r.l - MARGIN - CARD_W >= MARGIN
-        : r.l + r.w + MARGIN + CARD_W <= vw - MARGIN
-    ) {
-      l = rtl ? r.l - CARD_W - MARGIN : r.l + r.w + MARGIN;
-      t = r.t;
-    } else if (r.t + r.h + MARGIN + CARD_H <= vh - MARGIN) {
-      l = r.l;
-      t = r.t + r.h + MARGIN;
-    } else {
-      // Nowhere to stand beside it. The prototype always lands here for a large
-      // target, which puts the card on top of the content it is describing —
-      // acceptable only when there is genuinely no room.
-      l = r.l + r.w / 2 - CARD_W / 2;
-      t = r.t + r.h / 2 - CARD_H / 2;
-    }
-  } else if (r.w < 340) {
-    // Narrow target: card to the side, flipped when it would run off.
-    if (rtl) {
-      l = r.l - CARD_W - MARGIN;
-      t = r.h > 360 ? r.t + r.h / 2 - CARD_H / 2 : r.t + r.h / 2 - 62;
-      if (l < MARGIN) l = r.l + r.w + MARGIN;
-    } else {
-      l = r.l + r.w + MARGIN;
-      t = r.h > 360 ? r.t + r.h / 2 - CARD_H / 2 : r.t + r.h / 2 - 62;
-      if (l + CARD_W > vw - MARGIN) l = r.l - CARD_W - MARGIN;
-    }
-  } else {
-    // Wide target: card below, flipped above when it would run off.
-    l = r.l;
-    t = r.t + r.h + MARGIN;
-    if (t + CARD_H > vh - MARGIN) t = r.t - CARD_H - MARGIN;
-  }
-
-  return {
-    l: Math.min(Math.max(MARGIN, l), vw - CARD_W - MARGIN),
-    t: Math.min(Math.max(MARGIN, t), vh - CARD_H - MARGIN),
-  };
-};
+type Rect = TourRect;
 
 /** Slot key of a demo cell, from the week the grid is currently showing. */
 const demoSlot = (monday: string, day: number, hour: number) =>
@@ -764,39 +677,6 @@ const demoBandRect = (grid: Element): Rect | null => {
   const a = first.getBoundingClientRect();
   const b = last.getBoundingClientRect();
   return { t: a.top, l: a.left, w: b.right - a.left, h: b.bottom - a.top };
-};
-
-/**
- * Where the calendar step's card goes, given the block the demo fills.
- *
- * Next to the posts, not in a corner: the step is about those posts, and a card
- * parked at the far end of a mostly-empty week reads as belonging to nothing
- * (owner). Under the block first, beside it when the week is not tall enough,
- * and only then back to `place()`'s corner.
- */
-const placeByBand = (r: Rect, band: Rect, rtl: boolean) => {
-  const gap = 14;
-  const under = band.t + band.h + gap;
-  const beside = rtl ? band.l - CARD_W - gap : band.l + band.w + gap;
-  let l: number;
-  let t: number;
-
-  if (under + CARD_H <= r.t + r.h - gap) {
-    l = rtl ? band.l + band.w - CARD_W : band.l;
-    t = under;
-  } else if (
-    rtl ? beside >= r.l + gap : beside + CARD_W <= r.l + r.w - gap
-  ) {
-    l = beside;
-    t = band.t;
-  } else {
-    return null;
-  }
-
-  return {
-    l: Math.min(Math.max(MARGIN, l), window.innerWidth - CARD_W - MARGIN),
-    t: Math.min(Math.max(MARGIN, t), window.innerHeight - CARD_H - MARGIN),
-  };
 };
 
 /**
@@ -1188,43 +1068,31 @@ export const Tour: FC = () => {
 
   if (!current || !opened) return null;
 
-  const offscreen =
-    !!rect &&
-    (rect.w < 4 ||
-      rect.h < 4 ||
-      rect.l + rect.w < 8 ||
-      rect.l > window.innerWidth - 8 ||
-      rect.t > window.innerHeight - 8 ||
-      rect.t + rect.h < 8);
-  const covers =
-    !!rect &&
-    (rect.w * rect.h) / (window.innerWidth * window.innerHeight) > 0.82;
-  // platform-grid is intentionally large; treating it as `huge` centers the
-  // card on the whole pane and (with scrollIntoView center) dumps the page
-  // to the bottom. Keep the dedicated top placement instead.
-  const huge =
-    !!rect &&
-    current.key !== 'platform-grid' &&
-    current.key !== 'connect-featured' &&
-    (offscreen || covers || !!current.dim);
-  const spot = !!rect && !huge;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cardW = tourCardWidth(vw);
+  const spotRect = rect
+    ? clipSpotlight(rect, current.key, vw, vh)
+    : null;
+  const huge = tourIsHuge(spotRect, current.key, current.dim, vw, vh);
+  const spot = !!spotRect && !huge;
   const pad = current.flush ? 0 : RING_PAD;
   const rtl =
     typeof document !== 'undefined' &&
     document.documentElement.getAttribute('dir') === 'rtl';
-  const pos = !rect
+  const pos = !spotRect
     ? null
     : (current.key === 'cal-grid' && band && !huge
-        ? placeByBand(rect, band, rtl)
-        : null) || place(rect, huge, current.key);
+        ? placeByBand(spotRect, band, rtl, vw, vh)
+        : null) || placeTourCard(spotRect, huge, current.key, vw, vh, rtl);
   // Caret only when the card sits beside the target (LTR: right; RTL: left).
   const showCaret =
     !!spot &&
-    !!rect &&
+    !!spotRect &&
     !!pos &&
     (rtl
-      ? pos.l + CARD_W < rect.l
-      : pos.l > rect.l + rect.w);
+      ? pos.l + cardW < spotRect.l
+      : pos.l > spotRect.l + spotRect.w);
 
   return (
     <div
@@ -1257,31 +1125,31 @@ export const Tour: FC = () => {
       )}
 
       {spot &&
-        rect &&
+        spotRect &&
         [
           {
             top: 0,
             left: 0,
             width: '100%',
-            height: Math.max(0, rect.t - pad),
+            height: Math.max(0, spotRect.t - pad),
           },
           {
-            top: rect.t + rect.h + pad,
+            top: spotRect.t + spotRect.h + pad,
             left: 0,
             width: '100%',
             bottom: 0,
           },
           {
-            top: rect.t - pad,
+            top: spotRect.t - pad,
             left: 0,
-            width: Math.max(0, rect.l - pad),
-            height: rect.h + pad * 2,
+            width: Math.max(0, spotRect.l - pad),
+            height: spotRect.h + pad * 2,
           },
           {
-            top: rect.t - pad,
-            left: rect.l + rect.w + pad,
+            top: spotRect.t - pad,
+            left: spotRect.l + spotRect.w + pad,
             right: 0,
-            height: rect.h + pad * 2,
+            height: spotRect.h + pad * 2,
           },
         ].map((style, i) => (
           <div
@@ -1292,19 +1160,19 @@ export const Tour: FC = () => {
           />
         ))}
 
-      {spot && rect && (
+      {spot && spotRect && (
         <div
           aria-hidden="true"
           data-tour-ring="1"
           className="pq-loop pointer-events-none absolute border border-pqBrand animate-pqTick"
           style={{
-            top: rect.t - pad,
-            left: rect.l - pad,
-            width: rect.w + pad * 2,
-            height: rect.h + pad * 2,
+            top: spotRect.t - pad,
+            left: spotRect.l - pad,
+            width: spotRect.w + pad * 2,
+            height: spotRect.h + pad * 2,
             // The target's corner, grown by however far out the ring sits. A
             // fixed radius traces a different shape than the thing under it.
-            borderRadius: (rect.radius ?? 10) + pad,
+            borderRadius: (spotRect.radius ?? 10) + pad,
           }}
         />
       )}
@@ -1314,7 +1182,7 @@ export const Tour: FC = () => {
       {/* The caret the design draws from the card back to what it is pointing
           at. Only when the card ended up beside the target — LTR to the right,
           RTL to the left — that is the case where the gap reads as ambiguous. */}
-      {showCaret && rect && pos && (
+      {showCaret && spotRect && pos && (
         <div
           aria-hidden="true"
           data-tour-caret="1"
@@ -1325,10 +1193,10 @@ export const Tour: FC = () => {
             rtl ? 'border-e border-pqBrand' : 'border-s border-pqBrand'
           )}
           style={{
-            left: rtl ? pos.l + CARD_W - 8 : pos.l - 8,
+            left: rtl ? pos.l + cardW - 8 : pos.l - 8,
             top: Math.max(
               pos.t + 22,
-              Math.min(pos.t + 136, rect.t + rect.h / 2 - 8)
+              Math.min(pos.t + 136, spotRect.t + spotRect.h / 2 - 8)
             ),
           }}
         />
@@ -1341,15 +1209,16 @@ export const Tour: FC = () => {
         // and bloom instead of a neutral border, and a wash down from the top.
         // The wash is a background *image* over `bg-pqPop` — an alpha token set
         // as background-color would replace the surface instead of tinting it.
-        className="absolute w-[320px] rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
+        className="absolute rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
         style={{
+          width: cardW,
           backgroundImage:
             'linear-gradient(180deg, var(--tourCardWash), transparent 58%)',
           ...(pos
             ? { top: pos.t, left: pos.l }
             : {
-                top: `calc(50% - ${CARD_H / 2}px)`,
-                left: `calc(50% - ${CARD_W / 2}px)`,
+                top: `calc(50% - ${TOUR_CARD_H / 2}px)`,
+                left: `calc(50% - ${cardW / 2}px)`,
               }),
         }}
       >
