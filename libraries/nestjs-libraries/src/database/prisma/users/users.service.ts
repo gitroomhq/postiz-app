@@ -49,6 +49,10 @@ export class UsersService {
     return this._usersRepository.attachProviderId(userId, providerId);
   }
 
+  attachAppleProviderId(userId: string, appleProviderId: string) {
+    return this._usersRepository.attachAppleProviderId(userId, appleProviderId);
+  }
+
   async switchUser(
     currentUserId: string,
     targetUserId: string,

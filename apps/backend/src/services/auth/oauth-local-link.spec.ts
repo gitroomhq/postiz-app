@@ -6,6 +6,8 @@ import {
   shouldAttachGoogleId,
   shouldBlockLocalRegister,
   shouldLinkGoogleToLocalEmail,
+  shouldLinkOauthToLocalEmail,
+  shouldAttachAppleId,
   type OauthUserStore,
 } from './oauth-local-link.ts';
 
@@ -14,6 +16,7 @@ const localUser = (overrides: Record<string, unknown> = {}) => ({
   email: 'gokhan@example.com',
   providerName: 'LOCAL',
   providerId: '',
+  appleProviderId: '',
   activated: true,
   password: 'hashed',
   deletedAt: null,
@@ -30,12 +33,30 @@ describe('shouldLinkGoogleToLocalEmail', () => {
   });
 });
 
+describe('shouldLinkOauthToLocalEmail', () => {
+  it('links Google and Apple when an email is present, not GitHub', () => {
+    assert.equal(shouldLinkOauthToLocalEmail('GOOGLE', 'a@b.com'), true);
+    assert.equal(shouldLinkOauthToLocalEmail('APPLE', 'a@b.com'), true);
+    assert.equal(shouldLinkOauthToLocalEmail('APPLE', ''), false);
+    assert.equal(shouldLinkOauthToLocalEmail('GITHUB', 'a@b.com'), false);
+  });
+});
+
 describe('shouldAttachGoogleId', () => {
   it('attaches when empty or already the same id', () => {
     assert.equal(shouldAttachGoogleId('', 'gid'), true);
     assert.equal(shouldAttachGoogleId(null, 'gid'), true);
     assert.equal(shouldAttachGoogleId('gid', 'gid'), true);
     assert.equal(shouldAttachGoogleId('other', 'gid'), false);
+  });
+});
+
+describe('shouldAttachAppleId', () => {
+  it('attaches when empty or already the same id', () => {
+    assert.equal(shouldAttachAppleId('', 'aid'), true);
+    assert.equal(shouldAttachAppleId(null, 'aid'), true);
+    assert.equal(shouldAttachAppleId('aid', 'aid'), true);
+    assert.equal(shouldAttachAppleId('other', 'aid'), false);
   });
 });
 
@@ -219,6 +240,66 @@ describe('findExistingOauthUser', () => {
     const found = await findExistingOauthUser('GOOGLE', identity, users);
     assert.equal(found, null);
   });
+
+  it('email then Apple: LOCAL wins, appleProviderId set, Google providerId untouched', async () => {
+    const local = localUser({ providerId: 'google-99' });
+    const attached: string[] = [];
+    const users: OauthUserStore = {
+      getUserByProvider: async () => {
+        throw new Error('must not need provider lookup when LOCAL email hits');
+      },
+      getUserByEmail: async (email) => {
+        assert.equal(email, identity.email);
+        return local;
+      },
+      attachProviderId: async () => {
+        throw new Error('must not write Apple onto providerId');
+      },
+      attachAppleProviderId: async (userId, appleProviderId) => {
+        attached.push(`${userId}:${appleProviderId}`);
+      },
+      activateUser: async () => {
+        throw new Error('already activated');
+      },
+    };
+
+    const appleIdentity = { id: 'apple-55', email: identity.email };
+    const found = await findExistingOauthUser('APPLE', appleIdentity, users);
+    assert.equal(found, local);
+    assert.equal(found?.providerId, 'google-99');
+    assert.equal(found?.appleProviderId, 'apple-55');
+    assert.deepEqual(attached, ['local-1:apple-55']);
+    assert.equal((found as { providerName: string }).providerName, 'LOCAL');
+  });
+
+  it('Apple then Apple after a prior link: LOCAL that already holds the Apple id', async () => {
+    const linkedLocal = localUser({
+      providerId: 'google-99',
+      appleProviderId: 'apple-55',
+    });
+    const users: OauthUserStore = {
+      getUserByProvider: async () => linkedLocal,
+      getUserByEmail: async () => null,
+      attachProviderId: async () => {
+        throw new Error('must not attach Google');
+      },
+      attachAppleProviderId: async () => {
+        throw new Error('already attached');
+      },
+      activateUser: async () => {
+        throw new Error('must not activate');
+      },
+    };
+
+    const found = await findExistingOauthUser(
+      'APPLE',
+      { id: 'apple-55', email: null },
+      users
+    );
+    assert.equal(found, linkedLocal);
+    assert.equal(found?.providerId, 'google-99');
+    assert.equal(found?.appleProviderId, 'apple-55');
+  });
 });
 
 type UserRow = {
@@ -226,6 +307,7 @@ type UserRow = {
   email: string;
   providerName: string;
   providerId: string;
+  appleProviderId: string;
   activated: boolean;
   deletedAt: null;
 };
@@ -256,6 +338,17 @@ const makeUserTable = (seed: UserRow[] = []) => {
           return linkedLocal;
         }
       }
+      if (provider === 'APPLE') {
+        const linkedLocal = rows.find(
+          (row) =>
+            row.deletedAt === null &&
+            row.providerName === 'LOCAL' &&
+            row.appleProviderId === providerId
+        );
+        if (linkedLocal) {
+          return linkedLocal;
+        }
+      }
       return (
         rows.find(
           (row) =>
@@ -271,6 +364,14 @@ const makeUserTable = (seed: UserRow[] = []) => {
       );
       if (row) {
         row.providerId = providerId;
+      }
+    },
+    attachAppleProviderId: async (userId, appleProviderId) => {
+      const row = rows.find(
+        (item) => item.id === userId && item.providerName === 'LOCAL'
+      );
+      if (row) {
+        row.appleProviderId = appleProviderId;
       }
     },
     activateUser: async (id) => {
@@ -302,6 +403,7 @@ const makeUserTable = (seed: UserRow[] = []) => {
       email,
       providerName,
       providerId,
+      appleProviderId: '',
       activated: true,
       deletedAt: null,
     };
@@ -351,7 +453,18 @@ const makeUserTable = (seed: UserRow[] = []) => {
     return insert('LOCAL', email, '');
   };
 
-  return { rows, store, googleSignIn, otpSignIn, passwordRegister, insert };
+  const appleSignIn = async (identity: { id: string; email?: string | null }) => {
+    const existing = await findExistingOauthUser('APPLE', identity, store);
+    if (existing) {
+      return { user: existing, created: false };
+    }
+    return {
+      user: insert('APPLE', identity.email || `apple-${identity.id}@privaterelay.appleid.com`, identity.id),
+      created: true,
+    };
+  };
+
+  return { rows, store, googleSignIn, appleSignIn, otpSignIn, passwordRegister, insert };
 };
 
 describe('one verified inbox is one User (table + unique constraint)', () => {
@@ -447,5 +560,23 @@ describe('one verified inbox is one User (table + unique constraint)', () => {
     );
 
     assert.equal(github, null);
+  });
+
+  it('email then Apple: same LOCAL row, appleProviderId attached, Google id kept', async () => {
+    const db = makeUserTable();
+    const local = db.insert('LOCAL', 'gokhan@example.com', 'google-99');
+
+    const first = await db.appleSignIn({ id: 'apple-55', email: google.email });
+    const second = await db.appleSignIn({ id: 'apple-55', email: null });
+
+    assert.equal(first.created, false);
+    assert.equal(second.created, false);
+    assert.equal(first.user.id, local.id);
+    assert.equal(second.user.id, local.id);
+    assert.equal(first.user.providerName, 'LOCAL');
+    assert.equal(first.user.providerId, 'google-99');
+    assert.equal(first.user.appleProviderId, 'apple-55');
+    assert.equal(second.user.appleProviderId, 'apple-55');
+    assert.equal(db.rows.filter((row) => row.deletedAt === null).length, 1);
   });
 });

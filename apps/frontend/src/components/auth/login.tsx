@@ -11,10 +11,7 @@ import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import {
-  AuthShell,
-  AuthStep,
-} from '@gitroom/frontend/components/auth/auth-shell';
+import { AuthShell } from '@gitroom/frontend/components/auth/auth-shell';
 import { OtpEmailStep } from '@gitroom/frontend/components/auth/otp-email-step';
 // The DTO the resolver validates against is the form's shape. Declaring a
 // second, near-identical type let the two drift — this one was missing
@@ -24,9 +21,6 @@ export function Login() {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
-  const [step, setStep] = useState<AuthStep>('method');
-  // Chosen from the password step, so it only ever matters once `step` is
-  // 'email'. Going back to the method step clears it.
   const [withCode, setWithCode] = useState(false);
   const { billingEnabled, passwordlessLogin, emailEnabled } = useVariables();
   const resolver = useMemo(() => {
@@ -40,8 +34,6 @@ export function Login() {
     },
   });
   const fetchData = useFetch();
-  // The sign-up cross-link lives in the auth chrome (top right), so the form
-  // itself carries no footer.
   const subtitle = t(
     'sign_in_subtitle',
     'Welcome back. Sign in to get to your calendar.'
@@ -55,12 +47,6 @@ export function Login() {
         <AuthShell
           title={t('sign_in', 'Sign In')}
           subtitle={subtitle}
-          step={step}
-          onContinueEmail={() => setStep('email')}
-          onBack={() => {
-            setWithCode(false);
-            setStep('method');
-          }}
           extraProviders={billingEnabled ? <WalletProvider /> : undefined}
           emailStep={
             <div className="flex flex-col gap-[12px]">
@@ -139,9 +125,6 @@ export function Login() {
         <AuthShell
           title={t('sign_in', 'Sign In')}
           subtitle={subtitle}
-          step={step}
-          onContinueEmail={() => setStep('email')}
-          onBack={() => setStep('method')}
           extraProviders={billingEnabled ? <WalletProvider /> : undefined}
           emailStep={
             <div className="flex flex-col gap-[12px]">

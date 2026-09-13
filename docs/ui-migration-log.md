@@ -1250,3 +1250,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Product tour: Connect hub is not one overlay step
 
 **i18n +2 net.** Dropped `tour_clients_title` / `tour_clients_text` (the old whole-panel step that dimmed Featured). Added `tour_featured_title` / `tour_featured_text` and `tour_creds_title` / `tour_creds_text`. The tour now walks calendar → Connect (assistant vs channel) → Featured → API key strip → Channels (publishing, not assistants) → Add Channel. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Auth: Sign in and Create account on the form
+
+**i18n +1 net.** Dropped the header pill keys (`login`, `google`, `apple`, `farcaster`) and the two-step shell keys (`continue_with`, `continue_with_email`). Added form-side mode switch and stacked provider labels (`auth_mode`, `create_account_tab`, `create_one`, `dont_have_an_account`, `already_have_an_account`, `continue_with_farcaster`, `continue_with_wallet`). `continue_with_google` / `continue_with_apple` were already present as aria-labels and are now the visible button text. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1817 → 1818).

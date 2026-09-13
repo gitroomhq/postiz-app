@@ -30,7 +30,7 @@ export const AppleProvider = () => {
       type="button"
       onClick={gotoLogin}
       aria-label={t('continue_with_apple', 'Continue with Apple')}
-      className={`cursor-pointer flex-1 w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px]`}
+      className="cursor-pointer w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px] text-[15px] font-[500]"
     >
       <div>
         <svg
@@ -45,7 +45,7 @@ export const AppleProvider = () => {
           />
         </svg>
       </div>
-      <div className="block xs:hidden">{t('apple', 'Apple')}</div>
+      <div>{t('continue_with_apple', 'Continue with Apple')}</div>
     </button>
   );
 };

@@ -5,7 +5,7 @@ export const WalletUiProvider: FC = () => {
   const t = useT();
   return (
     <div
-      className={`cursor-pointer bg-white flex-1 h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[5px]`}
+      className="cursor-pointer w-full bg-white flex h-[52px] rounded-[10px] justify-center items-center text-[#0E0E0E] gap-[10px] text-[15px] font-[500]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -23,7 +23,7 @@ export const WalletUiProvider: FC = () => {
           fill="#0E0E0E"
         />
       </svg>
-      <div className="block xs:hidden">Wallet</div>
+      <div>{t('continue_with_wallet', 'Continue with Wallet')}</div>
     </div>
   );
 };

@@ -88,6 +88,7 @@ all_notifications_marked_as_read
 all_platforms
 all_previews
 already_activated
+already_have_an_account
 already_subscribed
 alt_text
 alt_text_saved
@@ -112,7 +113,6 @@ api_key_rotated
 api_keys
 api_keys_description
 app_name
-apple
 applies_to_every_post_on_this_channel
 apply
 apply_50_discount_3_months
@@ -160,6 +160,7 @@ are_you_sure_you_want_to_logout
 assign_this_channel_to_a_customer
 assistant_initial_message
 attachments
+auth_mode
 auth_showcase_alt
 auth_showcase_body
 auth_showcase_channels
@@ -800,10 +801,10 @@ connected
 connections
 contact_support
 continue_to
-continue_with
 continue_with_apple
-continue_with_email
+continue_with_farcaster
 continue_with_google
+continue_with_wallet
 continue_without_set
 conversations
 copy
@@ -822,9 +823,11 @@ could_not_delete_account
 could_not_use_rss_feed
 create
 create_account
+create_account_tab
 create_announcement
 create_new_post
 create_oauth_app
+create_one
 create_output
 create_post_failed
 create_post_options
@@ -897,6 +900,7 @@ discount_applied_successfully
 discount_forever
 discount_until
 documentation
+dont_have_an_account
 downgrade_on
 downgrade_to_plan
 download
@@ -955,7 +959,6 @@ faq_postqueen_gitroom_is_proudly_open_source
 faq_to_confirm_credit_card_information_postqueen_will_hold
 faq_what_are_channels
 faq_what_are_team_members
-farcaster
 feature_setup_admin
 feature_setup_docs
 feature_setup_member
@@ -1006,7 +1009,6 @@ global_settings
 go_back_to_login
 go_to_billing
 go_to_integrations
-google
 grid
 guide_bluesky
 guide_bluesky_f_identifier
@@ -1187,7 +1189,6 @@ list_empty_draft_hint
 list_empty_published_hint
 list_empty_scheduled_hint
 loading
-login
 login_failed_try_again
 login_instead
 login_register_to_add_comments

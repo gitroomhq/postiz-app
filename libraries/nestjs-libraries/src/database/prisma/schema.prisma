@@ -111,6 +111,8 @@ model User {
   audience              Int                  @default(0)
   pictureId             String?
   providerId            String?
+  /// Apple `sub`. Kept off `providerId` so a linked Google id is not overwritten.
+  appleProviderId       String?              @unique
   timezone              Int
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt

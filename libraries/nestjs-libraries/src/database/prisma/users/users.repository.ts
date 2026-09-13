@@ -34,6 +34,7 @@ export class UsersRepository {
       password: current.password,
       providerName: current.providerName,
       providerId: current.providerId,
+      appleProviderId: current.appleProviderId,
       account: current.account,
       connectedAccount: current.connectedAccount,
       activated: current.activated,
@@ -43,6 +44,7 @@ export class UsersRepository {
       password: target.password,
       providerName: target.providerName,
       providerId: target.providerId,
+      appleProviderId: target.appleProviderId,
       account: target.account,
       connectedAccount: target.connectedAccount,
       activated: target.activated,
@@ -53,7 +55,10 @@ export class UsersRepository {
     await this._transaction.model.$transaction([
       this._user.model.user.update({
         where: { id: current.id },
-        data: { email: `switch-${makeId(10)}-${current.email}` },
+        data: {
+          email: `switch-${makeId(10)}-${current.email}`,
+          appleProviderId: null,
+        },
       }),
       this._user.model.user.update({
         where: { id: target.id },
@@ -223,6 +228,19 @@ export class UsersRepository {
       }
     }
 
+    if (provider === Provider.APPLE) {
+      const linkedLocal = await this._user.model.user.findFirst({
+        where: {
+          appleProviderId: providerId,
+          providerName: Provider.LOCAL,
+          deletedAt: null,
+        },
+      });
+      if (linkedLocal) {
+        return linkedLocal;
+      }
+    }
+
     return this._user.model.user.findFirst({
       where: {
         providerId,
@@ -241,6 +259,19 @@ export class UsersRepository {
       },
       data: {
         providerId,
+      },
+    });
+  }
+
+  attachAppleProviderId(userId: string, appleProviderId: string) {
+    return this._user.model.user.updateMany({
+      where: {
+        id: userId,
+        providerName: Provider.LOCAL,
+        deletedAt: null,
+      },
+      data: {
+        appleProviderId,
       },
     });
   }
@@ -272,6 +303,9 @@ export class UsersRepository {
         name: user.name ? hash(user.name) : null,
         lastName: user.lastName ? hash(user.lastName) : null,
         providerId: user.providerId ? hash(user.providerId) : null,
+        appleProviderId: user.appleProviderId
+          ? hash(user.appleProviderId)
+          : null,
         bio: null,
         ip: null,
         agent: null,
