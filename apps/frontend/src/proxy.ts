@@ -4,11 +4,16 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
+import { isRegistrationDisabled } from '@gitroom/helpers/utils/registration.disabled';
 import {
   cookieName,
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
+import {
+  isLoginOauthCallback,
+  loginOauthAuthPath,
+} from '@gitroom/frontend/components/auth/google-login-return';
 acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
@@ -53,9 +58,17 @@ export async function proxy(request: NextRequest) {
     return topResponse;
   }
 
+  // Google sign-in returns to the YouTube redirect URI with state=login-….
+  // /auth (not /auth/login) is the page that exchanges the code.
+  if (isLoginOauthCallback(nextUrl.pathname, nextUrl.searchParams) && !authCookie) {
+    return NextResponse.redirect(
+      new URL(loginOauthAuthPath(nextUrl.searchParams), nextUrl.href)
+    );
+  }
+
   if (
     nextUrl.pathname.startsWith('/integrations/social/') &&
-    nextUrl.href.indexOf('state=login') === -1
+    !isLoginOauthCallback(nextUrl.pathname, nextUrl.searchParams)
   ) {
     return topResponse;
   }
@@ -82,7 +95,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.DISABLE_REGISTRATION === 'true'
+    isRegistrationDisabled()
   ) {
     return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }

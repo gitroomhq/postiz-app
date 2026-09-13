@@ -5,7 +5,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -14,8 +14,6 @@ import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/pl
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AuthShell } from '@gitroom/frontend/components/auth/auth-shell';
 import { OtpEmailStep } from '@gitroom/frontend/components/auth/otp-email-step';
-import { isAuthEmailMethod } from '@gitroom/frontend/components/auth/auth-chrome';
-import { useSearchParams } from 'next/navigation';
 const WalletProvider = dynamic(
   () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
   {
@@ -33,12 +31,6 @@ export function Login() {
   const [notActivated, setNotActivated] = useState(false);
   const [withCode, setWithCode] = useState(false);
   const { walletLogin, passwordlessLogin, emailEnabled } = useVariables();
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (!isAuthEmailMethod(searchParams)) {
-      setWithCode(false);
-    }
-  }, [searchParams]);
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);

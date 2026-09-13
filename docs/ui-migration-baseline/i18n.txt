@@ -803,7 +803,6 @@ connections
 contact_support
 continue_to
 continue_with_apple
-continue_with_email
 continue_with_farcaster
 continue_with_google
 continue_with_wallet

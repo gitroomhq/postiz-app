@@ -35,6 +35,7 @@ const WalletProvider = dynamic(
 type Inputs = CreateOrgUserDto;
 export function Register() {
   const getQuery = useSearchParams();
+  const router = useRouter();
   const fetch = useFetch();
   const [provider] = useState(getQuery?.get('provider')?.toUpperCase());
   const [code, setCode] = useState(getQuery?.get('code') || '');
@@ -57,6 +58,7 @@ export function Register() {
       },
     );
     if (!res.ok) {
+      router.replace('/auth/login');
       return;
     }
     const { token } = await res.json();
@@ -64,7 +66,7 @@ export function Register() {
       setCode(token);
       setShow(true);
     }
-  }, [provider, code]);
+  }, [provider, code, router, fetch, state]);
   if (!code && !provider) {
     return <RegisterAfter token="" provider="LOCAL" />;
   }
