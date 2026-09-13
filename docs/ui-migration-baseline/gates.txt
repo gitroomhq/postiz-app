@@ -1,5 +1,5 @@
 allowTrial 45
-billingEnabled 60
+billingEnabled 55
 isTrailing 18
 tier.ai 7
 tier.autoPost 2

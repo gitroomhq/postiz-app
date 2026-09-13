@@ -1254,3 +1254,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Auth: Sign in and Create account on the form
 
 **i18n +1 net.** Dropped the header pill keys (`login`, `google`, `apple`, `farcaster`) and the two-step shell keys (`continue_with`, `continue_with_email`). Added form-side mode switch and stacked provider labels (`auth_mode`, `create_account_tab`, `create_one`, `dont_have_an_account`, `already_have_an_account`, `continue_with_farcaster`, `continue_with_wallet`). `continue_with_google` / `continue_with_apple` were already present as aria-labels and are now the visible button text. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1817 → 1818).
+
+## Auth: wallet login is not billing, phone email waits behind a button
+
+**i18n +1, gates billingEnabled 60 → 55.** Continue with Wallet followed Stripe, so hosted PostQueen showed it. `WALLET_LOGIN` is now its own opt-in; login and register no longer read `billingEnabled` to mount the Solana button. On viewports below `lg`, email + password (and organization on sign-up) sit behind Continue with email, with Back in the header; desktop still shows the fields on the same screen. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` and `gates.txt`.

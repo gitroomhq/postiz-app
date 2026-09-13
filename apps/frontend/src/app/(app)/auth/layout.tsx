@@ -1,11 +1,12 @@
 export const dynamic = 'force-dynamic';
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import loadDynamic from 'next/dynamic';
 import {
   AuthFooter,
   AuthNav,
 } from '@gitroom/frontend/components/auth/auth-chrome';
 import { ProductShowcase } from '@gitroom/frontend/components/auth/product-showcase';
+import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
 
 /**
@@ -26,9 +27,19 @@ export default async function AuthLayout({
       <ReturnUrlComponent />
       <div className="flex flex-1 flex-col px-[24px] py-[28px] sm:px-[40px] lg:w-[46%] lg:max-w-[640px] lg:flex-none">
         <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
-          <AuthNav />
+          <Suspense
+            fallback={
+              <header className="flex items-center">
+                <LogoTextComponent />
+              </header>
+            }
+          >
+            <AuthNav />
+          </Suspense>
           <div className="flex flex-1 flex-col justify-center py-[40px]">
-            <div className="flex w-full">{children}</div>
+            <div className="flex w-full">
+              <Suspense fallback={null}>{children}</Suspense>
+            </div>
           </div>
           <AuthFooter year={new Date().getFullYear()} />
         </div>

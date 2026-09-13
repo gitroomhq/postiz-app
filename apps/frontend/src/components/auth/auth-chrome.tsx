@@ -6,14 +6,43 @@
 // fields was finding the opposite action in the top-right corner.
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
+import { ChevronLeftIcon } from '@gitroom/frontend/components/ui/icons';
+
+/** Phone auth hides email fields until this query is set. Desktop ignores it. */
+export const AUTH_EMAIL_METHOD = 'email';
+
+export const isAuthEmailMethod = (searchParams: {
+  get: (key: string) => string | null;
+}) => searchParams.get('method') === AUTH_EMAIL_METHOD;
+
+export const authModeHref = (
+  path: '/auth' | '/auth/login',
+  emailMethod: boolean,
+) => (emailMethod ? `${path}?method=${AUTH_EMAIL_METHOD}` : path);
 
 export const AuthNav = () => {
+  const t = useT();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const emailMethod = isAuthEmailMethod(searchParams);
+
   return (
-    <header className="flex items-center">
+    <header className="flex items-center gap-[4px]">
+      {emailMethod && (
+        <button
+          type="button"
+          onClick={() => router.replace(pathname)}
+          aria-label={t('back', 'Back')}
+          className="lg:hidden -ms-[8px] flex size-[40px] shrink-0 items-center justify-center rounded-[8px] text-newTextColor hover:bg-boxHover"
+        >
+          <ChevronLeftIcon size={22} />
+        </button>
+      )}
       <LogoTextComponent />
     </header>
   );
@@ -22,7 +51,9 @@ export const AuthNav = () => {
 export const AuthModeSwitch = () => {
   const t = useT();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const onLogin = pathname === '/auth/login';
+  const emailMethod = isAuthEmailMethod(searchParams);
 
   const tabClass = (active: boolean) =>
     `flex h-[40px] items-center justify-center rounded-[8px] text-[14px] font-[500] transition-colors ${
@@ -37,14 +68,14 @@ export const AuthModeSwitch = () => {
       className="mt-[20px] grid grid-cols-2 gap-[4px] rounded-[10px] border border-pqBorder p-[4px]"
     >
       <Link
-        href="/auth/login"
+        href={authModeHref('/auth/login', emailMethod)}
         className={tabClass(onLogin)}
         aria-current={onLogin ? 'page' : undefined}
       >
         {t('sign_in', 'Sign In')}
       </Link>
       <Link
-        href="/auth"
+        href={authModeHref('/auth', emailMethod)}
         className={tabClass(!onLogin)}
         aria-current={!onLogin ? 'page' : undefined}
       >
@@ -57,7 +88,9 @@ export const AuthModeSwitch = () => {
 export const AuthModeFooter = () => {
   const t = useT();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const onLogin = pathname === '/auth/login';
+  const emailMethod = isAuthEmailMethod(searchParams);
 
   return (
     <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
@@ -65,7 +98,7 @@ export const AuthModeFooter = () => {
         <>
           {t('dont_have_an_account', "Don't have an account?")}{' '}
           <Link
-            href="/auth"
+            href={authModeHref('/auth', emailMethod)}
             className="font-[500] text-newTextColor underline hover:font-bold"
           >
             {t('create_one', 'Create one')}
@@ -75,7 +108,7 @@ export const AuthModeFooter = () => {
         <>
           {t('already_have_an_account', 'Already have an account?')}{' '}
           <Link
-            href="/auth/login"
+            href={authModeHref('/auth/login', emailMethod)}
             className="font-[500] text-newTextColor underline hover:font-bold"
           >
             {t('sign_in', 'Sign In')}
