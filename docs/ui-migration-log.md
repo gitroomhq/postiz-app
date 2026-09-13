@@ -1262,3 +1262,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Auth: polish the side screens and phone chrome
 
 **i18n +2.** Added `forgot_password_subtitle` and `choose_a_new_password` so forgot / reset match the Sign in heading style. Phone email step hides the Sign in | Create account tabs (Back and the footer sentence do that job) and the provider screen hides the footer sentence (the tabs do that job). `scripts/ui-migration-check.sh --update` wrote `i18n.txt`.
+
+## Auth: one screen on every viewport
+
+**i18n -1 (`continue_with_email`).** Phone no longer hides email behind Continue with email. Sign in and Create account show Google (then Apple when `APPLE_CLIENT_ID` is set), or, then email and password on one screen. OTP still replaces only the email block. `DISABLE_REGISTRATION` hides the Create account tab and footer sentence. `scripts/ui-migration-check.sh --update` wrote `i18n.txt`.

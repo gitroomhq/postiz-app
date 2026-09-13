@@ -4,6 +4,7 @@ import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.man
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
+import { isRegistrationDisabled } from '@gitroom/helpers/utils/registration.disabled';
 import {
   cookieName,
   headerName,
@@ -94,7 +95,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.DISABLE_REGISTRATION === 'true'
+    isRegistrationDisabled()
   ) {
     return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
   }

@@ -31,6 +31,7 @@ import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
 import { isAiEnabled } from '@gitroom/helpers/utils/ai.enabled';
 import { isEmailEnabled } from '@gitroom/helpers/utils/email.enabled';
 import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
+import { isRegistrationDisabled } from '@gitroom/helpers/utils/registration.disabled';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
 
 function metadataBaseUrl(): URL {
@@ -126,6 +127,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           emailEnabled={isEmailEnabled()}
           passwordlessLogin={process.env.PASSWORDLESS_LOGIN === 'true'}
           walletLogin={isWalletLoginEnabled()}
+          disableRegistration={isRegistrationDisabled()}
           turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
           frontEndUrl={process.env.FRONTEND_URL!}
           legalUrl={process.env.LEGAL_URL || ''}

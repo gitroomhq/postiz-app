@@ -16,6 +16,8 @@ interface VariableContextInterface {
   passwordlessLogin: boolean;
   /** Solana wallet sign-in. Separate from billing; off unless WALLET_LOGIN. */
   walletLogin: boolean;
+  /** Sign-up is off. Login hides Create account; /auth still checks can-register. */
+  disableRegistration: boolean;
   turnstileSiteKey: string;
   isChatBase: boolean;
   /** Chatbase bot this deployment owns; the SSO token is signed against it. */
@@ -93,6 +95,7 @@ const VariableContext = createContext({
   emailEnabled: false,
   passwordlessLogin: false,
   walletLogin: false,
+  disableRegistration: false,
   turnstileSiteKey: '',
   isGeneral: true,
   genericOauth: false,
