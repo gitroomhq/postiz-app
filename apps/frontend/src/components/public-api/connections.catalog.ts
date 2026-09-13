@@ -1,10 +1,10 @@
 /**
  * Static Connections catalog, docs-backed, not an API.
  *
- * Publishing channels live on Channels / Add Channel; this catalog covers
- * assistants, self-hosted agents, chat front-doors, automation, CLI/API and
- * third-party media. Code samples interpolate backendUrl / mcpUrl / apiKey at
- * build time.
+ * Publishing channels live on Channels / Add Channel. This catalog covers
+ * coding agents, bots, chat front doors, editors, automation, Public API / CLI
+ * / Node SDK / OAuth apps, and third-party media. Code samples interpolate
+ * backendUrl / mcpUrl / apiKey at build time.
  *
  * Do not invent MCP commands for OpenClaw/Hermes, they use Agent Skills.
  * Do not invent Typefully commands.
@@ -24,22 +24,26 @@ export type CredKind = 'mcp' | 'api' | 'env' | 'none';
 /** Catalog group ids. */
 export type SectionId =
   | 'agents'
+  | 'bots'
   | 'chat'
-  | 'assistants'
-  | 'mcp'
+  | 'featured'
+  | 'editors'
   | 'automation'
   | 'developer'
   | 'media';
 
 export type ConnectNavId =
   | 'all'
-  | 'assistants'
   | 'agents'
+  | 'bots'
   | 'chat'
+  | 'editors'
   | 'automation'
-  | 'build'
+  | 'public-api'
+  | 'cli'
+  | 'sdk'
+  | 'oauth-apps'
   | 'api-keys'
-  | 'developers'
   | 'approved-apps';
 
 /** Automation catalog ids, in display order. */
@@ -63,33 +67,33 @@ export const FEATURED_IDS = [
 
 /** Category order on the All hub, after Featured. Matches the left rail. */
 export const ALL_PAGE_NAV_IDS = [
-  'assistants',
   'agents',
+  'bots',
   'chat',
+  'editors',
   'automation',
-  'build',
 ] as const;
 
 export const AGENTS_DISPLAY_ORDER = [
-  'openclaw',
-  'hermes',
   'claude-code',
-  'grok-build',
   'codex',
+  'cursor',
+  'grok-build',
   'muse-code',
 ] as const;
 
-export const ASSISTANTS_DISPLAY_ORDER = [
-  'claude-apps',
-  'chatgpt',
-  'grok',
+export const BOTS_DISPLAY_ORDER = [
+  'openclaw',
   'grok-bot',
-  'cursor',
+  'hermes',
+  'muse',
+] as const;
+
+export const EDITORS_DISPLAY_ORDER = [
   'vscode',
   'windsurf',
   'zed',
   'gemini',
-  'muse',
   'other-mcp',
 ] as const;
 
@@ -205,19 +209,34 @@ export const CONNECT_NAV_CONNECTORS: {
   labelDefault: string;
 }[] = [
   { id: 'all', labelKey: 'connect_nav_all', labelDefault: 'All' },
-  {
-    id: 'assistants',
-    labelKey: 'connect_nav_assistants',
-    labelDefault: 'Assistants',
-  },
   { id: 'agents', labelKey: 'connect_nav_agents', labelDefault: 'Agents' },
+  { id: 'bots', labelKey: 'connect_nav_bots', labelDefault: 'Bots' },
   { id: 'chat', labelKey: 'connect_nav_chat', labelDefault: 'Chat' },
+  { id: 'editors', labelKey: 'connect_nav_editors', labelDefault: 'Editors' },
   {
     id: 'automation',
     labelKey: 'connect_nav_automation',
     labelDefault: 'Automation',
   },
-  { id: 'build', labelKey: 'connect_nav_build', labelDefault: 'Build' },
+];
+
+export const CONNECT_NAV_DEVELOP: {
+  id: ConnectNavId;
+  labelKey: string;
+  labelDefault: string;
+}[] = [
+  {
+    id: 'public-api',
+    labelKey: 'connect_nav_public_api',
+    labelDefault: 'Public API',
+  },
+  { id: 'cli', labelKey: 'connect_nav_cli', labelDefault: 'CLI' },
+  { id: 'sdk', labelKey: 'connect_nav_sdk', labelDefault: 'Node SDK' },
+  {
+    id: 'oauth-apps',
+    labelKey: 'connect_nav_oauth_apps',
+    labelDefault: 'OAuth Apps',
+  },
 ];
 
 export const CONNECT_NAV_ACCOUNT: {
@@ -231,18 +250,24 @@ export const CONNECT_NAV_ACCOUNT: {
     labelDefault: 'API Keys',
   },
   {
-    id: 'developers',
-    labelKey: 'connect_nav_developers',
-    labelDefault: 'Developers',
-  },
-  {
     id: 'approved-apps',
     labelKey: 'connect_nav_approved_apps',
     labelDefault: 'Approved Apps',
   },
 ];
 
-export const CONNECT_NAV = [...CONNECT_NAV_CONNECTORS, ...CONNECT_NAV_ACCOUNT];
+export const CONNECT_NAV = [
+  ...CONNECT_NAV_CONNECTORS,
+  ...CONNECT_NAV_DEVELOP,
+  ...CONNECT_NAV_ACCOUNT,
+];
+
+/** Left-nav Develop rows that open a catalog item instead of a card grid. */
+export const DEVELOP_NAV_ITEM: Partial<Record<ConnectNavId, string>> = {
+  'public-api': 'api',
+  cli: 'cli',
+  sdk: 'sdk',
+};
 
 /** Deep-link aliases → catalog ids (`?connector=claude`). */
 export const CONNECTOR_ALIASES: Record<string, string> = {
@@ -283,9 +308,17 @@ export function resolveConnectorId(raw: string | null): string {
 export function resolveConnectNavId(raw: string | null): ConnectNavId | null {
   if (!raw) return null;
   const key = raw.trim().toLowerCase();
-  if (key === 'cli-api' || key === 'cli' || key === 'api') return 'build';
-  if (key === 'media' || key === 'ai-agents' || key === 'mcp') return 'all';
-  if (key === 'agent-skills') return 'agents';
+  if (key === 'cli-api' || key === 'build' || key === 'api') return 'public-api';
+  if (
+    key === 'media' ||
+    key === 'ai-agents' ||
+    key === 'mcp' ||
+    key === 'assistants'
+  ) {
+    return 'all';
+  }
+  if (key === 'agent-skills') return 'bots';
+  if (key === 'developers') return 'oauth-apps';
   if (CONNECT_NAV.some((n) => n.id === key)) return key as ConnectNavId;
   return null;
 }
@@ -294,17 +327,17 @@ const DOCS = 'https://docs.postqueen.ai';
 
 const HUB_SECTIONS: SectionId[] = [
   'agents',
+  'bots',
   'chat',
-  'assistants',
-  'mcp',
+  'featured',
+  'editors',
   'automation',
-  'developer',
 ];
 
 /**
  * Remaining cards on All, grouped like the rail. Featured ids are omitted.
- * `api-keys` / `developers` / `approved-apps` are panel-only.
- * Media stays in the catalog but is not a Connect nav.
+ * Develop (Public API, CLI, Node SDK, OAuth Apps) and Account rows are
+ * panel-only. Media stays in the catalog but is not a Connect nav.
  */
 export function restGroupsForAllPage(
   groups: Group[]
@@ -325,24 +358,33 @@ export function connectionsForNav(
   switch (navId) {
     case 'all':
       return all.filter((c) => HUB_SECTIONS.includes(c.section));
-    case 'assistants':
-      return sortByIdOrder(
-        all.filter((c) => c.section === 'assistants' || c.section === 'mcp'),
-        ASSISTANTS_DISPLAY_ORDER
-      );
     case 'agents':
       return sortByIdOrder(
         all.filter((c) => c.section === 'agents'),
         AGENTS_DISPLAY_ORDER
       );
+    case 'bots':
+      return sortByIdOrder(
+        all.filter((c) => c.section === 'bots'),
+        BOTS_DISPLAY_ORDER
+      );
     case 'chat':
       return all.filter((c) => c.section === 'chat');
+    case 'editors':
+      return sortByIdOrder(
+        all.filter((c) => c.section === 'editors'),
+        EDITORS_DISPLAY_ORDER
+      );
     case 'automation':
       return all.filter((c) => c.section === 'automation');
-    case 'build':
-      return all.filter((c) => c.section === 'developer');
+    case 'public-api':
+      return all.filter((c) => c.id === 'api');
+    case 'cli':
+      return all.filter((c) => c.id === 'cli');
+    case 'sdk':
+      return all.filter((c) => c.id === 'sdk');
+    case 'oauth-apps':
     case 'api-keys':
-    case 'developers':
     case 'approved-apps':
       return [];
     default:
@@ -364,9 +406,13 @@ export function findConnection(
 export function defaultNavForConnection(item: Connection): ConnectNavId {
   if (item.section === 'chat') return 'chat';
   if (item.section === 'automation') return 'automation';
-  if (item.section === 'developer') return 'build';
   if (item.section === 'agents') return 'agents';
-  if (item.section === 'assistants' || item.section === 'mcp') return 'assistants';
+  if (item.section === 'bots') return 'bots';
+  if (item.section === 'editors') return 'editors';
+  if (item.id === 'api') return 'public-api';
+  if (item.id === 'cli') return 'cli';
+  if (item.id === 'sdk') return 'sdk';
+  if (item.id === 'oauth') return 'oauth-apps';
   return 'all';
 }
 
@@ -463,7 +509,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_agents', 'Agents'),
       blurb: t(
         'conn_group_agents_blurb',
-        'OpenClaw is a chat bot you host. Claude Code, Grok Build and Codex run in a coding session.'
+        'Coding agents: Claude Code, Codex, Cursor, Grok Build and Muse Code.'
       ),
       items: [
         {
@@ -475,7 +521,7 @@ export function buildConnectionsCatalog(
           method: 'Skill',
           cred: 'env',
           exampleKind: 'skill',
-          section: 'agents',
+          section: 'bots',
           short: t('conn_openclaw_short', 'A bot you host that posts from chat'),
           intro: t(
             'conn_openclaw_intro',
@@ -534,7 +580,7 @@ export function buildConnectionsCatalog(
           method: 'Skill',
           cred: 'env',
           exampleKind: 'skill',
-          section: 'agents',
+          section: 'bots',
           short: t('conn_hermes_short', 'Hand it a brief. It plans the week.'),
           intro: t(
             'conn_hermes_intro',
@@ -949,10 +995,10 @@ export function buildConnectionsCatalog(
       ],
     },
     {
-      id: 'assistants',
-      label: t('conn_group_assistants', 'Assistants'),
+      id: 'featured',
+      label: t('conn_group_featured', 'Featured'),
       blurb: t(
-        'conn_group_assistants_blurb',
+        'conn_group_featured_blurb',
         'Chat products that call PostQueen over MCP. One URL, 14 tools.'
       ),
       items: [
@@ -965,7 +1011,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'featured',
           short: t('conn_claude_apps_short', 'Chat on claude.ai, Desktop or phone'),
           intro: t(
             'conn_claude_apps_intro',
@@ -1022,7 +1068,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'featured',
           short: t('conn_chatgpt_short', 'Schedule posts from ChatGPT on the web'),
           intro: t(
             'conn_chatgpt_intro',
@@ -1082,7 +1128,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'featured',
           short: t('conn_grok_short', 'Add a custom connector on grok.com'),
           intro: t(
             'conn_grok_intro',
@@ -1139,7 +1185,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'bots',
           short: t('conn_grok_bot_short', 'Tell Grok Bot the MCP URL in chat'),
           intro: t(
             'conn_grok_bot_intro',
@@ -1196,7 +1242,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'agents',
           short: t('conn_cursor_short', 'Schedule from Cursor in the editor'),
           intro: t(
             'conn_cursor_intro',
@@ -1257,7 +1303,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'editors',
           short: t(
             'conn_vscode_short',
             'Schedule from VS Code Copilot MCP'
@@ -1319,7 +1365,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'editors',
           short: t(
             'conn_windsurf_short',
             'Schedule from Windsurf Cascade'
@@ -1381,7 +1427,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'editors',
           short: t('conn_zed_short', 'Zed editor remote MCP from JSON'),
           intro: t(
             'conn_zed_intro',
@@ -1443,7 +1489,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'cli',
-          section: 'assistants',
+          section: 'editors',
           short: t('conn_gemini_short', 'Gemini CLI talks over streamable HTTP'),
           intro: t(
             'conn_gemini_intro',
@@ -1507,7 +1553,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'none',
           exampleKind: 'chat',
-          section: 'assistants',
+          section: 'bots',
           soon: true,
           short: t('conn_muse_short', 'Muse app. Custom MCP not ready yet'),
           intro: t(
@@ -1552,11 +1598,11 @@ export function buildConnectionsCatalog(
       ],
     },
     {
-      id: 'mcp',
-      label: t('conn_group_mcp_more', 'More MCP clients'),
+      id: 'editors',
+      label: t('conn_group_editors', 'Editors'),
       blurb: t(
-        'conn_group_mcp_more_blurb',
-        'Streamable HTTP at your /mcp endpoint, 14 tools. Any client that can reach a remote MCP server follows the same shape.'
+        'conn_group_editors_blurb',
+        'Editor and MCP clients. VS Code, Windsurf, Zed, Gemini CLI, and any other MCP client.'
       ),
       items: [
         {
@@ -1568,7 +1614,7 @@ export function buildConnectionsCatalog(
           method: 'MCP',
           cred: 'mcp',
           exampleKind: 'cli',
-          section: 'mcp',
+          section: 'editors',
           short: t('conn_other_mcp_short', 'Any other MCP client with the URL'),
           intro: t(
             'conn_other_mcp_intro',
@@ -1953,10 +1999,10 @@ export function buildConnectionsCatalog(
     },
     {
       id: 'developer',
-      label: t('conn_group_developer', 'CLI & API'),
+      label: t('conn_group_developer', 'Develop'),
       blurb: t(
         'conn_group_developer_blurb',
-        'The same public surface every other connection rides, CLI, REST, Node SDK and OAuth apps.'
+        'Public API, CLI, Node SDK and OAuth apps. Each has its own left-nav row.'
       ),
       items: [
         {
@@ -2135,7 +2181,7 @@ export function buildConnectionsCatalog(
           short: t('conn_oauth_short', 'Let other apps post for your users'),
           intro: t(
             'conn_oauth_intro',
-            'If you are building a product rather than automating your own account, register an OAuth app under Developers. Your users authorise it and you receive a token that works with the API, MCP and the CLI, no key sharing. Tokens are prefixed pos_.'
+            'If you are building a product rather than automating your own account, register an OAuth app under OAuth Apps. Your users authorise it and you receive a token that works with the API, MCP and the CLI, no key sharing. Tokens are prefixed pos_.'
           ),
           examples: [
             {
@@ -2156,7 +2202,7 @@ export function buildConnectionsCatalog(
               title: t('conn_oauth_step_create', 'Create the app'),
               detail: t(
                 'conn_oauth_step_create_detail',
-                'Connect → Developers, or Settings → Developers. Set your redirect URL there. This is not where the personal API key lives, that is API Keys.'
+                'Connect → OAuth Apps, or Settings → Developers. Set your redirect URL there. This is not where the personal API key lives, that is API Keys.'
               ),
             },
             {

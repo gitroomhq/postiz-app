@@ -1262,3 +1262,9 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Auth: polish the side screens and phone chrome
 
 **i18n +2.** Added `forgot_password_subtitle` and `choose_a_new_password` so forgot / reset match the Sign in heading style. Phone email step hides the Sign in | Create account tabs (Back and the footer sentence do that job) and the provider screen hides the footer sentence (the tabs do that job). `scripts/ui-migration-check.sh --update` wrote `i18n.txt`.
+
+## Connect: recategorize by what the thing is
+
+**i18n +4 net.** Dropped Assistants and Build as destinations (`connect_nav_assistants`, `connect_hub_assistants*`, `connect_nav_build`, `connect_hub_build*`, `connect_nav_developers`, `connect_open_developers`, `conn_group_assistants*`, `conn_group_mcp_more*`). Added Bots, Editors, and a Develop rail (`connect_nav_bots`, `connect_nav_editors`, `connect_nav_public_api`, `connect_nav_cli`, `connect_nav_sdk`, `connect_nav_oauth_apps`, `connect_nav_develop`, matching hub/group keys, `connect_open_oauth_apps`).
+
+All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents (Claude Code, Codex, Cursor, Grok Build, Muse Code) sit under Agents. Hosted/message bots (OpenClaw, Grok Bot, Hermes, Muse) sit under Bots. VS Code, Windsurf, Zed, Gemini CLI and Any MCP sit under Editors. Public API, CLI, Node SDK and OAuth Apps are left-nav Develop rows, not Build cards. Hub cards dropped the short description; the intro stays on the detail pane. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

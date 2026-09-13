@@ -74,7 +74,7 @@ export const TOUR_COPY: Record<string, { title: string; text: string }> = {
   },
   'connect-featured': {
     title: 'Pick the client you already use',
-    text: 'Featured is the short list. Assistants, Agents, Chat, Automation and Build are grouped under it. Open one card and follow its steps.',
+    text: 'Featured is the short list. Agents, Bots, Chat, Editors and Automation sit under it. Public API, CLI, Node SDK and OAuth Apps are under Develop. Open one card and follow its steps.',
   },
   'connect-creds': {
     title: 'One API key for every client',

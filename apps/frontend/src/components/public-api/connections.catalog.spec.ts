@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   AGENTS_DISPLAY_ORDER,
-  ASSISTANTS_DISPLAY_ORDER,
+  BOTS_DISPLAY_ORDER,
+  EDITORS_DISPLAY_ORDER,
   AUTOMATION_CHILD_IDS,
   FEATURED_IDS,
   ALL_PAGE_NAV_IDS,
+  CONNECT_NAV_DEVELOP,
+  DEVELOP_NAV_ITEM,
   buildConnectionsCatalog,
   connectionsForNav,
   restGroupsForAllPage,
@@ -32,11 +35,11 @@ const byId = (id: string) => {
 describe('Connect marketplace catalog', () => {
   it('groups the All page leftovers by rail category, without repeating Featured', () => {
     assert.deepEqual([...ALL_PAGE_NAV_IDS], [
-      'assistants',
       'agents',
+      'bots',
       'chat',
+      'editors',
       'automation',
-      'build',
     ]);
     const leftover = restGroupsForAllPage(catalog);
     assert.deepEqual(
@@ -50,9 +53,17 @@ describe('Connect marketplace catalog', () => {
         `${id} should stay in Featured, not repeat below`
       );
     }
-    assert.ok(leftover.find((g) => g.nav === 'agents')?.items.some((c) => c.id === 'openclaw'));
-    assert.ok(leftover.find((g) => g.nav === 'assistants')?.items.some((c) => c.id === 'grok-bot'));
+    assert.ok(
+      leftover.find((g) => g.nav === 'agents')?.items.some((c) => c.id === 'claude-code')
+    );
+    assert.ok(
+      leftover.find((g) => g.nav === 'bots')?.items.some((c) => c.id === 'openclaw')
+    );
+    assert.ok(
+      leftover.find((g) => g.nav === 'editors')?.items.some((c) => c.id === 'vscode')
+    );
     assert.ok(leftover.find((g) => g.nav === 'chat')?.items.some((c) => c.id === 'whatsapp'));
+    assert.ok(!leftover.some((g) => g.items.some((c) => c.section === 'developer')));
   });
 
   it('features Claude, ChatGPT, Cursor and Grok', () => {
@@ -64,35 +75,66 @@ describe('Connect marketplace catalog', () => {
     ]);
   });
 
-  it('puts OpenClaw and Hermes first under Agents, not featured', () => {
+  it('puts coding agents under Agents, bots under Bots, editors last', () => {
     assert.deepEqual([...AGENTS_DISPLAY_ORDER], [
-      'openclaw',
-      'hermes',
       'claude-code',
-      'grok-build',
       'codex',
+      'cursor',
+      'grok-build',
       'muse-code',
     ]);
-    assert.ok(!FEATURED_IDS.includes('openclaw' as never));
-    assert.ok(!FEATURED_IDS.includes('hermes' as never));
-  });
-
-  it('keeps Assistants in search-order with Muse soon and Any MCP last', () => {
-    assert.deepEqual([...ASSISTANTS_DISPLAY_ORDER], [
-      'claude-apps',
-      'chatgpt',
-      'grok',
+    assert.deepEqual([...BOTS_DISPLAY_ORDER], [
+      'openclaw',
       'grok-bot',
-      'cursor',
+      'hermes',
+      'muse',
+    ]);
+    assert.deepEqual([...EDITORS_DISPLAY_ORDER], [
       'vscode',
       'windsurf',
       'zed',
       'gemini',
-      'muse',
       'other-mcp',
     ]);
+    assert.equal(byId('claude-code').section, 'agents');
+    assert.equal(byId('codex').section, 'agents');
+    assert.equal(byId('cursor').section, 'agents');
+    assert.equal(byId('openclaw').section, 'bots');
+    assert.equal(byId('grok-bot').section, 'bots');
+    assert.equal(byId('hermes').section, 'bots');
+    assert.equal(byId('muse').section, 'bots');
+    assert.equal(byId('vscode').section, 'editors');
+    assert.equal(byId('claude-apps').section, 'featured');
+    assert.equal(byId('chatgpt').section, 'featured');
+    assert.equal(byId('grok').section, 'featured');
+    assert.ok(!FEATURED_IDS.includes('openclaw' as never));
+    assert.ok(!FEATURED_IDS.includes('hermes' as never));
     assert.equal(byId('muse').soon, true);
     assert.equal(byId('muse-code').soon, undefined);
+  });
+
+  it('exposes Public API, CLI, Node SDK and OAuth Apps as Develop nav, not All cards', () => {
+    assert.deepEqual(
+      CONNECT_NAV_DEVELOP.map((n) => n.id),
+      ['public-api', 'cli', 'sdk', 'oauth-apps']
+    );
+    assert.equal(DEVELOP_NAV_ITEM['public-api'], 'api');
+    assert.equal(DEVELOP_NAV_ITEM.cli, 'cli');
+    assert.equal(DEVELOP_NAV_ITEM.sdk, 'sdk');
+    assert.equal(DEVELOP_NAV_ITEM['oauth-apps'], undefined);
+    assert.deepEqual(
+      connectionsForNav(catalog, 'public-api').map((c) => c.id),
+      ['api']
+    );
+    assert.deepEqual(
+      connectionsForNav(catalog, 'cli').map((c) => c.id),
+      ['cli']
+    );
+    assert.equal(connectionsForNav(catalog, 'oauth-apps').length, 0);
+    assert.equal(defaultNavForConnection(byId('api')), 'public-api');
+    assert.equal(defaultNavForConnection(byId('cli')), 'cli');
+    assert.equal(defaultNavForConnection(byId('sdk')), 'sdk');
+    assert.equal(defaultNavForConnection(byId('oauth')), 'oauth-apps');
   });
 
   it('marks Make and Zapier coming soon, n8n live', () => {
@@ -155,7 +197,7 @@ describe('Connect marketplace catalog', () => {
   it('keeps Claude chat and Claude Code as separate products', () => {
     const claude = byId('claude-apps');
     const code = byId('claude-code');
-    assert.equal(claude.section, 'assistants');
+    assert.equal(claude.section, 'featured');
     assert.equal(code.section, 'agents');
     assert.ok(!FEATURED_IDS.includes('claude-code' as never));
     assert.match(claude.intro, /Claude Code is a different product/);
@@ -177,7 +219,7 @@ describe('Connect marketplace catalog', () => {
   it('keeps ChatGPT and Codex as separate products', () => {
     const chatgpt = byId('chatgpt');
     const codex = byId('codex');
-    assert.equal(chatgpt.section, 'assistants');
+    assert.equal(chatgpt.section, 'featured');
     assert.equal(codex.section, 'agents');
     assert.match(chatgpt.intro, /Codex is a different product/);
     assert.match(chatgpt.info || '', /does not install Codex/);
@@ -207,8 +249,8 @@ describe('Connect marketplace catalog', () => {
     const grok = byId('grok');
     const grokBot = byId('grok-bot');
     const grokBuild = byId('grok-build');
-    assert.equal(grok.section, 'assistants');
-    assert.equal(grokBot.section, 'assistants');
+    assert.equal(grok.section, 'featured');
+    assert.equal(grokBot.section, 'bots');
     assert.equal(grokBuild.section, 'agents');
     assert.ok(!FEATURED_IDS.includes('grok-build' as never));
     assert.match(grok.intro, /Grok Build are different products/);
@@ -264,12 +306,9 @@ describe('Connect marketplace catalog', () => {
     assert.equal(muse.cred, 'none');
   });
 
-  it('keeps shorts one readable line, with no dashes', () => {
+  it('keeps catalog shorts dash-free for search, without a card-length cap', () => {
     for (const item of all) {
-      assert.ok(
-        item.short.length >= 30 && item.short.length <= 40,
-        `${item.id} short is ${item.short.length}: ${item.short}`
-      );
+      assert.ok(item.short.length > 0, `${item.id} is missing a short`);
       assert.doesNotMatch(
         item.short,
         /[—–]| - /,
@@ -287,8 +326,13 @@ describe('Connect marketplace catalog', () => {
       connectionsForNav(catalog, 'agents').map((c) => c.id),
       [...AGENTS_DISPLAY_ORDER]
     );
-    assert.ok(
-      connectionsForNav(catalog, 'assistants').some((c) => c.id === 'grok')
+    assert.deepEqual(
+      connectionsForNav(catalog, 'bots').map((c) => c.id),
+      [...BOTS_DISPLAY_ORDER]
+    );
+    assert.deepEqual(
+      connectionsForNav(catalog, 'editors').map((c) => c.id),
+      [...EDITORS_DISPLAY_ORDER]
     );
     assert.ok(
       connectionsForNav(catalog, 'automation').some((c) => c.id === 'n8n')
@@ -296,19 +340,23 @@ describe('Connect marketplace catalog', () => {
     assert.equal(connectionsForNav(catalog, 'api-keys').length, 0);
   });
 
-  it('resolves legacy deep-links onto All / Agents / Build and the right card', () => {
+  it('resolves legacy deep-links onto All / Bots / Develop and the right card', () => {
     assert.equal(resolveConnectNavId('mcp'), 'all');
     assert.equal(resolveConnectNavId('ai-agents'), 'all');
-    assert.equal(resolveConnectNavId('agent-skills'), 'agents');
-    assert.equal(resolveConnectNavId('cli'), 'build');
-    assert.equal(resolveConnectNavId('api'), 'build');
-    assert.equal(resolveConnectNavId('assistants'), 'assistants');
+    assert.equal(resolveConnectNavId('assistants'), 'all');
+    assert.equal(resolveConnectNavId('agent-skills'), 'bots');
+    assert.equal(resolveConnectNavId('cli'), 'cli');
+    assert.equal(resolveConnectNavId('api'), 'public-api');
+    assert.equal(resolveConnectNavId('build'), 'public-api');
+    assert.equal(resolveConnectNavId('developers'), 'oauth-apps');
     assert.equal(resolveConnectorId('claude'), 'claude-apps');
     assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
     assert.equal(resolveConnectorId('muse-app'), 'muse');
     assert.equal(resolveConnectorId('gemini-cli'), 'gemini');
     assert.equal(defaultNavForConnection(byId('n8n')), 'automation');
-    assert.equal(defaultNavForConnection(byId('openclaw')), 'agents');
-    assert.equal(defaultNavForConnection(byId('chatgpt')), 'assistants');
+    assert.equal(defaultNavForConnection(byId('openclaw')), 'bots');
+    assert.equal(defaultNavForConnection(byId('chatgpt')), 'all');
+    assert.equal(defaultNavForConnection(byId('claude-code')), 'agents');
+    assert.equal(defaultNavForConnection(byId('vscode')), 'editors');
   });
 });
