@@ -34,14 +34,18 @@ import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-app
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import {
   buildConnectionsCatalog,
-  AUTOMATION_CHILD_IDS,
+  FEATURED_IDS,
   CONNECT_NAV,
   CONNECT_NAV_ACCOUNT,
   CONNECT_NAV_CONNECTORS,
   connectionsForNav,
+  defaultNavForConnection,
   findConnection,
+  METHOD_STYLE,
   type Connection,
   type ConnectNavId,
+  type Example,
+  type ExampleKind,
   absoluteApiUrl,
   needsApiUrl,
 } from '@gitroom/frontend/components/public-api/connections.catalog';
@@ -63,26 +67,28 @@ const CONNECTOR_ALIASES: Record<string, string> = {
   'other-clients': 'other-mcp',
   'any-mcp': 'other-mcp',
   'make.com': 'make',
+  'grok-bot': 'grok',
+  'xai': 'grok',
+  'muse-app': 'muse',
 };
 
 const NAV_ICONS: Record<ConnectNavId, string[]> = {
-  'ai-agents': [
+  all: [
+    'M4 5.5h6.5A1.5 1.5 0 0 1 12 7v4.5A1.5 1.5 0 0 1 10.5 13H4A1.5 1.5 0 0 1 2.5 11.5V7A1.5 1.5 0 0 1 4 5.5ZM13.5 5.5H20A1.5 1.5 0 0 1 21.5 7v2A1.5 1.5 0 0 1 20 10.5h-6.5A1.5 1.5 0 0 1 12 9V7A1.5 1.5 0 0 1 13.5 5.5ZM4 16h6.5A1.5 1.5 0 0 1 12 17.5V20A1.5 1.5 0 0 1 10.5 21.5H4A1.5 1.5 0 0 1 2.5 20v-2.5A1.5 1.5 0 0 1 4 16ZM13.5 13.5H20A1.5 1.5 0 0 1 21.5 15v5A1.5 1.5 0 0 1 20 21.5h-6.5A1.5 1.5 0 0 1 12 20v-5a1.5 1.5 0 0 1 1.5-1.5Z',
+  ],
+  assistants: [
     'M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 20a8 8 0 0 1 16 0',
+  ],
+  agents: [
+    'M12 3l2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 16.7l.9-5L4.8 8.2l5-.7L12 3Z',
   ],
   chat: [
     'M5 6.5h10.5A2.5 2.5 0 0 1 18 9v5a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16.5H5A2.5 2.5 0 0 1 2.5 14V9A2.5 2.5 0 0 1 5 6.5Z',
   ],
-  mcp: [
-    'M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1',
-  ],
-  'agent-skills': [
-    'M12 3l2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 16.7l.9-5L4.8 8.2l5-.7L12 3Z',
-  ],
   automation: [
     'M5 19.5h.01M5 12a7.5 7.5 0 0 1 7.5 7.5M5 5a14.5 14.5 0 0 1 14.5 14.5',
   ],
-  cli: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
-  api: ['M7 8h10M7 12h10M7 16h6'],
+  build: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
   'api-keys': [
     'M7.5 21a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z',
     'm21 2-9.6 9.6',
@@ -104,28 +110,11 @@ function resolveConnectorId(raw: string | null): string {
 function resolveNavId(raw: string | null): ConnectNavId | null {
   if (!raw) return null;
   const key = raw.trim().toLowerCase();
-  if (key === 'cli-api') return 'api';
-  if (key === 'media') return 'ai-agents';
+  if (key === 'cli-api' || key === 'cli' || key === 'api') return 'build';
+  if (key === 'media' || key === 'ai-agents' || key === 'mcp') return 'all';
+  if (key === 'agent-skills') return 'agents';
   if (CONNECT_NAV.some((n) => n.id === key)) return key as ConnectNavId;
   return null;
-}
-
-function defaultNavForConnection(item: Connection): ConnectNavId {
-  if (item.section === 'chat') return 'chat';
-  if (item.section === 'mcp') return 'mcp';
-  if (item.section === 'automation') return 'automation';
-  if (item.section === 'developer') {
-    return item.id === 'cli' ? 'cli' : 'api';
-  }
-  if (item.section === 'media') return 'ai-agents';
-  if (item.kind === 'SKILL' || item.id === 'openclaw' || item.id === 'hermes') {
-    return 'agent-skills';
-  }
-  return 'ai-agents';
-}
-
-function isAutomationChild(id: string): boolean {
-  return (AUTOMATION_CHILD_IDS as readonly string[]).includes(id);
 }
 
 const CodeBlock: FC<{
@@ -182,45 +171,84 @@ const ApiKeyMissingNote: FC = () => {
   );
 };
 
-const PromptHero: FC<{ prompts: string[] }> = ({ prompts }) => (
-  <div
-    className="flex flex-col items-end gap-[10px] rounded-[18px] p-[24px_20px] shadow-pqE2"
-    style={{
-      backgroundImage:
-        'linear-gradient(135deg, var(--brandSoft) 0%, var(--brand) 55%, var(--focused) 100%)',
-    }}
-  >
-    {prompts.map((prompt) => (
-      <div
-        key={prompt}
-        className="flex max-w-[86%] items-center gap-[11px] rounded-[999px] bg-pqOnBrand px-[15px] py-[11px] shadow-pqE1"
-      >
-        {/* Pills sit on onBrand (white) in both themes — force light ink via .light. */}
-        <span className="light min-w-0 flex-1 text-[13.5px] leading-[1.45] text-pqText">
-          <span className="font-[700]">@PostQueen</span> {prompt}
-        </span>
-        <span className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[999px] bg-pqInner text-pqText shadow-pqE1">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none">
-            <path
-              d="M5 12h13m-5-5 5 5-5 5"
-              stroke="currentColor"
-              strokeWidth="2.1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
+const ExamplesBlock: FC<{
+  kind: ExampleKind;
+  examples: Example[];
+  mask?: (text: string) => string;
+}> = ({ kind, examples, mask }) => {
+  const t = useT();
+  if (!examples.length) return null;
+  const chatLike = kind === 'chat' || kind === 'skill';
+  return (
+    <div className="flex flex-col gap-[10px]">
+      <div className="text-[11px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
+        {chatLike
+          ? t('conn_examples_try', 'Try saying')
+          : kind === 'workflow'
+            ? t('conn_examples_flow', 'Example workflows')
+            : kind === 'http' || kind === 'api'
+              ? t('conn_examples_http', 'Example requests')
+              : t('conn_examples_cli', 'Example commands')}
       </div>
-    ))}
-  </div>
-);
+      {chatLike ? (
+        <div
+          className="flex flex-col items-end gap-[10px] rounded-[18px] p-[20px_18px] shadow-pqE2"
+          style={{
+            backgroundImage:
+              'linear-gradient(135deg, var(--brandSoft) 0%, var(--brand) 55%, var(--focused) 100%)',
+          }}
+        >
+          {examples.map((ex) => (
+            <div
+              key={ex.body}
+              className="flex max-w-[90%] items-center gap-[11px] rounded-[16px] bg-pqOnBrand px-[15px] py-[11px] shadow-pqE1"
+            >
+              <span className="light min-w-0 flex-1 text-[13.5px] leading-[1.45] text-pqText">
+                {ex.body}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-[8px]">
+          {examples.map((ex) => (
+            <div
+              key={`${ex.title ?? ''}-${ex.body}`}
+              className="rounded-pqMd bg-pqInner p-[14px_16px] shadow-[inset_0_0_0_1px_var(--border)]"
+            >
+              {!!ex.title && (
+                <div className="text-[13px] font-[600] text-pqText">
+                  {ex.title}
+                </div>
+              )}
+              <div
+                className={clsx(
+                  'text-[13px] leading-[1.5] text-pqMuted',
+                  ex.title && 'mt-[3px]'
+                )}
+              >
+                {ex.body}
+              </div>
+              {!!ex.code && (
+                <CodeBlock
+                  code={mask ? mask(ex.code) : ex.code}
+                  rawCode={ex.code}
+                  label={ex.title || 'Example'}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ConnIcon: FC<{
-  item: Pick<Connection, 'icon' | 'glyph' | 'name' | 'hero'>;
+  item: Pick<Connection, 'icon' | 'glyph' | 'name'>;
   size?: 'xs' | 'sm' | 'lg';
 }> = ({ item, size = 'sm' }) => {
-  const img =
-    size === 'lg' ? 60 : size === 'xs' ? 22 : item.hero ? 50 : 40;
+  const img = size === 'lg' ? 48 : size === 'xs' ? 22 : 40;
   if (item.icon) {
     return (
       <span className="flex shrink-0 items-center justify-center">
@@ -236,12 +264,10 @@ const ConnIcon: FC<{
   }
   const box =
     size === 'lg'
-      ? 'h-[60px] w-[60px] rounded-pqLg text-[13px]'
+      ? 'h-[48px] w-[48px] rounded-pqLg text-[12px]'
       : size === 'xs'
         ? 'h-[22px] w-[22px] rounded-[6px] text-[9px]'
-        : item.hero
-          ? 'h-[50px] w-[50px] rounded-pqMd text-[13px]'
-          : 'h-[40px] w-[40px] rounded-pqMd text-[13px]';
+        : 'h-[40px] w-[40px] rounded-pqMd text-[12px]';
   return (
     <span
       className={clsx(
@@ -263,7 +289,7 @@ const NavIcon: FC<{ id: ConnectNavId }> = ({ id }) => (
     className="block shrink-0 opacity-[0.85]"
     aria-hidden="true"
   >
-    {(NAV_ICONS[id] || NAV_ICONS['ai-agents']).map((d) => (
+    {(NAV_ICONS[id] || NAV_ICONS.all).map((d) => (
       <path
         key={d}
         d={d}
@@ -325,7 +351,7 @@ const SkillInstallCallout: FC<{
         <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
           {t(
             'conn_step_skill_install_detail',
-            'One command, once per machine. It brings the postqueen CLI with it.'
+            'One command, once per machine. It installs the skill playbook — not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
           )}
         </div>
       </div>
@@ -464,46 +490,9 @@ const CliSetupCallout: FC<{
   );
 };
 
-const McpAuthCallout: FC<{ mcpUrl: string; mcpUrlWithKey: string; apiKey: string; keyRevealed: boolean }> = ({
-  mcpUrl,
-  mcpUrlWithKey,
-  apiKey,
-  keyRevealed,
-}) => {
-  const t = useT();
-  const mask = (text: string) =>
-    keyRevealed || !apiKey
-      ? text
-      : text.split(apiKey).join('*'.repeat(Math.min(apiKey.length, 24)));
-  return (
-    <div className="mb-[16px] flex flex-col gap-[10px] rounded-pqMd bg-pqBrandFaint p-[14px_16px]">
-      <div className="text-[13.5px] font-[600] text-pqText">
-        {t('connect_mcp_auth_title', 'MCP URL & auth')}
-      </div>
-      <div className="text-[12.5px] leading-[1.55] text-pqMuted">
-        {t(
-          'connect_mcp_auth_blurb',
-          'PostQueen MCP uses your API key — not OAuth. Put the key in the URL path, or send it as a Bearer token on /mcp.'
-        )}
-      </div>
-      <CodeBlock
-        code={mask(mcpUrlWithKey)}
-        rawCode={mcpUrlWithKey}
-        label="MCP URL"
-      />
-      <CodeBlock
-        code={mask(`${mcpUrl}\nAuthorization: Bearer ${apiKey}`)}
-        rawCode={`${mcpUrl}\nAuthorization: Bearer ${apiKey}`}
-        label="Bearer"
-      />
-      {!apiKey && <ApiKeyMissingNote />}
-    </div>
-  );
-};
-
 /**
  * Settings-scale dual-pane Connect PostQueen panel.
- * LOOK inspired by connectors catalogs; WORK and copy are PostQueen-only.
+ * Marketplace layout: credential strip, featured row, equal cards, stepper detail.
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -543,23 +532,18 @@ export const ConnectPanel: FC<{
   const tourConn = tourKey === 'connections-page';
 
 
-  const [nav, setNav] = useState<ConnectNavId>('ai-agents');
+  const [nav, setNav] = useState<ConnectNavId>('all');
   const [picked, setPicked] = useState('');
   const [keyRevealed, setKeyRevealed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [automationOpen, setAutomationOpen] = useState(false);
-  // Settings-identical left-rail filter (prototype settingsVals search).
   const [query, setQuery] = useState('');
 
   const apiKey = user?.publicApi || '';
-  // Absolute even behind the relative dev proxy: these strings are pasted
-  // into other programs.
   const apiUrl = useMemo(() => absoluteApiUrl(backendUrl), [backendUrl]);
-  // The CLI, SDK, skill and n8n node default to the hosted API; an instance
-  // anywhere else has to tell them where it is.
   const customApiUrl = needsApiUrl(apiUrl) ? apiUrl : undefined;
   const mcpUrl = `${apiUrl}/mcp`;
   const mcpUrlWithKey = `${apiUrl}/mcp/${apiKey}`;
+  const apiHeader = `Authorization: ${apiKey}`;
 
   const groups = useMemo(
     () =>
@@ -575,33 +559,19 @@ export const ConnectPanel: FC<{
 
   const all = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const automationItems = useMemo(
-    () =>
-      AUTOMATION_CHILD_IDS.map((id) => findConnection(groups, id)).filter(
-        (c): c is Connection => !!c
-      ),
-    [groups]
-  );
-
-  // Deep-links: ?nav=mcp&connector=claude · legacy ?nav=cli-api|media
   useEffect(() => {
     const resolvedNav = resolveNavId(searchParams.get('nav'));
     const connectorId = resolveConnectorId(searchParams.get('connector'));
 
     if (resolvedNav) {
       setNav(resolvedNav);
-      if (resolvedNav === 'automation') setAutomationOpen(true);
     }
 
     if (connectorId) {
       const found = findConnection(groups, connectorId);
       if (found) {
         setPicked(found.id);
-        const nextNav = resolvedNav || defaultNavForConnection(found);
-        if (!resolvedNav) setNav(nextNav);
-        if (nextNav === 'automation' || isAutomationChild(found.id)) {
-          setAutomationOpen(true);
-        }
+        if (!resolvedNav) setNav(defaultNavForConnection(found));
       }
     }
   }, [searchParams, groups]);
@@ -622,7 +592,6 @@ export const ConnectPanel: FC<{
       setPicked('');
       setKeyRevealed(false);
       setMobileNavOpen(false);
-      if (id === 'automation') setAutomationOpen(true);
       syncUrl(id, '');
     },
     [syncUrl]
@@ -633,38 +602,10 @@ export const ConnectPanel: FC<{
       setPicked(id);
       setKeyRevealed(false);
       setMobileNavOpen(false);
-      if (isAutomationChild(id)) setAutomationOpen(true);
       syncUrl(nav, id);
     },
     [nav, syncUrl]
   );
-
-  /** Automation child → detail under automation nav (desktop accordion / mobile chip). */
-  const selectAutomationChild = useCallback(
-    (id: string) => {
-      setNav('automation');
-      setAutomationOpen(true);
-      setPicked(id);
-      setKeyRevealed(false);
-      setMobileNavOpen(false);
-      syncUrl('automation', id);
-    },
-    [syncUrl]
-  );
-
-  // Keep router/setState out of setState updaters — React runs those during
-  // render, and router.replace updates Next's Router mid-render (same class of
-  // bug as CalendarWeekProvider / writeLaunchesUrl).
-  const toggleAutomation = useCallback(() => {
-    const next = !automationOpen;
-    setAutomationOpen(next);
-    if (next) {
-      setNav('automation');
-      setPicked('');
-      setKeyRevealed(false);
-      syncUrl('automation', '');
-    }
-  }, [automationOpen, syncUrl]);
 
   const clearPicked = useCallback(() => {
     setPicked('');
@@ -679,27 +620,33 @@ export const ConnectPanel: FC<{
     [apiKey, keyRevealed]
   );
 
-  const hubItems = useMemo(
-    () => connectionsForNav(groups, nav),
-    [groups, nav]
+  const hubItems = useMemo(() => {
+    const items = connectionsForNav(groups, nav);
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.short.toLowerCase().includes(q) ||
+        item.method.toLowerCase().includes(q)
+    );
+  }, [groups, nav, query]);
+
+  const featuredItems = useMemo(
+    () =>
+      FEATURED_IDS.map((id) => findConnection(groups, id)).filter(
+        (c): c is Connection => !!c
+      ),
+    [groups]
   );
+
+  const restHubItems = useMemo(() => {
+    if (nav !== 'all') return hubItems;
+    const featured = new Set<string>(FEATURED_IDS);
+    return hubItems.filter((item) => !featured.has(item.id));
+  }, [hubItems, nav]);
 
   const active = all.find((item) => item.id === picked);
-
-  const fallbackPrompts = useMemo(
-    () => [
-      t(
-        'conn_prompt_default_1',
-        'Draft a launch post and schedule it for Tuesday 09:00'
-      ),
-      t('conn_prompt_default_2', 'What is in my queue this week?'),
-      t(
-        'conn_prompt_default_3',
-        'Publish the changelog to X and LinkedIn'
-      ),
-    ],
-    [t]
-  );
 
   const close = useCallback(() => {
     if (onClose) {
@@ -716,16 +663,14 @@ export const ConnectPanel: FC<{
   const navItemBase =
     'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
 
-  // Literal t() keys so the i18n extractor keeps the Connect nav inventory.
   const navLabels = useMemo(
     (): Record<ConnectNavId, string> => ({
-      'ai-agents': t('connect_nav_ai_agents', 'AI Agents'),
+      all: t('connect_nav_all', 'All'),
+      assistants: t('connect_nav_assistants', 'Assistants'),
+      agents: t('connect_nav_agents', 'Agents'),
       chat: t('connect_nav_chat', 'Chat'),
-      mcp: t('connect_nav_mcp', 'MCP'),
-      'agent-skills': t('connect_nav_agent_skills', 'Agent Skills'),
       automation: t('connect_nav_automation', 'Automation'),
-      cli: t('connect_nav_cli', 'CLI'),
-      api: t('connect_nav_api', 'API'),
+      build: t('connect_nav_build', 'Build'),
       'api-keys': t('connect_nav_api_keys', 'API Keys'),
       developers: t('connect_nav_developers', 'Developers'),
       'approved-apps': t('connect_nav_approved_apps', 'Approved Apps'),
@@ -733,21 +678,14 @@ export const ConnectPanel: FC<{
     [t]
   );
 
-  // Same filter contract as Settings: label substring match; empty group hides.
   const navQuery = query.trim().toLowerCase();
 
   const visibleConnectors = useMemo(() => {
     if (!navQuery) return CONNECT_NAV_CONNECTORS;
-    return CONNECT_NAV_CONNECTORS.filter(({ id }) => {
-      if (navLabels[id].toLowerCase().includes(navQuery)) return true;
-      if (id === 'automation') {
-        return automationItems.some((item) =>
-          item.name.toLowerCase().includes(navQuery)
-        );
-      }
-      return false;
-    });
-  }, [navQuery, navLabels, automationItems]);
+    return CONNECT_NAV_CONNECTORS.filter(({ id }) =>
+      navLabels[id].toLowerCase().includes(navQuery)
+    );
+  }, [navQuery, navLabels]);
 
   const visibleAccount = useMemo(() => {
     if (!navQuery) return CONNECT_NAV_ACCOUNT;
@@ -756,33 +694,27 @@ export const ConnectPanel: FC<{
     );
   }, [navQuery, navLabels]);
 
-  const visibleAutomationItems = useMemo(() => {
-    if (!navQuery) return automationItems;
-    if (navLabels.automation.toLowerCase().includes(navQuery)) {
-      return automationItems;
-    }
-    return automationItems.filter((item) =>
-      item.name.toLowerCase().includes(navQuery)
-    );
-  }, [navQuery, automationItems, navLabels]);
-
-  // Searching a child should reveal the Automation accordion (Settings has no
-  // nested rows — Connect does).
-  const automationExpanded =
-    automationOpen ||
-    (!!navQuery &&
-      (navLabels.automation.toLowerCase().includes(navQuery) ||
-        automationItems.some((item) =>
-          item.name.toLowerCase().includes(navQuery)
-        )));
-
   const hubTitles = useMemo(
     (): Partial<Record<ConnectNavId, { title: string; blurb: string }>> => ({
-      'ai-agents': {
-        title: t('connect_hub_ai_agents', 'AI Agents'),
+      all: {
+        title: t('connect_hub_all', 'Connect PostQueen'),
         blurb: t(
-          'connect_hub_ai_agents_blurb',
-          'Claude, ChatGPT and coding agents. Drive PostQueen from the tools you already use.'
+          'connect_hub_all_blurb',
+          'Connect once. Then ask, run an agent, or automate.'
+        ),
+      },
+      assistants: {
+        title: t('connect_hub_assistants', 'Assistants'),
+        blurb: t(
+          'connect_hub_assistants_blurb',
+          'Claude, ChatGPT, Grok, Cursor and Gemini. One MCP URL, 14 tools.'
+        ),
+      },
+      agents: {
+        title: t('connect_hub_agents', 'Agents'),
+        blurb: t(
+          'connect_hub_agents_blurb',
+          'OpenClaw, Hermes, Claude Code, Codex and Muse Code. Skills or MCP — not a separate product.'
         ),
       },
       chat: {
@@ -792,47 +724,111 @@ export const ConnectPanel: FC<{
           'Message an agent from WhatsApp, Telegram, Slack or Discord. Publishing channels live under Channels.'
         ),
       },
-      mcp: {
-        title: t('connect_hub_mcp', 'MCP clients'),
-        blurb: t(
-          'connect_hub_mcp_blurb',
-          'Streamable HTTP at your /mcp endpoint — 11 tools. Auth is your API key in the URL or as a Bearer token.'
-        ),
-      },
-      'agent-skills': {
-        title: t('connect_hub_agent_skills', 'Agent Skills'),
-        blurb: t(
-          'connect_hub_agent_skills_blurb',
-          'One install teaches agents the PostQueen CLI. OpenClaw and Hermes use skills only — not MCP.'
-        ),
-      },
       automation: {
         title: t('connect_hub_automation', 'Automation'),
         blurb: t(
           'connect_hub_automation_blurb',
-          'Workflows in, webhooks and RSS out. Official Zapier/Make apps are not shipped yet — HTTP still works.'
+          'n8n is live. Zapier and Make official apps are coming soon — HTTP still works today.'
         ),
       },
-      cli: {
-        title: t('connect_hub_cli', 'CLI'),
+      build: {
+        title: t('connect_hub_build', 'Build'),
         blurb: t(
-          'connect_hub_cli_blurb',
-          'Install the postqueen package, export your API key, schedule from any shell.'
-        ),
-      },
-      api: {
-        title: t('connect_hub_api', 'API'),
-        blurb: t(
-          'connect_hub_api_blurb',
-          'Public REST API, Node SDK and OAuth apps — the same surface every other connection rides.'
+          'connect_hub_build_blurb',
+          'CLI, Public API, Node SDK and OAuth apps — the same surface every other connection rides.'
         ),
       },
     }),
     [t]
   );
 
+  const credentialStrip = (
+    cred: Connection['cred'] | 'hub',
+    compact = false
+  ) => {
+    if (cred === 'none') return null;
+    const showMcp = cred === 'hub' || cred === 'mcp';
+    const showApi = cred === 'hub' || cred === 'api';
+    const showEnv = cred === 'env';
+    return (
+      <div
+        className={clsx(
+          'flex flex-col gap-[12px] rounded-pqMd bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]',
+          compact && 'p-[14px]'
+        )}
+      >
+        <div className="text-[13.5px] font-[600] text-pqText">
+          {t('conn_your_connection', 'Your connection')}
+        </div>
+        <ApiKeyCard
+          compact
+          showWizard={false}
+          showDocs={false}
+          hint={t(
+            'conn_api_key_hint',
+            'One key for MCP, the CLI, n8n and the Public API. Settings → API Keys.'
+          )}
+          onRevealChange={setKeyRevealed}
+        />
+        {showMcp && (
+          <div>
+            <div className="text-[12px] font-[600] text-pqMuted">
+              {t('conn_copy_mcp', 'MCP URL')}
+            </div>
+            <CodeBlock
+              code={maskCode(mcpUrlWithKey)}
+              rawCode={mcpUrlWithKey}
+              label="MCP URL"
+            />
+          </div>
+        )}
+        {showApi && (
+          <div>
+            <div className="text-[12px] font-[600] text-pqMuted">
+              {t('conn_copy_api_header', 'Public API header — no Bearer')}
+            </div>
+            <CodeBlock
+              code={maskCode(apiHeader)}
+              rawCode={apiHeader}
+              label="API header"
+            />
+          </div>
+        )}
+        {showEnv && (
+          <div>
+            <div className="text-[12px] font-[600] text-pqMuted">
+              {t('conn_copy_env', 'Environment')}
+            </div>
+            <CodeBlock
+              code={maskCode(`export POSTQUEEN_API_KEY="${apiKey}"`)}
+              rawCode={`export POSTQUEEN_API_KEY="${apiKey}"`}
+              label="API key"
+            />
+            {!!customApiUrl && (
+              <CodeBlock
+                code={`export POSTQUEEN_API_URL="${customApiUrl}"`}
+                label="API URL"
+              />
+            )}
+          </div>
+        )}
+        {!apiKey && <ApiKeyMissingNote />}
+      </div>
+    );
+  };
+
+  const methodChip = (item: Connection) => (
+    <span
+      className={clsx(
+        'shrink-0 rounded-[5px] px-[6px] py-[1px] text-[9.5px] font-[700] tracking-[0.04em]',
+        METHOD_STYLE[item.method]
+      )}
+    >
+      {item.method}
+    </span>
+  );
+
   const renderDetail = (item: Connection) => {
-    const prompts = item.prompts ?? fallbackPrompts;
     return (
       <div className="flex flex-col gap-[20px]">
         <button
@@ -859,9 +855,10 @@ export const ConnectPanel: FC<{
               <h2 className="text-[22px] font-[600] text-pqText -tracking-[0.02em]">
                 {item.name}
               </h2>
+              {methodChip(item)}
               {item.soon && (
                 <span className="rounded-[5px] bg-pqAmberSoft px-[6px] py-[2px] text-[9.5px] font-[700] tracking-[0.06em] text-pqAmber">
-                  {t('conn_soon', 'OFFICIAL APP SOON')}
+                  {t('conn_soon', 'COMING SOON')}
                 </span>
               )}
             </div>
@@ -898,24 +895,12 @@ export const ConnectPanel: FC<{
           ))}
         </div>
 
-        <PromptHero prompts={prompts} />
+        {item.section !== 'media' && credentialStrip(item.cred)}
 
         {!!item.info && (
-          <div className="text-[14px] leading-[1.7] text-pqMuted">{item.info}</div>
-        )}
-
-        {/* One branch: the card answers for a key it may not show, and Reveal
-            is where a member is told why. */}
-        {item.section !== 'media' && (
-          <ApiKeyCard
-            showWizard={false}
-            showDocs={false}
-            hint={t(
-              'conn_api_key_hint',
-              'Use this key when the connector asks for credentials — the same key works for every integration here.'
-            )}
-            onRevealChange={setKeyRevealed}
-          />
+          <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[13px] leading-[1.6] text-pqMuted">
+            {item.info}
+          </div>
         )}
 
         {item.section === 'media' && (
@@ -964,6 +949,14 @@ export const ConnectPanel: FC<{
             </div>
           ))}
         </div>
+
+        {!!item.examples?.length && (
+          <ExamplesBlock
+            kind={item.exampleKind}
+            examples={item.examples}
+            mask={maskCode}
+          />
+        )}
 
         {!!item.note && (
           <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[12.5px] leading-[1.55] text-pqMuted">
@@ -1038,48 +1031,6 @@ export const ConnectPanel: FC<{
     const meta = hubTitles[nav];
     if (!meta) return null;
 
-    // Automation with no connector: compact children list (pane not blank).
-    if (nav === 'automation') {
-      return (
-        <div className="flex flex-col gap-[18px]">
-          <div>
-            <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
-              {meta.title}
-            </h3>
-            <div className="mt-[4px] text-[14px] text-pqMuted">{meta.blurb}</div>
-          </div>
-          <div className="flex flex-col gap-[6px]">
-            {automationItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                data-connector={item.id}
-                onClick={() => selectAutomationChild(item.id)}
-                className="flex items-center gap-[10px] rounded-pqMd bg-pqInner p-[12px_14px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
-              >
-                <ConnIcon item={item} size="xs" />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-[7px]">
-                    <span className="truncate text-[13.5px] font-[600] text-pqText">
-                      {item.name}
-                    </span>
-                    {item.soon && (
-                      <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
-                        {t('conn_soon_short', 'SOON')}
-                      </span>
-                    )}
-                  </span>
-                  <span className="line-clamp-1 text-[11.5px] text-pqMuted">
-                    {item.short}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
     const hubCard = (item: Connection, i: number) => (
       <button
         key={item.id}
@@ -1090,11 +1041,11 @@ export const ConnectPanel: FC<{
           tourConn ? { animationDelay: `${(i % 14) * 0.38}s` } : undefined
         }
         onClick={() => selectItem(item.id)}
-        className="flex flex-col gap-[10px] rounded-pqLg bg-pqInner p-[14px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+        className="flex min-h-[118px] flex-col gap-[10px] rounded-pqLg bg-pqPop p-[14px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
       >
         <span className="flex min-w-0 items-start gap-[11px]">
           <ConnIcon item={item} />
-          <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+          <span className="flex min-w-0 flex-1 flex-col gap-[4px]">
             <span className="flex min-w-0 items-center gap-[7px]">
               <span className="truncate text-[14px] font-[600] text-pqText -tracking-[0.01em]">
                 {item.name}
@@ -1105,16 +1056,17 @@ export const ConnectPanel: FC<{
                 </span>
               )}
             </span>
-            <span className="text-[12px] leading-[1.45] text-pqMuted">
+            <span className="line-clamp-2 min-h-[34px] text-[12px] leading-[1.45] text-pqMuted">
               {item.short}
             </span>
+            <span className="mt-[2px]">{methodChip(item)}</span>
           </span>
         </span>
       </button>
     );
 
     const hubGrid = (items: Connection[]) => (
-      <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
+      <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(210px,1fr))]">
         {items.map(hubCard)}
       </div>
     );
@@ -1128,58 +1080,40 @@ export const ConnectPanel: FC<{
           <div className="mt-[4px] text-[14px] text-pqMuted">{meta.blurb}</div>
         </div>
 
-        {nav === 'agent-skills' && (
+        {credentialStrip('hub')}
+
+        {nav === 'all' && !query.trim() && (
+          <div className="flex flex-col gap-[8px]">
+            <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
+              {t('connect_featured', 'Featured')}
+            </div>
+            {hubGrid(featuredItems)}
+          </div>
+        )}
+
+        {nav === 'agents' && (
           <SkillInstallCallout
             apiKey={apiKey}
             keyRevealed={keyRevealed}
             apiUrl={customApiUrl}
           />
         )}
-        {nav === 'cli' && (
+        {nav === 'build' && (
           <CliSetupCallout
             apiKey={apiKey}
             keyRevealed={keyRevealed}
             apiUrl={customApiUrl}
           />
         )}
-        {nav === 'mcp' && (
-          <McpAuthCallout
-            mcpUrl={mcpUrl}
-            mcpUrlWithKey={mcpUrlWithKey}
-            apiKey={apiKey}
-            keyRevealed={keyRevealed}
-          />
-        )}
 
-        {nav === 'ai-agents' ? (
-          <div className="flex flex-col gap-[18px]">
-            {(
-              [
-                {
-                  key: 'agents',
-                  label: t('conn_group_agents', 'Agents'),
-                  items: hubItems.filter((c) => c.section === 'agents'),
-                },
-                {
-                  key: 'assistants',
-                  label: t('conn_group_assistants', 'Assistants'),
-                  items: hubItems.filter((c) => c.section === 'assistants'),
-                },
-              ] as const
-            ).map((strip) =>
-              strip.items.length ? (
-                <div key={strip.key} className="flex flex-col gap-[8px]">
-                  <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-                    {strip.label}
-                  </div>
-                  {hubGrid(strip.items)}
-                </div>
-              ) : null
-            )}
-          </div>
-        ) : (
-          hubGrid(hubItems)
-        )}
+        <div className="flex flex-col gap-[8px]">
+          {nav === 'all' && !query.trim() && (
+            <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
+              {t('connect_all_connectors', 'All connectors')}
+            </div>
+          )}
+          {hubGrid(nav === 'all' && !query.trim() ? restHubItems : hubItems)}
+        </div>
 
         {!hubItems.length && (
           <div className="rounded-pqMd border border-pqBorder p-[20px] text-center text-[13px] text-pqMuted">
@@ -1222,108 +1156,17 @@ export const ConnectPanel: FC<{
             {t('connect_nav_section', 'Connectors')}
           </div>
         )}
-        {visibleConnectors.flatMap(({ id }) => {
-          // Mobile: flatten Automation into its five children (no nested accordion).
-          if (mobile && id === 'automation') {
-            return visibleAutomationItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => selectAutomationChild(item.id)}
-                className={chipClass(
-                  item.id,
-                  nav === 'automation' && picked === item.id
-                )}
-              >
-                {item.name}
-                {item.soon ? ` · ${t('conn_soon_short', 'SOON')}` : ''}
-              </button>
-            ));
-          }
-
-          if (mobile) {
-            return [
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectNav(id)}
-                className={chipClass(id, nav === id)}
-              >
-                {navLabels[id]}
-              </button>,
-            ];
-          }
-
-          // Desktop Automation: parent toggles accordion; children open detail.
-          if (id === 'automation') {
-            return [
-              <div key={id} className="flex flex-col gap-[1px]">
-                <button
-                  type="button"
-                  onClick={toggleAutomation}
-                  aria-expanded={automationExpanded}
-                  className={clsx(
-                    navItemBase,
-                    nav === 'automation'
-                      ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
-                      : 'text-pqMuted'
-                  )}
-                >
-                  <NavIcon id={id} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {navLabels[id]}
-                  </span>
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    aria-hidden="true"
-                    className={clsx(
-                      'shrink-0 opacity-[0.7] transition-transform',
-                      automationExpanded && 'rotate-180'
-                    )}
-                  >
-                    <path
-                      d="M6 9l6 6 6-6"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-                {automationExpanded &&
-                  visibleAutomationItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => selectAutomationChild(item.id)}
-                      aria-current={
-                        picked === item.id ? 'page' : undefined
-                      }
-                      className={clsx(
-                        'flex h-[30px] items-center gap-[8px] rounded-pqSm pe-[9px] ps-[28px] text-start text-[12.5px] transition-colors',
-                        picked === item.id && nav === 'automation'
-                          ? 'bg-[rgba(124,58,237,.12)] font-[600] text-pqFocused'
-                          : 'text-pqMuted hover:bg-pqHover hover:text-pqText'
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.name}
-                      </span>
-                      {item.soon && (
-                        <span className="shrink-0 rounded-[4px] bg-pqAmberSoft px-[4px] py-[0px] text-[8.5px] font-[700] tracking-[0.04em] text-pqAmber">
-                          {t('conn_soon_short', 'SOON')}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-              </div>,
-            ];
-          }
-
-          return [
+        {visibleConnectors.map(({ id }) =>
+          mobile ? (
+            <button
+              key={id}
+              type="button"
+              onClick={() => selectNav(id)}
+              className={chipClass(id, nav === id)}
+            >
+              {navLabels[id]}
+            </button>
+          ) : (
             <button
               key={id}
               type="button"
@@ -1338,9 +1181,9 @@ export const ConnectPanel: FC<{
             >
               <NavIcon id={id} />
               <span className="min-w-0 flex-1 truncate">{navLabels[id]}</span>
-            </button>,
-          ];
-        })}
+            </button>
+          )
+        )}
       </div>
       )}
 
@@ -1402,7 +1245,7 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
-          : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
+          : 'h-[min(720px,100%)] w-[min(1080px,100%)] rounded-[16px]'
       )}
     >
       {/* Left nav / mobile chips — Settings chrome: search above, then groups */}

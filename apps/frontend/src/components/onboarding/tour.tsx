@@ -337,7 +337,7 @@ const useSteps = (): Step[] => {
         title: t('tour_connect_title', 'Connect your AI to PostQueen'),
         text: t(
           'tour_connect_text',
-          'Claude, ChatGPT, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
+          'Claude, ChatGPT, Grok, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
         ),
       },
       'connections-page': {
@@ -351,7 +351,7 @@ const useSteps = (): Step[] => {
         // which is exactly the failure the comment was supposed to prevent.
         text: t(
           'tour_clients_text',
-          'Claude, ChatGPT, Cursor, Claude Code, Codex, n8n and every other MCP client.'
+          'Claude, ChatGPT, Grok, Cursor, Claude Code, Codex, n8n and every other MCP client.'
         ),
       },
       'nav-channels': {
