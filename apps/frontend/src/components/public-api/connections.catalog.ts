@@ -873,21 +873,17 @@ export function buildConnectionsCatalog(
           short: t('conn_claude_apps_short', 'Manage content from Claude'),
           intro: t(
             'conn_claude_apps_intro',
-            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. Add a custom connector from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
+            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. She is not in Anthropic\'s Connectors Directory — add a custom connector from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_claude_apps_note',
-            'A plain "url" entry in claude_desktop_config.json does not work — use a custom connector or mcp-remote. New connectors generally cannot be created from the mobile apps — add them on the web or Desktop first. For Claude Code in a terminal, see the Claude Code card under Agents.'
+            'Not listed at claude.com/connectors. Browse will not find PostQueen; use Add custom connector. A plain "url" entry in claude_desktop_config.json does not work — use a custom connector or mcp-remote. New connectors generally cannot be created from the mobile apps — add them on the web or Desktop first. For Claude Code in a terminal, see the Claude Code card under Agents.'
           ),
           docs: [
             {
               label: t('conn_docs_claude_apps', 'Claude MCP setup'),
               href: `${DOCS}/mcp/clients/claude`,
-            },
-            {
-              label: t('conn_docs_claude_apps_hub', 'Claude Apps hub'),
-              href: `${DOCS}/agents/claude-apps`,
             },
           ],
           steps: [

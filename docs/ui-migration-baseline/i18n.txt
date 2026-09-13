@@ -491,7 +491,6 @@ conn_discord_chat_short
 conn_docs_api
 conn_docs_chatgpt
 conn_docs_claude_apps
-conn_docs_claude_apps_hub
 conn_docs_claude_code
 conn_docs_cli
 conn_docs_cli_auth

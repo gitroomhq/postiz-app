@@ -107,6 +107,17 @@ describe('Connect marketplace catalog', () => {
       claude.steps.map((s) => s.detail).join('\n'),
       /mcp-remote/
     );
+    assert.equal(claude.docs.length, 1);
+    assert.match(claude.docs[0].href, /\/mcp\/clients\/claude$/);
+    assert.ok(!claude.docs.some((d) => /hub/i.test(d.label)));
+    assert.ok(!(claude.paths || []).length);
+    const claudeHrefs = claude.docs.map((d) => d.href).join('\n');
+    assert.doesNotMatch(
+      claudeHrefs,
+      /claude\.com\/connectors|claude\.ai\/directory/
+    );
+    assert.match(claude.intro, /not in Anthropic/);
+    assert.match(claude.info || '', /Not listed at claude\.com\/connectors/);
   });
 
   it('gives Grok one card with a Bot step, Muse app no paste-MCP lie', () => {

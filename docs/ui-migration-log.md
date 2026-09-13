@@ -1222,3 +1222,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Connect marketplace IA
 
 **i18n +59 net (Connect hub rebuilt as a job-based marketplace, not a restyle of the same keys).** The catalog and rail dropped MCP / Agent Skills / CLI / API as destinations and added Assistants / Agents / Build, Grok, Muse, Muse Code, kind-aware examples, and a credential strip. Old prompt/try keys (`conn_*_prompt_*`, `conn_*_try`, `connect_hub_mcp`, `connect_nav_cli`, …) were replaced by example and step keys (`conn_ex_*`, `conn_n8n_ex_*`, `conn_grok_*`, `conn_muse_*`, `connect_nav_assistants`, …). No API, route, gate or loop change. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1712 → 1771).
+
+## Connect: no Claude Apps hub listing
+
+**i18n −1 (`conn_docs_claude_apps_hub`).** PostQueen is not in Anthropic's Connectors Directory (`claude.com/connectors/postqueen` 404). The Claude card no longer shows a “Claude Apps hub” button. Setup is custom connector only; the note says Browse will not find her.
