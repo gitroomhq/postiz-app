@@ -59,9 +59,9 @@ export const clipSpotlight = (
   const left = Math.max(r.l, pad);
   const bottom = Math.min(r.t + r.h, vh - pad);
   const right = Math.min(r.l + r.w, vw - pad);
-  let t = top;
-  let l = left;
-  let w = Math.max(0, right - left);
+  const t = top;
+  const l = left;
+  const w = Math.max(0, right - left);
   let h = Math.max(0, bottom - top);
   if (
     (key === 'connect-featured' || key === 'platform-grid') &&
