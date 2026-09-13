@@ -10,16 +10,19 @@ describe('product tour Connect steps', () => {
         'cal-grid',
         'posts-panel',
         'connect-pq',
-        'connect-featured',
         'connect-creds',
+        'connect-featured',
         'nav-channels',
         'platform-grid',
       ]
     );
   });
 
-  it('opens Connect on All so Featured and the key strip exist', () => {
-    for (const key of ['connect-pq', 'connect-featured', 'connect-creds']) {
+  it('opens the hub on All for the key strip and Featured, after Connect on the calendar', () => {
+    const connect = STEPS.find((s) => s.key === 'connect-pq');
+    assert.ok(connect);
+    assert.equal(connect.path, '__calendar__');
+    for (const key of ['connect-creds', 'connect-featured']) {
       const step = STEPS.find((s) => s.key === key);
       assert.ok(step, key);
       assert.match(step.path, /\/connections\?nav=all/);
@@ -39,6 +42,7 @@ describe('product tour Connect steps', () => {
     assert.match(TOUR_COPY['connect-pq'].text, /Channels/);
     assert.match(TOUR_COPY['connect-pq'].title, /not a channel/i);
     assert.match(TOUR_COPY['connect-featured'].text, /Featured/);
+    assert.doesNotMatch(TOUR_COPY['connect-featured'].text, /left rail/);
     assert.match(TOUR_COPY['connect-creds'].text, /API key|MCP URL/i);
     assert.match(TOUR_COPY['nav-channels'].text, /not an assistant/);
     assert.ok(!TOUR_COPY['connections-page']);

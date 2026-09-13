@@ -238,6 +238,8 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
 
   // Tour steps that spotlight rail targets need the mobile drawer open —
   // otherwise `connect-pq` / `nav-channels` measure nothing off-screen.
+  // Hub steps (`connect-creds`, `connect-featured`) need it closed so the
+  // Connect overlay is the surface the ring can see.
   //
   // It follows the step rather than only opening: the drawer used to be opened
   // and never closed, so it stayed over `/channels` for the last step and was
