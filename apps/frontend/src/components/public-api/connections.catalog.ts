@@ -835,7 +835,7 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'chat',
           section: 'chat',
-          short: t('conn_discord_chat_short', 'Run socials from Discord'),
+          short: t('conn_discord_chat_short', 'Ask her from a Discord channel'),
           intro: t(
             'conn_discord_chat_intro',
             'Message your agent from Discord. Publishing into Discord is a separate Channels setup.'
