@@ -18,6 +18,10 @@ import {
   shouldTryNextConnectEndpoint,
 } from '@gitroom/frontend/components/launches/channel-connect.request';
 import { oauthReturnPath } from '@gitroom/frontend/components/launches/oauth-return';
+import {
+  isLoginOauthState,
+  loginOauthAuthPath,
+} from '@gitroom/frontend/components/auth/google-login-return';
 
 interface TwoStepState {
   integrationId: string;
@@ -126,6 +130,14 @@ export const ContinueIntegration: FC<{
 
   useEffect(() => {
     (async () => {
+      if (isLoginOauthState(oauthState) && modifiedParams?.code) {
+        const params = new URLSearchParams();
+        params.set('code', String(modifiedParams.code));
+        params.set('state', oauthState);
+        window.location.replace(loginOauthAuthPath(params));
+        return;
+      }
+
       const timezone = String(dayjs.tz().utcOffset());
 
       // Try public endpoint first (handles both public and fallback scenarios)
