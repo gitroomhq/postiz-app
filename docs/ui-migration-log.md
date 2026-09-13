@@ -1226,3 +1226,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Connect: no Claude Apps hub listing
 
 **i18n −1 (`conn_docs_claude_apps_hub`).** PostQueen is not in Anthropic's Connectors Directory (`claude.com/connectors/postqueen` 404). The Claude card no longer shows a “Claude Apps hub” button. Setup is custom connector only; the note says Browse will not find her.
+
+## Connect: Grok and Grok Bot are different products
+
+**i18n +9 net.** Grok chat uses grok.com/connectors. Grok Bot is the cloud agent: tell it in chat to add the MCP server. grok.com/connectors does not install the Bot. Dropped `conn_grok_step_bot` / `conn_grok_step_bot_detail`. Added `conn_grok_bot_*` plus `conn_docs_grok_bot` / `conn_docs_grok_bot_guide`.

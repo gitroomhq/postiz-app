@@ -54,6 +54,7 @@ describe('Connect marketplace catalog', () => {
       'claude-apps',
       'chatgpt',
       'grok',
+      'grok-bot',
       'cursor',
       'gemini',
       'muse',
@@ -120,16 +121,26 @@ describe('Connect marketplace catalog', () => {
     assert.match(claude.info || '', /Not listed at claude\.com\/connectors/);
   });
 
-  it('gives Grok one card with a Bot step, Muse app no paste-MCP lie', () => {
+  it('keeps Grok chat and Grok Bot as separate products', () => {
     const grok = byId('grok');
+    const grokBot = byId('grok-bot');
     assert.equal(grok.method, 'MCP');
-    assert.ok(grok.steps.some((s) => /Grok Bot/i.test(s.title)));
-    assert.match(grok.intro, /grok\.com\/connectors/);
+    assert.equal(grokBot.method, 'MCP');
+    assert.ok(!grok.steps.some((s) => /Grok Bot/i.test(s.title)));
+    assert.match(grok.intro, /Grok Bot is a different product/);
+    assert.match(grok.info || '', /does not install PostQueen on Grok Bot/);
+    assert.match(grok.steps.map((s) => s.detail).join('\n'), /grok\.com\/connectors/);
+    assert.match(grokBot.intro, /not grok\.com chat/);
+    assert.doesNotMatch(grokBot.intro, /grok\.com\/connectors first/);
     assert.match(
-      grok.steps.map((s) => s.detail).join('\n'),
-      /if the UI offers it/
+      grokBot.steps.map((s) => s.detail).join('\n'),
+      /Add this MCP server/
     );
+    assert.match(grokBot.info || '', /not a Grok Bot marketplace plugin/);
+    assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
+  });
 
+  it('marks Muse app no paste-MCP lie', () => {
     const muse = byId('muse');
     assert.match(muse.intro, /not a paste-an-MCP-URL flow/i);
     assert.equal(muse.cred, 'none');
@@ -166,7 +177,7 @@ describe('Connect marketplace catalog', () => {
     assert.equal(resolveConnectNavId('api'), 'build');
     assert.equal(resolveConnectNavId('assistants'), 'assistants');
     assert.equal(resolveConnectorId('claude'), 'claude-apps');
-    assert.equal(resolveConnectorId('grok-bot'), 'grok');
+    assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
     assert.equal(resolveConnectorId('muse-app'), 'muse');
     assert.equal(resolveConnectorId('gemini-cli'), 'gemini');
     assert.equal(defaultNavForConnection(byId('n8n')), 'automation');

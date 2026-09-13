@@ -73,6 +73,7 @@ export const ASSISTANTS_DISPLAY_ORDER = [
   'claude-apps',
   'chatgpt',
   'grok',
+  'grok-bot',
   'cursor',
   'gemini',
   'muse',
@@ -242,7 +243,8 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'other-clients': 'other-mcp',
   'any-mcp': 'other-mcp',
   'make.com': 'make',
-  'grok-bot': 'grok',
+  grokbot: 'grok-bot',
+  'grok bot': 'grok-bot',
   xai: 'grok',
   'muse-app': 'muse',
 };
@@ -990,12 +992,12 @@ export function buildConnectionsCatalog(
           short: t('conn_grok_short', 'Add her as a Grok custom connector'),
           intro: t(
             'conn_grok_intro',
-            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet.'
+            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot is a different product — use that card.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_grok_note',
-            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. There is no Bot-only MCP URL — grok.com/connectors is the source of truth. If Grok Bot offers Plugins or Connectors, enable that same account connector there; do not invent a second URL.'
+            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. grok.com/connectors does not install PostQueen on Grok Bot.'
           ),
           docs: [
             {
@@ -1026,17 +1028,67 @@ export function buildConnectionsCatalog(
               code: mcpUrlWithKey,
             },
             {
-              title: t('conn_grok_step_bot', 'Grok Bot (optional)'),
-              detail: t(
-                'conn_grok_step_bot_detail',
-                'Create the connector on grok.com/connectors first. If you use Grok Bot, enable that same account connector under the Bot\'s Plugins or Connectors if the UI offers it. Asking the Bot to "add a custom server" still ends at the same URL — there is no second MCP endpoint.'
-              ),
-            },
-            {
               title: t('conn_step_verify', 'Check it worked'),
               detail: t(
                 'conn_grok_verify',
                 'In a Grok chat, ask it to list your connected social media accounts.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'grok-bot',
+          name: t('conn_grok_bot_name', 'Grok Bot'),
+          glyph: 'GB',
+          icon: '/icons/connections/grok.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t('conn_grok_bot_short', 'Tell Grok Bot to add the MCP URL'),
+          intro: t(
+            'conn_grok_bot_intro',
+            'Grok Bot is the cloud agent, not grok.com chat. It does not read grok.com/connectors or Cursor mcp.json. Tell the Bot to add a remote MCP server. The URL must be public HTTPS — localhost and stdio do not work.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_grok_bot_note',
+            'PostQueen is not a Grok Bot marketplace plugin. Do not look for her under Plugins. Cursor staff document adding a custom server in the Bot chat. Teams inherit Cursor MCP allowlists. Same MCP URL as Grok chat, different product.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_grok_bot', 'Grok Bot MCP setup'),
+              href: `${DOCS}/mcp/clients/grok-bot`,
+            },
+          ],
+          paths: [
+            {
+              label: t('conn_docs_grok_bot_guide', 'Grok Bot guide'),
+              href: `${DOCS}/agents/grok-bot`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_grok_bot_step_ask', 'Ask the Bot to add the server'),
+              detail: t(
+                'conn_grok_bot_step_ask_detail',
+                'Open Grok Bot. There is no grok.com/connectors form here. In the Bot chat, tell it to add the MCP server. Cursor documents: Add this MCP server: plus the public URL.'
+              ),
+            },
+            {
+              title: t('conn_grok_bot_step_url', 'Give it the MCP URL'),
+              detail: t(
+                'conn_grok_bot_step_url_detail',
+                'Paste the streamable HTTP URL with your API key in the path. Get the key from Settings → API Keys. Confirm when the Bot asks. Tools show up on the next message.'
+              ),
+              code: mcpUrlWithKey,
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_grok_bot_verify',
+                'In that Grok Bot chat, ask it to list your connected social media accounts.'
               ),
             },
           ],

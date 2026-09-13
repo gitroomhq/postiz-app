@@ -676,7 +676,7 @@ export const ConnectPanel: FC<{
         title: t('connect_hub_assistants', 'Assistants'),
         blurb: t(
           'connect_hub_assistants_blurb',
-          'Claude, ChatGPT, Grok, Cursor and Gemini. One MCP URL, 14 tools.'
+          'Claude, ChatGPT, Grok, Grok Bot, Cursor and Gemini. One MCP URL, 14 tools.'
         ),
       },
       agents: {
