@@ -74,6 +74,7 @@ export const AGENTS_DISPLAY_ORDER = [
   'openclaw',
   'hermes',
   'claude-code',
+  'grok-build',
   'codex',
   'muse-code',
 ] as const;
@@ -84,6 +85,9 @@ export const ASSISTANTS_DISPLAY_ORDER = [
   'grok',
   'grok-bot',
   'cursor',
+  'vscode',
+  'windsurf',
+  'zed',
   'gemini',
   'muse',
   'other-mcp',
@@ -256,6 +260,15 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'make.com': 'make',
   grokbot: 'grok-bot',
   'grok bot': 'grok-bot',
+  grokbuild: 'grok-build',
+  'grok-cli': 'grok-build',
+  'grok build': 'grok-build',
+  vscode: 'vscode',
+  'vs-code': 'vscode',
+  'vs code': 'vscode',
+  windsurf: 'windsurf',
+  cascade: 'windsurf',
+  zed: 'zed',
   xai: 'grok',
   'muse-app': 'muse',
 };
@@ -450,7 +463,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_agents', 'Agents'),
       blurb: t(
         'conn_group_agents_blurb',
-        'OpenClaw is a chat bot you host. Claude Code and Codex run in a coding session.'
+        'OpenClaw is a chat bot you host. Claude Code, Grok Build and Codex run in a coding session.'
       ),
       items: [
         {
@@ -625,6 +638,61 @@ export function buildConnectionsCatalog(
             {
               title: t('conn_step_verify', 'Check it worked'),
               code: 'claude mcp list',
+            },
+          ],
+        },
+        {
+          id: 'grok-build',
+          name: t('conn_grok_build_name', 'Grok Build'),
+          glyph: 'Bd',
+          icon: '/icons/connections/grok.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'cli',
+          section: 'agents',
+          short: t(
+            'conn_grok_build_short',
+            'Grok Build MCP from the terminal'
+          ),
+          intro: t(
+            'conn_grok_build_intro',
+            'Grok Build is xAI\'s terminal coding agent, not grok.com chat and not Grok Bot. Same split as Claude Code vs Claude. Official install is grok mcp add --transport http, which writes ~/.grok/config.toml. grok.com/connectors does not register this product. It can also read Cursor mcp.json and ~/.claude.json at lower priority.'
+          ),
+          examples: [
+            {
+              body: t('conn_ex_cli_list', 'List connected channels'),
+              code: 'grok mcp list',
+            },
+          ],
+          info: t(
+            'conn_grok_build_note',
+            'A custom connector on grok.com does not replace grok mcp add. Grok Build may pick up a Cursor or Claude Code MCP entry as a fallback. Official setup is the grok command, then grok mcp list.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_grok_build', 'Grok Build guide'),
+              href: `${DOCS}/agents/grok-build`,
+            },
+          ],
+          paths: [
+            {
+              label: t('conn_path_mcp', 'Connect via MCP'),
+              href: `${DOCS}/mcp/clients/grok-build`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_grok_build_step_add', 'Register the server'),
+              detail: t(
+                'conn_grok_build_step_add_detail',
+                'Run this in your terminal. The key sits in the URL. Get it from Settings → API Keys. Add --header "Authorization: Bearer KEY" if you prefer the key out of the URL.'
+              ),
+              code: `grok mcp add --transport http postqueen ${mcpUrlWithKey}`,
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              code: 'grok mcp list',
             },
           ],
         },
@@ -1018,12 +1086,12 @@ export function buildConnectionsCatalog(
           short: t('conn_grok_short', 'Add a custom connector on grok.com'),
           intro: t(
             'conn_grok_intro',
-            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot is a different product, use that card.'
+            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot and Grok Build are different products, use those cards.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_grok_note',
-            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. grok.com/connectors does not install PostQueen on Grok Bot.'
+            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. grok.com/connectors does not install PostQueen on Grok Bot or Grok Build.'
           ),
           docs: [
             {
@@ -1075,7 +1143,7 @@ export function buildConnectionsCatalog(
           short: t('conn_grok_bot_short', 'Tell Grok Bot the MCP URL in chat'),
           intro: t(
             'conn_grok_bot_intro',
-            'Grok Bot is the cloud agent, not grok.com chat. It does not read grok.com/connectors or Cursor mcp.json. Tell the Bot to add a remote MCP server. The URL must be public HTTPS, localhost and stdio do not work.'
+            'Grok Bot is the cloud agent, not grok.com chat and not Grok Build. It does not read grok.com/connectors, Cursor mcp.json or ~/.grok/config.toml. Tell the Bot to add a remote MCP server. The URL must be public HTTPS, localhost and stdio do not work.'
           ),
           examples: chatExamples(),
           info: t(
@@ -1176,6 +1244,192 @@ export function buildConnectionsCatalog(
               detail: t(
                 'conn_cursor_verify',
                 'In agent mode, ask Cursor to list your connected channels.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'vscode',
+          name: t('conn_vscode_name', 'VS Code'),
+          glyph: 'VS',
+          icon: '/icons/connections/vscode.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t(
+            'conn_vscode_short',
+            'Schedule from VS Code Copilot MCP'
+          ),
+          intro: t(
+            'conn_vscode_intro',
+            'VS Code Copilot reads MCP from mcp.json. The file uses a servers object and each remote entry needs type http. That is not Cursor\'s mcpServers url shape. Add it from the Command Palette (MCP: Add Server) or edit .vscode/mcp.json (this workspace) or the user mcp.json (MCP: Open User Configuration).'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_vscode_note',
+            'Do not paste a Cursor mcpServers block into VS Code. GitHub Copilot CLI is a different product (~/.copilot/mcp-config.json). This card is the VS Code editor.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_vscode', 'VS Code MCP setup'),
+              href: `${DOCS}/mcp/clients/vscode`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_vscode_step_ui', 'Add the server'),
+              detail: t(
+                'conn_vscode_step_ui_detail',
+                'Command Palette → MCP: Add Server, pick HTTP, name it postqueen. Or create .vscode/mcp.json (this workspace) or run MCP: Open User Configuration for every workspace.'
+              ),
+            },
+            {
+              title: t('conn_vscode_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_vscode_step_json_detail',
+                'The key is servers, not mcpServers. type must be http. Put the API key in the URL or in a headers Authorization Bearer. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  servers: {
+                    postqueen: { type: 'http', url: mcpUrlWithKey },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_vscode_verify',
+                'In Copilot Chat agent mode, ask it to list your connected channels.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'windsurf',
+          name: 'Windsurf',
+          glyph: 'Ws',
+          icon: '/icons/connections/windsurf.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t(
+            'conn_windsurf_short',
+            'Schedule from Windsurf Cascade'
+          ),
+          intro: t(
+            'conn_windsurf_intro',
+            'Windsurf Cascade reads MCP from ~/.codeium/windsurf/mcp_config.json. Remote HTTP uses serverUrl (url also works). That is not Cursor mcp.json. Open MCPs in the Cascade panel, or Devin Settings → Cascade → MCP Servers, then edit the file. The newer Devin Local agent in Windsurf uses Devin CLI config instead of this file.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_windsurf_note',
+            'This card is Cascade\'s mcp_config.json. Devin Local (the default agent in new Windsurf tabs) does not read that file. Teams can allowlist servers by the key name in mcp_config.json.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_windsurf', 'Windsurf MCP setup'),
+              href: `${DOCS}/mcp/clients/windsurf`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_windsurf_step_ui', 'Open MCP settings'),
+              detail: t(
+                'conn_windsurf_step_ui_detail',
+                'In the Cascade panel, open MCPs, or Devin Settings → Cascade → MCP Servers. If PostQueen is not in the marketplace, edit the raw mcp_config.json.'
+              ),
+            },
+            {
+              title: t('conn_windsurf_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_windsurf_step_json_detail',
+                'Add this to ~/.codeium/windsurf/mcp_config.json. Use serverUrl for streamable HTTP. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  mcpServers: {
+                    postqueen: { serverUrl: mcpUrlWithKey },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_windsurf_verify',
+                'In a Cascade chat, ask it to list your connected channels.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'zed',
+          name: 'Zed',
+          glyph: 'Zd',
+          icon: '/icons/connections/zed.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t('conn_zed_short', 'Zed editor remote MCP from JSON'),
+          intro: t(
+            'conn_zed_intro',
+            'Zed stores MCP servers under context_servers, not mcpServers. Add a remote server from Settings → AI → MCP Servers → Add Remote Server. If the Authorization header is missing, Zed starts an OAuth flow PostQueen does not speak, so send a Bearer header or put the key in the URL.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_zed_note',
+            'A remote entry with only a url and no Authorization header is Zed\'s OAuth path. PostQueen /mcp with an API key is not that flow. Always send Authorization: Bearer, or put the key in the URL.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_zed', 'Zed MCP setup'),
+              href: `${DOCS}/mcp/clients/zed`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_zed_step_ui', 'Add a remote server'),
+              detail: t(
+                'conn_zed_step_ui_detail',
+                'Settings → AI → MCP Servers → Add Server → Add Remote Server. Name it postqueen. Or edit the settings file (zed: open settings file).'
+              ),
+            },
+            {
+              title: t('conn_zed_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_zed_step_json_detail',
+                'The key is context_servers. Include the Authorization header so Zed does not start OAuth. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  context_servers: {
+                    postqueen: {
+                      url: mcpUrl,
+                      headers: { Authorization: `Bearer ${apiKey}` },
+                    },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_zed_verify',
+                'In the Agent Panel, ask Zed to list your connected channels. A green indicator on the postqueen server means it is active.'
               ),
             },
           ],
@@ -1322,10 +1576,10 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              title: t('conn_other_mcp_ex_cursor', 'Cursor / VS Code Copilot'),
+              title: t('conn_other_mcp_ex_cursor', 'Cursor-style url'),
               body: t(
                 'conn_other_mcp_ex_cursor_body',
-                'Most editors that speak MCP use a url field, like Cursor.'
+                'Cursor uses mcpServers plus url. VS Code, Windsurf and Zed do not. Use those cards.'
               ),
               code: JSON.stringify(
                 { mcpServers: { postqueen: { url: mcpUrlWithKey } } },
@@ -1348,7 +1602,7 @@ export function buildConnectionsCatalog(
           ],
           note: t(
             'conn_other_mcp_note',
-            'There is no dedicated PostQueen guide for VS Code, Windsurf, Zed or Continue, use this generic shape. Claude Desktop is the exception: do not paste a plain url into claude_desktop_config.json; use a custom connector or mcp-remote.'
+            'Use this generic shape for Cline, Continue, Goose, Warp, JetBrains AI Assistant, Raycast and GitHub Copilot CLI. VS Code, Windsurf and Zed have their own cards. Claude Desktop is the exception: do not paste a plain url into claude_desktop_config.json; use a custom connector or mcp-remote.'
           ),
           docs: [
             {

@@ -69,6 +69,7 @@ describe('Connect marketplace catalog', () => {
       'openclaw',
       'hermes',
       'claude-code',
+      'grok-build',
       'codex',
       'muse-code',
     ]);
@@ -83,6 +84,9 @@ describe('Connect marketplace catalog', () => {
       'grok',
       'grok-bot',
       'cursor',
+      'vscode',
+      'windsurf',
+      'zed',
       'gemini',
       'muse',
       'other-mcp',
@@ -186,8 +190,8 @@ describe('Connect marketplace catalog', () => {
     assert.equal(grok.method, 'MCP');
     assert.equal(grokBot.method, 'MCP');
     assert.ok(!grok.steps.some((s) => /Grok Bot/i.test(s.title)));
-    assert.match(grok.intro, /Grok Bot is a different product/);
-    assert.match(grok.info || '', /does not install PostQueen on Grok Bot/);
+    assert.match(grok.intro, /Grok Bot and Grok Build are different products/);
+    assert.match(grok.info || '', /does not install PostQueen on Grok Bot or Grok Build/);
     assert.match(grok.steps.map((s) => s.detail).join('\n'), /grok\.com\/connectors/);
     assert.match(grokBot.intro, /not grok\.com chat/);
     assert.doesNotMatch(grokBot.intro, /grok\.com\/connectors first/);
@@ -197,6 +201,61 @@ describe('Connect marketplace catalog', () => {
     );
     assert.match(grokBot.info || '', /not a Grok Bot marketplace plugin/);
     assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
+  });
+
+  it('keeps Grok Build as a third Grok product with grok mcp add', () => {
+    const grok = byId('grok');
+    const grokBot = byId('grok-bot');
+    const grokBuild = byId('grok-build');
+    assert.equal(grok.section, 'assistants');
+    assert.equal(grokBot.section, 'assistants');
+    assert.equal(grokBuild.section, 'agents');
+    assert.ok(!FEATURED_IDS.includes('grok-build' as never));
+    assert.match(grok.intro, /Grok Build are different products/);
+    assert.match(grokBot.intro, /not Grok Build/);
+    assert.match(grokBuild.intro, /not grok\.com chat and not Grok Bot/);
+    assert.match(grokBuild.intro, /Claude Code vs Claude/);
+    assert.match(
+      grokBuild.steps.map((s) => s.code || '').join('\n'),
+      /grok mcp add --transport http/
+    );
+    assert.match(grokBuild.info || '', /does not replace grok mcp add/);
+    assert.doesNotMatch(grokBuild.intro, /grok\.com\/connectors first/);
+    assert.equal(resolveConnectorId('grok-build'), 'grok-build');
+    assert.equal(resolveConnectorId('grok-cli'), 'grok-build');
+    assert.equal(resolveConnectorId('grok build'), 'grok-build');
+  });
+
+  it('uses the official VS Code, Windsurf and Zed JSON keys, not Cursor mcpServers', () => {
+    const vscode = byId('vscode');
+    const windsurf = byId('windsurf');
+    const zed = byId('zed');
+    const vscodeJson = vscode.steps.map((s) => s.code || '').join('\n');
+    const windsurfJson = windsurf.steps.map((s) => s.code || '').join('\n');
+    const zedJson = zed.steps.map((s) => s.code || '').join('\n');
+
+    assert.match(vscodeJson, /"servers"/);
+    assert.match(vscodeJson, /"type": "http"/);
+    assert.doesNotMatch(vscodeJson, /mcpServers/);
+    assert.match(vscode.intro, /not Cursor/);
+    assert.match(vscode.info || '', /Copilot CLI is a different product/);
+
+    assert.match(windsurfJson, /"serverUrl"/);
+    assert.match(windsurf.intro, /mcp_config\.json/);
+    assert.match(windsurf.info || '', /Devin Local/);
+
+    assert.match(zedJson, /"context_servers"/);
+    assert.match(zedJson, /Authorization/);
+    assert.doesNotMatch(zedJson, /mcpServers/);
+    assert.match(zed.intro, /OAuth/);
+    assert.match(zed.info || '', /not that flow/);
+
+    const other = byId('other-mcp');
+    assert.match(other.note || '', /Cline, Continue, Goose/);
+    assert.match(other.intro, /14 tools/);
+    assert.equal(resolveConnectorId('vs-code'), 'vscode');
+    assert.equal(resolveConnectorId('cascade'), 'windsurf');
+    assert.equal(resolveConnectorId('zed'), 'zed');
   });
 
   it('marks Muse app no paste-MCP lie', () => {

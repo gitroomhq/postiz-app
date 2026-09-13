@@ -1242,3 +1242,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Connect: Claude chat vs Claude Code
 
 **i18n +1 (`conn_cc_note`).** Same pairing as ChatGPT vs Codex. Claude (claude.ai, Desktop, mobile) is the chat product: custom connector. Claude Code is the terminal/IDE agent: `claude mcp add`. Customize → Connectors does not install Claude Code. Desktop is not a third product — it shares the account connector with claude.ai.
+
+## Connect: Grok Build, VS Code, Windsurf, Zed
+
+**i18n +35 net.** Four clients with official installs that are not Cursor `{ mcpServers: { url } }`. Grok Build (Agents): `grok mcp add --transport http`. VS Code: `servers` plus `"type": "http"`. Windsurf Cascade: `serverUrl` in `mcp_config.json`. Zed: `context_servers` plus a Bearer header (missing header starts OAuth). Cline, Continue, Goose, Warp, JetBrains, Raycast and Copilot CLI stay on Any MCP. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
