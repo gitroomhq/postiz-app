@@ -42,6 +42,8 @@ import {
   defaultNavForConnection,
   findConnection,
   METHOD_STYLE,
+  resolveConnectNavId,
+  resolveConnectorId,
   type Connection,
   type ConnectNavId,
   type Example,
@@ -54,23 +56,6 @@ import {
   useRouteOverlayActive,
   type RouteOverlayMode,
 } from '@gitroom/frontend/components/layout/leave-settings';
-
-/** Deep-link aliases → catalog ids (`?connector=claude`). */
-const CONNECTOR_ALIASES: Record<string, string> = {
-  claude: 'claude-apps',
-  'claude-desktop': 'claude-apps',
-  'claude-app': 'claude-apps',
-  'claude-web': 'claude-apps',
-  slack: 'slack-chat',
-  discord: 'discord-chat',
-  'gemini-cli': 'gemini',
-  'other-clients': 'other-mcp',
-  'any-mcp': 'other-mcp',
-  'make.com': 'make',
-  'grok-bot': 'grok',
-  'xai': 'grok',
-  'muse-app': 'muse',
-};
 
 const NAV_ICONS: Record<ConnectNavId, string[]> = {
   all: [
@@ -99,23 +84,6 @@ const NAV_ICONS: Record<ConnectNavId, string[]> = {
     'M9 12.5l2.5 2.5 5-5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
   ],
 };
-
-function resolveConnectorId(raw: string | null): string {
-  if (!raw) return '';
-  const key = raw.trim().toLowerCase();
-  return CONNECTOR_ALIASES[key] || key;
-}
-
-/** Legacy `?nav=` aliases + current ConnectNavId values. */
-function resolveNavId(raw: string | null): ConnectNavId | null {
-  if (!raw) return null;
-  const key = raw.trim().toLowerCase();
-  if (key === 'cli-api' || key === 'cli' || key === 'api') return 'build';
-  if (key === 'media' || key === 'ai-agents' || key === 'mcp') return 'all';
-  if (key === 'agent-skills') return 'agents';
-  if (CONNECT_NAV.some((n) => n.id === key)) return key as ConnectNavId;
-  return null;
-}
 
 const CodeBlock: FC<{
   code: string;
@@ -560,7 +528,7 @@ export const ConnectPanel: FC<{
   const all = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
-    const resolvedNav = resolveNavId(searchParams.get('nav'));
+    const resolvedNav = resolveConnectNavId(searchParams.get('nav'));
     const connectorId = resolveConnectorId(searchParams.get('connector'));
 
     if (resolvedNav) {

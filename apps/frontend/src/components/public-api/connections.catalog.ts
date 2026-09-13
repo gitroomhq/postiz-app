@@ -230,6 +230,40 @@ export const CONNECT_NAV_ACCOUNT: {
 
 export const CONNECT_NAV = [...CONNECT_NAV_CONNECTORS, ...CONNECT_NAV_ACCOUNT];
 
+/** Deep-link aliases → catalog ids (`?connector=claude`). */
+export const CONNECTOR_ALIASES: Record<string, string> = {
+  claude: 'claude-apps',
+  'claude-desktop': 'claude-apps',
+  'claude-app': 'claude-apps',
+  'claude-web': 'claude-apps',
+  slack: 'slack-chat',
+  discord: 'discord-chat',
+  'gemini-cli': 'gemini',
+  'other-clients': 'other-mcp',
+  'any-mcp': 'other-mcp',
+  'make.com': 'make',
+  'grok-bot': 'grok',
+  xai: 'grok',
+  'muse-app': 'muse',
+};
+
+export function resolveConnectorId(raw: string | null): string {
+  if (!raw) return '';
+  const key = raw.trim().toLowerCase();
+  return CONNECTOR_ALIASES[key] || key;
+}
+
+/** Legacy `?nav=` aliases + current ConnectNavId values. */
+export function resolveConnectNavId(raw: string | null): ConnectNavId | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase();
+  if (key === 'cli-api' || key === 'cli' || key === 'api') return 'build';
+  if (key === 'media' || key === 'ai-agents' || key === 'mcp') return 'all';
+  if (key === 'agent-skills') return 'agents';
+  if (CONNECT_NAV.some((n) => n.id === key)) return key as ConnectNavId;
+  return null;
+}
+
 const DOCS = 'https://docs.postqueen.ai';
 
 const HUB_SECTIONS: SectionId[] = [
