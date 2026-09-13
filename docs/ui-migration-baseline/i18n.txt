@@ -723,7 +723,6 @@ conn_zapier_step_out
 conn_zapier_step_out_detail
 connect
 connect_a_channel
-connect_all_connectors
 connect_an_account_posts_here
 connect_an_ai_agent
 connect_an_ai_agent_sub
@@ -759,6 +758,7 @@ connect_post
 connect_postqueen
 connect_telegram
 connect_this_channel
+connect_view_all
 connect_your_accounts
 connect_your_repository
 connected

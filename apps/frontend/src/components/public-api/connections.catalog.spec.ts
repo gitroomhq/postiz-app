@@ -5,8 +5,10 @@ import {
   ASSISTANTS_DISPLAY_ORDER,
   AUTOMATION_CHILD_IDS,
   FEATURED_IDS,
+  ALL_PAGE_NAV_IDS,
   buildConnectionsCatalog,
   connectionsForNav,
+  restGroupsForAllPage,
   defaultNavForConnection,
   findConnection,
   resolveConnectNavId,
@@ -28,6 +30,31 @@ const byId = (id: string) => {
 };
 
 describe('Connect marketplace catalog', () => {
+  it('groups the All page leftovers by rail category, without repeating Featured', () => {
+    assert.deepEqual([...ALL_PAGE_NAV_IDS], [
+      'assistants',
+      'agents',
+      'chat',
+      'automation',
+      'build',
+    ]);
+    const leftover = restGroupsForAllPage(catalog);
+    assert.deepEqual(
+      leftover.map((g) => g.nav),
+      [...ALL_PAGE_NAV_IDS]
+    );
+    const leftoverIds = leftover.flatMap((g) => g.items.map((c) => c.id));
+    for (const id of FEATURED_IDS) {
+      assert.ok(
+        !leftoverIds.includes(id),
+        `${id} should stay in Featured, not repeat below`
+      );
+    }
+    assert.ok(leftover.find((g) => g.nav === 'agents')?.items.some((c) => c.id === 'openclaw'));
+    assert.ok(leftover.find((g) => g.nav === 'assistants')?.items.some((c) => c.id === 'grok-bot'));
+    assert.ok(leftover.find((g) => g.nav === 'chat')?.items.some((c) => c.id === 'whatsapp'));
+  });
+
   it('features Claude, ChatGPT, Cursor and Grok', () => {
     assert.deepEqual([...FEATURED_IDS], [
       'claude-apps',

@@ -1231,6 +1231,10 @@ so the shared confirm/grid/list CSS can actually size them.
 
 **i18n +9 net.** Grok chat uses grok.com/connectors. Grok Bot is the cloud agent: tell it in chat to add the MCP server. grok.com/connectors does not install the Bot. Dropped `conn_grok_step_bot` / `conn_grok_step_bot_detail`. Added `conn_grok_bot_*` plus `conn_docs_grok_bot` / `conn_docs_grok_bot_guide`.
 
+## Connect: All hub is grouped, not one dump
+
+**i18n 0 net.** Dropped `connect_all_connectors`. Added `connect_view_all`. The All page no longer lists every leftover card in one mixed grid. After Featured it uses the same groups as the left rail (Assistants, Agents, Chat, Automation, Build), compact name+method cards, and a View control into that nav. Featured still shows the four full cards.
+
 ## Connect: Claude chat vs Claude Code
 
 **i18n +1 (`conn_cc_note`).** Same pairing as ChatGPT vs Codex. Claude (claude.ai, Desktop, mobile) is the chat product: custom connector. Claude Code is the terminal/IDE agent: `claude mcp add`. Customize → Connectors does not install Claude Code. Desktop is not a third product — it shares the account connector with claude.ai.

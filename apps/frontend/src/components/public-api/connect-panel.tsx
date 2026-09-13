@@ -35,6 +35,7 @@ import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import {
   buildConnectionsCatalog,
   FEATURED_IDS,
+  restGroupsForAllPage,
   CONNECT_NAV,
   CONNECT_NAV_ACCOUNT,
   CONNECT_NAV_CONNECTORS,
@@ -460,7 +461,7 @@ const CliSetupCallout: FC<{
 
 /**
  * Dual-pane Connect PostQueen marketplace.
- * Desktop fills the viewport; hub uses a compact key row and a four-up featured grid.
+ * Desktop fills the viewport. All: Featured four-up, then rail groups of compact cards.
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -609,11 +610,10 @@ export const ConnectPanel: FC<{
     [groups]
   );
 
-  const restHubItems = useMemo(() => {
-    if (nav !== 'all') return hubItems;
-    const featured = new Set<string>(FEATURED_IDS);
-    return hubItems.filter((item) => !featured.has(item.id));
-  }, [hubItems, nav]);
+  const allPageGroups = useMemo(
+    () => (nav === 'all' && !query.trim() ? restGroupsForAllPage(groups) : []),
+    [groups, nav, query]
+  );
 
   const active = all.find((item) => item.id === picked);
 
@@ -1046,7 +1046,7 @@ export const ConnectPanel: FC<{
     const meta = hubTitles[nav];
     if (!meta) return null;
 
-    const hubCard = (item: Connection, i: number) => (
+    const hubCard = (item: Connection, i: number, compact = false) => (
       <button
         key={item.id}
         type="button"
@@ -1056,9 +1056,14 @@ export const ConnectPanel: FC<{
           tourConn ? { animationDelay: `${(i % 14) * 0.38}s` } : undefined
         }
         onClick={() => selectItem(item.id)}
-        className="flex min-h-[108px] items-start gap-[12px] rounded-pqLg bg-pqPop p-[16px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+        className={clsx(
+          'flex text-start rounded-pqLg bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
+          compact
+            ? 'min-h-[64px] items-center gap-[10px] p-[12px_14px]'
+            : 'min-h-[108px] items-start gap-[12px] p-[16px]'
+        )}
       >
-        <ConnIcon item={item} />
+        <ConnIcon item={item} size={compact ? 'xs' : 'sm'} />
         <span className="flex min-w-0 flex-1 flex-col gap-[4px] pt-[1px]">
           <span className="flex min-w-0 items-center gap-[7px]">
             <span className="truncate text-[15px] font-[600] text-pqText -tracking-[0.01em]">
@@ -1071,18 +1076,23 @@ export const ConnectPanel: FC<{
               </span>
             )}
           </span>
-          <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-pqMuted">
-            {item.short}
-          </span>
+          {!compact && (
+            <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-pqMuted">
+              {item.short}
+            </span>
+          )}
         </span>
       </button>
     );
 
-    const hubGrid = (items: Connection[], featured = false) => (
+    const hubGrid = (
+      items: Connection[],
+      opts: { featured?: boolean; compact?: boolean } = {}
+    ) => (
       <div
         className={clsx(
-          'grid gap-[12px]',
-          featured
+          'grid gap-[10px]',
+          opts.featured
             ? {
                 'grid-cols-1': mobile,
                 'grid-cols-2': tablet,
@@ -1090,12 +1100,16 @@ export const ConnectPanel: FC<{
               }
             : mobile
               ? 'grid-cols-1'
-              : '[grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]'
+              : opts.compact
+                ? '[grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]'
+                : '[grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]'
         )}
       >
-        {items.map(hubCard)}
+        {items.map((item, i) => hubCard(item, i, opts.compact))}
       </div>
     );
+
+    const browsingAll = nav === 'all' && !query.trim();
 
     return (
       <div className="flex flex-col gap-[20px]">
@@ -1116,12 +1130,12 @@ export const ConnectPanel: FC<{
 
         {credentialStrip('hub', true)}
 
-        {nav === 'all' && !query.trim() && (
+        {browsingAll && (
           <div className="flex flex-col gap-[10px]">
             <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
               {t('connect_featured', 'Featured')}
             </div>
-            {hubGrid(featuredItems, true)}
+            {hubGrid(featuredItems, { featured: true })}
           </div>
         )}
 
@@ -1140,14 +1154,29 @@ export const ConnectPanel: FC<{
           />
         )}
 
-        <div className="flex flex-col gap-[8px]">
-          {nav === 'all' && !query.trim() && (
-            <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-              {t('connect_all_connectors', 'All connectors')}
-            </div>
-          )}
-          {hubGrid(nav === 'all' && !query.trim() ? restHubItems : hubItems)}
-        </div>
+        {browsingAll ? (
+          <div className="flex flex-col gap-[22px]">
+            {allPageGroups.map((group) => (
+              <div key={group.nav} className="flex flex-col gap-[8px]">
+                <div className="flex items-baseline justify-between gap-[12px]">
+                  <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
+                    {navLabels[group.nav]}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => selectNav(group.nav)}
+                    className="shrink-0 text-[12px] font-[600] text-pqBrand hover:underline"
+                  >
+                    {t('connect_view_all', 'View')}
+                  </button>
+                </div>
+                {hubGrid(group.items, { compact: true })}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-[8px]">{hubGrid(hubItems)}</div>
+        )}
 
         {!hubItems.length && (
           <div className="rounded-pqMd border border-pqBorder p-[20px] text-center text-[13px] text-pqMuted">

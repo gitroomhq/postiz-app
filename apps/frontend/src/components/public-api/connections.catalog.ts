@@ -61,6 +61,15 @@ export const FEATURED_IDS = [
   'grok',
 ] as const;
 
+/** Category order on the All hub, after Featured. Matches the left rail. */
+export const ALL_PAGE_NAV_IDS = [
+  'assistants',
+  'agents',
+  'chat',
+  'automation',
+  'build',
+] as const;
+
 export const AGENTS_DISPLAY_ORDER = [
   'openclaw',
   'hermes',
@@ -280,10 +289,21 @@ const HUB_SECTIONS: SectionId[] = [
 ];
 
 /**
- * Connections for a Connect-panel nav id.
+ * Remaining cards on All, grouped like the rail. Featured ids are omitted.
  * `api-keys` / `developers` / `approved-apps` are panel-only.
  * Media stays in the catalog but is not a Connect nav.
  */
+export function restGroupsForAllPage(
+  groups: Group[]
+): { nav: (typeof ALL_PAGE_NAV_IDS)[number]; items: Connection[] }[] {
+  const featured = new Set<string>(FEATURED_IDS);
+  return ALL_PAGE_NAV_IDS.map((nav) => ({
+    nav,
+    items: connectionsForNav(groups, nav).filter((c) => !featured.has(c.id)),
+  })).filter((g) => g.items.length > 0);
+}
+
+/** Connections for a Connect-panel nav id. */
 export function connectionsForNav(
   groups: Group[],
   navId: ConnectNavId
