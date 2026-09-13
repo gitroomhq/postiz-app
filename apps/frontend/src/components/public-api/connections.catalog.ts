@@ -237,6 +237,8 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'claude-desktop': 'claude-apps',
   'claude-app': 'claude-apps',
   'claude-web': 'claude-apps',
+  claudecode: 'claude-code',
+  'claude code': 'claude-code',
   slack: 'slack-chat',
   discord: 'discord-chat',
   'gemini-cli': 'gemini',
@@ -557,7 +559,7 @@ export function buildConnectionsCatalog(
           short: t('conn_cc_short', 'Schedule posts from the terminal'),
           intro: t(
             'conn_cc_intro',
-            'Claude Code can take PostQueen either as an MCP server or as an Agent Skill. MCP is one command; skills load less context per call. The skill does not install the CLI — that is npm i -g postqueen.'
+            'Claude Code is Anthropic\'s terminal and IDE agent, not claude.ai or Claude Desktop. Same pairing as Codex vs ChatGPT. MCP is one command; skills load less context. The skill does not install the CLI — that is npm i -g postqueen. Customize → Connectors does not register this product.'
           ),
           examples: [
             {
@@ -571,6 +573,10 @@ export function buildConnectionsCatalog(
               ),
             },
           ],
+          info: t(
+            'conn_cc_note',
+            'claude_desktop_config.json is the Claude chat app, not Claude Code. Config for this product is ~/.claude.json or a project .mcp.json. Official install is claude mcp add --transport http. A custom connector on claude.ai does not replace that command.'
+          ),
           docs: [
             {
               label: t('conn_docs_claude_code', 'Claude Code guide'),
@@ -615,7 +621,7 @@ export function buildConnectionsCatalog(
           short: t('conn_codex_short', 'Post from Codex in the terminal'),
           intro: t(
             'conn_codex_intro',
-            'Codex discovers PostQueen from the skill definition and runs its commands in a sandbox. MCP is also documented for the Codex CLI. The skill is a playbook; install the CLI separately if you want postqueen commands on the PATH.'
+            'Codex is OpenAI\'s coding agent, not ChatGPT. Same pairing as Claude Code vs Claude. It discovers PostQueen from the skill and can also take MCP via the Codex CLI. The skill is a playbook; install the CLI separately if you want postqueen commands on the PATH.'
           ),
           examples: [
             {
@@ -872,15 +878,15 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'chat',
           section: 'assistants',
-          short: t('conn_claude_apps_short', 'Manage content from Claude'),
+          short: t('conn_claude_apps_short', 'claude.ai, Desktop and mobile'),
           intro: t(
             'conn_claude_apps_intro',
-            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. She is not in Anthropic\'s Connectors Directory — add a custom connector from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
+            'This is Anthropic\'s chat: claude.ai, Claude Desktop, iOS and Android. One custom connector follows the account. She is not in Anthropic\'s Connectors Directory — add her from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for LAN or VPN. Claude Code is a different product — use that card under Agents, like Codex vs ChatGPT.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_claude_apps_note',
-            'Not listed at claude.com/connectors. Browse will not find PostQueen; use Add custom connector. A plain "url" entry in claude_desktop_config.json does not work — use a custom connector or mcp-remote. New connectors generally cannot be created from the mobile apps — add them on the web or Desktop first. For Claude Code in a terminal, see the Claude Code card under Agents.'
+            'Not listed at claude.com/connectors. Browse will not find PostQueen. A plain "url" in claude_desktop_config.json does not work. Customize → Connectors does not install Claude Code. New connectors generally cannot be created from the mobile apps — add them on the web or Desktop first.'
           ),
           docs: [
             {
@@ -932,12 +938,12 @@ export function buildConnectionsCatalog(
           short: t('conn_chatgpt_short', 'Manage content from ChatGPT'),
           intro: t(
             'conn_chatgpt_intro',
-            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only — not the Free plan, not the mobile apps.'
+            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only — not the Free plan, not the mobile apps. Codex is a different product — use that card under Agents.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_chatgpt_note',
-            'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication — the key is already in the URL.'
+            'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication — the key is already in the URL. Settings → Apps does not install Codex.'
           ),
           docs: [
             {

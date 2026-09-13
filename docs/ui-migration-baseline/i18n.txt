@@ -435,6 +435,7 @@ conn_bridge_prompt_2
 conn_bridge_prompt_3
 conn_cc_example
 conn_cc_intro
+conn_cc_note
 conn_cc_short
 conn_cc_step_add
 conn_cc_step_add_detail

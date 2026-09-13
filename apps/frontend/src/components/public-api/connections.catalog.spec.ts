@@ -121,6 +121,38 @@ describe('Connect marketplace catalog', () => {
     assert.match(claude.info || '', /Not listed at claude\.com\/connectors/);
   });
 
+  it('keeps Claude chat and Claude Code as separate products', () => {
+    const claude = byId('claude-apps');
+    const code = byId('claude-code');
+    assert.equal(claude.section, 'assistants');
+    assert.equal(code.section, 'agents');
+    assert.ok(!FEATURED_IDS.includes('claude-code' as never));
+    assert.match(claude.intro, /Claude Code is a different product/);
+    assert.match(claude.intro, /Codex vs ChatGPT/);
+    assert.match(claude.info || '', /does not install Claude Code/);
+    assert.ok(!claude.steps.some((s) => /claude mcp add/i.test(s.code || '')));
+    assert.match(code.intro, /not claude\.ai or Claude Desktop/);
+    assert.match(code.intro, /Codex vs ChatGPT/);
+    assert.match(
+      code.steps.map((s) => s.code || '').join('\n'),
+      /claude mcp add --transport http/
+    );
+    assert.match(code.info || '', /claude_desktop_config\.json/);
+    assert.match(code.info || '', /does not replace that command/);
+    assert.equal(resolveConnectorId('claude-code'), 'claude-code');
+    assert.equal(resolveConnectorId('claude code'), 'claude-code');
+  });
+
+  it('keeps ChatGPT and Codex as separate products', () => {
+    const chatgpt = byId('chatgpt');
+    const codex = byId('codex');
+    assert.equal(chatgpt.section, 'assistants');
+    assert.equal(codex.section, 'agents');
+    assert.match(chatgpt.intro, /Codex is a different product/);
+    assert.match(chatgpt.info || '', /does not install Codex/);
+    assert.match(codex.intro, /not ChatGPT/);
+  });
+
   it('keeps Grok chat and Grok Bot as separate products', () => {
     const grok = byId('grok');
     const grokBot = byId('grok-bot');
