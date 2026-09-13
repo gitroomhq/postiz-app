@@ -16,7 +16,14 @@ export type Kind = 'AGENT' | 'CHAT' | 'MCP' | 'SKILL' | 'FLOW' | 'API' | 'MEDIA'
 export type MethodId = 'MCP' | 'Skill' | 'Chat' | 'HTTP' | 'CLI' | 'API';
 
 /** How examples render in the detail pane. */
-export type ExampleKind = 'chat' | 'workflow' | 'http' | 'cli' | 'skill' | 'api';
+export type ExampleKind =
+  | 'chat'
+  | 'bot'
+  | 'agent'
+  | 'workflow'
+  | 'http'
+  | 'cli'
+  | 'api';
 
 /** Credential the detail pane highlights. */
 export type CredKind = 'mcp' | 'api' | 'env' | 'none';
@@ -122,8 +129,14 @@ export interface DocLink {
 
 export interface Example {
   title?: string;
+  /** What you type, say, or send. */
   body: string;
+  /** Shell command or code sample. */
   code?: string;
+  /** Tool the client would call, shown as a chip. */
+  tool?: string;
+  /** What comes back: assistant line, stdout, or a short result. */
+  reply?: string;
 }
 
 export interface Connection {
@@ -435,22 +448,6 @@ export function buildConnectionsCatalog(
     : [];
   const mcpUrlWithKey = `${mcpUrl}/${apiKey}`;
 
-  const chatExamples = (): Example[] => [
-    { body: t('conn_ex_list_channels', 'List my connected channels') },
-    {
-      body: t(
-        'conn_ex_schedule_launch',
-        'Draft a launch post and schedule it for Tuesday 09:00'
-      ),
-    },
-    {
-      body: t(
-        'conn_ex_cross_post',
-        'Publish the changelog to X and LinkedIn'
-      ),
-    },
-  ];
-
   const skillInstall: Step[] = [
     {
       title: t('conn_step_skill_install', 'Install the PostQueen skill'),
@@ -520,7 +517,7 @@ export function buildConnectionsCatalog(
           kind: 'AGENT',
           method: 'Skill',
           cred: 'env',
-          exampleKind: 'skill',
+          exampleKind: 'bot',
           section: 'bots',
           short: t('conn_openclaw_short', 'A bot you host that posts from chat'),
           intro: t(
@@ -530,17 +527,13 @@ export function buildConnectionsCatalog(
           examples: [
             {
               body: t(
-                'conn_openclaw_prompt_1',
+                'conn_openclaw_ex',
                 'Post the blog cover to LinkedIn and X tomorrow at 9am'
               ),
-            },
-            {
-              body: t('conn_openclaw_prompt_2', 'What is in my queue this week?'),
-            },
-            {
-              body: t(
-                'conn_openclaw_prompt_3',
-                'Draft a thread from this release note'
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_openclaw_ex_reply',
+                'Queued as drafts on LinkedIn and X for 09:00. Confirm before they publish.'
               ),
             },
           ],
@@ -579,7 +572,7 @@ export function buildConnectionsCatalog(
           kind: 'AGENT',
           method: 'Skill',
           cred: 'env',
-          exampleKind: 'skill',
+          exampleKind: 'bot',
           section: 'bots',
           short: t('conn_hermes_short', 'Hand it a brief. It plans the week.'),
           intro: t(
@@ -589,15 +582,13 @@ export function buildConnectionsCatalog(
           examples: [
             {
               body: t(
-                'conn_hermes_prompt_1',
-                'Schedule my latest post to every connected channel for Monday morning'
+                'conn_hermes_ex',
+                'Draft a weekly digest for LinkedIn from this week\'s posts and save it for Monday morning'
               ),
-            },
-            { body: t('conn_hermes_prompt_2', 'List my connected channels') },
-            {
-              body: t(
-                'conn_hermes_prompt_3',
-                'Draft a weekly digest for LinkedIn'
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_hermes_ex_reply',
+                'LinkedIn draft saved for Monday 09:00. Review it on the calendar before it goes out.'
               ),
             },
           ],
@@ -642,13 +633,15 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              body: t('conn_ex_cli_list', 'List connected channels'),
-              code: 'claude mcp list',
-            },
-            {
               body: t(
-                'conn_cc_example',
-                'Ask Claude Code to schedule a launch post for Tuesday 09:00'
+                'conn_cc_ex',
+                'Schedule the README changelog to LinkedIn for Tuesday 09:00'
+              ),
+              code: 'claude',
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_cc_ex_reply',
+                'Draft on LinkedIn, Tuesday 09:00. Check it on the calendar before it publishes.'
               ),
             },
           ],
@@ -707,8 +700,16 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              body: t('conn_ex_cli_list', 'List connected channels'),
-              code: 'grok mcp list',
+              body: t(
+                'conn_grok_build_ex',
+                'Which PostQueen channels can I post to, then draft an X post from this file'
+              ),
+              code: 'grok',
+              tool: 'integrationList',
+              reply: t(
+                'conn_grok_build_ex_reply',
+                'LinkedIn, X, YouTube. X draft is on the calendar, waiting for you.'
+              ),
             },
           ],
           info: t(
@@ -750,7 +751,7 @@ export function buildConnectionsCatalog(
           kind: 'SKILL',
           method: 'Skill',
           cred: 'env',
-          exampleKind: 'skill',
+          exampleKind: 'cli',
           section: 'agents',
           short: t('conn_codex_short', 'Schedule from the Codex coding agent'),
           intro: t(
@@ -760,10 +761,14 @@ export function buildConnectionsCatalog(
           examples: [
             {
               body: t(
-                'conn_codex_try',
-                'list my social media integrations'
+                'conn_codex_ex',
+                'list my PostQueen channels'
               ),
-              code: 'codex "list my social media integrations"',
+              code: 'codex "list my PostQueen channels"',
+              reply: t(
+                'conn_codex_ex_reply',
+                'LinkedIn, X, YouTube'
+              ),
             },
           ],
           docs: [
@@ -798,7 +803,7 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'cli',
+          exampleKind: 'agent',
           section: 'agents',
           short: t('conn_muse_code_short', 'Muse Code over streamable HTTP MCP'),
           intro: t(
@@ -809,7 +814,12 @@ export function buildConnectionsCatalog(
             {
               body: t(
                 'conn_muse_code_ex',
-                'Ask Muse Code to list your PostQueen channels'
+                'List my PostQueen channels and draft a LinkedIn post from this file'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_muse_code_ex_reply',
+                'LinkedIn draft is on the calendar. Open it before anything publishes.'
               ),
             },
           ],
@@ -889,7 +899,7 @@ export function buildConnectionsCatalog(
           kind: 'CHAT',
           method: 'Chat',
           cred: 'env',
-          exampleKind: 'chat',
+          exampleKind: 'bot',
           section: 'chat',
           short: t('conn_whatsapp_short', 'Voice notes to the bot on your phone'),
           intro: t(
@@ -899,14 +909,14 @@ export function buildConnectionsCatalog(
           examples: [
             {
               body: t(
-                'conn_bridge_prompt_1',
-                'Write a launch thread for v3.2 and schedule it'
+                'conn_whatsapp_ex',
+                'Voice note: schedule this to LinkedIn tomorrow at 9'
+              ),
+              reply: t(
+                'conn_whatsapp_ex_reply',
+                'LinkedIn draft for tomorrow 09:00. Confirm in chat before it publishes.'
               ),
             },
-            {
-              body: t('conn_bridge_prompt_2', 'What is going out this week?'),
-            },
-            { body: t('conn_bridge_prompt_3', 'Publish the changelog now') },
           ],
           info: t(
             'conn_bridge_note',
@@ -928,14 +938,25 @@ export function buildConnectionsCatalog(
           kind: 'CHAT',
           method: 'Chat',
           cred: 'env',
-          exampleKind: 'chat',
+          exampleKind: 'bot',
           section: 'chat',
           short: t('conn_telegram_short', 'Message the hosted bot from Telegram'),
           intro: t(
             'conn_telegram_intro',
             'Talk to her from Telegram through OpenClaw or Hermes on your machine. Telegram can also be a publishing channel under Channels, that is a separate setup.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_telegram_ex',
+                'What is going out this week?'
+              ),
+              reply: t(
+                'conn_telegram_ex_reply',
+                'Tuesday LinkedIn 09:00, Wednesday X, a YouTube draft still waiting.'
+              ),
+            },
+          ],
           docs: [
             {
               label: t('conn_docs_telegram', 'Telegram chat front door'),
@@ -952,14 +973,25 @@ export function buildConnectionsCatalog(
           kind: 'CHAT',
           method: 'Chat',
           cred: 'env',
-          exampleKind: 'chat',
+          exampleKind: 'bot',
           section: 'chat',
           short: t('conn_slack_chat_short', 'Ask the hosted bot in a Slack channel'),
           intro: t(
             'conn_slack_chat_intro',
             'Use Slack as a front door to your agent, not the same as connecting Slack as a publishing channel under Channels.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_slack_chat_ex',
+                '@PostQueen what is on the calendar tomorrow?'
+              ),
+              reply: t(
+                'conn_slack_chat_ex_reply',
+                'One LinkedIn post at 09:00. Nothing else tomorrow.'
+              ),
+            },
+          ],
           docs: [
             {
               label: t('conn_docs_slack_chat', 'Slack chat front door'),
@@ -976,14 +1008,26 @@ export function buildConnectionsCatalog(
           kind: 'CHAT',
           method: 'Chat',
           cred: 'env',
-          exampleKind: 'chat',
+          exampleKind: 'bot',
           section: 'chat',
           short: t('conn_discord_chat_short', 'Ask the hosted bot in a Discord channel'),
           intro: t(
             'conn_discord_chat_intro',
             'Message your agent from Discord. Publishing into Discord is a separate Channels setup.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_discord_chat_ex',
+                'Queue the changelog to X as a draft'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_discord_chat_ex_reply',
+                'X draft is on the calendar. Open it before it publishes.'
+              ),
+            },
+          ],
           docs: [
             {
               label: t('conn_docs_discord_chat', 'Discord chat front door'),
@@ -1017,7 +1061,19 @@ export function buildConnectionsCatalog(
             'conn_claude_apps_intro',
             'This is Anthropic\'s chat: claude.ai, Claude Desktop, iOS and Android. One custom connector follows the account. She is not in Anthropic\'s Connectors Directory, add her from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for LAN or VPN. Claude Code is a different product, use that card under Agents, like Codex vs ChatGPT.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_claude_apps_ex',
+                'What is in my PostQueen queue this week?'
+              ),
+              tool: 'ask_postqueen',
+              reply: t(
+                'conn_claude_apps_ex_reply',
+                'Two scheduled, one draft. LinkedIn Tuesday 09:00, X Wednesday, a LinkedIn draft waiting.'
+              ),
+            },
+          ],
           info: t(
             'conn_claude_apps_note',
             'Not listed at claude.com/connectors. Browse will not find PostQueen. A plain "url" in claude_desktop_config.json does not work. Customize → Connectors does not install Claude Code. New connectors generally cannot be created from the mobile apps, add them on the web or Desktop first.'
@@ -1074,7 +1130,19 @@ export function buildConnectionsCatalog(
             'conn_chatgpt_intro',
             'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only, not the Free plan, not the mobile apps. Codex is a different product, use that card under Agents.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_chatgpt_ex',
+                'Draft a LinkedIn post from this changelog and schedule it for Tuesday 09:00'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_chatgpt_ex_reply',
+                'LinkedIn draft for Tuesday 09:00. Open the calendar before it goes out. Write tools can stay blocked on Plus and Pro.'
+              ),
+            },
+          ],
           info: t(
             'conn_chatgpt_note',
             'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication, the key is already in the URL. Settings → Apps does not install Codex.'
@@ -1134,7 +1202,19 @@ export function buildConnectionsCatalog(
             'conn_grok_intro',
             'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot and Grok Build are different products, use those cards.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_grok_ex',
+                'Put tonight\'s thread on X and LinkedIn as drafts'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_grok_ex_reply',
+                'Two drafts on the calendar, X and LinkedIn. Nothing publishes until you say so.'
+              ),
+            },
+          ],
           info: t(
             'conn_grok_note',
             'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. grok.com/connectors does not install PostQueen on Grok Bot or Grok Build.'
@@ -1191,7 +1271,19 @@ export function buildConnectionsCatalog(
             'conn_grok_bot_intro',
             'Grok Bot is the cloud agent, not grok.com chat and not Grok Build. It does not read grok.com/connectors, Cursor mcp.json or ~/.grok/config.toml. Tell the Bot to add a remote MCP server. The URL must be public HTTPS, localhost and stdio do not work.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_grok_bot_ex',
+                'Add a LinkedIn draft that recaps what we shipped in this repo'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_grok_bot_ex_reply',
+                'LinkedIn draft is on the calendar. The Bot used the public MCP URL, not grok.com/connectors.'
+              ),
+            },
+          ],
           info: t(
             'conn_grok_bot_note',
             'PostQueen is not a Grok Bot marketplace plugin. Do not look for her under Plugins. Cursor staff document adding a custom server in the Bot chat. Teams inherit Cursor MCP allowlists. Same MCP URL as Grok chat, different product.'
@@ -1241,14 +1333,26 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'chat',
+          exampleKind: 'agent',
           section: 'agents',
           short: t('conn_cursor_short', 'Schedule from Cursor in the editor'),
           intro: t(
             'conn_cursor_intro',
             'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field, Cursor infers the transport. You can also add it from Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP); all write the same file.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_cursor_ex',
+                'Turn this README into a LinkedIn post and schedule it Tuesday 09:00'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_cursor_ex_reply',
+                'LinkedIn draft for Tuesday 09:00. Cursor asks before running schedulePostTool, keep that on.'
+              ),
+            },
+          ],
           docs: [
             {
               label: t('conn_docs_cursor', 'Cursor guide'),
@@ -1302,7 +1406,7 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'chat',
+          exampleKind: 'agent',
           section: 'editors',
           short: t(
             'conn_vscode_short',
@@ -1312,7 +1416,19 @@ export function buildConnectionsCatalog(
             'conn_vscode_intro',
             'VS Code Copilot reads MCP from mcp.json. The file uses a servers object and each remote entry needs type http. That is not Cursor\'s mcpServers url shape. Add it from the Command Palette (MCP: Add Server) or edit .vscode/mcp.json (this workspace) or the user mcp.json (MCP: Open User Configuration).'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_vscode_ex',
+                'List my PostQueen channels, then draft an X post from CHANGELOG.md'
+              ),
+              tool: 'integrationList',
+              reply: t(
+                'conn_vscode_ex_reply',
+                'LinkedIn, X, YouTube. X draft is on the calendar from CHANGELOG.md.'
+              ),
+            },
+          ],
           info: t(
             'conn_vscode_note',
             'Do not paste a Cursor mcpServers block into VS Code. GitHub Copilot CLI is a different product (~/.copilot/mcp-config.json). This card is the VS Code editor.'
@@ -1364,7 +1480,7 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'chat',
+          exampleKind: 'agent',
           section: 'editors',
           short: t(
             'conn_windsurf_short',
@@ -1374,7 +1490,19 @@ export function buildConnectionsCatalog(
             'conn_windsurf_intro',
             'Windsurf Cascade reads MCP from ~/.codeium/windsurf/mcp_config.json. Remote HTTP uses serverUrl (url also works). That is not Cursor mcp.json. Open MCPs in the Cascade panel, or Devin Settings → Cascade → MCP Servers, then edit the file. The newer Devin Local agent in Windsurf uses Devin CLI config instead of this file.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_windsurf_ex',
+                'In Cascade, save a LinkedIn draft of this PR title for Monday 09:00'
+              ),
+              tool: 'schedulePostTool',
+              reply: t(
+                'conn_windsurf_ex_reply',
+                'LinkedIn draft for Monday 09:00. Cascade, not Devin Local, reads mcp_config.json.'
+              ),
+            },
+          ],
           info: t(
             'conn_windsurf_note',
             'This card is Cascade\'s mcp_config.json. Devin Local (the default agent in new Windsurf tabs) does not read that file. Teams can allowlist servers by the key name in mcp_config.json.'
@@ -1426,14 +1554,26 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'chat',
+          exampleKind: 'agent',
           section: 'editors',
           short: t('conn_zed_short', 'Zed editor remote MCP from JSON'),
           intro: t(
             'conn_zed_intro',
             'Zed stores MCP servers under context_servers, not mcpServers. Add a remote server from Settings → AI → MCP Servers → Add Remote Server. If the Authorization header is missing, Zed starts an OAuth flow PostQueen does not speak, so send a Bearer header or put the key in the URL.'
           ),
-          examples: chatExamples(),
+          examples: [
+            {
+              body: t(
+                'conn_zed_ex',
+                'In the Agent Panel, what is scheduled in PostQueen this week?'
+              ),
+              tool: 'ask_postqueen',
+              reply: t(
+                'conn_zed_ex_reply',
+                'LinkedIn Tuesday 09:00, X Wednesday. The postqueen server shows green when it is active.'
+              ),
+            },
+          ],
           info: t(
             'conn_zed_note',
             'A remote entry with only a url and no Authorization header is Zed\'s OAuth path. PostQueen /mcp with an API key is not that flow. Always send Authorization: Bearer, or put the key in the URL.'
@@ -1497,8 +1637,16 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              body: t('conn_gemini_ex_list', 'Confirm the server is connected'),
-              code: 'gemini mcp list',
+              body: t(
+                'conn_gemini_ex',
+                'Which PostQueen channels can I post to?'
+              ),
+              code: 'gemini',
+              tool: 'integrationList',
+              reply: t(
+                'conn_gemini_ex_reply',
+                'LinkedIn, X, YouTube'
+              ),
             },
           ],
           info: t(
@@ -1560,14 +1708,6 @@ export function buildConnectionsCatalog(
             'conn_muse_intro',
             'Meta Muse (the personal agent in the Muse app and WhatsApp) has Connectors, including custom connectors built from API details Muse walks you through. That is not a paste-an-MCP-URL flow. First-class MCP for the Muse app is coming soon. Muse Code, the coding agent, already connects, use that card under Agents.'
           ),
-          examples: [
-            {
-              body: t(
-                'conn_muse_ex',
-                'When Muse ships custom MCP, paste the same URL Grok and Claude use'
-              ),
-            },
-          ],
           info: t(
             'conn_muse_note',
             'Do not paste the MCP URL into Muse Settings → Connectors expecting it to work like Claude. For now, use Muse Code or another MCP client on this page.'
@@ -1613,7 +1753,7 @@ export function buildConnectionsCatalog(
           kind: 'MCP',
           method: 'MCP',
           cred: 'mcp',
-          exampleKind: 'cli',
+          exampleKind: 'agent',
           section: 'editors',
           short: t('conn_other_mcp_short', 'Any other MCP client with the URL'),
           intro: t(
@@ -1622,27 +1762,14 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              title: t('conn_other_mcp_ex_cursor', 'Cursor-style url'),
               body: t(
-                'conn_other_mcp_ex_cursor_body',
-                'Cursor uses mcpServers plus url. VS Code, Windsurf and Zed do not. Use those cards.'
+                'conn_other_mcp_ex',
+                'Ask the client to list your PostQueen channels'
               ),
-              code: JSON.stringify(
-                { mcpServers: { postqueen: { url: mcpUrlWithKey } } },
-                null,
-                2
-              ),
-            },
-            {
-              title: t('conn_other_mcp_ex_gemini', 'Gemini-style httpUrl'),
-              body: t(
-                'conn_other_mcp_ex_gemini_body',
-                'Some CLIs still split SSE (url) from streamable HTTP (httpUrl).'
-              ),
-              code: JSON.stringify(
-                { mcpServers: { postqueen: { httpUrl: mcpUrlWithKey } } },
-                null,
-                2
+              tool: 'integrationList',
+              reply: t(
+                'conn_other_mcp_ex_reply',
+                'LinkedIn, X, YouTube. JSON shape for the client itself is in the steps below.'
               ),
             },
           ],
@@ -2023,6 +2150,14 @@ export function buildConnectionsCatalog(
             {
               body: t('conn_cli_ex_list', 'List connected channels'),
               code: 'postqueen integrations:list',
+              reply: `[
+  { "name": "LinkedIn", "identifier": "acme" },
+  { "name": "X", "identifier": "acme" }
+]`,
+            },
+            {
+              body: t('conn_cli_ex_create', 'Schedule a post'),
+              code: 'postqueen posts:create -c "Hello world" -s "2026-08-01T09:00:00Z" -i <integration-id>',
             },
           ],
           docs: [
@@ -2123,7 +2258,7 @@ export function buildConnectionsCatalog(
           kind: 'API',
           method: 'API',
           cred: 'env',
-          exampleKind: 'cli',
+          exampleKind: 'api',
           section: 'developer',
           short: t('conn_sdk_short', 'Typed Node client for the Public API'),
           intro: t(
@@ -2132,8 +2267,18 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              body: t('conn_sdk_ex', 'Install and construct the client'),
-              code: 'npm install @postqueen/node',
+              body: t('conn_sdk_ex', 'List channels, then schedule a post'),
+              code: `import PostQueen from '@postqueen/node';
+
+const pq = new PostQueen(process.env.POSTQUEEN_API_KEY);
+const channels = await pq.integrations();
+await pq.post({
+  type: 'schedule',
+  date: '2026-08-01T09:00:00Z',
+  shortLink: false,
+  tags: [],
+  posts: [{ integration: { id: channels[0].id }, value: [{ content: 'We just shipped' }] }],
+});`,
             },
           ],
           docs: [
@@ -2183,14 +2328,6 @@ export function buildConnectionsCatalog(
             'conn_oauth_intro',
             'If you are building a product rather than automating your own account, register an OAuth app under OAuth Apps. Your users authorise it and you receive a token that works with the API, MCP and the CLI, no key sharing. Tokens are prefixed pos_.'
           ),
-          examples: [
-            {
-              body: t(
-                'conn_oauth_ex',
-                'Create an app, send users through authorize, store the pos_ token'
-              ),
-            },
-          ],
           docs: [
             {
               label: t('conn_docs_oauth', 'OAuth2 authentication'),

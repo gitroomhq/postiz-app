@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from 'react';
 import copy from 'copy-to-clipboard';
 import useSWR from 'swr';
@@ -157,43 +158,137 @@ const ApiKeyMissingNote: FC = () => {
   );
 };
 
+const ToolChip: FC<{ name: string }> = ({ name }) => (
+  <span className="inline-flex w-fit items-center rounded-[5px] bg-pqBrandSoft px-[7px] py-[2px] font-mono text-[10.5px] font-[600] tracking-[0.02em] text-pqFocused">
+    {name}
+  </span>
+);
+
+const TerminalFrame: FC<{
+  title: string;
+  children: ReactNode;
+}> = ({ title, children }) => (
+  <div className="overflow-hidden rounded-pqLg bg-pqBg shadow-[inset_0_0_0_1px_var(--border)]">
+    <div className="flex items-center gap-[7px] border-b border-pqLine px-[12px] py-[8px]">
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="ms-[4px] text-[11px] font-[600] text-pqMuted">{title}</span>
+    </div>
+    <div className="p-[14px_16px] font-mono text-[12.5px] leading-[1.65] text-pqText">
+      {children}
+    </div>
+  </div>
+);
+
 const ExamplesBlock: FC<{
   kind: ExampleKind;
   examples: Example[];
+  name: string;
   mask?: (text: string) => string;
-}> = ({ kind, examples, mask }) => {
+}> = ({ kind, examples, name, mask }) => {
   const t = useT();
   if (!examples.length) return null;
-  const chatLike = kind === 'chat' || kind === 'skill';
+
+  const heading =
+    kind === 'chat'
+      ? t('conn_examples_chat', 'In chat')
+      : kind === 'bot'
+        ? t('conn_examples_bot', 'Send a message')
+        : kind === 'agent'
+          ? t('conn_examples_agent', 'In the agent')
+          : kind === 'cli'
+            ? t('conn_examples_cli', 'In the terminal')
+            : kind === 'workflow'
+              ? t('conn_examples_flow', 'Example workflows')
+              : t('conn_examples_http', 'Example request');
+
+  const renderTurn = (ex: Example, i: number) => (
+    <div key={`${ex.body}-${i}`} className="flex flex-col gap-[10px]">
+      <div className="flex justify-end">
+        <div className="max-w-[92%] rounded-[16px_16px_6px_16px] bg-pqPop px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
+          {ex.body}
+        </div>
+      </div>
+      {(ex.tool || ex.reply) && (
+        <div className="flex max-w-[92%] flex-col gap-[6px]">
+          <div className="text-[11px] font-[600] text-pqMuted">{name}</div>
+          {!!ex.tool && <ToolChip name={ex.tool} />}
+          {!!ex.reply && (
+            <div className="rounded-[6px_16px_16px_16px] bg-pqSettings px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText">
+              {ex.reply}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-[10px]">
-      <div className="text-[11px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-        {chatLike
-          ? t('conn_examples_try', 'Try saying')
-          : kind === 'workflow'
-            ? t('conn_examples_flow', 'Example workflows')
-            : kind === 'http' || kind === 'api'
-              ? t('conn_examples_http', 'Example requests')
-              : t('conn_examples_cli', 'Example commands')}
-      </div>
-      {chatLike ? (
-        <div
-          className="flex flex-col items-end gap-[10px] rounded-[18px] p-[20px_18px] shadow-pqE2"
-          style={{
-            backgroundImage:
-              'linear-gradient(135deg, var(--brandSoft) 0%, var(--brand) 55%, var(--focused) 100%)',
-          }}
-        >
-          {examples.map((ex) => (
-            <div
-              key={ex.body}
-              className="flex max-w-[90%] items-center gap-[11px] rounded-[16px] bg-pqOnBrand px-[15px] py-[11px] shadow-pqE1"
-            >
-              <span className="light min-w-0 flex-1 text-[13.5px] leading-[1.45] text-pqText">
-                {ex.body}
-              </span>
-            </div>
-          ))}
+      <div className="text-[15px] font-[600] text-pqText">{heading}</div>
+      {kind === 'chat' || kind === 'bot' ? (
+        <div className="flex flex-col gap-[14px] rounded-pqLg bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
+          {examples.map(renderTurn)}
+        </div>
+      ) : kind === 'agent' ? (
+        <div className="overflow-hidden rounded-pqLg bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
+          <div className="border-b border-pqLine px-[14px] py-[8px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
+            {t('conn_examples_agent_panel', 'Agent')}
+          </div>
+          <div className="flex flex-col gap-[12px] p-[14px]">
+            {examples.map((ex, i) => (
+              <div key={`${ex.body}-${i}`} className="flex flex-col gap-[8px]">
+                <div className="text-[13.5px] leading-[1.5] text-pqText">{ex.body}</div>
+                {!!ex.tool && <ToolChip name={ex.tool} />}
+                {!!ex.reply && (
+                  <div className="text-[13px] leading-[1.5] text-pqMuted">{ex.reply}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : kind === 'cli' ? (
+        <div className="flex flex-col gap-[10px]">
+          {examples.map((ex, i) => {
+            const launch = ex.code && ex.body && !ex.code.includes(' ') ? ex.code : null;
+            const shell = ex.code && (!ex.body || ex.code.includes(' ')) ? ex.code : null;
+            return (
+              <TerminalFrame
+                key={`${ex.code ?? ex.body}-${i}`}
+                title={t('conn_examples_terminal', 'Terminal')}
+              >
+                {launch && (
+                  <div>
+                    <span className="text-pqMuted">$ </span>
+                    {launch}
+                  </div>
+                )}
+                {shell && (
+                  <div>
+                    <span className="text-pqMuted">$ </span>
+                    {mask ? mask(shell) : shell}
+                  </div>
+                )}
+                {!!ex.body && !!launch && (
+                  <div>
+                    <span className="text-pqMuted">{'> '}</span>
+                    {ex.body}
+                  </div>
+                )}
+                {!!ex.tool && (
+                  <div className="pt-[4px]">
+                    <ToolChip name={ex.tool} />
+                  </div>
+                )}
+                {!!ex.reply && (
+                  <pre className="m-0 mt-[6px] whitespace-pre-wrap break-all text-pqMuted">
+                    {mask ? mask(ex.reply) : ex.reply}
+                  </pre>
+                )}
+              </TerminalFrame>
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col gap-[8px]">
@@ -203,9 +298,7 @@ const ExamplesBlock: FC<{
               className="rounded-pqMd bg-pqInner p-[14px_16px] shadow-[inset_0_0_0_1px_var(--border)]"
             >
               {!!ex.title && (
-                <div className="text-[13px] font-[600] text-pqText">
-                  {ex.title}
-                </div>
+                <div className="text-[13px] font-[600] text-pqText">{ex.title}</div>
               )}
               <div
                 className={clsx(
@@ -1030,6 +1123,7 @@ export const ConnectPanel: FC<{
           <ExamplesBlock
             kind={item.exampleKind}
             examples={item.examples}
+            name={item.name}
             mask={maskCode}
           />
         )}

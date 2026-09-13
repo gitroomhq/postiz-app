@@ -321,6 +321,45 @@ describe('Connect marketplace catalog', () => {
     assert.match(byId('openclaw').intro, /WhatsApp/);
   });
 
+  it('shows a surface-matched usage example, not the same three chat bubbles', () => {
+    assert.equal(byId('claude-apps').exampleKind, 'chat');
+    assert.equal(byId('chatgpt').exampleKind, 'chat');
+    assert.equal(byId('openclaw').exampleKind, 'bot');
+    assert.equal(byId('whatsapp').exampleKind, 'bot');
+    assert.equal(byId('cursor').exampleKind, 'agent');
+    assert.equal(byId('vscode').exampleKind, 'agent');
+    assert.equal(byId('claude-code').exampleKind, 'cli');
+    assert.equal(byId('codex').exampleKind, 'cli');
+    assert.equal(byId('cli').exampleKind, 'cli');
+    assert.equal(byId('sdk').exampleKind, 'api');
+    assert.equal(byId('muse-code').exampleKind, 'agent');
+
+    assert.equal(byId('claude-code').examples?.[0]?.code, 'claude');
+    assert.doesNotMatch(byId('claude-code').examples?.[0]?.code || '', /mcp list/);
+    assert.equal(byId('grok-build').examples?.[0]?.code, 'grok');
+    assert.match(byId('codex').examples?.[0]?.code || '', /^codex "/);
+    assert.equal(byId('cli').examples?.[0]?.code, 'postqueen integrations:list');
+    assert.match(byId('sdk').examples?.[0]?.code || '', /new PostQueen/);
+    assert.ok(!byId('muse').examples?.length);
+    assert.ok(!byId('oauth').examples?.length);
+
+    const bodies = all
+      .flatMap((item) => (item.examples || []).map((ex) => `${item.id}:${ex.body}`));
+    const justBodies = all.flatMap((item) => (item.examples || []).map((ex) => ex.body));
+    const dupes = justBodies.filter((b, i) => justBodies.indexOf(b) !== i);
+    assert.deepEqual(dupes, [], `duplicate example bodies: ${dupes.join(', ')}`);
+    assert.ok(bodies.length > 10);
+    for (const item of all) {
+      for (const ex of item.examples || []) {
+        assert.doesNotMatch(
+          `${ex.body} ${ex.reply || ''}`,
+          /[—–]| - /,
+          `${item.id} example has a dash`
+        );
+      }
+    }
+  });
+
   it('maps nav filters to the job groups', () => {
     assert.deepEqual(
       connectionsForNav(catalog, 'agents').map((c) => c.id),
