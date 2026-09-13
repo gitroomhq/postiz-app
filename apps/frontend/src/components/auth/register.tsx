@@ -28,7 +28,7 @@ const WalletProvider = dynamic(
   {
     ssr: false,
     loading: () => <WalletUiProvider />,
-  }
+  },
 );
 // Same shape as the DTO the resolver validates, rather than a copy of it: the
 // copy had drifted to `provider: string` and no `datafast_visitor_id`.
@@ -46,15 +46,20 @@ export function Register() {
     }
   }, []);
   const load = useCallback(async () => {
-    const { token } = await (
-      await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
+    const res = await fetch(
+      `/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`,
+      {
         method: 'POST',
         body: JSON.stringify({
           code,
           state,
         }),
-      })
-    ).json();
+      },
+    );
+    if (!res.ok) {
+      return;
+    }
+    const { token } = await res.json();
     if (token) {
       setCode(token);
       setShow(true);
@@ -87,7 +92,7 @@ export function RegisterAfter({
   provider: string;
 }) {
   const t = useT();
-  const { billingEnabled, legalUrl } = useVariables();
+  const { walletLogin, legalUrl } = useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -187,30 +192,30 @@ export function RegisterAfter({
           app does not serve, so self-hosted signups pointed at a 404 while
           still asserting agreement. */}
       {!!legalUrl && (
-      <div className={clsx('text-[12px] text-textItemBlur')}>
-        {t(
-          'by_registering_you_agree_to_our',
-          'By registering you agree to our'
-        )}
-        &nbsp;
-        <a
-          href={`${legalUrl}/terms-of-service`}
-          className="underline hover:font-bold text-newTextColor"
-          rel="nofollow"
-        >
-          {t('terms_of_service', 'Terms of Service')}
-        </a>
-        &nbsp;
-        {t('and', 'and')}&nbsp;
-        <a
-          href={`${legalUrl}/privacy-policy`}
-          rel="nofollow"
-          className="underline hover:font-bold text-newTextColor"
-        >
-          {t('privacy_policy', 'Privacy Policy')}
-        </a>
-        &nbsp;
-      </div>
+        <div className={clsx('text-[12px] text-textItemBlur')}>
+          {t(
+            'by_registering_you_agree_to_our',
+            'By registering you agree to our',
+          )}
+          &nbsp;
+          <a
+            href={`${legalUrl}/terms-of-service`}
+            className="underline hover:font-bold text-newTextColor"
+            rel="nofollow"
+          >
+            {t('terms_of_service', 'Terms of Service')}
+          </a>
+          &nbsp;
+          {t('and', 'and')}&nbsp;
+          <a
+            href={`${legalUrl}/privacy-policy`}
+            rel="nofollow"
+            className="underline hover:font-bold text-newTextColor"
+          >
+            {t('privacy_policy', 'Privacy Policy')}
+          </a>
+          &nbsp;
+        </div>
       )}
       <div className="w-full flex mt-[12px]">
         <Button
@@ -227,7 +232,7 @@ export function RegisterAfter({
   // Sign in / Create account sits under the title and again under the form.
   const subtitle = t(
     'sign_up_subtitle',
-    'Create your account and connect your first channel.'
+    'Create your account and connect your first channel.',
   );
 
   return (
@@ -237,7 +242,7 @@ export function RegisterAfter({
           // Returning from an OAuth round-trip: no provider choice, just the
           // remaining Company field.
           <div className="flex flex-col flex-1">
-            <h1 className="text-[40px] font-[600] -tracking-[0.8px] font-display">
+            <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
               {t('sign_up', 'Sign Up')}
             </h1>
             <p className="mt-[10px] text-[15px] text-textItemBlur">
@@ -253,7 +258,7 @@ export function RegisterAfter({
           <AuthShell
             title={t('sign_up', 'Sign Up')}
             subtitle={subtitle}
-            extraProviders={billingEnabled ? <WalletProvider /> : undefined}
+            extraProviders={walletLogin ? <WalletProvider /> : undefined}
             emailStep={emailFields}
           />
         )}

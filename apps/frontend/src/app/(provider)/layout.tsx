@@ -19,6 +19,7 @@ import {
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
 import { isAiEnabled } from '@gitroom/helpers/utils/ai.enabled';
 import { isEmailEnabled } from '@gitroom/helpers/utils/email.enabled';
+import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           aiEnabled={isAiEnabled()}
           emailEnabled={isEmailEnabled()}
           passwordlessLogin={process.env.PASSWORDLESS_LOGIN === 'true'}
+          walletLogin={isWalletLoginEnabled()}
           turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || ''}
           frontEndUrl={process.env.FRONTEND_URL!}
           legalUrl={process.env.LEGAL_URL || ''}

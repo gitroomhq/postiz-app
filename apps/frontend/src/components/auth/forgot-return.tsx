@@ -37,7 +37,7 @@ export function ForgotReturn({ token }: { token: string }) {
       }),
     });
     const { reset } = response?.ok
-      ? await response.json().catch(() => ({} as any))
+      ? await response.json().catch(() => ({}) as any)
       : ({} as any);
 
     // `setState(true)` used to run BEFORE this check, which swapped the form
@@ -48,7 +48,10 @@ export function ForgotReturn({ token }: { token: string }) {
       setLoading(false);
       form.setError('password', {
         type: 'manual',
-        message: t('password_reset_link_expired', 'Your password reset link has expired. Please try again.'),
+        message: t(
+          'password_reset_link_expired',
+          'Your password reset link has expired. Please try again.',
+        ),
       });
       return false;
     }
@@ -58,15 +61,22 @@ export function ForgotReturn({ token }: { token: string }) {
   };
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div>
-          <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
-            {t('forgot_password_1', 'Forgot Password')}
-          </h1>
-        </div>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-1 flex-col"
+      >
+        <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
+          {t('forgot_password_1', 'Forgot password')}
+        </h1>
+        <p className="mt-[10px] text-[15px] text-textItemBlur">
+          {t(
+            'choose_a_new_password',
+            'Choose a new password for your account.',
+          )}
+        </p>
         {!state ? (
           <>
-            <div className="space-y-4 text-textColor">
+            <div className="mt-[28px] space-y-4 text-textColor">
               <Input
                 label="New Password"
                 translationKey="label_new_password"
@@ -82,30 +92,38 @@ export function ForgotReturn({ token }: { token: string }) {
                 placeholder={t('label_repeat_password', 'Repeat Password')}
               />
             </div>
-            <div className="text-center mt-6">
-              <div className="w-full flex">
-                <Button type="submit" className="flex-1" loading={loading}>
-                  {t('change_password', 'Change Password')}
-                </Button>
-              </div>
-              <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="underline cursor-pointer">
-                  {t('go_back_to_login', 'Go back to login')}
-                </Link>
-              </p>
+            <div className="w-full flex mt-[24px]">
+              <Button
+                type="submit"
+                className="flex-1 rounded-[10px] !h-[52px]"
+                loading={loading}
+              >
+                {t('change_password', 'Change password')}
+              </Button>
             </div>
+            <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+              <Link
+                href="/auth/login"
+                className="font-[500] text-newTextColor underline hover:font-bold"
+              >
+                {t('go_back_to_login', 'Back to sign in')}
+              </Link>
+            </p>
           </>
         ) : (
           <>
-            <div className="text-start mt-6">
+            <p className="mt-[28px] text-[15px] text-textItemBlur">
               {t(
                 'we_successfully_reset_your_password_you_can_now_login_with_your',
-                'We successfully reset your password. You can now login with your'
+                'Your password is updated. You can sign in with it now.',
               )}
-            </div>
-            <p className="mt-4 text-sm">
-              <Link href="/auth/login" className="underline cursor-pointer">
-                {t('go_back_to_login', 'Go back to login')}
+            </p>
+            <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+              <Link
+                href="/auth/login"
+                className="font-[500] text-newTextColor underline hover:font-bold"
+              >
+                {t('go_back_to_login', 'Back to sign in')}
               </Link>
             </p>
           </>
