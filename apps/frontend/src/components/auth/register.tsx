@@ -242,7 +242,7 @@ export function RegisterAfter({
           // Returning from an OAuth round-trip: no provider choice, just the
           // remaining Company field.
           <div className="flex flex-col flex-1">
-            <h1 className="text-[40px] font-[600] -tracking-[0.8px] font-display">
+            <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
               {t('sign_up', 'Sign Up')}
             </h1>
             <p className="mt-[10px] text-[15px] text-textItemBlur">

@@ -39,49 +39,59 @@ export function Forgot() {
     <div className="flex flex-1 flex-col">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div>
-            <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
-              {t('forgot_password_1', 'Forgot Password')}
-            </h1>
-          </div>
+          <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
+            {t('forgot_password_1', 'Forgot password')}
+          </h1>
+          <p className="mt-[10px] text-[15px] text-textItemBlur">
+            {t(
+              'forgot_password_subtitle',
+              'Enter the email on your account and we will send a reset link.',
+            )}
+          </p>
           {!state ? (
             <>
-              <div className="space-y-4 text-textColor">
+              <div className="mt-[28px] text-textColor">
                 <Input
                   label="Email"
                   translationKey="label_email"
                   {...form.register('email')}
                   type="email"
+                  autoFocus
                   placeholder={t('email_address', 'Email Address')}
                 />
               </div>
-              <div className="text-center mt-6">
-                <div className="w-full flex">
-                  <Button type="submit" className="flex-1 !h-[52px] !rounded-[10px]" loading={loading}>
-                    {t(
-                      'send_password_reset_email',
-                      'Send Password Reset Email'
-                    )}
-                  </Button>
-                </div>
-                <p className="mt-4 text-sm">
-                  <Link href="/auth/login" className="underline cursor-pointer">
-                    {t('go_back_to_login', 'Go back to login')}
-                  </Link>
-                </p>
+              <div className="w-full flex mt-[24px]">
+                <Button
+                  type="submit"
+                  className="flex-1 rounded-[10px] !h-[52px]"
+                  loading={loading}
+                >
+                  {t('send_password_reset_email', 'Send reset link')}
+                </Button>
               </div>
+              <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+                <Link
+                  href="/auth/login"
+                  className="font-[500] text-newTextColor underline hover:font-bold"
+                >
+                  {t('go_back_to_login', 'Back to sign in')}
+                </Link>
+              </p>
             </>
           ) : (
             <>
-              <div className="text-start mt-6">
+              <p className="mt-[28px] text-[15px] text-textItemBlur">
                 {t(
                   'we_have_send_you_an_email_with_a_link_to_reset_your_password',
-                  'We have send you an email with a link to reset your password.'
+                  'We have sent you an email with a link to reset your password.',
                 )}
-              </div>
-              <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="underline cursor-pointer">
-                  {t('go_back_to_login', 'Go back to login')}
+              </p>
+              <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+                <Link
+                  href="/auth/login"
+                  className="font-[500] text-newTextColor underline hover:font-bold"
+                >
+                  {t('go_back_to_login', 'Back to sign in')}
                 </Link>
               </p>
             </>

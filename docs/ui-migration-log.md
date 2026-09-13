@@ -1258,3 +1258,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Auth: wallet login is not billing, phone email waits behind a button
 
 **i18n +1, gates billingEnabled 60 → 55.** Continue with Wallet followed Stripe, so hosted PostQueen showed it. `WALLET_LOGIN` is now its own opt-in; login and register no longer read `billingEnabled` to mount the Solana button. On viewports below `lg`, email + password (and organization on sign-up) sit behind Continue with email, with Back in the header; desktop still shows the fields on the same screen. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` and `gates.txt`.
+
+## Auth: polish the side screens and phone chrome
+
+**i18n +2.** Added `forgot_password_subtitle` and `choose_a_new_password` so forgot / reset match the Sign in heading style. Phone email step hides the Sign in | Create account tabs (Back and the footer sentence do that job) and the provider screen hides the footer sentence (the tabs do that job). `scripts/ui-migration-check.sh --update` wrote `i18n.txt`.

@@ -109,7 +109,7 @@ export function AuthShell({
 
   return (
     <div className="flex flex-col flex-1">
-      <h1 className="text-[40px] font-[600] -tracking-[0.8px] font-display">
+      <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
         {title}
       </h1>
 
@@ -117,7 +117,9 @@ export function AuthShell({
         <p className="mt-[10px] text-[15px] text-textItemBlur">{subtitle}</p>
       )}
 
-      <AuthModeSwitch />
+      <div className={emailOpen ? 'hidden lg:block' : undefined}>
+        <AuthModeSwitch />
+      </div>
 
       <div className="mt-[28px] flex flex-col">
         <div
@@ -143,7 +145,9 @@ export function AuthShell({
         >
           {emailStep}
         </div>
-        <AuthModeFooter />
+        <div className={emailOpen ? undefined : 'hidden lg:block'}>
+          <AuthModeFooter />
+        </div>
       </div>
     </div>
   );

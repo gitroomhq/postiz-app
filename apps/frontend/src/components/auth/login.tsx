@@ -5,7 +5,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -14,12 +14,14 @@ import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/pl
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AuthShell } from '@gitroom/frontend/components/auth/auth-shell';
 import { OtpEmailStep } from '@gitroom/frontend/components/auth/otp-email-step';
+import { isAuthEmailMethod } from '@gitroom/frontend/components/auth/auth-chrome';
+import { useSearchParams } from 'next/navigation';
 const WalletProvider = dynamic(
   () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
   {
     ssr: false,
     loading: () => <WalletUiProvider />,
-  }
+  },
 );
 // The DTO the resolver validates against is the form's shape. Declaring a
 // second, near-identical type let the two drift — this one was missing
@@ -31,6 +33,12 @@ export function Login() {
   const [notActivated, setNotActivated] = useState(false);
   const [withCode, setWithCode] = useState(false);
   const { walletLogin, passwordlessLogin, emailEnabled } = useVariables();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (!isAuthEmailMethod(searchParams)) {
+      setWithCode(false);
+    }
+  }, [searchParams]);
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -44,7 +52,7 @@ export function Login() {
   const fetchData = useFetch();
   const subtitle = t(
     'sign_in_subtitle',
-    'Welcome back. Sign in to get to your calendar.'
+    'Welcome back. Sign in to get to your calendar.',
   );
   // The code step replaces the password step rather than sitting inside it:
   // OtpEmailStep brings its own <form>, and nesting one form in another is
@@ -66,7 +74,7 @@ export function Login() {
               >
                 {t(
                   'sign_in_with_password_instead',
-                  'Sign in with a password instead'
+                  'Sign in with a password instead',
                 )}
               </button>
             </div>
@@ -120,7 +128,7 @@ export function Login() {
           message ||
           t(
             'login_failed_try_again',
-            'We could not sign you in, please try again'
+            'We could not sign you in, please try again',
           ),
       });
       setLoading(false);
@@ -159,7 +167,7 @@ export function Login() {
                   <p className="text-amber-500 text-sm mb-2">
                     {t(
                       'account_not_activated',
-                      'Your account is not activated yet. Please check your email for the activation link.'
+                      'Your account is not activated yet. Please check your email for the activation link.',
                     )}
                   </p>
                   <Link

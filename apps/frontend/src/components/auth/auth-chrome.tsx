@@ -30,15 +30,23 @@ export const AuthNav = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const emailMethod = isAuthEmailMethod(searchParams);
+  const innerAuth =
+    pathname.startsWith('/auth/forgot') ||
+    pathname.startsWith('/auth/activate');
+  const showBack = emailMethod || innerAuth;
 
   return (
     <header className="flex items-center gap-[4px]">
-      {emailMethod && (
+      {showBack && (
         <button
           type="button"
-          onClick={() => router.replace(pathname)}
+          onClick={() =>
+            innerAuth ? router.push('/auth/login') : router.replace(pathname)
+          }
           aria-label={t('back', 'Back')}
-          className="lg:hidden -ms-[8px] flex size-[40px] shrink-0 items-center justify-center rounded-[8px] text-newTextColor hover:bg-boxHover"
+          className={`${
+            emailMethod && !innerAuth ? 'lg:hidden' : ''
+          } -ms-[8px] flex size-[40px] shrink-0 items-center justify-center rounded-[8px] text-newTextColor hover:bg-boxHover`}
         >
           <ChevronLeftIcon size={22} />
         </button>

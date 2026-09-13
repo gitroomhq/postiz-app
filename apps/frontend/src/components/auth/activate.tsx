@@ -26,7 +26,7 @@ export function Activate() {
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    
+
     const timer = setInterval(() => {
       setCooldown((prev) => prev - 1);
     }, 1000);
@@ -69,19 +69,16 @@ export function Activate() {
 
   return (
     <div className="flex flex-col flex-1">
-      <div>
-        <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
-          {t('activate_your_account', 'Activate your account')}
-        </h1>
-      </div>
-      <div className="text-textColor">
-        {t('thank_you_for_registering', 'Thank you for registering!')}
-        <br />
+      <h1 className="text-[32px] font-[600] -tracking-[0.8px] font-display lg:text-[40px]">
+        {t('activate_your_account', 'Activate your account')}
+      </h1>
+      <p className="mt-[10px] text-[15px] text-textItemBlur">
+        {t('thank_you_for_registering', 'Thank you for registering!')}{' '}
         {t(
           'please_check_your_email_to_activate_your_account',
-          'Please check your email to activate your account.'
+          'Please check your email to activate your account.',
         )}
-      </div>
+      </p>
 
       <div className="mt-8 border-t border-fifth pt-6">
         <h2 className="text-lg font-semibold mb-4">
@@ -92,7 +89,7 @@ export function Activate() {
             <div className="text-green-400">
               {t(
                 'activation_email_sent',
-                'Activation email has been sent! Please check your inbox.'
+                'Activation email has been sent! Please check your inbox.',
               )}
             </div>
             {cooldown > 0 ? (
@@ -110,7 +107,10 @@ export function Activate() {
           </div>
         ) : (
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
+            >
               <Input
                 label={t('label_email', 'Email')}
                 translationKey="label_email"
@@ -131,9 +131,12 @@ export function Activate() {
             </form>
           </FormProvider>
         )}
-        <p className="mt-4 text-sm text-textColor">
-          {t('already_activated', 'Already activated?')}&nbsp;
-          <Link href="/auth/login" className="underline cursor-pointer">
+        <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+          {t('already_activated', 'Already activated?')}{' '}
+          <Link
+            href="/auth/login"
+            className="font-[500] text-newTextColor underline hover:font-bold"
+          >
             {t('sign_in', 'Sign In')}
           </Link>
         </p>

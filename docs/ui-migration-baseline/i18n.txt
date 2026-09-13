@@ -386,6 +386,7 @@ chatgpt
 chats
 check_circles_above
 checkout_not_finished_logout
+choose_a_new_password
 choose_a_video_type
 choose_image
 choose_upload_without_posting_description
@@ -977,6 +978,7 @@ five_days
 follower_of_creator
 forgot_password
 forgot_password_1
+forgot_password_subtitle
 format
 founding_member
 four_days
