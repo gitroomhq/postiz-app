@@ -459,8 +459,8 @@ const CliSetupCallout: FC<{
 };
 
 /**
- * Settings-scale dual-pane Connect PostQueen panel.
- * Marketplace layout: credential strip, featured row, equal cards, stepper detail.
+ * Dual-pane Connect PostQueen marketplace.
+ * Desktop fills the viewport; hub uses a compact key row and a four-up featured grid.
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -493,7 +493,8 @@ export const ConnectPanel: FC<{
     [organizations, user?.orgId]
   );
   const { backendUrl } = useVariables();
-  const { mobile } = useViewport();
+  const toaster = useToaster();
+  const { mobile, tablet, desktop } = useViewport();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tourKey = useTourStepKey();
@@ -710,6 +711,9 @@ export const ConnectPanel: FC<{
     [t]
   );
 
+  const copyChipClass =
+    'flex h-[28px] items-center rounded-pqSm bg-pqSettings px-[10px] text-[12px] font-[500] text-pqText transition-colors hover:bg-pqHover';
+
   const credentialStrip = (
     cred: Connection['cred'] | 'hub',
     compact = false
@@ -718,16 +722,65 @@ export const ConnectPanel: FC<{
     const showMcp = cred === 'hub' || cred === 'mcp';
     const showApi = cred === 'hub' || cred === 'api';
     const showEnv = cred === 'env';
-    return (
-      <div
-        className={clsx(
-          'flex flex-col gap-[12px] rounded-pqMd bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]',
-          compact && 'p-[14px]'
-        )}
-      >
-        <div className="text-[13.5px] font-[600] text-pqText">
-          {t('conn_your_connection', 'Your connection')}
+    const maskedKey = keyRevealed
+      ? apiKey
+      : apiKey
+        ? `${'•'.repeat(Math.max(apiKey.length - 5, 8))}${apiKey.slice(-5)}`
+        : '•'.repeat(32);
+
+    if (compact) {
+      return (
+        <div
+          className="rounded-pqLg bg-pqPop p-[12px_14px] shadow-[inset_0_0_0_1px_var(--border)]"
+          aria-label={t('conn_your_connection', 'Your connection')}
+        >
+          <div className="flex flex-wrap items-center gap-[8px]">
+            <span className="text-[12px] font-[600] text-pqMuted">
+              {t('api_key', 'API key')}
+            </span>
+            <code className="min-w-0 max-w-full truncate rounded-pqSm bg-pqInner px-[10px] py-[5px] font-mono text-[12.5px] text-pqText">
+              {maskedKey || '•'.repeat(32)}
+            </code>
+          </div>
+          <div className="mt-[8px] flex flex-wrap gap-[6px]">
+            <button
+              type="button"
+              onClick={() => setKeyRevealed((v) => !v)}
+              className={copyChipClass}
+            >
+              {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
+            </button>
+            {showMcp && (
+              <button
+                type="button"
+                onClick={() => {
+                  copy(mcpUrlWithKey);
+                  toaster.show('MCP URL copied to clipboard', 'success');
+                }}
+                className={copyChipClass}
+              >
+                {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
+              </button>
+            )}
+          </div>
+          {showApi && (
+            <div className="mt-[8px]">
+              <code className="inline-flex rounded-pqSm bg-pqInner px-[10px] py-[4px] font-mono text-[11.5px] text-pqMuted">
+                Authorization: KEY
+              </code>
+            </div>
+          )}
+          {!apiKey && (
+            <div className="mt-[8px]">
+              <ApiKeyMissingNote />
+            </div>
+          )}
         </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-[12px] rounded-pqMd bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
         <ApiKeyCard
           compact
           showWizard={false}
@@ -1009,53 +1062,72 @@ export const ConnectPanel: FC<{
           tourConn ? { animationDelay: `${(i % 14) * 0.38}s` } : undefined
         }
         onClick={() => selectItem(item.id)}
-        className="flex min-h-[118px] flex-col gap-[10px] rounded-pqLg bg-pqPop p-[14px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
+        className="flex min-h-[108px] items-start gap-[12px] rounded-pqLg bg-pqPop p-[16px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]"
       >
-        <span className="flex min-w-0 items-start gap-[11px]">
-          <ConnIcon item={item} />
-          <span className="flex min-w-0 flex-1 flex-col gap-[4px]">
-            <span className="flex min-w-0 items-center gap-[7px]">
-              <span className="truncate text-[14px] font-[600] text-pqText -tracking-[0.01em]">
-                {item.name}
+        <ConnIcon item={item} />
+        <span className="flex min-w-0 flex-1 flex-col gap-[4px] pt-[1px]">
+          <span className="flex min-w-0 items-center gap-[7px]">
+            <span className="truncate text-[15px] font-[600] text-pqText -tracking-[0.01em]">
+              {item.name}
+            </span>
+            {methodChip(item)}
+            {item.soon && (
+              <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
+                {t('conn_soon_short', 'SOON')}
               </span>
-              {item.soon && (
-                <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
-                  {t('conn_soon_short', 'SOON')}
-                </span>
-              )}
-            </span>
-            <span className="line-clamp-2 min-h-[34px] text-[12px] leading-[1.45] text-pqMuted">
-              {item.short}
-            </span>
-            <span className="mt-[2px]">{methodChip(item)}</span>
+            )}
+          </span>
+          <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-pqMuted">
+            {item.short}
           </span>
         </span>
       </button>
     );
 
-    const hubGrid = (items: Connection[]) => (
-      <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fill,minmax(210px,1fr))]">
+    const hubGrid = (items: Connection[], featured = false) => (
+      <div
+        className={clsx(
+          'grid gap-[12px]',
+          featured
+            ? {
+                'grid-cols-1': mobile,
+                'grid-cols-2': tablet,
+                'grid-cols-4': desktop,
+              }
+            : mobile
+              ? 'grid-cols-1'
+              : '[grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]'
+        )}
+      >
         {items.map(hubCard)}
       </div>
     );
 
     return (
-      <div className="flex flex-col gap-[18px]">
+      <div className="flex flex-col gap-[20px]">
         <div>
-          <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
-            {meta.title}
-          </h3>
-          <div className="mt-[4px] text-[14px] text-pqMuted">{meta.blurb}</div>
+          {nav === 'all' ? (
+            <h3 className="m-0 max-w-[42rem] font-display text-[22px] font-[500] leading-[1.3] tracking-[-0.02em] text-pqText">
+              {meta.blurb}
+            </h3>
+          ) : (
+            <>
+              <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
+                {meta.title}
+              </h3>
+              <div className="mt-[4px] text-[14px] text-pqMuted">{meta.blurb}</div>
+            </>
+          )}
         </div>
 
-        {credentialStrip('hub')}
+        {credentialStrip('hub', true)}
 
         {nav === 'all' && !query.trim() && (
-          <div className="flex flex-col gap-[8px]">
+          <div className="flex flex-col gap-[10px]">
             <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
               {t('connect_featured', 'Featured')}
             </div>
-            {hubGrid(featuredItems)}
+            {hubGrid(featuredItems, true)}
           </div>
         )}
 
@@ -1094,7 +1166,7 @@ export const ConnectPanel: FC<{
 
   const chipClass = (id: ConnectNavId | string, activeChip: boolean) =>
     clsx(
-      'h-[30px] rounded-[999px] px-[12px] text-[12px] font-[600] transition-colors',
+      'h-[30px] shrink-0 rounded-[999px] px-[12px] text-[12px] font-[600] transition-colors',
       activeChip && !picked
         ? 'bg-pqBrand text-pqOnBrand'
         : activeChip && picked
@@ -1107,7 +1179,7 @@ export const ConnectPanel: FC<{
       className={clsx(
         'flex min-h-0 overflow-y-auto',
         mobile
-          ? 'flex-row flex-wrap gap-[6px] p-[0_12px_10px]'
+          ? 'flex-col gap-[8px] p-[0_12px_10px]'
           : 'flex-1 flex-col gap-[16px] p-[0_8px_14px]'
       )}
     >
@@ -1116,14 +1188,19 @@ export const ConnectPanel: FC<{
       <div
         className={clsx(
           'flex',
-          mobile ? 'flex-row flex-wrap gap-[6px]' : 'flex-col gap-[1px]'
+          mobile
+            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto'
+            : 'flex-col gap-[1px]'
         )}
       >
-        {!mobile && (
-          <div className="px-[9px] pb-[5px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-            {t('connect_nav_section', 'Connectors')}
-          </div>
-        )}
+        <div
+          className={clsx(
+            'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
+            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+          )}
+        >
+          {t('connect_nav_section', 'Connectors')}
+        </div>
         {visibleConnectors.map(({ id }) =>
           mobile ? (
             <button
@@ -1161,15 +1238,18 @@ export const ConnectPanel: FC<{
         className={clsx(
           'flex',
           mobile
-            ? 'w-full flex-row flex-wrap gap-[6px] border-t border-pqLine pt-[8px]'
+            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto pt-[2px]'
             : 'flex-col gap-[1px] border-t border-pqLine pt-[12px]'
         )}
       >
-        {!mobile && (
-          <div className="px-[9px] pb-[5px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-            {t('connect_nav_account', 'Account')}
-          </div>
-        )}
+        <div
+          className={clsx(
+            'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
+            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+          )}
+        >
+          {t('connect_nav_account', 'Account')}
+        </div>
         {visibleAccount.map(({ id }) =>
           mobile ? (
             <button
@@ -1213,7 +1293,7 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
-          : 'h-[min(720px,100%)] w-[min(1080px,100%)] rounded-[16px]'
+          : 'h-full w-full max-w-[1400px] rounded-[16px]'
       )}
     >
       {/* Left nav / mobile chips — Settings chrome: search above, then groups */}
@@ -1226,71 +1306,98 @@ export const ConnectPanel: FC<{
         )}
       >
         {mobile && (
-          <div className="flex items-center justify-between gap-[8px] p-[12px_14px_0]">
+          <div className="flex items-center justify-between gap-[8px] p-[12px_14px_8px]">
             <div className="text-[15px] font-[600] text-pqText">
               {t('connect_postqueen', 'Connect PostQueen')}
             </div>
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen((v) => !v)}
-              className="rounded-pqSm bg-pqBtnSimple px-[10px] py-[6px] text-[12px] font-[600] text-pqText"
-            >
-              {mobileNavOpen
-                ? t('hide', 'Hide')
-                : t('connect_categories', 'Categories')}
-            </button>
-          </div>
-        )}
-        {(!mobile || mobileNavOpen || !picked) && (
-          <>
-            <div className="shrink-0 p-[14px_12px_10px]">
-              <div className="relative">
-                <svg
-                  viewBox="0 0 24 24"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  aria-hidden="true"
-                  className="pointer-events-none absolute start-[10px] top-[10px] text-pqSoft"
-                >
+            <div className="flex items-center gap-[6px]">
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen((v) => !v)}
+                className="rounded-pqSm bg-pqBtnSimple px-[10px] py-[6px] text-[12px] font-[600] text-pqText"
+              >
+                {mobileNavOpen
+                  ? t('hide', 'Hide')
+                  : t('connect_categories', 'Categories')}
+              </button>
+              <button
+                type="button"
+                onClick={close}
+                aria-label={t('close', 'Close')}
+                className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              >
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
                   <path
-                    d="M17 17l4 4M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+                    d="M6 6l12 12M18 6 6 18"
                     stroke="currentColor"
-                    strokeWidth="1.8"
+                    strokeWidth="1.9"
                     strokeLinecap="round"
                   />
                 </svg>
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t('search_connectors', 'Search connectors')}
-                  className="h-[34px] w-full rounded-pqSm bg-pqInner pe-[11px] ps-[31px] text-[13px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus-visible:shadow-[inset_0_0_0_1px_var(--brand)]"
-                />
-              </div>
+              </button>
             </div>
-            {leftNav}
-          </>
+          </div>
         )}
+        {(!mobile || mobileNavOpen) && (
+          <div className="shrink-0 p-[14px_12px_10px]">
+            <div className="relative">
+              <svg
+                viewBox="0 0 24 24"
+                width="15"
+                height="15"
+                fill="none"
+                aria-hidden="true"
+                className="pointer-events-none absolute start-[10px] top-[10px] text-pqSoft"
+              >
+                <path
+                  d="M17 17l4 4M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('search_connectors', 'Search connectors')}
+                className="h-[34px] w-full rounded-pqSm bg-pqInner pe-[11px] ps-[31px] text-[13px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus-visible:shadow-[inset_0_0_0_1px_var(--brand)]"
+              />
+            </div>
+          </div>
+        )}
+        {(!mobile || mobileNavOpen || !picked) && leftNav}
       </div>
 
       {/* Right content */}
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <button
-          type="button"
-          onClick={close}
-          aria-label={t('close', 'Close')}
-          className="absolute end-[16px] top-[14px] z-[4] grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+        {!mobile && (
+          <div className="flex h-[52px] shrink-0 items-center justify-between border-b border-pqLine px-[24px]">
+            <div className="text-[14.5px] font-[600] text-pqText">
+              {t('connect_postqueen', 'Connect PostQueen')}
+            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label={t('close', 'Close')}
+              className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+        <div
+          className={clsx(
+            'min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner',
+            mobile ? 'p-[20px_16px_32px]' : 'p-[28px_32px_40px]'
+          )}
         >
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
-            <path
-              d="M6 6l12 12M18 6 6 18"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px]">
           {active ? renderDetail(active) : renderHub()}
         </div>
       </div>
