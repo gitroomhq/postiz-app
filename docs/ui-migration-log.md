@@ -1222,3 +1222,31 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Connect marketplace IA
 
 **i18n +59 net (Connect hub rebuilt as a job-based marketplace, not a restyle of the same keys).** The catalog and rail dropped MCP / Agent Skills / CLI / API as destinations and added Assistants / Agents / Build, Grok, Muse, Muse Code, kind-aware examples, and a credential strip. Old prompt/try keys (`conn_*_prompt_*`, `conn_*_try`, `connect_hub_mcp`, `connect_nav_cli`, …) were replaced by example and step keys (`conn_ex_*`, `conn_n8n_ex_*`, `conn_grok_*`, `conn_muse_*`, `connect_nav_assistants`, …). No API, route, gate or loop change. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1712 → 1771).
+
+## Connect: no Claude Apps hub listing
+
+**i18n −1 (`conn_docs_claude_apps_hub`).** PostQueen is not in Anthropic's Connectors Directory (`claude.com/connectors/postqueen` 404). The Claude card no longer shows a “Claude Apps hub” button. Setup is custom connector only; the note says Browse will not find her.
+
+## Connect: Grok and Grok Bot are different products
+
+**i18n +9 net.** Grok chat uses grok.com/connectors. Grok Bot is the cloud agent: tell it in chat to add the MCP server. grok.com/connectors does not install the Bot. Dropped `conn_grok_step_bot` / `conn_grok_step_bot_detail`. Added `conn_grok_bot_*` plus `conn_docs_grok_bot` / `conn_docs_grok_bot_guide`.
+
+## Connect: readable card copy, no dashes
+
+**i18n 0.** Same keys. Hub card shorts are one line (30 to 40 characters), no em/en dash, no ` - `. OpenClaw is a hosted chat bot (WhatsApp, Telegram, Slack, Discord), not a terminal agent. Cards put the name on one row and the full description underneath so the line is not clipped. Catalog and hub blurbs dropped punctuation dashes.
+
+## Connect: All hub is grouped, not one dump
+
+**i18n 0 net.** Dropped `connect_all_connectors`. Added `connect_view_all`. The All page no longer lists every leftover card in one mixed grid. After Featured it uses the same groups as the left rail (Assistants, Agents, Chat, Automation, Build), compact name+method cards, and a View control into that nav. Featured still shows the four full cards.
+
+## Connect: Claude chat vs Claude Code
+
+**i18n +1 (`conn_cc_note`).** Same pairing as ChatGPT vs Codex. Claude (claude.ai, Desktop, mobile) is the chat product: custom connector. Claude Code is the terminal/IDE agent: `claude mcp add`. Customize → Connectors does not install Claude Code. Desktop is not a third product — it shares the account connector with claude.ai.
+
+## Connect: Grok Build, VS Code, Windsurf, Zed
+
+**i18n +35 net.** Four clients with official installs that are not Cursor `{ mcpServers: { url } }`. Grok Build (Agents): `grok mcp add --transport http`. VS Code: `servers` plus `"type": "http"`. Windsurf Cascade: `serverUrl` in `mcp_config.json`. Zed: `context_servers` plus a Bearer header (missing header starts OAuth). Cline, Continue, Goose, Warp, JetBrains, Raycast and Copilot CLI stay on Any MCP. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Product tour: Connect hub is not one overlay step
+
+**i18n +2 net.** Dropped `tour_clients_title` / `tour_clients_text` (the old whole-panel step that dimmed Featured). Added `tour_featured_title` / `tour_featured_text` and `tour_creds_title` / `tour_creds_text`. The tour now walks calendar → Connect (assistant vs channel) → Featured → API key strip → Channels (publishing, not assistants) → Add Channel. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

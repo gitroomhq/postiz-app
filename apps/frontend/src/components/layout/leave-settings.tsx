@@ -111,7 +111,10 @@ export const RouteOverlayScrim: FC<{
       {...dataAttrs}
       data-route-mode={mode}
       className={clsx(
-        'fixed inset-0 z-[90] flex items-center justify-center p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0',
+        'fixed inset-0 z-[90] flex items-center justify-center',
+        kind === 'connect'
+          ? 'p-[24px] [@media(max-width:1180px)]:p-[16px] [@media(max-width:760px)]:p-0'
+          : 'p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0',
         !tourRunning && 'bg-pqPopup'
       )}
       // Dismiss-on-outside-click is right when the person opened this. During

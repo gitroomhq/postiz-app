@@ -5,8 +5,10 @@ import {
   ASSISTANTS_DISPLAY_ORDER,
   AUTOMATION_CHILD_IDS,
   FEATURED_IDS,
+  ALL_PAGE_NAV_IDS,
   buildConnectionsCatalog,
   connectionsForNav,
+  restGroupsForAllPage,
   defaultNavForConnection,
   findConnection,
   resolveConnectNavId,
@@ -28,6 +30,31 @@ const byId = (id: string) => {
 };
 
 describe('Connect marketplace catalog', () => {
+  it('groups the All page leftovers by rail category, without repeating Featured', () => {
+    assert.deepEqual([...ALL_PAGE_NAV_IDS], [
+      'assistants',
+      'agents',
+      'chat',
+      'automation',
+      'build',
+    ]);
+    const leftover = restGroupsForAllPage(catalog);
+    assert.deepEqual(
+      leftover.map((g) => g.nav),
+      [...ALL_PAGE_NAV_IDS]
+    );
+    const leftoverIds = leftover.flatMap((g) => g.items.map((c) => c.id));
+    for (const id of FEATURED_IDS) {
+      assert.ok(
+        !leftoverIds.includes(id),
+        `${id} should stay in Featured, not repeat below`
+      );
+    }
+    assert.ok(leftover.find((g) => g.nav === 'agents')?.items.some((c) => c.id === 'openclaw'));
+    assert.ok(leftover.find((g) => g.nav === 'assistants')?.items.some((c) => c.id === 'grok-bot'));
+    assert.ok(leftover.find((g) => g.nav === 'chat')?.items.some((c) => c.id === 'whatsapp'));
+  });
+
   it('features Claude, ChatGPT, Cursor and Grok', () => {
     assert.deepEqual([...FEATURED_IDS], [
       'claude-apps',
@@ -42,6 +69,7 @@ describe('Connect marketplace catalog', () => {
       'openclaw',
       'hermes',
       'claude-code',
+      'grok-build',
       'codex',
       'muse-code',
     ]);
@@ -54,7 +82,11 @@ describe('Connect marketplace catalog', () => {
       'claude-apps',
       'chatgpt',
       'grok',
+      'grok-bot',
       'cursor',
+      'vscode',
+      'windsurf',
+      'zed',
       'gemini',
       'muse',
       'other-mcp',
@@ -107,30 +139,147 @@ describe('Connect marketplace catalog', () => {
       claude.steps.map((s) => s.detail).join('\n'),
       /mcp-remote/
     );
+    assert.equal(claude.docs.length, 1);
+    assert.match(claude.docs[0].href, /\/mcp\/clients\/claude$/);
+    assert.ok(!claude.docs.some((d) => /hub/i.test(d.label)));
+    assert.ok(!(claude.paths || []).length);
+    const claudeHrefs = claude.docs.map((d) => d.href).join('\n');
+    assert.doesNotMatch(
+      claudeHrefs,
+      /claude\.com\/connectors|claude\.ai\/directory/
+    );
+    assert.match(claude.intro, /not in Anthropic/);
+    assert.match(claude.info || '', /Not listed at claude\.com\/connectors/);
   });
 
-  it('gives Grok one card with a Bot step, Muse app no paste-MCP lie', () => {
-    const grok = byId('grok');
-    assert.equal(grok.method, 'MCP');
-    assert.ok(grok.steps.some((s) => /Grok Bot/i.test(s.title)));
-    assert.match(grok.intro, /grok\.com\/connectors/);
+  it('keeps Claude chat and Claude Code as separate products', () => {
+    const claude = byId('claude-apps');
+    const code = byId('claude-code');
+    assert.equal(claude.section, 'assistants');
+    assert.equal(code.section, 'agents');
+    assert.ok(!FEATURED_IDS.includes('claude-code' as never));
+    assert.match(claude.intro, /Claude Code is a different product/);
+    assert.match(claude.intro, /Codex vs ChatGPT/);
+    assert.match(claude.info || '', /does not install Claude Code/);
+    assert.ok(!claude.steps.some((s) => /claude mcp add/i.test(s.code || '')));
+    assert.match(code.intro, /not claude\.ai or Claude Desktop/);
+    assert.match(code.intro, /Codex vs ChatGPT/);
     assert.match(
-      grok.steps.map((s) => s.detail).join('\n'),
-      /if the UI offers it/
+      code.steps.map((s) => s.code || '').join('\n'),
+      /claude mcp add --transport http/
     );
+    assert.match(code.info || '', /claude_desktop_config\.json/);
+    assert.match(code.info || '', /does not replace that command/);
+    assert.equal(resolveConnectorId('claude-code'), 'claude-code');
+    assert.equal(resolveConnectorId('claude code'), 'claude-code');
+  });
 
+  it('keeps ChatGPT and Codex as separate products', () => {
+    const chatgpt = byId('chatgpt');
+    const codex = byId('codex');
+    assert.equal(chatgpt.section, 'assistants');
+    assert.equal(codex.section, 'agents');
+    assert.match(chatgpt.intro, /Codex is a different product/);
+    assert.match(chatgpt.info || '', /does not install Codex/);
+    assert.match(codex.intro, /not ChatGPT/);
+  });
+
+  it('keeps Grok chat and Grok Bot as separate products', () => {
+    const grok = byId('grok');
+    const grokBot = byId('grok-bot');
+    assert.equal(grok.method, 'MCP');
+    assert.equal(grokBot.method, 'MCP');
+    assert.ok(!grok.steps.some((s) => /Grok Bot/i.test(s.title)));
+    assert.match(grok.intro, /Grok Bot and Grok Build are different products/);
+    assert.match(grok.info || '', /does not install PostQueen on Grok Bot or Grok Build/);
+    assert.match(grok.steps.map((s) => s.detail).join('\n'), /grok\.com\/connectors/);
+    assert.match(grokBot.intro, /not grok\.com chat/);
+    assert.doesNotMatch(grokBot.intro, /grok\.com\/connectors first/);
+    assert.match(
+      grokBot.steps.map((s) => s.detail).join('\n'),
+      /Add this MCP server/
+    );
+    assert.match(grokBot.info || '', /not a Grok Bot marketplace plugin/);
+    assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
+  });
+
+  it('keeps Grok Build as a third Grok product with grok mcp add', () => {
+    const grok = byId('grok');
+    const grokBot = byId('grok-bot');
+    const grokBuild = byId('grok-build');
+    assert.equal(grok.section, 'assistants');
+    assert.equal(grokBot.section, 'assistants');
+    assert.equal(grokBuild.section, 'agents');
+    assert.ok(!FEATURED_IDS.includes('grok-build' as never));
+    assert.match(grok.intro, /Grok Build are different products/);
+    assert.match(grokBot.intro, /not Grok Build/);
+    assert.match(grokBuild.intro, /not grok\.com chat and not Grok Bot/);
+    assert.match(grokBuild.intro, /Claude Code vs Claude/);
+    assert.match(
+      grokBuild.steps.map((s) => s.code || '').join('\n'),
+      /grok mcp add --transport http/
+    );
+    assert.match(grokBuild.info || '', /does not replace grok mcp add/);
+    assert.doesNotMatch(grokBuild.intro, /grok\.com\/connectors first/);
+    assert.equal(resolveConnectorId('grok-build'), 'grok-build');
+    assert.equal(resolveConnectorId('grok-cli'), 'grok-build');
+    assert.equal(resolveConnectorId('grok build'), 'grok-build');
+  });
+
+  it('uses the official VS Code, Windsurf and Zed JSON keys, not Cursor mcpServers', () => {
+    const vscode = byId('vscode');
+    const windsurf = byId('windsurf');
+    const zed = byId('zed');
+    const vscodeJson = vscode.steps.map((s) => s.code || '').join('\n');
+    const windsurfJson = windsurf.steps.map((s) => s.code || '').join('\n');
+    const zedJson = zed.steps.map((s) => s.code || '').join('\n');
+
+    assert.match(vscodeJson, /"servers"/);
+    assert.match(vscodeJson, /"type": "http"/);
+    assert.doesNotMatch(vscodeJson, /mcpServers/);
+    assert.match(vscode.intro, /not Cursor/);
+    assert.match(vscode.info || '', /Copilot CLI is a different product/);
+
+    assert.match(windsurfJson, /"serverUrl"/);
+    assert.match(windsurf.intro, /mcp_config\.json/);
+    assert.match(windsurf.info || '', /Devin Local/);
+
+    assert.match(zedJson, /"context_servers"/);
+    assert.match(zedJson, /Authorization/);
+    assert.doesNotMatch(zedJson, /mcpServers/);
+    assert.match(zed.intro, /OAuth/);
+    assert.match(zed.info || '', /not that flow/);
+
+    const other = byId('other-mcp');
+    assert.match(other.note || '', /Cline, Continue, Goose/);
+    assert.match(other.intro, /14 tools/);
+    assert.equal(resolveConnectorId('vs-code'), 'vscode');
+    assert.equal(resolveConnectorId('cascade'), 'windsurf');
+    assert.equal(resolveConnectorId('zed'), 'zed');
+  });
+
+  it('marks Muse app no paste-MCP lie', () => {
     const muse = byId('muse');
     assert.match(muse.intro, /not a paste-an-MCP-URL flow/i);
     assert.equal(muse.cred, 'none');
   });
 
-  it('keeps shorts to two lines of marketplace copy', () => {
+  it('keeps shorts one readable line, with no dashes', () => {
     for (const item of all) {
       assert.ok(
-        item.short.length <= 72,
+        item.short.length >= 30 && item.short.length <= 40,
         `${item.id} short is ${item.short.length}: ${item.short}`
       );
+      assert.doesNotMatch(
+        item.short,
+        /[—–]| - /,
+        `${item.id} short has a dash: ${item.short}`
+      );
     }
+    assert.match(byId('openclaw').short, /bot you host/i);
+    assert.doesNotMatch(byId('openclaw').short, /terminal/i);
+    assert.doesNotMatch(byId('openclaw').intro, /from your terminal/i);
+    assert.match(byId('openclaw').intro, /WhatsApp/);
   });
 
   it('maps nav filters to the job groups', () => {
@@ -155,7 +304,7 @@ describe('Connect marketplace catalog', () => {
     assert.equal(resolveConnectNavId('api'), 'build');
     assert.equal(resolveConnectNavId('assistants'), 'assistants');
     assert.equal(resolveConnectorId('claude'), 'claude-apps');
-    assert.equal(resolveConnectorId('grok-bot'), 'grok');
+    assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
     assert.equal(resolveConnectorId('muse-app'), 'muse');
     assert.equal(resolveConnectorId('gemini-cli'), 'gemini');
     assert.equal(defaultNavForConnection(byId('n8n')), 'automation');

@@ -1,18 +1,18 @@
 /**
- * Static Connections catalog — docs-backed, not an API.
+ * Static Connections catalog, docs-backed, not an API.
  *
  * Publishing channels live on Channels / Add Channel; this catalog covers
  * assistants, self-hosted agents, chat front-doors, automation, CLI/API and
  * third-party media. Code samples interpolate backendUrl / mcpUrl / apiKey at
  * build time.
  *
- * Do not invent MCP commands for OpenClaw/Hermes — they use Agent Skills.
+ * Do not invent MCP commands for OpenClaw/Hermes, they use Agent Skills.
  * Do not invent Typefully commands.
  */
 
 export type Kind = 'AGENT' | 'CHAT' | 'MCP' | 'SKILL' | 'FLOW' | 'API' | 'MEDIA';
 
-/** How the card connects — shown as a chip, not a destination. */
+/** How the card connects, shown as a chip, not a destination. */
 export type MethodId = 'MCP' | 'Skill' | 'Chat' | 'HTTP' | 'CLI' | 'API';
 
 /** How examples render in the detail pane. */
@@ -61,10 +61,20 @@ export const FEATURED_IDS = [
   'grok',
 ] as const;
 
+/** Category order on the All hub, after Featured. Matches the left rail. */
+export const ALL_PAGE_NAV_IDS = [
+  'assistants',
+  'agents',
+  'chat',
+  'automation',
+  'build',
+] as const;
+
 export const AGENTS_DISPLAY_ORDER = [
   'openclaw',
   'hermes',
   'claude-code',
+  'grok-build',
   'codex',
   'muse-code',
 ] as const;
@@ -73,7 +83,11 @@ export const ASSISTANTS_DISPLAY_ORDER = [
   'claude-apps',
   'chatgpt',
   'grok',
+  'grok-bot',
   'cursor',
+  'vscode',
+  'windsurf',
+  'zed',
   'gemini',
   'muse',
   'other-mcp',
@@ -236,13 +250,25 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'claude-desktop': 'claude-apps',
   'claude-app': 'claude-apps',
   'claude-web': 'claude-apps',
+  claudecode: 'claude-code',
+  'claude code': 'claude-code',
   slack: 'slack-chat',
   discord: 'discord-chat',
   'gemini-cli': 'gemini',
   'other-clients': 'other-mcp',
   'any-mcp': 'other-mcp',
   'make.com': 'make',
-  'grok-bot': 'grok',
+  grokbot: 'grok-bot',
+  'grok bot': 'grok-bot',
+  grokbuild: 'grok-build',
+  'grok-cli': 'grok-build',
+  'grok build': 'grok-build',
+  vscode: 'vscode',
+  'vs-code': 'vscode',
+  'vs code': 'vscode',
+  windsurf: 'windsurf',
+  cascade: 'windsurf',
+  zed: 'zed',
   xai: 'grok',
   'muse-app': 'muse',
 };
@@ -276,10 +302,21 @@ const HUB_SECTIONS: SectionId[] = [
 ];
 
 /**
- * Connections for a Connect-panel nav id.
+ * Remaining cards on All, grouped like the rail. Featured ids are omitted.
  * `api-keys` / `developers` / `approved-apps` are panel-only.
  * Media stays in the catalog but is not a Connect nav.
  */
+export function restGroupsForAllPage(
+  groups: Group[]
+): { nav: (typeof ALL_PAGE_NAV_IDS)[number]; items: Connection[] }[] {
+  const featured = new Set<string>(FEATURED_IDS);
+  return ALL_PAGE_NAV_IDS.map((nav) => ({
+    nav,
+    items: connectionsForNav(groups, nav).filter((c) => !featured.has(c.id)),
+  })).filter((g) => g.items.length > 0);
+}
+
+/** Connections for a Connect-panel nav id. */
 export function connectionsForNav(
   groups: Group[],
   navId: ConnectNavId
@@ -373,7 +410,7 @@ export function buildConnectionsCatalog(
       title: t('conn_step_skill_install', 'Install the PostQueen skill'),
       detail: t(
         'conn_step_skill_install_detail',
-        'One command, once per machine. It installs the skill playbook — not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
+        'One command, once per machine. It installs the skill playbook, not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
       ),
       code: 'npx skills add GkhanKINAY/postqueen-agent',
     },
@@ -396,7 +433,7 @@ export function buildConnectionsCatalog(
       ),
       detail: t(
         'conn_chat_step_agent_detail',
-        'Chat front doors talk to an agent you host — PostQueen never signs into the chat app. Install OpenClaw or Hermes, then keep its gateway awake.'
+        'Chat front doors talk to an agent you host, PostQueen never signs into the chat app. Install OpenClaw or Hermes, then keep its gateway awake.'
       ),
     },
     ...skillInstall,
@@ -404,7 +441,7 @@ export function buildConnectionsCatalog(
       title: t('conn_chat_step_channel', 'Connect the chat app'),
       detail: t(
         'conn_chat_step_channel_detail',
-        'Follow the channel section in the docs for pairing, bot tokens or QR login. Slack, Discord and Telegram can also be publishing channels — that is a separate setup under Channels.'
+        'Follow the channel section in the docs for pairing, bot tokens or QR login. Slack, Discord and Telegram can also be publishing channels, that is a separate setup under Channels.'
       ),
     },
     {
@@ -426,7 +463,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_agents', 'Agents'),
       blurb: t(
         'conn_group_agents_blurb',
-        'Self-hosted agents that run her skill and drive the calendar from a brief or a chat.'
+        'OpenClaw is a chat bot you host. Claude Code, Grok Build and Codex run in a coding session.'
       ),
       items: [
         {
@@ -439,10 +476,10 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'skill',
           section: 'agents',
-          short: t('conn_openclaw_short', 'Run her from a self-hosted agent'),
+          short: t('conn_openclaw_short', 'A bot you host that posts from chat'),
           intro: t(
             'conn_openclaw_intro',
-            "OpenClaw is an open-source agent you run yourself. It reads the Agent Skills package rather than MCP, which means it loads PostQueen's commands on demand instead of carrying a whole tool schema in every prompt — cheaper, and it leaves room for the rest of your context."
+            "OpenClaw is a self hosted personal agent that stays running, more like a bot than a coding session. You message it from WhatsApp, Telegram, Slack or Discord. It loads PostQueen as an Agent Skill, not MCP."
           ),
           examples: [
             {
@@ -498,7 +535,7 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'skill',
           section: 'agents',
-          short: t('conn_hermes_short', 'Load PostQueen as a Hermes skill'),
+          short: t('conn_hermes_short', 'Hand it a brief. It plans the week.'),
           intro: t(
             'conn_hermes_intro',
             "Hermes is Nous Research's open-source agent framework. It picks PostQueen up through the same Agent Skills package the other CLI agents use, so one install covers every agent on the machine."
@@ -520,7 +557,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_hermes_note',
-            'Hermes can run tools on a schedule from its own config, which is a neat fit for recurring publishing — a weekly digest, say. Whatever you automate, keep a human in the loop before it publishes.'
+            'Hermes can run tools on a schedule from its own config, which is a neat fit for recurring publishing, a weekly digest, say. Whatever you automate, keep a human in the loop before it publishes.'
           ),
           docs: [
             {
@@ -552,10 +589,10 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'cli',
           section: 'agents',
-          short: t('conn_cc_short', 'Schedule posts from the terminal'),
+          short: t('conn_cc_short', 'Schedule from the Claude Code session'),
           intro: t(
             'conn_cc_intro',
-            'Claude Code can take PostQueen either as an MCP server or as an Agent Skill. MCP is one command; skills load less context per call. The skill does not install the CLI — that is npm i -g postqueen.'
+            'Claude Code is Anthropic\'s terminal and IDE agent, not claude.ai or Claude Desktop. Same pairing as Codex vs ChatGPT. MCP is one command; skills load less context. The skill does not install the CLI, that is npm i -g postqueen. Customize → Connectors does not register this product.'
           ),
           examples: [
             {
@@ -569,6 +606,10 @@ export function buildConnectionsCatalog(
               ),
             },
           ],
+          info: t(
+            'conn_cc_note',
+            'claude_desktop_config.json is the Claude chat app, not Claude Code. Config for this product is ~/.claude.json or a project .mcp.json. Official install is claude mcp add --transport http. A custom connector on claude.ai does not replace that command.'
+          ),
           docs: [
             {
               label: t('conn_docs_claude_code', 'Claude Code guide'),
@@ -601,6 +642,61 @@ export function buildConnectionsCatalog(
           ],
         },
         {
+          id: 'grok-build',
+          name: t('conn_grok_build_name', 'Grok Build'),
+          glyph: 'Bd',
+          icon: '/icons/connections/grok.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'cli',
+          section: 'agents',
+          short: t(
+            'conn_grok_build_short',
+            'Grok Build MCP from the terminal'
+          ),
+          intro: t(
+            'conn_grok_build_intro',
+            'Grok Build is xAI\'s terminal coding agent, not grok.com chat and not Grok Bot. Same split as Claude Code vs Claude. Official install is grok mcp add --transport http, which writes ~/.grok/config.toml. grok.com/connectors does not register this product. It can also read Cursor mcp.json and ~/.claude.json at lower priority.'
+          ),
+          examples: [
+            {
+              body: t('conn_ex_cli_list', 'List connected channels'),
+              code: 'grok mcp list',
+            },
+          ],
+          info: t(
+            'conn_grok_build_note',
+            'A custom connector on grok.com does not replace grok mcp add. Grok Build may pick up a Cursor or Claude Code MCP entry as a fallback. Official setup is the grok command, then grok mcp list.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_grok_build', 'Grok Build guide'),
+              href: `${DOCS}/agents/grok-build`,
+            },
+          ],
+          paths: [
+            {
+              label: t('conn_path_mcp', 'Connect via MCP'),
+              href: `${DOCS}/mcp/clients/grok-build`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_grok_build_step_add', 'Register the server'),
+              detail: t(
+                'conn_grok_build_step_add_detail',
+                'Run this in your terminal. The key sits in the URL. Get it from Settings → API Keys. Add --header "Authorization: Bearer KEY" if you prefer the key out of the URL.'
+              ),
+              code: `grok mcp add --transport http postqueen ${mcpUrlWithKey}`,
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              code: 'grok mcp list',
+            },
+          ],
+        },
+        {
           id: 'codex',
           name: 'Codex',
           glyph: 'Cx',
@@ -610,10 +706,10 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'skill',
           section: 'agents',
-          short: t('conn_codex_short', 'Post from Codex in the terminal'),
+          short: t('conn_codex_short', 'Schedule from the Codex coding agent'),
           intro: t(
             'conn_codex_intro',
-            'Codex discovers PostQueen from the skill definition and runs its commands in a sandbox. MCP is also documented for the Codex CLI. The skill is a playbook; install the CLI separately if you want postqueen commands on the PATH.'
+            'Codex is OpenAI\'s coding agent, not ChatGPT. Same pairing as Claude Code vs Claude. It discovers PostQueen from the skill and can also take MCP via the Codex CLI. The skill is a playbook; install the CLI separately if you want postqueen commands on the PATH.'
           ),
           examples: [
             {
@@ -658,10 +754,10 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'cli',
           section: 'agents',
-          short: t('conn_muse_code_short', 'Wire Muse Code over streamable HTTP'),
+          short: t('conn_muse_code_short', 'Muse Code over streamable HTTP MCP'),
           intro: t(
             'conn_muse_code_intro',
-            'Muse Code is Meta\'s coding agent. It loads remote MCP servers from ~/.config/muse/settings.json over streamable HTTP. This is the path that works today — the consumer Muse app does not take an MCP URL yet.'
+            'Muse Code is Meta\'s coding agent. It loads remote MCP servers from ~/.config/muse/settings.json over streamable HTTP. This is the path that works today, the consumer Muse app does not take an MCP URL yet.'
           ),
           examples: [
             {
@@ -736,7 +832,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_chat_doors', 'Chat front doors'),
       blurb: t(
         'conn_group_chat_doors_blurb',
-        'Message an agent from WhatsApp, Telegram, Slack or Discord. Not publishing channels — those live under Channels.'
+        'Message an agent from WhatsApp, Telegram, Slack or Discord. Not publishing channels, those live under Channels.'
       ),
       items: [
         {
@@ -749,10 +845,10 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'chat',
           section: 'chat',
-          short: t('conn_whatsapp_short', 'Voice-note her from your phone'),
+          short: t('conn_whatsapp_short', 'Voice notes to the bot on your phone'),
           intro: t(
             'conn_whatsapp_intro',
-            'WhatsApp is a chat front door only — PostQueen does not publish into WhatsApp. OpenClaw pairs over QR on your machine; your messages never touch PostQueen directly.'
+            'WhatsApp is a chat front door only, PostQueen does not publish into WhatsApp. OpenClaw pairs over QR on your machine; your messages never touch PostQueen directly.'
           ),
           examples: [
             {
@@ -788,10 +884,10 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'chat',
           section: 'chat',
-          short: t('conn_telegram_short', 'Message her from Telegram'),
+          short: t('conn_telegram_short', 'Message the hosted bot from Telegram'),
           intro: t(
             'conn_telegram_intro',
-            'Talk to her from Telegram through OpenClaw or Hermes on your machine. Telegram can also be a publishing channel under Channels — that is a separate setup.'
+            'Talk to her from Telegram through OpenClaw or Hermes on your machine. Telegram can also be a publishing channel under Channels, that is a separate setup.'
           ),
           examples: chatExamples(),
           docs: [
@@ -812,10 +908,10 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'chat',
           section: 'chat',
-          short: t('conn_slack_chat_short', 'Ask her from a Slack channel'),
+          short: t('conn_slack_chat_short', 'Ask the hosted bot in a Slack channel'),
           intro: t(
             'conn_slack_chat_intro',
-            'Use Slack as a front door to your agent — not the same as connecting Slack as a publishing channel under Channels.'
+            'Use Slack as a front door to your agent, not the same as connecting Slack as a publishing channel under Channels.'
           ),
           examples: chatExamples(),
           docs: [
@@ -836,7 +932,7 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'chat',
           section: 'chat',
-          short: t('conn_discord_chat_short', 'Ask her from a Discord channel'),
+          short: t('conn_discord_chat_short', 'Ask the hosted bot in a Discord channel'),
           intro: t(
             'conn_discord_chat_intro',
             'Message your agent from Discord. Publishing into Discord is a separate Channels setup.'
@@ -870,24 +966,20 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'chat',
           section: 'assistants',
-          short: t('conn_claude_apps_short', 'Manage content from Claude'),
+          short: t('conn_claude_apps_short', 'Chat on claude.ai, Desktop or phone'),
           intro: t(
             'conn_claude_apps_intro',
-            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. Add a custom connector from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
+            'This is Anthropic\'s chat: claude.ai, Claude Desktop, iOS and Android. One custom connector follows the account. She is not in Anthropic\'s Connectors Directory, add her from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for LAN or VPN. Claude Code is a different product, use that card under Agents, like Codex vs ChatGPT.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_claude_apps_note',
-            'A plain "url" entry in claude_desktop_config.json does not work — use a custom connector or mcp-remote. New connectors generally cannot be created from the mobile apps — add them on the web or Desktop first. For Claude Code in a terminal, see the Claude Code card under Agents.'
+            'Not listed at claude.com/connectors. Browse will not find PostQueen. A plain "url" in claude_desktop_config.json does not work. Customize → Connectors does not install Claude Code. New connectors generally cannot be created from the mobile apps, add them on the web or Desktop first.'
           ),
           docs: [
             {
               label: t('conn_docs_claude_apps', 'Claude MCP setup'),
               href: `${DOCS}/mcp/clients/claude`,
-            },
-            {
-              label: t('conn_docs_claude_apps_hub', 'Claude Apps hub'),
-              href: `${DOCS}/agents/claude-apps`,
             },
           ],
           steps: [
@@ -931,15 +1023,15 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'chat',
           section: 'assistants',
-          short: t('conn_chatgpt_short', 'Manage content from ChatGPT'),
+          short: t('conn_chatgpt_short', 'Schedule posts from ChatGPT on the web'),
           intro: t(
             'conn_chatgpt_intro',
-            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only — not the Free plan, not the mobile apps.'
+            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only, not the Free plan, not the mobile apps. Codex is a different product, use that card under Agents.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_chatgpt_note',
-            'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication — the key is already in the URL.'
+            'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication, the key is already in the URL. Settings → Apps does not install Codex.'
           ),
           docs: [
             {
@@ -991,15 +1083,15 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'chat',
           section: 'assistants',
-          short: t('conn_grok_short', 'Add her as a Grok custom connector'),
+          short: t('conn_grok_short', 'Add a custom connector on grok.com'),
           intro: t(
             'conn_grok_intro',
-            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet.'
+            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot and Grok Build are different products, use those cards.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_grok_note',
-            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. There is no Bot-only MCP URL — grok.com/connectors is the source of truth. If Grok Bot offers Plugins or Connectors, enable that same account connector there; do not invent a second URL.'
+            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. grok.com/connectors does not install PostQueen on Grok Bot or Grok Build.'
           ),
           docs: [
             {
@@ -1030,17 +1122,67 @@ export function buildConnectionsCatalog(
               code: mcpUrlWithKey,
             },
             {
-              title: t('conn_grok_step_bot', 'Grok Bot (optional)'),
-              detail: t(
-                'conn_grok_step_bot_detail',
-                'Create the connector on grok.com/connectors first. If you use Grok Bot, enable that same account connector under the Bot\'s Plugins or Connectors if the UI offers it. Asking the Bot to "add a custom server" still ends at the same URL — there is no second MCP endpoint.'
-              ),
-            },
-            {
               title: t('conn_step_verify', 'Check it worked'),
               detail: t(
                 'conn_grok_verify',
                 'In a Grok chat, ask it to list your connected social media accounts.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'grok-bot',
+          name: t('conn_grok_bot_name', 'Grok Bot'),
+          glyph: 'GB',
+          icon: '/icons/connections/grok.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t('conn_grok_bot_short', 'Tell Grok Bot the MCP URL in chat'),
+          intro: t(
+            'conn_grok_bot_intro',
+            'Grok Bot is the cloud agent, not grok.com chat and not Grok Build. It does not read grok.com/connectors, Cursor mcp.json or ~/.grok/config.toml. Tell the Bot to add a remote MCP server. The URL must be public HTTPS, localhost and stdio do not work.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_grok_bot_note',
+            'PostQueen is not a Grok Bot marketplace plugin. Do not look for her under Plugins. Cursor staff document adding a custom server in the Bot chat. Teams inherit Cursor MCP allowlists. Same MCP URL as Grok chat, different product.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_grok_bot', 'Grok Bot MCP setup'),
+              href: `${DOCS}/mcp/clients/grok-bot`,
+            },
+          ],
+          paths: [
+            {
+              label: t('conn_docs_grok_bot_guide', 'Grok Bot guide'),
+              href: `${DOCS}/agents/grok-bot`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_grok_bot_step_ask', 'Ask the Bot to add the server'),
+              detail: t(
+                'conn_grok_bot_step_ask_detail',
+                'Open Grok Bot. There is no grok.com/connectors form here. In the Bot chat, tell it to add the MCP server. Cursor documents: Add this MCP server: plus the public URL.'
+              ),
+            },
+            {
+              title: t('conn_grok_bot_step_url', 'Give it the MCP URL'),
+              detail: t(
+                'conn_grok_bot_step_url_detail',
+                'Paste the streamable HTTP URL with your API key in the path. Get the key from Settings → API Keys. Confirm when the Bot asks. Tools show up on the next message.'
+              ),
+              code: mcpUrlWithKey,
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_grok_bot_verify',
+                'In that Grok Bot chat, ask it to list your connected social media accounts.'
               ),
             },
           ],
@@ -1055,10 +1197,10 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'chat',
           section: 'assistants',
-          short: t('conn_cursor_short', 'Schedule posts from Cursor'),
+          short: t('conn_cursor_short', 'Schedule from Cursor in the editor'),
           intro: t(
             'conn_cursor_intro',
-            'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field — Cursor infers the transport. You can also add it from Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP); all write the same file.'
+            'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field, Cursor infers the transport. You can also add it from Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP); all write the same file.'
           ),
           examples: chatExamples(),
           docs: [
@@ -1089,7 +1231,7 @@ export function buildConnectionsCatalog(
               title: t('conn_cursor_step_url', 'Paste this JSON'),
               detail: t(
                 'conn_cursor_step_url_detail',
-                'url is correct for Cursor. Do not put this block in Claude Desktop\'s config — that client does not accept a plain url field.'
+                'url is correct for Cursor. Do not put this block in Claude Desktop\'s config, that client does not accept a plain url field.'
               ),
               code: JSON.stringify(
                 { mcpServers: { postqueen: { url: mcpUrlWithKey } } },
@@ -1107,6 +1249,192 @@ export function buildConnectionsCatalog(
           ],
         },
         {
+          id: 'vscode',
+          name: t('conn_vscode_name', 'VS Code'),
+          glyph: 'VS',
+          icon: '/icons/connections/vscode.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t(
+            'conn_vscode_short',
+            'Schedule from VS Code Copilot MCP'
+          ),
+          intro: t(
+            'conn_vscode_intro',
+            'VS Code Copilot reads MCP from mcp.json. The file uses a servers object and each remote entry needs type http. That is not Cursor\'s mcpServers url shape. Add it from the Command Palette (MCP: Add Server) or edit .vscode/mcp.json (this workspace) or the user mcp.json (MCP: Open User Configuration).'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_vscode_note',
+            'Do not paste a Cursor mcpServers block into VS Code. GitHub Copilot CLI is a different product (~/.copilot/mcp-config.json). This card is the VS Code editor.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_vscode', 'VS Code MCP setup'),
+              href: `${DOCS}/mcp/clients/vscode`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_vscode_step_ui', 'Add the server'),
+              detail: t(
+                'conn_vscode_step_ui_detail',
+                'Command Palette → MCP: Add Server, pick HTTP, name it postqueen. Or create .vscode/mcp.json (this workspace) or run MCP: Open User Configuration for every workspace.'
+              ),
+            },
+            {
+              title: t('conn_vscode_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_vscode_step_json_detail',
+                'The key is servers, not mcpServers. type must be http. Put the API key in the URL or in a headers Authorization Bearer. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  servers: {
+                    postqueen: { type: 'http', url: mcpUrlWithKey },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_vscode_verify',
+                'In Copilot Chat agent mode, ask it to list your connected channels.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'windsurf',
+          name: 'Windsurf',
+          glyph: 'Ws',
+          icon: '/icons/connections/windsurf.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t(
+            'conn_windsurf_short',
+            'Schedule from Windsurf Cascade'
+          ),
+          intro: t(
+            'conn_windsurf_intro',
+            'Windsurf Cascade reads MCP from ~/.codeium/windsurf/mcp_config.json. Remote HTTP uses serverUrl (url also works). That is not Cursor mcp.json. Open MCPs in the Cascade panel, or Devin Settings → Cascade → MCP Servers, then edit the file. The newer Devin Local agent in Windsurf uses Devin CLI config instead of this file.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_windsurf_note',
+            'This card is Cascade\'s mcp_config.json. Devin Local (the default agent in new Windsurf tabs) does not read that file. Teams can allowlist servers by the key name in mcp_config.json.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_windsurf', 'Windsurf MCP setup'),
+              href: `${DOCS}/mcp/clients/windsurf`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_windsurf_step_ui', 'Open MCP settings'),
+              detail: t(
+                'conn_windsurf_step_ui_detail',
+                'In the Cascade panel, open MCPs, or Devin Settings → Cascade → MCP Servers. If PostQueen is not in the marketplace, edit the raw mcp_config.json.'
+              ),
+            },
+            {
+              title: t('conn_windsurf_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_windsurf_step_json_detail',
+                'Add this to ~/.codeium/windsurf/mcp_config.json. Use serverUrl for streamable HTTP. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  mcpServers: {
+                    postqueen: { serverUrl: mcpUrlWithKey },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_windsurf_verify',
+                'In a Cascade chat, ask it to list your connected channels.'
+              ),
+            },
+          ],
+        },
+        {
+          id: 'zed',
+          name: 'Zed',
+          glyph: 'Zd',
+          icon: '/icons/connections/zed.svg',
+          kind: 'MCP',
+          method: 'MCP',
+          cred: 'mcp',
+          exampleKind: 'chat',
+          section: 'assistants',
+          short: t('conn_zed_short', 'Zed editor remote MCP from JSON'),
+          intro: t(
+            'conn_zed_intro',
+            'Zed stores MCP servers under context_servers, not mcpServers. Add a remote server from Settings → AI → MCP Servers → Add Remote Server. If the Authorization header is missing, Zed starts an OAuth flow PostQueen does not speak, so send a Bearer header or put the key in the URL.'
+          ),
+          examples: chatExamples(),
+          info: t(
+            'conn_zed_note',
+            'A remote entry with only a url and no Authorization header is Zed\'s OAuth path. PostQueen /mcp with an API key is not that flow. Always send Authorization: Bearer, or put the key in the URL.'
+          ),
+          docs: [
+            {
+              label: t('conn_docs_zed', 'Zed MCP setup'),
+              href: `${DOCS}/mcp/clients/zed`,
+            },
+          ],
+          steps: [
+            {
+              title: t('conn_zed_step_ui', 'Add a remote server'),
+              detail: t(
+                'conn_zed_step_ui_detail',
+                'Settings → AI → MCP Servers → Add Server → Add Remote Server. Name it postqueen. Or edit the settings file (zed: open settings file).'
+              ),
+            },
+            {
+              title: t('conn_zed_step_json', 'Paste this JSON'),
+              detail: t(
+                'conn_zed_step_json_detail',
+                'The key is context_servers. Include the Authorization header so Zed does not start OAuth. Get the key from Settings → API Keys.'
+              ),
+              code: JSON.stringify(
+                {
+                  context_servers: {
+                    postqueen: {
+                      url: mcpUrl,
+                      headers: { Authorization: `Bearer ${apiKey}` },
+                    },
+                  },
+                },
+                null,
+                2
+              ),
+            },
+            {
+              title: t('conn_step_verify', 'Check it worked'),
+              detail: t(
+                'conn_zed_verify',
+                'In the Agent Panel, ask Zed to list your connected channels. A green indicator on the postqueen server means it is active.'
+              ),
+            },
+          ],
+        },
+        {
           id: 'gemini',
           name: 'Gemini CLI',
           glyph: 'Gm',
@@ -1116,10 +1444,10 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'cli',
           section: 'assistants',
-          short: t('conn_gemini_short', 'Point Gemini CLI at her MCP URL'),
+          short: t('conn_gemini_short', 'Gemini CLI talks over streamable HTTP'),
           intro: t(
             'conn_gemini_intro',
-            'Gemini CLI reads MCP servers from ~/.gemini/settings.json. Streamable HTTP uses the httpUrl key — url is reserved for SSE and will not connect to PostQueen. This is the terminal CLI, not gemini.google.com.'
+            'Gemini CLI reads MCP servers from ~/.gemini/settings.json. Streamable HTTP uses the httpUrl key, url is reserved for SSE and will not connect to PostQueen. This is the terminal CLI, not gemini.google.com.'
           ),
           examples: [
             {
@@ -1129,7 +1457,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_gemini_note',
-            'This settings.json does not appear in gemini.google.com. Google Connected Apps / Spark is a separate product with its own eligibility — do not expect the phone apps to pick up Gemini CLI.'
+            'This settings.json does not appear in gemini.google.com. Google Connected Apps / Spark is a separate product with its own eligibility, do not expect the phone apps to pick up Gemini CLI.'
           ),
           docs: [
             {
@@ -1181,10 +1509,10 @@ export function buildConnectionsCatalog(
           exampleKind: 'chat',
           section: 'assistants',
           soon: true,
-          short: t('conn_muse_short', 'Muse app connectors — MCP coming soon'),
+          short: t('conn_muse_short', 'Muse app. Custom MCP not ready yet'),
           intro: t(
             'conn_muse_intro',
-            'Meta Muse (the personal agent in the Muse app and WhatsApp) has Connectors, including custom connectors built from API details Muse walks you through. That is not a paste-an-MCP-URL flow. First-class MCP for the Muse app is coming soon. Muse Code, the coding agent, already connects — use that card under Agents.'
+            'Meta Muse (the personal agent in the Muse app and WhatsApp) has Connectors, including custom connectors built from API details Muse walks you through. That is not a paste-an-MCP-URL flow. First-class MCP for the Muse app is coming soon. Muse Code, the coding agent, already connects, use that card under Agents.'
           ),
           examples: [
             {
@@ -1216,7 +1544,7 @@ export function buildConnectionsCatalog(
               title: t('conn_muse_step_app', 'Muse app'),
               detail: t(
                 'conn_muse_step_app_detail',
-                'Settings → Connectors can attach catalog apps (Gmail, calendar). Custom connectors there collect API information — not an MCP server URL. We will add paste-URL steps here when Meta ships that.'
+                'Settings → Connectors can attach catalog apps (Gmail, calendar). Custom connectors there collect API information, not an MCP server URL. We will add paste-URL steps here when Meta ships that.'
               ),
             },
           ],
@@ -1228,7 +1556,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_mcp_more', 'More MCP clients'),
       blurb: t(
         'conn_group_mcp_more_blurb',
-        'Streamable HTTP at your /mcp endpoint — 14 tools. Any client that can reach a remote MCP server follows the same shape.'
+        'Streamable HTTP at your /mcp endpoint, 14 tools. Any client that can reach a remote MCP server follows the same shape.'
       ),
       items: [
         {
@@ -1241,17 +1569,17 @@ export function buildConnectionsCatalog(
           cred: 'mcp',
           exampleKind: 'cli',
           section: 'mcp',
-          short: t('conn_other_mcp_short', 'VS Code, Zed, Continue, Windsurf'),
+          short: t('conn_other_mcp_short', 'Any other MCP client with the URL'),
           intro: t(
             'conn_other_mcp_intro',
             'PostQueen exposes 14 tools at a single streamable HTTP endpoint (13 registry tools plus ask_postqueen). If your editor or agent can reach a remote MCP server, use the URL below (API key in the path or as a Bearer token). Get your key from Settings → API Keys.'
           ),
           examples: [
             {
-              title: t('conn_other_mcp_ex_cursor', 'Cursor / VS Code Copilot'),
+              title: t('conn_other_mcp_ex_cursor', 'Cursor-style url'),
               body: t(
                 'conn_other_mcp_ex_cursor_body',
-                'Most editors that speak MCP use a url field, like Cursor.'
+                'Cursor uses mcpServers plus url. VS Code, Windsurf and Zed do not. Use those cards.'
               ),
               code: JSON.stringify(
                 { mcpServers: { postqueen: { url: mcpUrlWithKey } } },
@@ -1274,7 +1602,7 @@ export function buildConnectionsCatalog(
           ],
           note: t(
             'conn_other_mcp_note',
-            'There is no dedicated PostQueen guide for VS Code, Windsurf, Zed or Continue — use this generic shape. Claude Desktop is the exception: do not paste a plain url into claude_desktop_config.json; use a custom connector or mcp-remote.'
+            'Use this generic shape for Cline, Continue, Goose, Warp, JetBrains AI Assistant, Raycast and GitHub Copilot CLI. VS Code, Windsurf and Zed have their own cards. Claude Desktop is the exception: do not paste a plain url into claude_desktop_config.json; use a custom connector or mcp-remote.'
           ),
           docs: [
             {
@@ -1304,7 +1632,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_automation', 'Automation'),
       blurb: t(
         'conn_group_automation_blurb',
-        'Workflows in, webhooks and RSS out. Official Zapier/Make apps are not shipped yet — HTTP still works.'
+        'Workflows in, webhooks and RSS out. Official Zapier/Make apps are not shipped yet, HTTP still works.'
       ),
       items: [
         {
@@ -1317,10 +1645,10 @@ export function buildConnectionsCatalog(
           cred: 'api',
           exampleKind: 'workflow',
           section: 'automation',
-          short: t('conn_n8n_short', 'Schedule posts from n8n workflows'),
+          short: t('conn_n8n_short', 'Schedule posts from an n8n workflow'),
           intro: t(
             'conn_n8n_intro',
-            'Use the community node to publish from an n8n flow, and PostQueen webhooks to trigger a flow when a post publishes. This is not a chat prompt — you drop nodes on a canvas.'
+            'Use the community node to publish from an n8n flow, and PostQueen webhooks to trigger a flow when a post publishes. This is not a chat prompt, you drop nodes on a canvas.'
           ),
           examples: [
             {
@@ -1368,7 +1696,7 @@ export function buildConnectionsCatalog(
               title: t('conn_n8n_step_cred', 'Add the credential'),
               detail: t(
                 'conn_n8n_step_cred_detail',
-                'Create a PostQueen API credential. Paste your key from Settings → API Keys. The Public API wants the raw key — n8n handles the Authorization header for you.'
+                'Create a PostQueen API credential. Paste your key from Settings → API Keys. The Public API wants the raw key, n8n handles the Authorization header for you.'
               ),
               code: apiKey,
             },
@@ -1407,7 +1735,7 @@ export function buildConnectionsCatalog(
           exampleKind: 'workflow',
           section: 'automation',
           soon: true,
-          short: t('conn_zapier_short', 'HTTP today, official app soon'),
+          short: t('conn_zapier_short', 'HTTP today. Official Zapier app soon'),
           intro: t(
             'conn_zapier_intro',
             "There is no PostQueen app in Zapier's directory yet. Until there is, Webhooks by Zapier talks to the Public API in both directions. Zaps you build now stay valid."
@@ -1454,7 +1782,7 @@ export function buildConnectionsCatalog(
               title: t('conn_zapier_step_auth', 'Authenticate the request'),
               detail: t(
                 'conn_zapier_step_auth_detail',
-                'Add this header. No Bearer prefix — the Public API expects the raw key.'
+                'Add this header. No Bearer prefix, the Public API expects the raw key.'
               ),
               code: `Authorization: ${apiKey}`,
             },
@@ -1471,10 +1799,10 @@ export function buildConnectionsCatalog(
           exampleKind: 'http',
           section: 'automation',
           soon: true,
-          short: t('conn_make_short', 'HTTP today, official app soon'),
+          short: t('conn_make_short', 'HTTP today. Official Make app soon'),
           intro: t(
             'conn_make_intro',
-            "No PostQueen module on Make yet — coming soon on cloud. Make's HTTP and Webhooks modules cover the same ground today. Scenarios you build against the Public API stay valid when the native app lands."
+            "No PostQueen module on Make yet, coming soon on cloud. Make's HTTP and Webhooks modules cover the same ground today. Scenarios you build against the Public API stay valid when the native app lands."
           ),
           examples: [
             {
@@ -1534,7 +1862,7 @@ export function buildConnectionsCatalog(
           cred: 'none',
           exampleKind: 'http',
           section: 'automation',
-          short: t('conn_webhooks_short', 'HTTP call when a post goes live'),
+          short: t('conn_webhooks_short', 'Get an HTTP call when a post goes live'),
           intro: t(
             'conn_webhooks_intro',
             'PostQueen POSTs the published post as JSON to any URL you register. A webhook can watch every channel or just the ones you pick.'
@@ -1550,7 +1878,7 @@ export function buildConnectionsCatalog(
           ],
           note: t(
             'conn_webhooks_note',
-            'Requests are not signed, so treat the URL itself as the secret — give each destination its own, and do not act on a payload you cannot otherwise verify.'
+            'Requests are not signed, so treat the URL itself as the secret, give each destination its own, and do not act on a payload you cannot otherwise verify.'
           ),
           docs: [
             {
@@ -1628,7 +1956,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_developer', 'CLI & API'),
       blurb: t(
         'conn_group_developer_blurb',
-        'The same public surface every other connection rides — CLI, REST, Node SDK and OAuth apps.'
+        'The same public surface every other connection rides, CLI, REST, Node SDK and OAuth apps.'
       ),
       items: [
         {
@@ -1640,7 +1968,7 @@ export function buildConnectionsCatalog(
           cred: 'env',
           exampleKind: 'cli',
           section: 'developer',
-          short: t('conn_cli_short', 'Automate posting from any shell'),
+          short: t('conn_cli_short', 'Run postqueen commands in a shell'),
           intro: t(
             'conn_cli_intro',
             'Automate posting from the terminal. Same Public API under the hood; data commands print JSON so anything that can run a shell command can run your publishing. The Agent Skill does not install this package.'
@@ -1674,7 +2002,7 @@ export function buildConnectionsCatalog(
               title: t('conn_cli_step_login', 'Authenticate'),
               detail: t(
                 'conn_cli_step_login_detail',
-                'Settings → API Keys → Reveal, then export. Self-hosted OAuth device flow (`auth:login`) is advanced — see Authentication docs.'
+                'Settings → API Keys → Reveal, then export. Self-hosted OAuth device flow (`auth:login`) is advanced, see Authentication docs.'
               ),
               code: `export POSTQUEEN_API_KEY="${apiKey}"`,
             },
@@ -1683,7 +2011,7 @@ export function buildConnectionsCatalog(
               title: t('conn_cli_step_try', 'Try it'),
               detail: t(
                 'conn_cli_step_try_detail',
-                'First command that reaches the API — lists your connected channels as JSON.'
+                'First command that reaches the API, lists your connected channels as JSON.'
               ),
               code: 'postqueen integrations:list',
             },
@@ -1701,7 +2029,7 @@ export function buildConnectionsCatalog(
           short: t('conn_api_short', 'REST for channels, posts and media'),
           intro: t(
             'conn_api_intro',
-            'Everything the app does to your account, you can do over HTTP: list channels, schedule and delete posts, upload media, generate video, read analytics. The header is the raw key — no Bearer prefix.'
+            'Everything the app does to your account, you can do over HTTP: list channels, schedule and delete posts, upload media, generate video, read analytics. The header is the raw key, no Bearer prefix.'
           ),
           examples: [
             {
@@ -1728,7 +2056,7 @@ export function buildConnectionsCatalog(
               title: t('conn_api_step_auth', 'Authenticate'),
               detail: t(
                 'conn_api_step_auth_detail',
-                'Send your key in the Authorization header on every request. Do not prefix Bearer — that is for MCP, not this API.'
+                'Send your key in the Authorization header on every request. Do not prefix Bearer, that is for MCP, not this API.'
               ),
               code: `curl -H "Authorization: ${apiKey}" ${backendUrl}/public/v1/integrations`,
             },
@@ -1804,10 +2132,10 @@ export function buildConnectionsCatalog(
           cred: 'none',
           exampleKind: 'api',
           section: 'developer',
-          short: t('conn_oauth_short', 'Let apps post on a user\'s behalf'),
+          short: t('conn_oauth_short', 'Let other apps post for your users'),
           intro: t(
             'conn_oauth_intro',
-            'If you are building a product rather than automating your own account, register an OAuth app under Developers. Your users authorise it and you receive a token that works with the API, MCP and the CLI — no key sharing. Tokens are prefixed pos_.'
+            'If you are building a product rather than automating your own account, register an OAuth app under Developers. Your users authorise it and you receive a token that works with the API, MCP and the CLI, no key sharing. Tokens are prefixed pos_.'
           ),
           examples: [
             {
@@ -1828,7 +2156,7 @@ export function buildConnectionsCatalog(
               title: t('conn_oauth_step_create', 'Create the app'),
               detail: t(
                 'conn_oauth_step_create_detail',
-                'Connect → Developers, or Settings → Developers. Set your redirect URL there. This is not where the personal API key lives — that is API Keys.'
+                'Connect → Developers, or Settings → Developers. Set your redirect URL there. This is not where the personal API key lives, that is API Keys.'
               ),
             },
             {
@@ -1847,7 +2175,7 @@ export function buildConnectionsCatalog(
       label: t('conn_group_media', 'Media'),
       blurb: t(
         'conn_group_media_blurb',
-        'Third-party media services you already pay for — paste an API key and they show up in the media picker.'
+        'Third-party media services you already pay for, paste an API key and they show up in the media picker.'
       ),
       items: [
         {
@@ -1860,7 +2188,7 @@ export function buildConnectionsCatalog(
           cred: 'none',
           exampleKind: 'workflow',
           section: 'media',
-          short: t('conn_heygen_short', 'Avatar videos in the media row'),
+          short: t('conn_heygen_short', 'HeyGen avatars in the media picker'),
           intro: t(
             'conn_heygen_intro',
             'Paste your HeyGen API key under Integrations. The service appears in the post editor media row as Integrations once connected.'
@@ -1906,7 +2234,7 @@ export function buildConnectionsCatalog(
           cred: 'none',
           exampleKind: 'workflow',
           section: 'media',
-          short: t('conn_reelfarm_short', 'Import clips into the media library'),
+          short: t('conn_reelfarm_short', 'Import ReelFarm clips to the library'),
           intro: t(
             'conn_reelfarm_intro',
             'Paste your Reel.Farm API key under Integrations. Import appears in the media library toolbar once connected.'
